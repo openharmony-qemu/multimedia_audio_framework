@@ -1358,6 +1358,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
         AUDIO_WARNING_LOG("Already release, do nothing");
         return true;
     }
+    state_ = RELEASED;
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
         ipcStream_->Release();
@@ -1384,12 +1385,12 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
             cbBufferQueue_.PushNoWait({nullptr, 0, 0});
         }
         cbThreadCv_.notify_all();
+        readDataCV_.notify_all();
         if (callbackLoop_.joinable()) {
             callbackLoop_.join();
         }
     }
     paramsIsSet_ = false;
-    state_ = RELEASED;
 
     std::unique_lock<std::mutex> lock(streamCbMutex_);
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
@@ -1516,12 +1517,10 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             std::unique_lock<std::mutex> readLock(readDataMutex_);
             bool isTimeout = !readDataCV_.wait_for(readLock,
                 std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-                    return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame();
+                    return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame() || state_ != RUNNING;
             });
-            if (isTimeout) {
-                AUDIO_WARNING_LOG("timeout");
-                return ERROR;
-            }
+            CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "State is not running");
+            CHECK_AND_RETURN_RET_LOG(isTimeout == false, ERROR, "Wait timeout");
         }
     }
     return readSize;
