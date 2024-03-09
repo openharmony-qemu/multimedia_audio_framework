@@ -1326,9 +1326,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     }
 
     hasFirstFrameWrited_ = false;
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_);
-    }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     if (ret != SUCCESS) {

@@ -262,10 +262,6 @@ public:
 
     virtual std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() = 0;
 
-    virtual void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) = 0;
-
-    virtual void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) = 0;
-
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

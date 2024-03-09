@@ -418,10 +418,6 @@ public:
 
     std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
-
-    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
-
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

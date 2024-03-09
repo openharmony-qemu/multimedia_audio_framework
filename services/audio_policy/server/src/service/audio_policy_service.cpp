@@ -3884,7 +3884,24 @@ int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_DEBUG_LOG("Entered AudioPolicyService UpdateTracker");
-    if (mode == AUDIO_MODE_RECORD) {
+    if (mode == AUDIO_MODE_PLAYBACK) {
+        if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
+            vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+            rendererChangeInfos.push_back(
+                make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
+            streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfos[0]);
+            FetchOutputDevice(rendererChangeInfos, true);
+            streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo = rendererChangeInfos[0]->outputDeviceInfo;
+        }
+    } else if (mode == AUDIO_MODE_RECORD) {
+        if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RUNNING) {
+            vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+            capturerChangeInfos.push_back(
+                make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
+            streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfos[0]);
+            FetchInputDevice(capturerChangeInfos, true);
+            streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = capturerChangeInfos[0]->inputDeviceInfo;
+        }
         std::lock_guard<std::mutex> lock(microphonesMutex_);
         if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
             audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
@@ -3893,22 +3910,6 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
     UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
     return ret;
-}
-
-void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-    vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
-    rendererChangeInfo.push_back(
-        make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
-    FetchOutputDevice(rendererChangeInfo, true);
-}
-
-void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-    vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
-    capturerChangeInfo.push_back(
-        make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
-    FetchInputDevice(capturerChangeInfo, true);
 }
 
 int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>>

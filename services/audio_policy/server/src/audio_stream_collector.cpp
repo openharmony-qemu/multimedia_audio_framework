@@ -273,7 +273,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                 ERR_MEMORY_ALLOC_FAILED, "RendererChangeInfo Memory Allocation Failed");
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
             rendererChangeInfo->channelCount = (*it)->channelCount;
-            if (rendererChangeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_INVALID) {
+            if (rendererChangeInfo->rendererState != RENDERER_RUNNING) {
                 rendererChangeInfo->outputDeviceInfo = (*it)->outputDeviceInfo;
             }
             *it = move(rendererChangeInfo);

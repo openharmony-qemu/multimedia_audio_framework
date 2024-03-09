@@ -372,10 +372,6 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
     CHECK_AND_RETURN_RET_LOG(!isPausing_, false,
         "Illegal isPausing_:%{public}u", isPausing_);
 
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, GetClientPid(), rendererInfo_);
-        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, RUNNING, GetClientPid(), capturerInfo_);
-    }
     int32_t ret = StartStream(cmdType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "StartStream Start failed:%{public}d", ret);
 

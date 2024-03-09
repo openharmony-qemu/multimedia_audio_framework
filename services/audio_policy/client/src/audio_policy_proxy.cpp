@@ -975,48 +975,6 @@ int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     return reply.ReadInt32();
 }
 
-void AudioPolicyProxy::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    if (!ret) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-    }
-
-    streamChangeInfo.audioRendererChangeInfo.Marshalling(data);
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::FETCH_OUTPUT_DEVICE_FOR_TRACK), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("event failed , error: %d", error);
-    }
-    return;
-}
-
-void AudioPolicyProxy::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    if (!ret) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-    }
-
-    streamChangeInfo.audioCapturerChangeInfo.Marshalling(data);
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::FETCH_INPUT_DEVICE_FOR_TRACK), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("event failed , error: %d", error);
-    }
-    return;
-}
-
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
