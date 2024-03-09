@@ -1061,19 +1061,5 @@ void AudioPolicyManagerStub::GetActiveBluetoothDeviceInternal(MessageParcel &dat
     std::unique_ptr<AudioDeviceDescriptor> desc = GetActiveBluetoothDevice();
     desc->Marshalling(reply);
 }
-
-void AudioPolicyManagerStub::FetchOutputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamChangeInfo streamChangeInfo = {};
-    streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-    FetchOutputDeviceForTrack(streamChangeInfo);
-}
-
-void AudioPolicyManagerStub::FetchInputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamChangeInfo streamChangeInfo = {};
-    streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
-    FetchInputDeviceForTrack(streamChangeInfo);
-}
 } // namespace audio_policy
 } // namespace OHOS

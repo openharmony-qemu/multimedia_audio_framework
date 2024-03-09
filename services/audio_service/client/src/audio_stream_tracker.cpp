@@ -83,35 +83,5 @@ void AudioStreamTracker::UpdateTracker(const int32_t sessionId, const State stat
     }
     AudioPolicyManager::GetInstance().UpdateTracker(eMode_, streamChangeInfo);
 }
-
-void AudioStreamTracker::FetchOutputDeviceForTrack(const int32_t sessionId, const State state, const int32_t clientPid,
-    const AudioRendererInfo &rendererInfo)
-{
-    AUDIO_DEBUG_LOG("entered");
-    if (eMode_ == AUDIO_MODE_PLAYBACK) {
-        AudioStreamChangeInfo streamChangeInfo;
-        streamChangeInfo.audioRendererChangeInfo.clientUID = clientUid_;
-        streamChangeInfo.audioRendererChangeInfo.sessionId = sessionId;
-        streamChangeInfo.audioRendererChangeInfo.clientPid = clientPid;
-        streamChangeInfo.audioRendererChangeInfo.rendererState = static_cast<RendererState>(state);
-        streamChangeInfo.audioRendererChangeInfo.rendererInfo = rendererInfo;
-        AudioPolicyManager::GetInstance().FetchOutputDeviceForTrack(streamChangeInfo);
-    }
-}
-
-void AudioStreamTracker::FetchInputDeviceForTrack(const int32_t sessionId, const State state, const int32_t clientPid,
-    const AudioCapturerInfo &capturerInfo)
-{
-    AUDIO_DEBUG_LOG("entered");
-    if (eMode_ == AUDIO_MODE_RECORD) {
-        AudioStreamChangeInfo streamChangeInfo;
-        streamChangeInfo.audioCapturerChangeInfo.clientUID = clientUid_;
-        streamChangeInfo.audioCapturerChangeInfo.sessionId = sessionId;
-        streamChangeInfo.audioCapturerChangeInfo.clientPid = clientPid;
-        streamChangeInfo.audioCapturerChangeInfo.capturerState = static_cast<CapturerState>(state);
-        streamChangeInfo.audioCapturerChangeInfo.capturerInfo = capturerInfo;
-        AudioPolicyManager::GetInstance().FetchInputDeviceForTrack(streamChangeInfo);
-    }
-}
 } // namespace AudioStandard
 } // namespace OHOS
