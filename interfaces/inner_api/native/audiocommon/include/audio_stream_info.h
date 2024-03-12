@@ -151,6 +151,7 @@ enum AudioStreamType {
 * Enumerates the stream usage.
 */
 enum StreamUsage {
+    STREAM_USAGE_INVALID = -1,
     STREAM_USAGE_UNKNOWN = 0,
     STREAM_USAGE_MEDIA = 1,
     STREAM_USAGE_MUSIC = 1,
