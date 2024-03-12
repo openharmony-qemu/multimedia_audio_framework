@@ -335,7 +335,11 @@ napi_status NapiParamUtils::GetRendererInfo(const napi_env &env, AudioRendererIn
 
     status = GetValueInt32(env, "usage", intValue, in);
     if (status == napi_ok) {
-        rendererInfo->streamUsage = static_cast<StreamUsage>(intValue);
+        if (NapiAudioEnum::IsLegalInputArgumentStreamUsage(intValue)) {
+            rendererInfo->streamUsage = static_cast<StreamUsage>(intValue);
+        } else {
+            rendererInfo->streamUsage = StreamUsage::STREAM_USAGE_INVALID;
+        }
     }
 
     GetValueInt32(env, "rendererFlags", rendererInfo->rendererFlags, in);
