@@ -5545,9 +5545,9 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDev
 
     uint32_t index = 0;
     for (uint32_t i = 1; i < btDeviceSize; ++i) {
-        if (activeDeviceDescriptors[i]->connectTimeStamp_ <
+        if (activeDeviceDescriptors[i]->connectTimeStamp_ >
             activeDeviceDescriptors[index]->connectTimeStamp_) {
-                index = i;
+            index = i;
         }
     }
     unique_ptr<AudioDeviceDescriptor> res = std::move(activeDeviceDescriptors[index]);
