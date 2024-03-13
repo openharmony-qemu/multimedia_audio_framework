@@ -2722,6 +2722,8 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         // Hmm, nothing to do. Let's sleep
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
+            AUDIO_ERR_LOG("Thread (use timing bus) shutting down, error %d, pid %d, tid %d",
+                ret, getpid(), gettid());
             // If this was no regular exit from the loop we have to continue
             // processing messages until we received PA_MESSAGE_SHUTDOWN
             pa_asyncmsgq_post(u->thread_mq.outq, PA_MSGOBJECT(u->core), PA_CORE_MESSAGE_UNLOAD_MODULE,
@@ -2732,6 +2734,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         }
 
         if (ret == 0) {
+            AUDIO_INFO_LOG("Thread (use timing bus) shutting down, pid %d, tid %d", getpid(), gettid());
             pthread_rwlock_unlock(&u->rwlockSleep);
             break;
         }
