@@ -2593,7 +2593,7 @@ static void SetHdiParam(struct Userdata *userdata)
         userdata->sinkSceneMode = sinkSceneModeMax;
         userdata->sinkSceneType = sinkSceneTypeMax;
         userdata->spatialEnabled = spatialEnabledMax;
-        EffectChainManagerSetHdiParam(SCENE_TYPE_SET[userdata->sinkSceneType],
+        EffectChainManagerSetHdiParam(userdata->sinkSceneType < 0 ? "" : SCENE_TYPE_SET[userdata->sinkSceneType],
             userdata->sinkSceneMode == 0 ? "EFFECT_NONE" : "EFFECT_DEFAULT", userdata->spatialEnabled);
     }
 }
