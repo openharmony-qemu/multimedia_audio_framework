@@ -2547,7 +2547,7 @@ static void ThreadFuncRendererTimerMultiChannel(void *userdata)
 static int32_t GetSinkTypeNum(const char *sinkSceneType)
 {
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
-        if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i]) == true) {
+        if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
             return i;
         }
     }
