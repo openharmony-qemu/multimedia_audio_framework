@@ -147,8 +147,8 @@ struct Userdata {
     BufferAttr *bufferAttr;
     int32_t processLen;
     size_t processSize;
-    char *sinkSceneType;
-    char *sinkSceneMode;
+    int32_t sinkSceneType;
+    int32_t sinkSceneMode;
     bool spatialEnabled;
     pthread_mutex_t mutexPa;
     pthread_mutex_t mutexPa2;
@@ -2544,21 +2544,29 @@ static void ThreadFuncRendererTimerMultiChannel(void *userdata)
     }
 }
 
+static int32_t GetSinkTypeNum(const char *sinkSceneType)
+{
+    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static void SetHdiParam(struct Userdata *userdata)
 {
     pa_sink_input *i;
     void *state = NULL;
     int sessionIDMax = -1;
-    char *sinkSceneTypeMax = "";
-    char *sinkSceneModeMax = "";
+    int32_t sinkSceneTypeMax = -1;
+    int32_t sinkSceneModeMax = -1;
     bool spatialEnabledMax = false;
     while ((i = pa_hashmap_iterate(userdata->sink->thread_info.inputs, &state, NULL))) {
         pa_sink_input_assert_ref(i);
         const char *clientUid = pa_proplist_gets(i->proplist, "stream.client.uid");
         const char *bootUpMusic = "1003";
-        if (pa_safe_streq(clientUid, bootUpMusic)) {
-            return;
-        }
+        if (pa_safe_streq(clientUid, bootUpMusic)) { return; }
         const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
         const char *sinkSpatialization = pa_proplist_gets(i->proplist, "spatialization.enabled");
@@ -2569,25 +2577,25 @@ static void SetHdiParam(struct Userdata *userdata)
         int sessionID = atoi(sinkSessionStr == NULL ? "-1" : sinkSessionStr);
         if (sessionID > sessionIDMax && sinkSceneType && sinkSceneMode && sinkSpatialization) {
             sessionIDMax = sessionID;
-            sinkSceneTypeMax = (char *)sinkSceneType;
-            sinkSceneModeMax = (char *)sinkSceneMode;
+            sinkSceneTypeMax = GetSinkTypeNum(sinkSceneType);
+            sinkSceneModeMax = pa_safe_streq(sinkSceneMode, "EFFECT_NONE") == true ? 0 : 1;
             spatialEnabledMax = spatialEnabled;
         }
     }
 
-    if (userdata == NULL || userdata->sinkSceneType == NULL || userdata->sinkSceneMode == NULL) {
+    if (userdata == NULL) {
         AUDIO_DEBUG_LOG("SetHdiParam userdata null pointer");
         return;
     }
 
-    if (!pa_safe_streq(userdata->sinkSceneType, sinkSceneTypeMax) ||
-        !pa_safe_streq(userdata->sinkSceneMode, sinkSceneModeMax) ||
+    if ((userdata->sinkSceneType != sinkSceneTypeMax) || (userdata->sinkSceneMode != sinkSceneModeMax) ||
         (userdata->spatialEnabled != spatialEnabledMax)) {
-            userdata->sinkSceneMode = sinkSceneModeMax;
-            userdata->sinkSceneType = sinkSceneTypeMax;
-            userdata->spatialEnabled = spatialEnabledMax;
-            EffectChainManagerSetHdiParam(userdata->sinkSceneType, userdata->sinkSceneMode, userdata->spatialEnabled);
-        }
+        userdata->sinkSceneMode = sinkSceneModeMax;
+        userdata->sinkSceneType = sinkSceneTypeMax;
+        userdata->spatialEnabled = spatialEnabledMax;
+        EffectChainManagerSetHdiParam(userdata->sinkSceneType < 0 ? "" : SCENE_TYPE_SET[userdata->sinkSceneType],
+            userdata->sinkSceneMode == 0 ? "EFFECT_NONE" : "EFFECT_DEFAULT", userdata->spatialEnabled);
+    }
 }
 
 static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUsec)
@@ -3314,8 +3322,8 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->bufferAttr->frameLen = DEFAULT_FRAMELEN;
     u->bufferAttr->numChanIn = u->ss.channels;
     u->bufferAttr->numChanOut = u->ss.channels;
-    u->sinkSceneMode = "";
-    u->sinkSceneType = "";
+    u->sinkSceneMode = -1;
+    u->sinkSceneType = -1;
     u->spatialEnabled = false;
 }
 
