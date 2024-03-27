@@ -452,7 +452,7 @@ void PaCapturerStreamImpl::PAStreamStopSuccessCb(pa_stream *stream, int32_t succ
 
     bool isUserdataExist;
     if (!paCapturerMap_.Find(userdata, isUserdataExist)) {
-        AUDIO_ERR_LOG("streamImpl is null");
+        AUDIO_ERR_LOG("userdata is null");
         return;
     }
     PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
