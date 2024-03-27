@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static SafeMap<PaCapturerStreamImpl *, bool> paCapturerMap_;
+static SafeMap<void *, bool> paCapturerMap_;
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
     do {
@@ -450,12 +450,12 @@ void PaCapturerStreamImpl::PAStreamStopSuccessCb(pa_stream *stream, int32_t succ
         return;
     }
 
-    PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
-    bool tempBool = true;
-    if (paCapturerMap_.Find(streamImpl, tempBool) == false) {
-        AUDIO_ERR_LOG("streamImpl is null");
+    bool isUserdataExist;
+    if (!paCapturerMap_.Find(userdata, isUserdataExist)) {
+        AUDIO_ERR_LOG("userdata is null");
         return;
     }
+    PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
     std::lock_guard<std::mutex> lock(streamImpl->streamImplLock_);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
