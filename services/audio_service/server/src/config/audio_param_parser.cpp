@@ -50,6 +50,12 @@ bool AudioParamParser::LoadConfiguration(
     }
     FreeCfgFiles(cfgFiles);
 #endif
+    if (doc == nullptr) {
+        AUDIO_ERR_LOG("xmlReadFile Failed");
+        return false;
+    }
+
+    xmlNode *root = xmlDocGetRootElement(doc);
     if (root == nullptr) {
         AUDIO_ERR_LOG("xmlDocGetRootElement Failed");
         xmlFreeDoc(doc);
