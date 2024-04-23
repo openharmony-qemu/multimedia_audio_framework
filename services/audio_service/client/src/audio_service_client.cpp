@@ -471,6 +471,7 @@ void AudioServiceClient::PAStreamLatencyUpdateCb(pa_stream *stream, void *userda
 void AudioServiceClient::PAStreamMovedCb(pa_stream *stream, void *userdata)
 {
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
+    CHECK_AND_RETURN_LOG(stream, "stream is null");
 
     // get stream informations.
     uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
@@ -485,6 +486,7 @@ void AudioServiceClient::PAStreamMovedCb(pa_stream *stream, void *userdata)
 void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 {
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
+    CHECK_AND_RETURN_LOG(stream, "stream is null");
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
     bool isClientExist;
