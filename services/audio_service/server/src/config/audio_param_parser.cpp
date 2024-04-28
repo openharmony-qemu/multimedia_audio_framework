@@ -15,6 +15,9 @@
 
 #include "audio_log.h"
 #include "config/audio_param_parser.h"
+#ifdef USE_CONFIG_POLICY
+#include "config_policy_utils.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,7 +35,24 @@ bool AudioParamParser::LoadConfiguration(
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys)
 {
     AUDIO_INFO_LOG("start LoadConfiguration");
-    xmlDoc *doc = xmlReadFile(CONFIG_FILE, nullptr, 0);
+    xmlDoc *doc = nullptr;
+
+#ifdef USE_CONFIG_POLICY
+    CfgFiles *cfgFiles = GetCfgFiles(CONFIG_FILE);
+    if (cfgFiles == nullptr) {
+        AUDIO_ERR_LOG("Not found audio_param_config.xml");
+        return false;
+    }
+
+    for (int32_t i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; i--) {
+        if (cfgFiles->paths[i] && *(cfgFiles->paths[i]) != '\0') {
+            AUDIO_INFO_LOG("extra parameter config file path: %{public}s", cfgFiles->paths[i]);
+            doc = xmlReadFile(cfgFiles->paths[i], nullptr, 0);
+            break;
+        }
+    }
+    FreeCfgFiles(cfgFiles);
+#endif
     if (doc == nullptr) {
         AUDIO_ERR_LOG("xmlReadFile Failed");
         return false;

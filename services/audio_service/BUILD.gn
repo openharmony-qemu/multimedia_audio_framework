@@ -396,6 +396,12 @@ ohos_shared_library("audio_service") {
     "samgr:samgr_proxy",
   ]
 
+  defines = []
+  if (audio_framework_config_policy_enable) {
+    external_deps += [ "config_policy:configpolicy_util" ]
+    defines += [ "USE_CONFIG_POLICY" ]
+  }
+
   if (sensor_enable == true) {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
