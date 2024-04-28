@@ -1210,7 +1210,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         switch (focusEntry.hintType) {
             case INTERRUPT_HINT_STOP:
                 iterActive = audioFocusInfoList.erase(iterActive);
-                if (iterActive != audioFocusInfoList.end() &&  
+                if (iterActive != audioFocusInfoList.end() && 
                     itZone->second->pids.find((iterActive->first).pid) != itZone->second->pids.end()) {
                     itZone->second->pids.erase(itZone->second->pids.find((iterActive->first).pid));
                 }
