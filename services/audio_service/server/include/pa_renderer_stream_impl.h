@@ -18,6 +18,7 @@
 
 #include <pulse/pulseaudio.h>
 #include "i_renderer_stream.h"
+#include <mutex>
 
 namespace OHOS {
 namespace AudioStandard {
