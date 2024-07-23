@@ -17,6 +17,7 @@
 #define PA_RENDERER_STREAM_IMPL_H
 
 #include <pulse/pulseaudio.h>
+#include <mutex>
 #include "i_renderer_stream.h"
 
 namespace OHOS {
