@@ -14,7 +14,9 @@
  */
 #include "napi_audio_renderer.h"
 #include "audio_utils.h"
+#ifdef FEATURE_HIVIEW_ENABLE
 #include "xpower_event_js.h"
+#endif
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
@@ -474,8 +476,9 @@ napi_value NapiAudioRenderer::Start(napi_env env, napi_callback_info info)
     }
 
     context->GetCbInfo(env, info);
+#ifdef FEATURE_HIVIEW_ENABLE
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "STREAM_CHANGE", "SRC=Audio");
-
+#endif
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
