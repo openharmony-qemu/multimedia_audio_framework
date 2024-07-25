@@ -57,10 +57,10 @@ declare_args() {
   } else {
     audio_framework_feature_device_manager = false
   }
-  
+
   if (!defined(global_parts_info) ||
       defined(global_parts_info.hiviewdfx_hiview)) {
-    audio_framework_feature_hiview_enable = false
+    audio_framework_feature_hiview_enable = true
   } else {
     audio_framework_feature_hiview_enable = false
   }
