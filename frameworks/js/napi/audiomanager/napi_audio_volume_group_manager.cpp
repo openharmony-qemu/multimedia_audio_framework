@@ -22,7 +22,9 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#ifdef FEATURE_HIVIEW_ENABLE
 #include "xpower_event_js.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -291,8 +293,9 @@ napi_value NapiAudioVolumeGroupManager::SetVolume(napi_env env, napi_callback_in
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
+#ifdef FEATURE_HIVIEW_ENABLE
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
-
+#endif
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);

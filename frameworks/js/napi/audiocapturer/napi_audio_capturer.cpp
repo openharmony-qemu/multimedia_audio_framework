@@ -14,7 +14,9 @@
  */
 #include "napi_audio_capturer.h"
 
+#ifdef FEATURE_HIVIEW_ENABLE
 #include "xpower_event_js.h"
+#endif
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "napi_audio_error.h"
@@ -403,7 +405,9 @@ napi_value NapiAudioCapturer::Start(napi_env env, napi_callback_info info)
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
+#ifdef FEATURE_HIVIEW_ENABLE
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "STREAM_CHANGE", "SRC=Audio");
+#endif
     return NapiAsyncWork::Enqueue(env, context, "Start", executor, complete);
 }
 

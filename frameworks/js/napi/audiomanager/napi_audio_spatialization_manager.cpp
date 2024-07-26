@@ -21,7 +21,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-#include "xpower_event_js.h"
+
 #include "napi_audio_spatialization_manager_callback.h"
 
 namespace OHOS {
