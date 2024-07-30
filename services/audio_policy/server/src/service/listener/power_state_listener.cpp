@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-#ifdef FEATURE_POWER_MANAGER
 #include "power_state_listener.h"
-#endif
+
 #include <chrono>
 #include <thread>
 
