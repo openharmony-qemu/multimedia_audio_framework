@@ -31,7 +31,9 @@
 #include "audio_stream_collector.h"
 #include "audio_router_center.h"
 #include "ipc_skeleton.h"
+#ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
+#endif
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -91,9 +93,9 @@ public:
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
 
     float GetLowPowerVolume(int32_t streamId) const;
-
+#ifdef FEATURE_POWER_MANAGER
     void HandlePowerStateChanged(PowerMgr::PowerState state);
-
+#endif
     float GetSingleStreamVolume(int32_t streamId) const;
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
@@ -796,7 +798,9 @@ private:
     AudioPnpServer &audioPnpServer_;
 
     std::optional<uint32_t> offloadSessionID_;
+#ifdef FEATURE_POWER_MANAGER
     PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
+#endif
     bool currentOffloadSessionIsBackground_ = false;
     std::mutex offloadMutex_;
 

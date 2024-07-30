@@ -20,7 +20,9 @@
 
 #include "suspend/isync_sleep_callback.h"
 #include "suspend/sleep_priority.h"
+#ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {

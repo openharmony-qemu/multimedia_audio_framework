@@ -26,7 +26,9 @@
 #include "key_event.h"
 #include "key_option.h"
 #endif
+#ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
+#endif
 
 #include "privacy_kit.h"
 #include "accesstoken_kit.h"
@@ -168,7 +170,9 @@ void AudioPolicyServer::OnStart()
 void AudioPolicyServer::OnStop()
 {
     audioPolicyService_.Deinit();
+#ifdef FEATURE_POWER_MANAGER
     UnRegisterPowerStateListener();
+#endif
     return;
 }
 
@@ -213,8 +217,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
+#ifdef FEATURE_POWER_MANAGER
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
+#endif
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -421,6 +427,7 @@ bool AudioPolicyServer::IsVolumeLevelValid(AudioStreamType streamType, int32_t v
     return result;
 }
 
+#ifdef FEATURE_POWER_MANAGER
 void AudioPolicyServer::SubscribePowerStateChangeEvents()
 {
     sptr<PowerMgr::IPowerStateCallback> powerStateCallback_;
@@ -457,11 +464,14 @@ void AudioPolicyServer::CheckSubscribePowerStateChange()
         AUDIO_ERR_LOG("PowerState CallBack Register Failed");
     }
 }
+#endif
 
 void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
     int64_t deactivateSessionId)
 {
+#ifdef FEATURE_POWER_MANAGER
     CheckSubscribePowerStateChange();
+#endif
     if (deactivateSessionId != OFFLOAD_NO_SESSION_ID) {
         audioPolicyService_.OffloadStreamReleaseCheck(deactivateSessionId);
     }
@@ -476,6 +486,7 @@ void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStrea
     }
 }
 
+#ifdef FEATURE_POWER_MANAGER
 AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerStateCallback(
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
@@ -484,6 +495,7 @@ void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged
 {
     policyServer_->audioPolicyService_.HandlePowerStateChanged(state);
 }
+#endif
 
 void AudioPolicyServer::InitKVStore()
 {
@@ -2786,7 +2798,7 @@ void AudioPolicyServer::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDes
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendDistributedRoutingRoleChange(descriptor, type);
 }
-
+#ifdef FEATURE_POWER_MANAGER
 void AudioPolicyServer::RegisterPowerStateListener()
 {
     if (powerStateListener_ == nullptr) {
@@ -2823,7 +2835,7 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
         AUDIO_INFO_LOG("unregister sync sleep callback success");
     }
 }
-
+#endif
 bool AudioPolicyServer::SpatializationClientDeathRecipientExist(SpatializationEventCategory eventCategory, pid_t uid)
 {
     if (eventCategory == SPATIALIZATION_ENABLED_CHANGE_EVENT) {

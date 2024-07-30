@@ -19,8 +19,9 @@
 
 #include "parameter.h"
 #include "parameters.h"
+#ifdef FEATURE_POWER_MANAGER
 #include "setting_provider.h"
-
+#endif
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_volume_parser.h"
@@ -1022,7 +1023,7 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
     } else {
         AUDIO_WARNING_LOG("WriteRingerModeToKvStore Writing RingerMode:%{public}d to kvStore failed!", ringerMode);
     }
-
+#ifdef FEATURE_POWER_MANAGER
     const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
     PowerMgr::SettingProvider& settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     const std::string settingKey = "ringer_mode";
@@ -1030,7 +1031,7 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write ringer_mode: %{public}d to setting db! Err: %{public}d", ringerMode, ret);
     }
-
+#endif
     return;
 }
 
