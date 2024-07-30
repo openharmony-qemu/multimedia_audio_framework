@@ -215,19 +215,17 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             InitKVStore();
             RegisterDataObserver();
             break;
+#ifdef FEATURE_POWER_MANAGER
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
-#ifdef FEATURE_POWER_MANAGER
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
 #endif
             break;
         default:
-            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
-    AUDIO_INFO_LOG("done systemAbilityId: %{public}d cost [%{public}" PRId64 "]", systemAbilityId,
-        ClockTime::GetCurNano() - stamp);
+    AUDIO_INFO_LOG("done cost [%{public}" PRId64 "]", ClockTime::GetCurNano() - stamp);
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
