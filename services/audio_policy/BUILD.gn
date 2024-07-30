@@ -249,9 +249,9 @@ ohos_shared_library("audio_policy_service") {
   ]
 
   if (audio_framework_feature_power_manager) {
-    external_deps += [ 
+    external_deps += [
       "power_manager:power_setting",
-      "power_manager:powermgr_client"
+      "power_manager:powermgr_client",
     ]
   }
 
