@@ -160,7 +160,6 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/effect/audio_effect_config_parser.cpp",
     "server/src/service/effect/audio_effect_manager.cpp",
     "server/src/service/listener/device_status_listener.cpp",
-    "server/src/service/listener/power_state_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
     "server/src/service/manager/pnp_server/audio_input_thread.cpp",
     "server/src/service/manager/pnp_server/audio_pnp_server.cpp",
@@ -180,6 +179,11 @@ ohos_shared_library("audio_policy_service") {
   defines = []
   if (audio_framework_feature_double_pnp_detect) {
     defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
+  }
+
+  if (audio_framework_feature_power_manager) {
+    sources += [ "server/src/service/listener/power_state_listener.cpp" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
   if (audio_framework_feature_dtmf_tone) {
@@ -240,11 +244,16 @@ ohos_shared_library("audio_policy_service") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
-    "power_manager:power_setting",
-    "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (audio_framework_feature_power_manager) {
+    external_deps += [
+      "power_manager:power_setting",
+      "power_manager:powermgr_client",
+    ]
+  }
 
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]

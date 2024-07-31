@@ -27,9 +27,10 @@
 
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
+#ifdef FEATURE_POWER_MANAGER
 #include "power_state_callback_stub.h"
 #include "power_state_listener.h"
-
+#endif
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
@@ -406,7 +407,7 @@ private:
     static std::map<InterruptHint, AudioFocuState> CreateStateMap();
 
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
-
+#ifdef FEATURE_POWER_MANAGER
     class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
     public:
         AudioPolicyServerPowerStateCallback(AudioPolicyServer *policyServer);
@@ -415,11 +416,13 @@ private:
     private:
         AudioPolicyServer *policyServer_;
     };
-
+#endif
     // offload session
     void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
         int64_t deactivateSessionId);
+#ifdef FEATURE_POWER_MANAGER
     void CheckSubscribePowerStateChange();
+#endif
 
     // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
@@ -499,7 +502,7 @@ private:
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
-    void SubscribePowerStateChangeEvents();
+    
     void InitMicrophoneMute();
     void InitKVStore();
     void ConnectServiceAdapter();
@@ -507,8 +510,11 @@ private:
     void RegisterBluetoothListener();
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
+#ifdef FEATURE_POWER_MANAGER
+    void SubscribePowerStateChangeEvents();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
+#endif
 
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
@@ -525,7 +531,9 @@ private:
     std::vector<pid_t> clientDiedListenerState_;
     std::vector<pid_t> spatializationEnabledListenerState_;
     std::vector<pid_t> headTrackingEnabledListenerState_;
+#ifdef FEATURE_POWER_MANAGER
     sptr<PowerStateListener> powerStateListener_;
+#endif
     std::unordered_map<int32_t /* zone id */, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMap_;
 
     std::mutex keyEventMutex_;
