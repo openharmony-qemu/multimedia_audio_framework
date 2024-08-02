@@ -33,7 +33,6 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "securec.h"
-#include "safe_block_queue.h"
 #include "hisysevent.h"
 
 #ifdef RESSCHE_ENABLE
@@ -1006,12 +1005,7 @@ void RendererInClientInner::WriteCallbackFunc()
 
         Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
         std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
-        cbBufferCV_.wait_for(lockBuffer, std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS), [this] {
-            return cbBufferQueue_.IsEmpty() == false; // will be false when got notified.
-        });
-        if (cbBufferQueue_.IsEmpty()) {
-            AUDIO_DEBUG_LOG("cbBufferQueue_ is empty");
-        }
+        cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
 }
@@ -1420,8 +1414,7 @@ bool RendererInClientInner::FlushAudioStream()
 
     // clear cbBufferQueue
     if (renderMode_ == RENDER_MODE_CALLBACK) {
-        BufferDesc tmpBuffer;
-        while (cbBufferQueue_.PopNotWait(tmpBuffer));
+        cbBufferQueue_.Clear();
     }
 
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");

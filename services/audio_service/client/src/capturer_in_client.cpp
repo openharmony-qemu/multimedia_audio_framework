@@ -32,7 +32,6 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "securec.h"
-#include "safe_block_queue.h"
 
 #include "ipc_stream.h"
 #include "audio_service_log.h"
@@ -286,7 +285,7 @@ private:
     std::mutex cbBufferMutex_;
     std::unique_ptr<uint8_t[]> cbBuffer_ {nullptr};
     size_t cbBufferSize_ = 0;
-    SafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
+    AudioSafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
     AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
     bool isInnerCapturer_ = false;
