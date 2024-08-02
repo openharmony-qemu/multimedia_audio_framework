@@ -319,7 +319,7 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
 int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device)
 {
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
-    int32_t ret;
+    bool ret;
     if (handleFlag) {
         AUDIO_INFO_LOG(" Recongnition sco connect");
         ret = hfpInstance_->OpenVoiceRecognition(device);
@@ -329,7 +329,7 @@ int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRem
         ret = hfpInstance_->CloseVoiceRecognition(device);
         AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
     }
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "HandleScoWithRecongnition failed, result: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == true, ERROR, "HandleScoWithRecongnition failed, result: %{public}d", ret);
     return SUCCESS;
 }
 
