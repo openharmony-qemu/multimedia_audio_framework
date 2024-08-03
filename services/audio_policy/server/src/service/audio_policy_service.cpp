@@ -2717,7 +2717,7 @@ void AudioPolicyService::BluetoothScoDisconectForRecongnition()
     if (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION &&
         currentActiveInputDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && audioDeviceManager_.GetScoState()) {
     int32_t ret = ScoInputDeviceFetchedForRecongnition(false, currentActiveInputDevice_.macAddress_,
-        currentActiveInputDevice_->connectState_);
+        currentActiveInputDevice_.connectState_);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
         GetEncryptAddr(currentActiveInputDevice_.macAddress_).c_str());
     }
