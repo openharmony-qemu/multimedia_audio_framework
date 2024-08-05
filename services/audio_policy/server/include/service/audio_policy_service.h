@@ -521,6 +521,7 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 
     int32_t ResetRingerModeMute();
+
     bool IsRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);

@@ -155,7 +155,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_AUDIO_CONCURRENCY_CALLBACK",
     "UNSET_AUDIO_CONCURRENCY_CALLBACK",
     "ACTIVATE_AUDIO_CONCURRENCY",
-    "SET_RINGER_MODE_MUTE",
     "SET_MICROPHONE_MUTE_PERSISTENT",
     "GET_MICROPHONE_MUTE_PERSISTENT",
     "INJECT_INTERRUPTION",
@@ -1409,12 +1408,6 @@ void AudioPolicyManagerStub::ActivateAudioConcurrencyInternal(MessageParcel &dat
 {
     AudioPipeType pipeType = static_cast<AudioPipeType>(data.ReadInt32());
     int32_t result = ActivateAudioConcurrency(pipeType);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = ResetRingerModeMute();
     reply.WriteInt32(result);
 }
 

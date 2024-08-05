@@ -157,7 +157,6 @@ private:
     void SetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateAudioConcurrencyInternal(MessageParcel &data, MessageParcel &reply);
-    void SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply);
@@ -295,7 +294,6 @@ private:
         &AudioPolicyManagerStub::SetConcurrencyCallbackInternal,
         &AudioPolicyManagerStub::UnsetConcurrencyCallbackInternal,
         &AudioPolicyManagerStub::ActivateAudioConcurrencyInternal,
-        &AudioPolicyManagerStub::SetRingerStreamMuteInternal,
         &AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal,
         &AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal,
         &AudioPolicyManagerStub::InjectInterruptionInternal,
