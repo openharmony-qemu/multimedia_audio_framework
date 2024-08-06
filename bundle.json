@@ -48,7 +48,6 @@
             "device_manager",
             "distributed_audio",
             "drivers_interface_audio",
-            "drivers_peripheral_audio",
             "eventhandler",
             "hdf_core",
             "hicollie",
