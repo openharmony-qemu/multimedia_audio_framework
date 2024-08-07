@@ -53,7 +53,7 @@ public:
     int32_t SetHeadTrackingEnabled(const bool enable);
     void HandleSpatializationEnabledChange(const bool &enabled);
     void HandleHeadTrackingEnabledChange(const bool &enabled);
-    AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage = StreamUsage::STREAM_USAGE_UNKNOWN);
+    AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
     bool IsSpatializationSupported();
     bool IsSpatializationSupportedForDevice(const std::string address);
     bool IsHeadTrackingSupported();
