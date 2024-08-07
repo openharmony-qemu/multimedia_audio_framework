@@ -44,6 +44,7 @@ private:
     int32_t InitSink(uint32_t channel, HdiAdapterFormat format, uint32_t rate);
     int32_t SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip);
     void PauseAsync();
+    int32_t SinkStopTimeOut();
     void DoFadeinOut(bool isFadeOut, char* buffer, size_t bufferSize);
 
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
