@@ -967,10 +967,6 @@ private:
 
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address);
 
-    bool GetAudioEffectOffloadFlag();
-    
-    void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
-
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
