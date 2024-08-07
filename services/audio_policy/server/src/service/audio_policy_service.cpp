@@ -6200,6 +6200,7 @@ bool AudioPolicyService::CheckStreamOffloadMode(int64_t activateSessionId, Audio
         AUDIO_DEBUG_LOG("Skip anco_audio out of offload mode");
         return false;
     }
+
     return true;
 }
 
