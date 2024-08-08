@@ -1222,7 +1222,7 @@ StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
         StreamUsage usage = changeInfo->rendererInfo.streamUsage;
         RendererState state = changeInfo->rendererState;
         if ((IsCallStreamUsage(usage) && state == RENDERER_RUNNING) ||
-            usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            (usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && state == RENDERER_PREPARED)) {
             return usage;
         }
     }
