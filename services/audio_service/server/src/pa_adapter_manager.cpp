@@ -436,6 +436,12 @@ void PaAdapterManager::ReleasePaStream(pa_stream *paStream)
 
     PaLockGuard palock(mainLoop_);
     pa_stream_set_state_callback(paStream, nullptr, nullptr);
+
+    pa_stream_state_t state = pa_stream_get_state(paStream);
+    if (state == PA_STREAM_UNCONNECTED) {
+        AUDIO_INFO_LOG("Release paStream unconnected");
+        pa_stream_terminate(paStream);
+    }
     pa_stream_unref(paStream);
     AUDIO_INFO_LOG("Release paStream because of errs");
 }
