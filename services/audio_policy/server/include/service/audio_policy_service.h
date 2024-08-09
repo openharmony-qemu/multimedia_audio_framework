@@ -1073,6 +1073,8 @@ private:
     std::mutex offloadMutex_;
 
     AudioModuleInfo primaryMicModuleInfo_ = {};
+    std::mutex defaultDeviceLoadMutex_;
+    std::condition_variable loadDefaultDeviceCV_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
