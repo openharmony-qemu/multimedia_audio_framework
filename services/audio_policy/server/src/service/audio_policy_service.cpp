@@ -5767,7 +5767,7 @@ int32_t AudioPolicyService::GetVoipRendererFlag(const std::string &sinkPortName,
     // VoIP stream has three mode for different products.
     if (enableFastVoip_ && (sinkPortName == PRIMARY_SPEAKER || networkId != LOCAL_NETWORK_ID)) {
         return AUDIO_FLAG_VOIP_FAST;
-    } else if (!normalVoipFlag_ && sinkPortName == PRIMARY_SPEAKER) {
+    } else if (!normalVoipFlag_ && (sinkPortName == PRIMARY_SPEAKER) && (networkId == LOCAL_NETWORK_ID)) {
         AUDIO_INFO_LOG("Direct VoIP mode is supported for the device");
         return AUDIO_FLAG_VOIP_DIRECT;
     }
