@@ -663,6 +663,16 @@ uint32_t OHAudioBuffer::GetSpanCount()
     return spanConut_;
 }
 
+int64_t OHAudioBuffer::GetLastWrittenTime()
+{
+    return lastWrittenTime_;
+}
+
+void OHAudioBuffer::SetLastWrittenTime(int64_t time)
+{
+    lastWrittenTime_ = time;
+}
+
 std::atomic<uint32_t> *OHAudioBuffer::GetFutex()
 {
     return &basicBufferInfo_->futexObj;

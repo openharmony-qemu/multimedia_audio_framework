@@ -91,7 +91,7 @@ int32_t AudioProcessInServer::Start()
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     std::lock_guard<std::mutex> lock(statusLock_);
-    CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING,
+    CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING || streamStatus_->load() == STREAM_STAND_BY,
         ERR_ILLEGAL_STATE, "Start failed, invalid status.");
 
     if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && !needCheckBackground_ &&
@@ -109,6 +109,12 @@ int32_t AudioProcessInServer::Start()
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
+
+    if (streamStatus_->load() == STREAM_STAND_BY) {
+        AUDIO_INFO_LOG("Call start while in stand-by");
+        streamStatus_->store(STREAM_STARTING);
+    }
+    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
 
     AUDIO_INFO_LOG("Start in server success!");
     return SUCCESS;
@@ -323,6 +329,7 @@ int32_t AudioProcessInServer::InitBufferStatus()
         spanInfo->volumeEnd = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
         spanInfo->isMute = false;
     }
+    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     return SUCCESS;
 }
 
