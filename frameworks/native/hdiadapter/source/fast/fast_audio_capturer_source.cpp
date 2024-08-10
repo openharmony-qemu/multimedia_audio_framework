@@ -556,6 +556,10 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
             source.ext.device.type = PIN_IN_BLUETOOTH_SCO_HEADSET;
             source.ext.device.desc = const_cast<char *>("pin_in_bluetooth_sco_headset");
             break;
+        case DEVICE_TYPE_USB_HEADSET:
+            source.ext.device.type = PIN_IN_USB_EXT;
+            source.ext.device.desc = (char *)"pin_in_usb_ext";
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;

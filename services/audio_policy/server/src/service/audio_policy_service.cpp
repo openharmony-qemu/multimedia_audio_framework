@@ -2679,8 +2679,8 @@ bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         "original flag is false");
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = capturerChangeInfo->inputDeviceInfo.isArmUsbDevice ?
-        USB_SPEAKER : GetSinkPortName(capturerChangeInfo->inputDeviceInfo.deviceType);
-    if ((strcmp(oldDevicePortName.c_str(), GetSinkPortName(currentActiveDevice_.deviceType_).c_str())) ||
+        USB_SPEAKER : GetSourcePortName(capturerChangeInfo->inputDeviceInfo.deviceType);
+    if ((strcmp(oldDevicePortName.c_str(), GetSourcePortName(currentActiveDevice_.deviceType_).c_str())) ||
         ((capturerChangeInfo->inputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
         (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
