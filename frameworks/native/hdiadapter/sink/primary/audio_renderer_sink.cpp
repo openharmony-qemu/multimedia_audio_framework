@@ -228,6 +228,9 @@ private:
 #endif
     std::string audioAttrInfo_ = "";
 
+    // for device switch
+    std::atomic<int32_t> renderEmptyFrameCount_ = 0;
+
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
@@ -714,6 +717,15 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
             static_cast<void *>(&data), len);
     }
     CheckUpdateState(&data, len);
+
+    if (renderEmptyFrameCount_ > 0) {
+        Trace traceEmpty("AudioRendererSinkInner::RenderFrame::renderEmpty");
+        if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
+            static_cast<size_t>(len)) != EOK) {
+            AUDIO_WARNING_LOG("call memset_s failed");
+        }
+        renderEmptyFrameCount_--;
+    }
 
     Trace::CountVolume("AudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
@@ -1576,7 +1588,8 @@ int32_t AudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUi
 int32_t AudioRendererSinkInner::SetRenderEmpty(int32_t durationUs)
 {
     int32_t emptyCount = durationUs / 1000 / BUFFER_CALC_20MS; // 1000 us->ms
-    AUDIO_INFO_LOG("render %{public}d empty", emptyCount);
+    AUDIO_INFO_LOG("%{public}s render %{public}d empty", halName_.c_str(), emptyCount);
+    CasWithCompare(renderEmptyFrameCount_, emptyCount, std::less<int32_t>());
     return SUCCESS;
 }
 } // namespace AudioStandard
