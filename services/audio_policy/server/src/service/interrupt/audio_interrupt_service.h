@@ -76,6 +76,8 @@ public:
     int32_t GetAudioFocusInfoList(const int32_t zoneId,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     int32_t SetAudioFocusInfoCallback(const int32_t zoneId, const sptr<IRemoteObject> &object);
+    int32_t GetStreamTypePriority(AudioStreamType streamType);
+    unordered_map<AudioStreamType, int> GetStreamPriorityMap() const;
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
@@ -88,6 +90,7 @@ private:
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
     static constexpr uid_t UID_AUDIO = 1041;
+    static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
 
     // Inner class for death handler
     class AudioInterruptDeathRecipient : public IRemoteObject::DeathRecipient {
