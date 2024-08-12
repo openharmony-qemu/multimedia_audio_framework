@@ -185,22 +185,36 @@ int32_t NoneMixEngine::Flush()
     return SUCCESS;
 }
 
-void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize)
+template <typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
+static void DoFadeInOut(T *dest, size_t count, bool isFadeOut, uint32_t channel)
 {
-    CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0 && uChannel_ > 0, "buffer is null.");
-    int32_t *dstPtr = reinterpret_cast<int32_t *>(pBuffer);
-    size_t dataLength = bufferSize / (static_cast<uint32_t>(uFormat_) * uChannel_);
-    float fadeStep = 1.0f / dataLength;
-    for (size_t i = 0; i < dataLength; i++) {
+    if (count <= 0) {
+        return;
+    }
+    float fadeStep = 1.0f / count;
+    for (size_t i = 0; i < count; i++) {
         float fadeFactor;
         if (isFadeOut) {
             fadeFactor = 1.0f - ((i + 1) * fadeStep);
         } else {
             fadeFactor = (i + 1) * fadeStep;
         }
-        for (uint32_t j = 0; j < uChannel_; j++) {
-            dstPtr[i * uChannel_ + j] *= fadeFactor;
+        for (uint32_t j = 0; j < channel; j++) {
+            dest[i * channel + j] *= fadeFactor;
         }
+    }
+}
+
+void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize)
+{
+    CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0 && uChannel_ > 0, "buffer is null.");
+    size_t dataLength = bufferSize / (static_cast<uint32_t>(uFormat_) * uChannel_);
+    if (uFormat_ == sizeof(int16_t)) {
+        AUDIO_INFO_LOG("int16 fading frame length:%{public}zu", dataLength);
+        DoFadeInOut(reinterpret_cast<int16_t *>(pBuffer), dataLength, isFadeOut, uChannel_);
+    } else if (uFormat_ == sizeof(int32_t)) {
+        AUDIO_INFO_LOG("int32 fading frame length:%{public}zu", dataLength);
+        DoFadeInOut(reinterpret_cast<int32_t *>(pBuffer), dataLength, isFadeOut, uChannel_);
     }
     if (isFadeOut) {
         startFadeout_.store(false);
