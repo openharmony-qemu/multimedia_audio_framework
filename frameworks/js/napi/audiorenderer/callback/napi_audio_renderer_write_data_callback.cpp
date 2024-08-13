@@ -76,6 +76,7 @@ void NapiRendererWriteDataCallback::RemoveCallbackReference(napi_env env, napi_v
     if (callback == nullptr) {
         napi_status ret = napi_delete_reference(env, callback_);
         CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
+        rendererWriteDataCallback_->cb_ = nullptr;
         AUDIO_INFO_LOG("Remove Js Callback");
         return;
     }
@@ -88,6 +89,7 @@ void NapiRendererWriteDataCallback::RemoveCallbackReference(napi_env env, napi_v
         AUDIO_INFO_LOG("found Js Callback, delete it!");
         napi_status status = napi_delete_reference(env, rendererWriteDataCallback_->cb_);
         CHECK_AND_RETURN_LOG(status == napi_ok, "deleting reference for callback failed");
+        rendererWriteDataCallback_->cb_ = nullptr;
     }
 }
 
