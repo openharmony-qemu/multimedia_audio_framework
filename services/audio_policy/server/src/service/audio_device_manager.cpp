@@ -397,12 +397,12 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
             devDesc.networkId_ == desc->networkId_;
     };
 
-    auto itr = find_if(descArray.begin(), descArray.end(), isPresent);
-    if (itr != descArray.end()) {
-        descArray.erase(itr);
-        AUDIO_INFO_LOG("Remove from %{public}s list, and then %{public}s",
-            logName.c_str(), GetConnDevicesStr(descArray).c_str());
-    }
+    auto removeBeginIt = std::remove_if(descArray.begin(), descArray.end(), isPresent);
+    size_t deleteNum = descArray.end() - removeBeginIt;
+    descArray.erase(removeBeginIt, descArray.end());
+
+    AUDIO_INFO_LOG("Remove %{public}zu desc from %{public}s list, and then %{public}s", deleteNum,
+        logName.c_str(), GetConnDevicesStr(descArray).c_str());
 }
 
 void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devDesc)
