@@ -78,6 +78,7 @@ void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_va
         AUDIO_INFO_LOG("found JS Callback, delete it!");
         napi_status status = napi_delete_reference(env, capturerReadDataCallback_->cb_);
         CHECK_AND_RETURN_LOG(status == napi_ok, "deleting reference for callback failed");
+        capturerReadDataCallback_->cb_ = nullptr;
     }
 }
 
