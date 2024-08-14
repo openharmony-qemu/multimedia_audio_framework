@@ -466,6 +466,18 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPubli
     return descs;
 }
 
+vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderBTCarDevices()
+{
+    vector<unique_ptr<AudioDeviceDescriptor>> carDescs;
+    for (const auto &desc : commRenderPublicDevices_) {
+        if (desc == nullptr || desc->deviceCategory_ != BT_CAR) {
+            continue;
+        }
+        carDescs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+    }
+    return carDescs;
+}
+
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
