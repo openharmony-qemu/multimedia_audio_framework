@@ -15,7 +15,6 @@
 #ifndef RENDERER_IN_CLIENT_PRIVATE_H
 #define RENDERER_IN_CLIENT_PRIVATE_H
 
-#include "safe_block_queue.h"
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
@@ -311,7 +310,7 @@ private:
     std::condition_variable cbBufferCV_;
     std::unique_ptr<uint8_t[]> cbBuffer_ {nullptr};
     size_t cbBufferSize_ = 0;
-    SafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
+    AudioSafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
     std::atomic<State> state_ = INVALID;
     // using this lock when change status_
