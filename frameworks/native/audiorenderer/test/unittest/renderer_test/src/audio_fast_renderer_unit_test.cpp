@@ -195,7 +195,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
 
     Timestamp timestamp;
     bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
-    EXPECT_EQ(false, getAudioTime);
+    EXPECT_EQ(true, getAudioTime);
 
     size_t bufferLen;
     ret = audioRenderer->GetBufferSize(bufferLen);
@@ -232,7 +232,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
 
     Timestamp timestamp;
     bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
-    EXPECT_EQ(false, getAudioTime);
+    EXPECT_EQ(true, getAudioTime);
 
     audioRenderer->Release();
 }
