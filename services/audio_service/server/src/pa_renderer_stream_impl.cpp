@@ -381,7 +381,7 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
             pa_threaded_mainloop_signal(this->mainloop_, 0);
         }, nullptr, XcollieFlag);
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
-    if (curTimeGetLatency - preTimeGetLatency_ < AUDIO_CYCLE_TIME_US && !firstGetLatency_ && offloadEnable_) { // 20000 cycle time
+    if (curTimeGetLatency - preTimeGetLatency_ < AUDIO_CYCLE_TIME_US && !firstGetLatency_) { // 20000 cycle time
         latency = preLatency_;
         return SUCCESS;
     }
