@@ -270,7 +270,6 @@ static bool InputIsOffload(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
 static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
 static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i);
-static void StopPrimaryHdiIfNoRunning(struct Userdata *u);
 static void StartPrimaryHdiIfRunning(struct Userdata *u);
 static void StartMultiChannelHdiIfRunning(struct Userdata *u);
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
@@ -2664,32 +2663,6 @@ static void StartMultiChannelHdiIfRunning(struct Userdata *u)
     EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
 
     ResetMultiChannelHdiState(u, sinkChannel, sinkChannelLayout);
-}
-
-static void POSSIBLY_UNUSED StopPrimaryHdiIfNoRunning(struct Userdata *u)
-{
-    if (!u->primary.isHDISinkStarted) {
-        return;
-    }
-
-    unsigned nPrimary = 0;
-    unsigned nOffload = 0;
-    unsigned nMultiChannel = 0;
-    GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
-    if (nPrimary > 0) {
-        return;
-    }
-
-    // Continuously dropping data clear counter on entering suspended state.
-    if (u->bytes_dropped != 0) {
-        AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, HDI-sink continuously dropping data - clear statistics "
-                       "(%zu -> 0 bytes dropped)", u->bytes_dropped);
-        u->bytes_dropped = 0;
-    }
-
-    u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
-    AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, Stopped HDI renderer");
-    u->primary.isHDISinkStarted = false;
 }
 
 static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *i, pa_sink_input_state_t state)
