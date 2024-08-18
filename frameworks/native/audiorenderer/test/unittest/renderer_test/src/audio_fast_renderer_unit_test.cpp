@@ -15,6 +15,7 @@
 
 #include <mutex>
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "audio_errors.h"
 #include "audio_info.h"
@@ -29,6 +30,7 @@
 using namespace std;
 using namespace std::chrono;
 using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -314,7 +316,8 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_006, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetRenderMode(RENDER_MODE_NORMAL);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    // If the audiorenderer does not enter low-latency mode but enters normal mode, the err code is ERR_INCORRECT_MODE.
+    EXPECT_THAT(ret, AnyOf(Eq(ERR_INVALID_OPERATION), Eq(ERR_INCORRECT_MODE)));
 
     ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
     EXPECT_EQ(SUCCESS, ret);
