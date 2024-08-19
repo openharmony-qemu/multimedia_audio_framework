@@ -1133,6 +1133,7 @@ private:
     std::unique_ptr<std::thread> RecoveryDevicesThread_ = nullptr;
 
     std::mutex offloadCloseMutex_;
+    std::mutex offloadOpenMutex_;
     std::atomic<bool> isOffloadOpened_ = false;
     std::condition_variable offloadCloseCondition_;
 
