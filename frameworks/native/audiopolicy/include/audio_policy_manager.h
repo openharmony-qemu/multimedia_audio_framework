@@ -297,11 +297,19 @@ public:
 
     bool IsSpatializationEnabled();
 
+    bool IsSpatializationEnabled(const std::string address);
+
     int32_t SetSpatializationEnabled(const bool enable);
+
+    int32_t SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
     bool IsHeadTrackingEnabled();
 
+    bool IsHeadTrackingEnabled(const std::string address);
+
     int32_t SetHeadTrackingEnabled(const bool enable);
+
+    int32_t SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
     int32_t RegisterSpatializationEnabledEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
