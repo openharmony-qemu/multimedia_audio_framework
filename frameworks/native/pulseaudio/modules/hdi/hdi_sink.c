@@ -2514,7 +2514,6 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
             OffloadLock(u);
             u->offload.sessionID = sessionID;
             OffloadSetHdiVolume(i);
-            OffloadSetHdiBufferSize(i);
         }
     }
 }
@@ -3619,7 +3618,8 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, st
     char str[SPRINTF_STR_LEN] = {0};
     GetSinkInputName(i, str, SPRINTF_STR_LEN);
     AUDIO_INFO_LOG("SinkInputMoveStartCb sink[%{public}s] - %{public}s", i->sink->name, str);
-    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME)) {
+    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME) &&
+        i->state == PA_SINK_INPUT_RUNNING) {
         const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) != 0;
         if (maybeOffload || InputIsOffload(i)) {
             OffloadRewindAndFlush(u, i, false);

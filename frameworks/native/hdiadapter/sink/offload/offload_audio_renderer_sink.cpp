@@ -410,6 +410,7 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
 int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
     Trace trace("OffloadSink::GetPresentationPosition");
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "failed audioRender_ is NULL");
     uint64_t frames_;
@@ -947,6 +948,7 @@ int32_t OffloadAudioRendererSinkInner::RestoreRenderSink(void)
 int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 {
     Trace trace("OffloadSink::SetBufferSize");
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     int32_t ret;
     // bytewidth is 4
     uint32_t size = (uint64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
