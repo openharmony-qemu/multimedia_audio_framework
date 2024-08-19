@@ -82,7 +82,7 @@ static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
-static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 3000; // 3000ms
+static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
@@ -1758,7 +1758,7 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
-    int32_t tryCount = 3; // try futex wait for 3 times.
+    int32_t tryCount = 2; // try futex wait for 2 times.
     FutexCode futexRes = FUTEX_OPERATION_FAILED;
     while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount > 0) {
         tryCount--;
