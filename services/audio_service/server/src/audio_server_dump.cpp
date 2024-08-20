@@ -19,6 +19,7 @@
 #include "audio_server_dump.h"
 #include "audio_utils.h"
 #include "audio_service.h"
+#include "pa_adapter_tools.h"
 
 using namespace std;
 
@@ -105,11 +106,10 @@ int32_t AudioServerDump::Initialize()
     }
 
     isContextConnected_ = true;
-    pa_threaded_mainloop_lock(mainLoop);
+    PaLockGuard lock(mainLoop);
 
     if (pa_threaded_mainloop_start(mainLoop) < 0) {
         AUDIO_ERR_LOG("Audio Service not started");
-        pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioDump();
         return AUDIO_DUMP_INIT_ERR;
     }
@@ -124,7 +124,6 @@ int32_t AudioServerDump::Initialize()
         if (!PA_CONTEXT_IS_GOOD(state)) {
             int error = pa_context_errno(context);
             AUDIO_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
-            pa_threaded_mainloop_unlock(mainLoop);
             ResetPAAudioDump();
             return AUDIO_DUMP_INIT_ERR;
         }
@@ -132,15 +131,13 @@ int32_t AudioServerDump::Initialize()
         pa_threaded_mainloop_wait(mainLoop);
     }
 
-    pa_threaded_mainloop_unlock(mainLoop);
     return AUDIO_DUMP_SUCCESS;
 }
 
 void AudioServerDump::OnTimeOut()
 {
-    pa_threaded_mainloop_lock(mainLoop);
+    PaLockGuard lock(mainLoop);
     pa_threaded_mainloop_signal(mainLoop, 0);
-    pa_threaded_mainloop_unlock(mainLoop);
 }
 
 bool AudioServerDump::IsEndWith(const std::string &mainStr, const std::string &toMatch)
@@ -214,7 +211,7 @@ void AudioServerDump::AudioDataDump(string &dumpString, std::queue<std::u16strin
         return;
     }
 
-    pa_threaded_mainloop_lock(mainLoop);
+    PaLockGuard lock(mainLoop);
     pa_operation *operation = nullptr;
     operation = pa_context_get_sink_info_list(context,
         AudioServerDump::PASinkInfoCallback, reinterpret_cast<void *>(this));
@@ -248,7 +245,6 @@ void AudioServerDump::AudioDataDump(string &dumpString, std::queue<std::u16strin
     }
 
     pa_operation_unref(operation);
-    pa_threaded_mainloop_unlock(mainLoop);
 
     ArgDataDump(dumpString, argQue);
 
