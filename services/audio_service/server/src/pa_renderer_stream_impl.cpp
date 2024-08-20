@@ -1028,8 +1028,8 @@ int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, 
         pa_proplist_free(propList);
         pa_operation_unref(updatePropOperation);
 
-        if (!(statePolicy == OFFLOAD_DEFAULT &&
-              (offloadStatePolicy_ == OFFLOAD_DEFAULT || offloadStatePolicy_ == OFFLOAD_ACTIVE_FOREGROUND))) {
+        if ((statePolicy != OFFLOAD_DEFAULT && offloadStatePolicy_ != OFFLOAD_DEFAULT) ||
+            offloadStatePolicy_ == OFFLOAD_INACTIVE_BACKGROUND) {
             const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
             OffloadSetBufferSize(bufLenMs);
         }

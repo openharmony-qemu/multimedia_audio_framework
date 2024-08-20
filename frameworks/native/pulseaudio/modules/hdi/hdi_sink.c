@@ -2304,6 +2304,8 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
             u->offload.fullTs = pa_rtclock_now();
         }
         pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
+    } else if (ret < 0) {
+        pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
     }
 
     u->offload.pos += pa_bytes_to_usec(*writen, &u->sink->sample_spec);
@@ -2514,7 +2516,6 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
             OffloadLock(u);
             u->offload.sessionID = sessionID;
             OffloadSetHdiVolume(i);
-            OffloadSetHdiBufferSize(i);
         }
     }
 }
@@ -2806,7 +2807,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         int32_t writen = -1;
         int ret = ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
         if (ret < 0) {
-            blockTime = 1 * PA_USEC_PER_MSEC; // 1ms for min wait
+            blockTime = 20 * PA_USEC_PER_MSEC; // 20ms for render write error
         } else if (wait) {
             blockTime = (int64_t)(timeWait * PA_USEC_PER_MSEC); // timeWait ms for first write no data
             if (timeWait < 20) { // 20ms max wait no data
@@ -3619,7 +3620,8 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, st
     char str[SPRINTF_STR_LEN] = {0};
     GetSinkInputName(i, str, SPRINTF_STR_LEN);
     AUDIO_INFO_LOG("SinkInputMoveStartCb sink[%{public}s] - %{public}s", i->sink->name, str);
-    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME)) {
+    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME) &&
+        i->state == PA_SINK_INPUT_RUNNING) {
         const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) != 0;
         if (maybeOffload || InputIsOffload(i)) {
             OffloadRewindAndFlush(u, i, false);
