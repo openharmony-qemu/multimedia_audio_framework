@@ -928,6 +928,8 @@ public:
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
 
+    virtual void EnableVoiceModemCommunicationStartStream(bool enable) = 0;
+
 private:
     static int32_t CreateCheckParam(const AudioRendererOptions &rendererOptions,
         const AppInfo &appInfo);

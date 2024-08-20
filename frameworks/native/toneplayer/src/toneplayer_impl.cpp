@@ -428,6 +428,10 @@ bool TonePlayerImpl::InitAudioRenderer()
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false,
         "Renderer create failed");
 
+    if (rendererOptions_.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        audioRenderer_->EnableVoiceModemCommunicationStartStream(true);
+    }
+
     size_t targetSize = 0;
     int32_t ret = audioRenderer_->GetBufferSize(targetSize);
 
