@@ -3966,8 +3966,9 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(
     AUDIO_DEBUG_LOG("deviceType %{public}d", deviceType);
 }
 
-void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType)
+int32_t AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType)
 {
+    int32_t activeSessionsSize = 0;
 #ifdef BLUETOOTH_ENABLE
     vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
@@ -3995,8 +3996,10 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType
     }
     UpdateAllActiveSessions(allSessionInfos);
     UpdateA2dpOffloadFlag(allSessionInfos, deviceType);
+    activeSessionsSize = allSessionInfos.size();
 #endif
     AUDIO_DEBUG_LOG("deviceType %{public}d", deviceType);
+    return activeSessionsSize;
 }
 
 void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,
@@ -4010,10 +4013,11 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     // only for the active a2dp device.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(activeBTDevice_)
         && IsDeviceActive(deviceType)) {
-        UpdateA2dpOffloadFlagForAllStream();
+        auto activeSessionsSize = UpdateA2dpOffloadFlagForAllStream();
         AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag_: %{public}d",
             streamInfo.samplingRate, a2dpOffloadFlag_);
-        if (!IsConfigurationUpdated(deviceType, streamInfo) || a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+        if (!IsConfigurationUpdated(deviceType, streamInfo) ||
+            (activeSessionsSize > 0 && a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
             return;
         }
