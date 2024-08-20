@@ -37,6 +37,7 @@ public:
 
 private:
 struct AudioSpatializationManagerAsyncContext : public ContextBase {
+    sptr<AudioDeviceDescriptor> deviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
     bool spatializationEnable;
     bool headTrackingEnable;
     int32_t intValue;
@@ -71,9 +72,13 @@ struct AudioSpatializationManagerAsyncContext : public ContextBase {
     static void UnRegisterCallback(napi_env env, napi_value jsThis,
         napi_value *args, const std::string &cbName);
     static void UnregisterSpatializationEnabledChangeCallback(napi_env env, napi_value callback,
-        NapiAudioSpatializationManager *napiAudioSpatializationManager);
+        const std::string &cbName, NapiAudioSpatializationManager *napiAudioSpatializationManager);
     static void UnregisterHeadTrackingEnabledChangeCallback(napi_env env, napi_value callback,
-        NapiAudioSpatializationManager *napiAudioSpatializationManager);
+        const std::string &cbName, NapiAudioSpatializationManager *napiAudioSpatializationManager);
+    static napi_value updateSpatializationEnabled(napi_env env, const std::size_t argc,
+    std::shared_ptr<AudioSpatializationManagerAsyncContext> &context);
+    static napi_value updateHeadTrackingEnabled(napi_env env, const std::size_t argc,
+    std::shared_ptr<AudioSpatializationManagerAsyncContext> &context);
 
     AudioSpatializationManager *audioSpatializationMngr_;
     std::shared_ptr<AudioSpatializationEnabledChangeCallback> spatializationEnabledChangeCallbackNapi_ = nullptr;

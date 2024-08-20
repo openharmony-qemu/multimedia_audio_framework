@@ -238,10 +238,26 @@ void AudioPolicyClientStub::HandleSpatializationEnabledChange(MessageParcel &dat
     OnSpatializationEnabledChange(enabled);
 }
 
+void AudioPolicyClientStub::HandleSpatializationEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+    bool enabled = data.ReadBool();
+    OnSpatializationEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
+}
+
 void AudioPolicyClientStub::HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply)
 {
     bool enabled = data.ReadBool();
     OnHeadTrackingEnabledChange(enabled);
+}
+
+void AudioPolicyClientStub::HandleHeadTrackingEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+    bool enabled = data.ReadBool();
+    OnHeadTrackingEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
 }
 } // namespace AudioStandard
 } // namespace OHOS

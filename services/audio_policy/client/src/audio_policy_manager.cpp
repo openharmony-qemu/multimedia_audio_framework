@@ -1381,11 +1381,26 @@ bool AudioPolicyManager::IsSpatializationEnabled()
     return gsp->IsSpatializationEnabled();
 }
 
+bool AudioPolicyManager::IsSpatializationEnabled(const std::string address)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsSpatializationEnabled(address);
+}
+
 int32_t AudioPolicyManager::SetSpatializationEnabled(const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->SetSpatializationEnabled(enable);
+}
+
+int32_t AudioPolicyManager::SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+    const bool enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetSpatializationEnabled(selectedAudioDevice, enable);
 }
 
 bool AudioPolicyManager::IsHeadTrackingEnabled()
@@ -1395,11 +1410,26 @@ bool AudioPolicyManager::IsHeadTrackingEnabled()
     return gsp->IsHeadTrackingEnabled();
 }
 
+bool AudioPolicyManager::IsHeadTrackingEnabled(const std::string address)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsHeadTrackingEnabled(address);
+}
+
 int32_t AudioPolicyManager::SetHeadTrackingEnabled(const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->SetHeadTrackingEnabled(enable);
+}
+
+int32_t AudioPolicyManager::SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+    const bool enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetHeadTrackingEnabled(selectedAudioDevice, enable);
 }
 
 int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(

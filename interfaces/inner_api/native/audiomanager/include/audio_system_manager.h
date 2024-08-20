@@ -75,6 +75,11 @@ public:
     bool isSameDevice(const DeviceInfo &deviceInfo);
 };
 
+struct AudioSpatialEnabledStateForDevice {
+    sptr<AudioDeviceDescriptor> deviceDescriptor;
+    bool enabled;
+};
+
 struct DistributedRoutingInfo {
     sptr<AudioDeviceDescriptor> descriptor;
     CastType type;

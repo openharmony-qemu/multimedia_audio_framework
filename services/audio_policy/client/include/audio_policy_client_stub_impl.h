@@ -90,7 +90,11 @@ public:
         const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
     void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
     void OnSpatializationEnabledChange(const bool &enabled) override;
+    void OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+        const bool &enabled) override;
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
+    void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+        const bool &enabled) override;
 
 private:
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,

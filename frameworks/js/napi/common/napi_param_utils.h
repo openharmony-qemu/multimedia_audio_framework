@@ -150,6 +150,8 @@ public:
         napi_value &result);
     static napi_status SetDeviceDescriptors(const napi_env &env,
         const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result);
+    static napi_status SetAudioSpatialEnabledStateForDevice(const napi_env &env,
+        const AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice, napi_value &result);
     static napi_status SetValueDeviceInfo(const napi_env &env, const DeviceInfo &deviceInfo, napi_value &result);
     static napi_status SetInterruptEvent(const napi_env &env, const InterruptEvent &interruptEvent,
         napi_value &result);

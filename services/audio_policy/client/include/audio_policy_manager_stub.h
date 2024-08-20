@@ -114,9 +114,13 @@ private:
     void SetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void IsHeadTrackingEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void SetHeadTrackingEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
@@ -245,9 +249,13 @@ private:
         &AudioPolicyManagerStub::SetAvailableDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::IsSpatializationEnabledInternal,
+        &AudioPolicyManagerStub::IsSpatializationEnabledForDeviceInternal,
         &AudioPolicyManagerStub::SetSpatializationEnabledInternal,
+        &AudioPolicyManagerStub::SetSpatializationEnabledForDeviceInternal,
         &AudioPolicyManagerStub::IsHeadTrackingEnabledInternal,
+        &AudioPolicyManagerStub::IsHeadTrackingEnabledForDeviceInternal,
         &AudioPolicyManagerStub::SetHeadTrackingEnabledInternal,
+        &AudioPolicyManagerStub::SetHeadTrackingEnabledForDeviceInternal,
         &AudioPolicyManagerStub::GetSpatializationStateInternal,
         &AudioPolicyManagerStub::IsSpatializationSupportedInternal,
         &AudioPolicyManagerStub::IsSpatializationSupportedForDeviceInternal,

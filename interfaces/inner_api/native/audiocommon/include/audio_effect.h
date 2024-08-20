@@ -311,8 +311,8 @@ struct AudioEffectLibEntry {
 };
 
 struct AudioSpatializationState {
-    bool spatializationEnabled;
-    bool headTrackingEnabled;
+    bool spatializationEnabled = false;
+    bool headTrackingEnabled = false;
 };
 
 struct ConverterConfig {

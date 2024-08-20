@@ -302,11 +302,20 @@ public:
 
     bool IsSpatializationEnabled() override;
 
+    bool IsSpatializationEnabled(const std::string address) override;
+
     int32_t SetSpatializationEnabled(const bool enable) override;
+
+    int32_t SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+        const bool enable) override;
 
     bool IsHeadTrackingEnabled() override;
 
+    bool IsHeadTrackingEnabled(const std::string address) override;
+
     int32_t SetHeadTrackingEnabled(const bool enable) override;
+
+    int32_t SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 

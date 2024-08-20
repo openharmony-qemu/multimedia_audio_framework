@@ -1693,8 +1693,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailab
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AVAILABLE_DESCRIPTORS), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, audioDeviceDescriptors,
-        "GetAvailableDevices failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, audioDeviceDescriptors, "GetAvailableDevices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
@@ -1716,8 +1715,23 @@ bool AudioPolicyProxy::IsSpatializationEnabled()
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
-        "IsSpatializationEnabled failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsSpatializationEnabled failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
+
+bool AudioPolicyProxy::IsSpatializationEnabled(const std::string address)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    data.WriteString(address);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED_FOR_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsSpatializationEnabled failed, error: %{public}d", error);
     return reply.ReadBool();
 }
 
@@ -1733,8 +1747,28 @@ int32_t AudioPolicyProxy::SetSpatializationEnabled(const bool enable)
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SPATIALIZATION_ENABLED), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR,
-        "SetSpatializationEnabled failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SetSpatializationEnabled failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+    const bool enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    bool result = selectedAudioDevice->Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(result, -1, "SelectedAudioDevice Marshalling() failed");
+
+    data.WriteBool(enable);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SPATIALIZATION_ENABLED_FOR_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SetSpatializationEnabled failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 
@@ -1750,8 +1784,24 @@ bool AudioPolicyProxy::IsHeadTrackingEnabled()
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_ENABLED), data, reply, option);
 
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
-        "IsHeadTrackingEnabled failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsHeadTrackingEnabled failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
+
+bool AudioPolicyProxy::IsHeadTrackingEnabled(const std::string address)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    data.WriteString(address);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_ENABLED_FOR_DEVICE), data, reply, option);
+
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsHeadTrackingEnabled failed, error: %{public}d", error);
     return reply.ReadBool();
 }
 
@@ -1767,8 +1817,27 @@ int32_t AudioPolicyProxy::SetHeadTrackingEnabled(const bool enable)
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HEAD_TRACKING_ENABLED), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR,
-        "SetHeadTrackingEnabled failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SetHeadTrackingEnabled failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+    const bool enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    bool result = selectedAudioDevice->Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(result, -1, "SelectedAudioDevice Marshalling() failed");
+    data.WriteBool(enable);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HEAD_TRACKING_ENABLED_FOR_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SetHeadTrackingEnabled failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 
@@ -1785,8 +1854,7 @@ AudioSpatializationState AudioPolicyProxy::GetSpatializationState(const StreamUs
     data.WriteInt32(static_cast<int32_t>(streamUsage));
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_STATE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, spatializationState,
-        "GetSpatializationState failed , error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, spatializationState, "SendRequest failed, error: %{public}d", error);
 
     spatializationState.spatializationEnabled = reply.ReadBool();
     spatializationState.headTrackingEnabled = reply.ReadBool();
@@ -1805,8 +1873,7 @@ bool AudioPolicyProxy::IsSpatializationSupported()
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_SUPPORTED), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
-        "IsSpatializationSupported failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsSpatializationSupported failed, error: %d", error);
     return reply.ReadBool();
 }
 
@@ -1822,8 +1889,7 @@ bool AudioPolicyProxy::IsSpatializationSupportedForDevice(const std::string addr
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR,
-        "IsSpatializationSupportedForDevice failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "IsSpatializationSupportedForDevice failed, error: %d", error);
     return reply.ReadBool();
 }
 
@@ -1854,8 +1920,7 @@ bool AudioPolicyProxy::IsHeadTrackingSupportedForDevice(const std::string addres
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR,
-        "IsHeadTrackingSupportedForDevice failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "IsHeadTrackingSupportedForDevice failed, error: %d", error);
     return reply.ReadBool();
 }
 
@@ -1874,8 +1939,7 @@ int32_t AudioPolicyProxy::UpdateSpatialDeviceState(const AudioSpatialDeviceState
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_SPATIAL_DEVICE_STATE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR,
-        "UpdateSpatialDeviceState failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "UpdateSpatialDeviceState failed, error: %d", error);
     return reply.ReadInt32();
 }
 
@@ -1888,16 +1952,14 @@ int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT,
-        "RegisterSpatializationStateEventListener Event object is null");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "SpatializationStateEventListener object is null");
 
     data.WriteInt32(static_cast<int32_t>(sessionID));
     data.WriteInt32(static_cast<int32_t>(streamUsage));
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR,
-        "RegisterSpatializationStateEventListener failed , error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed , error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -1908,18 +1970,13 @@ int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint3
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener:: WriteInterfaceToken failed");
-        return ERROR;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(sessionID));
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener failed , error: %{public}d", error);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed , error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -1930,23 +1987,15 @@ int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject>
     MessageParcel reply;
     MessageOption option;
 
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("RegisterPolicyCallbackClient object is null");
-        return ERR_NULL_OBJECT;
-    }
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "RegisterPolicyCallbackClient object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
 
     data.WriteRemoteObject(object);
     data.WriteInt32(zoneID);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed , error: %{public}d", error);
     return reply.ReadInt32();
 }
 
@@ -2040,19 +2089,14 @@ int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, boo
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(deviceType));
     data.WriteBool(active);
     data.WriteString(address);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALL_DEVICE_ACTIVE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("set device active failed, error: %d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
     return reply.ReadInt32();
 }
 
@@ -2121,8 +2165,7 @@ bool AudioPolicyProxy::IsHighResolutionExist()
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIGH_RESOLUTION_EXIST), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
-        "SendRequest failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED, "SendRequest failed, error: %d", error);
     
     bool replyReadBool = reply.ReadBool();
     return replyReadBool;
