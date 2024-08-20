@@ -428,11 +428,11 @@ napi_status NapiAudioCapturer::ReadFromNative(shared_ptr<AudioCapturerAsyncConte
     CHECK_AND_RETURN_RET_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context), napi_generic_failure,
         "context object state is error.");
     uint32_t userSize = context->userSize;
-    auto buffer = std::make_unique<uint8_t[]>(userSize);
+    uint8_t *buffer = new uint8_t[userSize];
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, status, "buffer malloc failed,no memery");
     int32_t bytesRead = 0;
     while (static_cast<uint32_t>(bytesRead) < context->userSize) {
-        int32_t len = napiAudioCapturer->audioCapturer_->Read(*(buffer.get() + bytesRead),
+        int32_t len = napiAudioCapturer->audioCapturer_->Read(*(buffer + bytesRead),
             userSize - bytesRead, context->isBlocking);
         if (len >= 0) {
             bytesRead += len;
@@ -442,11 +442,11 @@ napi_status NapiAudioCapturer::ReadFromNative(shared_ptr<AudioCapturerAsyncConte
         }
     }
     if (bytesRead <= 0) {
+        delete [] buffer;
         return status;
     }
     context->bytesRead = static_cast<size_t>(bytesRead);
-    context->buffer = buffer.get();
-    buffer.release();
+    context->buffer = buffer;
     status = napi_ok;
     return status;
 }
@@ -478,7 +478,7 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
 
     auto complete = [env, context](napi_value &output) {
         NapiParamUtils::CreateArrayBuffer(env, context->bytesRead, context->buffer, output);
-        free(context->buffer);
+        delete [] context->buffer;
         context->buffer = nullptr;
     };
 
