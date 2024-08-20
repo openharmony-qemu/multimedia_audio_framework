@@ -695,6 +695,7 @@ float OffloadAudioRendererSinkInner::GetMaxAmplitude()
 int32_t OffloadAudioRendererSinkInner::Start(void)
 {
     Trace trace("OffloadSink::Start");
+    AUDIO_INFO_LOG("Start");
     InitLatencyMeasurement();
     if (started_) {
         if (isFlushing_) {
@@ -846,6 +847,7 @@ int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 int32_t OffloadAudioRendererSinkInner::Stop(void)
 {
     Trace trace("OffloadSink::Stop");
+    AUDIO_INFO_LOG("Stop");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "failed audio render null");

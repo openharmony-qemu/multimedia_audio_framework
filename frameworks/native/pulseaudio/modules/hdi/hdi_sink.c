@@ -4075,6 +4075,7 @@ static void UserdataFreeOffload(struct Userdata *u)
     }
 
     if (u->offload.sinkAdapter) {
+        OffloadUnlock(u);
         u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
         u->offload.sinkAdapter->RendererSinkDeInit(u->offload.sinkAdapter);
         UnLoadSinkAdapter(u->offload.sinkAdapter);
