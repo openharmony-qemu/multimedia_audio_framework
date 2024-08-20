@@ -733,11 +733,6 @@ napi_value NapiAudioRoutingManager::GetAvailableMicrophones(napi_env env, napi_c
 
 napi_value NapiAudioRoutingManager::GetAvailableDevices(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("GetAvailableDevices");
-
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
-
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
@@ -795,8 +790,6 @@ napi_value NapiAudioRoutingManager::RegisterCallback(napi_env env, napi_value js
     } else if (!cbName.compare(PREFERRED_INPUT_DEVICE_CALLBACK_NAME)) {
         RegisterPreferredInputDeviceChangeCallback(env, argc, args, cbName, napiRoutingMgr);
     } else if (!cbName.compare(AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
         RegisterAvaiableDeviceChangeCallback(env, argc, args, cbName, napiRoutingMgr);
     } else {
         AUDIO_ERR_LOG("NapiAudioRoutingManager::No such supported");
@@ -1012,8 +1005,6 @@ napi_value NapiAudioRoutingManager::UnregisterCallback(napi_env env, napi_value 
     } else if (!callbackName.compare(PREFERRED_INPUT_DEVICE_CALLBACK_NAME)) {
         UnregisterPreferredInputDeviceChangeCallback(env, callback, napiRoutingMgr);
     } else if (!callbackName.compare(AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
         UnregisterAvailableDeviceChangeCallback(env, callback, napiRoutingMgr);
     } else {
         AUDIO_ERR_LOG("off no such supported");

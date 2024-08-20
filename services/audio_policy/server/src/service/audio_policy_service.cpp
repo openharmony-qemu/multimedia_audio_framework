@@ -1933,7 +1933,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredOutputD
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
     if (rendererInfo.streamUsage <= STREAM_USAGE_UNKNOWN ||
-        rendererInfo.streamUsage > STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        rendererInfo.streamUsage > STREAM_USAGE_MAX) {
+        AUDIO_WARNING_LOG("Invalid usage[%{public}d], return current device.", rendererInfo.streamUsage);
         sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(currentActiveDevice_);
         deviceList.push_back(devDesc);
         return deviceList;
@@ -3414,8 +3415,8 @@ AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const
     AUDIO_DEBUG_LOG("return value: %{public}d", audioScene_);
     if (!hasSystemPermission) {
         switch (audioScene_) {
-            case AUDIO_SCENE_RINGING:
-            case AUDIO_SCENE_PHONE_CALL:
+            case AUDIO_SCENE_CALL_START:
+            case AUDIO_SCENE_CALL_END:
                 return AUDIO_SCENE_DEFAULT;
             default:
                 break;

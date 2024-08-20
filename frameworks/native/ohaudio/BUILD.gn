@@ -53,6 +53,7 @@ ohos_shared_library("ohaudio") {
   sources = [
     "./OHAudioCapturer.cpp",
     "./OHAudioDeviceDescriptor.cpp",
+    "./OHAudioManager.cpp",
     "./OHAudioRenderer.cpp",
     "./OHAudioRoutingManager.cpp",
     "./OHAudioSessionManager.cpp",
