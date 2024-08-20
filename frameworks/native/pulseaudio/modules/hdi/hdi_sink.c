@@ -2304,6 +2304,8 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
             u->offload.fullTs = pa_rtclock_now();
         }
         pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
+    } else if (ret < 0) {
+        pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
     }
 
     u->offload.pos += pa_bytes_to_usec(*writen, &u->sink->sample_spec);
@@ -2805,7 +2807,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         int32_t writen = -1;
         int ret = ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
         if (ret < 0) {
-            blockTime = 1 * PA_USEC_PER_MSEC; // 1ms for min wait
+            blockTime = 20 * PA_USEC_PER_MSEC; // 20ms for render write error
         } else if (wait) {
             blockTime = (int64_t)(timeWait * PA_USEC_PER_MSEC); // timeWait ms for first write no data
             if (timeWait < 20) { // 20ms max wait no data
