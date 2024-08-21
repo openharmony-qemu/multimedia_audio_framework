@@ -207,6 +207,10 @@ public:
     static napi_status GetExtraParametersVector(const napi_env &env, std::vector<std::string> &subKeys, napi_value in);
     static napi_status SetExtraAudioParametersInfo(const napi_env &env,
         const std::vector<std::pair<std::string, std::string>> &extraParameters, napi_value &result);
+    static napi_status GetAudioSessionStrategy(const napi_env &env,
+        AudioSessionStrategy &audioSessionStrategy, napi_value in);
+    static napi_status SetAudioSessionDeactiveEvent(const napi_env &env,
+        const AudioSessionDeactiveEvent &deactiveEvent, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS

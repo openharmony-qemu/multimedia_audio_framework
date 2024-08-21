@@ -261,6 +261,17 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->InjectInterruption(networkId, event);
 }
 
+void AudioSessionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    AudioSessionStrategy sessionStrategy;
+    sessionStrategy.concurrencyMode = *reinterpret_cast<const AudioConcurrencyMode *>(rawData);
+    GetServerPtr()->ActivateAudioSession(sessionStrategy);
+}
+
 void AudioConcurrencyFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {

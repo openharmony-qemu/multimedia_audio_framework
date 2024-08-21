@@ -30,6 +30,7 @@
 #include <audio_source_type.h>
 #include <audio_device_info.h>
 #include <audio_interrupt_info.h>
+#include <audio_session_info.h>
 #include <audio_stream_info.h>
 #include <audio_asr.h>
 
@@ -291,6 +292,7 @@ enum CallbackChange : int32_t {
     CALLBACK_RENDERER_STATE_CHANGE,
     CALLBACK_CAPTURER_STATE_CHANGE,
     CALLBACK_MICMUTE_STATE_CHANGE,
+    CALLBACK_AUDIO_SESSION,
     CALLBACK_MAX,
 };
 

@@ -96,7 +96,7 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
 std::map<std::string, InterruptHint> AudioFocusParser::actionMap = {
     {"DUCK", INTERRUPT_HINT_DUCK},
     {"PAUSE", INTERRUPT_HINT_PAUSE},
-    {"REJECT", INTERRUPT_HINT_NONE},
+    {"REJECT", INTERRUPT_HINT_STOP},
     {"STOP", INTERRUPT_HINT_STOP},
     {"PLAY", INTERRUPT_HINT_NONE}
 };
@@ -252,7 +252,7 @@ void AudioFocusParser::AddRejectedFocusEntry(xmlNode *currNode, const std::strin
             std::make_pair(audioFocusMap[curStream], audioFocusMap[newStreamStr]);
         AudioFocusEntry rejectedFocusEntry;
         rejectedFocusEntry.actionOn = INCOMING;
-        rejectedFocusEntry.hintType = INTERRUPT_HINT_NONE;
+        rejectedFocusEntry.hintType = INTERRUPT_HINT_STOP;
         rejectedFocusEntry.forceType = INTERRUPT_FORCE;
         rejectedFocusEntry.isReject = true;
         focusMap.emplace(rejectedStreamsPair, rejectedFocusEntry);

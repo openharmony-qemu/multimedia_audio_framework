@@ -18,6 +18,7 @@
 
 #include "audio_policy_client_stub.h"
 #include "audio_device_info.h"
+#include "audio_session_manager.h"
 #include "audio_system_manager.h"
 #include "audio_interrupt_info.h"
 #include "audio_group_manager.h"
@@ -59,7 +60,6 @@ public:
     int32_t AddDeviceChangeWithInfoCallback(
         const uint32_t sessionId, const std::weak_ptr<DeviceChangeWithInfoCallback> &cb);
     int32_t RemoveDeviceChangeWithInfoCallback(const uint32_t sessionId);
-
     int32_t AddHeadTrackingDataRequestedChangeCallback(const std::string &macAddress,
         const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb);
     int32_t RemoveHeadTrackingDataRequestedChangeCallback(const std::string &macAddress);
@@ -68,6 +68,10 @@ public:
     int32_t AddHeadTrackingEnabledChangeCallback(const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);
     int32_t RemoveHeadTrackingEnabledChangeCallback();
     size_t GetFocusInfoChangeCallbackSize() const;
+    int32_t AddAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb);
+    int32_t RemoveAudioSessionCallback();
+    int32_t RemoveAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb);
+    size_t GetAudioSessionCallbackSize() const;
 
     void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
@@ -95,6 +99,7 @@ public:
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
 
 private:
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
@@ -111,6 +116,7 @@ private:
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
 
     std::unordered_map<uint32_t,
         std::weak_ptr<DeviceChangeWithInfoCallback>> deviceChangeWithInfoCallbackMap_;
@@ -131,6 +137,7 @@ private:
     std::mutex headTrackingDataRequestedChangeMutex_;
     std::mutex spatializationEnabledChangeMutex_;
     std::mutex headTrackingEnabledChangeMutex_;
+    mutable std::mutex audioSessionMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

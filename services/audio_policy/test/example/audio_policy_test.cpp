@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include "audio_errors.h"
+#include "audio_session_manager.h"
 #include "audio_system_manager.h"
 #include "audio_policy_log.h"
 
@@ -84,8 +85,9 @@ static void PrintUsage(void)
     cout << "-B\n\tSet AudioMonoState (using 1 or 0 instead of true of false)" << endl;
     cout << "\tSet AudioBalanceValue (using [9, 11] instead of [-1, 1])" << endl << endl;
     cout << "-F\n\tAudioFocusInfoListTest (using 1 or 0 instead of true of false)" << endl;
+    cout << "-A\n\t AudioSession: 1.ActivateAudioSession, 2.DeactivateAudioSession, 3.IsAudioSessionActivated." << endl;
     cout << "AUTHOR" << endl << endl;
-    cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
+    cout << "\tWritten by OpenHarmony AudioFramework Team." << endl << endl;
 }
 
 static void ShowAudioDeviceDescriptorsVector(std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
@@ -509,6 +511,38 @@ static void HandleAudioBalanceState(int argc, char* argv[])
     cout << "Audio balance value: " << balanceValue << endl;
 }
 
+static void HandleAudioSession(int argc, char *argv[])
+{
+    if (argc != AudioPolicyTest::FOURTH_ARG) {
+        cout << "Incorrect number of test commands." << endl;
+        return;
+    }
+    AudioSessionManager *sessionManager = AudioSessionManager::GetInstance();
+
+    int32_t option = atoi(argv[AudioPolicyTest::SECOND_ARG]);
+    AudioConcurrencyMode mode = static_cast<AudioConcurrencyMode>(atoi(argv[AudioPolicyTest::THIRD_ARG]));
+    cout << "AudioSession: 1.ActivateAudioSession, 2.DeactivateAudioSession, 3.IsAudioSessionActivated: Input: "
+        << option << endl;
+    int32_t result = 0;
+    switch (option) {
+        case 1: // 1: ActivateAudioSession
+            result = sessionManager->ActivateAudioSession({mode});
+            cout << "ActivateAudioSession: audioConcurrencyMode: " << static_cast<int32_t>(mode) <<
+                ". Result: " << result << endl;
+            break;
+        case 2: // 2: DeactivateAudioSession
+            result = sessionManager->DeactivateAudioSession();
+            cout << "DeactivateAudioSession: Result: " << result << endl;
+            break;
+        case 3: // 3: IsAudioSessionActivated
+            result = sessionManager->IsAudioSessionActivated();
+            cout << "IsAudioSessionActivated: Result: " << result << endl;
+            break;
+        default:
+            break;
+    }
+}
+
 static void PrintFocusInfoList(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
     cout << "===============FocusInfoList============== size:"<< focusInfoList.size() << endl;
@@ -636,8 +670,11 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:B:F:vmrucOoIiGgNntp")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:B:F:vmrucOoIiGgNntpA")) != -1) {
         switch (opt) {
+            case 'A':
+                HandleAudioSession(argc, argv);
+                break;
             case 'G':
             case 'g':
                 HandleGetDevices(argc, argv, opt);

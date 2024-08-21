@@ -57,6 +57,7 @@ constexpr int32_t LOCAL_USER_ID = 100;
 class AudioPolicyService;
 class AudioInterruptService;
 class AudioPolicyServerHandler;
+class AudioSessionService;
 class BluetoothEventSubscriber;
 
 class AudioPolicyServer : public SystemAbility,
@@ -177,6 +178,12 @@ public:
     bool IsMicrophoneMute() override;
 
     AudioScene GetAudioScene() override;
+
+    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy) override;
+
+    int32_t DeactivateAudioSession() override;
+
+    bool IsAudioSessionActivated() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const sptr<IRemoteObject> &object, const int32_t zoneId = 0) override;
@@ -480,6 +487,7 @@ private:
     void CheckSubscribePowerStateChange();
 
     void CheckStreamMode(const int64_t activateSessionId);
+    bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);

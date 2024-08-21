@@ -1657,6 +1657,111 @@ int32_t AudioPolicyManager::SetHighResolutionExist(bool highResExist)
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &strategy)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback clent");
+            return result;
+        }
+    }
+    return gsp->ActivateAudioSession(strategy);
+}
+
+int32_t AudioPolicyManager::DeactivateAudioSession()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->DeactivateAudioSession();
+}
+
+bool AudioPolicyManager::IsAudioSessionActivated()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsAudioSessionActivated();
+}
+
+int32_t AudioPolicyManager::SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(audioSessionCallback != nullptr, ERR_INVALID_PARAM, "audioSessionCallback is nullptr");
+
+    int32_t result = SUCCESS;
+    if (!isAudioPolicyClientRegisted_) {
+        result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback clent");
+            return result;
+        }
+    }
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");
+        return ERROR_ILLEGAL_STATE;
+    }
+
+    result = audioPolicyClientStubCB_->AddAudioSessionCallback(audioSessionCallback);
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to add audio session callback.");
+        return result;
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SESSION].mutex);
+    if (audioPolicyClientStubCB_->GetAudioSessionCallbackSize() == 1) {
+        // Notify audio server that the client has registerd one listener.
+        callbackChangeInfos_[CALLBACK_AUDIO_SESSION].isEnable = true;
+        SetClientCallbacksEnable(CALLBACK_AUDIO_SESSION, true);
+    }
+    return result;
+}
+
+int32_t AudioPolicyManager::UnsetAudioSessionCallback()
+{
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");
+        return ERROR_ILLEGAL_STATE;
+    }
+
+    int32_t result = audioPolicyClientStubCB_->RemoveAudioSessionCallback();
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to remove all audio session callbacks.");
+        return result;
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SESSION].mutex);
+    if (audioPolicyClientStubCB_->GetAudioSessionCallbackSize() == 0) {
+        // Notify audio server that all of the client listeners have been unregisterd.
+        callbackChangeInfos_[CALLBACK_AUDIO_SESSION].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_AUDIO_SESSION, false);
+    }
+    return result;
+}
+
+int32_t AudioPolicyManager::UnsetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
+{
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");
+        return ERROR_ILLEGAL_STATE;
+    }
+    int32_t result = audioPolicyClientStubCB_->RemoveAudioSessionCallback(audioSessionCallback);
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to remove the audio session callback.");
+        return result;
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SESSION].mutex);
+    if (audioPolicyClientStubCB_->GetAudioSessionCallbackSize() == 0) {
+        // Notify audio server that all of the client listeners have been unregisterd.
+        callbackChangeInfos_[CALLBACK_AUDIO_SESSION].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_AUDIO_SESSION, false);
+    }
+    return result;
+}
+
 AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

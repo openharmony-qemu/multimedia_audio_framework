@@ -31,9 +31,10 @@ enum ActionTarget {
 
 enum AudioFocuState {
     ACTIVE = 0,
-    DUCK,
-    PAUSE,
-    STOP
+    DUCK = 1,
+    PAUSE = 2,
+    STOP = 3,
+    PLACEHOLDER = 4,
 };
 
 enum InterruptMode {

@@ -159,6 +159,18 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
+    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
+
+    int32_t DeactivateAudioSession();
+
+    bool IsAudioSessionActivated();
+
+    int32_t SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
+
+    int32_t UnsetAudioSessionCallback();
+
+    int32_t UnsetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
+
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
 
