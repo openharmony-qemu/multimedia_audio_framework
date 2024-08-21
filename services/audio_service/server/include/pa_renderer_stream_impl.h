@@ -94,6 +94,8 @@ private:
     int32_t OffloadUpdatePolicyInWrite();
     // offload end
 
+    void UpdatePaTimingInfo();
+
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
     pa_stream *paStream_ = nullptr;
@@ -141,6 +143,8 @@ private:
     uint64_t preLatency_ = 50000; // 50000 default
     pa_usec_t preTimeGetLatency_ = pa_rtclock_now();
     bool firstGetLatency_ = true;
+    pa_usec_t preTimeGetPaLatency_ = pa_rtclock_now();
+    bool firstGetPaLatency_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS
