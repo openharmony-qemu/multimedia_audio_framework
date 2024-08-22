@@ -259,5 +259,13 @@ void AudioPolicyClientStub::HandleHeadTrackingEnabledChangeForAnyDevice(MessageP
     bool enabled = data.ReadBool();
     OnHeadTrackingEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
 }
+
+void AudioPolicyClientStub::HandleAudioSessionCallback(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("HandleAudioSessionCallback");
+    AudioSessionDeactiveEvent deactiveEvent;
+    deactiveEvent.deactiveReason = static_cast<AudioSessionDeactiveReason>(data.ReadInt32());
+    OnAudioSessionDeactive(deactiveEvent);
+}
 } // namespace AudioStandard
 } // namespace OHOS

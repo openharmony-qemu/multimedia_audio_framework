@@ -478,5 +478,23 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const sptr<
     }
     reply.ReadInt32();
 }
+
+void AudioPolicyClientProxy::OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE));
+    data.WriteInt32(static_cast<int32_t>(deactiveEvent.deactiveReason));
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending volume key event %{public}d", error);
+    }
+    reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

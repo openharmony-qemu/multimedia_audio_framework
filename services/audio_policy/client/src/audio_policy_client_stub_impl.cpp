@@ -224,6 +224,52 @@ void AudioPolicyClientStubImpl::OnRingerModeUpdated(const AudioRingerMode &ringe
     }
 }
 
+int32_t AudioPolicyClientStubImpl::AddAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb)
+{
+    AUDIO_INFO_LOG("AddAudioSessionCallback in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionMutex_);
+    audioSessionCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAudioSessionCallback()
+{
+    AUDIO_INFO_LOG("RemoveAudioSessionCallback all in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionMutex_);
+    audioSessionCallbackList_.clear();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb)
+{
+    AUDIO_INFO_LOG("RemoveAudioSessionCallback one in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionMutex_);
+    auto iter = audioSessionCallbackList_.begin();
+    while (iter != audioSessionCallbackList_.end()) {
+        if (*iter == cb) {
+            iter = audioSessionCallbackList_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetAudioSessionCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSessionMutex_);
+    return audioSessionCallbackList_.size();
+}
+
+void AudioPolicyClientStubImpl::OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent)
+{
+    AUDIO_INFO_LOG("OnAudioSessionDeactive in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionMutex_);
+    for (auto it = audioSessionCallbackList_.begin(); it != audioSessionCallbackList_.end(); ++it) {
+        (*it)->OnAudioSessionDeactive(deactiveEvent);
+    }
+}
+
 int32_t AudioPolicyClientStubImpl::AddMicStateChangeCallback(
     const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb)
 {

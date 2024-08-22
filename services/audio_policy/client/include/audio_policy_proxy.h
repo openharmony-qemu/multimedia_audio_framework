@@ -111,6 +111,12 @@ public:
 
     AudioScene GetAudioScene() override;
 
+    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy) override;
+
+    int32_t DeactivateAudioSession() override;
+
+    bool IsAudioSessionActivated() override;
+
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
 

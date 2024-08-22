@@ -37,6 +37,9 @@
 #include "napi_audio_ringermode_callback.h"
 #include "napi_audio_manager_interrupt_callback.h"
 #include "napi_audio_volume_key_event.h"
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+#include "napi_audio_session_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -122,6 +125,9 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+        DECLARE_NAPI_FUNCTION("getSessionManager", GetSessionManager),
+#endif
         DECLARE_NAPI_FUNCTION("getRoutingManager", GetRoutingManager),
         DECLARE_NAPI_FUNCTION("getVolumeManager", GetVolumeManager),
         DECLARE_NAPI_FUNCTION("getInterruptManager", GetInterruptManager),
@@ -250,6 +256,22 @@ napi_value NapiAudioManager::GetStreamManager(napi_env env, napi_callback_info i
 
     return NapiAudioStreamMgr::CreateStreamManagerWrapper(env);
 }
+
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+napi_value NapiAudioManager::GetSessionManager(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    size_t argCount = PARAM0;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
+    if (status != napi_ok || argCount != 0) {
+        AUDIO_ERR_LOG("Invalid arguments!");
+        return nullptr;
+    }
+
+    return NapiAudioSessionMgr::CreateSessionManagerWrapper(env);
+}
+#endif
 
 napi_value NapiAudioManager::GetRoutingManager(napi_env env, napi_callback_info info)
 {

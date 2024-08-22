@@ -51,6 +51,7 @@ config("audio_policy_public_config") {
     "server/src/interface",
     "server/src/service/concurrency",
     "server/src/service/interrupt",
+    "server/src/service/session",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../../frameworks/native/audioinnercall/include",
@@ -143,6 +144,9 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/routers/public_priority_router.cpp",
     "server/src/service/routers/stream_filter_router.cpp",
     "server/src/service/routers/user_select_router.cpp",
+    "server/src/service/session/audio_session.cpp",
+    "server/src/service/session/audio_session_service.cpp",
+    "server/src/service/session/audio_session_timer.cpp",
     "server/src/service/spatialization/audio_spatialization_service.cpp",
   ]
 

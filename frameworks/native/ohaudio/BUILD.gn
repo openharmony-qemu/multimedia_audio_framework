@@ -55,6 +55,7 @@ ohos_shared_library("ohaudio") {
     "./OHAudioDeviceDescriptor.cpp",
     "./OHAudioRenderer.cpp",
     "./OHAudioRoutingManager.cpp",
+    "./OHAudioSessionManager.cpp",
     "./OHAudioStreamBuilder.cpp",
   ]
 
@@ -82,6 +83,7 @@ group("oh_audio_renderer_test_packages") {
   deps = [
     ":oh_audio_capturer_test",
     ":oh_audio_renderer_test",
+    ":oh_audio_session_manager_test",
   ]
 }
 
@@ -159,6 +161,46 @@ ohos_executable("oh_audio_renderer_test") {
   deps = [ ":ohaudio" ]
 
   external_deps = [ "hilog:libhilog" ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("oh_audio_session_manager_test") {
+  stack_protector_ret = true
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+
+  install_enable = false
+
+  include_dirs = [
+    "../../../interfaces/kits/c/",
+    "../../../interfaces/kits/c/audio_manager/",
+    "../../../interfaces/kits/c/common/",
+    "../../../interfaces/kits/c/audio_renderer/",
+  ]
+
+  sources = [ "test/example/oh_audio_session_manager_test.cpp" ]
+
+  configs = [ ":audio_config" ]
+
+  deps = [
+    ":ohaudio",
+    "../../../services/audio_service:audio_client",
+    "../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

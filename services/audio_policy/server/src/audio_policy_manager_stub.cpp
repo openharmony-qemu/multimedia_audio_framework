@@ -159,7 +159,11 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_MICROPHONE_MUTE_PERSISTENT",
     "GET_MICROPHONE_MUTE_PERSISTENT",
     "INJECT_INTERRUPTION",
+    "ACTIVATE_AUDIO_SESSION",
+    "DEACTIVATE_AUDIO_SESSION",
+    "IS_AUDIO_SESSION_ACTIVATED",
 };
+
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),
     "keep same with AudioPolicyInterfaceCode");
@@ -1187,6 +1191,26 @@ void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel 
     CHECK_AND_RETURN_LOG(object != nullptr, "RegisterPolicyCallbackClientInternal obj is null");
     int32_t result = RegisterPolicyCallbackClient(object, zoneID);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::ActivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = static_cast<AudioConcurrencyMode>(data.ReadInt32());
+    int32_t result = ActivateAudioSession(strategy);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::DeactivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = DeactivateAudioSession();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = IsAudioSessionActivated();
+    reply.WriteBool(result);
 }
 
 void AudioPolicyManagerStub::CreateAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply)

@@ -24,6 +24,7 @@
 #include "audio_interrupt_info.h"
 #include "audio_policy_server_handler.h"
 #include "audio_policy_server.h"
+#include "audio_session_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,8 +41,11 @@ typedef struct {
 
 class AudioPolicyServerHandler;
 
+class SessionTimeOutCallback;
+
 class AudioInterruptService : public std::enable_shared_from_this<AudioInterruptService>,
-                              public IAudioInterruptEventDispatcher {
+                              public IAudioInterruptEventDispatcher,
+                              public SessionTimeOutCallback {
 public:
     AudioInterruptService();
     virtual ~AudioInterruptService();
@@ -53,6 +57,14 @@ public:
     void Init(sptr<AudioPolicyServer> server);
     void AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> &audioInterruptZonesMapDump);
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
+
+    // interfaces of SessionTimeOutCallback
+    void OnSessionTimeout(const int32_t pid) override;
+
+    // interfaces for AudioSessionService
+    int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
+    int32_t DeactivateAudioSession(const int32_t callerPid);
+    bool IsAudioSessionActivated(const int32_t callerPid);
 
     // deprecated interrupt interfaces
     int32_t SetAudioManagerInterruptCallback(const sptr<IRemoteObject> &object);
@@ -142,17 +154,18 @@ private:
     void HandleIncomingState(const int32_t &zoneId, AudioFocuState &incomingState,
         InterruptEventInternal &interruptEvent, const AudioInterrupt &incomingInterrupt);
     void ProcessExistInterrupt(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
-        &iterActive, const AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
+        &iterActive, AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
-    void ResumeAudioFocusList(const int32_t zoneId);
+    void ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout = false);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry(const int32_t zoneId);
     void SendActiveInterruptEvent(const uint32_t activeSessionId, const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &incomingInterrupt);
-    void DeactivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    void DeactivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isSessionTimeout = false);
     void SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
-    bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
+    bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     void UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
     void RemoveClient(const int32_t zoneId, uint32_t sessionId);
@@ -172,9 +185,27 @@ private:
     void WriteFocusMigrateEvent(const int32_t &toZoneId);
     void WriteServiceStartupError();
 
+    // interfaces about audio session.
+    void AddActiveInterruptToSession(const int32_t callerPid);
+    void RemovePlaceholderInterruptForSession(const int32_t callerPid, bool isSessionTimeout = false);
+    bool CanMixForSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
+        const AudioFocusEntry &focusEntry);
+    bool CanMixForIncomingSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
+        const AudioFocusEntry &focusEntry);
+    bool CanMixForActiveSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
+        const AudioFocusEntry &focusEntry);
+    bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
+    bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
+    void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+    void HandleSessionTimeOutEvent(const int32_t pid);
+    void HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
+    void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
+
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;
+    std::shared_ptr<AudioSessionService> sessionService_;
 
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusCfgMap_ = {};
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> zonesMap_;
