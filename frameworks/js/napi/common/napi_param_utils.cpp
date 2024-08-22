@@ -504,7 +504,7 @@ napi_status NapiParamUtils::SetAudioSpatialEnabledStateForDevice(const napi_env 
     (void)napi_create_object(env, &result);
     napi_value jsArray;
     NapiParamUtils::SetDeviceDescriptor(env, audioSpatialEnabledStateForDevice.deviceDescriptor, jsArray);
-    napi_set_named_property(env, result, "deviceDesriptor", jsArray);
+    napi_set_named_property(env, result, "deviceDescriptor", jsArray);
 
     NapiParamUtils::SetValueBoolean(env, "enabled", audioSpatialEnabledStateForDevice.enabled, result);
     return napi_ok;
