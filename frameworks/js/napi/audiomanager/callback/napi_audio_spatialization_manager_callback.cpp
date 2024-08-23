@@ -31,7 +31,6 @@ using namespace std;
 NapiAudioSpatializationEnabledChangeCallback::NapiAudioSpatializationEnabledChangeCallback(napi_env env)
     : env_(env)
 {
-    useNewApiFlag = true;
     AUDIO_DEBUG_LOG("NapiAudioSpatializationEnabledChangeCallback: instance create");
 }
 
@@ -252,7 +251,6 @@ void NapiAudioSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEna
 NapiAudioHeadTrackingEnabledChangeCallback::NapiAudioHeadTrackingEnabledChangeCallback(napi_env env)
     : env_(env)
 {
-    useNewApiFlag = true;
     AUDIO_DEBUG_LOG("NapiAudioHeadTrackingEnabledChangeCallback: instance create");
 }
 
