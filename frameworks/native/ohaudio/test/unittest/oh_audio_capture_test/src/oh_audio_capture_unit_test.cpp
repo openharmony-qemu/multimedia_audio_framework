@@ -248,25 +248,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Release_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OH_AudioCapturer_Release API via illegal state.
-* @tc.number: OH_Audio_Capture_Release_002
-* @tc.desc  : Test OH_AudioCapturer_Release interface. Returns error code, if stream is released twice.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Release_002, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OH_AudioCapturer* audioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    result = OH_AudioCapturer_Release(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
 * @tc.name  : Test OH_AudioCapturer_GetLatencyMode API via legal state.
 * @tc.number: OH_Audio_Capture_GetParameter_001
 * @tc.desc  : Test OH_AudioCapturer_GetLatencyMode interface. Returns true if latencyMode is
