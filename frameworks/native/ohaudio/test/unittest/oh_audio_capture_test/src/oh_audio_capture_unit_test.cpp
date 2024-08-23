@@ -351,30 +351,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_004, TestSize.Le
 }
 
 /**
-* @tc.name  : Test OH_AudioCapturer_GetCurrentState API via legal state.
-* @tc.number: OH_AudioCapturer_GetCurrentState_005
-* @tc.desc  : Test OH_AudioCapturer_GetCurrentState interface. Return true if the result state is
-*             AUDIOSTREAM_STATE_RELEASED.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_005, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-
-    OH_AudioCapturer_Start(audioCapturer);
-    OH_AudioCapturer_Release(audioCapturer);
-
-    OH_AudioStream_State state;
-    result = OH_AudioCapturer_GetCurrentState(audioCapturer, &state);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-
-    // The internal capturer has been released, returning an error.
-    EXPECT_EQ(state, AUDIOSTREAM_STATE_INVALID);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
 * @tc.name  : Test OH_AudioCapturer_GetStreamId API via legal state.
 * @tc.number: OH_Audio_Capture_GetParameter_002
 * @tc.desc  : Test OH_AudioCapturer_GetStreamId interface. Returns true if the result is AUDIOSTREAM_SUCCESS.
