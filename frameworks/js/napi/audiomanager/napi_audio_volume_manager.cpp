@@ -268,7 +268,19 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManagerSync(napi_env env, napi_
     int32_t groupId;
     NapiParamUtils::GetValueInt32(env, groupId, args[PARAM0]);
 
-    return NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, groupId);
+    result = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, groupId);
+
+    napi_value undefinedValue = nullptr;
+    napi_get_undefined(env, &undefinedValue);
+    bool isEqual = false;
+    napi_strict_equals(env, result, undefinedValue, &isEqual);
+    if (isEqual) {
+        AUDIO_ERR_LOG("The audio volume group manager is undefined!");
+        NapiAudioError::ThrowError(env, "GetVolumeGroupManagerSync failed: invalid param", NAPI_ERR_INVALID_PARAM);
+        return result;
+    }
+
+    return result;
 }
 
 napi_value NapiAudioVolumeManager::RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
