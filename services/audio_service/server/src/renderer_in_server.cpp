@@ -275,6 +275,12 @@ void RendererInServer::StandByCheck()
     Trace trace(traceTag_ + " StandByCheck:standByCounter_:" + std::to_string(standByCounter_));
     AUDIO_INFO_LOG("sessionId:%{public}u standByCounter_:%{public}u standByEnable_:%{public}s ", streamIndex_,
         standByCounter_, (standByEnable_ ? "true" : "false"));
+
+    // direct standBy need not in here
+    if (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) {
+        return;
+    }
+
     if (standByEnable_) {
         return;
     }
@@ -519,6 +525,11 @@ int32_t RendererInServer::OnWriteData(size_t length)
 
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     audioServerBuffer_->SetHandleInfo(currentReadFrame, ClockTime::GetCurNano() + MOCK_LATENCY);
+
+    if (mayNeedForceWrite) {
+        return ERR_RENDERER_IN_SERVER_UNDERRUN;
+    }
+
     return SUCCESS;
 }
 
