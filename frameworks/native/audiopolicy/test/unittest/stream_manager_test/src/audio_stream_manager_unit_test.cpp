@@ -122,13 +122,13 @@ void AudioCapturerStateChangeCallbackTest::OnCapturerStateChange(
 
 /**
 * @tc.name  : Test RegisterAudioRendererEventListener API
-* @tc.number: Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_001
+* @tc.number: AudioStreamChangeListnerRegisterAudioRendererEventListener_001
 * @tc.desc  : Test RegisterAudioRendererEventListener interface with valid parameters
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_001, TestSize.Level0)
+HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioRendererEventListener_001, TestSize.Level0)
 {
     int callBackSetResult = -1;
-    std::string testCaseName("Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_001");
+    std::string testCaseName("AudioStreamChangeListnerRegisterAudioRendererEventListener_001");
 
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
 
@@ -142,13 +142,13 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioRend
 
 /**
 * @tc.name  : Test RegisterAudioRendererEventListener API
-* @tc.number: Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_002
+* @tc.number: AudioStreamChangeListnerRegisterAudioRendererEventListener_002
 * @tc.desc  : Test RegisterAudioRendererEventListener interface after unregister event
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_002, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioRendererEventListener_002, TestSize.Level1)
 {
     int callBackSetResult = -1;
-    std::string testCaseName("Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_002");
+    std::string testCaseName("AudioStreamChangeListnerRegisterAudioRendererEventListener_002");
 
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
 
@@ -169,10 +169,10 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioRend
 
 /**
 * @tc.name  : Test RegisterAudioRendererEventListener API
-* @tc.number: Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_003
+* @tc.number: AudioStreamChangeListnerRegisterAudioRendererEventListener_003
 * @tc.desc  : Test RegisterAudioRendererEventListener interface with null callback
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_003, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioRendererEventListener_003, TestSize.Level1)
 {
     int callBackSetResult = -1;
 
@@ -182,13 +182,13 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioRend
 
 /**
 * @tc.name  : Test RegisterAudioRendererEventListener API
-* @tc.number: Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_004
+* @tc.number: AudioStreamChangeListnerRegisterAudioRendererEventListener_004
 * @tc.desc  : Test RegisterAudioRendererEventListener interface with valid parameter after nullptr callback
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_004, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioRendererEventListener_004, TestSize.Level1)
 {
     int callBackSetResult = -1;
-    std::string testCaseName("Audio_Stream_Change_Listner_RegisterAudioRendererEventListener_004");
+    std::string testCaseName("AudioStreamChangeListnerRegisterAudioRendererEventListener_004");
 
     callBackSetResult = g_audioManagerInstance->RegisterAudioRendererEventListener(getpid(), nullptr);
     EXPECT_NE(SUCCESS, callBackSetResult);
@@ -206,7 +206,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioRend
 * @tc.number: Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_001
 * @tc.desc  : Test UnregisterAudioRendererEventListener interface with valid parameters
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_001,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_001,
     TestSize.Level0)
 {
     int callBackSetResult = -1;
@@ -227,7 +227,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioRe
 * @tc.number: Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_002
 * @tc.desc  : Test UnregisterAudioRendererEventListener interface without Register event
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_002,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_002,
     TestSize.Level1)
 {
     int callBackUnSetResult = -1;
@@ -244,7 +244,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioRe
 * @tc.number: Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_003
 * @tc.desc  : Test UnregisterAudioRendererEventListener interface multiple register and unregister calls
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_003,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioRendererEventListener_003,
     TestSize.Level1)
 {
     int callBackSetResult = -1;
@@ -280,7 +280,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioRe
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface for single active stream information in prepared state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_001, TestSize.Level0)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_001, TestSize.Level0)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -310,7 +310,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface while no streams active
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_002, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_002, TestSize.Level1)
 {
     int32_t ret = -1;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -326,7 +326,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface for single active renderer stream in running state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_003, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_003, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -362,7 +362,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface for single active renderer stream in stopped state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_004, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_004, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -397,7 +397,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface for single active renderer stream in released state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_005, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_005, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -427,7 +427,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface for two active renderer stream information
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_006, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_006, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -485,7 +485,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface to display streams details
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_007, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_007, TestSize.Level1)
 {
     int32_t ret = -1;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -515,7 +515,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface for single active renderer stream in running state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_Stability_001,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_Stability_001,
     TestSize.Level1)
 {
     int32_t ret = -1;
@@ -554,7 +554,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
 * @tc.number: Audio_Stream_Change_Listner_GetCurrentRendererChangeDeviceInfos_001
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface for getting device information for current stream
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeDeviceInfos_001,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeDeviceInfos_001,
     TestSize.Level1)
 {
     int32_t ret = -1;
@@ -607,7 +607,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
 * @tc.desc  : Test RendererStateChangeCallback interface in prepared state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_001, TestSize.Level0)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_001, TestSize.Level0)
 {
     int32_t ret = -1;
     int callBackSetResult;
@@ -659,7 +659,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChan
 * @tc.desc  : Test RendererStateChangeCallback interface in running state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_002, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_002, TestSize.Level1)
 {
     int32_t ret = -1;
     int callBackSetResult;
@@ -710,7 +710,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChan
 * @tc.desc  : Test RendererStateChangeCallback interface in stop state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_003, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_003, TestSize.Level1)
 {
     int32_t ret = -1;
     [[maybe_unused]] int callBackSetResult;
@@ -760,7 +760,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChan
 * @tc.desc  : Test RendererStateChangeCallback interface in release state
 *             RENDERER_PREPARED:1, RENDERER_RUNNING:2, RENDERER_STOPPED:3, RENDERER_RELEASED:4, RENDERER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_004, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_004, TestSize.Level1)
 {
     int32_t ret = -1;
     [[maybe_unused]] int callBackSetResult;
@@ -807,13 +807,13 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChan
 // Capturer Listener Unit Cases
 /**
 * @tc.name  : Test RegisterAudioCapturerEventListener API
-* @tc.number: Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_001
+* @tc.number: AudioStreamChangeListnerRegisterAudioCapturerEventListener_001
 * @tc.desc  : Test RegisterAudioCapturerEventListener interface with valid parameters
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_001, TestSize.Level0)
+HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioCapturerEventListener_001, TestSize.Level0)
 {
     int callBackSetResult = -1;
-    std::string testCaseName("Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_001");
+    std::string testCaseName("AudioStreamChangeListnerRegisterAudioCapturerEventListener_001");
 
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
 
@@ -827,13 +827,13 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioCapt
 
 /**
 * @tc.name  : Test RegisterAudioCapturerEventListener API
-* @tc.number: Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_002
+* @tc.number: AudioStreamChangeListnerRegisterAudioCapturerEventListener_002
 * @tc.desc  : Test RegisterAudioCapturerEventListener interface after unregister
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_002, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioCapturerEventListener_002, TestSize.Level1)
 {
     int callBackSetResult = -1;
-    std::string testCaseName("Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_002");
+    std::string testCaseName("AudioStreamChangeListnerRegisterAudioCapturerEventListener_002");
 
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
 
@@ -854,10 +854,10 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioCapt
 
 /**
 * @tc.name  : Test RegisterAudioCapturerEventListener API
-* @tc.number: Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_003
+* @tc.number: AudioStreamChangeListnerRegisterAudioCapturerEventListener_003
 * @tc.desc  : Test RegisterAudioCapturerEventListener interface with null callback
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_003, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioCapturerEventListener_003, TestSize.Level1)
 {
     int callBackSetResult = -1;
 
@@ -867,13 +867,13 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioCapt
 
 /**
 * @tc.name  : Test RegisterAudioCapturerEventListener API
-* @tc.number: Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_004
+* @tc.number: AudioStreamChangeListnerRegisterAudioCapturerEventListener_004
 * @tc.desc  : Test RegisterAudioCapturerEventListener interface with valid parameter after nullptr callback
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_004, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerRegisterAudioCapturerEventListener_004, TestSize.Level1)
 {
     int callBackSetResult = -1;
-    std::string testCaseName("Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_004");
+    std::string testCaseName("AudioStreamChangeListnerRegisterAudioCapturerEventListener_004");
 
     callBackSetResult = g_audioManagerInstance->RegisterAudioCapturerEventListener(getpid(), nullptr);
     EXPECT_NE(SUCCESS, callBackSetResult);
@@ -891,7 +891,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RegisterAudioCapt
 * @tc.number: Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_001
 * @tc.desc  : Test UnregisterAudioCapturerEventListener interface with valid parameters
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_001,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_001,
     TestSize.Level0)
 {
     int callBackSetResult = -1;
@@ -917,7 +917,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioCa
 * @tc.number: Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_002
 * @tc.desc  : Test UnregisterAudioCapturerEventListener interface without register event
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_002,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_002,
     TestSize.Level1)
 {
     int callBackUnSetResult = -1;
@@ -934,7 +934,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioCa
 * @tc.number: Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_003
 * @tc.desc  : Test UnregisterAudioCapturerEventListener interface with multiple register and unregister
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_003,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioCapturerEventListener_003,
     TestSize.Level1)
 {
     int callBackSetResult = -1;
@@ -970,7 +970,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_UnregisterAudioCa
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interface for single active stream in prepared state
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_001, TestSize.Level0)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_001, TestSize.Level0)
 {
     int32_t ret = -1;
     AudioCapturerOptions capturerOptions;
@@ -999,7 +999,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interface while no stream active
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_002, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_002, TestSize.Level1)
 {
     int32_t ret = -1;
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
@@ -1015,7 +1015,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interface for single active stream in running state
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_003, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_003, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioCapturerOptions capturerOptions;
@@ -1050,7 +1050,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interface for single active stream in pause state
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_004, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_004, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioCapturerOptions capturerOptions;
@@ -1086,7 +1086,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interface for single active stream in stop state
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_005, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_005, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioCapturerOptions capturerOptions;
@@ -1120,7 +1120,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interface for single active stream in stop state in release state
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_006, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_006, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioCapturerOptions capturerOptions;
@@ -1150,7 +1150,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interface. Returns current two capturer stream information
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_007, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_007, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioCapturerOptions capturerOptions;
@@ -1198,7 +1198,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface to display streams details
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_008, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_008, TestSize.Level1)
 {
     int32_t ret = -1;
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
@@ -1228,7 +1228,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interface stability
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos__Stability_001,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos__Stability_001,
     TestSize.Level1)
 {
     int32_t ret = -1;
@@ -1264,10 +1264,10 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 
 /**
 * @tc.name  : Test GetCurrentCapturerChangeInfos API
-* @tc.number: Audio_Stream_Change_Listner_GetCurrentCapturerChangeDeviceInfos_001
+* @tc.number: AudioStreamChangeListnerGetCurrentCapturerChangeDeviceInfos_001
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interface for getting device information for current stream
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeDeviceInfos_001, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerGetCurrentCapturerChangeDeviceInfos_001, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioCapturerOptions capturerOptions;
@@ -1313,7 +1313,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 * @tc.desc  : Test CapturerStateChangeCallback interface in prepared state
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_001, TestSize.Level0)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_001, TestSize.Level0)
 {
     int32_t ret = -1;
     int callBackSetResult;
@@ -1368,7 +1368,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChan
 * @tc.desc  : Test CapturerStateChangeCallbackT interface in running state
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_002, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_002, TestSize.Level1)
 {
     int32_t ret = -1;
     int callBackSetResult;
@@ -1420,7 +1420,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChan
 * @tc.desc  : Test CapturerStateChangeCallbackT interface in stop state
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_003,
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_003,
     TestSize.Level1)
 {
     int32_t ret = -1;
@@ -1472,7 +1472,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChan
 * @tc.desc  : Test CapturerStateChangeCallbackT interface in stop state
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_004, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_004, TestSize.Level1)
 {
     int32_t ret = -1;
     [[maybe_unused]] int callBackSetResult;
@@ -1523,7 +1523,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChan
 * @tc.number: Audio_Stream_IsAudioRendererLowLatencySupported_001
 * @tc.desc  : Test IsAudioRendererLowLatencySupported interface
 */
-HWTEST(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
 {
     AudioCapturerOptions capturerOptions;
 
@@ -1545,7 +1545,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySupport
  * @tc.number: GetHardwareOutputSamplingRate_001
  * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
  */
-HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
 {
     int32_t ret = VALUE_NEGATIVE;
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
@@ -1568,7 +1568,7 @@ HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.L
  * @tc.number: GetHardwareOutputSamplingRate_002
  * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
  */
-HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_002, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_002, TestSize.Level1)
 {
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
     int32_t ret = AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
@@ -1581,7 +1581,7 @@ HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_002, TestSize.L
  * @tc.number: GetHardwareOutputSamplingRate_003
  * @tc.desc  : Test GetHardwareOutputSamplingRate interface for inputdevice.
  */
-HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_003, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_003, TestSize.Level1)
 {
     int32_t ret = VALUE_NEGATIVE;
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
