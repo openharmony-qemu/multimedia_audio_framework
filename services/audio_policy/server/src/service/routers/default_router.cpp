@@ -25,7 +25,10 @@ namespace AudioStandard {
 
 unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetSelectedMediaRenderDevice();
+    if (desc == nullptr) {
+        desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+    }
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
         desc->deviceType_);
     return desc;
@@ -33,8 +36,10 @@ unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsag
 
 unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc =
-        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice(streamUsage);
+    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetSelectedCallRenderDevice();
+    if (desc == nullptr) {
+        desc = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice(streamUsage);
+    }
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
         desc->deviceType_);
     return desc;

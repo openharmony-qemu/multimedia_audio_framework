@@ -928,6 +928,13 @@ public:
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
 
+    /**
+     * @brief Temporarily changes the current audio route.
+     * @param deviceType to set. The available deviceTypes are EARPIECE/SPEAKER/DEFAULT.
+     * @since 12
+     */
+    virtual int32_t SetDefaultOutputDevice(DeviceType deviceType) = 0;
+
 private:
     static int32_t CreateCheckParam(const AudioRendererOptions &rendererOptions,
         const AppInfo &appInfo);

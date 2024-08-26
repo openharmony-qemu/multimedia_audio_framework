@@ -1229,5 +1229,16 @@ StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
     return STREAM_USAGE_UNKNOWN;
 }
 
+std::vector<uint32_t> AudioStreamCollector::GetAllRendererSessionIDForUID(int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    std::vector<uint32_t> sessionIDSet;
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->clientUID == uid) {
+            sessionIDSet.push_back(changeInfo->sessionId);
+        }
+    }
+    return sessionIDSet;
+}
 } // namespace AudioStandard
 } // namespace OHOS

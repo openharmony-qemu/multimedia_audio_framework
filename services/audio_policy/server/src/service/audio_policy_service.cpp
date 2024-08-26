@@ -4918,7 +4918,12 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
     }
 
-    if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED)) {
+    if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED ||
+        rendererState == RENDERER_RELEASED)) {
+        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamChangeInfo.audioRendererChangeInfo.sessionId);
+        if (rendererState == RENDERER_RELEASED) {
+            audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
+        }
         FetchDevice(true);
     }
 
@@ -4954,6 +4959,8 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     rendererChangeInfo.push_back(
         make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
     streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfo[0]);
+
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     FetchOutputDevice(rendererChangeInfo, reason);
 }
@@ -5032,6 +5039,8 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<unique_ptr<Audi
 void AudioPolicyService::RegisteredTrackerClientDied(pid_t uid)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+
+    UpdateDefaultOutputDeviceWhenStopping(static_cast<int32_t>(uid));
 
     RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
@@ -8358,6 +8367,28 @@ void AudioPolicyService::SetRotationToEffect(const uint32_t rotate)
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->SetRotationToEffect(rotate);
     IPCSkeleton::SetCallingIdentity(identity);
+}
+
+int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    CHECK_AND_RETURN_RET_LOG(hasEarpiece_, ERR_NOT_SUPPORTED, "the device has no earpiece");
+    int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    if (ret == NEED_TO_FETCH) {
+        FetchDevice(true);
+        return SUCCESS;
+    }
+    return ret;
+}
+
+void AudioPolicyService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
+{
+    std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllRendererSessionIDForUID(uid);
+    for (const auto &sessionID : sessionIDSet) {
+        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
+        audioDeviceManager_.RemoveSelectedDefaultOutputDevice(sessionID);
+    }
+    FetchDevice(true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

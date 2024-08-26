@@ -1457,6 +1457,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult= true;
+        SetDefaultOutputDevice(selectedDefaultOutputDevice_);
     }
     WriteSwitchStreamLogMsg();
     return switchResult;
@@ -1812,6 +1813,25 @@ void AudioRendererPrivate::ConcedeStream()
         default:
             break;
     }
+}
+
+int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
+{
+    if (deviceType != DEVICE_TYPE_EARPIECE && deviceType != DEVICE_TYPE_SPEAKER &&
+        deviceType != DEVICE_TYPE_DEFAULT) {
+        return ERR_NOT_SUPPORTED;
+    }
+    bool isSupportedStreamUsage = (find(AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.begin(),
+        AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end(), rendererInfo_.streamUsage) !=
+        AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end());
+    CHECK_AND_RETURN_RET_LOG(isSupportedStreamUsage, ERR_NOT_SUPPORTED, "stream usage not supported");
+    selectedDefaultOutputDevice_ = deviceType;
+    uint32_t currentSessionID = 0;
+    audioStream_->GetAudioSessionID(currentSessionID);
+    int32_t ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType, currentSessionID,
+        rendererInfo_.streamUsage, GetStatus() == RENDERER_RUNNING);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select default output device failed");
+    return SUCCESS;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

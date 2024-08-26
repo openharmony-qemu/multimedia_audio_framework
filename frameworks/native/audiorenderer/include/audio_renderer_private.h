@@ -126,6 +126,8 @@ public:
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
 
+    int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
+
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
@@ -193,6 +195,7 @@ private:
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;
+    DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
 
     float speed_ = 1.0;
 

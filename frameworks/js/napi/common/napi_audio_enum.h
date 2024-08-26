@@ -95,6 +95,7 @@ public:
     static bool IsLegalInputArgumentRingMode(int32_t ringMode);
     static bool IsLegalInputArgumentVolumeAdjustType(int32_t adjustType);
     static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
+    static bool IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
     static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
     static int32_t GetJsAudioVolumeType(AudioStreamType volumeType);

@@ -19,6 +19,7 @@
 #include "audio_device_manager.h"
 
 #include "audio_utils.h"
+#include "audio_errors.h"
 #include "audio_device_parser.h"
 
 namespace OHOS {
@@ -1027,6 +1028,180 @@ bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDev
         audioDeviceDescriptors->deviceRole_, GetEncryptStr(audioDeviceDescriptors->networkId_).c_str(),
         audioDeviceDescriptors->deviceType_, GetEncryptAddr(audioDeviceDescriptors->macAddress_).c_str());
     return false;
+}
+
+
+int32_t AudioDeviceManager::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    selectedDefaultOutputDeviceInfo_[sessionID] = std::make_pair(deviceType, streamUsage);
+    if (!isRunning) {
+        AUDIO_INFO_LOG("no need to set default output device since current stream has not started");
+        return SUCCESS;
+    }
+    AUDIO_INFO_LOG("stream %{public}u with usage %{public}d selects output device %{public}d",
+        sessionID, streamUsage, deviceType);
+    if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
+        // select media default output device
+        auto it = std::find_if(mediaDefaultOutputDevices_.begin(), mediaDefaultOutputDevices_.end(),
+            [&sessionID](const std::pair<uint32_t, DeviceType> &mediaDefaultOutputDevice) {
+                return mediaDefaultOutputDevice.first == sessionID;
+            });
+        if (it != mediaDefaultOutputDevices_.end()) {
+            mediaDefaultOutputDevices_.erase(it);
+        }
+        mediaDefaultOutputDevices_.push_back(std::make_pair(sessionID, deviceType));
+        if (selectedMediaDefaultOutputDevice_ != deviceType) {
+            AUDIO_INFO_LOG("media default output device changes from %{public}d to %{public}d",
+                selectedMediaDefaultOutputDevice_, deviceType);
+            selectedMediaDefaultOutputDevice_ = deviceType;
+            return NEED_TO_FETCH;
+        }
+    } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+        streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        // select call default output device
+        auto it = std::find_if(callDefaultOutputDevices_.begin(), callDefaultOutputDevices_.end(),
+            [&sessionID](const std::pair<uint32_t, DeviceType> &callDefaultOutputDevice) {
+                return callDefaultOutputDevice.first == sessionID;
+            });
+        if (it != callDefaultOutputDevices_.end()) {
+            callDefaultOutputDevices_.erase(it);
+        }
+        callDefaultOutputDevices_.push_back(std::make_pair(sessionID, deviceType));
+        if (selectedCallDefaultOutputDevice_ != deviceType) {
+            AUDIO_INFO_LOG("call default output device changes from %{public}d to %{public}d",
+                selectedCallDefaultOutputDevice_, deviceType);
+            selectedCallDefaultOutputDevice_ = deviceType;
+            return NEED_TO_FETCH;
+        }
+    } else {
+        AUDIO_ERR_LOG("Invalid stream usage %{public}d", streamUsage);
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    if (!selectedDefaultOutputDeviceInfo_.count(sessionID)) {
+        AUDIO_DEBUG_LOG("no need to update default output device since current stream has not set");
+        return SUCCESS;
+    }
+    DeviceType deviceType = selectedDefaultOutputDeviceInfo_[sessionID].first;
+    StreamUsage streamUsage = selectedDefaultOutputDeviceInfo_[sessionID].second;
+    if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
+        // select media default output device
+        auto it = std::find_if(mediaDefaultOutputDevices_.begin(), mediaDefaultOutputDevices_.end(),
+            [&sessionID](const std::pair<uint32_t, DeviceType> &mediaDefaultOutputDevice) {
+                return mediaDefaultOutputDevice.first == sessionID;
+            });
+        if (it != mediaDefaultOutputDevices_.end()) {
+            mediaDefaultOutputDevices_.erase(it);
+        }
+        mediaDefaultOutputDevices_.push_back(std::make_pair(sessionID, deviceType));
+        AUDIO_INFO_LOG("changes from %{public}d to %{public}d because media stream %{public}u starts",
+            selectedMediaDefaultOutputDevice_, deviceType, sessionID);
+        selectedMediaDefaultOutputDevice_ = deviceType;
+    } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+        streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        // select call default output device
+        auto it = std::find_if(callDefaultOutputDevices_.begin(), callDefaultOutputDevices_.end(),
+            [&sessionID](const std::pair<uint32_t, DeviceType> &callDefaultOutputDevice) {
+                return callDefaultOutputDevice.first == sessionID;
+            });
+        if (it != callDefaultOutputDevices_.end()) {
+            callDefaultOutputDevices_.erase(it);
+        }
+        callDefaultOutputDevices_.push_back(std::make_pair(sessionID, deviceType));
+        AUDIO_INFO_LOG("changes from %{public}d to %{public}d because call stream %{public}u starts",
+            selectedCallDefaultOutputDevice_, deviceType, sessionID);
+        selectedCallDefaultOutputDevice_ = deviceType;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    if (!selectedDefaultOutputDeviceInfo_.count(sessionID)) {
+        AUDIO_DEBUG_LOG("no need to update default output device since current stream has not set");
+        return SUCCESS;
+    }
+    StreamUsage streamUsage = selectedDefaultOutputDeviceInfo_[sessionID].second;
+    if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
+        // select media default output device
+        auto it = std::find_if(mediaDefaultOutputDevices_.begin(), mediaDefaultOutputDevices_.end(),
+            [&sessionID](const std::pair<uint32_t, DeviceType> &mediaDefaultOutputDevice) {
+                return mediaDefaultOutputDevice.first == sessionID;
+            });
+        if (it == mediaDefaultOutputDevices_.end()) {
+            return SUCCESS;
+        }
+        mediaDefaultOutputDevices_.erase(it);
+        DeviceType currDeviceType;
+        if (mediaDefaultOutputDevices_.empty()) {
+            currDeviceType = DEVICE_TYPE_DEFAULT;
+        } else {
+            currDeviceType = mediaDefaultOutputDevices_.back().second;
+        }
+        AUDIO_INFO_LOG("changes from %{public}d to %{public}d because media stream %{public}u stops",
+            selectedMediaDefaultOutputDevice_, currDeviceType, sessionID);
+        selectedMediaDefaultOutputDevice_ = currDeviceType;
+    } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+        streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        // select call default output device
+        auto it = std::find_if(callDefaultOutputDevices_.begin(), callDefaultOutputDevices_.end(),
+            [&sessionID](const std::pair<uint32_t, DeviceType> &callDefaultOutputDevice) {
+                return callDefaultOutputDevice.first == sessionID;
+            });
+        if (it == callDefaultOutputDevices_.end()) {
+            return SUCCESS;
+        }
+        callDefaultOutputDevices_.erase(it);
+        DeviceType currDeviceType;
+        if (callDefaultOutputDevices_.empty()) {
+            currDeviceType = DEVICE_TYPE_DEFAULT;
+        } else {
+            currDeviceType = callDefaultOutputDevices_.back().second;
+        }
+        AUDIO_INFO_LOG("changes from %{public}d to %{public}d because call stream %{public}u stops",
+            selectedCallDefaultOutputDevice_, currDeviceType, sessionID);
+        selectedCallDefaultOutputDevice_ = currDeviceType;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioDeviceManager::RemoveSelectedDefaultOutputDevice(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    selectedDefaultOutputDeviceInfo_.erase(sessionID);
+    return SUCCESS;
+}
+
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedMediaRenderDevice()
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    unique_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+    if (selectedMediaDefaultOutputDevice_ == DEVICE_TYPE_EARPIECE) {
+        devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
+    } else if (selectedMediaDefaultOutputDevice_ == DEVICE_TYPE_SPEAKER) {
+        devDesc = make_unique<AudioDeviceDescriptor>(speaker_);
+    }
+    return devDesc;
+}
+
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallRenderDevice()
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    unique_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+    if (selectedCallDefaultOutputDevice_ == DEVICE_TYPE_EARPIECE) {
+        devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
+    } else if (selectedCallDefaultOutputDevice_ == DEVICE_TYPE_SPEAKER) {
+        devDesc = make_unique<AudioDeviceDescriptor>(speaker_);
+    }
+    return devDesc;
 }
 // LCOV_EXCL_STOP
 }

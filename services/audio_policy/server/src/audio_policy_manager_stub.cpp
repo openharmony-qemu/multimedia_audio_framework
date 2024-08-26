@@ -161,6 +161,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "ACTIVATE_AUDIO_SESSION",
     "DEACTIVATE_AUDIO_SESSION",
     "IS_AUDIO_SESSION_ACTIVATED",
+    "SET_DEFAULT_OUTPUT_DEVICE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1261,6 +1262,16 @@ void AudioPolicyManagerStub::ReleaseAudioInterruptZoneInternal(MessageParcel &da
 {
     int32_t zoneID = data.ReadInt32();
     int32_t result = ReleaseAudioInterruptZone(zoneID);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    uint32_t sessionID = data.ReadUint32();
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    bool isRunning = data.ReadBool();
+    int32_t result = SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     reply.WriteInt32(result);
 }
 

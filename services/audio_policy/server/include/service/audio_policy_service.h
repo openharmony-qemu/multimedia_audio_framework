@@ -530,6 +530,9 @@ public:
 
     void SetRotationToEffect(const uint32_t rotate);
 
+    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -967,6 +970,8 @@ private:
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address);
+
+    void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
