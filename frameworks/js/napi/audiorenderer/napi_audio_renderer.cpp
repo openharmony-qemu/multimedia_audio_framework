@@ -103,6 +103,7 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("setSilentModeAndMixWithOthers", SetSilentModeAndMixWithOthers),
         DECLARE_NAPI_FUNCTION("getSilentModeAndMixWithOthers", GetSilentModeAndMixWithOthers),
+        DECLARE_NAPI_FUNCTION("setDefaultOutputDevice", SetDefaultOutputDevice),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_RENDERER_CLASS_NAME.c_str(),
@@ -1567,6 +1568,51 @@ napi_value NapiAudioRenderer::GetSilentModeAndMixWithOthers(napi_env env, napi_c
     bool on = napiAudioRenderer->audioRenderer_->GetSilentModeAndMixWithOthers();
     napi_get_boolean(env, on, &result);
     return result;
+}
+
+napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, "SetDefaultOutputDevice failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "mandatory parameters are left unspecified",
+            NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt32(env, context->deviceType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of mode must be number", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context,
+            NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(context->deviceType),
+            "parameter verification failed: The param of mode must be enum deviceType", NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto executor = [context, env]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRenderer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        DeviceType deviceType = static_cast<DeviceType>(context->deviceType);
+        context->intValue = napiAudioRenderer->audioRenderer_->SetDefaultOutputDevice(deviceType);
+        if (context->intValue != SUCCESS) {
+            NapiAudioError::ThrowError(env, NAPI_ERR_ILLEGAL_STATE);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetDefaultOutputDevice", executor, complete);
 }
 
 napi_value NapiAudioRenderer::RegisterCallback(napi_env env, napi_value jsThis,

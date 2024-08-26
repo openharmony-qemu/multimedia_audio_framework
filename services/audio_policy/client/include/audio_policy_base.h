@@ -328,6 +328,9 @@ public:
 
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
 
+    virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning);
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

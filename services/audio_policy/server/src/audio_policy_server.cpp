@@ -2905,5 +2905,11 @@ bool AudioPolicyServer::IsAudioSessionActivated()
     AUDIO_INFO_LOG("callerPid %{public}d, isSessionActive: %{public}d.", callerPid, isActive);
     return isActive;
 }
+
+bool AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    return audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1265,6 +1265,16 @@ void AudioPolicyManagerStub::ReleaseAudioInterruptZoneInternal(MessageParcel &da
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    uint32_t sessionID = data.ReadUint32();
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    bool isRunning = data.ReadBool();
+    int32_t result = SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    reply.WriteInt32(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {

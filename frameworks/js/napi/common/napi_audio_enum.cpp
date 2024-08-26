@@ -1198,6 +1198,22 @@ bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
     return result;
 }
 
+bool NapiAudioEnum::IsLegalInputArgumentOutputDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
 {
     int32_t result = MEDIA;

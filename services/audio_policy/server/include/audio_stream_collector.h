@@ -76,6 +76,7 @@ public:
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     StreamUsage GetLastestRunningCallStreamUsage();
+    std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;

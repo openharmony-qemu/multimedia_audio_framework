@@ -601,6 +601,13 @@ const std::unordered_map<std::string, StreamUsage> STREAM_USAGE_MAP = {
     {"STREAM_USAGE_VOICE_RINGTONE", STREAM_USAGE_VOICE_RINGTONE},
 };
 
+const std::vector<StreamUsage> AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES {
+    STREAM_USAGE_VOICE_COMMUNICATION,
+    STREAM_USAGE_VOICE_MESSAGE,
+    STREAM_USAGE_VIDEO_COMMUNICATION,
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+};
+
 struct BufferDesc {
     uint8_t *buffer;
     size_t bufLength;

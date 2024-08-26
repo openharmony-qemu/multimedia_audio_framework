@@ -201,6 +201,7 @@ class OHAudioRenderer {
         void SetInterruptMode(InterruptMode mode);
         void SetSilentModeAndMixWithOthers(bool on);
         bool GetSilentModeAndMixWithOthers();
+        void SetDefaultOutputDevice(DeviceType deviceType);
 
         void SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType);
         WriteDataCallbackType GetRendererCallbackType();
