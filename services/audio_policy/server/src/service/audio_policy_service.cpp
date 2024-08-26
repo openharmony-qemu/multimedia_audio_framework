@@ -4913,18 +4913,16 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         return ret; // only update tracker in new and prepared
     }
 
-    if (mode == AUDIO_MODE_PLAYBACK && rendererState == RENDERER_RUNNING) {
-        UpdateDefaultOutputDeviceWhenStarting(streamChangeInfo.audioRendererChangeInfo.sessionId);
-    } else if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED ||
-        rendererState == RENDERER_RELEASED || rendererState == RENDERER_PAUSED)) {
-        UpdateDefaultOutputDeviceWhenStopping(streamChangeInfo.audioRendererChangeInfo.sessionId);
-    }
-
     if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
         DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
     }
 
-    if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED)) {
+    if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED ||
+        rendererState == RENDERER_RELEASED)) {
+        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamChangeInfo.audioRendererChangeInfo.sessionId);
+        if (rendererState == RENDERER_RELEASED) {
+            audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
+        }
         FetchDevice(true);
     }
 
@@ -4960,6 +4958,8 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     rendererChangeInfo.push_back(
         make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
     streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfo[0]);
+
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     FetchOutputDevice(rendererChangeInfo, reason);
 }
@@ -8385,6 +8385,7 @@ void AudioPolicyService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
     std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllRendererSessionIDForUID(uid);
     for (const auto &sessionID : sessionIDSet) {
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
+        audioDeviceManager_.RemoveSelectedDefaultOutputDevice(sessionID);
     }
 }
 } // namespace AudioStandard
