@@ -62,8 +62,6 @@ int32_t AudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(AudioRender
 int32_t AudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
     std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-
     desc = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(captureInfo);
 
     return SUCCESS;

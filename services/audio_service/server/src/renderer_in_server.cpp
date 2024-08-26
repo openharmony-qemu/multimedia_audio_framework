@@ -557,6 +557,7 @@ int32_t RendererInServer::Start()
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
         return IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
     }
     needForceWrite_ = 0;
@@ -605,6 +606,11 @@ int32_t RendererInServer::Pause()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_PAUSING;
+    if (standByEnable_) {
+        AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
+        standByEnable_ = false;
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
+    }
     int ret = IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
@@ -722,6 +728,11 @@ int32_t RendererInServer::Stop()
             return ERR_ILLEGAL_STATE;
         }
         status_ = I_STATUS_STOPPING;
+    }
+    if (standByEnable_) {
+        AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
+        standByEnable_ = false;
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
     }
     {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
