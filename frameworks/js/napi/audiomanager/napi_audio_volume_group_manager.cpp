@@ -142,6 +142,14 @@ napi_value NapiAudioVolumeGroupManager::Init(napi_env env, napi_value exports)
 
 napi_value NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(napi_env env, int32_t groupId)
 {
+    // Check whether the group id is valid.
+    auto groupManager = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("Failed to get group manager!");
+        NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
     napi_status status;
     napi_value result = nullptr;
     napi_value constructor;
@@ -193,14 +201,17 @@ napi_value NapiAudioVolumeGroupManager::Construct(napi_env env, napi_callback_in
     AUDIO_INFO_LOG("Construct() %{public}d", groupId);
 
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, undefinedResult, "Failed in NapiAudioVolumeGroupManager::Construct()!");
+    auto groupManager = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("Failed to get group manager!");
+        NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
+        return undefinedResult;
+    }
+
     unique_ptr<NapiAudioVolumeGroupManager> napiAudioVolumeGroupManager = make_unique<NapiAudioVolumeGroupManager>();
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, undefinedResult, "groupmanagerNapi is nullptr");
 
-    napiAudioVolumeGroupManager->audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-    if (napiAudioVolumeGroupManager->audioGroupMngr_ == nullptr) {
-        AUDIO_ERR_LOG("Failed in NapiAudioVolumeGroupManager::Construct()!");
-        NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_SYSTEM;
-    }
+    napiAudioVolumeGroupManager->audioGroupMngr_ = groupManager;
     napiAudioVolumeGroupManager->cachedClientId_ = getpid();
     ObjectRefMap<NapiAudioVolumeGroupManager>::Insert(napiAudioVolumeGroupManager.get());
     status = napi_wrap(env, jsThis, static_cast<void*>(napiAudioVolumeGroupManager.get()),
