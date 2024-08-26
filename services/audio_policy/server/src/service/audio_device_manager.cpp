@@ -1035,7 +1035,7 @@ int32_t AudioDeviceManager::SetDefaultOutputDevice(const DeviceType deviceType, 
     const StreamUsage streamUsage, bool isRunning)
 {
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
-    selectedDefaultOutputDeviceInfo_[sessionID] = std::make_pair(streamUsage, deviceType);
+    selectedDefaultOutputDeviceInfo_[sessionID] = std::make_pair(deviceType, streamUsage);
     if (!isRunning) {
         AUDIO_INFO_LOG("no need to set default output device since current stream has not started");
         return SUCCESS;
@@ -1089,8 +1089,8 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStarting(const uint32_t
         AUDIO_DEBUG_LOG("no need to update default output device since current stream has not set");
         return SUCCESS;
     }
-    StreamUsage streamUsage = selectedDefaultOutputDeviceInfo_[sessionID].first;
-    DeviceType deviceType = selectedDefaultOutputDeviceInfo_[sessionID].second;
+    DeviceType deviceType = selectedDefaultOutputDeviceInfo_[sessionID].first;
+    StreamUsage streamUsage = selectedDefaultOutputDeviceInfo_[sessionID].second;
     if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
         // select media default output device
         auto it = std::find_if(mediaDefaultOutputDevices_.begin(), mediaDefaultOutputDevices_.end(),
@@ -1129,7 +1129,7 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStopping(const uint32_t
         AUDIO_DEBUG_LOG("no need to update default output device since current stream has not set");
         return SUCCESS;
     }
-    StreamUsage streamUsage = selectedDefaultOutputDeviceInfo_[sessionID].first;
+    StreamUsage streamUsage = selectedDefaultOutputDeviceInfo_[sessionID].second;
     if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
         // select media default output device
         auto it = std::find_if(mediaDefaultOutputDevices_.begin(), mediaDefaultOutputDevices_.end(),
@@ -1144,7 +1144,7 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStopping(const uint32_t
         if (mediaDefaultOutputDevices_.empty()) {
             currDeviceType = DEVICE_TYPE_DEFAULT;
         } else {
-            currDeviceType = mediaDefaultOutputDevices_.back();
+            currDeviceType = mediaDefaultOutputDevices_.back().second;
         }
         AUDIO_INFO_LOG("changes from %{public}d to %{public}d because media stream %{public}u stops",
             selectedMediaDefaultOutputDevice_, currDeviceType, sessionID);
@@ -1164,7 +1164,7 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStopping(const uint32_t
         if (callDefaultOutputDevices_.empty()) {
             currDeviceType = DEVICE_TYPE_DEFAULT;
         } else {
-            currDeviceType = callDefaultOutputDevices_.back();
+            currDeviceType = callDefaultOutputDevices_.back().second;
         }
         AUDIO_INFO_LOG("changes from %{public}d to %{public}d because call stream %{public}u stops",
             selectedCallDefaultOutputDevice_, currDeviceType, sessionID);

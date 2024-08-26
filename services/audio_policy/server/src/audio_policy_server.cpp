@@ -2906,7 +2906,7 @@ bool AudioPolicyServer::IsAudioSessionActivated()
     return isActive;
 }
 
-bool AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
     return audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);

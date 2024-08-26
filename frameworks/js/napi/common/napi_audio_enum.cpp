@@ -1198,7 +1198,7 @@ bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
     return result;
 }
 
-bool NapiAudioEnum::IsLegalInputArgumentOutputDeviceType(int32_t deviceType)
+bool NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType)
 {
     bool result = false;
     switch (deviceType) {

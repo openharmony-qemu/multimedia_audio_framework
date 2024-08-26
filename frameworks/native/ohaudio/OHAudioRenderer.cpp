@@ -338,7 +338,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetSilentModeAndMixWithOthers(
 }
 
 OH_AudioStream_Result OH_AudioRenderer_SetDefaultOutputDevice(
-    OH_AudioRenderer* renderer, DeviceType deviceType)
+    OH_AudioRenderer* renderer, OH_AudioDevice_Type deviceType)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
