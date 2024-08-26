@@ -2438,7 +2438,7 @@ int32_t AudioPolicyProxy::SetDefaultOutputDevice(const DeviceType deviceType, co
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(deviceType));
-    data.WriteUint32(sessionId);
+    data.WriteUint32(sessionID);
     data.WriteInt32(static_cast<int32_t>(streamUsage));
     data.WriteBool(isRunning);
 
