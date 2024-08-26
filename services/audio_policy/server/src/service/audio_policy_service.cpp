@@ -8387,6 +8387,7 @@ void AudioPolicyService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
         audioDeviceManager_.RemoveSelectedDefaultOutputDevice(sessionID);
     }
+    FetchDevice(true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
