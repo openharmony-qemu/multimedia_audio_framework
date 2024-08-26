@@ -66,7 +66,9 @@ static const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
 static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const unsigned int BUFFER_CALC_1000MS = 1000;
-static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_US = 5000000; // 5s
+static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
+static const int64_t WAIT_OFFLOAD_SET_VOLUME_TIME_US = 40000; // 40ms
+static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -2086,11 +2088,28 @@ std::string AudioPolicyService::GetSinkName(const AudioDeviceDescriptor &desc, i
     }
 }
 
+void AudioPolicyService::SetVoiceCallMuteForSwitchDevice()
+{
+    Trace trace("SetVoiceMuteForSwitchDevice");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    g_adProxy->SetVoiceVolume(0);
+    IPCSkeleton::SetCallingIdentity(identity);
+
+    AUDIO_INFO_LOG("%{public}" PRId64" us for modem call update route", WAIT_MODEM_CALL_SET_VOLUME_TIME_US);
+    usleep(WAIT_MODEM_CALL_SET_VOLUME_TIME_US);
+    // Unmute in SetVolumeForSwitchDevice after update route.
+}
+
 void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (outputDevices.size() != 1) return;
     if (outputDevices.front()->isSameDevice(rendererChangeInfo->outputDeviceInfo)) return;
+
+    if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
+        return SetVoiceCallMuteForSwitchDevice();
+    }
 
     std::string oldSinkName = GetSinkName(rendererChangeInfo->outputDeviceInfo, rendererChangeInfo->sessionId);
     std::string newSinkName = GetSinkName(*outputDevices.front(), rendererChangeInfo->sessionId);
@@ -2134,12 +2153,13 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
             rendererChangeInfo->sessionId, outputDevices.front()->deviceType_);
         return;
     }
-    std::string newSinkName = GetSinkName(*outputDevices.front(), rendererChangeInfo->sessionId);
-    SetVolumeForSwitchDevice(outputDevices.front()->deviceType_, newSinkName);
 
     if (isUpdateRouteSupported_ && outputDevices.front()->networkId_ == LOCAL_NETWORK_ID) {
         UpdateRoute(rendererChangeInfo, outputDevices);
     }
+
+    std::string newSinkName = GetSinkName(*outputDevices.front(), rendererChangeInfo->sessionId);
+    SetVolumeForSwitchDevice(outputDevices.front()->deviceType_, newSinkName);
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
@@ -2279,6 +2299,7 @@ void AudioPolicyService::MuteSinkPort(const std::string &portName, int32_t durat
     } else if (portName == OFFLOAD_PRIMARY_SPEAKER) {
         // Mute offload sink.
         g_adProxy->SetSinkMuteForSwitchDevice(OFFLOAD_CLASS, duration, true);
+        usleep(WAIT_OFFLOAD_SET_VOLUME_TIME_US);
     } else {
         // Mute by pa.
         audioPolicyManager_.SetSinkMute(portName, true, isSync);
@@ -3250,7 +3271,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
         }
 #endif
     }
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 
@@ -4420,7 +4441,8 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
         return;
     }
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-
+    AUDIO_INFO_LOG("bt select device type[%{public}d] address[%{public}s]",
+        devType, GetEncryptAddr(macAddress).c_str());
     std::vector<unique_ptr<AudioDeviceDescriptor>> bluetoothDevices =
         audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
@@ -5945,7 +5967,7 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
     if (!isPrimaryMicModuleInfoLoaded_.load()) {
         std::unique_lock<std::mutex> lock(defaultDeviceLoadMutex_);
         bool loadWaiting = loadDefaultDeviceCV_.wait_for(lock,
-            std::chrono::milliseconds(WAIT_LOAD_DEFAULT_DEVICE_TIME_US),
+            std::chrono::milliseconds(WAIT_LOAD_DEFAULT_DEVICE_TIME_MS),
             [this] { return isPrimaryMicModuleInfoLoaded_.load(); }
         );
         if (!loadWaiting) {
@@ -7341,7 +7363,7 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
         }
 #endif
     }
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 

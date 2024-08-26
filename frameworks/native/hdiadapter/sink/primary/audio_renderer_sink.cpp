@@ -854,7 +854,7 @@ int32_t AudioRendererSinkInner::SetVoiceVolume(float volume)
     Trace trace("AudioRendererSinkInner::SetVoiceVolume");
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "SetVoiceVolume failed, audioAdapter_ is null");
-    AUDIO_DEBUG_LOG("SetVoiceVolume %{public}f", volume);
+    AUDIO_INFO_LOG("Set modem call volume %{public}f", volume);
     return audioAdapter_->SetVoiceVolume(audioAdapter_, volume);
 }
 
