@@ -324,8 +324,6 @@ public:
 
     virtual int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) = 0;
 
-    virtual int32_t ResetRingerModeMute() = 0;
-
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
 
 public:

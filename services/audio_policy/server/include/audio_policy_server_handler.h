@@ -222,6 +222,8 @@ private:
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
+    void ResetRingerModeMute(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+
     std::mutex runnerMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;

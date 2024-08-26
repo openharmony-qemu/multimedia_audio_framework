@@ -235,13 +235,6 @@ int32_t AudioPolicyManager::SetAudioScene(AudioScene scene)
     return gsp->SetAudioScene(scene);
 }
 
-int32_t AudioPolicyManager::ResetRingerModeMute()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->ResetRingerModeMute();
-}
-
 int32_t AudioPolicyManager::SetMicrophoneMute(bool isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

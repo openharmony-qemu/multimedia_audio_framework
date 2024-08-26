@@ -253,8 +253,6 @@ private:
     bool IsHighResolution() const noexcept;
 
     void ProcessWriteInner(BufferDesc &bufferDesc);
-
-    void ResetRingerModeMute();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
