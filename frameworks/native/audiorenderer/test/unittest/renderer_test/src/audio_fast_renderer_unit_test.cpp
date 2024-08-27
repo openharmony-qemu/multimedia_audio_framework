@@ -543,6 +543,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
         // count > 1 ensure sleeped
         return count > 1;
     });
+    lock.unlock();
 
     // Verify that the callback is invoked at least once
     EXPECT_GE(cb->GetExeCount(), 1);
