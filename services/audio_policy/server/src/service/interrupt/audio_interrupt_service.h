@@ -168,7 +168,7 @@ private:
     void DeactivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isSessionTimeout = false);
     void SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
-        std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
+        std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     void UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
