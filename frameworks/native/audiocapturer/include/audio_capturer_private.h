@@ -17,6 +17,7 @@
 #define AUDIO_CAPTURER_PRIVATE_H
 
 #include <mutex>
+#include <shared_mutex>
 #include "audio_utils.h"
 #include "audio_concurrency_callback.h"
 #include "audio_interrupt_callback.h"
@@ -135,7 +136,7 @@ private:
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
-    mutable std::mutex switchStreamMutex_;
+    mutable std::shared_mutex switchStreamMutex_;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     AppInfo appInfo_ = {};
@@ -153,9 +154,12 @@ private:
     DeviceInfo currentDeviceInfo_ = {};
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    mutable std::mutex signalDetectAgentMutex_;
     FILE *dumpFile_ = nullptr;
     AudioCaptureMode audioCaptureMode_ = CAPTURE_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
+    std::mutex setCapturerCbMutex_;
+    std::mutex setParamsMutex_;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

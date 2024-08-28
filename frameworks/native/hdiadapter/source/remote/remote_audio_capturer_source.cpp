@@ -120,7 +120,11 @@ private:
     std::atomic<bool> paused_ = false;
 
     std::shared_ptr<IAudioDeviceManager> audioManager_ = nullptr;
+    std::mutex audioMangerMutex_;
+
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
+    std::mutex audioAdapterMutex_;
+
     IAudioSourceCallback *paramCb_ = nullptr;
     sptr<IAudioCapture> audioCapture_ = nullptr;
     struct AudioPort audioPort_ = {};
@@ -176,17 +180,31 @@ void RemoteAudioCapturerSourceInner::ClearCapture()
     started_.store(false);
     paused_.store(false);
 
-    if (audioAdapter_ != nullptr) {
-        audioAdapter_->DestroyCapture(audioCapture_, captureId_);
-        audioAdapter_->Release();
+    std::shared_ptr<IAudioDeviceAdapter> audioAdapter;
+    {
+        std::lock_guard<std::mutex> lock(audioAdapterMutex_);
+        audioAdapter = std::move(audioAdapter_);
+        audioAdapter_ = nullptr;
+    }
+
+    if (audioAdapter != nullptr) {
+        audioAdapter->DestroyCapture(audioCapture_, captureId_);
+        audioAdapter->Release();
     }
     audioCapture_ = nullptr;
-    audioAdapter_ = nullptr;
+    audioAdapter = nullptr;
 
-    if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(deviceNetworkId_);
+    std::shared_ptr<IAudioDeviceManager> audioManager;
+    {
+        std::lock_guard<std::mutex> lock(audioMangerMutex_);
+        audioManager = std::move(audioManager_);
+        audioManager_ = nullptr;
     }
-    audioManager_ = nullptr;
+
+    if (audioManager != nullptr) {
+        audioManager->UnloadAdapter(deviceNetworkId_);
+    }
+    audioManager = nullptr;
 
     AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
     DumpFileUtil::CloseDumpFile(&dumpFile_);
@@ -219,10 +237,16 @@ int32_t RemoteAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Init");
     attr_ = attr;
-    audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
-    CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
 
-    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(deviceNetworkId_, false);
+    auto audioManager = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
+    CHECK_AND_RETURN_RET_LOG(audioManager != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
+
+    {
+        std::lock_guard<std::mutex> lock(audioMangerMutex_);
+        audioManager_ = audioManager;
+    }
+
+    struct AudioAdapterDescriptor *desc = audioManager->GetTargetAdapterDesc(deviceNetworkId_, false);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
     for (uint32_t port = 0; port < desc->ports.size(); port++) {
         if (desc->ports[port].portId == AudioPortPin::PIN_IN_MIC) {
@@ -233,10 +257,15 @@ int32_t RemoteAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
             "Not found the audio mic port.");
     }
 
-    audioAdapter_ = audioManager_->LoadAdapters(deviceNetworkId_, false);
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
+    auto audioAdapter = audioManager->LoadAdapters(deviceNetworkId_, false);
+    CHECK_AND_RETURN_RET_LOG(audioAdapter != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
 
-    int32_t ret = audioAdapter_->Init();
+    {
+        std::lock_guard<std::mutex> lock(audioAdapterMutex_);
+        audioAdapter_ = audioAdapter;
+    }
+
+    int32_t ret = audioAdapter->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{public}d.", ret);
 
     capturerInited_.store(true);
@@ -300,8 +329,14 @@ int32_t RemoteAudioCapturerSourceInner::CreateCapture(const struct AudioPort &ca
     deviceDesc.pins = AudioPortPin::PIN_IN_MIC;
     deviceDesc.desc = "";
 
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateCapture: Audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateCapture(deviceDesc, param, audioCapture_, this, captureId_);
+    std::shared_ptr<IAudioDeviceAdapter> audioAdapter;
+    {
+        std::lock_guard<std::mutex> lock(audioAdapterMutex_);
+        audioAdapter = audioAdapter_;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioAdapter != nullptr, ERR_INVALID_HANDLE, "CreateCapture: Audio adapter is null.");
+    int32_t ret = audioAdapter->CreateCapture(deviceDesc, param, audioCapture_, this, captureId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioCapture_ != nullptr, ret,
         "Create capture failed, ret %{public}d.", ret);
 
@@ -565,8 +600,14 @@ int32_t RemoteAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
     route.sources.push_back(source);
     route.sinks.push_back(sink);
 
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetInputRoute: Audio adapter is null.");
-    ret = audioAdapter_->UpdateAudioRoute(route);
+    std::shared_ptr<IAudioDeviceAdapter> audioAdapter;
+    {
+        std::lock_guard<std::mutex> lock(audioAdapterMutex_);
+        audioAdapter = audioAdapter_;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioAdapter != nullptr, ERR_INVALID_HANDLE, "SetInputRoute: Audio adapter is null.");
+    ret = audioAdapter->UpdateAudioRoute(route);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Update audio route fail, ret %{public}d", ret);
     return SUCCESS;
 }
@@ -650,8 +691,13 @@ void RemoteAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallb
     paramCb_ = callback;
 
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "RegisterParameterCallback: Audio adapter is null.");
-    int32_t ret = audioAdapter_->RegExtraParamObserver();
+    std::shared_ptr<IAudioDeviceAdapter> audioAdapter;
+    {
+        std::lock_guard<std::mutex> lock(audioAdapterMutex_);
+        audioAdapter = audioAdapter_;
+    }
+    CHECK_AND_RETURN_LOG(audioAdapter != nullptr, "RegisterParameterCallback: Audio adapter is null.");
+    int32_t ret = audioAdapter->RegExtraParamObserver();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterParameterCallback failed, ret %{public}d.", ret);
 #endif
 }
