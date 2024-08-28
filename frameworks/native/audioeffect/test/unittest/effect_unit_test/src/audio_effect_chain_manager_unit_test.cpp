@@ -486,32 +486,6 @@ HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_003, TestSize.Level1
 }
 
 /**
-* @tc.name   : Test GetDeviceSinkName API
-* @tc.number : GetDeviceSinkName_001
-* @tc.desc   : Test GetDeviceSinkName interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, GetDeviceSinkName_001, TestSize.Level1)
-{
-    string result = AudioEffectChainManager::GetInstance()->GetDeviceSinkName();
-
-    EXPECT_EQ(true, result != "");
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test GetOffloadEnabled API
-* @tc.number : GetOffloadEnabled_001
-* @tc.desc   : Test GetOffloadEnabled interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, GetOffloadEnabled_001, TestSize.Level1)
-{
-    bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
-
-    EXPECT_EQ(false, result);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
 * @tc.name   : Test Dump API
 * @tc.number : Dump_001
 * @tc.desc   : Test Dump interface.

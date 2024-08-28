@@ -200,21 +200,6 @@ std::string AudioEffectChainManager::GetDeviceTypeName()
     return name;
 }
 
-void AudioEffectChainManager::UpdateSpkOffloadEnabled()
-{
-    if (debugArmFlag_ && spkOffloadEnabled_) {
-        std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-        RecoverAllChains();
-        spkOffloadEnabled_ = false;
-        return;
-    }
-}
-
-std::string AudioEffectChainManager::GetDeviceSinkName()
-{
-    return deviceSink_;
-}
-
 bool AudioEffectChainManager::GetOffloadEnabled()
 {
     if (deviceType_ == DEVICE_TYPE_SPEAKER) {
@@ -743,7 +728,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
 {
     AUDIO_INFO_LOG("UpdateSpatializationState entered, current state: %{public}d and %{public}d, previous state: \
         %{public}d and %{public}d", spatializationState.spatializationEnabled, spatializationState.headTrackingEnabled,
-        spatializationEnabled_, headTrackingEnabled_);
+        spatializationEnabled_.load(), headTrackingEnabled_);
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (spatializationEnabled_ != spatializationState.spatializationEnabled) {
         UpdateSpatializationEnabled(spatializationState);

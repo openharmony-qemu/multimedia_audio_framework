@@ -16,6 +16,8 @@
 #ifndef AUDIO_EFFECT_CHAIN_H
 #define AUDIO_EFFECT_CHAIN_H
 
+#include <atomic>
+
 #include "audio_effect.h"
 #include "audio_utils.h"
 
@@ -43,7 +45,6 @@ public:
     AudioEffectChain(std::string scene);
 #endif
     ~AudioEffectChain();
-    std::string GetEffectMode();
     void SetEffectMode(const std::string &mode);
     void SetExtraSceneType(const std::string &extraSceneType);
     void SetEffectCurrSceneType(AudioEffectScene currSceneType);
