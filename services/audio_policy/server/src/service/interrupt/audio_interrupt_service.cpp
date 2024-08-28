@@ -1064,7 +1064,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
             itZone->second->audioFocusInfoList.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
             zonesMap_[zoneId] = itZone->second;
         }
-        if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pid)) {   
+        if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pid)) {
             std::shared_ptr<AudioSession> session = sessionService_->GetAudioSessionByPid(pid);
             if (session != nullptr) {
                 sessionService_->GetAudioSessionByPid(pid)->AddAudioInterrpt(std::make_pair(audioInterrupt, ACTIVE));
