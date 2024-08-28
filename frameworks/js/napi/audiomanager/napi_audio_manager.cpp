@@ -1393,6 +1393,10 @@ template<typename T> void NapiAudioManager::UnregisterInterruptCallback(napi_env
 void NapiAudioManager::UnregisterDeviceChangeCallback(napi_env env, napi_value callback,
     NapiAudioManager *audioMgrNapi)
 {
+    if (audioMgrNapi == nullptr) {
+        AUDIO_ERR_LOG("audioMgrNapi is nullptr");
+        return;
+    }
     CHECK_AND_RETURN_LOG(audioMgrNapi->deviceChangeCallbackNapi_ != nullptr,
         "UnregisterDeviceChangeCallback: audio manager deviceChangeCallbackNapi_ is null");
     std::shared_ptr<NapiAudioManagerCallback> cb =

@@ -217,6 +217,10 @@ napi_value NapiAudioSessionMgr::IsAudioSessionActivated(napi_env env, napi_callb
     auto obj = reinterpret_cast<NapiAudioSessionMgr*>(context->native);
     ObjectRefMap objectGuard(obj);
     auto *napiSessionMgr = objectGuard.GetPtr();
+    if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
+        return nullptr;
+    }
     context->isActive = napiSessionMgr->audioSessionMngr_->IsAudioSessionActivated();
     NapiParamUtils::SetValueBoolean(env, context->isActive, result);
     return result;

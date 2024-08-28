@@ -392,6 +392,7 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
         AUDIO_WARNING_LOG("self is null!");
     }
     auto *impl = reinterpret_cast<struct AudioCallbackService *>(self);
+    CHECK_AND_RETURN_RET_LOG(impl != nullptr, ERROR, "The impl is null");
     if (!impl->registered || impl->cookie == nullptr || impl->renderCallback == nullptr) {
         AUDIO_ERR_LOG("impl invalid, %{public}d, %{public}d, %{public}d",
             impl->registered, impl->cookie == nullptr, impl->renderCallback == nullptr);
@@ -595,6 +596,10 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     uint32_t size = MAX_AUDIO_ADAPTER_NUM;
     int32_t ret;
     AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
+    if (audioManager_ == nullptr) {
+        AUDIO_ERR_LOG("The audioManager is null!");
+        return ERROR;
+    }
     ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
     CHECK_AND_RETURN_RET_LOG(size <= MAX_AUDIO_ADAPTER_NUM && size != 0 && ret == 0, ERR_NOT_STARTED,
         "Get adapters Fail.");
