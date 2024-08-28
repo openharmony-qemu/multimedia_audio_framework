@@ -14,7 +14,7 @@
  */
 #ifndef ST_AUDIO_CONCURRENCY_SERVICE_H
 #define ST_AUDIO_CONCURRENCY_SERVICE_H
-#include<mutex>
+#include <mutex>
 
 #include "iremote_object.h"
 

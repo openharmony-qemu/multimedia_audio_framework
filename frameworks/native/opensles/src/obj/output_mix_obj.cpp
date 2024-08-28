@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include<common.h>
+#include <common.h>
 
 SLresult OutputMixDestroy(void *self)
 {
