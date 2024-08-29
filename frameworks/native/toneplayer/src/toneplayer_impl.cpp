@@ -442,6 +442,8 @@ bool TonePlayerImpl::InitAudioRenderer()
         AUDIO_INFO_LOG("Init renderer with buffer %{public}zu, duration %{public}zu", targetSize, bufferDuration);
     }
 
+    audioRenderer_->SetAudioEffectMode(EFFECT_NONE);
+
     int32_t setRendererWrite = audioRenderer_->SetRendererWriteCallback(shared_from_this());
     CHECK_AND_RETURN_RET_LOG(!setRendererWrite, false, "SetRendererWriteCallback failed");
     AUDIO_DEBUG_LOG("SetRendererWriteCallback Sucessful");
