@@ -1590,7 +1590,8 @@ napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback
     };
     context->GetCbInfo(env, info, inputParser);
 
-    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID ||
+        context->errCode == NAPI_ERR_INVALID_PARAM)) {
         NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
         return NapiParamUtils::GetUndefinedValue(env);
     }
