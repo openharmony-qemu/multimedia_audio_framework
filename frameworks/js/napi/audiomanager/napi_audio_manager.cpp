@@ -743,7 +743,11 @@ napi_value NapiAudioManager::GetAudioScene(napi_env env, napi_callback_info info
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
-        context->intValue = napiAudioManager->audioMngr_->GetAudioScene();
+        AudioScene audioScene = napiAudioManager->audioMngr_->GetAudioScene();
+        if (audioScene == AUDIO_SCENE_VOICE_RINGING) {
+            audioScene = AUDIO_SCENE_RINGING;
+        }
+        context->intValue = audioScene;
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -765,6 +769,9 @@ napi_value NapiAudioManager::GetAudioSceneSync(napi_env env, napi_callback_info 
     CHECK_AND_RETURN_RET_LOG(napiAudioManager != nullptr, result, "napiAudioManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioManager->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     AudioScene audioScene = napiAudioManager->audioMngr_->GetAudioScene();
+    if (audioScene == AUDIO_SCENE_VOICE_RINGING) {
+        audioScene = AUDIO_SCENE_RINGING;
+    }
     NapiParamUtils::SetValueInt32(env, audioScene, result);
     return result;
 }
@@ -1386,6 +1393,10 @@ template<typename T> void NapiAudioManager::UnregisterInterruptCallback(napi_env
 void NapiAudioManager::UnregisterDeviceChangeCallback(napi_env env, napi_value callback,
     NapiAudioManager *audioMgrNapi)
 {
+    if (audioMgrNapi == nullptr) {
+        AUDIO_ERR_LOG("audioMgrNapi is nullptr");
+        return;
+    }
     CHECK_AND_RETURN_LOG(audioMgrNapi->deviceChangeCallbackNapi_ != nullptr,
         "UnregisterDeviceChangeCallback: audio manager deviceChangeCallbackNapi_ is null");
     std::shared_ptr<NapiAudioManagerCallback> cb =

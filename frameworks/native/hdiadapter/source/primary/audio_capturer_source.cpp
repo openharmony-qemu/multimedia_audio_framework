@@ -104,6 +104,7 @@ private:
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitManagerAndAdapter();
     int32_t InitAdapterAndCapture();
+
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
@@ -153,6 +154,8 @@ private:
     bool latencyMeasEnabled_ = false;
     bool signalDetected_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    std::mutex signalDetectAgentMutex_;
+
     std::mutex managerAndAdapterMutex_;
 };
 
@@ -1181,6 +1184,8 @@ std::string AudioCapturerSourceInner::GetAudioParameter(const AudioParamKey key,
 
 void AudioCapturerSourceInner::InitLatencyMeasurement()
 {
+    std::lock_guard<std::mutex> lock(signalDetectAgentMutex_);
+
     if (!AudioLatencyMeasurement::CheckIfEnabled()) {
         return;
     }
@@ -1193,12 +1198,15 @@ void AudioCapturerSourceInner::InitLatencyMeasurement()
 
 void AudioCapturerSourceInner::DeinitLatencyMeasurement()
 {
+    std::lock_guard<std::mutex> lock(signalDetectAgentMutex_);
+
     signalDetected_ = false;
     signalDetectAgent_ = nullptr;
 }
 
 void AudioCapturerSourceInner::CheckLatencySignal(uint8_t *frame, size_t replyBytes)
 {
+    std::lock_guard<std::mutex> lock(signalDetectAgentMutex_);
     if (!latencyMeasEnabled_) {
         return;
     }

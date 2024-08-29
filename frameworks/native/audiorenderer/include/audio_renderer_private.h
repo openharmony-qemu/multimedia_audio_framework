@@ -127,6 +127,7 @@ public:
     bool GetSilentModeAndMixWithOthers() override;
 
     void EnableVoiceModemCommunicationStartStream(bool enable) override;
+    int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
@@ -184,6 +185,7 @@ private:
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
     FILE *dumpFile_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
+    std::mutex audioRendererErrCallbackMutex_;
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
@@ -196,12 +198,17 @@ private:
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;
     bool isEnableVoiceModemCommunicationStartStream_ = false;
+    DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
 
     float speed_ = 1.0;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
+    std::mutex policyServiceDiedCallbackMutex_;
 
     std::vector<uint32_t> usedSessionId_ = {};
+
+    std::mutex setStreamCallbackMutex_;
+    std::mutex setParamsMutex_;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

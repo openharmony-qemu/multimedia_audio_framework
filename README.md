@@ -104,7 +104,7 @@ The preceding steps describe the basic development scenario of audio playback.
 
 11. Call **SetVolume(float)** and **GetVolume()** to set and obtain the audio stream volume, which ranges from 0.0 to 1.0.
 
-For details, see [**audio_renderer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiorenderer/include/audio_renderer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
+For details, see [**audio_renderer.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiorenderer/include/audio_renderer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiocommon/include/audio_info.h).
 
 ### Audio Recording
 
@@ -158,10 +158,10 @@ You can use the APIs provided in the current repository to record audio via an i
 9.  Call **Stop()** to stop recording.
 10. After the recording task is complete, call **Release()** to release resources.
 
-For details, see [**audio_capturer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocapturer/include/audio_capturer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
+For details, see [**audio_capturer.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiocapturer/include/audio_capturer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiocommon/include/audio_info.h).
 
 ### Audio Management
-You can use the APIs provided in the [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) to control the volume and devices.
+You can use the APIs provided in the [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) to control the volume and devices.
 1. Call **GetInstance()** to obtain an **AudioSystemManager** instance.
     ```
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -183,7 +183,7 @@ You can use the APIs provided in the [**audio_system_manager.h**](https://gitee.
     int32_t result = audioSystemMgr->SetMute(streamType, true);
     bool isMute = audioSystemMgr->IsStreamMute(streamType);
     ```
-5. Call **SetRingerMode()** and **GetRingerMode()** to set and obtain the ringer mode, respectively. The supported ringer modes are the enumerated values of **AudioRingerMode** defined in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
+5. Call **SetRingerMode()** and **GetRingerMode()** to set and obtain the ringer mode, respectively. The supported ringer modes are the enumerated values of **AudioRingerMode** defined in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiocommon/include/audio_info.h).
     ```
     int32_t result = audioSystemMgr->SetRingerMode(RINGER_MODE_SILENT);
     AudioRingerMode ringMode = audioSystemMgr->GetRingerMode();
@@ -194,7 +194,7 @@ You can use the APIs provided in the [**audio_system_manager.h**](https://gitee.
     bool isMicMute = audioSystemMgr->IsMicrophoneMute();
     ```
 #### Device Control
-7. Call **GetDevices**, **deviceType_**, and **deviceRole_** to obtain information about the audio input and output devices. For details, see the enumerated values of **DeviceFlag**, **DeviceType**, and **DeviceRole** defined in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
+7. Call **GetDevices**, **deviceType_**, and **deviceRole_** to obtain information about the audio input and output devices. For details, see the enumerated values of **DeviceFlag**, **DeviceType**, and **DeviceRole** defined in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiocommon/include/audio_info.h).
     ```
     DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
     vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors
@@ -209,7 +209,7 @@ You can use the APIs provided in the [**audio_system_manager.h**](https://gitee.
     int32_t result = audioSystemMgr->SetDeviceActive(deviceType, true);
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
-9. (Optional) Call other APIs, such as **IsStreamActive()**, **SetAudioParameter()**, and **GetAudioParameter()**, provided in [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) if required.
+9. (Optional) Call other APIs, such as **IsStreamActive()**, **SetAudioParameter()**, and **GetAudioParameter()**, provided in [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) if required.
 10. Call **AudioManagerNapi::On** to subscribe to system volume changes. If a system volume change occurs, the following parameters are used to notify the application:
 **volumeType**: type of the system volume changed.
 **volume**: current volume level.
@@ -234,9 +234,9 @@ You can use the APIs provided in the [**audio_system_manager.h**](https://gitee.
     int32_t result = audioSystemMgr->SetAudioScene(AUDIO_SCENE_PHONE_CALL);
     AudioScene audioScene = audioSystemMgr->GetAudioScene();
     ```
-For details about the supported audio scenes, see the enumerated values of **AudioScene** defined in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
+For details about the supported audio scenes, see the enumerated values of **AudioScene** defined in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiocommon/include/audio_info.h).
 #### Audio Stream Management
-You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_stream_manager.h) to implement stream management.
+You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiomanager/include/audio_stream_manager.h) to implement stream management.
 1. Call **GetInstance()** to obtain an **AudioSystemManager** instance.
     ```
     AudioStreamManager *audioStreamMgr = AudioStreamManager::GetInstance();
@@ -292,7 +292,7 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
     std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t currentCapturerChangeInfo = audioStreamMgr->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     ```
-    For details, see **audioRendererChangeInfos** and **audioCapturerChangeInfos** in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
+    For details, see **audioRendererChangeInfos** and **audioCapturerChangeInfos** in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/interfaces/inner_api/native/audiocommon/include/audio_info.h).
 
 6. Call **IsAudioRendererLowLatencySupported()** to check whether low latency is supported.
     ```
@@ -301,10 +301,10 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
     ```
 #### Using JavaScript APIs
 JavaScript applications can call the audio management APIs to control the volume and devices.  
-For details, see [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/reference/apis/js-apis-audio.md#audiomanager).
+For details, see [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/OpenHarmony-5.0-Release/en/application-dev/reference/apis-audio-kit/js-apis-audio.md#audiomanager).
 
 ### Bluetooth SCO Call
-You can use the APIs provided in [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/services/include/audio_bluetooth/client/audio_bluetooth_manager.h) to implement Bluetooth calls over synchronous connection-oriented (SCO) links.
+You can use the APIs provided in [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/OpenHarmony-5.0-Release/frameworks/native/bluetoothclient/audio_bluetooth_manager.h) to implement Bluetooth calls over synchronous connection-oriented (SCO) links.
 
 1. Call **OnScoStateChanged()** to listen for SCO link state changes.
     ```

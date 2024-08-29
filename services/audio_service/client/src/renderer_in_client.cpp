@@ -77,7 +77,7 @@ const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const uint64_t MAX_CBBUF_IN_USEC = 100000;
 const uint64_t MIN_CBBUF_IN_USEC = 20000;
-const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
+const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
@@ -1293,7 +1293,6 @@ bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
-    ResetRingerModeMute();
     if (!offloadEnable_) {
         DrainAudioStream(true);
     }
@@ -1660,6 +1659,10 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         "invalid size is %{public}zu", bufferSize);
     Trace::CountVolume(traceTag_, *buffer);
     CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
+    if (clientBuffer_->GetStreamStatus() == nullptr) {
+        AUDIO_ERR_LOG("The stream status is null!");
+        return ERR_INVALID_PARAM;
+    }
     if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
         Trace trace2(traceTag_+ " call start to exit stand-by");
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
@@ -2294,14 +2297,6 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
-}
-
-void RendererInClientInner::ResetRingerModeMute()
-{
-    if (Util::IsDualToneStreamType(eStreamType_)) {
-        AUDIO_INFO_LOG("reset ringer tone mode, stream type %{public}d", eStreamType_);
-        AudioPolicyManager::GetInstance().ResetRingerModeMute();
-    }
 }
 
 RendererInClientPolicyServiceDiedCallbackImpl::RendererInClientPolicyServiceDiedCallbackImpl()

@@ -324,9 +324,10 @@ public:
 
     virtual int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) = 0;
 
-    virtual int32_t ResetRingerModeMute() = 0;
-
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

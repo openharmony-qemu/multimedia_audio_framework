@@ -184,6 +184,8 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released");
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
+    CHECK_AND_RETURN_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+        "stream status is nullptr");
     switch (operation) {
         case OPERATION_STARTED:
             if (standByEnable_) {
@@ -213,14 +215,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             break;
         case OPERATION_DRAINED:
-            // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
-            // Stop will be completed first. After a period of time, when Drain's callback goes here,
-            // state of server should not be changed to STARTED while the client state is Stopped.
-            if (status_ == I_STATUS_DRAINING) {
-                status_ = I_STATUS_STARTED;
-                stateListener->OnOperationHandled(DRAIN_STREAM, 0);
-            }
-            afterDrain = true;
+            OnStatusUpdateExt(operation, stateListener);
             break;
         case OPERATION_RELEASED:
             stateListener->OnOperationHandled(RELEASE_STREAM, 0);
@@ -229,6 +224,18 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         default:
             OnStatusUpdateSub(operation);
     }
+}
+
+void RendererInServer::OnStatusUpdateExt(IOperation operation, std::shared_ptr<IStreamListener> stateListener)
+{
+    // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
+    // Stop will be completed first. After a period of time, when Drain's callback goes here,
+    // state of server should not be changed to STARTED while the client state is Stopped.
+    if (status_ == I_STATUS_DRAINING) {
+        status_ = I_STATUS_STARTED;
+        stateListener->OnOperationHandled(DRAIN_STREAM, 0);
+    }
+    afterDrain = true;
 }
 
 void RendererInServer::OnStatusUpdateSub(IOperation operation)
@@ -426,6 +433,10 @@ int32_t RendererInServer::WriteData()
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
 
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
+        if (bufferDesc.buffer == nullptr) {
+            AUDIO_ERR_LOG("The buffer is null!");
+            return ERR_INVALID_PARAM;
+        }
         VolumeHandle(bufferDesc);
         if (processConfig_.streamType != STREAM_ULTRASONIC) {
             if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
@@ -557,6 +568,7 @@ int32_t RendererInServer::Start()
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
         return IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
     }
     needForceWrite_ = 0;
@@ -605,6 +617,11 @@ int32_t RendererInServer::Pause()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_PAUSING;
+    if (standByEnable_) {
+        AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
+        standByEnable_ = false;
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
+    }
     int ret = IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
@@ -722,6 +739,11 @@ int32_t RendererInServer::Stop()
             return ERR_ILLEGAL_STATE;
         }
         status_ = I_STATUS_STOPPING;
+    }
+    if (standByEnable_) {
+        AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
+        standByEnable_ = false;
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
     }
     {
         std::lock_guard<std::mutex> lock(fadeoutLock_);

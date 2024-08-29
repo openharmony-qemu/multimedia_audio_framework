@@ -176,6 +176,55 @@ typedef enum {
 } OH_AudioDevice_Flag;
 
 /**
+ * @brief Defines the audio device usage.
+ *
+ * @since 12
+ */
+typedef enum {
+    /**
+     * @brief Device used for media ouput.
+     *
+     * @since 12
+     */
+    AUDIO_DEVICE_USAGE_MEDIA_OUTPUT = 1,
+
+    /**
+     * @brief Device used for media input.
+     *
+     * @since 12
+     */
+    AUDIO_DEVICE_USAGE_MEDIA_INPUT = 2,
+
+    /**
+     * @brief Device used for media, including input and output.
+     *
+     * @since 12
+     */
+    AUDIO_DEVICE_USAGE_MEDIA_ALL = 3,
+
+    /**
+     * @brief Device used for call output.
+     *
+     * @since 12
+     */
+    AUDIO_DEVICE_USAGE_CALL_OUTPUT = 4,
+
+    /**
+     * @brief Device used for call input.
+     *
+     * @since 12
+     */
+    AUDIO_DEVICE_USAGE_CALL_INPUT = 8,
+
+    /**
+     * @brief Device used for call, including input and output.
+     *
+     * @since 12
+     */
+    AUDIO_DEVICE_USAGE_CALL_ALL = 12,
+} OH_AudioDevice_Usage;
+
+/**
  * @brief Declaring the audio device descriptor.
  * The instance is used to get more audio device detail attributes.
  *

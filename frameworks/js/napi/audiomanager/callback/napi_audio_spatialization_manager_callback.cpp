@@ -41,7 +41,7 @@ NapiAudioSpatializationEnabledChangeCallback::~NapiAudioSpatializationEnabledCha
 }
 
 void NapiAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledChangeCallbackReference(napi_value args,
-    const std::string cbName)
+    const std::string &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
@@ -79,7 +79,7 @@ void NapiAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledChan
 }
 
 void NapiAudioSpatializationEnabledChangeCallback::RemoveSpatializationEnabledChangeCallbackReference(napi_env env,
-    napi_value args, const std::string cbName)
+    napi_value args, const std::string &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME)) {
@@ -111,7 +111,7 @@ void NapiAudioSpatializationEnabledChangeCallback::RemoveSpatializationEnabledCh
 }
 
 void NapiAudioSpatializationEnabledChangeCallback::RemoveAllSpatializationEnabledChangeCallbackReference(
-    const std::string cbName)
+    const std::string &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME)) {
@@ -132,7 +132,8 @@ void NapiAudioSpatializationEnabledChangeCallback::RemoveAllSpatializationEnable
     AUDIO_INFO_LOG("RemoveAllSpatializationEnabledChangeCallbackReference: remove all js callbacks success");
 }
 
-int32_t NapiAudioSpatializationEnabledChangeCallback::GetSpatializationEnabledChangeCbListSize(const std::string cbName)
+int32_t NapiAudioSpatializationEnabledChangeCallback::GetSpatializationEnabledChangeCbListSize(
+    const std::string &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return ((!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME)) ? spatializationEnabledChangeCbList_.size():
@@ -262,7 +263,7 @@ NapiAudioHeadTrackingEnabledChangeCallback::~NapiAudioHeadTrackingEnabledChangeC
 }
 
 void NapiAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeCallbackReference(napi_value args,
-    const std::string cbName)
+    const std::string &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
@@ -300,7 +301,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeCa
 }
 
 void NapiAudioHeadTrackingEnabledChangeCallback::RemoveHeadTrackingEnabledChangeCallbackReference(napi_env env,
-    napi_value args, const std::string cbName)
+    napi_value args, const std::string &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME)) {
@@ -331,7 +332,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::RemoveHeadTrackingEnabledChange
 }
 
 void NapiAudioHeadTrackingEnabledChangeCallback::RemoveAllHeadTrackingEnabledChangeCallbackReference(const std::string
-    cbName)
+    &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME)) {
@@ -351,7 +352,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::RemoveAllHeadTrackingEnabledCha
     AUDIO_INFO_LOG("RemoveAllHeadTrackingEnabledChangeCallbackReference: remove all js callbacks success");
 }
 
-int32_t NapiAudioHeadTrackingEnabledChangeCallback::GetHeadTrackingEnabledChangeCbListSize(const std::string cbName)
+int32_t NapiAudioHeadTrackingEnabledChangeCallback::GetHeadTrackingEnabledChangeCbListSize(const std::string &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return ((!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME)) ? headTrackingEnabledChangeCbList_.size():

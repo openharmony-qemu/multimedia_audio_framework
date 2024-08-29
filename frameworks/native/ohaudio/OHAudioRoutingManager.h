@@ -64,6 +64,12 @@ public:
         return ohAudioRoutingManager_;
     }
     OH_AudioDeviceDescriptorArray* GetDevices(DeviceFlag deviceFlag);
+
+    OH_AudioDeviceDescriptorArray *ConvertDesc(std::vector<sptr<AudioDeviceDescriptor>> &desc);
+    OH_AudioDeviceDescriptorArray *GetAvailableDevices(AudioDeviceUsage deviceUsage);
+    OH_AudioDeviceDescriptorArray *GetPreferredOutputDevice(StreamUsage streamUsage);
+    OH_AudioDeviceDescriptorArray *GetPreferredInputDevice(SourceType sourceType);
+
     OH_AudioCommon_Result SetDeviceChangeCallback(const DeviceFlag flag,
         OH_AudioRoutingManager_OnDeviceChangedCallback callback);
     OH_AudioCommon_Result UnsetDeviceChangeCallback(DeviceFlag flag,

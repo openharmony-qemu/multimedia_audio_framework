@@ -491,6 +491,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
     Trace trace("AudioRenderer::SetParams");
     AUDIO_INFO_LOG("StreamClientState for Renderer::SetParams.");
+
+    std::shared_lock<std::shared_mutex> lockShared(switchStreamMutex_);
+    std::lock_guard<std::mutex> lock(setParamsMutex_);
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
@@ -586,6 +589,8 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
 
 int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback)
 {
+    std::shared_lock<std::shared_mutex> lockShared(switchStreamMutex_);
+    std::lock_guard<std::mutex> lock(setStreamCallbackMutex_);
     // If the client is using the deprecated SetParams API. SetRendererCallback must be invoked, after SetParams.
     // In general, callbacks can only be set after the renderer state is PREPARED.
     RendererState state = GetStatus();
@@ -823,6 +828,7 @@ bool AudioRendererPrivate::Stop() const
 
 bool AudioRendererPrivate::Release() const
 {
+    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
     bool result = audioStream_->ReleaseAudioStream();
@@ -1306,6 +1312,8 @@ uint32_t AudioRendererPrivate::GetUnderflowCount() const
 
 void AudioRendererPrivate::SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback)
 {
+    std::shared_lock sharedLock(switchStreamMutex_);
+    std::lock_guard lock(audioRendererErrCallbackMutex_);
     audioRendererErrorCallback_ = errorCallback;
 }
 
@@ -1314,6 +1322,8 @@ int32_t AudioRendererPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clie
 {
     AUDIO_INFO_LOG("RegisterAudioPolicyServerDiedCb client id: %{public}d", clientPid);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
+
+    std::lock_guard<std::mutex> lock(policyServiceDiedCallbackMutex_);
 
     policyServiceDiedCallback_ = callback;
     return AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid, callback);
@@ -1459,6 +1469,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult= true;
+        SetDefaultOutputDevice(selectedDefaultOutputDevice_);
     }
     WriteSwitchStreamLogMsg();
     return switchResult;
@@ -1819,6 +1830,25 @@ void AudioRendererPrivate::ConcedeStream()
 void AudioRendererPrivate::EnableVoiceModemCommunicationStartStream(bool enable)
 {
     isEnableVoiceModemCommunicationStartStream_ = enable;
+}
+
+int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
+{
+    if (deviceType != DEVICE_TYPE_EARPIECE && deviceType != DEVICE_TYPE_SPEAKER &&
+        deviceType != DEVICE_TYPE_DEFAULT) {
+        return ERR_NOT_SUPPORTED;
+    }
+    bool isSupportedStreamUsage = (find(AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.begin(),
+        AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end(), rendererInfo_.streamUsage) !=
+        AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end());
+    CHECK_AND_RETURN_RET_LOG(isSupportedStreamUsage, ERR_NOT_SUPPORTED, "stream usage not supported");
+    selectedDefaultOutputDevice_ = deviceType;
+    uint32_t currentSessionID = 0;
+    audioStream_->GetAudioSessionID(currentSessionID);
+    int32_t ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType, currentSessionID,
+        rendererInfo_.streamUsage, GetStatus() == RENDERER_RUNNING);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select default output device failed");
+    return SUCCESS;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

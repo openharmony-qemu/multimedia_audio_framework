@@ -34,6 +34,7 @@
  *
  * @library libohaudio.so
  * @syscap SystemCapability.Multimedia.Audio.Core
+ * @kit AudioKit
  * @since 12
  * @version 1.0
  */
@@ -54,45 +55,80 @@ extern "C" {
  */
 typedef enum {
     /**
-     * @brief The call was successful.
+     * @error The call was successful.
      */
     AUDIOCOMMON_RESULT_SUCCESS = 0,
 
     /**
-     * @brief This means that the input parameter is invalid.
+     * @error This means that the input parameter is invalid.
      */
     AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM = 6800101,
 
     /**
-     * @brief This means there is no memory left.
+     * @error This means there is no memory left.
      */
     AUDIOCOMMON_RESULT_ERROR_NO_MEMORY = 6800102,
 
     /**
-     * @brief Execution status exception.
+     * @error Execution status exception.
      */
     AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE = 6800103,
 
     /**
-     * @brief This means the operation is unsupported.
+     * @error This means the operation is unsupported.
      */
     AUDIOCOMMON_RESULT_ERROR_UNSUPPORTED = 6800104,
 
     /**
-     * @brief This means the operation is timeout.
+     * @error This means the operation is timeout.
      */
     AUDIOCOMMON_RESULT_ERROR_TIMEOUT = 6800105,
 
     /**
-     * @brief This means reached stream limit.
+     * @error This means reached stream limit.
      */
     AUDIOCOMMON_RESULT_ERROR_STREAM_LIMIT = 6800201,
 
     /**
-     * @brief An system error has occurred.
+     * @error An system error has occurred.
      */
     AUDIOCOMMON_RESULT_ERROR_SYSTEM = 6800301,
 } OH_AudioCommon_Result;
+
+/**
+ * @brief Defines the audio scene.
+ *
+ * @since 12
+ */
+typedef enum {
+    /**
+     * Default audio scene.
+     *
+     * @since 12
+     */
+    AUDIO_SCENE_DEFAULT = 0,
+
+    /**
+     * Ringing scene.
+     *
+     * @since 12
+     */
+    AUDIO_SCENE_RINGING = 1,
+
+    /**
+     * Phone call scene.
+     *
+     * @since 12
+     */
+    AUDIO_SCENE_PHONE_CALL = 2,
+
+    /**
+     * Voice chat scene.
+     *
+     * @since 12
+     */
+    AUDIO_SCENE_VOICE_CHAT = 3,
+} OH_AudioScene;
 
 #ifdef __cplusplus
 }

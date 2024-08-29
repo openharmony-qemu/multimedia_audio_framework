@@ -1086,6 +1086,10 @@ int32_t MultiChannelRendererSinkInner::InitAdapter()
 
     AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
     uint32_t size = MAX_AUDIO_ADAPTER_NUM;
+    if (audioManager_ == nullptr) {
+        AUDIO_ERR_LOG("The audioManager is nullptr.");
+        return ERROR;
+    }
     int32_t ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
     if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
         AUDIO_ERR_LOG("Get adapters failed");

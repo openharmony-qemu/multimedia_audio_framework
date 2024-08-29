@@ -153,7 +153,7 @@ void AudioPolicyServer::OnStart()
     if (iRes < 0) {
         AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
     }
-    
+
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
@@ -1245,6 +1245,8 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene > AUDIO_SCENE_INVALID && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "param is invalid");
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
     if (audioScene == AUDIO_SCENE_CALL_START) {
         AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_START means voip start.");
         isAvSessionSetVoipStart = true;
@@ -1256,8 +1258,6 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         AudioScene audioScene = interruptService_->GetHighestPriorityAudioScene(0);
         return audioPolicyService_.SetAudioScene(audioScene);
     }
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
     return audioPolicyService_.SetAudioScene(audioScene);
 }
 
@@ -2180,13 +2180,11 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvaila
         case CALL_OUTPUT_DEVICES:
         case CALL_INPUT_DEVICES:
         case ALL_CALL_DEVICES:
-            if (!hasSystemPermission) {
-                AUDIO_ERR_LOG("GetAvailableDevices: No system permission");
-                return deviceDescs;
-            }
+        case D_ALL_DEVICES:
             break;
         default:
-            break;
+            AUDIO_ERR_LOG("Invalid device usage:%{public}d", usage);
+            return deviceDescs;
     }
 
     deviceDescs = audioPolicyService_.GetAvailableDevices(usage);
@@ -2221,7 +2219,6 @@ int32_t AudioPolicyServer::SetAvailableDeviceChangeCallback(const int32_t /*clie
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "SetAvailableDeviceChangeCallback set listener object is nullptr");
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     switch (usage) {
         case MEDIA_OUTPUT_DEVICES:
         case MEDIA_INPUT_DEVICES:
@@ -2229,13 +2226,11 @@ int32_t AudioPolicyServer::SetAvailableDeviceChangeCallback(const int32_t /*clie
         case CALL_OUTPUT_DEVICES:
         case CALL_INPUT_DEVICES:
         case ALL_CALL_DEVICES:
-            if (!hasSystemPermission) {
-                AUDIO_ERR_LOG("SetAvailableDeviceChangeCallback: No system permission");
-                return ERR_PERMISSION_DENIED;
-            }
+        case D_ALL_DEVICES:
             break;
         default:
-            break;
+            AUDIO_ERR_LOG("Invalid AudioDeviceUsage");
+            return ERR_INVALID_PARAM;
     }
 
     int32_t clientPid = IPCSkeleton::GetCallingPid();
@@ -2609,7 +2604,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevi
         AUDIO_ERR_LOG("No system permission");
         return make_unique<AudioDeviceDescriptor>();
     }
-   
+
     auto btdevice = audioPolicyService_.GetActiveBluetoothDevice();
 
     bool hasBTPermission = VerifyBluetoothPermission();
@@ -2790,12 +2785,6 @@ int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeTyp
 {
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
 }
-
-int32_t AudioPolicyServer::ResetRingerModeMute()
-{
-    return audioPolicyService_.ResetRingerModeMute();
-}
-
 void AudioPolicyServer::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
 {
     audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
@@ -2904,6 +2893,12 @@ bool AudioPolicyServer::IsAudioSessionActivated()
     bool isActive = interruptService_->IsAudioSessionActivated(callerPid);
     AUDIO_INFO_LOG("callerPid %{public}d, isSessionActive: %{public}d.", callerPid, isActive);
     return isActive;
+}
+
+int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    return audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
 }
 } // namespace AudioStandard
 } // namespace OHOS

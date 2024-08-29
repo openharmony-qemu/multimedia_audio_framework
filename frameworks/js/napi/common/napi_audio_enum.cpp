@@ -692,9 +692,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioSessionDeactivatedReason", CreateEnumObject(env, reasonMap, reason_)),
         DECLARE_NAPI_PROPERTY("PolicyType", CreateEnumObject(env, policyTypeMap, policyType_)),
     };
-    napi_status status =
-        napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
-    return status;
+    return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
 
 napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
@@ -1189,6 +1187,22 @@ bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_FILE_SINK:
         case DeviceType::DEVICE_TYPE_FILE_SOURCE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_DEFAULT:
             result = true;
             break;
         default:

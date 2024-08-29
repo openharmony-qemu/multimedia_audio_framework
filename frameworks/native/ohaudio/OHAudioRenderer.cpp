@@ -337,6 +337,25 @@ OH_AudioStream_Result OH_AudioRenderer_GetSilentModeAndMixWithOthers(
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioRenderer_SetDefaultOutputDevice(
+    OH_AudioRenderer* renderer, OH_AudioDevice_Type deviceType)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    bool result = (deviceType == AUDIO_DEVICE_TYPE_EARPIECE || deviceType == AUDIO_DEVICE_TYPE_SPEAKER ||
+        deviceType == AUDIO_DEVICE_TYPE_DEFAULT) ? true : false;
+    CHECK_AND_RETURN_RET_LOG(result != false, AUDIOSTREAM_ERROR_INVALID_PARAM, "deviceType is not valid");
+    int32_t ret = audioRenderer->SetDefaultOutputDevice((OHOS::AudioStandard::DeviceType)deviceType);
+    if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
+        AUDIO_ERR_LOG("This audiorenderer can not reset the output device");
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    } else if (ret != AUDIOSTREAM_SUCCESS) {
+        AUDIO_ERR_LOG("system error when calling this function");
+        return AUDIOSTREAM_ERROR_SYSTEM;
+    }
+    return AUDIOSTREAM_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -781,6 +800,12 @@ bool OHAudioRenderer::GetSilentModeAndMixWithOthers()
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
     return audioRenderer_->GetSilentModeAndMixWithOthers();
+}
+
+int32_t OHAudioRenderer::SetDefaultOutputDevice(DeviceType deviceType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->SetDefaultOutputDevice(deviceType);
 }
 
 void OHAudioRenderer::SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType)

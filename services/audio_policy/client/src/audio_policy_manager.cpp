@@ -235,13 +235,6 @@ int32_t AudioPolicyManager::SetAudioScene(AudioScene scene)
     return gsp->SetAudioScene(scene);
 }
 
-int32_t AudioPolicyManager::ResetRingerModeMute()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->ResetRingerModeMute();
-}
-
 int32_t AudioPolicyManager::SetMicrophoneMute(bool isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1905,6 +1898,14 @@ int32_t AudioPolicyManager::InjectInterruption(const std::string networkId, Inte
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->InjectInterruption(networkId, event);
+}
+
+int32_t AudioPolicyManager::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()

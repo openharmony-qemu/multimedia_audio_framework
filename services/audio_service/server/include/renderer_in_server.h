@@ -40,6 +40,7 @@ public:
     RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
     virtual ~RendererInServer();
     void OnStatusUpdate(IOperation operation) override;
+    void OnStatusUpdateExt(IOperation operation, std::shared_ptr<IStreamListener> stateListener);
     void HandleOperationFlushed();
     int32_t OnWriteData(size_t length) override;
 

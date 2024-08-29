@@ -521,6 +521,7 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 
     int32_t ResetRingerModeMute();
+
     bool IsRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
@@ -528,6 +529,9 @@ public:
     AudioScene GetLastAudioScene() const;
 
     void SetRotationToEffect(const uint32_t rotate);
+
+    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning);
 
 private:
     AudioPolicyService()
@@ -966,6 +970,8 @@ private:
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address);
+
+    void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
