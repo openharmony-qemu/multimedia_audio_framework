@@ -422,6 +422,10 @@ int32_t FastAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
     int32_t index;
     uint32_t size = MAX_AUDIO_ADAPTER_NUM;
     AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
+    if (audioManager_ == nullptr) {
+        AUDIO_ERR_LOG("The audioManager is null");
+        return ERROR;
+    }
     ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
     CHECK_AND_RETURN_RET_LOG(size <= MAX_AUDIO_ADAPTER_NUM && size != 0 && ret == 0, ERR_NOT_STARTED,
         "Get adapters Fail");
