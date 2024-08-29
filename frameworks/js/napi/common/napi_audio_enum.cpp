@@ -692,9 +692,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioSessionDeactivatedReason", CreateEnumObject(env, reasonMap, reason_)),
         DECLARE_NAPI_PROPERTY("PolicyType", CreateEnumObject(env, policyTypeMap, policyType_)),
     };
-    napi_status status =
-        napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
-    return status;
+    return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
 
 napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
