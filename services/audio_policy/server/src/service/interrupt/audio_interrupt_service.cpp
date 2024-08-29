@@ -1070,7 +1070,6 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
                 sessionService_->GetAudioSessionByPid(pid)->AddAudioInterrpt(std::make_pair(audioInterrupt, ACTIVE));
             }
         }
-        }
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
         UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
