@@ -184,6 +184,7 @@ private:
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
     FILE *dumpFile_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
+    std::mutex audioRendererErrCallbackMutex_;
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
@@ -200,8 +201,12 @@ private:
     float speed_ = 1.0;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
+    std::mutex policyServiceDiedCallbackMutex_;
 
     std::vector<uint32_t> usedSessionId_ = {};
+
+    std::mutex setStreamCallbackMutex_;
+    std::mutex setParamsMutex_;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
