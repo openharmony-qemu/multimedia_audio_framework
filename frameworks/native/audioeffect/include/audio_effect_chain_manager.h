@@ -106,7 +106,6 @@ public:
     int32_t ApplyAudioEffectChain(const std::string &sceneType, const std::unique_ptr<EffectBufferAttr> &bufferAttr);
     void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
     std::string GetDeviceTypeName();
-    std::string GetDeviceSinkName();
     bool GetOffloadEnabled();
     void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
@@ -128,7 +127,6 @@ public:
     void UpdateRealAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
-    void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
     void UpdateExtraSceneType(const std::string &extraSceneType);
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
@@ -175,7 +173,7 @@ private:
     std::string extraSceneType_ = "0";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
-    bool spatializationEnabled_ = false;
+    std::atomic<bool> spatializationEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool btOffloadEnabled_ = false;
     bool spkOffloadEnabled_ = false;

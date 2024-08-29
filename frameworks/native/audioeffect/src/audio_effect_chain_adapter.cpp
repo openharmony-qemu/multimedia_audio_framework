@@ -110,10 +110,6 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
     if (!audioEffectChainManager->CheckAndAddSessionID(sessionIDString)) {
         return SUCCESS;
     }
-    if (sceneTypeString == "SCENE_MOVIE" && audioEffectChainManager->GetDeviceTypeName() == "DEVICE_TYPE_SPEAKER") {
-        // for AISS, dsp has not implemented it yet
-        audioEffectChainManager->UpdateSpkOffloadEnabled();
-    }
     bool curSpatializationEnabled = audioEffectChainManager->GetCurSpatializationEnabled();
     std::string curDeviceType = audioEffectChainManager->GetDeviceTypeName();
     if (audioEffectChainManager->GetOffloadEnabled() ||
@@ -360,5 +356,5 @@ bool EffectChainManagerSceneCheck(const char *sinkSceneType, const char *sceneTy
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
     std::string sceneTypeString = sceneType;
     std::string sinkSceneTypeString = sinkSceneType;
-    return audioEffectChainManager->CheckSceneTypeMatch(sinkSceneType, sceneType);
+    return audioEffectChainManager->CheckSceneTypeMatch(sinkSceneTypeString, sceneTypeString);
 }

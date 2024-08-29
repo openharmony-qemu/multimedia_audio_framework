@@ -108,11 +108,6 @@ void AudioEffectChain::Dump()
     }
 }
 
-std::string AudioEffectChain::GetEffectMode()
-{
-    return effectMode_;
-}
-
 void AudioEffectChain::SetEffectMode(const std::string &mode)
 {
     effectMode_ = mode;
@@ -348,7 +343,7 @@ AudioEffectConfig AudioEffectChain::GetIoBufferConfig()
 
 void AudioEffectChain::StoreOldEffectChainInfo(std::string &sceneMode, AudioEffectConfig &ioBufferConfig)
 {
-    sceneMode = GetEffectMode();
+    sceneMode = effectMode_;
     ioBufferConfig = GetIoBufferConfig();
     return;
 }
