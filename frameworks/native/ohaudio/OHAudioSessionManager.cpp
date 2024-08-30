@@ -109,7 +109,7 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionCallback(OH_AudioSes
         audioSessionManager_->SetAudioSessionCallback(ohAudioSessionCallback);
         return AUDIOCOMMON_RESULT_SUCCESS;
     }
-    return AUDIOCOMMON_RESULT_ERROR_NO_MEMORY;
+    return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
 }
 
 OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionCallback(OH_AudioSession_DeactivatedCallback callback)
@@ -125,31 +125,30 @@ OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionCallback(OH_AudioS
 OH_AudioCommon_Result OHAudioSessionManager::ActivateAudioSession(const AudioSessionStrategy &strategy)
 {
     CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+        AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE, "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->ActivateAudioSession(strategy);
     if (ret == 0) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
-        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
 }
 
 OH_AudioCommon_Result OHAudioSessionManager::DeactivateAudioSession()
 {
     CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+        AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE, "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->DeactivateAudioSession();
     if (ret == 0) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
-        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
 }
 
 bool OHAudioSessionManager::IsAudioSessionActivated()
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr, false, "failed, audioSessionManager_ is null");
     return audioSessionManager_->IsAudioSessionActivated();
 }
 
