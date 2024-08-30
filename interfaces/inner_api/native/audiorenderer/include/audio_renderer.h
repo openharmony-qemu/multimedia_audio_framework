@@ -928,6 +928,7 @@ public:
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
 
+    virtual void EnableVoiceModemCommunicationStartStream(bool enable) = 0;
     /**
      * @brief Temporarily changes the current audio route.
      * @param deviceType to set. The available deviceTypes are EARPIECE/SPEAKER/DEFAULT.

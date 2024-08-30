@@ -678,7 +678,8 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
         CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
     }
     // When the cellular call stream is starting, only need to activate audio interrupt.
-    CHECK_AND_RETURN_RET(audioInterrupt_.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION, true);
+    CHECK_AND_RETURN_RET(audioInterrupt_.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        isEnableVoiceModemCommunicationStartStream_, true);
 
     bool result = audioStream_->StartAudioStream(cmdType);
     if (!result) {
@@ -775,7 +776,8 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
 
-    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        !isEnableVoiceModemCommunicationStartStream_) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
             AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
@@ -804,7 +806,8 @@ bool AudioRendererPrivate::Stop() const
     std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
-    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        !isEnableVoiceModemCommunicationStartStream_) {
         // When the cellular call stream is stopping, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
             AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
@@ -1822,6 +1825,11 @@ void AudioRendererPrivate::ConcedeStream()
         default:
             break;
     }
+}
+
+void AudioRendererPrivate::EnableVoiceModemCommunicationStartStream(bool enable)
+{
+    isEnableVoiceModemCommunicationStartStream_ = enable;
 }
 
 int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
