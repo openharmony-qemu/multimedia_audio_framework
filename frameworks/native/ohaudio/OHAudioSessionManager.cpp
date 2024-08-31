@@ -82,8 +82,7 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
     OH_AudioSessionManager *audioSessionManager)
 {
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr, false, "ohAudioSessionManager is nullptr");
     return ohAudioSessionManager->IsAudioSessionActivated();
 }
 
@@ -125,7 +124,7 @@ OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionCallback(OH_AudioS
 OH_AudioCommon_Result OHAudioSessionManager::ActivateAudioSession(const AudioSessionStrategy &strategy)
 {
     CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE, "failed, audioSessionManager_ is null");
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->ActivateAudioSession(strategy);
     if (ret == 0) {
         return AUDIOCOMMON_RESULT_SUCCESS;
@@ -137,7 +136,7 @@ OH_AudioCommon_Result OHAudioSessionManager::ActivateAudioSession(const AudioSes
 OH_AudioCommon_Result OHAudioSessionManager::DeactivateAudioSession()
 {
     CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE, "failed, audioSessionManager_ is null");
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
     int32_t ret = audioSessionManager_->DeactivateAudioSession();
     if (ret == 0) {
         return AUDIOCOMMON_RESULT_SUCCESS;
