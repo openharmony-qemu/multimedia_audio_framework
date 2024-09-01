@@ -66,6 +66,28 @@ static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     return 0;
 }
 
+static int32_t AudioErrCallback(OH_AudioRenderer* renderer,
+    void* userData,
+    OH_AudioStream_Result error)
+{
+    printf("recv err : code %d \n", error);
+}
+
+static int32_t AudioInterruptCallback(OH_AudioRenderer* renderer,
+    void* userData,
+    OH_AudioInterrupt_ForceType type,
+    OH_AudioInterrupt_Hint hint)
+{
+    printf("recv interrupt event : type: %d hint: %d \n", type, hint);
+}
+
+static int32_t AudioEventCallback(OH_AudioRenderer* renderer,
+    void* userData,
+    OH_AudioStream_Event event)
+{
+    printf("recv event : event: %d \n", event);
+}
+
 static void AudioRendererDeviceChangeCb(OH_AudioRenderer* renderer, void* userData,
     OH_AudioStream_DeviceChangeReason reason)
 {
@@ -90,6 +112,9 @@ void PlayerTest(char *argv[])
 
     OH_AudioRenderer_Callbacks callbacks;
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
+    callbacks.OH_AudioRenderer_OnError = AudioErrCallback;
+    callbacks.OH_AudioRenderer_OnInterruptEvent = AudioInterruptCallback;
+    callbacks.OH_AudioRenderer_OnStreamEvent = AudioEventCallback;
     ret = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, nullptr);
     printf("setcallback ret: %d \n", ret);
 

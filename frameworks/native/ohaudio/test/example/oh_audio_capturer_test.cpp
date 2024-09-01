@@ -54,6 +54,28 @@ static int32_t AudioCapturerOnReadData(OH_AudioCapturer* capturer,
     return 0;
 }
 
+static int32_t AudioErrCallback(OH_AudioCapturer* renderer,
+    void* userData,
+    OH_AudioStream_Result error)
+{
+    printf("recv err : code %d \n", error);
+}
+
+static int32_t AudioInterruptCallback(OH_AudioCapturer* renderer,
+    void* userData,
+    OH_AudioInterrupt_ForceType type,
+    OH_AudioInterrupt_Hint hint)
+{
+    printf("recv interrupt event : type: %d hint: %d \n", type, hint);
+}
+
+static int32_t AudioEventCallback(OH_AudioCapturer* renderer,
+    void* userData,
+    OH_AudioStream_Event event)
+{
+    printf("recv event : event: %d \n", event);
+}
+
 void SleepWaitRecoder(bool* stop)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(AudioTestConstants::RECODER_TIME));
@@ -76,6 +98,9 @@ void RecorderTest(char *argv[])
 
     OH_AudioCapturer_Callbacks callbacks;
     callbacks.OH_AudioCapturer_OnReadData = AudioCapturerOnReadData;
+    callbacks.OH_AudioCapturer_OnError = AudioErrCallback;
+    callbacks.OH_AudioCapturer_OnInterruptEvent = AudioInterruptCallback;
+    callbacks.OH_AudioCapturer_OnStreamEvent = AudioEventCallback;
     ret = OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, nullptr);
     printf("setcallback: %d \n", ret);
 

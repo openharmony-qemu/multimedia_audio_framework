@@ -26,6 +26,7 @@
 #include "audio_errors.h"
 #include "audio_session_manager.h"
 #include "audio_system_manager.h"
+#include "audio_stream_manager.h"
 #include "audio_policy_log.h"
 
 using namespace std;
@@ -85,7 +86,10 @@ static void PrintUsage(void)
     cout << "-B\n\tSet AudioMonoState (using 1 or 0 instead of true of false)" << endl;
     cout << "\tSet AudioBalanceValue (using [9, 11] instead of [-1, 1])" << endl << endl;
     cout << "-F\n\tAudioFocusInfoListTest (using 1 or 0 instead of true of false)" << endl;
-    cout << "-A\n\t AudioSession: 1.ActivateAudioSession, 2.DeactivateAudioSession, 3.IsAudioSessionActivated." << endl;
+    cout << "-A\n\t AudioSession: 1.ActivateAudioSession, 2.DeactivateAudioSession, "
+        "3.IsAudioSessionActivated." << endl;
+    cout << "-Y\n\t AudioRendererChangeInfo: 1.GetCurrentRendererChangeInfos, "
+        "2.RegisterAudioRendererEventListener" << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by OpenHarmony AudioFramework Team." << endl << endl;
 }
@@ -561,6 +565,23 @@ static void PrintFocusInfoList(const std::list<std::pair<AudioInterrupt, AudioFo
         cout << "------------------------------------------" << endl;
     }
 }
+
+static void PrintAudioRendererChangeInfos(
+    const std::vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    cout << "===============AudioRendererChangeInfo============== size:"<< audioRendererChangeInfos.size() << endl;
+    for (const auto& uPtraudioRendererChangeInfo : audioRendererChangeInfos) {
+        cout <<"| createrUID: \t\t\t"          << uPtraudioRendererChangeInfo->createrUID << "\t |" << endl;
+        cout <<"| clientUID: \t\t\t"          << uPtraudioRendererChangeInfo->clientUID << "\t |" << endl;
+        cout <<"| sessionId: \t"<< uPtraudioRendererChangeInfo->sessionId<< "\t |" << endl;
+        cout <<"| streamUsage: \t"<< uPtraudioRendererChangeInfo->rendererInfo.streamUsage<< "\t |" << endl;
+        cout <<"| contentType \t"    << uPtraudioRendererChangeInfo->rendererInfo.contentType    << "\t |" << endl;
+        cout <<"| rendererState: \t\t\t"            << uPtraudioRendererChangeInfo->rendererState << "\t |" << endl;
+        cout << "------------------------------------------" << endl;
+    }
+    cout << "=========================================================="<< endl;
+}
+
 class AudioFocusInfoChangeCallbackTest : public AudioFocusInfoChangeCallback {
 public:
     AudioFocusInfoChangeCallbackTest()
@@ -576,6 +597,15 @@ public:
         cout << "OnAudioFocusInfoChange" << endl;
         PrintFocusInfoList(focusInfoList);
     };
+};
+
+class AudioRendererChangeInfoCallbackTest : public AudioRendererStateChangeCallback {
+public:
+    void OnRendererStateChange(
+        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) final
+    {
+        PrintAudioRendererChangeInfos(audioRendererChangeInfos);
+    }
 };
 
 static void RegisterFocusInfoChangeCallback(AudioSystemManager * audioSystemMgr_,
@@ -660,6 +690,41 @@ static void HandleAudioFocusInfoTest()
     return;
 }
 
+static void HandleAudioRendererChangeInfo()
+{
+    auto audioStreamManager = AudioStreamManager::GetInstance();
+    cout << "*******************************************************" << endl;
+    cout << "0 \t exit" << endl;
+    cout << "1 \t GetCurrentRendererChangeInfos" << endl;
+    cout << "2 \t RegisterAudioRendererEventListener callback" << endl;
+    cout << "*******************************************************" << endl << endl;
+
+    char num;
+    while (true) {
+        cin >> num;
+        switch (num) {
+            case '1': {
+                std::vector<unique_ptr<AudioRendererChangeInfo>> res;
+                audioStreamManager->GetCurrentRendererChangeInfos(res);
+                PrintAudioRendererChangeInfos(res);
+                break;
+            }
+            case '2': {
+                audioStreamManager->RegisterAudioRendererEventListener(
+                    make_shared<AudioRendererChangeInfoCallbackTest>());
+                break;
+            }
+            case '0':
+                return;
+            default:
+                cout << "unknow cin: " << endl;
+                break;
+        }
+    }
+
+    return;
+}
+
 int main(int argc, char* argv[])
 {
     int opt = 0;
@@ -670,7 +735,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:B:F:vmrucOoIiGgNntpA")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:B:F:vmrucOoIiGgNntpAY")) != -1) {
         switch (opt) {
             case 'A':
                 HandleAudioSession(argc, argv);
@@ -749,6 +814,9 @@ int main(int argc, char* argv[])
                 break;
             case 'F':
                 HandleAudioFocusInfoTest();
+                break;
+            case 'Y':
+                HandleAudioRendererChangeInfo();
                 break;
             default:
                 break;

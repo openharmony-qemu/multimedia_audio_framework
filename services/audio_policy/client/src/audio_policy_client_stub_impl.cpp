@@ -434,6 +434,10 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
         std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
         callbacks = rendererStateChangeCallbackList_;
     }
+    size_t cBSize = callbacks.size();
+    size_t infosSize = audioRendererChangeInfos.size();
+    AUDIO_DEBUG_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
+
     Trace trace("AudioPolicyClientStubImpl::OnRendererStateChange");
     for (auto &cb : callbacks) {
         Trace traceCallback("OnRendererStateChange");
