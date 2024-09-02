@@ -92,6 +92,7 @@
 #define MIN_SLEEP_FOR_USEC 2000
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
+const uint64_t DEFAULT_GETLATENCY_LOG_THRESHOLD_MS = 100;
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -192,6 +193,8 @@ struct Userdata {
     int8_t spatializationFadingCount; // for indicating the fading rate
     bool actualSpatializationEnabled; // the spatialization state that actually applies effect
     bool isFirstStarted;
+    uint64_t lastRecodedLatency;
+    uint32_t continuesGetLatencyErrCount;
     struct {
         int32_t sessionID;
         bool firstWrite;
@@ -3363,6 +3366,18 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
     pa_sink_set_max_request_within_thread(s, nbytes);
 }
 
+static void CheckAndPrintLatency(uint64_t lastRecodedLatency, uint64_t latency, bool getLatencyFromHdiSucess,
+    uint32_t continuesGetLatencyErrCount, uint64_t logThreshold)
+{
+    uint64_t latencyDifference = (latency > lastRecodedLatency)
+        ? (latency - lastRecodedLatency) : (lastRecodedLatency - latency);
+    if (latencyDifference > logThreshold) {
+        AUDIO_INFO_LOG("lastLatency: %{public}" PRIu64 " latency: %{public}" PRIu64 ""
+            " getLatencyFromHdiSucess: %{public}d continuesGetLatencyErrCount: %{public}u",
+            lastRecodedLatency, latency, getLatencyFromHdiSucess, continuesGetLatencyErrCount);
+    }
+}
+
 static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t offset,
     pa_memchunk *chunk)
 {
@@ -3382,7 +3397,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
             } else {
                 uint64_t latency;
                 uint32_t hdiLatency;
-
+                bool getLatencyFromHdiSucess = true;
                 // Tries to fetch latency from HDI else will make an estimate based
                 // on samples to be rendered based on the timestamp and current time
                 if (u->primary.sinkAdapter->RendererSinkGetLatency(u->primary.sinkAdapter, &hdiLatency) == 0) {
@@ -3390,9 +3405,14 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
                 } else {
                     pa_usec_t now = pa_rtclock_now();
                     latency = (now - u->primary.timestamp);
+                    getLatencyFromHdiSucess = false;
                 }
 
                 *((uint64_t *)data) = latency;
+                CheckAndPrintLatency(u->lastRecodedLatency, latency, getLatencyFromHdiSucess,
+                    u->continuesGetLatencyErrCount, DEFAULT_GETLATENCY_LOG_THRESHOLD_MS);
+                u->lastRecodedLatency = latency;
+                u->continuesGetLatencyErrCount = getLatencyFromHdiSucess ? 0 : (u->continuesGetLatencyErrCount + 1);
             }
             return 0;
         }
@@ -3996,6 +4016,9 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
     }
 
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
+
+    u->lastRecodedLatency = 0;
+    u->continuesGetLatencyErrCount = 0;
 
     if (u->fixed_latency) {
         pa_sink_set_fixed_latency(u->sink, u->block_usec);
