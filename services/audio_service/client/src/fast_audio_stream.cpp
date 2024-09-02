@@ -394,7 +394,7 @@ int32_t FastAudioStream::SetLowPowerVolume(float volume)
 float FastAudioStream::GetLowPowerVolume()
 {
     AUDIO_INFO_LOG("GetLowPowerVolume enter.");
-    return SUCCESS;
+    return 1.0f;
 }
 
 int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)

@@ -1135,8 +1135,8 @@ int32_t RendererInClientInner::UnsetOffloadMode()
 
 float RendererInClientInner::GetSingleStreamVolume()
 {
-    // in plan
-    return 0.0;
+    // in plan. For now, keep it consistent with fast_audio_stream
+    return 1.0f;
 }
 
 AudioEffectMode RendererInClientInner::GetAudioEffectMode()

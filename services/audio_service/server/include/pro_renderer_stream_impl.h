@@ -125,6 +125,8 @@ private:
     std::condition_variable firstFrameSync_;
     std::condition_variable drainSync_;
     FILE *dumpFile_;
+
+    std::atomic<bool> isFirstNoUnderrunFrame_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

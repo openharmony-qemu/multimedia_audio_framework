@@ -1445,11 +1445,14 @@ bool CapturerInClientInner::StopAudioStream()
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already release, do nothing");
         return true;
     }
     state_ = RELEASED;
+    statusLock.unlock();
+
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
         ipcStream_->Release();
@@ -1635,13 +1638,6 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 
     std::lock_guard<std::mutex> lock(readMutex_);
 
-    // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_) {
-        ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
-        needSetThreadPriority_ = false;
-    }
-
     std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
     if (state_ != RUNNING) {
         if (readLogTimes_ < LOGLITMITTIMES) {
@@ -1656,6 +1652,15 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     }
 
     statusLock.unlock();
+
+    // if first call, call set thread priority. if thread tid change recall set thread priority
+    if (needSetThreadPriority_) {
+        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
+        ipcStream_->RegisterThreadPriority(gettid(),
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+        needSetThreadPriority_ = false;
+    }
+
     size_t readSize = 0;
     int32_t res = HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
     CHECK_AND_RETURN_RET_LOG(res >= 0, ERROR, "HandleCapturerRead err : %{public}d", res);

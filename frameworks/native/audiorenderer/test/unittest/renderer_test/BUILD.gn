@@ -16,6 +16,7 @@ import("//build/test.gni")
 module_output_path = "multimedia_audio_framework/audio_renderer"
 
 ohos_unittest("audio_renderer_unit_test") {
+  testonly = true
   module_out_path = module_output_path
   include_dirs = [
     "./include",
@@ -50,6 +51,7 @@ ohos_unittest("audio_renderer_unit_test") {
 }
 
 ohos_unittest("audio_fast_renderer_unit_test") {
+  testonly = true
   module_out_path = module_output_path
   include_dirs = [
     "./include",
@@ -75,6 +77,8 @@ ohos_unittest("audio_fast_renderer_unit_test") {
 
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
     "hilog:libhilog",
     "pulseaudio:pulse",
   ]
@@ -84,6 +88,7 @@ ohos_unittest("audio_fast_renderer_unit_test") {
 }
 
 ohos_unittest("renderer_capture_interrupt_unit_test") {
+  testonly = true
   module_out_path = module_output_path
   include_dirs = [
     "./include",
@@ -122,6 +127,7 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
 }
 
 ohos_unittest("capture_renderer_interrupt_unit_test") {
+  testonly = true
   module_out_path = module_output_path
   include_dirs = [
     "./include",

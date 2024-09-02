@@ -181,6 +181,7 @@ int32_t ProRendererStreamImpl::Start()
     }
     status_ = I_STATUS_STARTED;
     isFirstFrame_ = true;
+    isFirstNoUnderrunFrame_ = false;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STARTED);
@@ -531,11 +532,29 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
     std::shared_ptr<IWriteCallback> writeCallback = writeCallback_.lock();
     if (writeCallback != nullptr) {
         result = writeCallback->OnWriteData(minBufferSize_);
-        if (result != SUCCESS) {
-            AUDIO_ERR_LOG("Write callback failed,result:%{public}d", result);
-            return result;
+        switch (result) {
+            // As a low-risk change, temporarily keep the previous behavior
+            // and avoid enterring the err logic on underrun.
+            case ERR_RENDERER_IN_SERVER_UNDERRUN: {
+                auto statusCallback = statusCallback_.lock();
+                if (statusCallback != nullptr && isFirstNoUnderrunFrame_) {
+                    statusCallback->OnStatusUpdate(OPERATION_UNDERFLOW);
+                }
+                [[fallthrough]];
+            }
+            case SUCCESS: {
+                PopSinkBuffer(audioBuffer, index);
+                if (result != ERR_RENDERER_IN_SERVER_UNDERRUN) {
+                    isFirstNoUnderrunFrame_ = true;
+                    result = SUCCESS;
+                }
+                break;
+            }
+            default: {
+                AUDIO_ERR_LOG("Write callback failed,result:%{public}d", result);
+                return result;
+            }
         }
-        PopSinkBuffer(audioBuffer, index);
     } else {
         AUDIO_ERR_LOG("Write callback is nullptr");
         result = ERR_WRITE_BUFFER;
