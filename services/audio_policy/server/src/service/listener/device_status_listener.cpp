@@ -160,6 +160,8 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener()
         "[DeviceStatusListener]: Get HDI service manager failed");
 
     listener_ = HdiServiceStatusListenerNewInstance();
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE,
+        "[DeviceStatusListener]: status listener failed");
     listener_->callback = OnServiceStatusReceived;
     listener_->priv = (void *)this;
     int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_,

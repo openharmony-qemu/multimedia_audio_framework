@@ -1625,6 +1625,8 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
         CHECK_AND_RETURN_RET_LOG(tempSpan != nullptr, false,
             "GetSpanInfo failed, can not get process read span");
         SpanStatus targetStatus = SpanStatus::SPAN_READING;
+        CHECK_AND_RETURN_RET_LOG(processBufferList_[i]->GetStreamStatus() != nullptr, false,
+            "stream status is null");
         if (tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READ_DONE)) {
             tempSpan->readDoneTime = curReadDoneTime;
             BufferDesc bufferReadDone = { nullptr, 0, 0};
