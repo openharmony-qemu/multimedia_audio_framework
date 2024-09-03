@@ -4077,8 +4077,8 @@ static void UserdataFreeOffload(struct Userdata *u)
     }
 
     if (u->offload.sinkAdapter) {
-        OffloadUnlock(u);
         u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
+        OffloadUnlock(u);
         u->offload.sinkAdapter->RendererSinkDeInit(u->offload.sinkAdapter);
         UnLoadSinkAdapter(u->offload.sinkAdapter);
     }
@@ -4167,6 +4167,9 @@ static void UserdataFree(struct Userdata *u)
         pa_rtpoll_free(u->rtpoll);
     }
 
+    UserdataFreeOffload(u);
+    UserdataFreeMultiChannel(u);
+
     if (u->primary.msgq) {
         pa_asyncmsgq_unref(u->primary.msgq);
     }
@@ -4180,9 +4183,6 @@ static void UserdataFree(struct Userdata *u)
         u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
         UnLoadSinkAdapter(u->primary.sinkAdapter);
     }
-
-    UserdataFreeOffload(u);
-    UserdataFreeMultiChannel(u);
 
     // free heap allocated in userdata init
     if (u->bufferAttr == NULL) {
