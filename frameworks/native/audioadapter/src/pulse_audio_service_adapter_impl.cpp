@@ -371,11 +371,10 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
 std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
 {
     AUDIO_INFO_LOG("GetAllSinks enter.");
-    int32_t XcollieFlag = 2; // flag 1 generate log file, flag 2 die when timeout, restart server
+    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSinks", PA_SERVICE_IMPL_TIMEOUT,
-        [this](void *) {
+        [](void *) {
             AUDIO_ERR_LOG("GetAllSinks timeout, trigger signal");
-            pa_threaded_mainloop_signal(this->mMainLoop, 0);
         }, nullptr, XcollieFlag);
     lock_guard<mutex> lock(lock_);
     unique_ptr<UserData> userData = make_unique<UserData>();
