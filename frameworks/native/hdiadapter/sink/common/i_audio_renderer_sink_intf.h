@@ -59,6 +59,7 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkOffloadRunningLockLock)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkOffloadRunningLockUnlock)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkSetPaPower)(struct RendererSinkAdapter *adapter, int32_t flag);
+    int32_t (*RendererSinkSetPriPaPower)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkUpdateAppsUid) (struct RendererSinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
         const size_t size);
 };
@@ -85,6 +86,7 @@ int32_t IAudioRendererSinkOffloadRunningLockInit(struct RendererSinkAdapter *ada
 int32_t IAudioRendererSinkOffloadRunningLockLock(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkOffloadRunningLockUnlock(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkSetPaPower(struct RendererSinkAdapter *adapter, int32_t flag);
+int32_t IAudioRendererSinkSetPriPaPower(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkUpdateAppsUid(struct RendererSinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
     const size_t size);
 

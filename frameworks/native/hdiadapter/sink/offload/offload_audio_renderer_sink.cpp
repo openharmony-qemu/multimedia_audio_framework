@@ -120,6 +120,7 @@ public:
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
+    int32_t SetPriPaPower() override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -1083,6 +1084,11 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
 int32_t OffloadAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
     (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t OffloadAudioRendererSinkInner::SetPriPaPower()
+{
     return ERR_NOT_SUPPORTED;
 }
 

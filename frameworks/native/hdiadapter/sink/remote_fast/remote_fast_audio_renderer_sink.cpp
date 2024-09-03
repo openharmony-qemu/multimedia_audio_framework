@@ -117,6 +117,7 @@ public:
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     int32_t SetPaPower(int32_t flag) override;
+    int32_t SetPriPaPower() override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -748,6 +749,11 @@ OHOS::AudioStandard::IAudioSinkCallback* RemoteFastAudioRendererSinkInner::GetPa
 int32_t RemoteFastAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
     (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t RemoteFastAudioRendererSinkInner::SetPriPaPower()
+{
     return ERR_NOT_SUPPORTED;
 }
 

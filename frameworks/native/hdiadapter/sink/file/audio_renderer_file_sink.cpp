@@ -235,6 +235,11 @@ int32_t AudioRendererFileSink::SetPaPower(int32_t flag)
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t AudioRendererFileSink::SetPriPaPower()
+{
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t AudioRendererFileSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
     return SUCCESS;

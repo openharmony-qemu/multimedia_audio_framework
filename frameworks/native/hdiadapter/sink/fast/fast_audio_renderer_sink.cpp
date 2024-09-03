@@ -100,6 +100,7 @@ public:
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
+    int32_t SetPriPaPower() override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -585,6 +586,11 @@ float FastAudioRendererSinkInner::GetMaxAmplitude()
 int32_t FastAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
     (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t FastAudioRendererSinkInner::SetPriPaPower()
+{
     return ERR_NOT_SUPPORTED;
 }
 

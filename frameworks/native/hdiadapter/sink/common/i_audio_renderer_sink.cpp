@@ -361,6 +361,20 @@ int32_t IAudioRendererSinkSetPaPower(struct RendererSinkAdapter *adapter, int32_
     return ret;
 }
 
+int32_t IAudioRendererSinkSetPriPaPower(struct RendererSinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");
+
+    IAudioRendererSink *audioRendererSink = static_cast<IAudioRendererSink *>(adapter->wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    bool isInited = audioRendererSink->IsInited();
+    CHECK_AND_RETURN_RET_LOG(isInited, ERR_NOT_STARTED,
+        "audioRenderer Not Inited! Init the renderer first, Renderer Resume failed");
+
+    int32_t ret = audioRendererSink->SetPriPaPower();
+    return ret;
+}
+
 int32_t IAudioRendererSinkUpdateAppsUid(struct RendererSinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
     const size_t size)
 {
