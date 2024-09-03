@@ -38,7 +38,7 @@ ohos_shared_library("audio_capturer_source") {
 
   external_deps = [
     "c_utils:utils",
-    "drivers_interface_audio:libaudio_proxy_4.0",
+    "drivers_interface_audio:libaudio_proxy_3.0",
     "hdf_core:libhdf_utils",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -79,7 +79,7 @@ ohos_shared_library("fast_audio_capturer_source") {
 
   external_deps = [
     "c_utils:utils",
-    "drivers_interface_audio:libaudio_proxy_4.0",
+    "drivers_interface_audio:libaudio_proxy_3.0",
     "hdf_core:libhdf_utils",
     "hilog:libhilog",
     "ipc:ipc_single",
