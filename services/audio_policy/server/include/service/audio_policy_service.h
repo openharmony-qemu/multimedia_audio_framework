@@ -445,9 +445,8 @@ public:
 
     DistributedRoutingInfo& GetDistributedRoutingRoleInfo();
 
-    void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
-
-    void OnPreferredStateUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
+    void OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
+        const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
 
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
@@ -628,10 +627,6 @@ private:
 
     int32_t GetModuleInfo(ClassType classType, std::string &moduleInfoStr);
 
-    int32_t HandleFileDevice(DeviceType deviceType);
-
-    int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
-
     void MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -645,7 +640,7 @@ private:
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
 
-    void KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType);
+    void UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType);
 
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
@@ -829,12 +824,21 @@ private:
 
     bool NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor> &desc);
 
-    void MuteSinkPort(DeviceType deviceType, int32_t duration, bool isSync = false);
-
     void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
 
     void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
+
+    void MuteDefaultSinkPort();
+
+    void SetVoiceCallMuteForSwitchDevice();
+
+    void MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
+
+    std::string GetSinkName(const DeviceInfo& desc, int32_t sessionId);
+
+    std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
 
     void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
         SourceInfo &targetInfo);
@@ -1099,6 +1103,7 @@ private:
         SOURCE_TYPE_REMOTE_CAST
     };
 
+    static std::map<std::string, std::string> sinkPortStrToClassStrMap_;
     static std::map<std::string, uint32_t> formatStrToEnum;
     static std::map<std::string, ClassType> classStrToEnum;
     static std::map<std::string, ClassType> portStrToEnum;
