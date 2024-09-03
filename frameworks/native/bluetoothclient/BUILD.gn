@@ -31,9 +31,13 @@ ohos_shared_library("audio_bluetooth_client") {
     "../../../services/audio_policy/server/include/service/interface",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
+    "../audioutils/include",
   ]
 
-  deps = [ "../../../services/audio_service:audio_client" ]
+  deps = [
+    "../../../services/audio_service:audio_client",
+    "../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "bluetooth:btframework",
