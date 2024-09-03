@@ -664,6 +664,16 @@ void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t vo
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+void AudioPolicyService::SetOffloadMute(AudioStreamType streamType, bool mute)
+{
+    if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
+        AUDIO_INFO_LOG("SetOffloadMute for streamType %{public}d is not support", streamType);
+        return;
+    }
+    AUDIO_INFO_LOG("SetOffloadMute for streamType [%{public}d], mute [%{public}d]", streamType, mute);
+    SetOffloadVolume(OffloadStreamType(), mute ? 0 : GetSystemVolumeLevel(OffloadStreamType()));
+}
+
 AudioStreamType AudioPolicyService::OffloadStreamType()
 {
     return offloadSessionID_.has_value() ? GetStreamType(*offloadSessionID_) : STREAM_MUSIC;
@@ -939,6 +949,9 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute,
     vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevel(streamType));
     vol.volumeFloat = GetSystemVolumeInDb(streamType, vol.volumeInt, currentActiveDevice_.deviceType_);
     SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
+
+    // offload sink mute
+    SetOffloadMute(streamType, mute);
     return result;
 }
 
