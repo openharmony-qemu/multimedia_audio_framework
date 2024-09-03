@@ -1256,16 +1256,9 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         ERR_INVALID_PARAM, "param is invalid");
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    if (audioScene == AUDIO_SCENE_CALL_START) {
-        AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_START means voip start.");
-        isAvSessionSetVoipStart = true;
-        return SUCCESS;
-    }
-    if (audioScene == AUDIO_SCENE_CALL_END) {
-        AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_END means voip end, need reset audio scene.");
-        isAvSessionSetVoipStart = false;
-        AudioScene audioScene = interruptService_->GetHighestPriorityAudioScene(0);
-        return audioPolicyService_.SetAudioScene(audioScene);
+    if (audioScene == AUDIO_SCENE_CALL_START || audioScene == AUDIO_SCENE_CALL_END) {
+        AUDIO_ERR_LOG("param is invalid");
+        return ERR_INVALID_PARAM;
     }
     return audioPolicyService_.SetAudioScene(audioScene);
 }
