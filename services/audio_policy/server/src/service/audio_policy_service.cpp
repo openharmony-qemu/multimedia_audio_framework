@@ -2704,22 +2704,32 @@ void AudioPolicyService::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &de
 {
     int32_t ret;
     if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        int32_t activeRet = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
+        if (activeRet != SUCCESS) {
+            AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
+            desc->exceptionFlag_ = true;
+            audioDeviceManager_.UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
+            FetchInputDevice(capturerChangeInfos);
+        }
         ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
     } else {
         ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
     }
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet",
-        GetEncryptAddr(desc->macAddress_).c_str());
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("sco [%{public}s] is not connected yet", GetEncryptAddr(desc->macAddress_).c_str());
+    }
 }
 
 void AudioPolicyService::BluetoothScoDisconectForRecongnition()
 {
-    if (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION &&
-        currentActiveInputDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && audioDeviceManager_.GetScoState()) {
-    int32_t ret = ScoInputDeviceFetchedForRecongnition(false, currentActiveInputDevice_.macAddress_,
-        currentActiveInputDevice_.connectState_);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
-        GetEncryptAddr(currentActiveInputDevice_.macAddress_).c_str());
+    AUDIO_INFO_LOG("Recongnition scoCategory: %{public}d, deviceType: %{public}d, scoState: %{public}d",
+        Bluetooth::AudioHfpManager::GetScoCategory(), currentActiveInputDevice_.deviceType_,
+        audioDeviceManager_.GetScoState());
+    if (currentActiveInputDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        int32_t ret = ScoInputDeviceFetchedForRecongnition(false, currentActiveInputDevice_.macAddress_,
+            currentActiveInputDevice_.connectState_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
+            GetEncryptAddr(currentActiveInputDevice_.macAddress_).c_str());
     }
 }
 
