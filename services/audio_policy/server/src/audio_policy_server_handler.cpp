@@ -902,6 +902,7 @@ void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppEx
     std::lock_guard<std::mutex> lock(runnerMutex_);
     if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
         AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
+        return;
     }
     sptr<IAudioPolicyClient> rendererCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
     CHECK_AND_RETURN_LOG(rendererCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
@@ -917,6 +918,7 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     std::lock_guard<std::mutex> lock(runnerMutex_);
     if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
         AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
+        return;
     }
     sptr<IAudioPolicyClient> capturerCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
     CHECK_AND_RETURN_LOG(capturerCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
