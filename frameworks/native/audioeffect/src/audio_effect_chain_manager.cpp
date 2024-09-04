@@ -536,8 +536,7 @@ void AudioEffectChainManager::Dump()
 
 int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
-    // update dsp volume
-    AUDIO_DEBUG_LOG("send volume to dsp.");
+    AUDIO_INFO_LOG("send volume to dsp.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     uint32_t volumeMax = 0;
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
@@ -547,7 +546,6 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
             volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
         }
     }
-    // send volume to dsp
     if (audioEffectVolume->GetDspVolume() != volumeMax) {
         audioEffectVolume->SetDspVolume(volumeMax);
         effectHdiInput_[0] = HDI_VOLUME;
@@ -562,8 +560,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
 
 int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
-    // send to ap
-    AUDIO_DEBUG_LOG("send volume to ap.");
+    AUDIO_INFO_LOG("send volume to ap.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
         uint32_t volumeMax = 0;

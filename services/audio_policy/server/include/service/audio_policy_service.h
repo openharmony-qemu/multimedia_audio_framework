@@ -431,8 +431,6 @@ public:
     void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
         DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    void UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions);
-
     void CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc);
 #endif
     void GetA2dpOffloadCodecAndSendToDsp();
@@ -1113,7 +1111,6 @@ private:
     SourceType currentSourceType = SOURCE_TYPE_MIC;
     uint32_t currentRate = 0;
     bool updateA2dpOffloadLogFlag = false;
-    std::unordered_map<uint32_t, bool> sessionHasBeenSpatialized_;
     std::mutex checkSpatializedMutex_;
     SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
     SafeStatus safeStatus_ = SAFE_UNKNOWN;
