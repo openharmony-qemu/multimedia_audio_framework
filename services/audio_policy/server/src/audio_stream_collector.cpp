@@ -190,6 +190,7 @@ bool AudioStreamCollector::ExistStreamForPipe(AudioPipeType pipeType)
 
 int32_t AudioStreamCollector::GetRendererDeviceInfo(const int32_t sessionId, DeviceInfo &outputDeviceInfo)
 {
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
         [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
             return changeInfo->sessionId == sessionId;
