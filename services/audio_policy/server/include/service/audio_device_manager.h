@@ -51,6 +51,7 @@ public:
     vector<unique_ptr<AudioDeviceDescriptor>> GetRemoteCaptureDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCommRenderPrivacyDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCommRenderPublicDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> GetCommRenderBTCarDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCommCapturePrivacyDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCommCapturePublicDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetMediaRenderPrivacyDevices();
