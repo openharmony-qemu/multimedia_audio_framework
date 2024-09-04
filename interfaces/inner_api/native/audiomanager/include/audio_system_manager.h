@@ -388,6 +388,7 @@ public:
 private:
     std::list<std::shared_ptr<AudioDistributedRoutingRoleCallback>> callbackList_;
     std::shared_ptr<AudioDistributedRoutingRoleCallback> cb_;
+    std::mutex cbListMutex_;
 };
 
 class AudioDeviceRefiner {
