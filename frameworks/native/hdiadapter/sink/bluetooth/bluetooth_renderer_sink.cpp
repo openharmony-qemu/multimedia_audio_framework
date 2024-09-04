@@ -116,6 +116,7 @@ public:
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     int32_t SetPaPower(int32_t flag) override;
+    int32_t SetPriPaPower() override;
 
     bool GetAudioMonoState();
     float GetAudioBalanceValue();
@@ -988,6 +989,11 @@ void BluetoothRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device
 int32_t BluetoothRendererSinkInner::SetPaPower(int32_t flag)
 {
     (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t BluetoothRendererSinkInner::SetPriPaPower()
+{
     return ERR_NOT_SUPPORTED;
 }
 

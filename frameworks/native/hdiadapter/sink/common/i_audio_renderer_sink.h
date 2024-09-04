@@ -94,6 +94,7 @@ public:
 
     virtual void ResetOutputRouteForDisconnect(DeviceType device) = 0;
     virtual int32_t SetPaPower(int32_t flag) = 0;
+    virtual int32_t SetPriPaPower() = 0;
 
     virtual int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
         const size_t size) = 0;
