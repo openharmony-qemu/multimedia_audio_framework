@@ -20,6 +20,7 @@
 #include "bluetooth_def.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "bluetooth_audio_manager.h"
 #include "bluetooth_device_manager.h"
 #include "bluetooth_device_utils.h"
@@ -42,6 +43,7 @@ BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
 std::mutex g_hfpInstanceLock;
+static const int32_t BT_SET_ACTIVE_DEVICE_TIMEOUT = 8; //BtService SetActiveDevice 8s timeout
 
 static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
@@ -338,6 +340,9 @@ ScoCategory AudioHfpManager::GetScoCategory()
 
 int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
 {
+    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
+    AudioXCollie audioXCollie("AudioHfpManager::SetActiveHfpDevice", BT_SET_ACTIVE_DEVICE_TIMEOUT,
+        nullptr, nullptr, XcollieFlag);
     AUDIO_INFO_LOG("AudioHfpManager::SetActiveHfpDevice");
     BluetoothRemoteDevice device;
     if (HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
