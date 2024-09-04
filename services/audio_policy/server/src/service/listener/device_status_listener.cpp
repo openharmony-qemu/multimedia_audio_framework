@@ -19,7 +19,7 @@
 #include "device_status_listener.h"
 #include <securec.h>
 #include "hdf_device_class.h"
-#include "v4_0/audio_types.h"
+#include "v3_0/audio_types.h"
 #ifdef BLUETOOTH_ENABLE
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"

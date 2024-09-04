@@ -35,7 +35,7 @@
 #include "running_lock.h"
 #include "audio_running_lock_manager.h"
 #endif
-#include "v4_0/iaudio_manager.h"
+#include "v3_0/iaudio_manager.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
