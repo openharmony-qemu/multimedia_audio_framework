@@ -144,6 +144,8 @@ private:
     bool KeepLoopRunning();
     bool KeepLoopRunningIndependent();
 
+    void CallExitStandBy();
+
     void ProcessCallbackFuc();
     void ProcessCallbackFucIndependent();
     void RecordProcessCallbackFuc();
@@ -1210,6 +1212,16 @@ bool AudioProcessInClientInner::ClientPrepareNextLoop(uint64_t curWritePos, int6
     return true;
 }
 
+void AudioProcessInClientInner::CallExitStandBy()
+{
+    Trace trace("AudioProcessInClient::CallExitStandBy::" + std::to_string(sessionId_));
+    int32_t result = processProxy_->Start();
+    StreamStatus targetStatus = StreamStatus::STREAM_STARTING;
+    bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_RUNNING);
+    AUDIO_INFO_LOG("Call start result:%{public}d  status change: %{public}s", result, ret ? "success" : "fail");
+    UpdateHandleInfo();
+}
+
 std::string AudioProcessInClientInner::GetStatusInfo(StreamStatus status)
 {
     switch (status) {
@@ -1243,6 +1255,10 @@ bool AudioProcessInClientInner::KeepLoopRunning()
 
     switch (streamStatus_->load()) {
         case STREAM_RUNNING:
+            return true;
+        case STREAM_STAND_BY:
+            AUDIO_INFO_LOG("Status is STAND_BY, let's call exit!");
+            CallExitStandBy();
             return true;
         case STREAM_STARTING:
             targetStatus = STREAM_RUNNING;

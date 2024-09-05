@@ -52,6 +52,7 @@ namespace {
     static constexpr int64_t RECORD_VOIP_DELAY_TIME = 10000000; // 10ms
     static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
     static constexpr int64_t DELAY_STOP_HDI_TIME = 10000000000; // 10s
+    static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s
     static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME = 4000000000; // 4s
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
@@ -195,6 +196,7 @@ private:
     int32_t GetProcLastWriteDoneInfo(const std::shared_ptr<OHAudioBuffer> processBuffer, uint64_t curWriteFrame,
         uint64_t &proHandleFrame, int64_t &proHandleTime);
 
+    void CheckStandBy();
     bool IsAnyProcessRunning();
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos);
@@ -1237,9 +1239,28 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     return SUCCESS;
 }
 
+void AudioEndpointInner::CheckStandBy()
+{
+    if (endpointStatus_ == RUNNING) {
+        endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
+    }
+
+    if (endpointStatus_ == RUNNING) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+    if (endpointStatus_ == IDEL) {
+        // delay call sink stop when no process running
+        AUDIO_INFO_LOG("status is IDEL, need delay call stop");
+        delayStopTime_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME;
+    }
+}
+
 bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos)
 {
     bool isAllReady = true;
+    bool needCheckStandby = false;
     {
         // lock list without sleep
         std::lock_guard<std::mutex> lock(listLock_);
@@ -1255,14 +1276,30 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_ + duration);
                 continue; // process not running
             }
+            // Status is RUNNING
+            int64_t current = ClockTime::GetCurNano();
+            int64_t lastWrittenTime = tempBuffer->GetLastWrittenTime();
+            if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS) {
+                Trace trace("AudioEndpoint::MarkClientStandby");
+                AUDIO_INFO_LOG("Find one process did not write data for more than 1s, change the status to stand-by");
+                tempBuffer->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
+                needCheckStandby = true;
+                continue;
+            }
             uint64_t curRead = tempBuffer->GetCurReadFrame();
             SpanInfo *curReadSpan = tempBuffer->GetSpanInfo(curRead);
             if (curReadSpan == nullptr || curReadSpan->spanStatus != SpanStatus::SPAN_WRITE_DONE) {
                 AUDIO_DEBUG_LOG("Find one process not ready"); // print uid of the process?
                 isAllReady = false;
-                break;
+                continue;
             }
+            // process Status is RUNNING && buffer status is WRITE_DONE
+            tempBuffer->SetLastWrittenTime(current);
         }
+    }
+
+    if (needCheckStandby) {
+        CheckStandBy();
     }
 
     if (!isAllReady) {

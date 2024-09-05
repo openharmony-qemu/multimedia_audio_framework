@@ -166,6 +166,9 @@ public:
 
     uint32_t GetSpanCount();
 
+    int64_t GetLastWrittenTime();
+    void SetLastWrittenTime(int64_t time);
+
     std::atomic<uint32_t> *GetFutex();
     uint8_t *GetDataBase();
     size_t GetDataSize();
@@ -177,6 +180,9 @@ private:
     uint32_t totalSizeInFrame_;
     uint32_t spanSizeInFrame_;
     uint32_t byteSizePerFrame_;
+
+    // available only in single process
+    int64_t lastWrittenTime_ = 0;
 
     // calculated in advance
     size_t totalSizeInByte_ = 0;
