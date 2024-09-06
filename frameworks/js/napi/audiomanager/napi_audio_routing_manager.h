@@ -99,6 +99,13 @@ private:
     static NapiAudioRoutingManager* GetParamWithSync(const napi_env &env, napi_callback_info info,
         size_t &argc, napi_value *args);
 
+    static void RegisterMicrophoneBlockedCallback(napi_env env, size_t argc, napi_value *args,
+        const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr);
+    static void UnRegisterMicrophoneBlockedCallback(napi_env env, napi_value callback,
+        NapiAudioRoutingManager *napiRoutingMgr);
+
+    static int32_t NapiAudioRountingMicroPhoneBlockCallback();
+
     AudioSystemManager *audioMngr_;
     AudioRoutingManager *audioRoutingMngr_ = nullptr;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
@@ -106,6 +113,7 @@ private:
     std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> preferredOutputDeviceCallbackNapi_ = nullptr;
     std::shared_ptr<AudioPreferredInputDeviceChangeCallback> preferredInputDeviceCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> availableDeviceChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerMicrophoneBlockedCallback> microphoneBlockedCallbackNapi_ = nullptr;
 
     napi_env env_;
 };

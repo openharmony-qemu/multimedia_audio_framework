@@ -213,6 +213,17 @@ OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
+OH_AudioCommon_Result OH_AudioRoutingManager_SetMicrophoneBlockedCallback(
+    OH_AudioRoutingManager *audioRoutingManager,
+    OH_AudioRoutingManager_OnMicrophoneBlockedCallback callback, void* userData)
+{
+    OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
+    ohAudioRoutingManager->SetMicrophoneBlockedCallback(callback, userData);
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -401,6 +412,81 @@ void OHAudioDeviceChangedCallback::OnDeviceChange(const DeviceChangeAction &devi
         }
     }
     callback_(type, audioDeviceDescriptorArray);
+}
+
+void OHMicroPhoneBlockCallback::OnMicrophoneBlocked(const MicPhoneBlockedInfo &micPhoneBlockedInfo)
+{
+    CHECK_AND_RETURN_LOG(blockedCallback_ != nullptr, "failed, pointer to the fuction is nullptr");
+    bool isBlocked = micPhoneBlockedInfo.isBlocked_;
+    uint32_t size = micPhoneBlockedInfo.deviceDescriptor.size();
+    if (size <= 0) {
+        AUDIO_ERR_LOG("audioDeviceDescriptors is null");
+        return;
+    }
+    
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
+        (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
+    if (audioDeviceDescriptorArray) {
+        audioDeviceDescriptorArray->descriptors =
+            (OH_AudioDeviceDescriptor**)malloc(sizeof(OH_AudioDeviceDescriptor*) * size);
+        if (audioDeviceDescriptorArray->descriptors == nullptr) {
+            free(audioDeviceDescriptorArray);
+            audioDeviceDescriptorArray = nullptr;
+            AUDIO_ERR_LOG("failed to malloc descriptors.");
+            return;
+        }
+        audioDeviceDescriptorArray->size = size;
+        uint32_t index = 0;
+        for (auto deviceDescriptor : micPhoneBlockedInfo.deviceDescriptors) {
+            audioDeviceDescriptorArray->descriptors[index] =
+                (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
+            if (audioDeviceDescriptorArray->descriptors[index] == nullptr) {
+                DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray);
+                return;
+            }
+            index++;
+        }
+    }
+    blockedCallback_(isBlocked, audioDeviceDescriptorArray，nullptr);
+}
+
+OH_AudioCommon_Result OHAudioRoutingManager::SetMicrophoneBlockedCallback(
+    OH_AudioRoutingManager_OnMicrophoneBlockedCallback callback，void* userData)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSystemManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSystemManager is null");
+    if (callback == nullptr) {
+        UnSetMicrophoneBlockedCallback(callback);
+        return AUDIOCOMMON_RESULT_SUCCESS;
+    }
+    std::shared_ptr<OHMicroPhoneBlockCallback> microphoneBlock =
+        std::make_shared<OHMicroPhoneBlockCallback>(callback, userData);
+    if (microphoneBlock) {
+        audioSystemManager_->SetMicrophoneBlockedCallback(microphoneBlock);
+        ohMicroPhoneBlockCallbackArray_.push_back(microphoneBlock);
+        return AUDIOCOMMON_RESULT_SUCCESS;
+    }
+    return AUDIOCOMMON_RESULT_ERROR_NO_MEMORY;
+}
+
+OH_AudioCommon_Result OHAudioRoutingManager::UnSetMicrophoneBlockedCallback(
+    OH_AudioRoutingManager_OnMicrophoneBlockedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSystemManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSystemManager is null");
+
+    audioSystemManager_->UnSetMicrophoneBlockedCallback();
+
+    auto iter = std::find_if(ohMicroPhoneBlockCallbackArray_.begin(), ohMicroPhoneBlockCallbackArray_.end(),
+        [&](const std::shared_ptr<OHMicroPhoneBlockCallback> &item) {
+        return item->GetCallback() == callback;
+    });
+    if (iter == ohMicroPhoneBlockCallbackArray_.end()) {
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+
+    ohMicroPhoneBlockCallbackArray_.erase(iter);
+    return AUDIOCOMMON_RESULT_SUCCESS;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

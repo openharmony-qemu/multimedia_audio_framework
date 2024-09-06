@@ -28,6 +28,7 @@
 #include "audio_errors.h"
 #include "securec.h"
 #include "audio_policy_log.h"
+#include "audio_pnp_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,28 +137,32 @@ ssize_t AudioSocketThread::AudioPnpReadUeventMsg(int sockFd, char *buffer, size_
 int32_t AudioSocketThread::SetAudioPnpServerEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent)
 {
     if (strncmp(audioPnpUevent->subSystem, UEVENT_SUBSYSTEM_SWITCH, strlen(UEVENT_SUBSYSTEM_SWITCH)) == 0) {
-        static uint32_t h2wTypeLast = AUDIO_HEADSET;
+        static uint32_t h2wTypeLast = PNP_DEVICE_HEADSET;
         if (strncmp(audioPnpUevent->switchName, UEVENT_SWITCH_NAME_H2W, strlen(UEVENT_SWITCH_NAME_H2W)) != 0) {
             AUDIO_ERR_LOG("the switch name of 'h2w' not found!");
             return ERROR;
         }
         switch (audioPnpUevent->switchState[0]) {
             case REMOVE_AUDIO_DEVICE:
-                audioEvent->eventType = AUDIO_DEVICE_REMOVE;
+                audioEvent->eventType = PNP_EVENT_DEVICE_REMOVE;
                 audioEvent->deviceType = h2wTypeLast;
                 break;
             case ADD_DEVICE_HEADSET:
             case ADD_DEVICE_HEADSET_WITHOUT_MIC:
-                audioEvent->eventType = AUDIO_DEVICE_ADD;
-                audioEvent->deviceType = AUDIO_HEADSET;
+                audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
+                audioEvent->deviceType = PNP_DEVICE_HEADSET;
                 break;
             case ADD_DEVICE_ADAPTER:
-                audioEvent->eventType = AUDIO_DEVICE_ADD;
-                audioEvent->deviceType = AUDIO_ADAPTER_DEVICE;
+                audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
+                audioEvent->deviceType = PNP_DEVICE_DEVICE;
+                break;
+            case ADD_DEVICE_MIC_BLOCKED:
+                audioEvent->eventType = PNP_EVENT_MIC_BLOCKED;
+                audioEvent->deviceType = PNP_DEVICE_MIC;
                 break;
             default:
-                audioEvent->eventType = AUDIO_DEVICE_ADD;
-                audioEvent->deviceType = AUDIO_DEVICE_UNKNOWN;
+                audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
+                audioEvent->deviceType = PNP_DEVICE_UNKNOWN;
                 break;
         }
         h2wTypeLast = audioEvent->deviceType;
@@ -174,13 +179,13 @@ int32_t AudioSocketThread::SetAudioPnpServerEventValue(AudioEvent *audioEvent, s
             return ERROR;
         }
         if (strstr(audioPnpUevent->state, UEVENT_STATE_ANALOG_HS0) != NULL) {
-            audioEvent->eventType = AUDIO_DEVICE_REMOVE;
+            audioEvent->eventType = PNP_EVENT_DEVICE_REMOVE;
         } else if (strstr(audioPnpUevent->state, UEVENT_STATE_ANALOG_HS1) != NULL) {
-            audioEvent->eventType = AUDIO_DEVICE_ADD;
+            audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
         } else {
             return ERROR;
         }
-        audioEvent->deviceType = AUDIO_HEADSET;
+        audioEvent->deviceType = PNP_DEVICE_HEADSET;
     }
     return SUCCESS;
 }
@@ -197,8 +202,8 @@ int32_t AudioSocketThread::AudioAnalogHeadsetDetectDevice(struct AudioPnpUevent 
         return ERROR;
     }
     AUDIO_DEBUG_LOG("audio analog [%{public}s][%{public}s]",
-        audioEvent.deviceType == AUDIO_HEADSET ? "headset" : "headphone",
-        audioEvent.eventType == AUDIO_DEVICE_ADD ? "add" : "removed");
+        audioEvent.deviceType == PNP_DEVICE_HEADSET ? "headset" : "headphone",
+        audioEvent.eventType == PNP_EVENT_DEVICE_ADD ? "add" : "removed");
 
     if (!IsUpdatePnpDeviceState(&audioEvent)) {
         AUDIO_ERR_LOG("audio analog device[%{public}u] state[%{public}u] not need flush !", audioEvent.deviceType,
@@ -396,14 +401,14 @@ int32_t AudioSocketThread::AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUe
     }
 
     if (strcmp(audioPnpUevent->switchState, "1") == 0) {
-        audioEvent.eventType = AUDIO_DEVICE_ADD;
+        audioEvent.eventType = PNP_EVENT_DEVICE_ADD;
     } else if (strcmp(audioPnpUevent->switchState, "0") == 0) {
-        audioEvent.eventType = AUDIO_DEVICE_REMOVE;
+        audioEvent.eventType = PNP_EVENT_DEVICE_REMOVE;
     } else {
         AUDIO_ERR_LOG("audio dp device [%{public}d]", audioEvent.eventType);
         return ERROR;
     }
-    audioEvent.deviceType = AUDIO_DP_DEVICE;
+    audioEvent.deviceType = PNP_DEVICE_DP_DEVICE;
 
     std::string switchNameStr = audioPnpUevent->switchName;
 
@@ -425,7 +430,7 @@ int32_t AudioSocketThread::AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUe
     if (audioEvent.address.empty()) {
         audioEvent.address = '0';
     }
-    AUDIO_INFO_LOG("audio dp device [%{public}s]", audioEvent.eventType == AUDIO_DEVICE_ADD ? "add" : "removed");
+    AUDIO_INFO_LOG("audio dp device [%{public}s]", audioEvent.eventType == PNP_EVENT_DEVICE_ADD ? "add" : "removed");
 
     if (!IsUpdatePnpDeviceState(&audioEvent)) {
         AUDIO_ERR_LOG("audio usb device[%{public}u] state[%{public}u] not need flush !", audioEvent.deviceType,
@@ -459,18 +464,18 @@ int32_t AudioSocketThread::AudioUsbHeadsetDetectDevice(struct AudioPnpUevent *au
         if (!CheckAudioUsbDevice(audioPnpUevent->devName)) {
             return HDF_ERR_INVALID_PARAM;
         }
-        audioEvent.eventType = AUDIO_DEVICE_ADD;
+        audioEvent.eventType = PNP_EVENT_DEVICE_ADD;
     } else if (strcmp(audioPnpUevent->action, UEVENT_ACTION_REMOVE) == 0) {
         if (!DeleteAudioUsbDevice(audioPnpUevent->devName)) {
             return HDF_ERR_INVALID_PARAM;
         }
-        audioEvent.eventType = AUDIO_DEVICE_REMOVE;
+        audioEvent.eventType = PNP_EVENT_DEVICE_REMOVE;
     } else {
         return ERROR;
     }
 
-    audioEvent.deviceType = AUDIO_USB_HEADSET;
-    AUDIO_DEBUG_LOG("audio usb headset [%{public}s]", audioEvent.eventType == AUDIO_DEVICE_ADD ? "add" : "removed");
+    audioEvent.deviceType = PNP_DEVICE_USB_HEADSET;
+    AUDIO_DEBUG_LOG("audio usb headset [%{public}s]", audioEvent.eventType == PNP_EVENT_DEVICE_ADD ? "add" : "removed");
 
     audioEvent.name = audioPnpUevent->name;
     audioEvent.address = audioPnpUevent->devName;

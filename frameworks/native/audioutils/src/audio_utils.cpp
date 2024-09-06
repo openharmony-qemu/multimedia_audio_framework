@@ -1068,6 +1068,9 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
         case STREAM_WAKEUP:
             name = "WAKEUP";
             break;
+        case STREAM_CAMCORDER:
+            name ="CAMCORDER";
+            break;
         default:
             name = GetStreamNameExt(streamType);
     }
@@ -1194,6 +1197,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_MIC:
             name = "MIC";
             break;
+        case SOURCE_TYPE_CAMCORDER:
+            name = "CAMCORDER"；
+            break;
         case SOURCE_TYPE_VOICE_RECOGNITION:
             name = "VOICE_RECOGNITION";
             break;
@@ -1254,6 +1260,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_GAME, STREAM_MUSIC},
     {STREAM_SPEECH, STREAM_MUSIC},
     {STREAM_NAVIGATION, STREAM_MUSIC},
+    {STREAM_CAMCORDER, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
     {STREAM_ALARM, STREAM_ALARM},

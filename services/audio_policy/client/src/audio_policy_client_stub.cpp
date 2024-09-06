@@ -127,6 +127,9 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
                 case static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE):
                     HandleDeviceChange(data, reply);
                     break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_MICRO_PHONE_BLOCKED):
+                    HandleMicrophoneBlocked(data, reply);
+                    break;
                 default:
                     OnMaxRemoteRequest(updateCode, data, reply);
                     break;
@@ -193,6 +196,19 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
         deviceChange.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
     OnDeviceChange(deviceChange);
+}
+
+void AudioPolicyClientStub::HandleMicrophoneBlocked(MessageParcel &data, MessageParcel &reply)
+{
+    MicPhoneBlockedInfo micPhoneBlocked;
+    micPhoneBlocked.isBlocked_ = static_cast<bool>(data.ReadUint32());
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
+
+    for (int32_t i = 0; i < size; i++) {
+        micPhoneBlocked.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
+    }
+    OnMicrophoneBlocked(micPhoneBlocked);
 }
 
 void AudioPolicyClientStub::HandleRingerModeUpdated(MessageParcel &data, MessageParcel &reply)

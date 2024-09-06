@@ -659,6 +659,24 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::SetMicrophoneBlockedCallback(const int32_t clientId,
+    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::SetMicrophoneBlockedCallback");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetMicrophoneBlockedCallback: callback is nullptr");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+    audioPolicyClientStubCB_->AddMicrophoneBlockedCallback(clientId, callback);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag,
     std::shared_ptr<AudioManagerDeviceChangeCallback> &cb)
 {
@@ -752,6 +770,16 @@ int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback()
             callbackChangeInfos_[CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE, false);
         }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnSetMicrophoneBlockedCallback(const int32_t clientId,
+    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::UnSetMicrophoneBlockedCallback");
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveMicrophoneBlockedCallback(clientId, callback);
     }
     return SUCCESS;
 }

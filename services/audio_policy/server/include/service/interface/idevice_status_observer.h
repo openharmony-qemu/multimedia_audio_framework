@@ -29,6 +29,7 @@ public:
     virtual void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected) = 0;
     virtual void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &name, const std::string &adderess) = 0;
+    virtual void OnMicrophoneBlockedUpdate(DeviceType devType, bool isBlocked) = 0;
     virtual void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo) = 0;

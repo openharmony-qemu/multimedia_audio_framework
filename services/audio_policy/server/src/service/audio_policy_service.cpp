@@ -3837,6 +3837,32 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isCon
     OnDeviceStatusUpdated(devType, isConnected, adderess, name, streamInfo);
 }
 
+void AudioPolicyService::OnMicrophoneBlockedUpdate(DeviceType devType, bool isBlocked)
+{
+    CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
+    if (g_adProxy == nullptr) {
+        GetAudioServerProxy();
+    }
+    OnBlockedStatusUpdated(devType, isBlocked);
+}
+
+void AudioPolicyService::OnBlockedStatusUpdated(DeviceType devType, bool isBlocked)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> descForCb = {};
+    AudioDeviceDescriptor updatedDesc(devType, GetDeviceRole(devType));
+    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(updatedDesc);
+    descForCb.push_back(audioDescriptor);
+
+    vector<unique_ptr<AudioCapturerChangeInfo>> audioChangeInfos;
+    streamCollector_.GetCurrentCapturerChangeInfos(audioChangeInfos);
+    for (auto it = audioChangeInfos.begin; it != audioChangeInfos.end(); it++) {
+        if ((*it)->capturerState == CAPTURER_RUNNING) {
+            AUDIO_INFO_LOG("record running");
+            TriggerMicrophoneBlockedCallback(descForCb, isBlocked);
+        }
+    }
+}
+
 void AudioPolicyService::UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc)
 {
@@ -5993,6 +6019,15 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
     }
 }
 
+void AudioPolicyService::TriggerMicrophoneBlockedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc,
+    bool isBlocked)
+{
+    Trace trace("AudioPolicyService::TriggerMicrophoneBlockedCallback");
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendMicrophoneBlockedCallback(desc, isBlocked);
+    }
+}
+
 DeviceRole AudioPolicyService::GetDeviceRole(DeviceType deviceType) const
 {
     switch (deviceType) {
@@ -7187,6 +7222,8 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
         }
     } else if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_CALL) {
         targetSourceType = SOURCE_TYPE_VOICE_CALL;
+    } else if (sessionInfo.sourceType == SOURCE_TYPE_CAMCORDER) {
+        targetSourceType = SOURCE_TYPE_CAMCORDER;
     } else {
         // For normal sourcetype, continue to use the default value
         targetSourceType = SOURCE_TYPE_MIC;
@@ -8428,6 +8465,7 @@ bool AudioPolicyService::IsStreamSupported(AudioStreamType streamType)
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_WAKEUP:
+        case STREAM_CAMCORDER:
             return true;
         default:
             return false;

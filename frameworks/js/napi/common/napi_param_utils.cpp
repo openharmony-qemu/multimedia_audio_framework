@@ -891,6 +891,18 @@ napi_status NapiParamUtils::SetValueDeviceChangeAction(const napi_env& env, cons
     return napi_ok;
 }
 
+napi_status NapiParamUtils::SetValueBlockedDeviceAction(const napi_env& env, const MicPhoneBlockedInfo &action,
+    napi_value &result)
+{
+    napi_create_object(env, &result);
+    NapiParamUtils::SetValueInt32(env, "isBlocked", static_cast<int32_t>(action.isBlocked_), result);
+
+    napi_value jsArray;
+    NapiParamUtils::SetDeviceDescriptors(env, action.deviceDescriptors, jsArray);
+    napi_set_named_property(env, result, "deviceDescriptors", jsArray);
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::SetRendererChangeInfos(const napi_env &env,
     const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &changeInfos, napi_value &result)
 {

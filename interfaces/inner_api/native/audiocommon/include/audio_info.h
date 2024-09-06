@@ -1061,6 +1061,7 @@ class AudioPnpDeviceChangeCallback {
 public:
     virtual ~AudioPnpDeviceChangeCallback() = default;
     virtual void OnPnpDeviceStatusChanged(const std::string &info) = 0;
+    virtual void OnMicrophoneBlocked(const std::string &info) = 0;
 };
 
 struct SourceInfo {

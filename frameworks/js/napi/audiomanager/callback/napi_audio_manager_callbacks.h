@@ -25,8 +25,10 @@ namespace OHOS {
 namespace AudioStandard {
 const std::string DEVICE_CHANGE_CALLBACK_NAME = "deviceChange";
 const std::string MIC_STATE_CHANGE_CALLBACK_NAME = "micStateChange";
+const std::string MICRO_PHONE_BLOCKED_CALLBACK_NAME = "microphoneBlocked";
 
-class NapiAudioManagerCallback : public AudioManagerDeviceChangeCallback {
+class NapiAudioManagerCallback : public AudioManagerDeviceChangeCallback,
+    public AudioManagerMicrophoneBlockedCallback {
 public:
     static bool IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback);
 
@@ -34,6 +36,11 @@ public:
     virtual ~NapiAudioManagerCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+    void onMicrophoneBlocked(const MicPhoneBlockedInfo &micPhoneBlockedinfo) override;
+    void SaveMicrophoneBlockedCallbackReference(napi_value callback);
+    void RemoveMicrophoneBlockedCallbackReference(napi_env env, napi_value callback);
+    void RemoveMicrophoneBlockedCallbackCb();
+    int32_t GetRoutingMicrophoneBlockedCbListSize();
     int32_t GetAudioManagerDeviceChangeCbListSize();
     void SaveAudioManagerDeviceChangeCbRef(DeviceFlag deviceFlag, napi_value callback);
     void RemoveAudioManagerDeviceChangeCbRef(napi_env env, napi_value callback);
@@ -49,16 +56,20 @@ private:
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         DeviceChangeAction deviceChangeAction;
+        MicPhoneBlockedInfo micPhoneBlockedinfo;
     };
 
     static void WorkCallbackInterruptDone(uv_work_t *work, int status);
     void OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb);
+    void OnJsCallbackMicrophoneBlocked(std::unique_ptr<AudioManagerJsCallback> &jsCb);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> deviceChangeCallback_ = nullptr;
+    std::shared_ptr<AutoRef> onMicroPhoneBlockedCallback_ = nullptr;
     std::list<std::pair<std::shared_ptr<AutoRef>, DeviceFlag>> audioManagerDeviceChangeCbList_;
     std::list<std::pair<std::shared_ptr<AutoRef>, DeviceFlag>> routingManagerDeviceChangeCbList_;
+    std::list<std::shared_ptr<AutoRef>> MicrophoneBlockedCbList_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -62,6 +62,7 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_VOICE_COMMUNICATION, "voice_call"},
     {STREAM_VOICE_RING, "ring"},
     {STREAM_VOICE_CALL_ASSISTANT, "voice_call_assistant"},
+    {STREAM_CAMCORDER, "camcorder"},
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -77,7 +78,7 @@ static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
 static bool IsEnhanceMode(SourceType sourceType)
 {
     if (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
-        sourceType == SOURCE_TYPE_VOICE_CALL) {
+        sourceType == SOURCE_TYPE_VOICE_CALL || sourceType == SOURCE_TYPE_CAMCORDER) {
         return true;
     }
     return false;
@@ -879,6 +880,7 @@ const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
     std::string name;
     switch (sourceType) {
         case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_CAMCORDER:
             name = "SCENE_RECORD";
             break;
         case SOURCE_TYPE_VOICE_CALL:

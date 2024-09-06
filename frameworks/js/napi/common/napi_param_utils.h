@@ -187,6 +187,8 @@ public:
         bool &argTransFlag, napi_value in);
     static napi_status SetValueDeviceChangeAction(const napi_env& env, const DeviceChangeAction &action,
         napi_value &result);
+    static napi_status SetValueBlockedDeviceAction(const napi_env& env, const MicPhoneBlockedInfo &action,
+        napi_value &result);
     static napi_status SetRendererChangeInfos(const napi_env &env,
         const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &changeInfos, napi_value &result);
     static napi_status SetCapturerChangeInfos(const napi_env &env,

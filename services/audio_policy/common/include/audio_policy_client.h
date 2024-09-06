@@ -36,6 +36,7 @@ enum class AudioPolicyClientCode {
     ON_FOCUS_REQUEST_CHANGED,
     ON_FOCUS_ABANDON_CHANGED,
     ON_DEVICE_CHANGE,
+    ON_MICRO_PHONE_BLOCKED,
     ON_RINGERMODE_UPDATE,
     ON_MIC_STATE_UPDATED,
     ON_ACTIVE_OUTPUT_DEVICE_UPDATED,
@@ -60,6 +61,7 @@ public:
     virtual void OnAudioFocusRequested(const AudioInterrupt &requestFocus) = 0;
     virtual void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) = 0;
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) =0;
+    virtual void OnMicrophoneBlocked(const MicPhoneBlockedInfo &micPhoneBlockedInfo) =0;
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;

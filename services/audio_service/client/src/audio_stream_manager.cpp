@@ -176,6 +176,7 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
+        case STREAM_CAMCORDER:
             break;
         case STREAM_ULTRASONIC:{
             bool ret = PermissionUtil::VerifySelfPermission();
