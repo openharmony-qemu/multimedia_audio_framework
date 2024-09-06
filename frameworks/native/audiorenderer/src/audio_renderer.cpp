@@ -459,9 +459,8 @@ IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStr
 
 bool AudioRendererPrivate::IsDirectVoipParams(const AudioStreamParams &audioStreamParams)
 {
-    // VoIP derect only supports 8K, 16K and 48K sampling rate.
-    if (!(audioStreamParams.samplingRate == SAMPLE_RATE_8000 ||
-        audioStreamParams.samplingRate == SAMPLE_RATE_16000 ||
+    // VoIP derect only supports 16K and 48K sampling rate.
+    if (!(audioStreamParams.samplingRate == SAMPLE_RATE_16000 ||
         audioStreamParams.samplingRate == SAMPLE_RATE_48000)) {
         AUDIO_ERR_LOG("The sampling rate %{public}d is not supported for direct VoIP mode",
             audioStreamParams.samplingRate);
