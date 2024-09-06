@@ -223,7 +223,10 @@ ohos_shared_library("audio_policy_service") {
     "samgr:samgr_proxy",
   ]
 
-  public_external_deps = [ "libxml2:libxml2" ]
+  public_external_deps = [
+    "libxml2:libxml2",
+    "openssl:libcrypto_shared",
+  ]
 
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
