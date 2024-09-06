@@ -1515,7 +1515,7 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
             ret = snprintf_s(keyValueList, len, len - 1,
-                "zero_volume=true;routing=10");
+                "zero_volume=true;routing=16");
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             ret = snprintf_s(keyValueList, len, len - 1,
