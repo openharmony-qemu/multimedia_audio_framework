@@ -46,7 +46,6 @@ namespace {
     constexpr int32_t MAX_VOL = 15;
     constexpr int32_t MIN_VOL = 0;
     constexpr int32_t INV_CHANNEL = -1;
-    constexpr int32_t CAPTURER_FLAG = 0;
     constexpr int32_t AUDIO_ERR = -3;
     constexpr float DISCOUNT_VOLUME = 0.5;
     constexpr float INVALID_VOLUME = -1.0;
