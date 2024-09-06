@@ -491,7 +491,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     Trace trace("AudioRenderer::SetParams");
     AUDIO_INFO_LOG("StreamClientState for Renderer::SetParams.");
 
-    std::shared_lock<std::shared_mutex> lockShared(switchStreamMutex_);
+    std::shared_lock<std::shared_mutex> lockShared(rendererMutex_);
     std::lock_guard<std::mutex> lock(setParamsMutex_);
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
@@ -588,7 +588,7 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
 
 int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback)
 {
-    std::shared_lock<std::shared_mutex> lockShared(switchStreamMutex_);
+    std::shared_lock<std::shared_mutex> lockShared(rendererMutex_);
     std::lock_guard<std::mutex> lock(setStreamCallbackMutex_);
     // If the client is using the deprecated SetParams API. SetRendererCallback must be invoked, after SetParams.
     // In general, callbacks can only be set after the renderer state is PREPARED.
@@ -655,7 +655,7 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Start");
-    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
 
@@ -745,7 +745,7 @@ bool AudioRendererPrivate::Flush() const
 bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::PauseTransitent");
-    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
     if (isSwitching_) {
         AUDIO_ERR_LOG("failed. Switching state: %{public}d", isSwitching_);
@@ -769,7 +769,7 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Pause");
-    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
 
@@ -802,7 +802,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Stop() const
 {
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
-    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
     if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
@@ -827,7 +827,7 @@ bool AudioRendererPrivate::Stop() const
 
 bool AudioRendererPrivate::Release() const
 {
-    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
     bool result = audioStream_->ReleaseAudioStream();
@@ -1146,12 +1146,7 @@ AudioRenderMode AudioRendererPrivate::GetRenderMode() const
 
 int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    if (!switchStreamMutex_.try_lock_shared()) {
-        AUDIO_ERR_LOG("In switch stream process, return");
-        return ERR_ILLEGAL_STATE;
-    }
     int32_t ret = audioStream_->GetBufferDesc(bufDesc);
-    switchStreamMutex_.unlock_shared();
     return ret;
 }
 
@@ -1160,12 +1155,7 @@ int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
     Trace trace("AudioRenderer::Enqueue");
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
-    if (!switchStreamMutex_.try_lock_shared()) {
-        AUDIO_ERR_LOG("In switch stream process, return");
-        return ERR_ILLEGAL_STATE;
-    }
     int32_t ret = audioStream_->Enqueue(bufDesc);
-    switchStreamMutex_.unlock_shared();
     return ret;
 }
 
@@ -1214,6 +1204,8 @@ void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
 
 void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
 {
+    Trace trace(std::string("AudioRenderer::SetSilentModeAndMixWithOthers:") + (on ? "on" : "off"));
+    std::shared_lock<std::shared_mutex> sharedLockSwitch(rendererMutex_);
     if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
         if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
@@ -1311,7 +1303,7 @@ uint32_t AudioRendererPrivate::GetUnderflowCount() const
 
 void AudioRendererPrivate::SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback)
 {
-    std::shared_lock sharedLock(switchStreamMutex_);
+    std::shared_lock sharedLock(rendererMutex_);
     std::lock_guard lock(audioRendererErrCallbackMutex_);
     audioRendererErrorCallback_ = errorCallback;
 }
@@ -1414,7 +1406,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     bool switchResult = false;
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
-        std::lock_guard<std::shared_mutex> lock(switchStreamMutex_);
+        std::lock_guard<std::shared_mutex> lock(rendererMutex_);
         isSwitching_ = true;
         RendererState previousState = GetStatus();
         AUDIO_INFO_LOG("Previous stream state: %{public}d", previousState);
@@ -1576,7 +1568,7 @@ int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 
 void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
 {
-    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
+    std::shared_lock<std::shared_mutex> lock(rendererMutex_);
     audioStream_->SetPreferredFrameSize(frameSize);
 }
 
