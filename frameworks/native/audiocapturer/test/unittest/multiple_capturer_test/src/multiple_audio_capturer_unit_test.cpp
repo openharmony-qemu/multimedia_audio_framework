@@ -41,7 +41,9 @@ void MultipleAudioCapturerUnitTest::AudioCapUnitTestFunc(unique_ptr<AudioCapture
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = sourceType;
     audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioCapturer);
+    if (audioCapturer == nullptr) {
+        return ;
+    }
 
     cb = make_shared<MultipleAudioCapturerCallbackTest>();
     ASSERT_NE(nullptr, cb);

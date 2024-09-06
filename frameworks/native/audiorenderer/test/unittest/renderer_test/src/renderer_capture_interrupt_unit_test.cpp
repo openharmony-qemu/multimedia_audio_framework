@@ -100,6 +100,36 @@ void AudioRendererCapturerUnitTest::AudioInterruptUnitTestFunc(StreamUsage strea
     audioRenderer->Release();
 }
 
+void AudioRendererCapturerUnitTest::AudioInterruptDenyIncomingUnitTestFunc(StreamUsage streamUsage,
+    SourceType sourceType)
+{
+    unique_ptr<AudioRenderer> audioRenderer = nullptr;
+    unique_ptr<AudioCapturer> audioCapturer = nullptr;
+
+    AudioRendererOptions rendererOptions = UTCreateAudioRenderer(streamUsage);
+    audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    audioRenderer->SetInterruptMode(INDEPENDENT_MODE);
+    bool isRendererStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isRendererStarted);
+
+    AudioCapturerOptions capturerOptions = UTCreateAudioCapturer(sourceType);
+    audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+    shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = make_shared<AudioCapturerCallbackTest>();
+    int32_t ret = audioCapturer->SetCapturerCallback(audioCapturerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    bool isCapturerStarted = audioCapturer->Start();
+    EXPECT_EQ(false, isCapturerStarted);
+
+    std::this_thread::sleep_for(std::chrono::seconds(SLEEP_TIME));
+    EXPECT_EQ(AudioRendererCapturerUnitTest::CaptureinterruptEventTest_.hintType, INTERRUPT_HINT_STOP);
+    AudioRendererCapturerUnitTest::CaptureinterruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioCapturer->Release();
+    audioRenderer->Release();
+}
+
 /**
  * @tc.name  : Test Audio Interrupt rule
  * @tc.number: SetRendererCaptureInterrupt_001
@@ -301,7 +331,7 @@ HWTEST(AudioRendererCapturerUnitTest, SetRendererCaptureInterrupt_019, TestSize.
  */
 HWTEST(AudioRendererCapturerUnitTest, SetRendererCaptureInterrupt_020, TestSize.Level1)
 {
-    AudioRendererCapturerUnitTest::AudioInterruptUnitTestFunc(STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+    AudioRendererCapturerUnitTest::AudioInterruptDenyIncomingUnitTestFunc(STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
         SOURCE_TYPE_VOICE_MESSAGE);
 }
 } // namespace AudioStandard

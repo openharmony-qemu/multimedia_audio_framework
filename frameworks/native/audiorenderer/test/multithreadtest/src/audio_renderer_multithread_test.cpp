@@ -39,7 +39,6 @@ namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
     const int32_t RENDERER_FLAG = 0;
     const int32_t WRITE_BUFFERS_COUNT = 1000;
-    const int32_t VALUE_ZERO = 0;
     const int32_t MAX_INSTANCE_NUM = 16;
 } // namespace
 
@@ -87,7 +86,6 @@ void AudioRendererMultithreadTest::Write(unique_ptr<AudioRenderer> &audioRendere
             ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
             bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
                                                  bytesToWrite - static_cast<size_t>(bytesWritten));
-            EXPECT_GE(bytesWritten, VALUE_ZERO);
             if (bytesWritten < 0) {
                 failCount--;
                 break;

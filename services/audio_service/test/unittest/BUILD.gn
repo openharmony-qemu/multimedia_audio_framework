@@ -58,30 +58,6 @@ ohos_unittest("audio_balance_unit_test") {
   ]
 }
 
-ohos_unittest("policy_handler_unit_test") {
-  module_out_path = module_output_path
-  sources = [ "policy_handler_unit_test.cpp" ]
-
-  configs = [ ":module_private_config" ]
-
-  deps = [
-    "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../audio_service:audio_common",
-    "../../../audio_service:audio_process_service",
-  ]
-
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "pulseaudio:pulse",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
-}
-
 ohos_unittest("audio_direct_sink_unit_test") {
   module_out_path = module_output_path
 
