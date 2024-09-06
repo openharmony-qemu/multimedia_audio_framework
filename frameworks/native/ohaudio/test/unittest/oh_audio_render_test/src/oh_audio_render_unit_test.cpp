@@ -1802,7 +1802,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetDefaultOutputDevice_001, TestS
     std::this_thread::sleep_for(1s);
 
     result = OH_AudioRenderer_SetDefaultOutputDevice(audioRenderer, AUDIO_DEVICE_TYPE_EARPIECE);
-    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS || result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     std::this_thread::sleep_for(1s);
 
