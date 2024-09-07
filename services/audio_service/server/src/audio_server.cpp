@@ -1884,12 +1884,15 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
 
     IAudioCapturerSource* primaryAudioCapturerSourceInstance =
         IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_MIC);
-
     IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
+    IAudioCapturerSource *fastAudioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
+    IAudioCapturerSource *voipFastAudioCapturerSourceInstance = FastAudioCapturerSource::GetVoipInstance();
 
     for (auto audioCapturerSourceInstance : {
         primaryAudioCapturerSourceInstance,
-        usbAudioCapturerSinkInstance
+        usbAudioCapturerSinkInstance,
+        fastAudioCapturerSourceInstance,
+        voipFastAudioCapturerSourceInstance
     }) {
         if (audioCapturerSourceInstance != nullptr) {
             audioCapturerSourceInstance->RegisterAudioCapturerSourceCallback(make_unique<CapturerStateOb>(
