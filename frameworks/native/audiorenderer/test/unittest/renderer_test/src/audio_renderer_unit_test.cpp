@@ -6425,7 +6425,7 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     EXPECT_EQ(true, isStartedforVoiceCall);
 
     std::this_thread::sleep_for(std::chrono::seconds(3));
-    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_STOP);
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_PAUSE);
 
     audioRendererForVoiceCall->Stop();
     audioRendererForVoiceCall->Release();

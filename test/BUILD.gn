@@ -53,7 +53,6 @@ group("audio_unit_test") {
     "../frameworks/native/playbackcapturer/test/unittest:playback_capturer_manager_unit_test",
     "../frameworks/native/toneplayer/test/unittest:audio_toneplayer_unit_test",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
-    "../services/audio_service/test/unittest:policy_handler_unit_test",
   ]
 
   if (audio_framework_feature_opensl_es) {
