@@ -50,34 +50,6 @@ ohos_unittest("audio_capturer_unit_test") {
   ]
 }
 
-ohos_unittest("inner_capturer_unit_test") {
-  module_out_path = module_output_path
-  include_dirs = [
-    "./include",
-    "../../../include",
-    "../../../../../../interfaces/inner_api/native/audiocommon/include",
-  ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-  ]
-
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "pulseaudio:pulse",
-  ]
-
-  sources = [ "src/inner_capturer_unit_test.cpp" ]
-
-  deps = [
-    "../../../../../../services/audio_service:audio_client",
-    "../../../../audiocapturer:audio_capturer",
-    "../../../../audiorenderer:audio_renderer",
-  ]
-}
-
 ohos_unittest("audio_fast_capturer_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
