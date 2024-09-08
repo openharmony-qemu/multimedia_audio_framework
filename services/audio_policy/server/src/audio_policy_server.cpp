@@ -210,7 +210,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case COMMON_EVENT_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility common event service start");
             SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
-            SubscribeCommonEvent("custom.event.display_rotation_changed");
+            SubscribeCommonEvent("usual.event.dms.rotation_changed");
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -496,6 +496,9 @@ void AudioPolicyServer::SubscribeCommonEvent(const std::string event)
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(event);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    if (event == "usual.event.dms.rotation_changed") {
+        subscribeInfo.SetPermission("ohos.permission.PUBLISH_DISPLAY_ROTATION_EVENT");
+    }
     auto commonSubscribePtr = std::make_shared<AudioCommonEventSubscriber>(subscribeInfo,
         std::bind(&AudioPolicyServer::OnReceiveEvent, this, std::placeholders::_1));
     if (commonSubscribePtr == nullptr) {
@@ -516,7 +519,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
             AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
             InitMicrophoneMute();
         }
-    } else if (action == "custom.event.display_rotation_changed") {
+    } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
         audioPolicyService_.SetRotationToEffect(rotate);

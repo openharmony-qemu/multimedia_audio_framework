@@ -619,18 +619,13 @@ int32_t AudioEffectChainManager::EffectDspRotationUpdate(std::shared_ptr<AudioEf
     const uint32_t rotationState)
 {
     // send rotation to dsp
-    AUDIO_DEBUG_LOG("send rotation to dsp.");
-    CHECK_AND_RETURN_RET_LOG(audioEffectRotation != nullptr, ERROR, "null audioEffectRotation");
-    if (audioEffectRotation->GetRotation() != rotationState) {
-        AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
-            rotationState, audioEffectRotation->GetRotation());
-        audioEffectRotation->SetRotation(rotationState);
-        effectHdiInput_[0] = HDI_ROTATION;
-        effectHdiInput_[1] = rotationState;
-        AUDIO_INFO_LOG("set hdi rotation: %{public}d", effectHdiInput_[1]);
-        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi rotation failed");
-    }
+    AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
+        rotationState, audioEffectRotation->GetRotation());
+    effectHdiInput_[0] = HDI_ROTATION;
+    effectHdiInput_[1] = rotationState;
+    AUDIO_INFO_LOG("set hdi rotation: %{public}d", effectHdiInput_[1]);
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi rotation failed");
     return SUCCESS;
 }
 
@@ -638,35 +633,31 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEff
     const uint32_t rotationState)
 {
     // send rotation to ap
-    AUDIO_DEBUG_LOG("send rotation to ap.");
-    CHECK_AND_RETURN_RET_LOG(audioEffectRotation != nullptr, ERROR, "null audioEffectRotation");
-    if (audioEffectRotation->GetRotation() != rotationState) {
-        AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
-            rotationState, audioEffectRotation->GetRotation());
-        audioEffectRotation->SetRotation(rotationState);
-        for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
-            std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
-            if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-                return ERROR;
-            }
-            auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-            if (audioEffectChain == nullptr) {
-                return ERROR;
-            }
-            AudioEffectScene currSceneType;
-            if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
-                currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first));
-            } else {
-                currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
-                    GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first)));
-            }
-            audioEffectChain->SetEffectCurrSceneType(currSceneType);
-            int32_t ret = audioEffectChain->UpdateEffectParam();
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
-            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, rotation changed to %{public}u",
-                it->first.c_str(), audioEffectChain->GetLatency(), rotationState);
+    AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
+        rotationState, audioEffectRotation->GetRotation());
+    for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
+        std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
+        if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+            return ERROR;
         }
-    }
+        auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+        if (audioEffectChain == nullptr) {
+            return ERROR;
+        }
+        AudioEffectScene currSceneType;
+        if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+            currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first));
+        } else {
+            currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
+                GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first)));
+        }
+        audioEffectChain->SetEffectCurrSceneType(currSceneType);
+        int32_t ret = audioEffectChain->UpdateEffectParam();
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
+        AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, rotation changed to %{public}u",
+            it->first.c_str(), audioEffectChain->GetLatency(), rotationState);
+        }
+
     return SUCCESS;
 }
 
@@ -674,9 +665,12 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
-    AUDIO_INFO_LOG("rotation update to %{public}u", rotationState);
-    EffectDspRotationUpdate(audioEffectRotation, rotationState);
-    EffectApRotationUpdate(audioEffectRotation, rotationState);
+    if (audioEffectRotation->GetRotation() != rotationState) {
+        audioEffectRotation->SetRotation(rotationState);
+        AUDIO_INFO_LOG("rotation update to %{public}u", rotationState);
+        EffectDspRotationUpdate(audioEffectRotation, rotationState);
+        EffectApRotationUpdate(audioEffectRotation, rotationState);
+    }
     
     return SUCCESS;
 }
