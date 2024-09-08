@@ -91,6 +91,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     SceneTypeToEffectChainCountBackupMap_.clear();
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
+    spatialDeviceType_ = EARPHONE_TYPE_OTHERS;
     isInitialized_ = false;
 
 #ifdef SENSOR_ENABLE
@@ -365,6 +366,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
 
     audioEffectChain->SetEffectMode(effectMode);
     audioEffectChain->SetExtraSceneType(extraSceneType_);
+    audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
     for (std::string effect: EffectChainToEffectsMap_[effectChain]) {
         AudioEffectHandle handle = nullptr;
         AudioEffectDescriptor descriptor;
@@ -728,6 +730,32 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
         headTrackingEnabled_ = spatializationState.headTrackingEnabled;
         UpdateSensorState();
     }
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
+{
+    int32_t ret{ SUCCESS };
+    spatialDeviceType_ = spatialDeviceType;
+
+    effectHdiInput_[0] = HDI_UPDATE_SPATIAL_DEVICE_TYPE;
+    effectHdiInput_[1] = spatialDeviceType_;
+    AUDIO_INFO_LOG("set hdi spatialDeviceType: %{public}d", effectHdiInput_[1]);
+    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set hdi update spatial device type failed");
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    for (auto& sceneType2EffectChain : SceneTypeToEffectChainMap_) {
+        auto audioEffectChain = sceneType2EffectChain.second;
+        if (audioEffectChain != nullptr) {
+            audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
+            ret = audioEffectChain->UpdateEffectParam();
+            CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "UpdateEffectParam failed.");
+        }
+    }
+
     return SUCCESS;
 }
 

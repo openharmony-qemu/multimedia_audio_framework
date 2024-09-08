@@ -317,7 +317,9 @@ bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::str
 
 int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
 {
-    AUDIO_INFO_LOG("UpdateSpatialDeviceState Entered");
+    AUDIO_INFO_LOG("UpdateSpatialDeviceState Entered, "
+        "isSpatializationSupported = %{public}d, isHeadTrackingSupported = %{public}d",
+        audioSpatialDeviceState.isSpatializationSupported, audioSpatialDeviceState.isHeadTrackingSupported);
     {
         std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
         std::string encryptedAddress = GetSha256EncryptAddress(audioSpatialDeviceState.address);
@@ -328,6 +330,13 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
             return SPATIALIZATION_SERVICE_OK;
         }
         addressToSpatialDeviceStateMap_[encryptedAddress] = audioSpatialDeviceState;
+    }
+
+    AUDIO_INFO_LOG("currSpatialDeviceType_ = %{public}d,  nextSpatialDeviceType_ = %{public}d",
+        currSpatialDeviceType_, audioSpatialDeviceState.spatialDeviceType);
+    if (audioSpatialDeviceState.spatialDeviceType != currSpatialDeviceType_) {
+        UpdateSpatialDeviceType(audioSpatialDeviceState.spatialDeviceType);
+        currSpatialDeviceType_ = audioSpatialDeviceState.spatialDeviceType;
     }
 
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
@@ -378,6 +387,25 @@ void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddres
     }
     std::string preDeviceAddress = currentDeviceAddress_;
     currentDeviceAddress_ = macAddress;
+
+    std::string currEncryptedAddress_ = GetSha256EncryptAddress(currentDeviceAddress_);
+    if (addressToSpatialDeviceStateMap_.find(currEncryptedAddress_) != addressToSpatialDeviceStateMap_.end()) {
+        auto nextSpatialDeviceType{ addressToSpatialDeviceStateMap_[currEncryptedAddress_].spatialDeviceType };
+        AUDIO_INFO_LOG("currSpatialDeviceType_ = %{public}d,  nextSpatialDeviceType_ = %{public}d",
+            currSpatialDeviceType_, nextSpatialDeviceType);
+        if (nextSpatialDeviceType != currSpatialDeviceType_) {
+            UpdateSpatialDeviceType(nextSpatialDeviceType);
+            currSpatialDeviceType_ = nextSpatialDeviceType;
+        }
+    } else {
+        AUDIO_INFO_LOG("currSpatialDeviceType_ = %{public}d,  nextSpatialDeviceType_ = %{public}d",
+            currSpatialDeviceType_, EARPHONE_TYPE_NONE);
+        if (currSpatialDeviceType_ != EARPHONE_TYPE_NONE) {
+            UpdateSpatialDeviceType(EARPHONE_TYPE_NONE);
+            currSpatialDeviceType_ = EARPHONE_TYPE_NONE;
+        }
+    }
+
     if (UpdateSpatializationStateReal(true, preDeviceAddress) != 0) {
         AUDIO_WARNING_LOG("UpdateSpatializationStateReal fail");
     }
@@ -494,6 +522,19 @@ int32_t AudioSpatializationService::UpdateSpatializationSceneType()
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(ret == SPATIALIZATION_SERVICE_OK, ret, "set spatialization scene type failed");
     return SPATIALIZATION_SERVICE_OK;
+}
+
+void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->UpdateSpatialDeviceType(spatialDeviceType);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_LOG(ret == 0, "AudioSpatializationService::UpdateSpatialDeviceType fail");
+
+    return;
 }
 
 void AudioSpatializationService::UpdateDeviceSpatialInfo(const uint32_t deviceID, const std::string deviceSpatialInfo)

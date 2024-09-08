@@ -1924,6 +1924,17 @@ int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatiali
     return audioEffectChainManager->UpdateSpatializationState(spatializationState);
 }
 
+int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+
+    return audioEffectChainManager->UpdateSpatialDeviceType(spatialDeviceType);
+}
+
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
