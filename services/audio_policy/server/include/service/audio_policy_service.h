@@ -663,6 +663,9 @@ private:
     void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
+    int32_t HandleDeviceChangeForFetchInputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
+        unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
+
     void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
 
