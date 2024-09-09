@@ -31,12 +31,16 @@ AudioSessionTimer::AudioSessionTimer()
 
 AudioSessionTimer::~AudioSessionTimer()
 {
+    if (timerThread_ != nullptr && timerThread_->joinable()) {
+        timerThread_->join();
+        timerThread_ = nullptr;
+    }
 }
 
 void AudioSessionTimer::StartTimer(const int32_t callerPid)
 {
     AUDIO_INFO_LOG("Audio session state change: StartTimer for pid %{public}d", callerPid);
-    std::lock_guard<std::mutex> lock(sessionTimerMutex_);
+    std::unique_lock<std::mutex> lock(sessionTimerMutex_);
     if (timerMap_.count(callerPid) != 0) {
         AUDIO_INFO_LOG("StartTimer: timer of callerPid %{public}d is already running", callerPid);
         // the time point will not be updated.
@@ -45,12 +49,13 @@ void AudioSessionTimer::StartTimer(const int32_t callerPid)
     std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     timerMap_[callerPid] = now;
     if (!timerMap_.empty()) {
-        std::lock_guard<std::mutex> lock(timerLoopMutex_);
+        std::lock_guard<std::mutex> loopLock(timerLoopMutex_);
         state_ = TimerState::TIMER_RUNNING;
     }
 
-    if (timerThread_ != nullptr && timerThread_->joinable()) {
+    if (!isThreadRunning_.load() && timerThread_ != nullptr && timerThread_->joinable()) {
         // the old thread has been used and can be reset.
+        lock.unlock();
         timerThread_->join();
         timerThread_ = nullptr;
     }
@@ -62,23 +67,27 @@ void AudioSessionTimer::StartTimer(const int32_t callerPid)
 void AudioSessionTimer::StopTimer(const int32_t callerPid)
 {
     AUDIO_INFO_LOG("Audio session state change: StopTimer for pid %{public}d", callerPid);
-    std::lock_guard<std::mutex> lock(sessionTimerMutex_);
+    std::unique_lock<std::mutex> lock(sessionTimerMutex_);
     if (timerMap_.count(callerPid) == 0) {
         AUDIO_WARNING_LOG("StopTimer: timer of callerPid %{public}d is already stopped", callerPid);
     }
     timerMap_.erase(callerPid);
     if (timerMap_.empty()) {
         {
-            std::lock_guard<std::mutex> lock(timerLoopMutex_);
+            std::lock_guard<std::mutex> loopLock(timerLoopMutex_);
             state_ = TimerState::TIMER_STOPPED;
         }
         timerCond_.notify_all();
+        if (!isThreadRunning_.load() && timerThread_ != nullptr && timerThread_->joinable()) {
+            lock.unlock();
+            timerThread_->join();
+            timerThread_ = nullptr;
+        }
     }
 }
 
 bool AudioSessionTimer::IsSessionTimerRunning(const int32_t callerPid)
 {
-    AUDIO_INFO_LOG("IsSessionTimerRunning: callerPid %{public}d", callerPid);
     std::lock_guard<std::mutex> lock(sessionTimerMutex_);
     bool isRunning = (timerMap_.count(callerPid) > 0);
     AUDIO_INFO_LOG("IsSessionTimerRunning: callerPid %{public}d, result %{public}d", callerPid, isRunning);
@@ -88,6 +97,7 @@ bool AudioSessionTimer::IsSessionTimerRunning(const int32_t callerPid)
 void AudioSessionTimer::TimerLoopFunc()
 {
     AUDIO_INFO_LOG("Start the session timer loop");
+    isThreadRunning_.store(true);
     for (;;) {
         std::unique_lock<std::mutex> lock(sessionTimerMutex_);
         if (timerMap_.empty()) {
@@ -119,6 +129,7 @@ void AudioSessionTimer::TimerLoopFunc()
             break;
         }
     }
+    isThreadRunning_.store(false);
 }
 
 void AudioSessionTimer::SendSessionTimeOutCallback(const int32_t callerPid)

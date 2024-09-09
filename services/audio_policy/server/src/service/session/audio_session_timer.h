@@ -58,6 +58,7 @@ private:
     TimerState state_ = TimerState::TIMER_INVALID;
     std::unordered_map<int32_t, std::time_t> timerMap_;
     std::shared_ptr<std::thread> timerThread_;
+    std::atomic<bool> isThreadRunning_ = false;
     std::condition_variable timerCond_;
     std::mutex timerLoopMutex_;
     std::weak_ptr<AudioSessionTimerCallback> timerCallback_;

@@ -154,7 +154,7 @@ private:
     int32_t ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     void AddToAudioFocusInfoList(std::shared_ptr<AudioInterruptZone> &audioInterruptZone,
         const int32_t &zoneId, const AudioInterrupt &incomingInterrupt, const AudioFocuState &incomingState);
-    void HandleIncomingState(const int32_t &zoneId, AudioFocuState &incomingState,
+    void HandleIncomingState(const int32_t &zoneId, const AudioFocuState &incomingState,
         InterruptEventInternal &interruptEvent, const AudioInterrupt &incomingInterrupt);
     void ProcessExistInterrupt(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
         &iterActive, AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
