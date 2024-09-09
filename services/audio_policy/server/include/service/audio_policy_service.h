@@ -632,7 +632,7 @@ private:
     void MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
         unique_ptr<AudioDeviceDescriptor> &inputDevice);
 
-    void SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc);
+    int32_t SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc);
 
     void SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType, sptr<AudioDeviceDescriptor> desc);
 
