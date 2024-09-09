@@ -309,9 +309,7 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
             break;
         }
     }
-    if (!match) {
-        return ERR_INVALID_PARAM;
-    }
+    if (!match) { return ERR_INVALID_PARAM; }
 
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");

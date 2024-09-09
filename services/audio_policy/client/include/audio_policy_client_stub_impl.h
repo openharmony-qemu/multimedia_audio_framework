@@ -96,7 +96,7 @@ public:
     void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
     void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
-    void OnMicrophoneBlocked(const MicPhoneBlockedInfo &micPhoneBlockedInfo) override;
+    void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;

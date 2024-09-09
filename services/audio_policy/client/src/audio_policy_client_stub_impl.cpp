@@ -200,16 +200,15 @@ void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
     }
 }
 
-void AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicPhoneBlockedInfo &dca)
+void AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedInfo &blockedInfo)
 {
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
-    MicPhoneBlockedInfo micPhoneBlockedInfo;
-    micPhoneBlockedInfo.isBlocked_ = dca.isBlocked_;
+    MicrophoneBlockedInfo microphoneBlockedInfo;
+    microphoneBlockedInfo.status = blockedInfo.status;
     for (auto it = microphoneBlockedCallbackList_.begin(); it != microphoneBlockedCallbackList_.end(); ++it) {
-        micPhoneBlockedInfo.deviceDescriptors = dca.deviceDescriptors;
-        if (it->second && micPhoneBlockedInfo.deviceDescriptors.size() > 0) {
-            AUDIO_INFO_LOG("AudioPolicyClientStubImpl OnMicrophoneBlocked")
-            it->second->OnMicrophoneBlocked(micPhoneBlockedInfo);
+        microphoneBlockedInfo.deviceDescriptors = blockedInfo.deviceDescriptors;
+        if (it->second && microphoneBlockedInfo.deviceDescriptors.size() > 0) {
+            it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
         }
     }
 }

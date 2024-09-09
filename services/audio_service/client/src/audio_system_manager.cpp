@@ -607,12 +607,12 @@ int32_t AudioSystemManager::SetMicrophoneBlockedCallback(
     return AudioPolicyManager::GetInstance().SetMicrophoneBlockedCallback(clientId, callback);
 }
 
-int32_t AudioSystemManager::UnSetMicrophoneBlockedCallback(
+int32_t AudioSystemManager::UnsetMicrophoneBlockedCallback(
     const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     int32_t clientId = GetCallingPid();
-    return AudioPolicyManager::GetInstance().UnSetMicrophoneBlockedCallback(clientId, callback);
+    return AudioPolicyManager::GetInstance().UnsetMicrophoneBlockedCallback(clientId, callback);
 }
 
 

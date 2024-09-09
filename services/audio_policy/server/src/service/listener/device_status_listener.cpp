@@ -212,8 +212,24 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
 void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
 {
     CHECK_AND_RETURN_LOG(!info.empty(), "OnPnpDeviceStatusChange invalid info");
+
+    if (audioDeviceAnahsCb_ != nullptr) {
+        std::string anahsName = "";
+        auto anahsBegin = info.find("ANAHS_NAME=");
+        auto anahsEnd = info.find_first_of(";", anahsBegin);
+        anahsName = info.substr(anahsBegin + std::strlen("ANAHS_NAME="),
+            anahsEnd - anahsBegin - std::strlen("ANAHS_NAME="));
+        if (strncmp(anahsName.c_str(), UEVENT_INSERT, strlen(UEVENT_INSERT)) == 0 ||
+            strncmp(anahsName.c_str(), UEVENT_REMOVE, strlen(UEVENT_REMOVE)) == 0) {
+            AUDIO_INFO_LOG("parse anahsName = %{public}s", anahsName.c_str());
+            audioDeviceAnahsCb_->OnExtPnpDeviceStatusChanged(anahsName);
+            return;
+        }
+    }
+
     PnpDeviceType pnpDeviceType = PNP_DEVICE_UNKNOWN;
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
+
     std::string name = "";
     std::string address = "";
  
@@ -263,6 +279,52 @@ void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
     AUDIO_INFO_LOG("[device type :%{public}d], [isBlocked :%{public}d]", micBlockedDeviceType, isBlocked);
 
     deviceObserver_.OnMicrophoneBlockedUpdate(micBlockedDeviceType, isBlocked);
+}
+
+void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
+{
+    CHECK_AND_RETURN_LOG(!info.empty(), "OnMicrophoneBlocked invalid info");
+
+    PnpDeviceType pnpDeviceType = PNP_DEVICE_UNKNOWN;
+    PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
+ 
+    if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d;", &pnpEventType, &pnpDeviceType) < EVENT_NUM_TYPE) {
+        AUDIO_ERR_LOG("Failed to scan info string %{public}s", info.c_str());
+        return;
+    }
+ 
+    DeviceType micBlockedDeviceType = GetInternalDeviceType(pnpDeviceType);
+    CHECK_AND_RETURN_LOG(micBlockedDeviceType != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
+
+    DeviceBlockStatus status = DEVICE_UNBLOCKED;
+    if (pnpEventType == PNP_EVENT_MIC_BLOCKED) {
+        status = DEVICE_BLOCKED;
+    }
+    AUDIO_INFO_LOG("[device type :%{public}d], [status :%{public}d]", micBlockedDeviceType, status);
+    deviceObserver_.OnMicrophoneBlockedUpdate(micBlockedDeviceType, status);
+}
+
+void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
+{
+    CHECK_AND_RETURN_LOG(!info.empty(), "OnMicrophoneBlocked invalid info");
+
+    PnpDeviceType pnpDeviceType = PNP_DEVICE_UNKNOWN;
+    PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
+ 
+    if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d;", &pnpEventType, &pnpDeviceType) < EVENT_NUM_TYPE) {
+        AUDIO_ERR_LOG("Failed to scan info string %{public}s", info.c_str());
+        return;
+    }
+ 
+    DeviceType micBlockedDeviceType = GetInternalDeviceType(pnpDeviceType);
+    CHECK_AND_RETURN_LOG(micBlockedDeviceType != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
+
+    DeviceBlockStatus status = DEVICE_UNBLOCKED;
+    if (pnpEventType == PNP_EVENT_MIC_BLOCKED) {
+        status = DEVICE_BLOCKED;
+    }
+    AUDIO_INFO_LOG("[device type :%{public}d], [status :%{public}d]", micBlockedDeviceType, status);
+    deviceObserver_.OnMicrophoneBlockedUpdate(micBlockedDeviceType, status);
 }
 
 AudioPnpStatusCallback::AudioPnpStatusCallback()

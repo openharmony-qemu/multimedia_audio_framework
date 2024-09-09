@@ -164,14 +164,14 @@ struct DeviceChangeAction {
 };
 
 /**
- * Describes the device change type and device information.
+ * Describes the mic phone blocked device information.
  *
- * @since 7
+ * @since 13
  */
- struct MicPhoneBlockedInfo {
-    bool isBlocked_;
+struct MicrophoneBlockedInfo {
+    DeviceBlockStatus status;
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
- }
+};
 
 /**
  * @brief AudioRendererFilter is used for select speficed AudioRenderer.
@@ -278,16 +278,15 @@ public:
 
 class AudioManagerMicrophoneBlockedCallback {
 public:
-    virtual ~AudioManagerMicrophoneBlockedCallback() = defalut;
+    virtual ~AudioManagerMicrophoneBlockedCallback() = default;
     /**
-     * Called when an interrupt is received.
+     * Called when micro phone is blocked.
      *
-     * @param misPhoneBlockedInfo Indicates the MisPhoneBlockedInfo information needed by client.
+     * @param microphoneBlockedInfo Indicates the MisPhoneBlockedInfo information needed by client.
      * For details, refer MisPhoneBlockedInfo struct
-     * @since 11
+     * @since 13
      */
-    virtual void OnMicrophoneBlocked(const MicPhoneBlockedInfo &micPhoneBlockedInfo) = 0;
-
+    virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
 };
 
 class VolumeKeyEventCallback {
@@ -1277,8 +1276,7 @@ public:
     static void AudioServerDied(pid_t pid);
 
     int32_t SetMicrophoneBlockedCallback(const std::shared_ptr<AudioManagerMicrophoneBlockedCallback>& callback);
-    int32_t UnSetMicrophoneBlockedCallback(std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = nullptr);
-
+    int32_t UnsetMicrophoneBlockedCallback(std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = nullptr);
 
     std::string GetSelfBundleName(int32_t uid);
 

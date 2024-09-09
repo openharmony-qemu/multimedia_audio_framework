@@ -51,6 +51,9 @@ private:
         std::vector<sptr<AudioDeviceDescriptor>> inputDeviceDescriptors;
     };
 
+#if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+    bool IsMicBlockDetectionSupported();
+#endif
     static napi_value GetDevices(napi_env env, napi_callback_info info);
     static napi_value GetDevicesSync(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
@@ -101,7 +104,7 @@ private:
 
     static void RegisterMicrophoneBlockedCallback(napi_env env, size_t argc, napi_value *args,
         const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr);
-    static void UnRegisterMicrophoneBlockedCallback(napi_env env, napi_value callback,
+    static void UnregisterMicrophoneBlockedCallback(napi_env env, napi_value callback,
         NapiAudioRoutingManager *napiRoutingMgr);
 
     static int32_t NapiAudioRountingMicroPhoneBlockCallback();

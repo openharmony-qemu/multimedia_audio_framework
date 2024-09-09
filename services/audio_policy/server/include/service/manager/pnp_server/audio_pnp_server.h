@@ -29,7 +29,7 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-class MicPhoneBlocked;
+class MicrophoneBlocked;
 
 class AudioPnpServer {
 public:
@@ -44,8 +44,8 @@ public:
     int32_t UnRegisterPnpStatusListener();
     void OnPnpDeviceStatusChanged(const std::string &info);
     void StopPnpServer();
-    friend class MicPhoneBlocked;
-    void OnMicrophoneBlocked(const std::string &info);
+    friend class MicrophoneBlocked;
+    void OnMicrophoneBlocked(const std::string &info, AudioPnpServer &audioPnpServer);
 
 private:
     std::string eventInfo_;
@@ -61,19 +61,20 @@ private:
 #endif
 };
 
-class MicPhoneBlocked {
+class MicrophoneBlocked {
 public:
-    static MicPhoneBlocked &GetInstance()
+    static MicrophoneBlocked &GetInstance()
     {
-        static MicPhoneBlocked instance_;
-        return instance;
+        static MicrophoneBlocked instance_;
+        return instance_;
     }
-    MicPhoneBlocked() {}
-    ~MicPhoneBlocked() {}
-    void OnMicrophoneBlocked();
+    MicrophoneBlocked() {}
+    ~MicrophoneBlocked() {}
+    void OnMicrophoneBlocked(const std::string &info, AudioPnpServer &audioPnpServer);
 };
 
 enum PnpEventType {
+    PNP_EVENT_UNKNOWN = 0,
     PNP_EVENT_DEVICE_ADD = 1,
     PNP_EVENT_DEVICE_REMOVE = 2,
     PNP_EVENT_LOAD_SUCCESS = 3,
@@ -83,10 +84,11 @@ enum PnpEventType {
     PNP_EVENT_SERVICE_INVALID  = 8,
     PNP_EVENT_CAPTURE_THRESHOLD = 9,
     PNP_EVENT_MIC_BLOCKED = 10,
-    PNP_EVENT_UNKNOWN = 11,
+    PNP_EVENT_MIC_UNBLOCKED = 11,
 };
 
 enum PnpDeviceType {
+    PNP_DEVICE_UNKNOWN = 0,
     PNP_DEVICE_LINEOUT = 1 << 0,
     PNP_DEVICE_HEADPHONE = 1 << 1,
     PNP_DEVICE_HEADSET = 1 << 2,
@@ -101,7 +103,6 @@ enum PnpDeviceType {
     PNP_DEVICE_ADAPTER_DEVICE = 1 << 11,
     PNP_DEVICE_DP_DEVICE = 1 << 12,
     PNP_DEVICE_MIC = 1 << 13,
-    PNP_DEVICE_UNKNOWN,
 };
 
 } // namespace AudioStandard

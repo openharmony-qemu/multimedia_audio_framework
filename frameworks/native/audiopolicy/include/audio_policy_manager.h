@@ -420,10 +420,10 @@ public:
 
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 
-    int32_t SetMicrophoneBlockedCallback(const std::string clientId,
+    int32_t SetMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
     
-    int32_t UnSetMicrophoneBlockedCallback(const std::string clientId,
+    int32_t UnsetMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,

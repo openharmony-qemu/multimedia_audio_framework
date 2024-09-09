@@ -75,13 +75,13 @@ public:
         PIPE_STREAM_CLEAN_EVENT,
         CONCURRENCY_EVENT_WITH_SESSIONID,
         AUDIO_SESSION_DEACTIVE_EVENT,
-        MICRO_PHONE_BLOCKED,
+        MICROPHONE_BLOCKED,
     };
     /* event data */
     class EventContextObj {
     public:
         DeviceChangeAction deviceChangeAction;
-        MicPhoneBlockedInfo micPhoneBlockedInfo;
+        MicrophoneBlockedInfo microphoneBlockedInfo;
         VolumeEvent volumeEvent;
         AudioInterrupt audioInterrupt;
         std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
@@ -142,7 +142,8 @@ public:
     void AddConcurrencyEventDispatcher(std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher);
     bool SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
     bool SendAvailableDeviceChange(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
-    bool SendMicrophoneBlockedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isBlocked_);
+    bool SendMicrophoneBlockedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
+        DeviceBlockStatus status);
     void HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent);
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,

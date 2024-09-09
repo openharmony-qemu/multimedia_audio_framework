@@ -3837,28 +3837,27 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isCon
     OnDeviceStatusUpdated(devType, isConnected, adderess, name, streamInfo);
 }
 
-void AudioPolicyService::OnMicrophoneBlockedUpdate(DeviceType devType, bool isBlocked)
+void AudioPolicyService::OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status)
 {
     CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
     if (g_adProxy == nullptr) {
         GetAudioServerProxy();
     }
-    OnBlockedStatusUpdated(devType, isBlocked);
+    OnBlockedStatusUpdated(devType, status);
 }
 
-void AudioPolicyService::OnBlockedStatusUpdated(DeviceType devType, bool isBlocked)
+void AudioPolicyService::OnBlockedStatusUpdated(DeviceType devType, DeviceBlockStatus status)
 {
     std::vector<sptr<AudioDeviceDescriptor>> descForCb = {};
-    AudioDeviceDescriptor updatedDesc(devType, GetDeviceRole(devType));
-    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(updatedDesc);
+    sptr<AudioDeviceDescriptor> audioDescriptor = new AudioDeviceDescriptor(devType, GetDeviceRole(devType));
     descForCb.push_back(audioDescriptor);
 
     vector<unique_ptr<AudioCapturerChangeInfo>> audioChangeInfos;
     streamCollector_.GetCurrentCapturerChangeInfos(audioChangeInfos);
-    for (auto it = audioChangeInfos.begin; it != audioChangeInfos.end(); it++) {
+    for (auto it = audioChangeInfos.begin(); it != audioChangeInfos.end(); it++) {
         if ((*it)->capturerState == CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("record running");
-            TriggerMicrophoneBlockedCallback(descForCb, isBlocked);
+            TriggerMicrophoneBlockedCallback(descForCb, status);
         }
     }
 }
@@ -6020,11 +6019,11 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
 }
 
 void AudioPolicyService::TriggerMicrophoneBlockedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc,
-    bool isBlocked)
+    DeviceBlockStatus status)
 {
     Trace trace("AudioPolicyService::TriggerMicrophoneBlockedCallback");
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendMicrophoneBlockedCallback(desc, isBlocked);
+        audioPolicyServerHandler_->SendMicrophoneBlockedCallback(desc, status);
     }
 }
 

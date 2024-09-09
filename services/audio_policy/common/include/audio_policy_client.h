@@ -60,8 +60,8 @@ public:
     virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
     virtual void OnAudioFocusRequested(const AudioInterrupt &requestFocus) = 0;
     virtual void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) = 0;
-    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) =0;
-    virtual void OnMicrophoneBlocked(const MicPhoneBlockedInfo &micPhoneBlockedInfo) =0;
+    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
+    virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;

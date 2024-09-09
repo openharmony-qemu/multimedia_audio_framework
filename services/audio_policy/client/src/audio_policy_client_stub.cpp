@@ -29,6 +29,7 @@ static const int32_t FOCUS_INFO_VALID_SIZE = 128;
 static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;
 static const int32_t STATE_VALID_SIZE = 1024;
+static const int32_t MIC_BLOCKED_VALID_SIZE = 128;
 
 AudioPolicyClientStub::AudioPolicyClientStub()
 {}
@@ -200,15 +201,15 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
 
 void AudioPolicyClientStub::HandleMicrophoneBlocked(MessageParcel &data, MessageParcel &reply)
 {
-    MicPhoneBlockedInfo micPhoneBlocked;
-    micPhoneBlocked.isBlocked_ = static_cast<bool>(data.ReadUint32());
+    MicrophoneBlockedInfo microphoneBlocked;
+    microphoneBlocked.status = static_cast<DeviceBlockStatus>(data.ReadUint32());
     int32_t size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
+    CHECK_AND_RETURN_LOG(size < MIC_BLOCKED_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
-        micPhoneBlocked.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
+        microphoneBlocked.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
-    OnMicrophoneBlocked(micPhoneBlocked);
+    OnMicrophoneBlocked(microphoneBlocked);
 }
 
 void AudioPolicyClientStub::HandleRingerModeUpdated(MessageParcel &data, MessageParcel &reply)

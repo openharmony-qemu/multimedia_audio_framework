@@ -134,6 +134,57 @@ ssize_t AudioSocketThread::AudioPnpReadUeventMsg(int sockFd, char *buffer, size_
     return len;
 }
 
+int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent)
+{
+    if (strncmp(audioPnpUevent->subSystem, UEVENT_PLATFORM, strlen(UEVENT_PLATFORM)) == 0) {
+        if (strncmp(audioPnpUevent->anahsName, UEVENT_INSERT, strlen(UEVENT_INSERT)) == 0) {
+            AUDIO_INFO_LOG("set anahs event to insert.");
+            audioEvent->anahsName = UEVENT_INSERT;
+            return SUCCESS;
+        } else if (strncmp(audioPnpUevent->anahsName, UEVENT_REMOVE, strlen(UEVENT_REMOVE)) == 0) {
+            AUDIO_INFO_LOG("set anahs event to remove.");
+            audioEvent->anahsName = UEVENT_REMOVE;
+            return SUCCESS;
+        } else {
+            AUDIO_ERR_LOG("set anahs event error.");
+            return ERROR;
+        }
+    }
+    AUDIO_ERR_LOG("set anahs event error and subSystem is not platform.");
+    return ERROR;
+}
+
+static void SetAudioPnpUevent(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent, uint32_t h2wTypeLast)
+{
+    switch (audioPnpUevent->switchState[0]) {
+        case REMOVE_AUDIO_DEVICE:
+            audioEvent->eventType = PNP_EVENT_DEVICE_REMOVE;
+            audioEvent->deviceType = h2wTypeLast;
+            break;
+        case ADD_DEVICE_HEADSET:
+        case ADD_DEVICE_HEADSET_WITHOUT_MIC:
+            audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
+            audioEvent->deviceType = PNP_DEVICE_HEADSET;
+            break;
+        case ADD_DEVICE_ADAPTER:
+            audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
+            audioEvent->deviceType = PNP_DEVICE_ADAPTER_DEVICE;
+            break;
+        case ADD_DEVICE_MIC_BLOCKED:
+            audioEvent->eventType = PNP_EVENT_MIC_BLOCKED;
+            audioEvent->deviceType = PNP_DEVICE_MIC;
+            break;
+        case ADD_DEVICE_MIC_UN_BLOCKED:
+            audioEvent->eventType = PNP_EVENT_MIC_UNBLOCKED;
+            audioEvent->deviceType = PNP_DEVICE_MIC;
+            break;
+        default:
+            audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
+            audioEvent->deviceType = PNP_DEVICE_UNKNOWN;
+            break;
+    }
+}
+
 int32_t AudioSocketThread::SetAudioPnpServerEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent)
 {
     if (strncmp(audioPnpUevent->subSystem, UEVENT_SUBSYSTEM_SWITCH, strlen(UEVENT_SUBSYSTEM_SWITCH)) == 0) {
@@ -142,29 +193,7 @@ int32_t AudioSocketThread::SetAudioPnpServerEventValue(AudioEvent *audioEvent, s
             AUDIO_ERR_LOG("the switch name of 'h2w' not found!");
             return ERROR;
         }
-        switch (audioPnpUevent->switchState[0]) {
-            case REMOVE_AUDIO_DEVICE:
-                audioEvent->eventType = PNP_EVENT_DEVICE_REMOVE;
-                audioEvent->deviceType = h2wTypeLast;
-                break;
-            case ADD_DEVICE_HEADSET:
-            case ADD_DEVICE_HEADSET_WITHOUT_MIC:
-                audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
-                audioEvent->deviceType = PNP_DEVICE_HEADSET;
-                break;
-            case ADD_DEVICE_ADAPTER:
-                audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
-                audioEvent->deviceType = PNP_DEVICE_DEVICE;
-                break;
-            case ADD_DEVICE_MIC_BLOCKED:
-                audioEvent->eventType = PNP_EVENT_MIC_BLOCKED;
-                audioEvent->deviceType = PNP_DEVICE_MIC;
-                break;
-            default:
-                audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
-                audioEvent->deviceType = PNP_DEVICE_UNKNOWN;
-                break;
-        }
+        SetAudioPnpUevent(audioEvent, audioPnpUevent, h2wTypeLast);
         h2wTypeLast = audioEvent->deviceType;
         audioEvent->name = audioPnpUevent->name;
         audioEvent->address = audioPnpUevent->devName;

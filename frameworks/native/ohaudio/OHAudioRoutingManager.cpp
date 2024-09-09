@@ -19,6 +19,7 @@
 
 #include "audio_errors.h"
 #include "audio_routing_manager.h"
+#include "parameters.h"
 
 namespace {
 const size_t MAX_VALID_SIZE = 128; // MAX AudioDevice size.
@@ -213,11 +214,24 @@ OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
-OH_AudioCommon_Result OH_AudioRoutingManager_SetMicrophoneBlockedCallback(
-    OH_AudioRoutingManager *audioRoutingManager,
-    OH_AudioRoutingManager_OnMicrophoneBlockedCallback callback, void* userData)
+OH_AudioCommon_Result OH_AudioRoutingManager_IsMicBlockDetectionSupported(
+    OH_AudioRoutingManager *audioRoutingManager, bool *supported)
 {
-    OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
+    *supported = OHOS::system::GetBoolParameter("const.multimedia.audio.mic_block_detection", false);
+    if (*supported == true) {
+        AUDIO_INFO_LOG("mic block detection supported");
+        return AUDIOCOMMON_RESULT_SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("mic block detection is not supported");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+}
+
+OH_AudioCommon_Result OH_AudioRoutingManager_SetMicBlockStatusCallback(
+    OH_AudioRoutingManager *audioRoutingManager,
+    OH_AudioRoutingManager_OnDeviceBlockStatusCallback callback, void *userData)
+{
+    OHAudioRoutingManager *ohAudioRoutingManager = convertManager(audioRoutingManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
     ohAudioRoutingManager->SetMicrophoneBlockedCallback(callback, userData);
@@ -414,16 +428,16 @@ void OHAudioDeviceChangedCallback::OnDeviceChange(const DeviceChangeAction &devi
     callback_(type, audioDeviceDescriptorArray);
 }
 
-void OHMicroPhoneBlockCallback::OnMicrophoneBlocked(const MicPhoneBlockedInfo &micPhoneBlockedInfo)
+void OHMicrophoneBlockCallback::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)
 {
+    AUDIO_INFO_LOG("Enter blocked info: %{public}d", microphoneBlockedInfo.status);
     CHECK_AND_RETURN_LOG(blockedCallback_ != nullptr, "failed, pointer to the fuction is nullptr");
-    bool isBlocked = micPhoneBlockedInfo.isBlocked_;
-    uint32_t size = micPhoneBlockedInfo.deviceDescriptor.size();
+    uint32_t size = microphoneBlockedInfo.deviceDescriptors.size();
     if (size <= 0) {
         AUDIO_ERR_LOG("audioDeviceDescriptors is null");
         return;
     }
-    
+    OH_AudioDevice_BlockStatus status = static_cast<OH_AudioDevice_BlockStatus>(microphoneBlockedInfo.status);
     OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
         (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
     if (audioDeviceDescriptorArray) {
@@ -437,7 +451,7 @@ void OHMicroPhoneBlockCallback::OnMicrophoneBlocked(const MicPhoneBlockedInfo &m
         }
         audioDeviceDescriptorArray->size = size;
         uint32_t index = 0;
-        for (auto deviceDescriptor : micPhoneBlockedInfo.deviceDescriptors) {
+        for (auto deviceDescriptor : microphoneBlockedInfo.deviceDescriptors) {
             audioDeviceDescriptorArray->descriptors[index] =
                 (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
             if (audioDeviceDescriptorArray->descriptors[index] == nullptr) {
@@ -447,20 +461,20 @@ void OHMicroPhoneBlockCallback::OnMicrophoneBlocked(const MicPhoneBlockedInfo &m
             index++;
         }
     }
-    blockedCallback_(isBlocked, audioDeviceDescriptorArray，nullptr);
+    blockedCallback_(audioDeviceDescriptorArray, status, nullptr);
 }
 
 OH_AudioCommon_Result OHAudioRoutingManager::SetMicrophoneBlockedCallback(
-    OH_AudioRoutingManager_OnMicrophoneBlockedCallback callback，void* userData)
+    OH_AudioRoutingManager_OnDeviceBlockStatusCallback callback, void *userData)
 {
     CHECK_AND_RETURN_RET_LOG(audioSystemManager_ != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSystemManager is null");
     if (callback == nullptr) {
-        UnSetMicrophoneBlockedCallback(callback);
+        UnsetMicrophoneBlockedCallback(callback);
         return AUDIOCOMMON_RESULT_SUCCESS;
     }
-    std::shared_ptr<OHMicroPhoneBlockCallback> microphoneBlock =
-        std::make_shared<OHMicroPhoneBlockCallback>(callback, userData);
+    std::shared_ptr<OHMicrophoneBlockCallback> microphoneBlock =
+        std::make_shared<OHMicrophoneBlockCallback>(callback, userData);
     if (microphoneBlock) {
         audioSystemManager_->SetMicrophoneBlockedCallback(microphoneBlock);
         ohMicroPhoneBlockCallbackArray_.push_back(microphoneBlock);
@@ -469,16 +483,16 @@ OH_AudioCommon_Result OHAudioRoutingManager::SetMicrophoneBlockedCallback(
     return AUDIOCOMMON_RESULT_ERROR_NO_MEMORY;
 }
 
-OH_AudioCommon_Result OHAudioRoutingManager::UnSetMicrophoneBlockedCallback(
-    OH_AudioRoutingManager_OnMicrophoneBlockedCallback callback)
+OH_AudioCommon_Result OHAudioRoutingManager::UnsetMicrophoneBlockedCallback(
+    OH_AudioRoutingManager_OnDeviceBlockStatusCallback callback)
 {
     CHECK_AND_RETURN_RET_LOG(audioSystemManager_ != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSystemManager is null");
 
-    audioSystemManager_->UnSetMicrophoneBlockedCallback();
+    audioSystemManager_->UnsetMicrophoneBlockedCallback();
 
     auto iter = std::find_if(ohMicroPhoneBlockCallbackArray_.begin(), ohMicroPhoneBlockCallbackArray_.end(),
-        [&](const std::shared_ptr<OHMicroPhoneBlockCallback> &item) {
+        [&](const std::shared_ptr<OHMicrophoneBlockCallback> &item) {
         return item->GetCallback() == callback;
     });
     if (iter == ohMicroPhoneBlockCallbackArray_.end()) {

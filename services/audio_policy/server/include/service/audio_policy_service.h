@@ -86,11 +86,12 @@ public:
     void InitKVStore();
     bool ConnectServiceAdapter();
 
-    void OnMicrophoneBlockedUpdate(DeviceType devType, bool isBlocked);
+    void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
 
-    void OnBlockedStatusUpdated(DeviceType devType, bool isBlocked);
+    void OnBlockedStatusUpdated(DeviceType devType, DeviceBlockStatus status);
 
-    void TriggerMicrophoneBlockedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isBlocked);
+    void TriggerMicrophoneBlockedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
+        DeviceBlockStatus status);
 
     const sptr<IStandardAudioService> GetAudioServerProxy();
 

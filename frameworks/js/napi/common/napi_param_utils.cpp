@@ -891,11 +891,11 @@ napi_status NapiParamUtils::SetValueDeviceChangeAction(const napi_env& env, cons
     return napi_ok;
 }
 
-napi_status NapiParamUtils::SetValueBlockedDeviceAction(const napi_env& env, const MicPhoneBlockedInfo &action,
+napi_status NapiParamUtils::SetValueBlockedDeviceAction(const napi_env& env, const MicrophoneBlockedInfo &action,
     napi_value &result)
 {
     napi_create_object(env, &result);
-    NapiParamUtils::SetValueInt32(env, "isBlocked", static_cast<int32_t>(action.isBlocked_), result);
+    NapiParamUtils::SetValueInt32(env, "status", static_cast<int32_t>(action.status), result);
 
     napi_value jsArray;
     NapiParamUtils::SetDeviceDescriptors(env, action.deviceDescriptors, jsArray);

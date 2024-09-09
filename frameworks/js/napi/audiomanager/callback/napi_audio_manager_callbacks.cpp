@@ -63,7 +63,7 @@ void NapiAudioManagerCallback::SaveCallbackReference(const std::string &callback
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     if (callbackName == DEVICE_CHANGE_CALLBACK_NAME) {
         deviceChangeCallback_ = cb;
-    } else if (callbackName == MICRO_PHONE_BLOCKED_CALLBACK_NAME) {
+    } else if (callbackName == MICROPHONE_BLOCKED_CALLBACK_NAME) {
         onMicroPhoneBlockedCallback_ = cb;
     } else {
         AUDIO_ERR_LOG("NapiAudioManagerCallback: Unknown callback type: %{public}s", callbackName.c_str());
@@ -159,16 +159,16 @@ void NapiAudioManagerCallback::OnDeviceChange(const DeviceChangeAction &deviceCh
     return;
 }
 
-void NapiAudioManagerCallback::OnMicrophoneBlocked(const MicPhoneBlockedInfo &micPhoneBlockedInfo)
+void NapiAudioManagerCallback::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("OnMicrophoneBlocked: isBlocked_ [%{public}d]", micPhoneBlockedInfo.isBlocked_);
+    AUDIO_INFO_LOG("status [%{public}d]", microphoneBlockedInfo.status);
 
-    for (auto it = MicrophoneBlockedCbList_.begin(); it != MicrophoneBlockedCbList_.end(); it++) {
+    for (auto it = microphoneBlockedCbList_.begin(); it != microphoneBlockedCbList_.end(); it++) {
         std::unique_ptr<AudioManagerJsCallback> cb = std::make_unique<AudioManagerJsCallback>();
         cb->callback = *it;
-        cb->callbackName = MICRO_PHONE_BLOCKED_CALLBACK_NAME;
-        cb->micPhoneBlockedInfo = micPhoneBlockedInfo;
+        cb->callbackName = MICROPHONE_BLOCKED_CALLBACK_NAME;
+        cb->microphoneBlockedInfo = microphoneBlockedInfo;
         OnJsCallbackMicrophoneBlocked(cb);
     }
     return;
@@ -176,51 +176,48 @@ void NapiAudioManagerCallback::OnMicrophoneBlocked(const MicPhoneBlockedInfo &mi
 
 void NapiAudioManagerCallback::SaveMicrophoneBlockedCallbackReference(napi_value callback)
 {
-    AUDIO_DEBUG_LOG("SaveMicrophoneBlockedCallbackReference");
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
 
-    for (auto it = MicrophoneBlockedCbList_.begin(); it != MicrophoneBlockedCbList_.end(); ++it) {
+    for (auto it = microphoneBlockedCbList_.begin(); it != microphoneBlockedCbList_.end(); ++it) {
         bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it)->cb_);
-        CHECK_AND_RETURN_LOG(!isSameCallback,
-            "SaveMicrophoneBlockedCallbackReference: audio manager has same callback, nothing to do");
+        CHECK_AND_RETURN_LOG(!isSameCallback, "audio manager has same callback, nothing to do");
     }
 
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-        "SaveMicrophoneBlockedCallbackReference: creating reference for callback fail");
+    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr, "creating reference for callback fail");
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
-    MicrophoneBlockedCbList_.push_back({cb});
+    microphoneBlockedCbList_.push_back({cb});
     AUDIO_INFO_LOG("SaveMicrophoneBlocked callback ref success, list size [%{public}zu]",
-        MicrophoneBlockedCbList_.size());
+        microphoneBlockedCbList_.size());
 }
 
 void NapiAudioManagerCallback::RemoveMicrophoneBlockedCallbackReference(napi_env env, napi_value callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (auto it = MicrophoneBlockedCbList_.begin(); it != MicrophoneBlockedCbList_.end(); ++it) {
+    for (auto it = microphoneBlockedCbList_.begin(); it != microphoneBlockedCbList_.end(); ++it) {
         bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it)->cb_);
         if (isSameCallback) {
+            AUDIO_INFO_LOG("find microphoneBlocked callback, remove it");
             napi_delete_reference(env_, (*it)->cb_);
             (*it)->cb_ = nullptr;
-            MicrophoneBlockedCbList_.erase(it);
+            microphoneBlockedCbList_.erase(it);
             return;
         }
     }
-    MicrophoneBlockedCbList_.clear();
-    AUDIO_INFO_LOG("RemoveMicrophoneBlockedcb: remove js callback success");
+    AUDIO_INFO_LOG("remove microphoneBlocked callback no find");
 }
 
-void NapiAudioManagerCallback::RemoveMicrophoneBlockedCallbackCb()
+void NapiAudioManagerCallback::RemoveAllMicrophoneBlockedCallback()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (auto it = MicrophoneBlockedCbList_.begin(); it != MicrophoneBlockedCbList_.end(); ++it) {
+    for (auto it = microphoneBlockedCbList_.begin(); it != microphoneBlockedCbList_.end(); ++it) {
         napi_delete_reference(env_, (*it)->cb_);
         (*it)->cb_ = nullptr;
     }
-    MicrophoneBlockedCbList_.clear();
-    AUDIO_INFO_LOG("MicrophoneBlockedcbList_: remove all js callback success");
+    microphoneBlockedCbList_.clear();
+    AUDIO_INFO_LOG("remove all js callback success");
 }
 
 void NapiAudioManagerCallback::SaveAudioManagerDeviceChangeCbRef(DeviceFlag deviceFlag, napi_value callback)
@@ -375,6 +372,51 @@ void NapiAudioManagerCallback::OnJsCallbackMicrophoneBlocked(std::unique_ptr<Aud
     };
     if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
         AUDIO_ERR_LOG("OnJsCallbackMicrophoneBlocked: Failed to SendEvent");
+    } else {
+        jsCb.release();
+    }
+}
+
+void NapiAudioManagerCallback::OnJsCallbackMicrophoneBlocked(std::unique_ptr<AudioManagerJsCallback> &jsCb)
+{
+    if (jsCb.get() == nullptr) {
+        AUDIO_ERR_LOG("jsCb.get() is null");
+        return;
+    }
+    AudioManagerJsCallback *event = jsCb.get();
+    auto task = [event]() {
+        std::shared_ptr<AudioManagerJsCallback> context(
+            static_cast<AudioManagerJsCallback*>(event),
+            [](AudioManagerJsCallback* ptr) {
+                delete ptr;
+        });
+        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
+        std::string request = event->callbackName;
+        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
+        napi_env env = event->callback->env_;
+        napi_ref callback = event->callback->cb_;
+        napi_handle_scope scope = nullptr;
+        napi_open_handle_scope(env, &scope);
+        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+        do {
+            napi_value jsCallback = nullptr;
+            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+                request.c_str());
+            napi_value args[ARGS_ONE] = { nullptr };
+            NapiParamUtils::SetValueBlockedDeviceAction(env, event->microphoneBlockedInfo, args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
+                "%{public}s fail to create microphoneBlocked callback", request.c_str());
+            const size_t argCount = ARGS_ONE;
+            napi_value result = nullptr;
+            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call microphoneBlocked callback",
+                request.c_str());
+        } while (0);
+        napi_close_handle_scope(env, scope);
+    };
+    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
+        AUDIO_ERR_LOG("Failed to sendEvent");
     } else {
         jsCb.release();
     }
