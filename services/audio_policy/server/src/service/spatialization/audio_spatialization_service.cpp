@@ -616,11 +616,11 @@ void AudioSpatializationService::WriteSpatializationStateToDb(WriteToDbOperation
         }
         case WRITE_DEVICESPATIAL_INFO: {
             std::string encryptedAddress = GetSha256EncryptAddress(address);
-            uint32_t deviceID = addressToDeviceIDMap_[encryptedAddress];
+            uint32_t tmpID = addressToDeviceIDMap_[encryptedAddress];
             ErrCode ret = settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" +
-                std::to_string(deviceID), addressToDeviceSpatialInfoMap_[encryptedAddress]);
+                std::to_string(tmpID), addressToDeviceSpatialInfoMap_[encryptedAddress]);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write spatialization_state_device%{public}d to"
-                    "setting db: %{public}d", deviceID, ret);
+                    "setting db: %{public}d", tmpID, ret);
             break;
         }
         default:
