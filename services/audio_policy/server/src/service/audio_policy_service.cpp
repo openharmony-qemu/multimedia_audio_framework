@@ -2373,6 +2373,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
         if (!IsSameDevice(desc, currentActiveDevice_)) {
             currentActiveDevice_ = AudioDeviceDescriptor(*desc);
             SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
+            UpdateActiveDeviceRoute(currentActiveDevice_.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
             OnPreferredOutputDeviceUpdated(currentActiveDevice_);
         }
         return ERR_NEED_NOT_SWITCH_DEVICE;
