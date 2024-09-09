@@ -71,6 +71,7 @@ static int32_t AudioErrCallback(OH_AudioRenderer* renderer,
     OH_AudioStream_Result error)
 {
     printf("recv err : code %d \n", error);
+    return 0;
 }
 
 static int32_t AudioInterruptCallback(OH_AudioRenderer* renderer,
@@ -79,6 +80,7 @@ static int32_t AudioInterruptCallback(OH_AudioRenderer* renderer,
     OH_AudioInterrupt_Hint hint)
 {
     printf("recv interrupt event : type: %d hint: %d \n", type, hint);
+    return 0;
 }
 
 static int32_t AudioEventCallback(OH_AudioRenderer* renderer,
@@ -86,6 +88,7 @@ static int32_t AudioEventCallback(OH_AudioRenderer* renderer,
     OH_AudioStream_Event event)
 {
     printf("recv event : event: %d \n", event);
+    return 0;
 }
 
 static void AudioRendererDeviceChangeCb(OH_AudioRenderer* renderer, void* userData,

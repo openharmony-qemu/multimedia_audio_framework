@@ -59,6 +59,7 @@ static int32_t AudioErrCallback(OH_AudioCapturer* renderer,
     OH_AudioStream_Result error)
 {
     printf("recv err : code %d \n", error);
+    return 0;
 }
 
 static int32_t AudioInterruptCallback(OH_AudioCapturer* renderer,
@@ -67,6 +68,7 @@ static int32_t AudioInterruptCallback(OH_AudioCapturer* renderer,
     OH_AudioInterrupt_Hint hint)
 {
     printf("recv interrupt event : type: %d hint: %d \n", type, hint);
+    return 0;
 }
 
 static int32_t AudioEventCallback(OH_AudioCapturer* renderer,
@@ -74,6 +76,7 @@ static int32_t AudioEventCallback(OH_AudioCapturer* renderer,
     OH_AudioStream_Event event)
 {
     printf("recv event : event: %d \n", event);
+    return 0;
 }
 
 void SleepWaitRecoder(bool* stop)
