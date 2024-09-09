@@ -19,6 +19,7 @@
 #include <list>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "audio_info.h"
 #include "audio_policy_log.h"
@@ -50,6 +51,13 @@ static const std::string INTERNAL_PORT = "internal";
 static const std::string ROLE_SOURCE = "source";
 static const std::string ROLE_SINK = "sink";
 static const std::string PORT_NONE = "none";
+
+const std::vector<std::string> SourceNames = {
+    std::string(PRIMARY_MIC),
+    std::string(USB_MIC),
+    std::string(PRIMARY_WAKEUP),
+    std::string(FILE_SOURCE)
+};
 
 enum NodeName {
     DEVICE_CLASS,

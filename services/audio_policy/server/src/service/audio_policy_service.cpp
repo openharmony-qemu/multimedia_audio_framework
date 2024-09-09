@@ -1257,7 +1257,15 @@ std::vector<SinkInput> AudioPolicyService::FilterSinkInputs(int32_t sessionId)
 std::vector<SourceOutput> AudioPolicyService::FilterSourceOutputs(int32_t sessionId)
 {
     std::vector<SourceOutput> targetSourceOutputs = {};
-    std::vector<SourceOutput> sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
+    std::vector<SourceOutput> sourceOutputs;
+    {
+        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+        if (std::any_of(IOHandles_.cbegin(), IOHandles_.cend(), [](const auto &pair) {
+                return std::find(SourceNames.cbegin(), SourceNames.cend(), pair.first) != SourceNames.cend();
+            })) {
+            sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
+        }
+    }
 
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         AUDIO_DEBUG_LOG("sourceOutput[%{public}zu]:%{public}s", i, PrintSourceOutput(sourceOutputs[i]).c_str());
@@ -5210,7 +5218,15 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
                     WriteOutDeviceChangedSysEvents(deviceDescriptor, sinkInput);
                 }
             } else if (deviceDescriptor->deviceRole_ == INPUT_DEVICE) {
-                vector<SourceOutput> sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
+                vector<SourceOutput> sourceOutputs;
+                {
+                    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+                    if (std::any_of(IOHandles_.cbegin(), IOHandles_.cend(), [](const auto &pair) {
+                            return std::find(SourceNames.cbegin(), SourceNames.cend(), pair.first) != SourceNames.end();
+                        })) {
+                        sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
+                    }
+                }
                 for (SourceOutput sourceOutput : sourceOutputs) {
                     WriteInDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
                 }
@@ -7458,6 +7474,7 @@ int32_t AudioPolicyService::ClosePortAndEraseIOHandle(const std::string &moduleN
         ioHandle = ioHandleIter->second;
         IOHandles_.erase(moduleName);
     }
+    AUDIO_INFO_LOG("[close-module] %{public}s,id:%{public}d", moduleName.c_str(), ioHandle);
     int32_t result = audioPolicyManager_.CloseAudioPort(ioHandle);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     return SUCCESS;
