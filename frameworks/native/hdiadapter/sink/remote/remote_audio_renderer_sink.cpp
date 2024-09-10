@@ -434,7 +434,6 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     Trace trace("RemoteAudioRendererSinkInner::Start");
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Start");
     std::lock_guard<std::mutex> lock(createRenderMutex_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME, &dumpFile_);
     if (!isRenderCreated_.load()) {
         CHECK_AND_RETURN_RET_LOG(CreateRender(audioPort_) == SUCCESS, ERR_NOT_STARTED,
             "Create render fail, audio port %{public}d", audioPort_.portId);
@@ -444,6 +443,8 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
         AUDIO_INFO_LOG("Remote render is already started.");
         return SUCCESS;
     }
+
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME, &dumpFile_);
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Start: Audio render is null.");
     int32_t ret = audioRender_->Start();
