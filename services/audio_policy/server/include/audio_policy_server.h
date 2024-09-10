@@ -574,7 +574,6 @@ private:
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::shared_ptr<BluetoothEventSubscriber> bluetoothEventSubscriberOb_ = nullptr;
-    bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
 
     bool isHighResolutionExist_ = false;
