@@ -90,6 +90,7 @@ public:
     virtual DeviceRole GetDeviceRole() = 0;
     virtual DeviceInfo &GetDeviceInfo() = 0;
     virtual float GetMaxAmplitude() = 0;
+    virtual uint32_t GetLinkedProcessCount() = 0;
 
     virtual ~AudioEndpoint() = default;
 private:
@@ -150,6 +151,7 @@ public:
     }
 
     float GetMaxAmplitude() override;
+    uint32_t GetLinkedProcessCount() override;
 private:
     int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
     int32_t GetAdapterBufferInfo(const DeviceInfo &deviceInfo);
