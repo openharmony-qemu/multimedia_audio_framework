@@ -580,7 +580,9 @@ int32_t RendererInServer::Start()
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
-        return IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
+        int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+            IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
+        return ret;
     }
     needForceWrite_ = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
@@ -594,7 +596,8 @@ int32_t RendererInServer::Start()
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
         fadeoutFlag_ = NO_FADING;
     }
-    int ret = IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
+    int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+        IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -633,7 +636,8 @@ int32_t RendererInServer::Pause()
         standByEnable_ = false;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
     }
-    int ret = IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
+    int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+        IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_) : stream_->Pause();
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
@@ -761,7 +765,8 @@ int32_t RendererInServer::Stop()
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
         fadeoutFlag_ = NO_FADING;
     }
-    int ret = IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_);
+    int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+        IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
