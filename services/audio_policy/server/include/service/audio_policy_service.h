@@ -976,7 +976,8 @@ private:
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
-    int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address);
+    int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
+        ConnectState connectState);
 
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
 
