@@ -59,6 +59,7 @@ public:
     uint32_t GetLatency();
     int32_t UpdateEffectParam();
     void ResetIoBufferConfig();
+    void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
 
 private:
     AudioEffectConfig GetIoBufferConfig();
@@ -81,6 +82,7 @@ private:
     FILE *dumpFileOutput_ = nullptr;
     std::string dumpNameIn_ = "";
     std::string dumpNameOut_ = "";
+    AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

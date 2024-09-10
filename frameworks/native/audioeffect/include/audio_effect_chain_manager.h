@@ -111,6 +111,7 @@ public:
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
     int32_t InitAudioEffectChainDynamic(const std::string &sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
+    int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     int32_t SetHdiParam(const std::string &sceneType, const std::string &effectMode, bool enabled);
     int32_t SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info);
     int32_t SessionInfoMapDelete(const std::string &sceneType, const std::string &sessionID);
@@ -185,6 +186,7 @@ private:
     bool isCommonEffectChainExisted_ = false;
     bool debugArmFlag_ = false;
     int32_t commonEffectChainCount_ = 0;
+    AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

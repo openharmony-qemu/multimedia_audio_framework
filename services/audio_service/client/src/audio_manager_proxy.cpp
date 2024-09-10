@@ -877,6 +877,24 @@ int32_t AudioManagerProxy::UpdateSpatializationState(AudioSpatializationState sp
     return reply.ReadInt32();
 }
 
+int32_t AudioManagerProxy::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(spatialDeviceType);
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIAL_DEVICE_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "UpdateSpatialDeviceType failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioManagerProxy::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
 {
     int32_t error;

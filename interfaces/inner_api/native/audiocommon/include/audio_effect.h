@@ -41,12 +41,15 @@ constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16; // max num of e
 
 constexpr int32_t HDI_EFFECT_NUM = 2;
 constexpr int32_t HDI_SET_PATAM = 6;
+
 constexpr int32_t HDI_INIT = 0;
 constexpr int32_t HDI_BYPASS = 1;
 constexpr int32_t HDI_HEAD_MODE = 2;
 constexpr int32_t HDI_ROOM_MODE = 3;
 constexpr int32_t HDI_BLUETOOTH_MODE = 4;
 constexpr int32_t HDI_DESTROY = 5;
+constexpr int32_t HDI_UPDATE_SPATIAL_DEVICE_TYPE = 6;
+
 constexpr int32_t HDI_VOLUME = 7;
 constexpr int32_t HDI_ROTATION = 8;
 
@@ -353,4 +356,4 @@ struct AudioRendererInfoForSpatialization {
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif //AUDIO_FRAMEWORK_AUDIO_EFFECT_H
+#endif // AUDIO_FRAMEWORK_AUDIO_EFFECT_H

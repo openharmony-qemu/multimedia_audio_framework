@@ -360,6 +360,15 @@ public:
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
 
     /**
+     * Update spatial device type.
+     *
+     * @param spatialDeviceType identify the spatial device type.
+     *
+     * @return result of setting. 0 if success, error number else.
+    */
+    virtual int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) = 0;
+
+    /**
      * Notify Stream volume changed.
      *
      * @param streamType specified streamType whose volume to be notified
@@ -467,6 +476,7 @@ private:
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply);
     int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
     int HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
