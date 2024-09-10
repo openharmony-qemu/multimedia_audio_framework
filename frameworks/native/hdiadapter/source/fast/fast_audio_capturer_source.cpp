@@ -157,7 +157,11 @@ bool FastAudioCapturerSourceInner::IsInited(void)
 
 void FastAudioCapturerSourceInner::DeInit()
 {
-    started_ = false;
+    AUDIO_INFO_LOG("Deinit, flag %{public}d", attr_.audioStreamFlag);
+    if (started_) {
+        Stop();
+        started_ = false;
+    }
     capturerInited_ = false;
 
     if (audioAdapter_ != nullptr) {
@@ -416,6 +420,7 @@ int32_t FastAudioCapturerSourceInner::PrepareMmapBuffer()
 
 int32_t FastAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
+    AUDIO_INFO_LOG("Init, flag %{public}d", attr.audioStreamFlag);
     CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_INVALID_HANDLE, "Init audio manager Fail");
     attr_ = attr;
     int32_t ret;

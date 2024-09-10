@@ -738,5 +738,11 @@ float AudioEndpointSeparate::GetMaxAmplitude()
     AUDIO_WARNING_LOG("getMaxAmplitude in audioEndpointSeparate not support");
     return 0;
 }
+
+uint32_t AudioEndpointSeparate::GetLinkedProcessCount()
+{
+    std::lock_guard<std::mutex> lock(listLock_);
+    return processList_.size();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -164,6 +164,7 @@ public:
     }
 
     float GetMaxAmplitude() override;
+    uint32_t GetLinkedProcessCount() override;
 
 private:
     AudioProcessConfig GetInnerCapConfig();
@@ -2109,6 +2110,12 @@ void AudioEndpointInner::ProcessUpdateAppsUidForRecord()
     }
     CHECK_AND_RETURN_LOG(fastSource_, "fastSource_ is nullptr");
     fastSource_->UpdateAppsUid(appsUid);
+}
+
+uint32_t AudioEndpointInner::GetLinkedProcessCount()
+{
+    std::lock_guard<std::mutex> lock(listLock_);
+    return processList_.size();
 }
 } // namespace AudioStandard
 } // namespace OHOS
