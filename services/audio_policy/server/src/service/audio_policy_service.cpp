@@ -795,7 +795,11 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
     }
     DeviceInfo deviceInfo;
     ret = streamCollector_.GetRendererDeviceInfo(sessionId, deviceInfo);
-    if (ret != SUCCESS || deviceInfo.deviceType != currentActiveDevice_.deviceType_) {
+    if (ret != SUCCESS || currentActiveDevice_.networkId_ != LOCAL_NETWORK_ID ||
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
+        deviceInfo.deviceType != currentActiveDevice_.deviceType_ ||
+        deviceInfo.networkId != currentActiveDevice_.networkId_ ||
+        deviceInfo.macAddress != currentActiveDevice_.macAddress_) {
         AUDIO_INFO_LOG("sessionId[%{public}d] not fetch device, Offload Skipped", sessionId);
         return;
     }
