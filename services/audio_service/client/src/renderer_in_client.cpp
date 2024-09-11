@@ -2260,7 +2260,7 @@ int32_t RendererInClientInner::RemoveRendererOrCapturerPolicyServiceDiedCB()
 bool RendererInClientInner::RestoreAudioStream()
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
-    CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID, true,
+    CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
         "state_ is NEW/INVALID, no need for restore");
     bool result = false;
     State oldState = state_;
