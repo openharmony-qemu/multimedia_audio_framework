@@ -112,6 +112,7 @@ private:
 
     int bufferFd_ = INVALID_FD;
     uint32_t eachReadFrameSize_ = 0;
+    std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -174,6 +175,10 @@ void FastAudioCapturerSourceInner::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
+
+    if (audioCapturerSourceCallback_ != nullptr) {
+        audioCapturerSourceCallback_->OnCapturerState(false);
+    }
 }
 
 void FastAudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes &attrs)
@@ -511,13 +516,25 @@ int32_t FastAudioCapturerSourceInner::Start(void)
 #endif
 
     if (!started_) {
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(true);
+        }
+
         int32_t ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
+            if (audioCapturerSourceCallback_ != nullptr) {
+                audioCapturerSourceCallback_->OnCapturerState(false);
+            }
             return ERR_NOT_STARTED;
         }
         int32_t err = CheckPositionTime();
-        CHECK_AND_RETURN_RET_LOG(err == SUCCESS, ERR_NOT_STARTED,
-            "CheckPositionTime failed!");
+        if (err != SUCCESS) {
+            if (audioCapturerSourceCallback_ != nullptr) {
+                audioCapturerSourceCallback_->OnCapturerState(false);
+            }
+            AUDIO_ERR_LOG("CheckPositionTime failed!");
+            return ERR_NOT_STARTED;
+        }
         started_ = true;
     }
 
@@ -658,7 +675,8 @@ void FastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallb
 
 void FastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback)
 {
-    AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
+    AUDIO_INFO_LOG("Register AudioCapturerSource Callback");
+    audioCapturerSourceCallback_ = std::move(callback);
 }
 
 void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback *callback)
@@ -680,6 +698,9 @@ int32_t FastAudioCapturerSourceInner::Stop(void)
 
     if (started_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Stop(audioCapture_);
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(false);
+        }
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "Stop capture Failed");
     }
     started_ = false;
@@ -691,6 +712,9 @@ int32_t FastAudioCapturerSourceInner::Pause(void)
 {
     if (started_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Pause(audioCapture_);
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(false);
+        }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "pause capture Failed");
     }
     paused_ = true;
@@ -702,6 +726,9 @@ int32_t FastAudioCapturerSourceInner::Resume(void)
 {
     if (paused_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Resume(audioCapture_);
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(true);
+        }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "resume capture Failed");
     }
     paused_ = false;
