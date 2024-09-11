@@ -117,7 +117,7 @@ int32_t PaCapturerStreamImpl::InitParams()
 
 int32_t PaCapturerStreamImpl::Start()
 {
-    AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Start");
+    AUDIO_INFO_LOG("Start");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -136,7 +136,7 @@ int32_t PaCapturerStreamImpl::Start()
 
 int32_t PaCapturerStreamImpl::Pause()
 {
-    AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Pause");
+    AUDIO_INFO_LOG("Pause");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -242,7 +242,7 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
 
 int32_t PaCapturerStreamImpl::Flush()
 {
-    AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Flush");
+    AUDIO_INFO_LOG("Flush");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -266,7 +266,7 @@ int32_t PaCapturerStreamImpl::Flush()
 
 int32_t PaCapturerStreamImpl::Stop()
 {
-    AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Stop");
+    AUDIO_INFO_LOG("Stop");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -284,6 +284,18 @@ int32_t PaCapturerStreamImpl::Stop()
 
 int32_t PaCapturerStreamImpl::Release()
 {
+    AUDIO_INFO_LOG("Enter");
+
+    if (state_ == RUNNING) {
+        PaLockGuard lock(mainloop_);
+        if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+            return ERR_ILLEGAL_STATE;
+        }
+        pa_operation *operation = pa_stream_cork(paStream_, 1, nullptr, nullptr);
+        CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
+        pa_operation_unref(operation);
+    }
+
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
