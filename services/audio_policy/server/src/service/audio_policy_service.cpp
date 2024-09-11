@@ -6284,6 +6284,11 @@ bool AudioPolicyService::CheckStreamOffloadMode(int64_t activateSessionId, Audio
         return false;
     }
 
+    if (CheckSpatializationAndEffectState()) {
+        AUDIO_INFO_LOG("spatialization effect in arm, Skipped");
+        return false;
+    }
+
     return true;
 }
 
@@ -6367,15 +6372,7 @@ bool AudioPolicyService::CheckStreamMultichannelMode(const int64_t activateSessi
     }
 
     // The multi-channel algorithm needs to be supported in the DSP
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false,
-        "error for g_adProxy null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool ret = gsp->GetEffectOffloadEnabled();
-    IPCSkeleton::SetCallingIdentity(identity);
-
-    return ret;
+    return GetAudioEffectOffloadFlag();
 }
 
 AudioModuleInfo AudioPolicyService::ConstructMchAudioModuleInfo(DeviceType deviceType)
@@ -8411,6 +8408,26 @@ void AudioPolicyService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
         audioDeviceManager_.RemoveSelectedDefaultOutputDevice(sessionID);
     }
     FetchDevice(true);
+}
+
+bool AudioPolicyService::GetAudioEffectOffloadFlag()
+{
+    // check if audio effect offload
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "gsp null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    bool effectOffloadFlag = gsp->GetEffectOffloadEnabled();
+    IPCSkeleton::SetCallingIdentity(identity);
+    return effectOffloadFlag;
+}
+
+bool AudioPolicyService::CheckSpatializationAndEffectState()
+{
+    AudioSpatializationState spatialState =
+        AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState();
+    bool effectOffloadFlag = GetAudioEffectOffloadFlag();
+    return spatialState.spatializationEnabled && !effectOffloadFlag;
 }
 } // namespace AudioStandard
 } // namespace OHOS
