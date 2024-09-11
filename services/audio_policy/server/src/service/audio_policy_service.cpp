@@ -331,7 +331,8 @@ static uint32_t PcmFormatToBits(AudioSampleFormat format)
 
 AudioPolicyService::~AudioPolicyService()
 {
-    AUDIO_DEBUG_LOG("~AudioPolicyService()");
+    AUDIO_WARNING_LOG("~AudioPolicyService()");
+    Deinit();
 }
 
 bool AudioPolicyService::Init(void)
