@@ -981,6 +981,10 @@ private:
 
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
 
+    bool GetAudioEffectOffloadFlag();
+
+    bool CheckSpatializationAndEffectState();
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
