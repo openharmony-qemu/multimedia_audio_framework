@@ -447,7 +447,6 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
     Trace trace("PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName:id:" + std::to_string(sinkInputId) +
         +":index:" + std::to_string(sinkIndex) + ":name:" + sinkName);
 
-
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
     int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
