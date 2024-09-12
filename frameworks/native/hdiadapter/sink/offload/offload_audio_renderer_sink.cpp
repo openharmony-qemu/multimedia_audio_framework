@@ -435,6 +435,7 @@ void OffloadAudioRendererSinkInner::DeInit()
 {
     Trace trace("OffloadSink::DeInit");
     std::lock_guard<std::mutex> lock(renderMutex_);
+    std::lock_guard<std::mutex> lockVolume(volumeMutex_);
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
