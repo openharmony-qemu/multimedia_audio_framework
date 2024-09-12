@@ -775,6 +775,8 @@ std::string AudioSpatializationService::RemoveOldestDevice()
         }
     }
     addressToDeviceSpatialInfoMap_.erase(oldestAddr);
+    addressToSpatialEnabledMap_.erase(oldestAddr);
+    addressToSpatialDeviceStateMap_.erase(oldestAddr);
     return oldestAddr;
 }
 
