@@ -517,6 +517,7 @@ int32_t OHAudioBuffer::ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFr
 
 uint64_t OHAudioBuffer::GetCurWriteFrame()
 {
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, 0, "basicBufferInfo_ is null");
     return basicBufferInfo_->curWriteFrame.load();
 }
 
