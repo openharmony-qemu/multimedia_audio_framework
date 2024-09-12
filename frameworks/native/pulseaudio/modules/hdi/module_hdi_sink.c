@@ -110,7 +110,8 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
         }
         EffectChainManagerCreateCb(sceneType, sessionID);
         SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, volume};
-        if (si->state == PA_SINK_INPUT_RUNNING && !EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
+        if (si->thread_info.state == PA_SINK_INPUT_RUNNING &&
+            !EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
             EffectChainManagerEffectUpdate();
         }
@@ -138,7 +139,8 @@ static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u
     if (!pa_safe_streq(clientUid, bootUpMusic)) {
         const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
         EffectChainManagerReleaseCb(sceneType, sessionID);
-        if (si->state == PA_SINK_INPUT_RUNNING && !EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
+        if (si->thread_info.state == PA_SINK_INPUT_RUNNING &&
+            !EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
             EffectChainManagerMultichannelUpdate(sceneType);
             EffectChainManagerEffectUpdate();
         }
@@ -161,7 +163,8 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, v
     const char *bootUpMusic = "1003";
     uint32_t volume = si->volume.values[0];
 
-    if (si->state == PA_SINK_INPUT_RUNNING && si->sink && !pa_safe_streq(clientUid, bootUpMusic)) {
+    if (si->thread_info.state == PA_SINK_INPUT_RUNNING && si->sink &&
+        !pa_safe_streq(clientUid, bootUpMusic)) {
         SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, volume};
         if (!EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
@@ -169,8 +172,8 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, v
         }
     }
 
-    if ((si->state == PA_SINK_INPUT_CORKED || si->state == PA_SINK_INPUT_UNLINKED) && si->sink &&
-        !pa_safe_streq(clientUid, bootUpMusic)) {
+    if ((si->thread_info.state == PA_SINK_INPUT_CORKED || si->state == PA_SINK_INPUT_UNLINKED) &&
+        si->sink && !pa_safe_streq(clientUid, bootUpMusic)) {
         if (!EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
             EffectChainManagerMultichannelUpdate(sceneType);
         }
