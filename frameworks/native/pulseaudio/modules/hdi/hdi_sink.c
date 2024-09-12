@@ -2666,7 +2666,7 @@ static void StartMultiChannelHdiIfRunning(struct Userdata *u)
 
 static void POSSIBLY_UNUSED StopPrimaryHdiIfNoRunning(struct Userdata *u)
 {
-    if (!u->primary.isHDISinkStarted) {
+    if (pa_atomic_load(&u->primary.isHDISinkStarted) == 0) {
         return;
     }
 
@@ -2687,7 +2687,7 @@ static void POSSIBLY_UNUSED StopPrimaryHdiIfNoRunning(struct Userdata *u)
 
     u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
     AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, Stopped HDI renderer");
-    u->primary.isHDISinkStarted = false;
+    pa_atomic_store(&u->primary.isHDISinkStarted, 0);
 }
 
 static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *i, pa_sink_input_state_t state)
@@ -3284,12 +3284,12 @@ static void ThreadFuncWriteHDI(void *userdata)
         switch (code) {
             case HDI_RENDER: {
                 pa_usec_t now = pa_rtclock_now();
-                if (!u->primary.isHDISinkStarted && now - u->timestampLastLog > USEC_PER_SEC) {
+                if (pa_atomic_load(&u->primary.isHDISinkStarted) == 0 && now - u->timestampLastLog > USEC_PER_SEC) {
                     u->timestampLastLog = now;
                     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
                     AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite, wait sink[%s] suspend", deviceClass);
                     pa_memblock_unref(chunk.memblock);
-                } else if (!u->primary.isHDISinkStarted) {
+                } else if (pa_atomic_load(&u->primary.isHDISinkStarted) == 0) {
                     pa_memblock_unref(chunk.memblock);
                 } else if (RenderWrite(u->primary.sinkAdapter, &chunk) < 0) {
                     u->bytes_dropped += chunk.length;
@@ -3498,10 +3498,10 @@ static int32_t RemoteSinkStateChange(pa_sink *s, pa_sink_state_t newState)
             u->bytes_dropped = 0;
         }
 
-        if (u->primary.isHDISinkStarted) {
+        if (pa_atomic_load(&u->primary.isHDISinkStarted) == 1) {
             u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
             AUDIO_INFO_LOG("Stopped HDI renderer");
-            u->primary.isHDISinkStarted = false;
+            pa_atomic_store(&u->primary.isHDISinkStarted, 0);
         }
     }
 
@@ -3618,10 +3618,10 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
             u->bytes_dropped = 0;
         }
 
-        if (u->primary.isHDISinkStarted) {
+        if (pa_atomic_load(&u->primary.isHDISinkStarted) == 1) {
             u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
             AUDIO_INFO_LOG("Stopped HDI renderer");
-            u->primary.isHDISinkStarted = false;
+            pa_atomic_store(&u->primary.isHDISinkStarted, 0);
         }
 
         if (u->multiChannel.isHDISinkStarted) {
