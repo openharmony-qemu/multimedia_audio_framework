@@ -670,6 +670,8 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     AUDIO_INFO_LOG("Create render sinkName:%{public}s, rate:%{public}u channel:%{public}u format:%{public}u, " \
         "devicePin:%{public}u",
         halName_.c_str(), param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
+        "CreateRender failed, audioAdapter_ is null");
     int32_t ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
