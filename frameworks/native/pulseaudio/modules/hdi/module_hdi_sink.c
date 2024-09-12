@@ -172,7 +172,7 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, v
         }
     }
 
-    if ((si->thread_info.state == PA_SINK_INPUT_CORKED || si->state == PA_SINK_INPUT_UNLINKED) &&
+    if ((si->thread_info.state == PA_SINK_INPUT_CORKED || si->thread_info.state == PA_SINK_INPUT_UNLINKED) &&
         si->sink && !pa_safe_streq(clientUid, bootUpMusic)) {
         if (!EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
             EffectChainManagerMultichannelUpdate(sceneType);
