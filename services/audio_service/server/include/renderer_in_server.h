@@ -137,7 +137,7 @@ private:
     bool isBufferConfiged_  = false;
     std::atomic<bool> isInited_ = false;
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
-    size_t needForceWrite_ = 0;
+    std::atomic<size_t> needForceWrite_ = 0;
     bool afterDrain = false;
     float lowPowerVolume_ = 1.0f;
     bool isNeedFade_ = false;

@@ -272,7 +272,7 @@ static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
     pa_source_output *sourceOutput;
     while ((sourceOutput = pa_hashmap_iterate(u->source->thread_info.outputs, &state, NULL))) {
         const char *cstringClientUid = pa_proplist_gets(sourceOutput->proplist, "stream.client.uid");
-        if (cstringClientUid && (sourceOutput->state == PA_SOURCE_OUTPUT_RUNNING)) {
+        if (cstringClientUid && (sourceOutput->thread_info.state == PA_SOURCE_OUTPUT_RUNNING)) {
             appsUid[count++] = atoi(cstringClientUid);
         }
     }
