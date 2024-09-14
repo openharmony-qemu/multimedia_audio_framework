@@ -125,6 +125,7 @@ void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
 
 void AudioEffectChain::ReleaseEffectChain()
 {
+    std::lock_guard<std::mutex> lock(reloadMutex_);
     for (uint32_t i = 0; i < standByEffectHandles_.size() && i < libHandles_.size(); ++i) {
         if (!libHandles_[i]) {
             continue;
