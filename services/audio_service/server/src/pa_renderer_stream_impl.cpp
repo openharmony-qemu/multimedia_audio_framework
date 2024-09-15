@@ -335,17 +335,12 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
 
     pa_usec_t paLatency {0};
     int32_t negative {0};
-    if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
-        if (negative) {
-            return ERR_OPERATION_FAILED;
-        }
+    if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0 && negative) {
+        return ERR_OPERATION_FAILED;
     }
 
     const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
-    if (info == nullptr) {
-        AUDIO_WARNING_LOG("pa_stream_get_timing_info failed");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(info != nullptr, ERR_OPERATION_FAILED, "pa_stream_get_timing_info failed");
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
     uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
     uint64_t writeIndex = pa_bytes_to_usec(info->write_index, sampleSpec);
