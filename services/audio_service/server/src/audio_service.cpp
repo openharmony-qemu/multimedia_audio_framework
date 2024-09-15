@@ -25,6 +25,7 @@
 #include "audio_utils.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
+#include "audio_capturer_source.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -695,6 +696,14 @@ float AudioService::GetMaxAmplitude(bool isOutputDevice)
         }
     }
     return fastAudioMaxAmplitude;
+}
+
+int32_t AudioService::UpdateSourceType(SourceType sourceType)
+{
+    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr, ERROR, "source is null");
+
+    return audioCapturerSourceInstance->UpdateSourceType(sourceType);
 }
 } // namespace AudioStandard
 } // namespace OHOS
