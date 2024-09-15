@@ -35,7 +35,7 @@ const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint64_t BUF_LENGTH_IN_MSEC = 20;
 static const uint32_t PA_RECORD_MAX_LENGTH_NORMAL = 4;
 static const uint32_t PA_RECORD_MAX_LENGTH_WAKEUP = 30;
-static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 8; // 8S
+static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 5; // 5S
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
@@ -624,9 +624,8 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
         }
         AudioXCollie audioXCollie("PaAdapterManager::ConnectStreamToPA", CONNECT_STREAM_TIMEOUT_IN_SEC,
             [this](void *) {
-                AUDIO_ERR_LOG("ConnectStreamToPA timeout, trigger signal");
+                AUDIO_ERR_LOG("ConnectStreamToPA timeout");
                 waitConnect_ = false;
-                pa_threaded_mainloop_signal(this->mainLoop_, 0);
             }, nullptr, XcollieFlag);
         pa_threaded_mainloop_wait(mainLoop_);
     }
