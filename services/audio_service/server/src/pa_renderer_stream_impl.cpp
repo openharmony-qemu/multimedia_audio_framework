@@ -299,7 +299,7 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentTimeStamp", PA_STREAM_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("Connect timeout");
+            AUDIO_ERR_LOG("pulseAudio timeout");
         }, nullptr, XcollieFlag);
 
     UpdatePaTimingInfo();
@@ -324,7 +324,7 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     }
     int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentPosition", PA_STREAM_IMPL_TIMEOUT,
-        [](void *) { AUDIO_ERR_LOG("Connect timeout"); }, nullptr, XcollieFlag);
+        [](void *) { AUDIO_ERR_LOG("pulseAudio timeout"); }, nullptr, XcollieFlag);
 
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
     if (curTimeGetLatency - preTimeGetPaLatency_ > AUDIO_CYCLE_TIME_US || firstGetPaLatency_) { // 20000 cycle time
@@ -385,7 +385,7 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetLatency", PA_STREAM_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("Connect timeout");
+            AUDIO_ERR_LOG("pulseAudio timeout");
         }, nullptr, XcollieFlag);
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
     if (curTimeGetLatency - preTimeGetLatency_ < AUDIO_CYCLE_TIME_US && !firstGetLatency_) { // 20000 cycle time
@@ -1169,7 +1169,7 @@ void PaRendererStreamImpl::UpdatePaTimingInfo()
         auto start_time = std::chrono::steady_clock::now();
         while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
             if ((std::chrono::steady_clock::now() - start_time) > std::chrono::seconds(PA_STREAM_IMPL_TIMEOUT + 1)) {
-                AUDIO_ERR_LOG("pa_stream_update_timing_info time out");
+                AUDIO_ERR_LOG("pa_stream_update_timing_info timeout");
                 break;
             }
             pa_threaded_mainloop_wait(mainloop_);
