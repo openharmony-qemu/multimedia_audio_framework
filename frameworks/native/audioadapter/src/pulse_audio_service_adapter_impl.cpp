@@ -45,7 +45,7 @@ static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
 SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
 SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
 
-static const int32_t PA_SERVICE_IMPL_TIMEOUT = 15; // 15s
+static const int32_t PA_SERVICE_IMPL_TIMEOUT = 5; // 5s
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
     {"voice_call_assistant", STREAM_VOICE_CALL_ASSISTANT},
