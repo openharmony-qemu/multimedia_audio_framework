@@ -147,7 +147,7 @@ public:
 
     unique_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor() const;
 
-    DeviceType GetActiveInputDevice() const;
+    DeviceType GetActiveInputDevice();
 
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
@@ -979,6 +979,14 @@ private:
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
         ConnectState connectState);
 
+    void SetCurrenInputDevice(const AudioDeviceDescriptor &desc);
+
+    AudioDeviceDescriptor GetCurrentInputDevice();
+
+    DeviceType GetCurrentInputDeviceType();
+
+    void SetCurrentInputDeviceType(DeviceType deviceType);
+
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
 
     bool GetAudioEffectOffloadFlag();
@@ -1013,6 +1021,7 @@ private:
     std::mutex serviceFlagMutex_;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
+    std::mutex curInputDevice_; // lock this mutex to operate currentActiveInputDevice_
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::vector<std::pair<DeviceType, bool>> pnpDeviceList_;
 
