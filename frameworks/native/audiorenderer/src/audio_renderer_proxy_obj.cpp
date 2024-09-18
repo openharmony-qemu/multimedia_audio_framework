@@ -19,7 +19,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-void AudioRendererProxyObj::SaveRendererObj(const AudioRenderer *rendererObj)
+void AudioRendererProxyObj::SaveRendererObj(AudioRenderer *rendererObj)
 {
     renderer = rendererObj;
 }
