@@ -2257,12 +2257,12 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
         AUDIO_DEBUG_LOG("output device is not change");
         return;
     }
+    currentActiveDevice_ = AudioDeviceDescriptor(*descs.front());
+    AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
     SetVolumeForSwitchDevice(descs.front()->deviceType_);
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SwitchActiveA2dpDevice(new AudioDeviceDescriptor(*descs.front()));
     }
-    currentActiveDevice_ = AudioDeviceDescriptor(*descs.front());
-    AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
     OnPreferredOutputDeviceUpdated(currentActiveDevice_);
 }
 
