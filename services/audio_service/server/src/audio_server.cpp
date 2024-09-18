@@ -2075,15 +2075,10 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, i
     if (durationUs <= 0) {
         return SUCCESS;
     }
-    if (devceClass == "offload") {
-        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
-        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-        return audioRendererSinkInstance->SetSinkMuteForSwitchDevice(mute);
-    }
 
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance(devceClass.c_str(), "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    return audioRendererSinkInstance->SetRenderEmpty(durationUs);
+    return audioRendererSinkInstance->SetSinkMuteForSwitchDevice(mute);
 }
 
 void AudioServer::LoadHdiEffectModel()
