@@ -32,7 +32,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr int32_t MAX_DELAY_TIME = 4 * 1000;
 
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
