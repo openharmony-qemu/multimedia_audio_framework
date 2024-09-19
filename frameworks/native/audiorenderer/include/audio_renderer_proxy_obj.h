@@ -25,7 +25,7 @@ namespace AudioStandard {
 class AudioRendererProxyObj : public AudioClientTracker {
 public:
     virtual ~AudioRendererProxyObj() = default;
-    void SaveRendererObj(const AudioRenderer *rendererObj);
+    void SaveRendererObj(AudioRenderer *rendererObj);
     void UnsetRendererObj();
 
     void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
@@ -36,7 +36,7 @@ public:
     void UnsetOffloadModeImpl();
     void GetSingleStreamVolumeImpl(float &volume);
 private:
-    const AudioRenderer *renderer;
+    AudioRenderer *renderer;
     std::mutex mutex_;
 };
 } // namespace AudioStandard

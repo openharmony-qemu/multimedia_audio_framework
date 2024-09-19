@@ -317,7 +317,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
      * @since 10
      */
-    virtual bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const = 0;
+    virtual bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
      * @brief Writes audio data.
@@ -419,7 +419,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
      * @since 10
      */
-    virtual bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const = 0;
+    virtual bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
      * @brief Pauses audio rendering.
@@ -427,7 +427,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
      * @since 10
      */
-    virtual bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const = 0;
+    virtual bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
      * @brief Stops audio rendering.
@@ -435,7 +435,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully stopped; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Stop() const = 0;
+    virtual bool Stop() = 0;
 
     /**
      * @brief Releases a local <b>AudioRenderer</b> object.
@@ -929,6 +929,9 @@ public:
     virtual bool GetSilentModeAndMixWithOthers() = 0;
 
     virtual void EnableVoiceModemCommunicationStartStream(bool enable) = 0;
+
+    virtual bool IsNoStreamRenderer() const = 0;
+
     /**
      * @brief Temporarily changes the current audio route.
      * @param deviceType to set. The available deviceTypes are EARPIECE/SPEAKER/DEFAULT.

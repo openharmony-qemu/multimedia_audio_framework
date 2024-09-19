@@ -42,16 +42,16 @@ public:
     int32_t GetParams(AudioRendererParams &params) const override;
     int32_t GetRendererInfo(AudioRendererInfo &rendererInfo) const override;
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
-    bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
+    bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Drain() const override;
-    bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
-    bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
-    bool Stop() const override;
+    bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    bool Stop() override;
     bool Flush() const override;
     bool Release() const override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
@@ -127,6 +127,9 @@ public:
     bool GetSilentModeAndMixWithOthers() override;
 
     void EnableVoiceModemCommunicationStartStream(bool enable) override;
+
+    bool IsNoStreamRenderer() const override;
+
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
@@ -199,6 +202,7 @@ private:
     bool isDirectVoipSupported_ = false;
     bool isEnableVoiceModemCommunicationStartStream_ = false;
     DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
+    RendererState state_ = RENDERER_INVALID;
 
     float speed_ = 1.0;
 
