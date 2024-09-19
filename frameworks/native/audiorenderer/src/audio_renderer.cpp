@@ -1381,18 +1381,8 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetVolume(info.volume);
     audioStream->SetUnderflowCount(info.underFlowCount);
 
-    if (info.renderMode == RENDER_MODE_CALLBACK) {
-        size_t sizePerFrameInByte = 0;
-        IAudioStream::GetByteSizePerFrame(info.params, sizePerFrameInByte);
-        size_t bufferSize = 0;
-        audioStream_->GetBufferSize(bufferSize);
-        
-        if (bufferSize > 0 && sizePerFrameInByte > 0) {
-            audioStream->SetPreferredFrameSize(bufferSize / sizePerFrameInByte);
-        } else {
-            AUDIO_ERR_LOG("param err sizePerFrameInByte: %{public}zu bufferSize: %{public}zu",
-                sizePerFrameInByte, bufferSize);
-        }
+    if (info.userSettedPreferredFrameSize.has_value()) {
+        audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value());
     }
 
     // set callback
@@ -1586,6 +1576,7 @@ int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 
 void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
 {
+    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
     audioStream_->SetPreferredFrameSize(frameSize);
 }
 

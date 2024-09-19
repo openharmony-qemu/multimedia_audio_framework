@@ -1515,6 +1515,8 @@ bool RendererInClientInner::DrainAudioStream(bool stopFlag)
 
 void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
+    std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
+    userSettedPreferredFrameSize_ = frameSize;
     CHECK_AND_RETURN_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID,
         "playing audiovivid, frameSize is always 1024.");
     size_t maxCbBufferSize =
@@ -2088,6 +2090,11 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.sessionId = sessionId_;
     info.streamTrackerRegistered = streamTrackerRegistered_;
     GetStreamSwitchInfo(info);
+
+    {
+        std::lock_guard<std::mutex> lock(setPreferredFrameSizeMutex_);
+        info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
+    }
 }
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)

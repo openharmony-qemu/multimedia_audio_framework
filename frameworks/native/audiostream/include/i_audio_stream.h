@@ -100,6 +100,8 @@ public:
         std::shared_ptr<AudioRendererWriteCallback> rendererWriteCallback;
         std::shared_ptr<AudioCapturerReadCallback> capturerReadCallback;
         std::shared_ptr<AudioRendererFirstFrameWritingCallback> rendererFirstFrameWritingCallback;
+
+        std::optional<int32_t> userSettedPreferredFrameSize = std::nullopt;
     };
 
     virtual ~IAudioStream() = default;
