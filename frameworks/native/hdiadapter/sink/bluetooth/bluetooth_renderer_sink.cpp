@@ -69,8 +69,6 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 constexpr uint32_t BIT_TO_BYTES = 8;
 constexpr int64_t STAMP_THRESHOLD_MS = 20;
-const unsigned int BUFFER_CALC_20MS = 20;
-const unsigned int BUFFER_CALC_1000MS = 1000;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
@@ -125,7 +123,7 @@ public:
         const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    int32_t SetRenderEmpty(int32_t durationUs) final;
+    int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     explicit BluetoothRendererSinkInner(bool isBluetoothLowLatency = false);
     ~BluetoothRendererSinkInner();
@@ -150,7 +148,9 @@ private:
     int32_t logMode_ = 0;
 
     // for device switch
-    std::atomic<int32_t> renderEmptyFrameCount_ = 0;
+    std::mutex switchDeviceMutex_;
+    int32_t muteCount_ = 0;
+    std::atomic<bool> switchDeviceMute_ = false;
 
     // Low latency
     int32_t PrepareMmapBuffer();
@@ -511,13 +511,12 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     if (suspend_) { return ret; }
 
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
-    if (renderEmptyFrameCount_ > 0) {
+    if (switchDeviceMute_) {
         Trace traceEmpty("BluetoothRendererSinkInner::RenderFrame::renderEmpty");
         if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
             static_cast<size_t>(len)) != EOK) {
             AUDIO_WARNING_LOG("call memset_s failed");
         }
-        renderEmptyFrameCount_--;
     }
     while (true) {
         Trace::CountVolume("BluetoothRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
@@ -1132,11 +1131,29 @@ int32_t BluetoothRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &ap
     return SUCCESS;
 }
 
-int32_t BluetoothRendererSinkInner::SetRenderEmpty(int32_t durationUs)
+// LCOV_EXCL_START
+int32_t BluetoothRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
 {
-    int32_t emptyCount = durationUs / BUFFER_CALC_1000MS / BUFFER_CALC_20MS; // 1000 us->ms
-    AUDIO_INFO_LOG("a2dp render %{public}d empty", emptyCount);
-    CasWithCompare(renderEmptyFrameCount_, emptyCount, std::less<int32_t>());
+    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
+    AUDIO_INFO_LOG("set a2dp mute %{public}d", mute);
+
+    if (mute) {
+        muteCount_++;
+        if (switchDeviceMute_) {
+            AUDIO_INFO_LOG("a2dp already muted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = true;
+    } else {
+        muteCount_--;
+        if (muteCount_ > 0) {
+            AUDIO_WARNING_LOG("a2dp not all unmuted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = false;
+        muteCount_ = 0;
+    }
+
     return SUCCESS;
 }
 } // namespace AudioStandard
