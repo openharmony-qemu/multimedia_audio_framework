@@ -752,26 +752,13 @@ void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk
 
 void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
 {
-    AudioRendererInfo rendererInfo;
-    auto deviceDescs = AudioPolicyService::GetAudioPolicyService().GetPreferredOutputDeviceDescriptors(rendererInfo);
-    bool noBTPermissionExist = false;
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        AudioRendererInfo rendererInfo;
+        auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
+            GetPreferredOutputDeviceDescInner(rendererInfo);
         if (!(it->second->hasBTPermission_)) {
-            noBTPermissionExist = true;
-            continue;
-        }
-        it->second->OnPreferredOutputDeviceUpdated(deviceDescs);
-    }
-
-    if (!noBTPermissionExist) {
-        return;
-    }
-
-    AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
-    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        if (it->second->hasBTPermission_) {
-            continue;
+            AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
         }
         it->second->OnPreferredOutputDeviceUpdated(deviceDescs);
     }
@@ -779,26 +766,12 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
 
 void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
 {
-    AudioCapturerInfo captureInfo;
-    auto deviceDescs = AudioPolicyService::GetAudioPolicyService().GetPreferredInputDeviceDescriptors(captureInfo);
-    bool noBTPermissionExist = false;
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        AudioCapturerInfo captureInfo;
+        auto deviceDescs = AudioPolicyService::GetAudioPolicyService().GetPreferredInputDeviceDescInner(captureInfo);
         if (!(it->second->hasBTPermission_)) {
-            noBTPermissionExist = true;
-            continue;
-        }
-        it->second->OnPreferredInputDeviceUpdated(deviceDescs);
-    }
-
-    if (!noBTPermissionExist) {
-        return;
-    }
-
-    AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
-    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        if (it->second->hasBTPermission_) {
-            continue;
+            AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
         }
         it->second->OnPreferredInputDeviceUpdated(deviceDescs);
     }
@@ -1054,6 +1027,7 @@ void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExec
     }
 }
 
+// Run with event-runner mutex hold, lock any mutex that SendSyncEvent-calling holds may cause dead lock.
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
