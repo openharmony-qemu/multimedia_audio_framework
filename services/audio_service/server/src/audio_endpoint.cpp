@@ -176,9 +176,9 @@ private:
     void RecordReSyncPosition();
     void InitAudiobuffer(bool resetReadWritePos);
     void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
-    void ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData);
+    void ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol);
     void HandleZeroVolumeCheckEvent();
-    void HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData);
+    void HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol = true);
     int32_t HandleCapturerDataParams(const BufferDesc &writeBuf, const BufferDesc &readBuf,
         const BufferDesc &convertedBuffer);
     void ZeroVolumeCheck(const int32_t vol);
@@ -201,6 +201,7 @@ private:
     bool IsAnyProcessRunning();
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos);
+    void ProcessToDupStream(std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData);
     void GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList);
 
     std::string GetStatusStr(EndpointStatus status);
@@ -1402,14 +1403,15 @@ void AudioEndpointInner::HandleZeroVolumeCheckEvent()
 }
 
 
-void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData)
+void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData,
+    bool applyVol)
 {
     if (srcData.streamInfo.encoding != dstData.streamInfo.encoding) {
         AUDIO_ERR_LOG("Different encoding formats");
         return;
     }
     if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
-        return ProcessSingleData(srcData, dstData);
+        return ProcessSingleData(srcData, dstData, applyVol);
     }
     if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
         CHECK_AND_RETURN_LOG(processList_.size() > 0 && processList_[0] != nullptr, "No avaliable process");
@@ -1418,14 +1420,15 @@ void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from mono to stereo failed");
         AudioStreamData dataAfterProcess = srcData;
         dataAfterProcess.bufferDesc = convertedBuffer;
-        ProcessSingleData(dataAfterProcess, dstData);
+        ProcessSingleData(dataAfterProcess, dstData, applyVol);
         ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
             convertedBuffer.bufLength);
         CHECK_AND_RETURN_LOG(ret == EOK, "memset converted buffer to 0 failed");
     }
 }
 
-void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData)
+void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData,
+    bool applyVol)
 {
     CHECK_AND_RETURN_LOG(dstData.streamInfo.format == SAMPLE_S16LE && dstData.streamInfo.channels == STEREO,
         "ProcessData failed, streamInfo are not support");
@@ -1436,7 +1439,7 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
     for (size_t offset = 0; dataLength > 0; dataLength--) {
         int32_t vol = srcData.volumeStart; // change to modify volume of each channel
         int16_t *srcPtr = reinterpret_cast<int16_t *>(srcData.bufferDesc.buffer) + offset;
-        int32_t sum = (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER; // 1/65536
+        int32_t sum = applyVol ? (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER : *srcPtr; // 1/65536
         ZeroVolumeCheck(vol);
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
@@ -1536,7 +1539,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     }
 
     if (isInnerCapEnabled_) {
-        MixToDupStream(audioDataList);
+        ProcessToDupStream(audioDataList, dstStreamData);
     }
 
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
@@ -1546,6 +1549,25 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
         dstStreamData.bufferDesc.bufLength);
 
     return true;
+}
+
+void AudioEndpointInner::ProcessToDupStream(std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData)
+{
+    Trace trace("AudioEndpointInner::ProcessToDupStream");
+    if (endpointType_ == TYPE_VOIP_MMAP) {
+        if (audioDataList.size() == 1 && audioDataList[0].isInnerCaped) {
+            BufferDesc temp;
+            temp.buffer = dupBuffer_.get();
+            temp.bufLength = dupBufferSize_;
+            temp.dataLength = dupBufferSize_;
+
+            dstStreamData.bufferDesc = temp;
+            HandleRendererDataParams(audioDataList[0], dstStreamData, false);
+            dupStream_->EnqueueBuffer(temp);
+        }
+    } else {
+        MixToDupStream(audioDataList);
+    }
 }
 
 void AudioEndpointInner::CheckUpdateState(char *frame, uint64_t replyBytes)
