@@ -1720,6 +1720,10 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
 {
     auto streamVolInfo = streamVolumeInfos_.find(streamType);
     auto deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(deviceType);
+    if (deviceVolInfo == streamVolInfo->second->deviceVolumeInfos.end()) {
+        AUDIO_ERR_LOG("Cannot find device type %{public}d", deviceType);
+        return;
+    }
     volumePoints = deviceVolInfo->second->volumePoints;
 }
 
