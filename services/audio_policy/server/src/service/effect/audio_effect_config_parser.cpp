@@ -100,7 +100,6 @@ static int32_t LoadConfigCheck(xmlDoc *doc, xmlNode *currNode)
     if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_effects_conf"))) {
         AUDIO_ERR_LOG("Missing tag - audio_effects_conf");
         xmlFreeDoc(doc);
-        xmlCleanupParser();
         return FILE_CONTENT_ERROR;
     }
 
@@ -109,7 +108,6 @@ static int32_t LoadConfigCheck(xmlDoc *doc, xmlNode *currNode)
     } else {
         AUDIO_ERR_LOG("Missing node - audio_effects_conf");
         xmlFreeDoc(doc);
-        xmlCleanupParser();
         return FILE_CONTENT_ERROR;
     }
 }
@@ -745,7 +743,6 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
 
     if (doc) {
         xmlFreeDoc(doc);
-        xmlCleanupParser();
     }
     return 0;
 }
