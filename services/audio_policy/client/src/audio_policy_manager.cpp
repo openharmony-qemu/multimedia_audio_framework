@@ -688,6 +688,8 @@ int32_t AudioPolicyManager::UnsetMicStateChangeCallback(
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, ERR_INVALID_OPERATION,
+        "audioPolicyClientStubCB is nullptr");
 
     audioPolicyClientStubCB_->RemoveMicStateChangeCallback();
     return SUCCESS;
