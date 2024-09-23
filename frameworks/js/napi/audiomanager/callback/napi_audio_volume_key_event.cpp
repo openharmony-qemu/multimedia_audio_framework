@@ -126,6 +126,7 @@ bool NapiAudioVolumeKeyEvent::ContainSameJsCallback(napi_value args)
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
+    napi_get_reference_value(env_, callback_, &copyValue);
     CHECK_AND_RETURN_RET_LOG(args != nullptr, false, "args is nullptr");
     CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, copyValue, args, &isEquals) == napi_ok, false,
         "Get napi_strict_equals failed");
