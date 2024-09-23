@@ -195,7 +195,6 @@ ConverterConfig AudioConverterParser::LoadConfig()
 
     if ((ret = LoadConfigCheck(doc, currNode)) != 0) {
         xmlFreeDoc(doc);
-        xmlCleanupParser();
         return result;
     }
 
@@ -217,7 +216,6 @@ ConverterConfig AudioConverterParser::LoadConfig()
         currNode = currNode->next;
     }
     xmlFreeDoc(doc);
-    xmlCleanupParser();
     return result;
 }
 } // namespace AudioStandard
