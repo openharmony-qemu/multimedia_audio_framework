@@ -522,6 +522,25 @@ int32_t AudioInterruptService::UnsetAudioInterruptCallback(const int32_t zoneId,
     return SUCCESS;
 }
 
+bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zoneId, const uint32_t incomingSessionId)
+{
+    auto itZone = zonesMap_.find(zoneId);
+    if (itZone == zonesMap_.end()) {
+        AUDIO_ERR_LOG("Can not find zoneid");
+        return false;
+    }
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
+    if (itZone != zonesMap_.end()) { audioFocusInfoList = itZone->second->audioFocusInfoList; }
+    auto isPresent = [incomingSessionId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
+        return pair.first.sessionId == incomingSessionId && pair.second == ACTIVE;
+    };
+    auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
+    if (iter != audioFocusInfoList.end()) {
+        return true;
+    }
+    return false;
+}
+
 int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -532,6 +551,11 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, cons
         "usage: %{public}d source: %{public}d",
         incomingSessionId, audioInterrupt.pid, streamType,
         audioInterrupt.streamUsage, (audioInterrupt.audioFocusType).sourceType);
+
+    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId)) {
+        AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
+        return SUCCESS;
+    }
 
     if (audioInterrupt.parallelPlayFlag) {
         AUDIO_INFO_LOG("allow parallel play");
