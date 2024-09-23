@@ -931,7 +931,7 @@ void BluetoothRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         case AUDIO_FORMAT_TYPE_PCM_24_BIT: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
             break;
         }
         case AUDIO_FORMAT_TYPE_PCM_32_BIT: {
@@ -964,7 +964,7 @@ void BluetoothRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case AUDIO_FORMAT_TYPE_PCM_24_BIT: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_TYPE_PCM_32_BIT: {
