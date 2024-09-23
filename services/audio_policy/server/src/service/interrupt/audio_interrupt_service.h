@@ -76,6 +76,7 @@ public:
     int32_t SetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId,
         const sptr<IRemoteObject> &object);
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId);
+    bool AudioInterruptIsActiveInFocusList(const int32_t zoneId, const uint32_t incomingSessionId);
     int32_t ActivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
 
