@@ -60,11 +60,11 @@ void NapiAudioVolumeKeyEvent::SaveCallbackReference(const std::string &callbackN
 {
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
-    copyValue_ = args;
     const int32_t refCount = 1;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "NapiAudioVolumeKeyEvent: creating reference for callback fail");
+    callback_ = callback;
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     if (callbackName == VOLUME_KEY_EVENT_CALLBACK_NAME) {
         audioVolumeKeyEventJsCallback_ = cb;
@@ -124,10 +124,13 @@ void NapiAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
 bool NapiAudioVolumeKeyEvent::ContainSameJsCallback(napi_value args)
 {
     bool isEquals = false;
+    napi_value copyValue = nullptr;
+
+    napi_get_reference_value(env_, callback_, &copyValue);
     CHECK_AND_RETURN_RET_LOG(args != nullptr, false, "args is nullptr");
-    CHECK_AND_RETURN_RET_LOG(copyValue_ != nullptr, false, "copyValue is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, copyValue_, args, &isEquals) == napi_ok, false,
+    CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, copyValue, args, &isEquals) == napi_ok, false,
         "Get napi_strict_equals failed");
+
     return isEquals;
 }
 } // namespace AudioStandard

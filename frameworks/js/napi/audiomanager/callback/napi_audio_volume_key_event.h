@@ -46,7 +46,7 @@ private:
     std::shared_ptr<AutoRef> audioVolumeKeyEventJsCallback_ = nullptr;
     std::mutex mutex_;
     napi_env env_;
-    napi_value copyValue_ = nullptr;
+    napi_ref callback_;
     static napi_ref sConstructor_;
 };
 } // namespace AudioStandard
