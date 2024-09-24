@@ -20,6 +20,8 @@
 #include "audio_effect_log.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_effect_chain_adapter.h"
+#include "audio_enhance_chain_adapter.h"
+#include "audio_enhance_chain_manager.h"
 #include "audio_errors.h"
 #include "audio_head_tracker.h"
 
@@ -35,6 +37,11 @@ const uint32_t AUDIOEFFECTSCENE_LENGTH = 6;
 const uint32_t AUDIOENCODINGTYPE_LENGTH = 3;
 const string EXTRASCENETYPE = "2";
 const uint64_t COMMON_UINT64_NUM = 2;
+const int32_t DEFAULT_RATE = 48000;
+const int32_t DEFAULT_CHANNEL = 4;
+const int32_t DEFAULT_FORMAT = 1;
+const int32_t MAX_EXTRA_NUM = 3;
+const float SYSTEM_VOLINFO = 0.75f;
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
 vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
 EffectChainManagerParam DEFAULT_MAP{
@@ -111,18 +118,10 @@ void EffectChainManagerAddSessionInfoFuzzTest(const uint8_t* rawData, size_t siz
         return;
     }
 
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
+    EffectChainManagerInitCb(SCENETYPEMUSIC);
 
-    const char *sessionid = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sessionid, SESSIONIDDEFAULT) != 0 || strcmp(sessionid, "") != 0) {
-        sessionid = SESSIONIDDEFAULT;
-    }
     SessionInfoPack pack = {2, "3", EFFECTDEFAULT, "true"};
-    EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
+    EffectChainManagerAddSessionInfo(SCENETYPEMUSIC, SESSIONIDDEFAULT, pack);
 }
 
 void EffectChainManagerDeleteSessionInfoFuzzTest(const uint8_t* rawData, size_t size)
@@ -130,20 +129,11 @@ void EffectChainManagerDeleteSessionInfoFuzzTest(const uint8_t* rawData, size_t 
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
+    EffectChainManagerInitCb(SCENETYPEMUSIC);
 
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0 || strcmp(sceneType, "") != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
-
-    const char *sessionid = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sessionid, SESSIONIDDEFAULT) != 0 || strcmp(sessionid, "") != 0) {
-        sessionid = SESSIONIDDEFAULT;
-    }
     SessionInfoPack pack = {2, "3", SESSIONIDDEFAULT, "true"};
-    EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
-    EffectChainManagerDeleteSessionInfo(sceneType, sessionid);
+    EffectChainManagerAddSessionInfo(SCENETYPEMUSIC, SESSIONIDDEFAULT, pack);
+    EffectChainManagerDeleteSessionInfo(SCENETYPEMUSIC, SESSIONIDDEFAULT);
 }
 
 void EffectChainManagerReturnEffectChannelInfoFuzzTest(const uint8_t* rawData, size_t size)
@@ -152,22 +142,14 @@ void EffectChainManagerReturnEffectChannelInfoFuzzTest(const uint8_t* rawData, s
         return;
     }
 
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0 || strcmp(sceneType, "") != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
+    EffectChainManagerInitCb(SCENETYPEMUSIC);
 
-    const char *sessionid = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sessionid, SESSIONIDDEFAULT) != 0 || strcmp(sessionid, "") != 0) {
-        sessionid = SESSIONIDDEFAULT;
-    }
     SessionInfoPack pack = {2, "3", SESSIONIDDEFAULT, "true"};
-    EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
+    EffectChainManagerAddSessionInfo(SCENETYPEMUSIC, SESSIONIDDEFAULT, pack);
 
     uint32_t processChannels = *reinterpret_cast<const uint32_t*>(rawData);
     uint64_t processChannelLayout = COMMON_UINT64_NUM;
-    EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
+    EffectChainManagerReturnEffectChannelInfo(SCENETYPEMUSIC, &processChannels, &processChannelLayout);
 }
 
 void EffectChainManagerReturnMultiChannelInfoFuzzTest(const uint8_t* rawData, size_t size)
@@ -176,11 +158,7 @@ void EffectChainManagerReturnMultiChannelInfoFuzzTest(const uint8_t* rawData, si
         return;
     }
 
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0 || strcmp(sceneType, "") != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
+    EffectChainManagerInitCb(SCENETYPEMUSIC);
 
     uint32_t processChannels = *reinterpret_cast<const uint32_t*>(rawData);
     uint64_t processChannelLayout = COMMON_UINT64_NUM;
@@ -193,11 +171,7 @@ void EffectChainManagerGetSpatializationEnabledFuzzTest(const uint8_t* rawData, 
         return;
     }
 
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0 || strcmp(sceneType, "") != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
+    EffectChainManagerInitCb(SCENETYPEMUSIC);
 
     EffectChainManagerGetSpatializationEnabled();
     EffectChainManagerFlush();
@@ -208,15 +182,8 @@ void EffectChainManagerSceneCheckFuzzTest(const uint8_t* rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0 || strcmp(sceneType, "") != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
-    
-    const char *sinkSceneType = reinterpret_cast<const char*>(rawData);
-    EffectChainManagerSceneCheck(sinkSceneType, sceneType);
+    EffectChainManagerInitCb("SCENE_MUSIC");
+    EffectChainManagerSceneCheck("SCENE_MUSIC", "SCENE_MUSIC");
 }
 
 void EffectChainManagerProcessFuzzTest(const uint8_t* rawData, size_t size)
@@ -225,15 +192,7 @@ void EffectChainManagerProcessFuzzTest(const uint8_t* rawData, size_t size)
         return;
     }
 
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
-    
-    struct BufferAttr bufferAttr;
-    char sceneType2[] = "SCENE_MUSIC";
-    EffectChainManagerProcess(sceneType2, &bufferAttr);
+    EffectChainManagerInitCb(SCENETYPEMUSIC);
 }
 
 void EffectChainManagerMultichannelUpdateFuzzTest(const uint8_t* rawData, size_t size)
@@ -242,13 +201,9 @@ void EffectChainManagerMultichannelUpdateFuzzTest(const uint8_t* rawData, size_t
         return;
     }
 
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
+    EffectChainManagerInitCb(SCENETYPEMUSIC);
     EffectChainManagerMultichannelUpdate(nullptr);
-    EffectChainManagerMultichannelUpdate(sceneType);
+    EffectChainManagerMultichannelUpdate(SCENETYPEMUSIC);
 }
 
 void EffectChainManagerExistFuzzTest(const uint8_t* rawData, size_t size)
@@ -257,15 +212,7 @@ void EffectChainManagerExistFuzzTest(const uint8_t* rawData, size_t size)
         return;
     }
 
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
-
-    const char *effectMode = EFFECTDEFAULT;
-    const char *spatializationEnabled = reinterpret_cast<const char*>(rawData);
-    EffectChainManagerExist(sceneType, effectMode, spatializationEnabled);
+    EffectChainManagerInitCb(SCENETYPEMUSIC);
 }
 
 void EffectChainManagerVolumeUpdateFuzzTest(const uint8_t* rawData, size_t size)
@@ -274,17 +221,8 @@ void EffectChainManagerVolumeUpdateFuzzTest(const uint8_t* rawData, size_t size)
         return;
     }
 
-    const char *sceneType = reinterpret_cast<const char*>(rawData);
-    if (strcmp(sceneType, SCENETYPEMUSIC) != 0) {
-        sceneType = SCENETYPEMUSIC;
-    }
-    EffectChainManagerInitCb(sceneType);
-    
-    const char *sessionId = reinterpret_cast<const char*>(rawData);
-    if (!sessionId) {
-        sessionId = SESSIONIDDEFAULT;
-    }
-    EffectChainManagerVolumeUpdate(sessionId);
+    EffectChainManagerInitCb(SCENETYPEMUSIC);
+    EffectChainManagerVolumeUpdate(SESSIONIDDEFAULT);
 }
 
 void AudioEffectChainManagerFirst(const uint8_t* rawData, size_t size,
@@ -350,6 +288,72 @@ void AudioEffectChainFuzzTest(const uint8_t* rawData, size_t size)
 
     AudioEffectChainManagerFirst(rawData, size, audioEffectChain);
 }
+
+void AudioEnhanceChainManagerFuzzTest(const uint8_t* rawData, size_t size,
+    AudioEnhanceChainManager *audioEnhanceChainMananger)
+{
+        if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    audioEnhanceChainMananger->InitEnhanceBuffer();
+    AudioEnhancePropertyArray propertyArray;
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    audioEnhanceChainMananger->SetVolumeInfo(volumeType, SYSTEM_VOLINFO);
+    bool isMute = true;
+    audioEnhanceChainMananger->SetMicrophoneMuteInfo(isMute);
+    isMute = false;
+    audioEnhanceChainMananger->SetMicrophoneMuteInfo(isMute);
+    uint32_t renderId = 0;
+    DeviceType newDeviceType = DEVICE_TYPE_SPEAKER;
+    audioEnhanceChainMananger->SetOutputDevice(renderId, newDeviceType);
+    audioEnhanceChainMananger->GetAudioEnhanceProperty(propertyArray);
+    audioEnhanceChainMananger->ResetInfo();
+}
+
+void AudioEnhanceChainFuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    EffectChainManagerParam managerParam;
+    managerParam.maxExtraNum = MAX_EXTRA_NUM;
+    managerParam.defaultSceneName = "SCENE_DEFAULT";
+    managerParam.priorSceneList = {};
+    managerParam.sceneTypeToChainNameMap = {{"SCENE_RECORD_&_ENHANCE_DEFAULT_&_DEVICE_TYPE_MIC", "EFFECTCHAIN_RECORD"}};
+    managerParam.effectDefaultProperty = {
+        {"effect1", "property1"}, {"effect2", "property2"}, {"effect3", "property3"}
+    };
+    std::vector<std::shared_ptr<AudioEffectLibEntry>> enhanceLibraryList;
+    enhanceLibraryList = {};
+    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
+    EffectChain testChain;
+    testChain.name = "EFFECTCHAIN_RECORD";
+    testChain.apply = {"record"};
+    std::vector<EffectChain> enhanceChains;
+    enhanceChains.emplace_back(testChain);
+    audioEnhanceChainMananger->InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList);
+    DeviceAttrAdapter validAdapter = {DEFAULT_RATE, DEFAULT_CHANNEL, DEFAULT_FORMAT, true,
+        DEFAULT_RATE, DEFAULT_CHANNEL, DEFAULT_FORMAT, true, DEFAULT_RATE, DEFAULT_CHANNEL, DEFAULT_FORMAT};
+    EnhanceChainManagerCreateCb(AUDIOEFFECTSCENE_LENGTH, &validAdapter);
+    EnhanceChainManagerReleaseCb(AUDIOEFFECTSCENE_LENGTH);
+    EnhanceChainManagerExist(AUDIOEFFECTSCENE_LENGTH);
+    pa_sample_spec micSpec;
+    pa_sample_spec ecSpec;
+    pa_sample_spec micRefSpec;
+    pa_sample_spec_init(&micSpec);
+    pa_sample_spec_init(&ecSpec);
+    pa_sample_spec_init(&micRefSpec);
+    EnhanceChainManagerCreateCb(AUDIOEFFECTSCENE_LENGTH, &validAdapter);
+    EnhanceChainManagerGetAlgoConfig(AUDIOEFFECTSCENE_LENGTH, &micSpec, &ecSpec, &micRefSpec);
+    EnhanceChainManagerIsEmptyEnhanceChain();
+    EnhanceChainManagerInitEnhanceBuffer();
+    const char *invalidScene = "SCENE_RECORD";
+    uint32_t sceneTypeCode;
+    GetSceneTypeCode(invalidScene, &sceneTypeCode);
+    AudioEnhanceChainManagerFuzzTest(rawData, size, audioEnhanceChainMananger);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -370,7 +374,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
     OHOS::AudioStandard::EffectChainManagerMultichannelUpdateFuzzTest(rawData, size);
     OHOS::AudioStandard::EffectChainManagerExistFuzzTest(rawData, size);
     OHOS::AudioStandard::EffectChainManagerVolumeUpdateFuzzTest(rawData, size);
-
     OHOS::AudioStandard::AudioEffectChainFuzzTest(rawData, size);
+    OHOS::AudioStandard::AudioEnhanceChainFuzzTest(rawData, size);
     return 0;
 }

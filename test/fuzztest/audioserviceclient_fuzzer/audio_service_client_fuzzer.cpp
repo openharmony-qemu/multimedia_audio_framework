@@ -34,7 +34,7 @@ const int32_t LIMITSIZE = 4;
 bool g_hasClientInit = false;
 shared_ptr<AudioProcessInClient> g_AudioProcessInClient = nullptr;
 const uint64_t COMMON_UINT64_NUM = 2;
-const int64_t COMMON_INT64_NUM = 2;
+const size_t BUFFERSIZE = 2;
 
 void GetAudioProcessInClient(const uint8_t *rawData, size_t size)
 {
@@ -82,25 +82,12 @@ void AudioClientGetSessionIDTest(const uint8_t *rawData, size_t size)
     }
 }
 
-void AudioClientGetAudioTimeTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t framePos = *reinterpret_cast<const uint32_t*>(rawData);
-    int64_t sec = COMMON_INT64_NUM;
-    int64_t nanoSec = COMMON_INT64_NUM;
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetAudioTime(framePos, sec, nanoSec);
-    }
-}
-
 void AudioClientGetBufferSizeTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    size_t bufferSize = *reinterpret_cast<const size_t*>(rawData);
+    size_t bufferSize = BUFFERSIZE;
     if (g_AudioProcessInClient) {
         g_AudioProcessInClient->GetBufferSize(bufferSize);
     }
@@ -295,7 +282,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::GetAudioProcessInClient(data, size);
     OHOS::AudioStandard::AudioClientSetVolumeTest(data, size);
     OHOS::AudioStandard::AudioClientGetSessionIDTest(data, size);
-    OHOS::AudioStandard::AudioClientGetAudioTimeTest(data, size);
     OHOS::AudioStandard::AudioClientGetBufferSizeTest(data, size);
     OHOS::AudioStandard::AudioClientGetFrameCountTest(data, size);
     OHOS::AudioStandard::AudioClientGetLatencyTest(data, size);

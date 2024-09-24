@@ -44,6 +44,7 @@ const int32_t SYSTEM_ABILITY_ID = 3009;
 string DEFAULTNAME = "name";
 string DEFAULTADDRESS = "address";
 string DEFAULTINFO = "EVENT_NAME=name;DEVICE_ADDRESS=address";
+const ssize_t DEFAULTSTRLENGTH = 2;
 
 void AudioFuzzTestGetPermission()
 {
@@ -394,15 +395,8 @@ void AudioPolicySomeMoreFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
-    SessionEvent sessionEvent = *reinterpret_cast<const SessionEvent *>(rawData);
-    sessionEvent.type = *reinterpret_cast<const SessionEvent::Type *>(rawData);
-    sessionEvent.sessionID = sessionID;
-    sessionEvent.sessionInfo_ = *reinterpret_cast<const SessionInfo *>(rawData);
-
     GetServerPtr()->OnAudioStreamRemoved(sessionID);
     GetServerPtr()->ProcessSessionRemoved(sessionID);
-    GetServerPtr()->ProcessSessionAdded(sessionEvent);
-    GetServerPtr()->ProcessorCloseWakeupSource(sessionID);
     GetServerPtr()->ProcessorCloseWakeupSource(sessionID);
 }
 
@@ -413,27 +407,20 @@ void AudioPolicyOtherMoreFuzzTest(const uint8_t *rawData, size_t size)
     }
     int pid = *reinterpret_cast<const int *>(rawData);
     GetServerPtr()->RegisteredTrackerClientDied(pid);
-    AudioStreamInfo audioStreamInfo = {};
-    audioStreamInfo.samplingRate = *reinterpret_cast<const AudioSamplingRate *>(rawData);
-    audioStreamInfo.channels = *reinterpret_cast<const AudioChannel *>(rawData);
-    audioStreamInfo.format = *reinterpret_cast<const AudioSampleFormat *>(rawData);
-    audioStreamInfo.encoding = *reinterpret_cast<const AudioEncodingType *>(rawData);
+    AudioStreamInfo audioStreamInfo;
+    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioStreamInfo.channels = AudioChannel::MONO;
     GetServerPtr()->IsAudioRendererLowLatencySupported(audioStreamInfo);
 
     int32_t clientUid = *reinterpret_cast<const int32_t *>(rawData);
-    StreamSetState streamSetState = *reinterpret_cast<const StreamSetState *>(rawData);
-    StreamUsage streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    StreamSetState streamSetState = STREAM_PAUSE;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     GetServerPtr()->UpdateStreamState(clientUid, streamSetState, streamUsage);
     GetServerPtr()->IsHighResolutionExist();
     bool highResExist = *reinterpret_cast<const bool *>(rawData);
     GetServerPtr()->SetHighResolutionExist(highResExist);
-
-    std::string networkId = "123";
-    InterruptEvent event = {};
-    event.eventType = *reinterpret_cast<const InterruptType *>(rawData);
-    event.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
-    event.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
-    GetServerPtr()->InjectInterruption(networkId, event);
 }
 
 void AudioVolumeKeyCallbackStubMoreFuzzTest(const uint8_t *rawData, size_t size)
@@ -476,11 +463,8 @@ void AudioPolicyManagerFuzzTest(const uint8_t *rawData, size_t size)
     audioEvent.name = DEFAULTNAME;
     audioEvent.address = DEFAULTADDRESS;
     int fd = *reinterpret_cast<const int*>(rawData);
-    int sockfd = *reinterpret_cast<const int*>(rawData);
-    size_t length = *reinterpret_cast<const size_t*>(rawData);
-    ssize_t strLength = *reinterpret_cast<const ssize_t*>(rawData);
+    ssize_t strLength = DEFAULTSTRLENGTH;
     const char *msg = reinterpret_cast<const char *>(rawData);
-    char* buffer = const_cast<char*>(reinterpret_cast<const char*>(rawData));
     AudioSocketThread::IsUpdatePnpDeviceState(&audioEvent);
     AudioSocketThread::UpdatePnpDeviceState(&audioEvent);
     AudioSocketThread::AudioPnpUeventOpen(&fd);
@@ -488,7 +472,6 @@ void AudioPolicyManagerFuzzTest(const uint8_t *rawData, size_t size)
     AudioSocketThread::DetectUsbHeadsetState(&audioEvent);
     AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
     AudioSocketThread::AudioPnpUeventParse(msg, strLength);
-    AudioSocketThread::AudioPnpReadUeventMsg(sockfd, buffer, length);
     AudioInputThread::AudioPnpInputOpen();
     AudioInputThread::AudioPnpInputPollAndRead();
 

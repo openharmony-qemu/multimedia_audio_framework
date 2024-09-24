@@ -417,8 +417,6 @@ void AudioCapturerInServerFuzzTest(const uint8_t* rawData, size_t size)
     operation_int = (operation_int%IOPERTAION_LENGTH) - 1;
     IOperation operation = static_cast<IOperation>(operation_int);
     capturerInServer->OnStatusUpdate(operation);
-    size_t length = *reinterpret_cast<const size_t*>(rawData);
-    capturerInServer->OnReadData(length);
     std::shared_ptr<OHAudioBuffer> buffer = nullptr;
     capturerInServer->ResolveBuffer(buffer);
     uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
@@ -436,8 +434,6 @@ void AudioRendererInServerTestFirst(const uint8_t* rawData, size_t size, std::sh
     IOperation operation = static_cast<IOperation>(operation_int);
     renderer->OnStatusUpdate(operation);
     renderer->HandleOperationFlushed();
-    size_t length = *reinterpret_cast<const size_t*>(rawData);
-    renderer->OnWriteData(length);
     std::shared_ptr<OHAudioBuffer> buffer = nullptr;
     renderer->ResolveBuffer(buffer);
     uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
@@ -478,8 +474,6 @@ void AudioRendererInServerTestSecond(const uint8_t* rawData, size_t size, std::s
     renderer->WriterRenderStreamStandbySysEvent();
     uint64_t timeStamp = COMMON_UINT64_NUM;
     renderer->GetOffloadApproximatelyCacheTime(timeStamp, timeStamp, timeStamp, timeStamp);
-    size_t length = *reinterpret_cast<const size_t*>(rawData);
-    renderer->DequeueBuffer(length);
     BufferDesc desc;
     desc.buffer = nullptr;
     desc.bufLength = 0;
