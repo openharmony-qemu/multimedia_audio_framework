@@ -303,7 +303,7 @@ void OffloadAudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
             break;
         }
         case SAMPLE_S32LE: {
@@ -335,7 +335,7 @@ void OffloadAudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case SAMPLE_S32LE: {

@@ -59,6 +59,14 @@ constexpr size_t MIN_LEN = 8;
 constexpr size_t HEAD_STR_LEN = 2;
 constexpr size_t TAIL_STR_LEN = 5;
 
+const int32_t DATA_INDEX_0 = 0;
+const int32_t DATA_INDEX_1 = 1;
+const int32_t DATA_INDEX_2 = 2;
+const int32_t DATA_INDEX_3 = 3;
+const int32_t DATA_INDEX_4 = 4;
+const int32_t DATA_INDEX_5 = 5;
+const int32_t STEREO_CHANNEL_COUNT = 2;
+
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     0, // UID_ROOT
@@ -341,9 +349,31 @@ void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
     }
 }
 
-void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len)
+void AdjustStereoToMonoForPCM24Bit(uint8_t *data, uint64_t len)
 {
-    // 24bit is not supported for audio balance.
+    uint64_t count = len / STEREO_CHANNEL_COUNT / 3; // 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
+
+    while (count > 0) {
+        uint32_t leftData = (static_cast<uint32_t>(data[DATA_INDEX_2]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_1]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_0]));
+        uint32_t rightData = (static_cast<uint32_t>(data[DATA_INDEX_5]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_4]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_3]));
+
+        leftData = static_cast<uint32_t>(static_cast<int32_t>(leftData << BIT_8) / STEREO_CHANNEL_COUNT +
+            static_cast<int32_t>(rightData << BIT_8) / STEREO_CHANNEL_COUNT) >> BIT_8;
+        rightData = leftData;
+
+        data[DATA_INDEX_0] = static_cast<uint8_t>(leftData);
+        data[DATA_INDEX_1] = static_cast<uint8_t>(leftData >> BIT_8);
+        data[DATA_INDEX_2] = static_cast<uint8_t>(leftData >> BIT_16);
+        data[DATA_INDEX_3] = static_cast<uint8_t>(rightData);
+        data[DATA_INDEX_4] = static_cast<uint8_t>(rightData >> BIT_8);
+        data[DATA_INDEX_5] = static_cast<uint8_t>(rightData >> BIT_16);
+        data += 6; // 6: 2 channels, 24 bits (3 bytes), 2 * 3 = 6
+        count--;
+    }
 }
 
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
@@ -390,9 +420,33 @@ void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, floa
     }
 }
 
-void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right)
+void AdjustAudioBalanceForPCM24Bit(uint8_t *data, uint64_t len, float left, float right)
 {
-    // 24bit is not supported for audio balance.
+    uint64_t count = len / STEREO_CHANNEL_COUNT / 3; // 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
+
+    while (count > 0) {
+        uint32_t leftData = (static_cast<uint32_t>(data[DATA_INDEX_2]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_1]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_0]));
+        int32_t leftTemp = static_cast<int32_t>(leftData << BIT_8);
+        leftTemp *= left;
+        leftData = static_cast<uint32_t>(leftTemp) >> BIT_8;
+        data[DATA_INDEX_0] = static_cast<uint8_t>(leftData);
+        data[DATA_INDEX_1] = static_cast<uint8_t>(leftData >> BIT_8);
+        data[DATA_INDEX_2] = static_cast<uint8_t>(leftData >> BIT_16);
+
+        uint32_t rightData = (static_cast<uint32_t>(data[DATA_INDEX_5]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_4]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_3]));
+        int32_t rightTemp = static_cast<int32_t>(rightData << BIT_8);
+        rightTemp *= right;
+        rightData = static_cast<uint32_t>(rightTemp) >> BIT_8;
+        data[DATA_INDEX_3] = static_cast<uint8_t>(rightData);
+        data[DATA_INDEX_4] = static_cast<uint8_t>(rightData >> BIT_8);
+        data[DATA_INDEX_5] = static_cast<uint8_t>(rightData >> BIT_16);
+        data += 6; // 6: 2 channels, 24 bits (3 bytes), 2 * 3 = 6
+        count--;
+    }
 }
 
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
