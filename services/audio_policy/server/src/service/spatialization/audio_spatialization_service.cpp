@@ -37,6 +37,7 @@ static const std::string SPATIALIZATION_SUPPORTED_LABEL = "SPATIALIZATION";
 static const std::string HEAD_TRACKING_SUPPORTED_LABEL = "HEADTRACKING";
 static const std::string SPATIALIZATION_STATE_SETTINGKEY = "spatialization_state";
 static const std::string SPATIALIZATION_SCENE_SETTINGKEY = "spatialization_scene";
+static const std::string PRE_SETTING_SPATIAL_ADDRESS = "pre_setting_spatial_address";
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 mutex g_adSpatializationProxyMutex;
 
@@ -89,6 +90,7 @@ void AudioSpatializationService::Init(const std::vector<EffectChain> &effectChai
             isHeadTrackingSupported_ = true;
         }
     }
+    UpdateSpatializationStateReal(false);
 }
 
 void AudioSpatializationService::Deinit(void)
@@ -635,6 +637,12 @@ void AudioSpatializationService::InitSpatializationState()
         }
         UpdateDeviceSpatialInfo(i, deviceSpatialInfo);
     }
+
+    ret = settingProvider.GetStringValue(PRE_SETTING_SPATIAL_ADDRESS, preSettingSpatialAddress_);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("Failed to read pre_setting_spatial_address from setting db! Err: %{public}d", ret);
+        preSettingSpatialAddress_ = "NO_PREVIOUS_SET_DEVICE";
+    }
     UpdateSpatializationStateReal(false);
     isLoadedfromDb_ = true;
 }
@@ -661,7 +669,10 @@ void AudioSpatializationService::WriteSpatializationStateToDb(WriteToDbOperation
             ErrCode ret = settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" +
                 std::to_string(tmpID), addressToDeviceSpatialInfoMap_[encryptedAddress]);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write spatialization_state_device%{public}d to"
-                    "setting db: %{public}d", tmpID, ret);
+                "setting db: %{public}d", tmpID, ret);
+            ret = settingProvider.PutStringValue(PRE_SETTING_SPATIAL_ADDRESS, preSettingSpatialAddress_);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write pre_setting_spatial_address to"
+                "setting db: %{public}d", ret);
             break;
         }
         default:
