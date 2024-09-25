@@ -2463,8 +2463,11 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
-            int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos, reason);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
+            if (descs.front()->isEnable_) {
+                AUDIO_INFO_LOG("descs front is enabled");
+                int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos, reason);
+                CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
+            }
         } else if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             int32_t ret = HandleScoOutputDeviceFetched(descs.front(), rendererChangeInfos);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
