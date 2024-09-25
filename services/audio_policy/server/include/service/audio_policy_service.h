@@ -86,6 +86,8 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
+    int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel);
+
     int32_t GetSystemVolumeLevel(AudioStreamType streamType) const;
 
     float GetSystemVolumeDb(AudioStreamType streamType) const;
