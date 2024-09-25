@@ -157,6 +157,7 @@ private:
     std::time_t startMuteTime_ = 0;
     int32_t silentState_ = 1; // 0:silent 1:unsilent
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
+    int32_t renderEmptyCountForInnerCap_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
