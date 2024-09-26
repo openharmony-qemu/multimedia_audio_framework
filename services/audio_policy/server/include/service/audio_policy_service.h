@@ -952,7 +952,7 @@ private:
         std::string &networkId);
 
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
-        std::string &networkId);
+        const std::string &networkId);
 
     bool NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,

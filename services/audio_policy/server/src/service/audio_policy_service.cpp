@@ -3002,12 +3002,12 @@ bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         "original flag is false");
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = GetSourcePortName(capturerChangeInfo->inputDeviceInfo.deviceType);
-    if ((strcmp(oldDevicePortName.c_str(), GetSourcePortName(currentActiveDevice_.deviceType_).c_str())) ||
+    if ((strcmp(oldDevicePortName.c_str(), GetSourcePortName(GetCurrentInputDeviceType()).c_str())) ||
         ((capturerChangeInfo->inputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
-        (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
+        (GetCurrentInputDevice().networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
-            currentActiveDevice_.deviceType_, capturerChangeInfo->capturerInfo.originalFlag,
-            currentActiveDevice_.networkId_);
+            GetCurrentInputDeviceType(), capturerChangeInfo->capturerInfo.originalFlag,
+            GetCurrentInputDevice().networkId_);
         TriggerRecreateCapturerStreamCallback(capturerChangeInfo->callerPid,
             capturerChangeInfo->sessionId, streamClass, reason);
         return true;
@@ -6353,7 +6353,7 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
 }
 
 int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType,
-    int32_t flags, std::string &networkId)
+    int32_t flags, const std::string &networkId)
 {
     AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
         deviceType, sourceType, flags);
