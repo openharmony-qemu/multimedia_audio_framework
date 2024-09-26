@@ -2491,9 +2491,9 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
 int32_t AudioPolicyService::ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
     vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, const AudioStreamDeviceChangeReasonExt reason)
 {
-    if (descs.front()->isEnable_) {
+    if (desc->isEnable_) {
         AUDIO_INFO_LOG("descs front is enabled");
-        return ActivateA2dpDevice(descs.front(), rendererChangeInfos, reason);
+        return ActivateA2dpDevice(desc, rendererChangeInfos, reason);
     }
     return SUCCESS;
 }
