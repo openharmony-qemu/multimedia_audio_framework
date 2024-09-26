@@ -1039,6 +1039,7 @@ void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeSessio
         AUDIO_INFO_LOG("OnInterrupt for active sessionId:%{public}d, hintType:%{public}d. By sessionId:%{public}d",
             activeSessionId, interruptEvent.hintType, incomingInterrupt.sessionId);
         if (handler_ != nullptr) {
+            AUDIO_INFO_LOG("handler_ is not nullptr");
             handler_->SendInterruptEventWithSessionIdCallback(interruptEvent, activeSessionId);
         }
         // focus remove or state change

@@ -271,6 +271,7 @@ bool AudioPolicyServerHandler::SendInterruptEventWithSessionIdCallback(const Int
     eventContextObj->interruptEvent = interruptEvent;
     eventContextObj->sessionId = sessionId;
     lock_guard<mutex> runnerlock(runnerMutex_);
+    AUDIO_INFO_LOG("Send interrupt event with sessionId callback");
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_SESSIONID,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_SESSIONID event failed");
