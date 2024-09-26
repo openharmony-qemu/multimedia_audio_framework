@@ -831,6 +831,10 @@ private:
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    
+    int32_t ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void ResetToSpeaker(DeviceType devType);
 

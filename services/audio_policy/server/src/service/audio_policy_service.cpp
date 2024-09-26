@@ -2463,11 +2463,8 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
-            if (descs.front()->isEnable_) {
-                AUDIO_INFO_LOG("descs front is enabled");
-                int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos, reason);
-                CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
-            }
+            int32_t ret = ActivateA2dpDeviceWhenDescEnabled(descs.front(), rendererChangeInfos, reason);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
         } else if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             int32_t ret = HandleScoOutputDeviceFetched(descs.front(), rendererChangeInfos);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
@@ -2489,6 +2486,16 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     if (runningStreamCount == 0) {
         FetchOutputDeviceWhenNoRunningStream();
     }
+}
+
+int32_t AudioPolicyService::ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
+    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (descs.front()->isEnable_) {
+        AUDIO_INFO_LOG("descs front is enabled");
+        return ActivateA2dpDevice(descs.front(), rendererChangeInfos, reason);
+    }
+    return SUCCESS;
 }
 
 bool AudioPolicyService::IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
