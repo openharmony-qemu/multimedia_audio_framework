@@ -1175,7 +1175,7 @@ int32_t AudioServer::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, 
 
 void AudioServer::SetAudioMonoState(bool audioMono)
 {
-    AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_INFO_LOG("AudioMonoState = [%{public}s]", audioMono ? "true": "false");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(callingUid == audioUid_, "refused for %{public}d", callingUid);
     // Set mono for audio_renderer_sink (primary)
@@ -1221,11 +1221,11 @@ void AudioServer::SetAudioMonoState(bool audioMono)
 
 void AudioServer::SetAudioBalanceValue(float audioBalance)
 {
+    AUDIO_INFO_LOG("AudioBalanceValue = [%{public}f]", audioBalance);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(callingUid == audioUid_, "refused for %{public}d", callingUid);
     CHECK_AND_RETURN_LOG(audioBalance >= -1.0f && audioBalance <= 1.0f,
         "audioBalance value %{public}f is out of range [-1.0, 1.0]", audioBalance);
-    AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
 
     // Set balance for audio_renderer_sink (primary)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
