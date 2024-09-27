@@ -46,6 +46,7 @@ namespace {
     static constexpr int32_t ONE_MINUTE = 60;
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
+    const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -478,6 +479,14 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
         Trace traceDup("RendererInServer::WriteData DupSteam write");
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
+            if (renderEmptyCountForInnerCap_ > 0) {
+                size_t emptyBufferSize = renderEmptyCountForInnerCap_ * spanSizeInByte_;
+                auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
+                BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
+                memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
+                dupStream_->EnqueueBuffer(emptyBufferDesc);
+                renderEmptyCountForInnerCap_ = 0;
+            }
             dupStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
         }
     }
@@ -933,6 +942,10 @@ int32_t RendererInServer::InitDupStream()
     if (status_ == I_STATUS_STARTED) {
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
         dupStream_->Start();
+
+        if (offloadEnable_) {
+            renderEmptyCountForInnerCap_ = OFFLOAD_INNER_CAP_PREBUF;
+        }
     }
     return SUCCESS;
 }
