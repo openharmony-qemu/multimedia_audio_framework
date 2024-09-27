@@ -21,6 +21,7 @@
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
 #include "i_stream_manager.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -158,6 +159,7 @@ private:
     int32_t silentState_ = 1; // 0:silent 1:unsilent
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t renderEmptyCountForInnerCap_ = 0;
+    int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS
