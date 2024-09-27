@@ -67,6 +67,7 @@ public:
     void RemoveRenderer(uint32_t sessionId);
     int32_t EnableDualToneList(uint32_t sessionId);
     int32_t DisableDualToneList(uint32_t sessionId);
+    int32_t UpdateSourceType(SourceType sourceType);
 
 private:
     AudioService();
