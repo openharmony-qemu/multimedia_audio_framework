@@ -204,7 +204,6 @@ void FastAudioRendererSinkInner::DeInit()
 #ifdef FEATURE_POWER_MANAGER
     KeepRunningUnlock();
 
-    runningLockManager_ = nullptr;
 #endif
 
     started_ = false;
