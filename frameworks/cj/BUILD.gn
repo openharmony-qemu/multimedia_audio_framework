@@ -33,9 +33,15 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
   ]
 
   sources = [
+    "src/multimedia_audio_capturer_callback.cpp",
+    "src/multimedia_audio_capturer_impl.cpp",
     "src/multimedia_audio_common.cpp",
     "src/multimedia_audio_ffi.cpp",
     "src/multimedia_audio_manager_impl.cpp",
+    "src/multimedia_audio_routing_manager_callback.cpp",
+    "src/multimedia_audio_routing_manager_impl.cpp",
+    "src/multimedia_audio_stream_manager_callback.cpp",
+    "src/multimedia_audio_stream_manager_impl.cpp",
     "src/multimedia_audio_volume_group_manager_impl.cpp",
     "src/multimedia_audio_volume_manager_impl.cpp",
   ]
@@ -49,18 +55,8 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
   ]
 
   external_deps = [
-    "ability_base:session_info",
-    "ability_base:want",
-    "ability_runtime:abilitykit_native",
-    "ability_runtime:extensionkit_native",
-    "ability_runtime:mission_info",
-    "ability_runtime:wantagent_innerkits",
-    "bundle_framework:appexecfwk_base",
     "c_utils:utils",
-    "eventhandler:libeventhandler",
     "hilog:libhilog",
-    "init:libbegetutil",
-    "ipc:ipc_single",
     "napi:ace_napi",
     "napi:cj_bind_ffi",
     "napi:cj_bind_native",

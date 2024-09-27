@@ -1,0 +1,145 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "multimedia_audio_capturer_callback.h"
+#include "multimedia_audio_common.h"
+
+namespace OHOS {
+namespace AudioStandard {
+void CjAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
+{
+    std::lock_guard<std::mutex> lock(cbMutex_);
+    CInterruptEvent event;
+    event.eventType = interruptEvent.eventType;
+    event.forceType = interruptEvent.forceType;
+    event.hintType = interruptEvent.hintType;
+    interruptEventfunc_(event);
+}
+
+void CjAudioCapturerCallback::OnStateChange(const CapturerState state)
+{
+    std::lock_guard<std::mutex> lock(cbMutex_);
+    int32_t cjState = state;
+    stateChangefunc_(cjState);
+}
+
+void CjAudioCapturerCallback::RegisterInterruptFunc(std::function<void(CInterruptEvent)> cjCallback)
+{
+    interruptEventfunc_ = cjCallback;
+}
+
+void CjAudioCapturerCallback::RegisterStateChangeFunc(std::function<void(int32_t)> cjCallback)
+{
+    stateChangefunc_ = cjCallback;
+}
+
+void CjCapturerPositionCallback::RegisterFunc(std::function<void(int32_t)> cjCallback)
+{
+    func_ = cjCallback;
+}
+
+void CjCapturerPositionCallback::OnMarkReached(const int64_t &framePosition)
+{
+    std::lock_guard<std::mutex> lock(cbMutex_);
+    func_(framePosition);
+}
+
+void CjCapturerPeriodPositionCallback::RegisterFunc(std::function<void(int32_t)> cjCallback)
+{
+    func_ = cjCallback;
+}
+void CjCapturerPeriodPositionCallback::OnPeriodReached(const int64_t &frameNumber)
+{
+    std::lock_guard<std::mutex> lock(cbMutex_);
+    func_(frameNumber);
+}
+
+void CjAudioCapturerReadCallback::RegisterFunc(std::function<void(CArrUI8)> cjCallback,
+    std::shared_ptr<AudioCapturer> audioCapturer)
+{
+    func_ = cjCallback;
+    audioCapturer_ = audioCapturer;
+}
+
+void CjAudioCapturerReadCallback::OnReadData(size_t length)
+{
+    CArrUI8 arr;
+    BufferDesc buf;
+    audioCapturer_->GetBufferDesc(buf);
+    if (buf.buffer == nullptr) {
+        return;
+    }
+    if (length > buf.bufLength) {
+        arr.size = buf.bufLength;
+    } else {
+        arr.size = length;
+    }
+    arr.head = static_cast<uint8_t *>(malloc(sizeof(uint8_t) * arr.size));
+    if (arr.head == nullptr) {
+        return;
+    }
+    for (int32_t i = 0; i < static_cast<int32_t>(arr.size); i++) {
+        arr.head[i] = buf.buffer[i];
+    }
+    func_(arr);
+    free(arr.head);
+    free(buf.buffer);
+    if (buf.metaBuffer != nullptr) {
+        free(buf.metaBuffer);
+    }
+    arr.head = nullptr;
+    buf.buffer = nullptr;
+    buf.metaBuffer = nullptr;
+}
+
+void CjAudioCapturerInfoChangeCallback::RegisterFunc(std::function<void(CAudioCapturerChangeInfo)> cjCallback)
+{
+    func_ = cjCallback;
+}
+
+void CjAudioCapturerInfoChangeCallback::OnStateChange(const AudioCapturerChangeInfo &capturerChangeInfo)
+{
+    std::lock_guard<std::mutex> lock(cbMutex_);
+    CAudioCapturerChangeInfo cInfo;
+    int32_t *errorCode = nullptr;
+    Convert2CAudioCapturerChangeInfo(cInfo, capturerChangeInfo, errorCode);
+    if (*errorCode != SUCCESS_CODE) {
+        return;
+    }
+    func_(cInfo);
+    free(cInfo.deviceDescriptors.head);
+    cInfo.deviceDescriptors.head = nullptr;
+}
+
+void CjAudioCapturerDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
+{
+    func_ = cjCallback;
+}
+
+void CjAudioCapturerDeviceChangeCallback::OnStateChange(const DeviceInfo &deviceInfo)
+{
+    std::lock_guard<std::mutex> lock(cbMutex_);
+    CArrDeviceDescriptor arr;
+    int32_t *errorCode = nullptr;
+    Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, errorCode);
+    if (*errorCode != SUCCESS_CODE) {
+        return;
+    }
+    func_(arr);
+    free(arr.head);
+    arr.head = nullptr;
+}
+} // namespace AudioStandard
+} // namespace OHOS
