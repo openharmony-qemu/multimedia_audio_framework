@@ -21,6 +21,7 @@
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
 #include "i_stream_manager.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
