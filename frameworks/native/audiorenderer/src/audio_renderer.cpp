@@ -352,9 +352,6 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
 
 int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
 {
-    CHECK_AND_RETURN_RET_LOG(GetCurrentOutputDevices(currentDeviceInfo_) == SUCCESS, ERROR,
-        "Get current device info failed");
-    
     if (!outputDeviceChangeCallback_) {
         outputDeviceChangeCallback_ = std::make_shared<OutputDeviceChangeWithInfoCallbackImpl>();
         CHECK_AND_RETURN_RET_LOG(outputDeviceChangeCallback_ != nullptr, ERROR, "Memory allocation failed");
