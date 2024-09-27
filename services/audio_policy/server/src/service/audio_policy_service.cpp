@@ -591,25 +591,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
         }
 #endif
     }
-    int32_t sVolumeLevel = volumeLevel;
-    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() &&
-        GetStreamForVolumeMap(streamType) == STREAM_MUSIC) {
-        switch (currentActiveDevice_.deviceType_) {
-            case DEVICE_TYPE_BLUETOOTH_A2DP:
-            case DEVICE_TYPE_BLUETOOTH_SCO:
-                sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
-                break;
-            case DEVICE_TYPE_WIRED_HEADSET:
-            case DEVICE_TYPE_WIRED_HEADPHONES:
-            case DEVICE_TYPE_USB_HEADSET:
-            case DEVICE_TYPE_USB_ARM_HEADSET:
-                sVolumeLevel = DealWithSafeVolume(volumeLevel, false);
-                break;
-            default:
-                AUDIO_INFO_LOG("unsupport safe volume:%{public}d", currentActiveDevice_.deviceType_);
-                break;
-        }
-    }
+    int32_t sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERROR, "safevolume did not deal");
     result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (result == SUCCESS && (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION)) {
@@ -624,6 +606,33 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
         SetOffloadVolume(streamType, volumeLevel);
     }
     return result;
+}
+
+int32_t AudioPolicyService::SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel)
+{
+    int32_t sVolumeLevel = volumeLevel;
+    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() &&
+        GetStreamForVolumeMap(streamType) == STREAM_MUSIC) {
+        switch (currentActiveDevice_.deviceType_) {
+            case DEVICE_TYPE_BLUETOOTH_A2DP:
+            case DEVICE_TYPE_BLUETOOTH_SCO:
+                if (currentActiveDevice_.deviceCategory_ != BT_SOUNDBOX &&
+                    currentActiveDevice_.deviceCategory_ != BT_CAR) {
+                    sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+                }
+                break;
+            case DEVICE_TYPE_WIRED_HEADSET:
+            case DEVICE_TYPE_WIRED_HEADPHONES:
+            case DEVICE_TYPE_USB_HEADSET:
+            case DEVICE_TYPE_USB_ARM_HEADSET:
+                sVolumeLevel = DealWithSafeVolume(volumeLevel, false);
+                break;
+            default:
+                AUDIO_INFO_LOG("unsupport safe volume:%{public}d", currentActiveDevice_.deviceType_);
+                break;
+        }
+    }
+    return sVolumeLevel;
 }
 
 void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
