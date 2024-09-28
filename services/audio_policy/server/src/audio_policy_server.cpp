@@ -596,7 +596,7 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal()
     }else {
         streamInFocus = VolumeUtils::GetVolumeStreamType(GetStreamInFocus());
     }
-    AUDIO_INFO_LOG("Get active volume type = %{public}d", streamInFocus);
+    AUDIO_INFO_LOG("Get active volume type success:= %{public}d", streamInFocus);
     return streamInFocus;
 }
 
