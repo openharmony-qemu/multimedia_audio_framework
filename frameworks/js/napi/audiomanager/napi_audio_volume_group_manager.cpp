@@ -45,7 +45,7 @@ bool NapiAudioVolumeGroupManager::CheckContextStatus(std::shared_ptr<AudioVolume
     CHECK_AND_RETURN_RET_LOG(context != nullptr, false, "context object is nullptr.");
     if (context->native == nullptr) {
         context->SignError(NAPI_ERR_SYSTEM);
-        AUDIO_ERR_LOG("context object state is error.!!!");
+        AUDIO_ERR_LOG("context object state is error.");
         return false;
     }
     return true;
