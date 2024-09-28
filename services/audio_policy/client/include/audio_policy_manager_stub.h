@@ -31,7 +31,7 @@ private:
     void GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
-    void GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply)；
+    void GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply);
     void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
