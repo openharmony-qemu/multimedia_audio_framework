@@ -84,6 +84,7 @@ NapiAudioVolumeGroupManager* NapiAudioVolumeGroupManager::GetParamWithSync(const
 napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_env env, napi_value &constructor)
 {
     napi_property_descriptor audio_svc_group_mngr_properties[] = {
+        DECLARE_NAPI_FUNCTION("getActiveVolumeType", GetActiveVolumeType),
         DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
         DECLARE_NAPI_FUNCTION("getVolumeSync", GetVolumeSync),
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
@@ -222,6 +223,21 @@ napi_value NapiAudioVolumeGroupManager::Construct(napi_env env, napi_callback_in
     }
     napiAudioVolumeGroupManager.release();
     return jsThis;
+}
+
+napi_value NapiAudioVolumeGroupManager::GetActiveVolumeType(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto* napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, nullptr);
+
+    CHECH_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAduioVolumeGroupManager is nullptr");
+    CHECH_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
+        "audioGroupMngr_ is nullptr");
+    AudioStreamType volType = NapiAudioVolumeGroupManager->audioGroupMngr_->GetActiveVolumeType();
+    NapiParamUtils::GetValueInt32(env, volType, result);
+
+    return result;
 }
 
 napi_value NapiAudioVolumeGroupManager::GetVolume(napi_env env, napi_callback_info info)

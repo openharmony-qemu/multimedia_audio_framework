@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\services",
+    "\\services\\audio_policy",
+    "\\services\\audio_policy\\client",
+    "\\services\\audio_policy\\client\\include",
+    "\\services\\audio_policy\\client\\src",
+    "\\services\\audio_policy\\client\\src\\proxy",
+    "\\services\\audio_policy\\server\\include",
+    "\\services\\audio_policy\\server\\src",
+    "\\services\\audio_service\\client"
+  ],
+  "SelectedNode": "\\services\\audio_policy\\client\\src\\proxy\\audio_policy_volume_proxy.cpp",
+  "PreviewInSolutionExplorer": false
+}

@@ -38,6 +38,8 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
+    AudioStreamType GetSystemActiveVolumeType() override;
+
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;

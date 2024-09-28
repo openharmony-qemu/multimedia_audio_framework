@@ -78,6 +78,11 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
     return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, false, volumeFlag);
 }
 
+AudioStreamType AudioGroupManager::GetActiveVolumeType()
+{
+    return AudioPolicyManager::GetInstance().GetSystemActiveVolumeType();
+}
+
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {

@@ -88,6 +88,20 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32
     return reply.ReadInt32();
 }
 
+AudioStreamType AudioPolicyProxy::GetSystemActiveVolumeType()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, STREAM_DEFAULT, "WriteInterfaceToken failed");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get active volume type failed, error: %d", error);
+    return static_cast<AudioStreamType>(reply.ReadIn32());
+}
+
 int32_t AudioPolicyProxy::GetSystemVolumeLevel(AudioVolumeType volumeType)
 {
     MessageParcel data;

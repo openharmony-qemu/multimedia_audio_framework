@@ -42,6 +42,8 @@ public:
 
     virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
+    virtual AudioStreamType GetSystemActiveVolumeType() = 0;
+
     virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
 
     virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
