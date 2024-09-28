@@ -100,6 +100,7 @@ AudioStreamType AudioPolicyProxy::GetSystemActiveVolumeType()
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get stream in focus failed, error: %d", error);
+    }
     return static_cast<AudioStreamType>(reply.ReadInt32());
 }
 
