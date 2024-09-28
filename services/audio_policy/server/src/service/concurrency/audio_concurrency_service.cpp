@@ -34,10 +34,24 @@ void AudioConcurrencyService::DispatchConcurrencyEventWithSessionId(uint32_t ses
     concurrencyClients_[sessionID]->OnConcedeStream();
 }
 
+AudioConcurrencyService::AudioConcurrencyDeathRecipient::AudioConcurrencyDeathRecipient(
+    const std::shared_ptr<AudioConcurrencyService> &service, uint32_t sessionID)
+    : service_(service), sessionID_(sessionID)
+{
+}
+
+void AudioConcurrencyService::AudioConcurrencyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
+{
+    std::shared_ptr<AudioConcurrencyService> service = service_.lock();
+    if (service != nullptr) {
+        service->UnsetAudioConcurrencyCallback(sessionID_);
+    }
+}
+
 AudioConcurrencyService::AudioConcurrencyClient::AudioConcurrencyClient(
-    const std::shared_ptr<AudioConcurrencyService> &service,
-    const std::shared_ptr<AudioConcurrencyCallback> &callback, uint32_t sessionID)
-    : service_(service), callback_(callback), sessionID_(sessionID)
+    const std::shared_ptr<AudioConcurrencyCallback> &callback, const sptr<IRemoteObject> &object,
+    const sptr<AudioConcurrencyDeathRecipient> &deathRecipient, uint32_t sessionID)
+    : callback_(callback), object_(object), deathRecipient_(deathRecipient), sessionID_(sessionID)
 {
     AUDIO_DEBUG_LOG("callback ctor, sessionID %{public}u", sessionID_);
 }
@@ -45,6 +59,9 @@ AudioConcurrencyService::AudioConcurrencyClient::AudioConcurrencyClient(
 AudioConcurrencyService::AudioConcurrencyClient::~AudioConcurrencyClient()
 {
     AUDIO_DEBUG_LOG("callback dtor, sessionID %{public}u", sessionID_);
+    if (object_ != nullptr) {
+        object_->RemoveDeathRecipient(deathRecipient_);
+    }
 }
 
 int32_t AudioConcurrencyService::SetAudioConcurrencyCallback(const uint32_t sessionID,
@@ -63,13 +80,15 @@ int32_t AudioConcurrencyService::SetAudioConcurrencyCallback(const uint32_t sess
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioConcurrencyService create cb failed");
 
     if (concurrencyClients_.find(sessionID) == concurrencyClients_.end()) {
-        sptr<AudioConcurrencyClient> client = new AudioConcurrencyClient(
-            shared_from_this(), callback, sessionID);
+        sptr<AudioConcurrencyDeathRecipient> deathRecipient = new
+            AudioConcurrencyDeathRecipient(shared_from_this(), sessionID);
+        object->AddDeathRecipient(deathRecipient);
+        std::shared_ptr<AudioConcurrencyClient> client =
+            std::make_shared<AudioConcurrencyClient>(callback, object, deathRecipient, sessionID);
         concurrencyClients_[sessionID] = client;
         for (auto t : concurrencyClients_) {
             AUDIO_DEBUG_LOG("cb added in service, sessionID:%{public}d", t.first);
         }
-        object->AddDeathRecipient(client);
     } else {
         AUDIO_ERR_LOG("session %{public}u already exist", sessionID);
         return ERR_INVALID_PARAM;
@@ -99,14 +118,6 @@ int32_t AudioConcurrencyService::UnsetAudioConcurrencyCallback(const uint32_t se
 void AudioConcurrencyService::SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler)
 {
     handler_ = handler;
-}
-
-void AudioConcurrencyService::AudioConcurrencyClient::OnRemoteDied(const wptr<IRemoteObject> &remote)
-{
-    std::shared_ptr<AudioConcurrencyService> service = service_.lock();
-    if (service != nullptr) {
-        service->UnsetAudioConcurrencyCallback(sessionID_);
-    }
 }
 
 void AudioConcurrencyService::AudioConcurrencyClient::OnConcedeStream()
