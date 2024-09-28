@@ -59,12 +59,15 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
     auto paired = linkedPairedList_.begin();
     std::string endpointName;
     bool needRelease = false;
+    int32_t delayTime = NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
                 needRelease = true;
                 endpointName = (*paired).second->GetEndpointName();
+                delayTime = (*paired).second->GetDeviceInfo().deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ?
+                    A2DP_ENDPOINT_RELEASE_DELAY_TIME : NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
             }
             linkedPairedList_.erase(paired);
             isFind = true;
@@ -83,8 +86,6 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
         AUDIO_INFO_LOG("find endpoint unlink, call delay release.");
         std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
         releasingEndpointSet_.insert(endpointName);
-        int32_t delayTime = (*paired).second->GetDeviceInfo().deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ?
-            A2DP_ENDPOINT_RELEASE_DELAY_TIME : NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
         std::thread releaseEndpointThread(&AudioService::DelayCallReleaseEndpoint, this, endpointName, delayTime);
         releaseEndpointThread.detach();
     }
