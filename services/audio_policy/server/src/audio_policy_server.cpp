@@ -593,8 +593,8 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal()
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC;// use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
-    }else {
-        streamInFocus = VolumeUtils::GetVolumeStreamType(GetStreamInFocus());
+    } else {
+        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
     }
     AUDIO_INFO_LOG("Get active volume type success:= %{public}d", streamInFocus);
     return streamInFocus;

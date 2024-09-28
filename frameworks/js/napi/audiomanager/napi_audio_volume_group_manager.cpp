@@ -231,11 +231,11 @@ napi_value NapiAudioVolumeGroupManager::GetActiveVolumeType(napi_env env, napi_c
     size_t argc = PARAM0;
     auto* napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, nullptr);
 
-    CHECH_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAduioVolumeGroupManager is nullptr");
-    CHECH_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAduioVolumeGroupManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
-    AudioStreamType volType = NapiAudioVolumeGroupManager->audioGroupMngr_->GetActiveVolumeType();
-    NapiParamUtils::GetValueInt32(env, volType, result);
+    AudioStreamType volType = napiAudioVolumeGroupManager->audioGroupMngr_->GetActiveVolumeType();
+    NapiParamUtils::SetValueInt32(env, volType, result);
 
     return result;
 }
