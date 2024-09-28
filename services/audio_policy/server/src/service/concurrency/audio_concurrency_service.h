@@ -33,7 +33,7 @@ class AudioConcurrencyService : public std::enable_shared_from_this<AudioConcurr
 public:
     AudioConcurrencyService()
     {
-        AUDIO_DEBUG_LOG("ctor");
+        AUDIO_INFO_LOG("ctor");
     }
     virtual ~AudioConcurrencyService()
     {
@@ -48,26 +48,40 @@ public:
         const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
         const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 private:
-    class AudioConcurrencyClient : public IRemoteObject::DeathRecipient {
+    // Inner class for death handler
+    class AudioConcurrencyDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
-        explicit AudioConcurrencyClient(
-            const std::shared_ptr<AudioConcurrencyService> &service,
-            const std::shared_ptr<AudioConcurrencyCallback> &callback, uint32_t sessionID);
+        explicit AudioConcurrencyDeathRecipient(
+            const std::shared_ptr<AudioConcurrencyService> &service, uint32_t sessionID);
+        virtual ~AudioConcurrencyDeathRecipient() = default;
+
+        DISALLOW_COPY_AND_MOVE(AudioConcurrencyDeathRecipient);
+
+        void OnRemoteDied(const wptr<IRemoteObject> &remote);
+
+    private:
+        const std::weak_ptr<AudioConcurrencyService> service_;
+        const uint32_t sessionID_;
+    };
+    // Inner class for callback
+    class AudioConcurrencyClient {
+    public:
+        explicit AudioConcurrencyClient(const std::shared_ptr<AudioConcurrencyCallback> &callback,
+            const sptr<IRemoteObject> &object, const sptr<AudioConcurrencyDeathRecipient> &deathRecipient,
+            uint32_t sessionID);
         virtual ~AudioConcurrencyClient();
 
         DISALLOW_COPY_AND_MOVE(AudioConcurrencyClient);
 
-        // DeathRecipient
-        void OnRemoteDied(const wptr<IRemoteObject> &remote);
-
         void OnConcedeStream();
 
     private:
-        const std::weak_ptr<AudioConcurrencyService> service_;
         const std::shared_ptr<AudioConcurrencyCallback> callback_;
+        const sptr<IRemoteObject> object_;
+        sptr<AudioConcurrencyDeathRecipient> deathRecipient_;
         const uint32_t sessionID_;
     };
-    std::map<int32_t /*sessionId*/, sptr<AudioConcurrencyClient>> concurrencyClients_ = {};
+    std::map<int32_t /*sessionId*/, std::shared_ptr<AudioConcurrencyClient>> concurrencyClients_ = {};
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> concurrencyCfgMap_ = {};
     std::shared_ptr<AudioPolicyServerHandler> handler_;
     std::mutex cbMapMutex_;

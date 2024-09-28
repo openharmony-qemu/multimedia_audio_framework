@@ -120,6 +120,7 @@ RendererInClientInner::~RendererInClientInner()
         runnerReleased_ = true;
         callbackHandler_ = nullptr;
     }
+    UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
 }
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
