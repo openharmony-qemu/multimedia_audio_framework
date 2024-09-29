@@ -42,7 +42,6 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
-SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
 SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
 
 static const int32_t PA_SERVICE_IMPL_TIMEOUT = 15; // 15s
@@ -529,28 +528,7 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
 
 int32_t PulseAudioServiceAdapterImpl::SetVolumeDb(AudioStreamType streamType, float volumeDb)
 {
-    lock_guard<mutex> lock(lock_);
-
-    unique_ptr<UserData> userData = make_unique<UserData>();
-    CHECK_AND_RETURN_RET_LOG(userData != nullptr, ERROR, "userData memory alloc failed");
-
-    userData->thiz = this;
-    userData->volume = volumeDb;
-    userData->streamType = streamType;
-
-    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, ERROR, "SetVolumeDb mContext is nullptr");
-    PaLockGuard palock(mMainLoop);
-    pa_operation *operation = pa_context_get_sink_input_info_list(mContext,
-        PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb, reinterpret_cast<void*>(userData.get()));
-    if (operation == nullptr) {
-        AUDIO_ERR_LOG("pa_context_get_sink_input_info_list nullptr");
-        return ERROR;
-    }
-    userData.release();
-
-    pa_threaded_mainloop_accept(mMainLoop);
-
-    pa_operation_unref(operation);
+    AUDIO_DEBUG_LOG("SetVolumeDb: streamType [%{public}d] : volumeDb [%{public}f]", streamType, volumeDb);
 
     return SUCCESS;
 }
@@ -768,90 +746,6 @@ inline void CastValue(T &a, const char *raw)
     valueStr >> a;
 }
 
-void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_input_info *i, int eol,
-    void *userdata)
-{
-    UserData *userData = reinterpret_cast<UserData*>(userdata);
-    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
-
-    if (eol < 0) {
-        pa_threaded_mainloop_signal(thiz->mMainLoop, 1);
-        delete userData;
-        AUDIO_ERR_LOG("Failed to get sink input information: %{public}s",
-            pa_strerror(pa_context_errno(c)));
-        return;
-    }
-
-    if (eol) {
-        pa_threaded_mainloop_signal(thiz->mMainLoop, 1);
-        delete userData;
-        return;
-    }
-
-    CHECK_AND_RETURN_LOG(i->proplist != nullptr, "Invalid Proplist for sink input (%{public}d).", i->index);
-
-    const char *streamMode = pa_proplist_gets(i->proplist, "stream.mode");
-    if (streamMode != nullptr && streamMode == DUP_STREAM) { return; }
-
-    HandleSinkInputInfoVolume(c, i, userdata);
-}
-
-void PulseAudioServiceAdapterImpl::HandleSinkInputInfoVolume(pa_context *c, const pa_sink_input_info *i,
-    void *userdata)
-{
-    UserData *userData = reinterpret_cast<UserData*>(userdata);
-    const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
-    const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
-    const char *streamPowerVolume = pa_proplist_gets(i->proplist, "stream.powerVolumeFactor");
-    const char *streamDuckVolume = pa_proplist_gets(i->proplist, "stream.duckVolumeFactor");
-    const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
-    int32_t uid = -1;
-    int32_t pid = -1;
-    CastValue<int32_t>(uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
-    CastValue<int32_t>(pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
-    CHECK_AND_RETURN_LOG((streamtype != nullptr) && (streamVolume != nullptr) && (streamPowerVolume != nullptr) &&
-        (streamDuckVolume != nullptr) && (sessionCStr != nullptr), "Invalid Stream parameter info.");
-
-    uint32_t sessionID = 0;
-    CastValue<uint32_t>(sessionID, sessionCStr);
-    sinkIndexSessionIDMap.Insert(i->index, sessionID);
-    int32_t streamUsage = 0;
-    CastValue<int32_t>(streamUsage, pa_proplist_gets(i->proplist, "stream.usage"));
-    float volumeFactor = atof(streamVolume);
-    float powerVolumeFactor = atof(streamPowerVolume);
-    float duckVolumeFactor = atof(streamDuckVolume);
-    AudioStreamType streamTypeID = userData->thiz->GetIdByStreamType(streamtype);
-    auto volumePair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamTypeID);
-    float volumeDbCb = volumePair.first;
-    int32_t volumeLevel = volumePair.second;
-    float vol = volumeDbCb * volumeFactor * powerVolumeFactor * duckVolumeFactor;
-
-    pa_cvolume cv = i->volume;
-    uint32_t volume = pa_sw_volume_from_linear(vol);
-    pa_cvolume_set(&cv, i->channel_map.channels, volume);
-
-    if (streamTypeID == userData->streamType || userData->isSubscribingCb) {
-        AUDIO_INFO_LOG("set pa volume type:%{public}d id:%{public}d vol:%{public}f db:%{public}f stream:%{public}f " \
-            "power:%{public}f duck:%{public}f", streamTypeID, sessionID, vol, volumeDbCb, volumeFactor,
-            powerVolumeFactor, duckVolumeFactor);
-        pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
-    }
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::AUDIO, Media::MediaMonitor::VOLUME_CHANGE,
-        Media::MediaMonitor::BEHAVIOR_EVENT);
-    bean->Add("ISOUTPUT", 1);
-    bean->Add("STREAMID", static_cast<int32_t>(sessionID));
-    bean->Add("APP_UID", uid);
-    bean->Add("APP_PID", pid);
-    bean->Add("STREAMTYPE", streamTypeID);
-    bean->Add("STREAM_TYPE", streamUsage);
-    bean->Add("VOLUME", vol);
-    bean->Add("SYSVOLUME", volumeLevel);
-    bean->Add("VOLUMEFACTOR", volumeFactor);
-    bean->Add("POWERVOLUMEFACTOR", powerVolumeFactor);
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-}
-
 void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_source_output_info *i, int eol,
     void *userdata)
 {
@@ -1024,19 +918,10 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
 
         case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
             if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_NEW) {
-                PaLockGuard lock(thiz->mMainLoop);
-                pa_operation *operation = pa_context_get_sink_input_info(c, idx,
-                    PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb, reinterpret_cast<void*>(userData.get()));
-                if (operation == nullptr) {
-                    AUDIO_ERR_LOG("pa_context_get_sink_input_info_list nullptr");
-                    return;
-                }
-                userData.release();
-                pa_threaded_mainloop_accept(thiz->mMainLoop);
-                pa_operation_unref(operation);
+                AUDIO_INFO_LOG("PA_SUBSCRIPTION_EVENT_NEW");
+                g_audioServiceAdapterCallback->OnSetVolumeDbCb();
             } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-                const uint32_t sessionID = sinkIndexSessionIDMap.ReadVal(idx);
-                AUDIO_INFO_LOG("sessionID: %{public}d  removed", sessionID);
+                AUDIO_INFO_LOG("PA_SUBSCRIPTION_EVENT_REMOVE");
             }
             break;
 

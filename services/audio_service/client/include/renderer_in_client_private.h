@@ -322,7 +322,6 @@ private:
     Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
 
-    int32_t continueDownCount_ = 0;
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
     float clientVolume_ = 1.0;

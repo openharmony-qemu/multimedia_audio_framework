@@ -65,6 +65,8 @@ private:
 
     int32_t HandleSetClientVolume(MessageParcel &data, MessageParcel &reply);
 
+    int32_t HandleSetMute(MessageParcel &data, MessageParcel &reply);
+
     int32_t HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply);
     
     using HandlerFunc = int32_t(IpcStreamStub::*)(MessageParcel &data, MessageParcel &reply);
@@ -100,6 +102,7 @@ private:
         &IpcStreamStub::HandleGetStreamManagerType,
         &IpcStreamStub::HandleSetSilentModeAndMixWithOthers,
         &IpcStreamStub::HandleSetClientVolume,
+        &IpcStreamStub::HandleSetMute,
         &IpcStreamStub::HandleRegisterThreadPriority,
     };
 };

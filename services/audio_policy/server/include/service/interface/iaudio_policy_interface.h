@@ -23,6 +23,7 @@
 #include "audio_stream_removed_callback.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
+#include "audio_manager_base.h"
 
 #include <memory>
 #include <string>
@@ -156,6 +157,8 @@ public:
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
 
     virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
+
+    virtual void SetAudioServerProxy(sptr<IStandardAudioService> gsp) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

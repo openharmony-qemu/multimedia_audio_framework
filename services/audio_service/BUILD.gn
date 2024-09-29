@@ -48,6 +48,7 @@ ohos_shared_library("audio_common") {
     "common/src/audio_resample.cpp",
     "common/src/audio_ring_cache.cpp",
     "common/src/audio_thread_task.cpp",
+    "common/src/audio_volume.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
     "common/src/linear_pos_time_model.cpp",
@@ -73,6 +74,9 @@ ohos_shared_library("audio_common") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
   ]
 
   if (sonic_enable == true) {

@@ -432,6 +432,15 @@ int32_t IpcStreamInServer::SetClientVolume()
     return ERR_OPERATION_FAILED;
 }
 
+int32_t IpcStreamInServer::SetMute(bool isMute)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetMute(isMute);
+    }
+    AUDIO_ERR_LOG("mode is not playback or renderer is null");
+    return ERR_OPERATION_FAILED;
+}
+
 int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
 {
     if (!clientThreadPriorityRequested_) {

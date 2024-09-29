@@ -602,9 +602,6 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     vol.volumeFloat = GetSystemVolumeInDb(streamType, volumeLevel, currentActiveDevice_.deviceType_);
     SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
 
-    if (result == SUCCESS) {
-        SetOffloadVolume(streamType, volumeLevel);
-    }
     return result;
 }
 
@@ -650,48 +647,6 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
 
-void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t volume)
-{
-    if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
-        return;
-    }
-    DeviceType dev = GetActiveOutputDevice();
-    if (!(dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_BLUETOOTH_A2DP || dev == DEVICE_TYPE_USB_HEADSET)) {
-        return;
-    }
-    const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "gsp null");
-    float volumeDb;
-    {
-        std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
-        auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
-        if (dev == DEVICE_TYPE_BLUETOOTH_A2DP && configInfoPos != connectedA2dpDeviceMap_.end() &&
-            configInfoPos->second.absVolumeSupport) {
-            volumeDb = 1;
-        } else {
-            volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
-        }
-    }
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->OffloadSetVolume(volumeDb);
-    IPCSkeleton::SetCallingIdentity(identity);
-}
-
-void AudioPolicyService::SetOffloadMute(AudioStreamType streamType, bool mute)
-{
-    if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
-        AUDIO_INFO_LOG("SetOffloadMute for streamType %{public}d is not support", streamType);
-        return;
-    }
-    AUDIO_INFO_LOG("SetOffloadMute for streamType [%{public}d], mute [%{public}d]", streamType, mute);
-    SetOffloadVolume(OffloadStreamType(), mute ? 0 : GetSystemVolumeLevel(OffloadStreamType()));
-}
-
-AudioStreamType AudioPolicyService::OffloadStreamType()
-{
-    return offloadSessionID_.has_value() ? GetStreamType(*offloadSessionID_) : STREAM_MUSIC;
-}
-
 void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName)
 {
     Trace trace("AudioPolicyService::SetVolumeForSwitchDevice:" + std::to_string(deviceType));
@@ -704,12 +659,6 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType, const s
     }
 
     UpdateVolumeForLowLatency();
-
-    if (deviceType == DEVICE_TYPE_SPEAKER || deviceType == DEVICE_TYPE_USB_HEADSET) {
-        SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
-    } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && newSinkName == OFFLOAD_PRIMARY_SPEAKER) {
-        SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
-    }
 }
 
 std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
@@ -972,8 +921,6 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute,
     vol.volumeFloat = GetSystemVolumeInDb(streamType, vol.volumeInt, currentActiveDevice_.deviceType_);
     SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
 
-    // offload sink mute
-    SetOffloadMute(streamType, mute);
     return result;
 }
 
@@ -6155,6 +6102,7 @@ void AudioPolicyService::RegiestPolicy()
     AUDIO_INFO_LOG("Start");
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "RegiestPolicy g_adProxy null");
+    audioPolicyManager_.SetAudioServerProxy(gsp);
 
     sptr<PolicyProviderWrapper> wrapper = new(std::nothrow) PolicyProviderWrapper(this);
     CHECK_AND_RETURN_LOG(wrapper != nullptr, "Get null PolicyProviderWrapper");

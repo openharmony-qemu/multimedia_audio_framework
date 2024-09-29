@@ -319,6 +319,13 @@ int32_t IpcStreamStub::HandleSetClientVolume(MessageParcel &data, MessageParcel 
     return AUDIO_OK;
 }
 
+int32_t IpcStreamStub::HandleSetMute(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    reply.WriteInt32(SetMute(isMute));
+    return AUDIO_OK;
+}
+
 int32_t IpcStreamStub::HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t tid = data.ReadUint32();

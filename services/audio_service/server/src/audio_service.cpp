@@ -26,6 +26,7 @@
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
 #include "audio_capturer_source.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -671,6 +672,7 @@ void AudioService::Dump(std::string &dumpString)
         item.second->Dump(dumpString);
     }
     PolicyHandler::GetInstance().Dump(dumpString);
+    AudioVolume::GetInstance()->Dump(dumpString);
 }
 
 float AudioService::GetMaxAmplitude(bool isOutputDevice)

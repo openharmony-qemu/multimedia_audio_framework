@@ -88,6 +88,8 @@ public:
 
     int32_t SetClientVolume() override;
 
+    int32_t SetMute(bool isMute) override;
+
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
 private:
     static inline BrokerDelegator<IpcStreamProxy> delegator_;

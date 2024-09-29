@@ -95,6 +95,8 @@ public:
 
     virtual int32_t SetClientVolume() = 0;
 
+    virtual int32_t SetMute(bool isMute) = 0;
+
     virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) = 0;
     // IPC code.
     enum IpcStreamMsg : uint32_t {
@@ -128,6 +130,7 @@ public:
         ON_GET_STREAM_MANAGER_TYPE,
         ON_SET_SILENT_MODE_AND_MIX_WITH_OTHERS,
         ON_SET_CLIENT_VOLUME,
+        ON_SET_MUTE,
         ON_REGISTER_THREAD_PRIORITY,
         IPC_STREAM_MAX_MSG
     };
