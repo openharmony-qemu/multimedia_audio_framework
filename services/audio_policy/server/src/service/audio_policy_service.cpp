@@ -4461,11 +4461,13 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                     return descriptor->macAddress_ == macAddress;
                 };
 
-                sptr<AudioDeviceDescriptor> audioDescriptor
-                    = new(std::nothrow) AudioDeviceDescriptor(deviceType, OUTPUT_DEVICE);
-                audioDescriptor->SetDeviceInfo(deviceName, macAddress);
-                audioDescriptor->SetDeviceCapability(streamInfo, 0);
-                std::replace_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent, audioDescriptor);
+                auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+                if (itr != connectedDevices_.end()) {
+                    (*itr)->deviceType_ = deviceType;
+                    (*itr)->deviceName_ = deviceName;
+                    (*itr)->audioStreamInfo_ = streamInfo;
+                }
+
                 break;
             }
         }
