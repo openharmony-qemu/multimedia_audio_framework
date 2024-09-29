@@ -655,6 +655,18 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
     return SetSystemVolumeLevelInternal(streamType, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
 }
 
+AudioStreamType AudioPolicyServer::GetSystemActiveVolumeType()
+{
+    return GetSystemActiveVolumeTypeInternal();
+}
+
+AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal()
+{
+    AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+    AUDIO_INFO_LOG("Get active volume type success:= %{public}d", streamInFocus);
+    return streamInFocus;
+}
+
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     return GetSystemVolumeLevelInternal(streamType);

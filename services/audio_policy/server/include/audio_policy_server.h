@@ -121,6 +121,8 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
+    AudioStreamType GetSystemActiveVolumeType() override;
+
     int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
@@ -536,6 +538,7 @@ private:
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    AudioStreamType GetSystemActiveVolumeTypeInternal();
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi);

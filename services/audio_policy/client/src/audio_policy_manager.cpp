@@ -295,6 +295,13 @@ AudioScene AudioPolicyManager::GetAudioScene()
     return gsp->GetAudioScene();
 }
 
+AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, STREAM_DEFAULT, "audio policy manager proxy is NULL.");
+    return gsp->GetSystemActiveVolumeType();
+}
+
 int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
