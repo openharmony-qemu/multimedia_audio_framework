@@ -51,6 +51,7 @@ static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioSt
         codecInfo.sampleRate, codecInfo.bitsPerSample, codecInfo.channelMode);
     switch (codecInfo.sampleRate) {
         case A2DP_SBC_SAMPLE_RATE_48000_USER:
+        case A2DP_L2HCV2_SAMPLE_RATE_48000_USER:
             audioStreamInfo.samplingRate = SAMPLE_RATE_48000;
             break;
         case A2DP_SBC_SAMPLE_RATE_44100_USER:
