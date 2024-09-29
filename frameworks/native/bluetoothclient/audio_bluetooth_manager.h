@@ -115,6 +115,7 @@ public:
     static AudioStandard::AudioScene GetPolicyAudioScene();
     static void SetAudioSceneFromPolicy(AudioStandard::AudioScene scene);
     static int32_t HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device);
+    static void ClearRecongnitionStatus();
     static ScoCategory GetScoCategory();
 
 private:

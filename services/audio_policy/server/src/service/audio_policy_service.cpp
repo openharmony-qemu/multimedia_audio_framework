@@ -5076,6 +5076,7 @@ void AudioPolicyService::HandleAudioCaptureState(AudioMode &mode, AudioStreamCha
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
         if (streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
             BluetoothScoDisconectForRecongnition();
+            Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
         }
         audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
     }
@@ -6976,9 +6977,6 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
     }
 
     if (sessionWithNormalSourceType_.count(sessionID) > 0) {
-        if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
-            BluetoothScoDisconectForRecongnition();
-        }
         sessionWithNormalSourceType_.erase(sessionID);
         if (!sessionWithNormalSourceType_.empty()) {
             return;
@@ -7391,6 +7389,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     AUDIO_INFO_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] connectState[%{public}d] " \
         "isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_,
         command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
+    DeviceUpdateClearRecongnitionStatus(desc);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             ClearScoDeviceSuspendState(desc.macAddress_);
@@ -7421,6 +7420,15 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     FetchDevice(true, reason);
     FetchDevice(false);
     UpdateA2dpOffloadFlagForAllStream();
+}
+
+void AudioPolicyService::DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE ||
+        desc.connectState_ == DEACTIVE_CONNECTED || !desc.isEnable_)) {
+        BluetoothScoDisconectForRecongnition();
+        Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
+    }
 }
 
 void AudioPolicyService::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
