@@ -1968,7 +1968,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("Start");
 
-    if (audioPolicyServerHandler_ != nullptr && (ringerModeMute_ ||
+    if (audioPolicyServerHandler_ != nullptr && (ringerModeMute_.load() ||
         (audioScene_ != AUDIO_SCENE_RINGING && audioScene_ != AUDIO_SCENE_VOICE_RINGING))) {
         audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
     }
