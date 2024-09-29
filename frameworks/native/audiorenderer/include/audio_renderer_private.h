@@ -216,6 +216,7 @@ private:
     std::mutex silentModeAndMixWithOthersMutex_;
     std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
+    int64_t framesAlreadyWritten_ = 0;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

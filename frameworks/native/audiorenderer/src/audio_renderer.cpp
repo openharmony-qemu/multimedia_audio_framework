@@ -19,6 +19,7 @@
 #include <sstream>
 #include "securec.h"
 #include <atomic>
+#include <cinttypes>
 #include <memory>
 
 #include "audio_renderer.h"
@@ -1500,6 +1501,12 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         }
         IAudioStream::SwitchInfo info;
         InitSwitchInfo(targetClass, info);
+        int64_t framesWritten = audioStream_->GetFramesWritten();
+        if (framesWritten > 0) {
+            framesAlreadyWritten_ += framesWritten;
+            AUDIO_INFO_LOG("Frames already written: %{public}" PRId64 ", current stream value: %{public}" PRId64 ".",
+                framesAlreadyWritten_, framesWritten);
+        }
 
         switchResult = audioStream_->ReleaseAudioStream(true, true);
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, info.params,
@@ -1618,7 +1625,7 @@ AudioEffectMode AudioRendererPrivate::GetAudioEffectMode() const
 
 int64_t AudioRendererPrivate::GetFramesWritten() const
 {
-    return audioStream_->GetFramesWritten();
+    return framesAlreadyWritten_ + audioStream_->GetFramesWritten();
 }
 
 int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) const
