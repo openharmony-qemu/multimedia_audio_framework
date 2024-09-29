@@ -26,6 +26,7 @@
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
 #include "i_standard_audio_routing_manager_listener.h"
+#include "i_standard_audio_anahs_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,7 +51,7 @@ private:
     std::shared_ptr<AudioPnpStatusCallback> pnpDeviceCB_ = nullptr;
     struct HDIServiceManager *hdiServiceManager_;
     struct ServiceStatusListener *listener_;
-    sptr<IStandardAudioRoutingManagerListener> audioDeviceAnahsCb_;
+    sptr<IStandardAudioAnahsManagerListener> audioDeviceAnahsCb_;
 };
 
 class AudioPnpStatusCallback : public AudioPnpDeviceChangeCallback {

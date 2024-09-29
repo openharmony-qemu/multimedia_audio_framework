@@ -1950,16 +1950,16 @@ int32_t AudioPolicyManager::SetAudioDeviceAnahsCallback(const std::shared_ptr<Au
     };
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    auto activeDistributedRoutingRoleCb = new (std::nothrow) AudioRoutingManagerListenerStub();
-    if (activeDistributedRoutingRoleCb == nullptr) {
+    auto activeDistributedAnahsRoleCb = new (std::nothrow) AudioAnahsManagerListenerStub();
+    if (activeDistributedAnahsRoleCb == nullptr) {
         AUDIO_ERR_LOG("object is nullptr");
         return ERROR;
     }
-    activeDistributedRoutingRoleCb->SetAudioDeviceAnahsCallback(callback);
-    sptr<IRemoteObject> object = activeDistributedRoutingRoleCb->AsObject();
+    activeDistributedAnahsRoleCb->SetAudioDeviceAnahsCallback(callback);
+    sptr<IRemoteObject> object = activeDistributedAnahsRoleCb->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("listenerStub is nullptr");
-        delete activeDistributedRoutingRoleCb;
+        delete activeDistributedAnahsRoleCb;
         return ERROR;
     }
     return gsp->SetAudioDeviceAnahsCallback(object);

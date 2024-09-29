@@ -157,6 +157,7 @@ ohos_shared_library("audio_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
   sources = [
+    "client/src/audio_anahs_manager.cpp",
     "client/src/audio_device_descriptor.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",

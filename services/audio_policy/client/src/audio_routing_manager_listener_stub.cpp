@@ -56,10 +56,6 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
             OnAudioInputDeviceRefinedInternal(data, reply);
             return AUDIO_OK;
         }
-        case ON_AUDIO_ANAHS_DEVICE_CHANGE: {
-            OnExtPnpDeviceStatusChangedInternal(data, reply);
-            return AUDIO_OK;
-        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -90,13 +86,6 @@ void AudioRoutingManagerListenerStub::SetAudioDeviceRefinerCallback(const std::w
     audioDeviceRefinerCallback_ = callback;
     std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
     CHECK_AND_RETURN_LOG(audioDeviceRefinerCallback != nullptr, "audioDeviceRefinerCallback_ is nullptr");
-}
-
-void AudioRoutingManagerListenerStub::SetAudioDeviceAnahsCallback(const std::weak_ptr<AudioDeviceAnahs> &callback)
-{
-    audioDeviceAnahsCallback_ = callback;
-    std::shared_ptr<AudioDeviceAnahs> audioDeviceAnahsCallback = audioDeviceAnahsCallback_.lock();
-    CHECK_AND_RETURN_LOG(audioDeviceAnahsCallback != nullptr, "audioDeviceAnahsCallback_ is nullptr");
 }
 
 void AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply)
@@ -172,21 +161,5 @@ int32_t AudioRoutingManagerListenerStub::OnAudioInputDeviceRefined(
     return audioDeviceRefinerCallback->OnAudioInputDeviceRefined(descs, routerType,
         sourceType, clientUid, audioPipeType);
 }
-
-void AudioRoutingManagerListenerStub::OnExtPnpDeviceStatusChangedInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::string anahsName = data.ReadString();
-    int32_t result = OnExtPnpDeviceStatusChanged(anahsName);
-    reply.WriteInt32(result);
-}
-
-int32_t AudioRoutingManagerListenerStub::OnExtPnpDeviceStatusChanged(std::string anahsStatus)
-{
-    std::shared_ptr<AudioDeviceAnahs> audioDeviceAnahsCallback = audioDeviceAnahsCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(audioDeviceAnahsCallback != nullptr, ERR_CALLBACK_NOT_REGISTERED,
-        "audioDeviceAnahsCallback_ is nullptr");
-    return audioDeviceAnahsCallback->OnExtPnpDeviceStatusChanged(anahsStatus);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

@@ -29,7 +29,6 @@ namespace AudioStandard {
 class AudioDeviceDescriptor;
 class AudioRendererFilter;
 class AudioDeviceRefiner;
-class AudioDeviceAnahs;
 class AudioPreferredOutputDeviceChangeCallback {
 public:
     virtual ~AudioPreferredOutputDeviceChangeCallback() = default;
@@ -75,8 +74,6 @@ public:
     int32_t SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback);
     int32_t UnsetAudioDeviceRefinerCallback();
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-    int32_t SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback);
-    int32_t UnsetAudioDeviceAnahsCallback();
 private:
     int32_t GetCallingPid();
 };
