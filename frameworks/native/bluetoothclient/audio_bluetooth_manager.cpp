@@ -429,6 +429,13 @@ int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRem
     return SUCCESS;
 }
 
+void AudioHfpManager::ClearRecongnitionStatus()
+{
+    if (AudioHfpManager::scoCategory == ScoCategory::SCO_RECOGNITION) {
+        AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
+    }
+}
+
 ScoCategory AudioHfpManager::GetScoCategory()
 {
     return scoCategory;
