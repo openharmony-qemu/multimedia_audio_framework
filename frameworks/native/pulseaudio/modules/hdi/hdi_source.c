@@ -102,7 +102,10 @@ static char *GetStateInfo(pa_source_state_t state)
 
 static void UserdataFree(struct Userdata *u)
 {
-    pa_assert(u);
+    if (u == NULL) {
+        AUDIO_INFO_LOG("Userdata is null, free done");
+        return;
+    }
     if (u->source) {
         pa_source_unlink(u->source);
     }
@@ -574,4 +577,5 @@ void PaHdiSourceFree(pa_source *s)
     pa_source_assert_ref(s);
     pa_assert_se(u = s->userdata);
     UserdataFree(u);
+    s->userdata = NULL;
 }

@@ -4200,13 +4200,13 @@ static void UserdataFreeThread(struct Userdata *u)
     pa_thread_mq_done(&u->thread_mq);
 }
 
-static void FreeBufferAttr(struct Userdata *u)
+static bool FreeBufferAttr(struct Userdata *u)
 {
     // free heap allocated in userdata init
     if (u->bufferAttr == NULL) {
         pa_xfree(u);
         AUDIO_DEBUG_LOG("buffer attr is null, free done");
-        return;
+        return false;
     }
     free(u->bufferAttr->bufIn);
     free(u->bufferAttr->bufOut);
@@ -4219,11 +4219,15 @@ static void FreeBufferAttr(struct Userdata *u)
 
     pa_xfree(u->bufferAttr);
     u->bufferAttr = NULL;
+    return true;
 }
 
 static void UserdataFree(struct Userdata *u)
 {
-    pa_assert(u);
+    if (u == NULL) {
+        AUDIO_INFO_LOG("Userdata is null, free done");
+        return;
+    }
 
     if (u->sink) {
         pa_sink_unlink(u->sink);
@@ -4260,7 +4264,9 @@ static void UserdataFree(struct Userdata *u)
         UnLoadSinkAdapter(u->primary.sinkAdapter);
     }
 
-    FreeBufferAttr(u);
+    if (!FreeBufferAttr(u)) {
+        return;
+    }
 
     if (u->sceneToCountMap) {
         pa_hashmap_free(u->sceneToCountMap);
@@ -4285,4 +4291,5 @@ void PaHdiSinkFree(pa_sink *s)
     pa_assert_se(u = s->userdata);
 
     UserdataFree(u);
+    s->userdata = NULL;
 }
