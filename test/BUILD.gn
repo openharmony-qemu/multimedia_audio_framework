@@ -56,6 +56,7 @@ group("audio_unit_test") {
     "../frameworks/native/toneplayer/test/unittest:audio_toneplayer_unit_test",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
     "../services/audio_service/test/unittest:audio_service_unit_test",
+    "../services/audio_service/test/unittest:ipc_stream_in_server_unit_test",
     "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
     "../services/audio_service/test/unittest/audio_manager_stub_unit_test:audio_manager_stub_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
