@@ -541,9 +541,7 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
     for (int i = 0; i < size; i++) {
         sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-        if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-            audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-        }
+        MapExternalToInternalDeviceType(*audioDeviceDescriptor);
         targetOutputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -573,9 +571,7 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
     for (int i = 0; i < size; i++) {
         sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-        if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-            audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-        }
+        MapExternalToInternalDeviceType(*audioDeviceDescriptor);
         targetInputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -992,10 +988,7 @@ void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel
 {
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-
-    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    }
+    MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     int32_t result =  GetHardwareOutputSamplingRate(audioDeviceDescriptor);
     reply.WriteInt32(result);
 }
@@ -1076,9 +1069,7 @@ void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageP
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
-    if (IsArmUsbDevice(*descriptor)) {
-        descriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    }
+    MapExternalToInternalDeviceType(*descriptor);
     CastType type = static_cast<CastType>(data.ReadInt32());
     int32_t result = ConfigDistributedRoutingRole(descriptor, type);
     reply.WriteInt32(result);
@@ -1122,9 +1113,7 @@ void AudioPolicyManagerStub::SetSpatializationEnabledForDeviceInternal(MessagePa
 {
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    }
+    MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     bool enable = data.ReadBool();
     int32_t result = SetSpatializationEnabled(audioDeviceDescriptor, enable);
     reply.WriteInt32(result);
@@ -1154,10 +1143,7 @@ void AudioPolicyManagerStub::SetHeadTrackingEnabledForDeviceInternal(MessageParc
 {
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-
-    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    }
+    MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     bool enable = data.ReadBool();
     int32_t result = SetHeadTrackingEnabled(audioDeviceDescriptor, enable);
     reply.WriteInt32(result);

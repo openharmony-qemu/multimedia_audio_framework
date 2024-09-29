@@ -964,6 +964,15 @@ bool AudioPolicyServer::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
     return audioPolicyService_.IsArmUsbDevice(desc);
 }
 
+void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc)
+{
+    if (IsArmUsbDevice(desc)) {
+        desc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && desc.deviceRole_ == INPUT_DEVICE) {
+        desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    }
+}
+
 int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {

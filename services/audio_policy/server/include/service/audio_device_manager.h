@@ -66,6 +66,9 @@ public:
     unique_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> GetDevicePrivacyMaps();
     vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableDevicesByUsage(AudioDeviceUsage usage);
+    unique_ptr<AudioDeviceDescriptor> GetDeviceByMacAddressAndDeviceType(
+        const vector<unique_ptr<AudioDeviceDescriptor>> &descs,
+        const string &macAddress, DeviceType deviceType);
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
         const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
         std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);

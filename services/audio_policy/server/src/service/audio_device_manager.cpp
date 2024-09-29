@@ -777,6 +777,19 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     return audioDeviceDescriptors;
 }
 
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetDeviceByMacAddressAndDeviceType(
+    const vector<unique_ptr<AudioDeviceDescriptor>> &descs, const string &macAddress, DeviceType deviceType)
+{
+    auto isPresent = [&](const unique_ptr<AudioDeviceDescriptor> &desc) {
+        return desc->macAddress_ == macAddress && desc->deviceType_ == deviceType;
+    };
+    auto it = find_if(descs.begin(), descs.end(), isPresent);
+    if (it != descs.end()) {
+        return make_unique<AudioDeviceDescriptor>(**it);
+    }
+    return std::make_unique<AudioDeviceDescriptor>();
+}
+
 unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManager::GetDevicePrivacyMaps()
 {
     return devicePrivacyMaps_;
