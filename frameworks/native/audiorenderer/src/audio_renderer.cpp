@@ -195,9 +195,6 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 {
     Trace trace("AudioRenderer::Create");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
-    int32_t ret = AudioRenderer::CreateCheckParam(rendererOptions, appInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
-
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
     if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
