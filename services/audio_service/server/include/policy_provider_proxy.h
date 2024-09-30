@@ -42,6 +42,8 @@ public:
 
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
 
+    int32_t GetMaxRendererInstances() override;
+
 private:
     static inline BrokerDelegator<PolicyProviderProxy> delegator_;
 };
