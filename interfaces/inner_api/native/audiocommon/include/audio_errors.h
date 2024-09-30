@@ -141,6 +141,11 @@ const int32_t ERR_CONCEDE_INCOMING_STREAM = BASE_AUDIO_ERR_OFFSET - 26;
 
 const int32_t ERR_RENDERER_IN_SERVER_UNDERRUN = BASE_AUDIO_ERR_OFFSET - 27;
 
+/**exceed max audio stream cnt*/
+const int32_t ERR_EXCEED_MAX_STREAM_CNT = BASE_AUDIO_ERR_OFFSET - 28;
+
+/**exceed max audio stream cnt per uid*/
+const int32_t ERR_EXCEED_MAX_STREAM_CNT_PER_UID = BASE_AUDIO_ERR_OFFSET - 29;
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard
