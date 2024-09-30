@@ -209,7 +209,7 @@ private:
     bool IsFastBlocked(int32_t uid);
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
-    void GetMaxRendererStreamCntPerUid();
+    void InitMaxRendererStreamCntPerUid();
     int32_t CheckParam(const AudioProcessConfig &config);
     void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
