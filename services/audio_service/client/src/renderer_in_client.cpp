@@ -770,9 +770,20 @@ float RendererInClientInner::GetVolume()
 int32_t RendererInClientInner::SetMute(bool mute)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
-    AUDIO_INFO_LOG("sessionId:%{public}d SetDuck:%{public}d", sessionId_, mute);
-    muteVolume_ = mute ? 0.0f : 1.0f;
+    AUDIO_INFO_LOG("sessionId:%{public}d SetMute:%{public}d", sessionId_, mute);
+    if (mute == isMute_) {
+        AUDIO_INFO_LOG("isMute_ = mute : %{public}d", mute);
+        return SUCCESS;
+    }
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
+    if (state_ == RUNNING && mute == false && isLoadInterrupt_ == false) {
+        isLoadInterrupt_ = true;
+        muteVolume_ = 1.0f;
+    } else {
+        isLoadInterrupt_ = false;
+        muteVolume_ = 0.0f;
+    }
+    isMute_ = mute;
     clientBuffer_->SetMuteFactor(muteVolume_);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetMute(mute);
@@ -2218,7 +2229,8 @@ void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 
 bool RendererInClientInner::GetSilentModeAndMixWithOthers()
 {
-    return silentModeAndMixWithOthers_;
+    AUDIO_INFO_LOG("Background Mute Activate: %{public}d", isLoadInterrupt_);
+    return silentModeAndMixWithOthers_ || !isLoadInterrupt_;
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
