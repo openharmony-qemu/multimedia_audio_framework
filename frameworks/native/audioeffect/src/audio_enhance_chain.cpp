@@ -162,7 +162,7 @@ int32_t AudioEnhanceChain::SetEnhanceParam(bool mute, uint32_t systemVol)
     AudioEffectTransInfo replyInfo{};
     for (uint32_t index = 0; index < size; index++) {
         auto &handle = standByEnhanceHandles_[index];
-        CHECK_AND_RETURN_RET_LOG(SetPropertyToHandle(handle, property) == SUCCESS, ERROR,
+        CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(handle) == SUCCESS, ERROR,
             "[%{public}s] effect EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
         CHECK_AND_RETURN_RET_LOG(
             (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo) == SUCCESS, ERROR,
