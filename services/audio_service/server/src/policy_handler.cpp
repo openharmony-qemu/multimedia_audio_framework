@@ -206,5 +206,11 @@ int32_t PolicyHandler::GetAndSaveClientType(uint32_t uid, const std::string &bun
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->GetAndSaveClientType(uid, bundleName);
 }
+
+int32_t PolicyHandler::GetMaxRendererInstances()
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->GetMaxRendererInstances();
+}
 } // namespace AudioStandard
 } // namespace OHOS
