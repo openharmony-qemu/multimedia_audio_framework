@@ -51,6 +51,11 @@ constexpr int32_t DEFAULT_STREAM_ID = 10;
 bool g_hasServerInit = false;
 const int64_t ACTIVEBTTIME = 60*1140*2;
 const uint32_t ENUM_NUM = 4;
+const int32_t A2DP_PLAYING = 2;
+const int32_t A2DP_STOPPED = 1;
+const std::string SPLITARGS = "splitArgs";
+const std::string NETWORKID = "networkId";
+const int32_t SESSIONID_32 = 123456;
 
 AudioPolicyServer *GetServerPtr()
 {
@@ -307,7 +312,7 @@ void AudioPolicyServiceTest(const uint8_t *rawData, size_t size)
     AudioPolicyServiceThirdTest(rawData, size);
 }
 
-void AudioPolicyServiceMoreTest(const uint8_t* rawData, size_t size)
+void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -335,6 +340,73 @@ void AudioPolicyServiceMoreTest(const uint8_t* rawData, size_t size)
     }
     GetServerPtr()->
         audioPolicyService_.FetchInputDevice(audioCapturerChangeInfos, AudioStreamDeviceChangeReason::UNKNOWN);
+    GetServerPtr()->
+        audioPolicyService_.OnReceiveBluetoothEvent(GetServerPtr()->audioPolicyService_.activeBTDevice_, "deviceName");
+    GetServerPtr()->audioPolicyService_.GetAudioEffectOffloadFlag();
+    GetServerPtr()->audioPolicyService_.CheckSpatializationAndEffectState();
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->IsA2dpOffloadConnecting(MOD_NUM_TWO);
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->a2dpOffloadDeviceAddress_ = "A2dpMacAddress";
+    GetServerPtr()->
+        audioPolicyService_.audioA2dpOffloadManager_->currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+    GetServerPtr()->
+        audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddressS", A2DP_STOPPED);
+    GetServerPtr()->
+        audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddressS", A2DP_PLAYING);
+    GetServerPtr()->
+        audioPolicyService_.audioA2dpOffloadManager_->currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
+    GetServerPtr()->
+        audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddress", A2DP_PLAYING);
+    GetServerPtr()->
+        audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddress", A2DP_STOPPED);
+    GetServerPtr()->audioPolicyService_.LoadSplitModule("", NETWORKID);
+    GetServerPtr()->audioPolicyService_.LoadSplitModule(SPLITARGS, NETWORKID);
+    GetServerPtr()->audioPolicyService_.SetRotationToEffect(ENUM_NUM);
+}
+
+void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioRendererChangeInfo audioRendererChangeInfo;
+    int32_t clientUID = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t sessionId = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t clientPid_1 = *reinterpret_cast<const int32_t*>(rawData);
+    audioRendererChangeInfo.clientUID = clientUID;
+    audioRendererChangeInfo.sessionId = sessionId;
+    audioRendererChangeInfo.clientPid = clientPid_1;
+    audioRendererChangeInfo.rendererState = RENDERER_NEW;
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    audioRendererChangeInfo.rendererInfo = rendererInfo;
+    GetServerPtr()->audioPolicyService_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    GetServerPtr()->audioPolicyService_.streamCollector_.audioRendererChangeInfos_.
+        push_back(make_unique<AudioRendererChangeInfo>(audioRendererChangeInfo));
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->WaitForConnectionCompleted();
+    std::string dumpString = "";
+    GetServerPtr()->audioPolicyService_.AudioStreamDump(dumpString);
+    GetServerPtr()->audioPolicyService_.ScoInputDeviceFetchedForRecongnition(true, NETWORKID, SUSPEND_CONNECTED);
+    GetServerPtr()->audioPolicyService_.ScoInputDeviceFetchedForRecongnition(false, NETWORKID, SUSPEND_CONNECTED);
+    GetServerPtr()->audioPolicyService_.ringerModeMute_ = true;
+    GetServerPtr()->audioPolicyService_.ResetRingerModeMute();
+    InternalDeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    GetServerPtr()->audioPolicyService_.IsA2dpOrArmUsbDevice(deviceType);
+    GetServerPtr()->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioStreamInfo.channels = AudioChannel::STEREO;
+    GetServerPtr()->audioPolicyService_.ReloadA2dpOffloadOnDeviceChanged(DEVICE_TYPE_BLUETOOTH_A2DP,
+        GetServerPtr()->audioPolicyService_.activeBTDevice_, "DeviceName", audioStreamInfo);
+    sptr<AudioDeviceDescriptor> dis = new AudioDeviceDescriptor();
+    dis->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    dis->macAddress_ = GetServerPtr()->audioPolicyService_.activeBTDevice_;
+    dis->deviceRole_ = OUTPUT_DEVICE;
+    GetServerPtr()->audioPolicyService_.ConnectVirtualDevice(dis);
+    GetServerPtr()->audioPolicyService_.
+        HandleRecoveryPreferredDevices(A2DP_PLAYING, LIMITSIZE, LIMITSIZE);
+    GetServerPtr()->audioPolicyService_.RestoreSession(SESSIONID_32, true);
 }
 
 } // namespace AudioStandard
@@ -351,6 +423,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
     OHOS::AudioStandard::AudioPolicyServiceTest(data, size);
-    OHOS::AudioStandard::AudioPolicyServiceMoreTest(data, size);
+    OHOS::AudioStandard::AudioPolicyServiceTestII(data, size);
+    OHOS::AudioStandard::AudioPolicyServiceTestIII(data, size);
     return 0;
 }

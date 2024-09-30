@@ -15,6 +15,8 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
+import("../../../sensor.gni")
+import("../../../window_manager.gni")
 
 ohos_fuzztest("AudioEffectFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -31,7 +33,6 @@ ohos_fuzztest("AudioEffectFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
     "-fno-access-control",
-    "-DSENSOR_ENABLE",
   ]
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
@@ -78,13 +79,19 @@ ohos_fuzztest("AudioEffectFuzzTest") {
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "sensor:sensor_interface_native",
   ]
   if (accessibility_enable == true) {
     external_deps += [
       "accessibility:accessibility_common",
       "accessibility:accessibilityconfig",
     ]
+  }
+  if (sensor_enable == true) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+    cflags += [ "-DSENSOR_ENABLE" ]
+  }
+  if (window_manager_enable == true) {
+    cflags += [ "-DWINDOW_MANAGER_ENABLE" ]
   }
 }
 
