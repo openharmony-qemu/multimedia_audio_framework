@@ -151,23 +151,35 @@ int32_t AudioEnhanceChain::SetInputDevice(const std::string &inputDevice)
     return SUCCESS;
 }
 
+int32_t AudioEnhanceChain::SetEnhanceParam(bool mute, uint32_t systemVol)
+{
+    algoParam_.muteInfo = mute;
+    algoParam_.volumeInfo = systemVol;
+
+    std::lock_guard<std::mutex> lock(chainMutex_);
+    uint32_t size = standByEnhanceHandles_.size();
+    AudioEffectTransInfo cmdInfo{};
+    AudioEffectTransInfo replyInfo{};
+    for (uint32_t index = 0; index < size; index++) {
+        auto &handle = standByEnhanceHandles_[index];
+        CHECK_AND_RETURN_RET_LOG(SetPropertyToHandle(handle, property) == SUCCESS, ERROR,
+            "[%{public}s] effect EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
+        CHECK_AND_RETURN_RET_LOG(
+            (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo) == SUCCESS, ERROR,
+            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
+    }
+    return SUCCESS;
+}
+
 int32_t AudioEnhanceChain::SetEnhanceParamToHandle(AudioEffectHandle handle)
 {
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
-
     AudioEnhanceParam setParam = {algoParam_.muteInfo, algoParam_.volumeInfo, algoParam_.preDevice.c_str(),
         algoParam_.postDevice.c_str(), algoParam_.sceneType.c_str()};
-
     cmdInfo.data = static_cast<void *>(&setParam);
     cmdInfo.size = sizeof(setParam);
-
-    int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-    if (ret != 0) {
-        return ERROR;
-    }
-    AUDIO_DEBUG_LOG("%{public}s: EFFECT_CMD_SET_PARAM success", sceneType_.c_str());
-    return SUCCESS;
+    return (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
 }
 
 void AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle,

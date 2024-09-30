@@ -642,6 +642,15 @@ int32_t AudioEnhanceChainManager::SetVolumeInfo(const AudioVolumeType &volumeTyp
 int32_t AudioEnhanceChainManager::SetMicrophoneMuteInfo(const bool &isMute)
 {
     isMute_ = isMute;
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    int32_t ret = 0;
+    for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
+        if (enhanceChain) {
+            ret = enhanceChain->SetEnhanceParam(isMute_, systemVol_);
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "[%{public}u] set mute:%{public}d vol:%{public}f failed",
+                sceneType, isMute_, systemVol_);
+        }
+    }
     AUDIO_INFO_LOG("success, isMute: %{public}d", isMute_);
     return SUCCESS;
 }
