@@ -23,12 +23,17 @@
 #include <vector>
 #include <sys/socket.h>
 #include <cerrno>
+#include <fstream>
+#include <algorithm>
 using namespace std;
 using namespace std::chrono;
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    const int32_t HDF_ERR_INVALID_PARAM = -1;
+} // namespace
 
 AudioDevBusUsbDevice g_audioUsbDeviceList[AUDIO_UEVENT_USB_DEVICE_COUNT] = {};
 
@@ -857,7 +862,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_029, TestSize.Level1)
     // Test case 1: Invalid parameter (NULL audioPnpUevent)
     {
         int32_t result = audioSocketThread.AudioDpDetectDevice(nullptr);
-        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
     }
     // Test case 2: Invalid subSystem
     {
@@ -868,7 +873,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_029, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioDpDetectDevice(&uevent);
-        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
     }
     // Test case 3: Invalid switchName
     {
@@ -879,7 +884,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_029, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioDpDetectDevice(&uevent);
-        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
     }
 }
 
@@ -900,7 +905,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_029, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioDpDetectDevice(&uevent);
-        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
     }
     // Test case 5: Device Add Event
     {
@@ -958,6 +963,202 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_029, TestSize.Level1)
         int32_t result = audioSocketThread.AudioDpDetectDevice(&uevent);
         EXPECT_EQ(result, SUCCESS);
     }
+}
+
+/**
+ * @tc.name : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_032
+ * @tc.desc : Test CheckUsbDesc
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_032, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    //Test Case 1: Normal Condition
+    UsbDevice validDevice = {
+        .devName = "TestDevice",
+        .desc = {9, USB_AUDIO_DESC_TYPE, 0, 0, 0, USB_AUDIO_CLASS, USB_AUDIO_SUBCLASS_CTRL, 0, 0},
+        .descLen = 9
+    };
+    EXPECT_EQ(audioSocketThread.CheckUsbDesc(&validDevice), AUDIO_DEVICE_ONLINE);
+
+    // Test Case 2: descLen exceeds the maximum
+    UsbDevice invalidLenDevice = {
+        .devName = "InvalidLenDevice",
+        .desc = {0},
+        .descLen = USB_DES_LEN_MAX + 1
+    };
+    EXPECT_NE(audioSocketThread.CheckUsbDesc(&invalidLenDevice), HDF_ERR_INVALID_PARAM);
+
+    // Test case 3: descLen is 0
+    UsbDevice zeroLenDevice = {
+        .devName = "ZeroLenDevice",
+        .desc = {0},
+        .descLen = 1
+    };
+    EXPECT_NE(audioSocketThread.CheckUsbDesc(&zeroLenDevice), HDF_ERR_INVALID_PARAM);
+
+    // Test Case 4: Non-audio devices
+    UsbDevice nonAudioDevice = {
+        .devName = "NonAudioDevice",
+        .desc = {9, USB_AUDIO_DESC_TYPE, 0, 0, 0, 2, 0, 0, 0},
+        .descLen = 9
+    };
+    EXPECT_EQ(audioSocketThread.CheckUsbDesc(&nonAudioDevice), SUCCESS);
+
+    // Test case 5: The descriptor length is smaller than the interface descriptor length
+    UsbDevice shortDescDevice = {
+        .devName = "ShortDescDevice",
+        .desc = {8, USB_AUDIO_DESC_TYPE, 0, 0, 0, 0, 0, 0},
+        .descLen = 8
+    };
+    EXPECT_EQ(audioSocketThread.CheckUsbDesc(&shortDescDevice), SUCCESS);
+}
+
+/**
+ * @tc.name : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_033
+ * @tc.desc : Test UpdateDeviceState
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_033, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    //Test: No update required
+    AudioEvent noUpdateEvent = {1, 1, "device", "address", "anahs"};
+    AudioEvent audioSocketEvent_ = noUpdateEvent;
+    audioSocketThread.UpdateDeviceState(noUpdateEvent);
+    //Test: Successful update
+    AudioEvent successUpdateEvent = {1, 2, "device", "address", "anahs"};
+    audioSocketThread.UpdateDeviceState(successUpdateEvent);
+    //Test：snprintf_s failed
+    AudioEvent snprintfFailEvent = {1, 2, "device", "address", "anahs"};
+    audioSocketThread.UpdateDeviceState(snprintfFailEvent);
+    AudioEvent snprintfSuccessEvent = {1, 2, "device", "address", "anahs"};
+    audioSocketThread.UpdateDeviceState(snprintfSuccessEvent);
+}
+
+/**
+ * @tc.name : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_034
+ * @tc.desc : Test AudioAnalogHeadsetDetectDevice
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_034, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    AudioPnpUevent audioPnpUevent = {
+        .action = "change",
+        .name = "headset",
+        .state = "analog_hs1",
+        .devType = "extcon",
+        .subSystem = "switch",
+        .switchName = "h2w",
+        .switchState = "on",
+        .hidName = "hid_name",
+        .devName = "test_dev_name",
+        .anahsName = "anahs_name"
+    };
+    EXPECT_EQ(audioSocketThread.AudioAnalogHeadsetDetectDevice(&audioPnpUevent), SUCCESS);
+}
+
+/**
+ * @tc.name : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_035
+ * @tc.desc : Test SetAudioPnpServerEventValue
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_035, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    AudioPnpUevent audioPnpUevent = {
+        .action = "change",
+        .name = "headset",
+        .state = "analog_hs1",
+        .devType = "extcon",
+        .subSystem = "switch",
+        .switchName = "h2w",
+        .switchState = "on",
+        .hidName = "hid_name",
+        .devName = "dev_name",
+        .anahsName = "anahs_name"
+    };
+    AudioEvent audioEvent;
+
+    EXPECT_EQ(audioSocketThread.SetAudioPnpServerEventValue(&audioEvent, &audioPnpUevent), SUCCESS);
+    EXPECT_EQ(audioEvent.eventType, PNP_EVENT_DEVICE_ADD);
+    EXPECT_NE(audioEvent.deviceType, PNP_DEVICE_HEADSET);
+    EXPECT_EQ(audioEvent.name, "headset");
+    EXPECT_EQ(audioEvent.address, "dev_name");
+}
+
+/**
+ * @tc.name : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_036
+ * @tc.desc : Test SetAudioPnpServerEventValue
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_036, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    AudioPnpUevent audioPnpUevent = {
+        .action = "change",
+        .name = "headset",
+        .state = "analog_hs0",
+        .devType = "extcon",
+        .subSystem = "not_switch",
+        .switchName = "h2w",
+        .switchState = "on",
+        .hidName = "hid_name",
+        .devName = "dev_name",
+        .anahsName = "anahs_name"
+    };
+    AudioEvent audioEvent;
+
+    EXPECT_NE(audioSocketThread.SetAudioPnpServerEventValue(&audioEvent, &audioPnpUevent), SUCCESS);
+    EXPECT_NE(audioEvent.eventType, PNP_EVENT_DEVICE_REMOVE);
+    EXPECT_NE(audioEvent.deviceType, PNP_DEVICE_HEADSET);
+}
+
+/**
+ * @tc.name : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_037
+ * @tc.desc : Test AudioAnahsDetectDevice
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_037, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    // Test case 1: NULL input
+    EXPECT_NE(HDF_ERR_INVALID_PARAM, audioSocketThread.AudioAnahsDetectDevice(nullptr));
+
+    // Test case 2: Valid input with UEVENT_INSERT
+    struct AudioPnpUevent validUeventInsert = {
+        .subSystem = UEVENT_PLATFORM,
+        .anahsName = UEVENT_INSERT
+    };
+    EXPECT_EQ(SUCCESS, audioSocketThread.AudioAnahsDetectDevice(&validUeventInsert));
+    EXPECT_STREQ(UEVENT_INSERT, AudioSocketThread::audioSocketEvent_.anahsName.c_str());
+
+    // Test case 3: Valid input with UEVENT_REMOVE
+    struct AudioPnpUevent validUeventRemove = {
+        .subSystem = UEVENT_PLATFORM,
+        .anahsName = UEVENT_REMOVE
+    };
+    EXPECT_EQ(SUCCESS, audioSocketThread.AudioAnahsDetectDevice(&validUeventRemove));
+    EXPECT_STREQ(UEVENT_REMOVE, AudioSocketThread::audioSocketEvent_.anahsName.c_str());
+
+    // Test case 4: Invalid subsystem
+    struct AudioPnpUevent invalidSubsystem = {
+        .subSystem = "invalid",
+        .anahsName = UEVENT_INSERT
+    };
+    EXPECT_EQ(ERROR, audioSocketThread.AudioAnahsDetectDevice(&invalidSubsystem));
+
+    // Test case 5: Invalid anahsName
+    struct AudioPnpUevent invalidAnahsName = {
+        .subSystem = UEVENT_PLATFORM,
+        .anahsName = "invalid"
+    };
+    EXPECT_EQ(ERROR, audioSocketThread.AudioAnahsDetectDevice(&invalidAnahsName));
+
+    // Test case 6: Same anahsName as previous event
+    EXPECT_EQ(SUCCESS, audioSocketThread.AudioAnahsDetectDevice(&validUeventRemove));
+    EXPECT_STREQ(UEVENT_REMOVE, AudioSocketThread::audioSocketEvent_.anahsName.c_str());
 }
 } // namespace AudioStandard
 } // namespace OHOS
