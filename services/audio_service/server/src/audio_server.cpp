@@ -198,6 +198,16 @@ static const std::map<bool, std::string> RES_MAP_VERSE = {
     {false, "false"},
 };
 
+static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
+{
+    for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
+        if (streamUsage == item) {
+            return true;
+        }
+    }
+    return false;
+}
+
 class CapturerStateOb final : public ICapturerStateCallback {
 public:
     explicit CapturerStateOb(std::function<void(bool, int32_t)> callback) : callback_(callback)
@@ -288,14 +298,15 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
-void AudioServer::GetMaxRendererStreamCntPerUid()
+void AudioServer::InitMaxRendererStreamCntPerUid()
 {
     maxRendererStreamCntPerUid_ = MAX_RENDERER_STREAM_CNT_PER_UID;
 }
+
 void AudioServer::OnStart()
 {
     AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
-    GetMaxRendererStreamCntPerUid();
+    InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
     bool res = Publish(this);
     if (!res) {
@@ -1544,16 +1555,6 @@ bool AudioServer::IsFastBlocked(int32_t uid)
     return result == "true";
 }
 
-static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
-{
-    for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
-        if (streamUsage == item) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void AudioServer::SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
     const int32_t &errorCode)
 {
@@ -1600,7 +1601,7 @@ int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
 int32_t AudioServer::CheckMaxRendererInstances()
 {
     int32_t maxRendererInstances = PolicyHandler::GetInstance().GetMaxRendererInstances();
-    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance()->GetMaxRendererStreamCnt() < maxRendererInstances,
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance()->GetCurrentRendererStreamCnt() < maxRendererInstances,
         ERR_EXCEED_MAX_STREAM_CNT,
         "The current number of audio renderer streams is greater than the maximum number of configured instances");
     return SUCCESS;
