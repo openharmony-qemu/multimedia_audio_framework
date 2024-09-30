@@ -107,7 +107,7 @@ public:
         return 0;
     }
 
-    virtual int32_t UpdateSourceType(SourceType souceType)
+    virtual int32_t UpdateSourceType(SourceType sourceType)
     {
         return 0;
     }

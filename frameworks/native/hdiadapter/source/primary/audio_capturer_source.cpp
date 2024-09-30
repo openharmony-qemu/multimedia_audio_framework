@@ -173,7 +173,7 @@ public:
         const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    int32_t UpdateSourceType(SourceType souceType) final;
+    int32_t UpdateSourceType(SourceType sourceType) final;
 
     explicit AudioCapturerSourceInner(const std::string &halName = "primary");
     explicit AudioCapturerSourceInner(CaptureAttr *attr);
