@@ -1181,7 +1181,6 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     if (ret != 0) {
         AUDIO_WARNING_LOG("ProcessVol failed:%{public}d", ret);
     }
-    pa_memblock_release(pchunk->memblock);
 }
 
 static void HandleFading(pa_sink *si, pa_sink_input *sinkIn, pa_mix_info *infoIn)
