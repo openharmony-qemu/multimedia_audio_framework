@@ -489,6 +489,8 @@ public:
 
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
+    void DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc);
+
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
 
     void UpdateA2dpOffloadFlagBySpatialService(
