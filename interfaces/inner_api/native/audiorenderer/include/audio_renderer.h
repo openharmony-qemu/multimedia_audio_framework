@@ -956,8 +956,6 @@ public:
     virtual bool Unmute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const {return false;};
 
 private:
-    static int32_t CreateCheckParam(const AudioRendererOptions &rendererOptions,
-        const AppInfo &appInfo);
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
     static std::mutex createRendererMutex_;
