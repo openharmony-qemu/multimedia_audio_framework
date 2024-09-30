@@ -75,6 +75,11 @@ public:
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
     void UpdateMuteControlSet(uint32_t sessionId, bool muteFlag);
     int32_t UpdateSourceType(SourceType sourceType);
+   void SetIncMaxRendererStreamCnt();
+    int32_t GetMaxRendererStreamCnt();
+    void CleanUpStream(int32_t callingUid);
+    void FillAppUseNumMap(int32_t callingUid);
+    bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t maxStreamCntPerUid);
 
 private:
     AudioService();
@@ -123,6 +128,10 @@ private:
 
     std::mutex mutedSessionsMutex_;
     std::set<uint32_t> mutedSessions_ = {};
+    int32_t maxRendererStreamCnt_ = 0;
+    std::mutex streamLifeCycleMutex_ {};
+    std::map<int32_t, std::int32_t> appUseNumMap;
+    int32_t initValue_ = 1;
 };
 } // namespace AudioStandard
 } // namespace OHOS

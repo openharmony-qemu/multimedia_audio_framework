@@ -919,5 +919,43 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
 
     return audioCapturerSourceInstance->UpdateSourceType(sourceType);
 }
+
+void AudioService::SetIncMaxRendererStreamCnt()
+{
+    maxRendererStreamCnt_++;
+}
+void AudioService::CleanUpStream(int32_t callingUid)
+{
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    maxRendererStreamCnt_--;
+    auto appUseNum = appUseNumMap.find(callingUid);
+    if (appUseNum != appUseNumMap.end()) {
+        appUseNumMap[callingUid] = --appUseNum->second;
+    }
+}
+
+int32_t AudioService::GetMaxRendererStreamCnt()
+{
+    return maxRendererStreamCnt_;
+}
+
+void AudioService::FillAppUseNumMap(int32_t callingUid)
+{
+    auto appUseNum = appUseNumMap.find(callingUid);
+    if (appUseNum != appUseNumMap.end()) {
+        ++appUseNum->second;
+    } else {
+        appUseNumMap.emplace(callingUid, initValue_);
+    }
+}
+
+bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t maxStreamCntPerUid)
+{
+    if (appUseNumMap[callingUid] > maxStreamCntPerUid) {
+        --appUseNumMap[callingUid];
+        return true;
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
