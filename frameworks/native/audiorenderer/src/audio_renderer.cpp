@@ -237,43 +237,6 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return audioRenderer;
 }
 
-int32_t AudioRenderer::CreateCheckParam(const AudioRendererOptions &rendererOptions,
-    const AppInfo &appInfo)
-{
-    int32_t ret = AudioRenderer::CheckMaxRendererInstances();
-    if (ret != SUCCESS) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ret);
-        AUDIO_ERR_LOG("Too many renderer instances");
-        return ERR_INVALID_PARAM;
-    }
-    ContentType contentType = rendererOptions.rendererInfo.contentType;
-    if (contentType < CONTENT_TYPE_UNKNOWN || contentType > CONTENT_TYPE_ULTRASONIC) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
-            ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("Invalid content type");
-        return ERR_INVALID_PARAM;
-    }
-
-    StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
-    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_MAX) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
-            ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("Invalid stream usage");
-        return ERR_INVALID_PARAM;
-    }
-
-    if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
-        if (!PermissionUtil::VerifySelfPermission()) {
-            AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
-                "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
-            AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
-                ERR_PERMISSION_DENIED);
-            return ERR_PERMISSION_DENIED;
-        }
-    }
-    return SUCCESS;
-}
-
 void AudioRenderer::SendRendererCreateError(const StreamUsage &sreamUsage,
     const int32_t &errorCode)
 {
