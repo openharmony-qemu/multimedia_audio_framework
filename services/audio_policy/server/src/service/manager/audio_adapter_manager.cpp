@@ -1232,6 +1232,9 @@ void AudioAdapterManager::ResetRemoteCastDeviceVolume()
         AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
         volumeDataMaintainer_.SaveVolume(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
+        if (streamType != STREAM_RING) {
+            volumeDataMaintainer_.SaveMuteStatus(DEVICE_TYPE_REMOTE_CAST, streamType, false);
+        }
     }
 }
 
