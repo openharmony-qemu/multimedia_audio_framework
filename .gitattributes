@@ -13,3 +13,4 @@
 *.so filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.dll filter=lfs diff=lfs merge=lfs -text
+/.vs/multimedia_audio_framework/v17/ipch/AutoPCH/3abffa31398b1c9d/AUDIO_POLICY_SERVER.ipch filter=lfs diff=lfs merge=lfs -text
