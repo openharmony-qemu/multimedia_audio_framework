@@ -431,6 +431,7 @@ int AudioManagerStub::HandleCreateAudioProcess(MessageParcel &data, MessageParce
     CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
         "CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
     reply.WriteRemoteObject(process);
+    reply.WriteInt32(errorCode);
     return AUDIO_OK;
 }
 
