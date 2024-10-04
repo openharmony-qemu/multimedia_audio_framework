@@ -130,7 +130,6 @@ private:
     int32_t currentRendererStreamCnt_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     std::map<int32_t, std::int32_t> appUseNumMap;
-    int32_t initValue_ = 1;
 };
 } // namespace AudioStandard
 } // namespace OHOS
