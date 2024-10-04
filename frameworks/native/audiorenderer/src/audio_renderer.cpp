@@ -56,16 +56,6 @@ static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamIn
     return params;
 }
 
-static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
-{
-    for (const auto& item : NEED_VERIFY_PERMISSION_STREAMS) {
-        if (streamUsage == item) {
-            return true;
-        }
-    }
-    return false;
-}
-
 std::mutex AudioRenderer::createRendererMutex_;
 
 AudioRenderer::~AudioRenderer() = default;
