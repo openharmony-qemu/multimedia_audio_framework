@@ -920,14 +920,14 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
     return audioCapturerSourceInstance->UpdateSourceType(sourceType);
 }
 
-void AudioService::SetIncMaxRendererStreamCnt()
+void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
 {
     if (audioMode == AUDIO_MODE_PLAYBACK) {
         currentRendererStreamCnt_++;
     }
 }
 
-void AudioService::CleanUpStream(int32_t callingUid)
+void AudioService::CleanUpStream(int32_t callingUid, AudioMode audioMode)
 {
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     currentRendererStreamCnt_--;
