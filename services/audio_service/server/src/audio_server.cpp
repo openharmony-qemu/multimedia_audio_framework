@@ -1623,7 +1623,6 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         return nullptr;
     }
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    AudioService::GetInstance()->FillAppUseNumMap(callingUid);
     if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, maxRendererStreamCntPerUid_)) {
         errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
         return nullptr;
@@ -1641,19 +1640,20 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         GetBundleNameFromUid(resetConfig.appInfo.appUid));
 #endif
 
+    AudioMode audioMode = resetConfig.audioMode;
     if (IsNormalIpcStream(resetConfig) || (isFastControlled_ && IsFastBlocked(resetConfig.appInfo.appUid))) {
         AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);
         CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, nullptr, "GetIpcStream failed.");
-        AudioService::GetInstance()->SetIncMaxRendererStreamCnt();
+        AudioService::GetInstance()->SetIncMaxRendererStreamCnt(audioMode);
         sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
         return remoteObject;
     }
 
     sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(resetConfig);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "GetAudioProcess failed.");
-    AudioService::GetInstance()->SetIncMaxRendererStreamCnt();
+    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(audioMode);
     sptr<IRemoteObject> remoteObject= process->AsObject();
     return remoteObject;
 }
