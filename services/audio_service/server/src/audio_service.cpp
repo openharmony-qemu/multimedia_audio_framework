@@ -922,7 +922,9 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
 
 void AudioService::SetIncMaxRendererStreamCnt()
 {
-    currentRendererStreamCnt_++;
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentRendererStreamCnt_++;
+    }
 }
 
 void AudioService::CleanUpStream(int32_t callingUid)
@@ -930,7 +932,7 @@ void AudioService::CleanUpStream(int32_t callingUid)
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     currentRendererStreamCnt_--;
     auto appUseNum = appUseNumMap.find(callingUid);
-    if (appUseNum != appUseNumMap.end()) {
+    if (appUseNum != appUseNumMap.end() && audioMode == AUDIO_MODE_PLAYBACK) {
         appUseNumMap[callingUid] = --appUseNum->second;
     }
 }
@@ -941,19 +943,16 @@ int32_t AudioService::GetCurrentRendererStreamCnt()
 }
 
 // need call with streamLifeCycleMutex_ lock
-void AudioService::FillAppUseNumMap(int32_t callingUid)
+bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t maxStreamCntPerUid)
 {
     auto appUseNum = appUseNumMap.find(callingUid);
     if (appUseNum != appUseNumMap.end()) {
         ++appUseNum->second;
     } else {
-        appUseNumMap.emplace(callingUid, initValue_);
+        int32_t initValue = 1;
+        appUseNumMap.emplace(callingUid, initValue);
     }
-}
 
-// need call with streamLifeCycleMutex_ lock
-bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t maxStreamCntPerUid)
-{
     if (appUseNumMap[callingUid] > maxStreamCntPerUid) {
         --appUseNumMap[callingUid];
         return true;

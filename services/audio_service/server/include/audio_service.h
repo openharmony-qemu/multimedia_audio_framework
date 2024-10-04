@@ -75,10 +75,9 @@ public:
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
     void UpdateMuteControlSet(uint32_t sessionId, bool muteFlag);
     int32_t UpdateSourceType(SourceType sourceType);
-    void SetIncMaxRendererStreamCnt();
+    void SetIncMaxRendererStreamCnt(AudioMode audioMode);
     int32_t GetCurrentRendererStreamCnt();
-    void CleanUpStream(int32_t callingUid);
-    void FillAppUseNumMap(int32_t callingUid);
+    void CleanUpStream(int32_t callingUid, AudioMode audioMode);
     bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t maxStreamCntPerUid);
 
 private:
