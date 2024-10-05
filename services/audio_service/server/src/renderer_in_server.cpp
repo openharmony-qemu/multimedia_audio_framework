@@ -835,6 +835,7 @@ int32_t RendererInServer::Stop()
 
 int32_t RendererInServer::Release()
 {
+    AudioService::GetInstance()->CleanUpStream(processConfig_.callerUid, processConfig_.audioMode);
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);

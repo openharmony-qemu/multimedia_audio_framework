@@ -287,7 +287,7 @@ public:
      *
      * @return Returns AudioProcess client.
      */
-    virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) = 0;
+    virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) = 0;
 
     /**
      * Use effect manager information to load effect libraries.

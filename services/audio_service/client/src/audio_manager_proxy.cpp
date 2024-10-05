@@ -629,7 +629,7 @@ void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetAudioBalanceValue failed, error: %{public}d", error);
 }
 
-sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConfig &config)
+sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -642,6 +642,7 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, nullptr, "CreateAudioProcess failed, error: %{public}d", error);
     sptr<IRemoteObject> process = reply.ReadRemoteObject();
+    errorCode = reply.ReadInt32();
     return process;
 }
 

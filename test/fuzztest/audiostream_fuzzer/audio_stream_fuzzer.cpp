@@ -90,6 +90,8 @@ public:
 
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
 
+    int32_t GetMaxRendererInstances() override;
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 
@@ -145,6 +147,11 @@ int32_t MockPolicyProvider::OffloadGetRenderPosition(uint32_t &delayValue, uint6
 }
 
 int32_t MockPolicyProvider::GetAndSaveClientType(uint32_t uid, const std::string &bundleName)
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::GetMaxRendererInstances()
 {
     return SUCCESS;
 }
@@ -418,7 +425,8 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
 
     ModifyProcessConfig(config);
 
-    auto remoteObj = GetServerPtr()->CreateAudioProcess(config);
+    int32_t errorCode = 0;
+    auto remoteObj = GetServerPtr()->CreateAudioProcess(config, errorCode);
     if (remoteObj != nullptr) {
         DoStreamFuzzTest(config, rawData, size);
     }

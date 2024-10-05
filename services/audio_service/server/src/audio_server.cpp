@@ -94,6 +94,7 @@ static constexpr int32_t VM_MANAGER_UID = 7700;
 static const int32_t FAST_DUMPINFO_LEN = 2;
 static const int32_t BUNDLENAME_LENGTH_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
+constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 40;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -197,6 +198,16 @@ static const std::map<bool, std::string> RES_MAP_VERSE = {
     {false, "false"},
 };
 
+static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
+{
+    for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
+        if (streamUsage == item) {
+            return true;
+        }
+    }
+    return false;
+}
+
 class CapturerStateOb final : public ICapturerStateCallback {
 public:
     explicit CapturerStateOb(std::function<void(bool, int32_t)> callback) : callback_(callback)
@@ -287,9 +298,15 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
+void AudioServer::InitMaxRendererStreamCntPerUid()
+{
+    maxRendererStreamCntPerUid_ = MAX_RENDERER_STREAM_CNT_PER_UID;
+}
+
 void AudioServer::OnStart()
 {
     AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
+    InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
     bool res = Publish(this);
     if (!res) {
@@ -1538,7 +1555,59 @@ bool AudioServer::IsFastBlocked(int32_t uid)
     return result == "true";
 }
 
-sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
+void AudioServer::SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
+    const int32_t &errorCode)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_STREAM_CREATE_ERROR_STATS,
+        Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
+    bean->Add("IS_PLAYBACK", 1);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+    bean->Add("STREAM_TYPE", sreamUsage);
+    bean->Add("ERROR_CODE", errorCode);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
+{
+    ContentType contentType = config.rendererInfo.contentType;
+    if (contentType < CONTENT_TYPE_UNKNOWN || contentType > CONTENT_TYPE_ULTRASONIC) {
+        SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid content type");
+        return ERR_INVALID_PARAM;
+    }
+
+    StreamUsage streamUsage = config.rendererInfo.streamUsage;
+    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_MAX) {
+        SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid stream usage");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
+        if (!PermissionUtil::VerifySelfPermission()) {
+            SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
+                ERR_PERMISSION_DENIED);
+            AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
+                "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioServer::CheckMaxRendererInstances()
+{
+    int32_t maxRendererInstances = PolicyHandler::GetInstance().GetMaxRendererInstances();
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance()->GetCurrentRendererStreamCnt() < maxRendererInstances,
+        ERR_EXCEED_MAX_STREAM_CNT,
+        "The current number of audio renderer streams is greater than the maximum number of configured instances");
+    return SUCCESS;
+}
+
+sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
 {
     Trace trace("AudioServer::CreateAudioProcess");
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
@@ -1546,7 +1615,19 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    int32_t ret = CheckParam(config);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
+    errorCode = CheckMaxRendererInstances();
+    if (errorCode != SUCCESS) {
+        return nullptr;
+    }
     int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, maxRendererStreamCntPerUid_)) {
+        errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
+        return nullptr;
+    }
+
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA
         && config.rendererInfo.isSatellite) {
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
@@ -1559,17 +1640,20 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         GetBundleNameFromUid(resetConfig.appInfo.appUid));
 #endif
 
+    AudioMode audioMode = resetConfig.audioMode;
     if (IsNormalIpcStream(resetConfig) || (isFastControlled_ && IsFastBlocked(resetConfig.appInfo.appUid))) {
         AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);
         CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, nullptr, "GetIpcStream failed.");
+        AudioService::GetInstance()->SetIncMaxRendererStreamCnt(audioMode);
         sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
         return remoteObject;
     }
 
     sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(resetConfig);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "GetAudioProcess failed.");
+    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(audioMode);
     sptr<IRemoteObject> remoteObject= process->AsObject();
     return remoteObject;
 }

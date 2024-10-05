@@ -919,5 +919,45 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
 
     return audioCapturerSourceInstance->UpdateSourceType(sourceType);
 }
+
+void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
+{
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentRendererStreamCnt_++;
+    }
+}
+
+void AudioService::CleanUpStream(int32_t callingUid, AudioMode audioMode)
+{
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    currentRendererStreamCnt_--;
+    auto appUseNum = appUseNumMap.find(callingUid);
+    if (appUseNum != appUseNumMap.end() && audioMode == AUDIO_MODE_PLAYBACK) {
+        appUseNumMap[callingUid] = --appUseNum->second;
+    }
+}
+
+int32_t AudioService::GetCurrentRendererStreamCnt()
+{
+    return currentRendererStreamCnt_;
+}
+
+// need call with streamLifeCycleMutex_ lock
+bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t maxStreamCntPerUid)
+{
+    auto appUseNum = appUseNumMap.find(callingUid);
+    if (appUseNum != appUseNumMap.end()) {
+        ++appUseNum->second;
+    } else {
+        int32_t initValue = 1;
+        appUseNumMap.emplace(callingUid, initValue);
+    }
+
+    if (appUseNumMap[callingUid] > maxStreamCntPerUid) {
+        --appUseNumMap[callingUid];
+        return true;
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
