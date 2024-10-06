@@ -300,7 +300,10 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 
 void AudioServer::InitMaxRendererStreamCntPerUid()
 {
-    maxRendererStreamCntPerUid_ = MAX_RENDERER_STREAM_CNT_PER_UID;
+    bool result = GetSysPara("const.multimedia.audio.stream_cnt_uid", maxRendererStreamCntPerUid_);
+    if (!result || maxRendererStreamCntPerUid_ <= 0) {
+        maxRendererStreamCntPerUid_ = MAX_RENDERER_STREAM_CNT_PER_UID;
+    }
 }
 
 void AudioServer::OnStart()
@@ -1587,7 +1590,7 @@ int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
     }
 
     if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
-        if (!PermissionUtil::VerifySelfPermission()) {
+        if (!PermissionUtil::VerifySystemPermission()()) {
             SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
                 ERR_PERMISSION_DENIED);
             AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
@@ -1601,9 +1604,16 @@ int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
 int32_t AudioServer::CheckMaxRendererInstances()
 {
     int32_t maxRendererInstances = PolicyHandler::GetInstance().GetMaxRendererInstances();
-    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance()->GetCurrentRendererStreamCnt() < maxRendererInstances,
-        ERR_EXCEED_MAX_STREAM_CNT,
-        "The current number of audio renderer streams is greater than the maximum number of configured instances");
+    if (AudioService::GetInstance()->GetMaxRendererStreamCnt() >= maxRendererInstances) {
+        int32_t mostAppUid = AudioService::GetInstance()->GetCreatedAudioStreamMostUid();
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
+            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+        bean->Add("CLIENT_UID", mostAppUid);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        AUDIO_ERR_LOG("Current audio renderer streams number is greater than the maximum number of configured instances");
+        return ERR_EXCEED_MAX_STREAM_CNT;
+    }
     return SUCCESS;
 }
 
