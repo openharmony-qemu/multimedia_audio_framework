@@ -33,7 +33,6 @@
 #include "audio_affinity_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_converter_parser.h"
-#include "audio_dialog_ability_connection.h"
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
 #include "audio_safe_volume_notification.h"
@@ -6045,25 +6044,6 @@ void AudioPolicyService::CreateCheckMusicActiveThread()
     }
 }
 
-void AudioPolicyService::CreateSafeVolumeDialogThread()
-{
-    std::lock_guard<std::mutex> safeVolumeLock(safeVolumeMutex_);
-    AUDIO_INFO_LOG("enter");
-    if (safeVolumeDialogThrd_ != nullptr && safeVolumeDialogThrd_->joinable()) {
-        AUDIO_INFO_LOG("safeVolumeDialogThread exit begin");
-        safeVolumeDialogThrd_->join();
-        safeVolumeDialogThrd_.reset();
-        safeVolumeDialogThrd_ = nullptr;
-        AUDIO_INFO_LOG("safeVolumeDialogThread exit end");
-    }
-
-    AUDIO_INFO_LOG("create thread begin");
-    safeVolumeDialogThrd_ = std::make_unique<std::thread>([this] { this->ShowDialog(); });
-    pthread_setname_np(safeVolumeDialogThrd_->native_handle(), "OS_AudioSafeDialog");
-    isSafeVolumeDialogShowing_.store(true);
-    AUDIO_INFO_LOG("create thread end");
-}
-
 int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice)
 {
     if (isA2dpDevice) {
@@ -6098,47 +6078,6 @@ int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool i
         return sVolumeLevel;
     }
     return sVolumeLevel;
-}
-
-int32_t AudioPolicyService::ShowDialog()
-{
-    auto abilityMgrClient = AAFwk::AbilityManagerClient::GetInstance();
-    if (abilityMgrClient == nullptr) {
-        isSafeVolumeDialogShowing_.store(false);
-        AUDIO_INFO_LOG("abilityMgrClient malloc failed");
-        return ERROR;
-    }
-    sptr<OHOS::AAFwk::IAbilityConnection> dialogConnectionCallback = new (std::nothrow)AudioDialogAbilityConnection();
-    if (dialogConnectionCallback == nullptr) {
-        isSafeVolumeDialogShowing_.store(false);
-        AUDIO_INFO_LOG("dialogConnectionCallback malloc failed");
-        return ERROR;
-    }
-
-    AAFwk::Want want;
-    std::string bundleName = "com.ohos.sceneboard";
-    std::string abilityName = "com.ohos.sceneboard.systemdialog";
-    want.SetElementName(bundleName, abilityName);
-    ErrCode result = abilityMgrClient->ConnectAbility(want, dialogConnectionCallback,
-        AppExecFwk::Constants::INVALID_USERID);
-    if (result != SUCCESS) {
-        isSafeVolumeDialogShowing_.store(false);
-        AUDIO_INFO_LOG("ConnectAbility failed");
-        return result;
-    }
-
-    AUDIO_INFO_LOG("show safe Volume Dialog");
-    std::unique_lock<std::mutex> lock(dialogMutex_);
-    isSafeVolumeDialogShowing_.store(true);
-    if (!isDialogSelectDestroy_.load()) {
-        auto status = dialogSelectCondition_.wait_for(lock, std::chrono::seconds(WAIT_DIALOG_CLOSE_TIME_S),
-            [this] () { return isDialogSelectDestroy_.load() || !isSafeVolumeDialogShowing_.load(); });
-        if (!status) {
-            AUDIO_ERR_LOG("user cancel or not select.");
-        }
-        isDialogSelectDestroy_.store(false);
-    }
-    return result;
 }
 
 int32_t AudioPolicyService::HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel)
