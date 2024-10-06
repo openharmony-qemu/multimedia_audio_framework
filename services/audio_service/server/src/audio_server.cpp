@@ -1590,7 +1590,7 @@ int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
     }
 
     if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
-        if (!PermissionUtil::VerifySystemPermission()()) {
+        if (!PermissionUtil::VerifySystemPermission()) {
             SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
                 ERR_PERMISSION_DENIED);
             AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
@@ -1604,14 +1604,14 @@ int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
 int32_t AudioServer::CheckMaxRendererInstances()
 {
     int32_t maxRendererInstances = PolicyHandler::GetInstance().GetMaxRendererInstances();
-    if (AudioService::GetInstance()->GetMaxRendererStreamCnt() >= maxRendererInstances) {
+    if (AudioService::GetInstance()->GetCurrentRendererStreamCnt() >= maxRendererInstances) {
         int32_t mostAppUid = AudioService::GetInstance()->GetCreatedAudioStreamMostUid();
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
             Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
         bean->Add("CLIENT_UID", mostAppUid);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-        AUDIO_ERR_LOG("Current audio renderer streams number is greater than the maximum number of configured instances");
+        AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
         return ERR_EXCEED_MAX_STREAM_CNT;
     }
     return SUCCESS;
