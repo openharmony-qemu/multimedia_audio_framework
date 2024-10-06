@@ -145,6 +145,8 @@ static const std::string USER_DEFINED_STRING = "settings.general.user_defined_de
 static const std::string EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
 static const std::string FLAG_MMAP_STRING = "AUDIO_FLAG_MMAP";
 static const std::string USAGE_VOIP_STRING = "AUDIO_USAGE_VOIP";
+static const std::string CONFIG_AUDIO_BALANACE_KEY = "master_balance";
+static const std::string CONFIG_AUDIO_MONO_KEY = "master_mono";
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
@@ -504,7 +506,7 @@ void AudioPolicyService::Deinit(void)
     IOHandles_.clear();
     ioHandleLock.unlock();
 #ifdef ACCESSIBILITY_ENABLE
-    accessibilityConfigListener_->UnsubscribeObserver();
+    UnRegisterAccessibilityMonitorHelper();
 #endif
     deviceStatusListener_->UnRegisterDeviceStatusListener();
     audioPnpServer_.StopPnpServer();
@@ -4674,6 +4676,83 @@ bool AudioPolicyService::IsDataShareReady()
     }
 }
 
+void AudioPolicyService::RegisterAccessibilityMonitorHelper()
+{
+    RegisterAccessiblilityBalance();
+    RegisterAccessiblilityMono();
+}
+
+void AudioPolicyService::RegisterAccessiblilityBalance()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncBalance = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        float balance = 0;
+        int32_t ret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get balance value failed");
+        if (balance < -1.0f || balance > 1.0f) {
+            AUDIO_WARNING_LOG("AccessibilityConfigListener: audioBalance value is out of range [-1.0, 1.0]");
+        } else {
+            OnAudioBalanceChanged(balance);
+        }
+    };
+    sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_BALANACE_KEY, updateFuncBalance);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterAccessiblilityBalance end");
+    }
+}
+
+void AudioPolicyService::RegisterAccessiblilityMono()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int32_t value = 0;
+        ErrCode ret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get mono value failed");
+        OnMonoAudioConfigChanged(value != 0);
+    };
+    sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_MONO_KEY, updateFuncMono);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterAccessiblilityMono failed");
+    }
+}
+
+void AudioPolicyService::UnRegisterAccessibilityMonitorHelper()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncBalance = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        float balance = 0;
+        int32_t ret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get balance value failed");
+        if (balance < -1.0f || balance > 1.0f) {
+            AUDIO_WARNING_LOG("AccessibilityConfigListener: audioBalance value is out of range [-1.0, 1.0]");
+        } else {
+            OnAudioBalanceChanged(balance);
+        }
+    };
+    sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_BALANACE_KEY, updateFuncBalance);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("UnRegisterAccessiblilityBalance end");
+    }
+    AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int32_t value = 0;
+        ErrCode ret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get mono value failed");
+        OnMonoAudioConfigChanged(value != 0);
+    };
+    observer = settingProvider.CreateObserver(CONFIG_AUDIO_MONO_KEY, updateFuncMono);
+    ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("UnRegisterAccessiblilityMono failed");
+    }
+}
+
 void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
@@ -7138,7 +7217,7 @@ void AudioPolicyService::UnregisterBluetoothListener()
 void AudioPolicyService::SubscribeAccessibilityConfigObserver()
 {
 #ifdef ACCESSIBILITY_ENABLE
-    accessibilityConfigListener_->SubscribeObserver();
+    RegisterAccessibilityMonitorHelper();
     AUDIO_INFO_LOG("Subscribe accessibility config observer successfully");
 #endif
 }

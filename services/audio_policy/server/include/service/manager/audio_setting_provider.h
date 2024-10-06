@@ -57,6 +57,7 @@ public:
     ErrCode GetStringValue(const std::string &key, std::string &value, std::string tableType = "");
     ErrCode GetIntValue(const std::string &key, int32_t &value, std::string tableType = "");
     ErrCode GetLongValue(const std::string &key, int64_t &value, std::string tableType = "");
+    ErrCode GetFloatValue(const std::string &key, float &value, std::string tableType = "");
     ErrCode GetBoolValue(const std::string &key, bool &value, std::string tableType = "");
     ErrCode PutStringValue(const std::string &key, const std::string &value,
         std::string tableType = "", bool needNotify = true);
@@ -66,8 +67,8 @@ public:
     bool IsValidKey(const std::string &key);
     sptr<AudioSettingObserver> CreateObserver(const std::string &key, AudioSettingObserver::UpdateFunc &func);
     static void ExecRegisterCb(const sptr<AudioSettingObserver> &observer);
-    ErrCode RegisterObserver(const sptr<AudioSettingObserver> &observer);
-    ErrCode UnregisterObserver(const sptr<AudioSettingObserver> &observer);
+    ErrCode RegisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
+    ErrCode UnregisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
 
 protected:
     ~AudioSettingProvider() override;
