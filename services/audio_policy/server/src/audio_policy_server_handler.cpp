@@ -562,14 +562,15 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
         AudioDeviceUsage usage = it->first.second;
-        eventContextObj->deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
-            DeviceFilterByUsageInner(it->first.second, eventContextObj->deviceChangeAction.deviceDescriptors);
-        if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
+        DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
+        deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
+            DeviceFilterByUsageInner(it->first.second, deviceChangeAction.deviceDescriptors);
+        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().
-                    UpdateDescWhenNoBTPermission(eventContextObj->deviceChangeAction.deviceDescriptors);
+                    UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
             }
-            it->second->OnAvailableDeviceChange(usage, eventContextObj->deviceChangeAction);
+            it->second->OnAvailableDeviceChange(usage, deviceChangeAction);
         }
     }
 }
