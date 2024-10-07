@@ -240,15 +240,6 @@ ohos_shared_library("audio_policy_service") {
     external_deps += [ "config_policy:configpolicy_util" ]
   }
 
-  if (accessibility_enable == true) {
-    sources +=
-        [ "server/src/service/listener/accessibility_config_listener.cpp" ]
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
-
   if (appgallery_part_enable == true) {
     defines += [ "FEATURE_APPGALLERY" ]
   }

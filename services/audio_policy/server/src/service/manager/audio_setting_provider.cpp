@@ -102,6 +102,21 @@ ErrCode AudioSettingProvider::GetLongValue(const std::string &key, int64_t &valu
     return ERR_OK;
 }
 
+ErrCode AudioSettingProvider::GetFloatValue(const std::string &key, float &value,
+    std::string tableType)
+{
+    std::string valueStr;
+    ErrCode ret = GetStringValue(key, valueStr, tableType);
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    AUDIO_DEBUG_LOG("GetFloatValue valueStr=%{public}s", valueStr.c_str());
+    if (valueStr != "") {
+        value = std::stof(valueStr);
+    }
+    return ERR_OK;
+}
+
 ErrCode AudioSettingProvider::GetBoolValue(const std::string &key, bool &value,
     std::string tableType)
 {
@@ -158,11 +173,11 @@ void AudioSettingProvider::ExecRegisterCb(const sptr<AudioSettingObserver> &obse
     observer->OnChange();
 }
 
-ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> &observer)
+ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType)
 {
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
-    auto uri = AssembleUri(observer->GetKey());
-    auto helper = CreateDataShareHelper();
+    auto uri = AssembleUri(observer->GetKey(), tableType);
+    auto helper = CreateDataShareHelper(tableType);
     if (helper == nullptr) {
         IPCSkeleton::SetCallingIdentity(callingIdentity);
         return ERR_NO_INIT;
@@ -178,11 +193,11 @@ ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> 
     return ERR_OK;
 }
 
-ErrCode AudioSettingProvider::UnregisterObserver(const sptr<AudioSettingObserver> &observer)
+ErrCode AudioSettingProvider::UnregisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType)
 {
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
-    auto uri = AssembleUri(observer->GetKey());
-    auto helper = CreateDataShareHelper();
+    auto uri = AssembleUri(observer->GetKey(), tableType);
+    auto helper = CreateDataShareHelper(tableType);
     if (helper == nullptr) {
         IPCSkeleton::SetCallingIdentity(callingIdentity);
         return ERR_NO_INIT;
