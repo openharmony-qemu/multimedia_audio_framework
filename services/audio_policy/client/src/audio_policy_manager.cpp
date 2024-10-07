@@ -169,13 +169,14 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
     {
         std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
         if (audioStreamCBMap_.size() != 0) {
-            for (auto it = audioStreamCBMap_.begin(); it != audioStreamCBMap_.end(); ++it) {
+            for (auto it = audioStreamCBMap_.begin(); it != audioStreamCBMap_.end();) {
                 auto cb = (*it).lock();
                 if (cb == nullptr) {
                     it = audioStreamCBMap_.erase(it);
                     continue;
                 }
                 cb->OnAudioPolicyServiceDied();
+                ++it;
             }
         }
     }
