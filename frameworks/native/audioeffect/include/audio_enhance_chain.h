@@ -89,6 +89,7 @@ public:
     uint32_t GetAlgoBufferSizeMicRef();
     int32_t ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length);
     int32_t SetEnhanceProperty(const std::string &effect, const std::string &property);
+    int32_t SetEnhanceParam(bool mute, uint32_t systemVol);
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
     bool IsDefaultChain();
     int32_t SetInputDevice(const std::string &inputDevice);

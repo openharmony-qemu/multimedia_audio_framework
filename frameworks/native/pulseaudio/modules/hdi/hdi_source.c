@@ -574,6 +574,10 @@ void PaHdiSourceFree(pa_source *s)
 {
     AUTO_CTRACE("PaHdiSourceFree");
     struct Userdata *u = NULL;
+    if (s == NULL) {
+        AUDIO_INFO_LOG("pa_source is null, PaHdiSourceFree done");
+        return;
+    }
     pa_source_assert_ref(s);
     pa_assert_se(u = s->userdata);
     UserdataFree(u);

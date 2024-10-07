@@ -4264,16 +4264,16 @@ static void UserdataFree(struct Userdata *u)
         UnLoadSinkAdapter(u->primary.sinkAdapter);
     }
 
-    if (!FreeBufferAttr(u)) {
-        return;
-    }
-
     if (u->sceneToCountMap) {
         pa_hashmap_free(u->sceneToCountMap);
     }
 
     if (u->streamAvailableMap) {
         pa_hashmap_free(u->streamAvailableMap);
+    }
+
+    if (!FreeBufferAttr(u)) {
+        return;
     }
 
     pa_xfree(u);
