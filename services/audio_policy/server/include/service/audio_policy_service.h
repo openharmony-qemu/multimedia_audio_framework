@@ -815,7 +815,7 @@ private:
 
     void RegisterAccessiblilityMono();
 
-    void UnRegisterAccessibilityMonitorHelper();
+    void UnregisterAccessibilityMonitorHelper();
 
     bool IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc);
 
