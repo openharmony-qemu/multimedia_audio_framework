@@ -928,8 +928,6 @@ private:
 
     void CreateCheckMusicActiveThread();
 
-    void CreateSafeVolumeDialogThread();
-
     void SetDeviceSafeVolumeStatus();
 
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
@@ -941,8 +939,6 @@ private:
     void SetSafeVolumeCallback(AudioStreamType streamType);
 
     int32_t CheckActiveMusicTime();
-
-    int32_t ShowDialog();
 
     int32_t GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
 

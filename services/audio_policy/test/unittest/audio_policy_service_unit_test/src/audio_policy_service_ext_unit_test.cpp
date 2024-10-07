@@ -308,17 +308,6 @@ HWTEST(AudioPolicyServiceExtUnitTest, CreateCheckMusicActiveThread_001, TestSize
 }
 
 /**
- * @tc.name  : Test CreateSafeVolumeDialogThread.
- * @tc.number: CreateSafeVolumeDialogThread_001
- * @tc.desc  : Test CreateSafeVolumeDialogThread interfaces.
- */
-HWTEST(AudioPolicyServiceExtUnitTest, CreateSafeVolumeDialogThread_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    server->audioPolicyService_.CreateSafeVolumeDialogThread();
-}
-
-/**
  * @tc.name  : Test DealWithSafeVolume.
  * @tc.number: DealWithSafeVolume_001
  * @tc.desc  : Test DealWithSafeVolume interfaces.

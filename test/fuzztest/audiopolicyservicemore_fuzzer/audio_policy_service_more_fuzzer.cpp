@@ -317,7 +317,6 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    GetServerPtr()->audioPolicyService_.CreateSafeVolumeDialogThread();
     int32_t volumeLevel = *reinterpret_cast<const int32_t*>(rawData);
     GetServerPtr()->audioPolicyService_.DealWithSafeVolume(volumeLevel, true);
     GetServerPtr()->audioPolicyService_.DealWithSafeVolume(volumeLevel, false);
