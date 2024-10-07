@@ -172,6 +172,7 @@ private:
     DeviceType selectedMediaDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
     DeviceType selectedCallDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
     std::mutex selectDefaultOutputDeviceMutex_;
+    std::mutex currentActiveDevicesMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
