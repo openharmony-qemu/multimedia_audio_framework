@@ -294,7 +294,8 @@ void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel & /* data */, M
 
 void AudioPolicyManagerStub::GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply)
 {
-    AudioStreamType volumeType = GetSystemActiveVolumeType();
+    int32_t clientUid = data.ReadInt32();
+    AudioStreamType volumeType = GetSystemActiveVolumeType(clientUid);
     reply.WriteInt32(volumeType);
 }
 

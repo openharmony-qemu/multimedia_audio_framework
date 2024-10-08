@@ -84,7 +84,7 @@ NapiAudioVolumeGroupManager* NapiAudioVolumeGroupManager::GetParamWithSync(const
 napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_env env, napi_value &constructor)
 {
     napi_property_descriptor audio_svc_group_mngr_properties[] = {
-        DECLARE_NAPI_FUNCTION("getActiveVolumeType", GetActiveVolumeType),
+        DECLARE_NAPI_FUNCTION("getActiveVolumeTypeSync", GetActiveVolumeTypeSync),
         DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
         DECLARE_NAPI_FUNCTION("getVolumeSync", GetVolumeSync),
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
@@ -225,16 +225,27 @@ napi_value NapiAudioVolumeGroupManager::Construct(napi_env env, napi_callback_in
     return jsThis;
 }
 
-napi_value NapiAudioVolumeGroupManager::GetActiveVolumeType(napi_env env, napi_callback_info info)
+napi_value NapiAudioVolumeGroupManager::GetActiveVolumeTypeSync(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
-    size_t argc = PARAM0;
-    auto* napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, nullptr);
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of uid must be number"), "invalid uid");
+
+    int32_t clientUid;
+    NapiParamUtils::GetValueInt32(env, clientUid, args[PARAM0]);
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAduioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
-    AudioStreamType volType = napiAudioVolumeGroupManager->audioGroupMngr_->GetActiveVolumeType();
+    AudioStreamType volType = napiAudioVolumeGroupManager->audioGroupMngr_->GetActiveVolumeType(clientUid);
     NapiParamUtils::SetValueInt32(env, volType, result);
 
     return result;
