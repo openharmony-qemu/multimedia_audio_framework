@@ -18,6 +18,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <shared_mutex>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,6 +64,7 @@ private:
     std::unordered_map<std::string, SystemVolume> systemVolume_ {};
     std::unordered_map<uint32_t, float> historyVolume_ {};
     std::unordered_map<uint32_t, std::pair<float, int32_t>> monitorVolume_ {};
+    std::shared_mutex volumeMutex_ {};
 };
 
 class StreamVolume {
