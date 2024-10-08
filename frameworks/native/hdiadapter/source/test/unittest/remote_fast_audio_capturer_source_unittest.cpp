@@ -256,6 +256,7 @@ HWTEST_F(RemoteFastAudioCapturerSourceUnitTest, remote_fast_audio_capturer_sourc
         new RemoteFastAudioCapturerSourceInner(deviceNetworkId);
     std::atomic<bool>* unittestPtr = new std::atomic<bool>();
     unittestPtr->store(false);
+    EXPECT_NE(rfCapturer, nullptr);
     rfCapturer->capturerInited_ = unittestPtr;
     delete rfCapturer;
 }
@@ -270,6 +271,7 @@ HWTEST_F(RemoteFastAudioCapturerSourceUnitTest, remote_fast_audio_capturer_sourc
     const std::string deviceNetworkId = "device_network_id";
     RemoteFastAudioCapturerSourceInner *rfCapturer =
         new RemoteFastAudioCapturerSourceInner(deviceNetworkId);
+    EXPECT_NE(rfCapturer, nullptr);
     delete rfCapturer;
 }
 

@@ -30,6 +30,7 @@ config("audio_effect_config") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-fno-access-control",
   ]
 
   if (sensor_enable == true) {
