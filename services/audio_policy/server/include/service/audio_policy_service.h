@@ -934,6 +934,8 @@ private:
 
     void CheckWiredActiveMusicTime(int32_t safeVolume);
 
+    bool CheckMixActiveMusicTime(int32_t safeVolume);
+
     void RestoreSafeVolume(AudioStreamType streamType, int32_t safeVolume);
 
     void SetSafeVolumeCallback(AudioStreamType streamType);
