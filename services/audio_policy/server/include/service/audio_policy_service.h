@@ -1172,7 +1172,9 @@ private:
     std::atomic<bool> isOffloadOpened_ = false;
     std::condition_variable offloadCloseCondition_;
 
-    bool ringerModeMute_ = true;
+    std::mutex ringerModeMuteMutex_;
+    std::atomic<bool> ringerModeMute_ = true;
+    std::condition_variable ringerModeMuteCondition_;
 
     std::atomic<bool> isPolicyConfigParsered_ = false;
 };

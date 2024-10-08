@@ -71,6 +71,7 @@ static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
 static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
+static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -1853,7 +1854,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("Start");
 
-    if (audioPolicyServerHandler_ != nullptr && ringerModeMute_) {
+    if (audioPolicyServerHandler_ != nullptr && ringerModeMute_.load()) {
         audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
     }
     spatialDeviceMap_.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
@@ -8277,9 +8278,9 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
         if (ringerMode != RINGER_MODE_NORMAL && IsRingerOrAlarmerDualDevicesRange(outputDevices.front()->getType()) &&
              outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
             audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
-            ringerModeMute_ = false;
+            ringerModeMute_.store(false);
         } else {
-            ringerModeMute_ = true;
+            ringerModeMute_.store(true);
         }
         shouldUpdateDeviceDueToDualTone_ = true;
     } else {
@@ -8287,7 +8288,7 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
             AUDIO_INFO_LOG("disable dual hal tone for not ringer/alarm.");
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
-        ringerModeMute_ = true;
+        ringerModeMute_.store(true);
         UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         shouldUpdateDeviceDueToDualTone_ = false;
     }
@@ -8420,9 +8421,17 @@ void AudioPolicyService::DealAudioSceneOutputDevices(const AudioScene &audioScen
 
 int32_t AudioPolicyService::ResetRingerModeMute()
 {
-    if (!ringerModeMute_) {
-        if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
-            ringerModeMute_ = true;
+    if (!ringerModeMute_.load()) {
+        std::unique_lock<std::mutex> lock(ringerModeMuteMutex_);
+        bool resetWaiting = ringerModeMuteCondition_.wait_for(lock,
+            std::chrono::milliseconds(WAIT_RINGER_MODE_MUTE_RESET_TIME_MS),
+            [this] { return !ringerModeMute_.load(); }
+        );
+        if (!resetWaiting) {
+            AUDIO_INFO_LOG("reset ringer mode mute after time out.");
+            if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
+                ringerModeMute_.store(true);
+            }
         }
     }
     return SUCCESS;
@@ -8430,7 +8439,7 @@ int32_t AudioPolicyService::ResetRingerModeMute()
 
 bool AudioPolicyService::IsRingerModeMute()
 {
-    return ringerModeMute_;
+    return ringerModeMute_.load();
 }
 
 void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
