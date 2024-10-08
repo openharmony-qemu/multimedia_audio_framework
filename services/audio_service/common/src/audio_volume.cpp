@@ -74,6 +74,8 @@ AudioVolume::~AudioVolume()
 
 float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass)
 {
+    Trace trace("AudioVolume::GetVolume sessionId:" + std::to_string(sessionId));
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     float volumeStream = 1.0f;
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
@@ -111,6 +113,8 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
 
 float AudioVolume::GetHistoryVolume(uint32_t sessionId)
 {
+    Trace trace("AudioVolume::GetHistoryVolume sessionId:" + std::to_string(sessionId));
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = historyVolume_.find(sessionId);
     if (it != historyVolume_.end()) {
         return it->second;
@@ -121,6 +125,8 @@ float AudioVolume::GetHistoryVolume(uint32_t sessionId)
 void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
 {
     AUDIO_INFO_LOG("history volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
+    Trace trace("AudioVolume::SetHistoryVolume sessionId:" + std::to_string(sessionId));
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = historyVolume_.find(sessionId);
     if (it != historyVolume_.end()) {
         it->second = volume;
@@ -131,6 +137,7 @@ void AudioVolume::AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_
     int32_t uid, int32_t pid)
 {
     AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", sessionId);
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it == streamVolume_.end()) {
         streamVolume_.insert(std::make_pair(sessionId, StreamVolume(sessionId, streamType, streamUsage, uid, pid)));
@@ -144,6 +151,7 @@ void AudioVolume::AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_
 void AudioVolume::RemoveStreamVolume(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", sessionId);
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         streamVolume_.erase(sessionId);
@@ -162,7 +170,8 @@ void AudioVolume::RemoveStreamVolume(uint32_t sessionId)
 
 void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
 {
-    AUDIO_DEBUG_LOG("stream volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.volume_ = volume;
@@ -173,7 +182,8 @@ void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
 
 void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor)
 {
-    AUDIO_DEBUG_LOG("stream volume, sessionId:%{public}u, duckFactor:%{public}f", sessionId, duckFactor);
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, duckFactor:%{public}f", sessionId, duckFactor);
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.duckFactor_ = duckFactor;
@@ -184,7 +194,8 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
 
 void AudioVolume::SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPowerFactor)
 {
-    AUDIO_DEBUG_LOG("stream volume, sessionId:%{public}u, lowPowerFactor:%{public}f", sessionId, lowPowerFactor);
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, lowPowerFactor:%{public}f", sessionId, lowPowerFactor);
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.lowPowerFactor_ = lowPowerFactor;
@@ -195,7 +206,8 @@ void AudioVolume::SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPow
 
 void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
 {
-    AUDIO_DEBUG_LOG("stream volume, sessionId:%{public}u, isMuted:%{public}d", sessionId, isMuted);
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, isMuted:%{public}d", sessionId, isMuted);
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.isMuted_ = isMuted;
@@ -204,8 +216,9 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
 
 void AudioVolume::SetStreamVolumeFade(uint32_t sessionId, float fadeBegin, float fadeEnd)
 {
-    AUDIO_DEBUG_LOG("stream volume, sessionId:%{public}u, fadeBegin:%{public}f, fadeEnd:%{public}f",
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, fadeBegin:%{public}f, fadeEnd:%{public}f",
         sessionId, fadeBegin, fadeEnd);
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.fadeBegin_ = fadeBegin;
@@ -217,6 +230,7 @@ void AudioVolume::SetStreamVolumeFade(uint32_t sessionId, float fadeBegin, float
 
 std::pair<float, float> AudioVolume::GetStreamVolumeFade(uint32_t sessionId)
 {
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         return {it->second.fadeBegin_, it->second.fadeEnd_};
@@ -297,6 +311,7 @@ bool AudioVolume::IsSameVolume(float x, float y)
 void AudioVolume::Dump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("AudioVolume dump begin");
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     // dump system volume
     std::vector<SystemVolume> systemVolumeList;
     for (auto &systemVolume : systemVolume_) {
@@ -343,6 +358,7 @@ void AudioVolume::Dump(std::string &dumpString)
 
 void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
 {
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto streamVolume = streamVolume_.find(sessionId);
     if (streamVolume != streamVolume_.end()) {
         auto monVol = monitorVolume_.find(sessionId);
