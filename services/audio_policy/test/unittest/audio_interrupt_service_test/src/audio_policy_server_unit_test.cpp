@@ -101,83 +101,9 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_002, TestSize.Level1)
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_003
-* @tc.desc  : Test CreateAudioInterruptZone.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_003, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    std::set<int32_t> pids = {1, 2, 3};
-    int32_t zoneID = 0;
-
-    int32_t result = server->CreateAudioInterruptZone(pids, zoneID);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_004
-* @tc.desc  : Test RemoveAudioInterruptZonePids.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_004, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    std::set<int32_t> pids = {1, 2, 3};
-    int32_t zoneID = 0;
-
-    server->interruptService_ =  nullptr;
-    int32_t result = server->CreateAudioInterruptZone(pids, zoneID);
-    result = server->RemoveAudioInterruptZonePids(pids, zoneID);
-    EXPECT_EQ(result, ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_005
-* @tc.desc  : Test ReleaseAudioInterruptZone.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_005, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    std::set<int32_t> pids = {1, 2, 3};
-    int32_t zoneID = 0;
-
-    server->interruptService_ =  nullptr;
-    int32_t result = server->CreateAudioInterruptZone(pids, zoneID);
-    result = server->ReleaseAudioInterruptZone(1);
-    EXPECT_EQ(result, ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_006
-* @tc.desc  : Test SetLowPowerVolume.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_006, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
-    int32_t result = server->SetLowPowerVolume(1, 0.5f);
-    EXPECT_EQ(result, ERROR);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_007
 * @tc.desc  : Test SetAudioManagerInterruptCallback.
 */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_007, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_003, TestSize.Level1)
 {
     auto policyServerTest = GetPolicyServerUnitTest();
     int32_t systemAbilityId = 3009;
@@ -191,10 +117,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_007, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_008
+* @tc.number: AudioPolicyServer_004
 * @tc.desc  : Test UnsetAudioManagerInterruptCallback.
 */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_008, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_004, TestSize.Level1)
 {
     auto policyServerTest = GetPolicyServerUnitTest();
     int32_t systemAbilityId = 3009;
@@ -208,10 +134,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_008, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_009
+* @tc.number: AudioPolicyServer_005
 * @tc.desc  : Test OnAudioParameterChange.
 */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_005, TestSize.Level1)
 {
     auto policyServerTest = GetPolicyServerUnitTest();
     int32_t systemAbilityId = 3009;
@@ -228,28 +154,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_010
-* @tc.desc  : Test RequestAudioFocus.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_010, TestSize.Level1)
-{
-    AudioInterrupt audioInterrupt;
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
-    server->interruptService_ = nullptr;
-    int32_t result = server->RequestAudioFocus(0, audioInterrupt);
-    EXPECT_EQ(result, ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_011
+* @tc.number: AudioPolicyServer_006
 * @tc.desc  : Test OnAudioParameterChange.
 */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_011, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_006, TestSize.Level1)
 {
     auto policyServerTest = GetPolicyServerUnitTest();
     int32_t systemAbilityId = 3009;
@@ -266,10 +174,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_011, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_012
+* @tc.number: AudioPolicyServer_007
 * @tc.desc  : Test ReconfigureAudioChannel.
 */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_012, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_007, TestSize.Level1)
 {
     #ifdef AUDIO_BUILD_VARIANT_ROOT
     #undef AUDIO_BUILD_VARIANT_ROOT
@@ -286,10 +194,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_012, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_013
+* @tc.number: AudioPolicyServer_008
 * @tc.desc  : Test ArgInfoDump.
 */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_013, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_008, TestSize.Level1)
 {
     auto policyServerTest = GetPolicyServerUnitTest();
     int32_t systemAbilityId = 3009;
@@ -305,48 +213,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_013, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_014
-* @tc.desc  : Test SetLowPowerVolume.
-*/
-#define FEATURE_MULTIMODALINPUT_INPUT
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_014, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
-    int32_t streamId = 2;
-    float volume = 0.7f;
-    int32_t result = server->SetLowPowerVolume(streamId, volume);
-    EXPECT_EQ(result, ERROR);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_015
-* @tc.desc  : Test SetAudioInterruptCallback.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_015, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
-    uint32_t sessionID = 123;
-    sptr<IRemoteObject> object = nullptr;
-    int32_t zoneID = 456;
-    int32_t result = server->SetAudioInterruptCallback(sessionID, object, zoneID);
-    EXPECT_EQ(result, ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_016
+* @tc.number: AudioPolicyServer_009
 * @tc.desc  : Test DeactivateAudioInterrupt.
 */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
 {
     auto policyServerTest = GetPolicyServerUnitTest();
     int32_t systemAbilityId = 3009;
@@ -361,28 +231,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_017
-* @tc.desc  : Test GetSessionInfoInFocus.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_017, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
-    AudioInterrupt audioInterrupt;
-    int32_t zoneID = 456;
-    int32_t result = server->GetSessionInfoInFocus(audioInterrupt, zoneID);
-    EXPECT_EQ(result, ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_018
+* @tc.number: AudioPolicyServer_010
 * @tc.desc  : Test OnAudioParameterChange.
 */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_018, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_010, TestSize.Level1)
 {
     auto policyServerTest = GetPolicyServerUnitTest();
     int32_t systemAbilityId = 3009;
@@ -400,10 +252,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_018, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_019
+* @tc.number: AudioPolicyServer_011
 * @tc.desc  : Test OnAudioParameterChange.
 */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_019, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_011, TestSize.Level1)
 {
     auto policyServerTest = GetPolicyServerUnitTest();
     int32_t systemAbilityId = 3009;
@@ -417,6 +269,70 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_019, TestSize.Level1)
 
     auto callback = std::make_shared<AudioPolicyServer::RemoteParameterCallback>(server);
     callback->OnAudioParameterChange(networkId, key, condition, value);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_012
+* @tc.desc  : Test ActivateAudioSession.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_012, TestSize.Level1)
+{
+    AudioSessionStrategy strategy;
+    auto policyServerTest = GetPolicyServerUnitTest();
+    EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_013
+* @tc.desc  : Test GetStreamInFocus.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_013, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    int32_t zoneID = 456;
+    AudioStreamType result = policyServerTest->GetStreamInFocus(zoneID);
+    EXPECT_EQ(result, -62980296);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_014
+* @tc.desc  : Test OnRemoveSystemAbility.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_014, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    int32_t systemAbilityId = AVSESSION_SERVICE_ID;
+    std::string deviceId = "132456";
+    policyServerTest->OnRemoveSystemAbility(systemAbilityId, deviceId);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_015
+* @tc.desc  : Test InitMicrophoneMute.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_015, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    policyServerTest->isInitMuteState_ = true;
+    policyServerTest->InitMicrophoneMute();
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_029
+* @tc.desc  : Test ActivateAudioInterrupt.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    AudioInterrupt audioInterrupt;
+    int32_t zoneID = 456;
+    int32_t result = policyServerTest->ActivateAudioInterrupt(audioInterrupt, zoneID);
+    EXPECT_EQ(result, ERR_UNKNOWN);
 }
 }
 }

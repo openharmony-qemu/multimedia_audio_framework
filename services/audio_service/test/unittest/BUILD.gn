@@ -29,9 +29,68 @@ config("module_private_config") {
   ]
 }
 
+ohos_unittest("audio_endpoint_separate_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  sources = [ "audio_endpoint_separate_unit_test.cpp" ]
+
+  cflags = [ "-fno-access-control" ]
+
+  include_dirs = [
+    "../../server/include",
+    "../../../../frameworks/native/hdiadapter/sink/common",
+    "../../../../frameworks/native/hdiadapter/sink/fast",
+    "../../../../frameworks/native/hdiadapter/common/include",
+    "../../../../frameworks/native/hdiadapter/sink/remote_fast",
+    "../../../../services/audio_service/server/include",
+    "../../../../services/audio_service/server/src",
+    "../../../../frameworks/native/audioschedule/include",
+    "../../../../frameworks/native/hdiadapter/source/fast",
+    "../../../../frameworks/native/hdiadapter/source/common",
+  ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "../../../audio_service:audio_client",
+    "../../../audio_service:audio_common",
+    "../../../audio_service:audio_process_service",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
 ohos_unittest("audio_balance_unit_test") {
   testonly = true
   module_out_path = module_output_path
+  cflags = [ "-fno-access-control" ]
+
+  include_dirs = [
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/server/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../frameworks/native/audioinnercall/include",
+    "../../../../frameworks/native/audiopolicy/include",
+    "../../../../frameworks/native/hdiadapter/sink/common",
+    "../../../../frameworks/native/hdiadapter/sink/primary",
+    "../../../../frameworks/native/hdiadapter/sink/fast",
+    "../../../../frameworks/native/hdiadapter/common/include",
+    "../../../../frameworks/native/hdiadapter/source/common",
+    "../../../../services/audio_service/client/src",
+    "../../../../services/audio_service/server/include",
+    "../../../../frameworks/native/playbackcapturer/include",
+  ]
   sources = [
     "audio_balance_unit_test.cpp",
     "audio_service_common_unit_test.cpp",
@@ -41,7 +100,11 @@ ohos_unittest("audio_balance_unit_test") {
   configs = [ ":module_private_config" ]
 
   deps = [
+    "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_service:audio_process_service",
+    "../../../../services/audio_service:audio_service",
     "../../../audio_service:audio_client",
     "../../../audio_service:audio_common",
   ]
@@ -241,5 +304,35 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
     "googletest:gmock",
     "hilog:libhilog",
     "pulseaudio:pulse",
+  ]
+}
+
+ohos_unittest("volume_tools_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "../../../../frameworks/native/audiocapturer/include",
+    "../../interfaces/inner_api/native/audiocommon/include",
+  ]
+  sources = [ "volume_tools_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../frameworks/native/audiocapturer:audio_capturer",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_client",
+    "../../../audio_service:audio_common",
+    "../../../audio_service:audio_process_service",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 }
