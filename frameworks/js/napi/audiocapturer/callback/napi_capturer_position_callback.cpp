@@ -79,9 +79,6 @@ void NapiCapturerPositionCallback::OnJsCapturerPositionCallback(std::unique_ptr<
                 delete ptr;
         });
         CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        if (event->callback->jsTid_ != pthread_self()) {
-            AUDIO_WARNING_LOG("napi callback not in js thread");
-        }
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
