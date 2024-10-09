@@ -121,6 +121,5 @@ void pa__done(pa_module *m)
 
     if ((source = m->userdata)) {
         PaHdiSourceFree(source);
-        m->userdata = NULL;
     }
 }
