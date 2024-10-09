@@ -498,6 +498,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);
 #ifdef DEVICE_FLAG
     if (it == sceneTypeToEffectChainMap_.end() || it->second == nullptr) {
@@ -513,7 +514,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
         return SUCCESS;
     }
 #endif
-    auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    auto audioEffectChain = it->second;
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
     return SUCCESS;
