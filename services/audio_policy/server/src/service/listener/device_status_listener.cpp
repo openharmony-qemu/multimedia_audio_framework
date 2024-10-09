@@ -263,7 +263,7 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
 
 int32_t DeviceStatusListener::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
 {
-    sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
+    sptr<IStandardAudioAnahsManagerListener> listener = iface_cast<IStandardAudioAnahsManagerListener>(object);
     if (listener != nullptr) {
         audioDeviceAnahsCb_ = listener;
         return SUCCESS;

@@ -123,25 +123,5 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
     }
     return SUCCESS;
 }
-
-int32_t AudioRoutingManagerListenerProxy::OnExtPnpDeviceStatusChanged(std::string anahsStatus)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
-        "OnAudioOutputDeviceRefined: WriteInterfaceToken failed");
-    data.WriteString(anahsStatus);
-
-    int error = Remote()->SendRequest(ON_AUDIO_ANAHS_DEVICE_CHANGE, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "OnExtPnpDeviceStatusChanged, error: %{public}d", error);
-
-    int32_t result = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
-        "OnExtPnpDeviceStatusChanged callback failed, error %{public}d", result);
-
-    return SUCCESS;
-}
 } // namespace AudioStandard
 } // namespace OHOS

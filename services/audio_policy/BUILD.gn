@@ -99,6 +99,7 @@ ohos_shared_library("audio_policy_service") {
   sources = [
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
+    "server/src/audio_anahs_manager_listener_proxy.cpp",
     "server/src/audio_client_tracker_callback_proxy.cpp",
     "server/src/audio_concurrency_state_listener_proxy.cpp",
     "server/src/audio_group_handle.cpp",
@@ -377,6 +378,7 @@ ohos_shared_library("audio_policy_client") {
   sources = [
     "../audio_service/client/src/audio_device_descriptor.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
+    "client/src/audio_anahs_manager_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
     "client/src/audio_concurrency_state_listener_stub.cpp",
     "client/src/audio_policy_client_stub.cpp",
