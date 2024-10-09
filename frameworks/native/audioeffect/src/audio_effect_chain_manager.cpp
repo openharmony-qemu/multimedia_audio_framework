@@ -506,24 +506,25 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);
 #ifdef DEVICE_FLAG
-    if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+    if (it == sceneTypeToEffectChainMap_.end() || it->second == nullptr) {
         CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
             "memcpy error when no effect applied");
         return ERROR;
     }
 #else
-    if (deviceType_ != DEVICE_TYPE_SPEAKER || !SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+    if (deviceType_ != DEVICE_TYPE_SPEAKER || it == sceneTypeToEffectChainMap_.end()
+        || it->second == nullptr) {
         CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
             "memcpy error when no effect applied");
         return SUCCESS;
     }
 #endif
-    auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    if (audioEffectChain != nullptr) {
-        AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
-        audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
-    }
+    auto audioEffectChain = it->second;
+    AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
+    audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
     return SUCCESS;
 }
 
