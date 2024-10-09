@@ -39,6 +39,9 @@ const uint32_t COMMON_SIZE = 2;
 const int32_t COMMON_INT = 2;
 const std::u16string COMMONU16STRTEST = u"Test";
 const uint32_t IOPERTAION_LENGTH = 13;
+const uint32_t ENUM_LENGTH = 15;
+const uint32_t ENUM_LENGTH_1 = 6;
+const uint32_t ENUM_LENGTH_2 = 1;
 const uint32_t APPID_LENGTH = 10;
 const uint64_t COMMON_UINT64_NUM = 2;
 
@@ -496,7 +499,11 @@ void AudioRendererInServerTestSecond(const uint8_t* rawData, size_t size, std::s
     IOperation operation = static_cast<IOperation>(operation_int);
     renderer->OnDataLinkConnectionUpdate(operation);
     std::string dumpString = "";
+    renderer->managerType_ = DIRECT_PLAYBACK;
     renderer->Dump(dumpString);
+    bool muteFlag = false;
+    renderer->SetNonInterruptMute(muteFlag);
+    renderer->RestoreSession();
     renderer->Pause();
     renderer->Flush();
     renderer->Drain(headTrackingEnabled);
@@ -530,10 +537,37 @@ void AudioRendererInServerTest(const uint8_t* rawData, size_t size)
     renderer->ConfigServerBuffer();
     renderer->InitBufferStatus();
     renderer->UpdateWriteIndex();
-    
+    uint32_t statusInt = *reinterpret_cast<const uint32_t*>(rawData);
+    statusInt = (statusInt % ENUM_LENGTH) -ENUM_LENGTH_2;
+    IStatus status = static_cast<IStatus>(statusInt);
+    uint32_t typeInt = *reinterpret_cast<const uint32_t*>(rawData);
+    typeInt = typeInt % ENUM_LENGTH_1;
+    ManagerType type = static_cast<ManagerType>(typeInt);
+    renderer->managerType_ = type;
+    renderer->status_ = status;
+    std::string dumpString = "";
+    renderer->Dump(dumpString);
+    renderer->SetStreamVolumeInfoForEnhanceChain();
+    renderer->ReportDataToResSched(true);
     AudioRendererInServerTestFirst(rawData, size, renderer);
     AudioRendererInServerTestSecond(rawData, size, renderer);
 }
+
+void AudioMicroPhoneFuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    sptr<MicrophoneDescriptor> micDesc = new (std::nothrow) MicrophoneDescriptor();
+    MicrophoneDescriptor micDescs;
+    Vector3D vector3d;
+    vector3d.x = 0.0f;
+    vector3d.y = 0.0f;
+    vector3d.z = 0.0f;
+    micDesc->SetMicPositionInfo(vector3d);
+    micDesc->SetMicOrientationInfo(vector3d);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -557,5 +591,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioLoadAudioEffectLibrariesTest(data, size);
     OHOS::AudioStandard::AudioCapturerInServerFuzzTest(data, size);
     OHOS::AudioStandard::AudioRendererInServerTest(data, size);
+    OHOS::AudioStandard::AudioMicroPhoneFuzzTest(data, size);
     return 0;
 }

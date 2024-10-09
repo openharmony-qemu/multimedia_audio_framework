@@ -473,11 +473,11 @@ void AudioPolicyManagerFuzzTest(const uint8_t *rawData, size_t size)
     AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
     AudioSocketThread::AudioPnpUeventParse(msg, strLength);
     AudioInputThread::AudioPnpInputOpen();
-    AudioInputThread::AudioPnpInputPollAndRead();
 
     GetPnpServerPtr()->GetAudioPnpServer();
     GetPnpServerPtr()->UnRegisterPnpStatusListener();
     GetPnpServerPtr()->OnPnpDeviceStatusChanged(DEFAULTINFO);
+    AudioInputThread::AudioPnpInputPollAndRead();
 }
 } // namespace AudioStandard
 } // namesapce OHOS

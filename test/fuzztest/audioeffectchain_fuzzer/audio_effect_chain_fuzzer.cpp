@@ -231,21 +231,7 @@ void AudioEffectChainManagerFirst(const uint8_t* rawData, size_t size,
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    audioEffectChain->SetEffectMode("EFFECT_DEFAULT");
-    audioEffectChain->SetExtraSceneType(EXTRASCENETYPE);
-    uint32_t currSceneType_int = *reinterpret_cast<const uint32_t*>(rawData);
-    currSceneType_int = (currSceneType_int%AUDIOEFFECTSCENE_LENGTH);
-    AudioEffectScene currSceneType = static_cast<AudioEffectScene>(currSceneType_int);
-    audioEffectChain->SetEffectCurrSceneType(currSceneType);
-    float* bufIn = const_cast<float *>(reinterpret_cast<const float*>(rawData));
-    float* bufOut = const_cast<float *>(reinterpret_cast<const float*>(rawData));
-    uint32_t frameLen = *reinterpret_cast<const uint32_t*>(rawData);
-    AudioEffectProcInfo procInfo;
-    bool headTrackingEnabled = *reinterpret_cast<const bool*>(rawData);
-    bool btOffloadEnabled = *reinterpret_cast<const bool*>(rawData);
-    procInfo.btOffloadEnabled = btOffloadEnabled;
-    procInfo.headTrackingEnabled = headTrackingEnabled;
-    audioEffectChain->ApplyEffectChain(bufIn, bufOut, frameLen, procInfo);
+
     audioEffectChain->IsEmptyEffectHandles();
     audioEffectChain->Dump();
     const uint32_t channels = *reinterpret_cast<const uint32_t*>(rawData);
@@ -285,7 +271,12 @@ void AudioEffectChainFuzzTest(const uint8_t* rawData, size_t size)
 #else
     audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
 #endif
-
+    audioEffectChain->SetEffectMode("EFFECT_DEFAULT");
+    audioEffectChain->SetExtraSceneType(EXTRASCENETYPE);
+    uint32_t currSceneType_int = *reinterpret_cast<const uint32_t*>(rawData);
+    currSceneType_int = (currSceneType_int%AUDIOEFFECTSCENE_LENGTH);
+    AudioEffectScene currSceneType = static_cast<AudioEffectScene>(currSceneType_int);
+    audioEffectChain->SetEffectCurrSceneType(currSceneType);
     AudioEffectChainManagerFirst(rawData, size, audioEffectChain);
 }
 
@@ -308,6 +299,7 @@ void AudioEnhanceChainManagerFuzzTest(const uint8_t* rawData, size_t size,
     audioEnhanceChainMananger->SetOutputDevice(renderId, newDeviceType);
     audioEnhanceChainMananger->GetAudioEnhanceProperty(propertyArray);
     audioEnhanceChainMananger->ResetInfo();
+    audioEnhanceChainMananger->SetInputDevice(DEFAULT_CHANNEL, newDeviceType);
 }
 
 void AudioEnhanceChainFuzzTest(const uint8_t* rawData, size_t size)
