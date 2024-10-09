@@ -21,8 +21,8 @@ import("../../window_manager.gni")
 group("audio_service_packages") {
   deps = [
     ":audio_common",
-    ":audio_service",
     ":audio_server_init",
+    ":audio_service",
     ":audio_service_init",
   ]
 }
@@ -138,9 +138,7 @@ config("audio_client_public_config") {
 }
 
 config("audio_sasdk_public_config") {
-  include_dirs = [
-    "../../interfaces/inner_api/native/audiosasdk/include",
-  ]
+  include_dirs = [ "../../interfaces/inner_api/native/audiosasdk/include" ]
 
   cflags = [
     "-Wall",
