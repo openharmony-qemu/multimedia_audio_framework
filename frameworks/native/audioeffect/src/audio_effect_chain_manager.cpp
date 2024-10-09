@@ -514,6 +514,11 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     }
 #endif
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    if (audioEffectChain == nullptr) {
+        CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
+            "memcpy error when no effect applied");
+        return ERROR;
+    }
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
     return SUCCESS;
