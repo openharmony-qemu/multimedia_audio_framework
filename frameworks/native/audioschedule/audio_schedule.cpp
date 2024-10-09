@@ -28,7 +28,7 @@
 #endif
 
 #include "audio_utils.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 
 #ifdef __cplusplus
 extern "C" {

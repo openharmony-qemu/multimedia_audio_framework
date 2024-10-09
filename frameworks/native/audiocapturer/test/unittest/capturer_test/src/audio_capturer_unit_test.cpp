@@ -35,7 +35,6 @@ namespace {
     const int32_t READ_BUFFERS_COUNT = 128;
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_HUNDRED = 100;
-    const int32_t STRESS_TEST_COUNTS = 200;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
 } // namespace
@@ -670,25 +669,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_025, TestSize.Level0)
         ASSERT_NE(nullptr, audioCapturer);
         audioCapturer->Release();
     }
-}
-
-/**
- * @tc.name  : Test Create API via legal input.
- * @tc.number: Audio_Capturer_Create_026
- * @tc.desc  : Test Create capture with invalid sourceType
- */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_026, TestSize.Level0)
-{
-    AudioCapturerOptions capturerOptions;
-    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
-    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    capturerOptions.streamInfo.channels = AudioChannel::MONO;
-    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
-    capturerOptions.capturerInfo.sourceType = SOURCE_TYPE_INVALID;
-
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_EQ(nullptr, audioCapturer);
 }
 
 /**
@@ -1893,86 +1873,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_Stability_001, TestSiz
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
-
-    bool isReleased = audioCapturer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
-* @tc.name  : Test IsDeviceChanged API via different device type.
-* @tc.number: Audio_Capturer_IsDeviceChanged_001
-* @tc.desc  : Test IsDeviceChanged API via device type DEVICE_TYPE_INVALID, return true because different device types.
-*/
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioCapturer);
-
-    AudioPlaybackCaptureConfig playbackCaptureConfig;
-    audioCapturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
-    audioCapturer->capturerInfo_.capturerFlags = 0;
-    audioCapturer->capturerInfo_.originalFlag = 0;
-    audioCapturer->filterConfig_ = playbackCaptureConfig;
-    AudioCapturerParams capturerParams;
-    capturerParams.audioSampleFormat = SAMPLE_S16LE;
-    capturerParams.samplingRate = SAMPLE_RATE_44100;
-    capturerParams.audioChannel = STEREO;
-    capturerParams.audioEncoding = ENCODING_PCM;
-
-    audioCapturer->SetParams(capturerParams);
-
-    bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(true, isStarted);
-
-    audioCapturer->currentDeviceInfo_.deviceType = DEVICE_TYPE_INVALID;
-
-    DeviceInfo newDeviceInfo = {};
-    bool isChanged = audioCapturer->IsDeviceChanged(newDeviceInfo);
-    EXPECT_EQ(isChanged, true);
-
-    bool isReleased = audioCapturer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
-* @tc.name  : Test IsDeviceChanged API via same device type.
-* @tc.number: Audio_Capturer_IsDeviceChanged_002
-* @tc.desc  : Test IsDeviceChanged API via same device, return false.
-*/
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioCapturer);
-
-    DeviceInfo newDeviceInfo = {};
-    bool isChanged = audioCapturer->IsDeviceChanged(newDeviceInfo);
-    EXPECT_EQ(isChanged, false);
-
-    bool isReleased = audioCapturer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
-* @tc.name  : Test IsDeviceChanged API via lots of calls.
-* @tc.number: Audio_Capturer_IsDeviceChanged_003
-* @tc.desc  : Test IsDeviceChanged API 200 times.
-*/
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_003, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioCapturer);
-
-    DeviceInfo newDeviceInfo = {};
-    for (int32_t i = 0; i < STRESS_TEST_COUNTS; i++) {
-        bool isChanged = audioCapturer->IsDeviceChanged(newDeviceInfo);
-        EXPECT_EQ(isChanged, false);
-    }
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);

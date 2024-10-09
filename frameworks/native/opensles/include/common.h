@@ -24,7 +24,7 @@
 #include <cstdlib>
 #include <stddef.h>
 
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audioplayer_adapter.h"
 #include "audiocapturer_adapter.h"
 

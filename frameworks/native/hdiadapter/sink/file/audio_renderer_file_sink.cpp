@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 
 using namespace std;
 

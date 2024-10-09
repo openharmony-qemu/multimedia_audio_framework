@@ -114,6 +114,7 @@ public:
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
+    std::shared_ptr<CapturerInServer> GetCapturer();
 
 private:
     int32_t ConfigRenderer();

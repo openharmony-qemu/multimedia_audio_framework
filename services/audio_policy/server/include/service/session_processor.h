@@ -76,7 +76,7 @@ public:
         }
         exitLoop_ = false;
         started_ = true;
-        loopThread_ = std::thread{&SessionProcessor::Loop, this};
+        loopThread_ = std::thread{[this] { this->Loop(); }};
         AUDIO_INFO_LOG("Start end");
     }
 

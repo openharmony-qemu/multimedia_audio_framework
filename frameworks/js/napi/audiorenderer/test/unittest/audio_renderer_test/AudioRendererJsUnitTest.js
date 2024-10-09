@@ -448,6 +448,6 @@ describe("AudioRendererJsUnitTest", function() {
         } catch (err) {
             console.error(`${TAG}: SUB_AUDIO_RENDERER_GET_SILENT_MODE_AND_MIX_WITH_OTHERS_TEST_001 ERROR: ${err}`);
             done();
-	}
+        }
     })
 })

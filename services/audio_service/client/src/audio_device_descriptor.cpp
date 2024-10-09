@@ -139,7 +139,7 @@ DeviceRole AudioDeviceDescriptor::getRole() const
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
-    parcel.WriteInt32(deviceType_);
+    parcel.WriteInt32(deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET ? DEVICE_TYPE_USB_HEADSET : deviceType_);
     parcel.WriteInt32(deviceRole_);
     parcel.WriteInt32(deviceId_);
 
@@ -211,6 +211,14 @@ bool AudioDeviceDescriptor::isSameDevice(const DeviceInfo &deviceInfo)
     return deviceInfo.deviceType == deviceType_ &&
         deviceInfo.macAddress == macAddress_ &&
         deviceInfo.networkId == networkId_;
+}
+
+bool AudioDeviceDescriptor::isSameDeviceDesc(const std::unique_ptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "Invalid device descriptor");
+    return deviceDescriptor->deviceType_ == deviceType_ &&
+        deviceDescriptor->macAddress_ == macAddress_ &&
+        deviceDescriptor->networkId_ == networkId_;
 }
 
 AudioRendererFilter::AudioRendererFilter()

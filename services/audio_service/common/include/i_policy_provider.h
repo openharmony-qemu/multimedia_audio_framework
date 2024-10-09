@@ -75,6 +75,10 @@ public:
 
     virtual bool IsAbsVolumeSupported() = 0;
 
+    virtual int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) = 0;
+
+    virtual int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) = 0;
+
     virtual ~IPolicyProvider() = default;
 
     static bool GetVolumeIndex(AudioVolumeType streamType, DeviceGroup deviceGroup, size_t &index)

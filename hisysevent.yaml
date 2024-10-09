@@ -47,6 +47,11 @@ STREAM_CHANGE:
   DEVICETYPE: {type: INT32, desc: device type}
   NETWORKID: {type: STRING, desc: network id}
 
+STREAM_STANDBY:
+  __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: render stream standby state change}
+  STREAMID: {type: INT32, desc: stream id}
+  STANDBY: {type: INT32, desc: standby state}
+
 HEADSET_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: headset connection state}
   ISCONNECT: {type: INT32, desc: is plugged in}

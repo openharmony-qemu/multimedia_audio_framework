@@ -25,7 +25,7 @@
 #include "securec.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "audio_info.h"
 #include <v1_0/iaudio_manager.h>
@@ -324,7 +324,7 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
 
     int32_t totalBufferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
-    int32_t reqBufferFrameSize = totalBufferInMs * (static_cast<int32_t>(attr_.sampleRate) / 1000);
+    int32_t reqBufferFrameSize = totalBufferInMs * static_cast<int32_t>(attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc;
     int32_t ret = audioRender_->ReqMmapBuffer(reqBufferFrameSize, desc);

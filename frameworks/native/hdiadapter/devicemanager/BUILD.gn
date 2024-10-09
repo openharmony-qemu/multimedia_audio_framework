@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 import("../../../../config.gni")
 
 ohos_shared_library("audio_device_manager") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -45,7 +46,6 @@ ohos_shared_library("audio_device_manager") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
   ]
 

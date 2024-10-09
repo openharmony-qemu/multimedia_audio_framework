@@ -41,7 +41,6 @@ typedef struct SessionInfoPack {
     const char *channelLayout;
     const char *sceneMode;
     const char *spatializationEnabled;
-    uint32_t volume;
 } SessionInfoPack;
 
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
@@ -57,7 +56,7 @@ bool EffectChainManagerCheckEffectOffload();
 int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *sessionID);
 int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_t *channels, uint64_t *channelLayout);
 int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
-int32_t EffectChainManagerVolumeUpdate(const char *sessionID, const uint32_t volume);
+int32_t EffectChainManagerVolumeUpdate(const char *sessionID);
 bool EffectChainManagerGetSpatializationEnabled();
 void EffectChainManagerFlush(void);
 void EffectChainManagerEffectUpdate(void);

@@ -46,6 +46,7 @@ AudioPolicyServer* GetServerPtr()
         server.OnAddSystemAbility(ACCESSIBILITY_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
         g_hasServerInit = true;
     }
     return &server;
@@ -154,7 +155,8 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
 
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
-    GetServerPtr()->SetAudioInterruptCallback(sessionID, object);
+    uint32_t clientUid = *reinterpret_cast<const uint32_t *>(rawData);
+    GetServerPtr()->SetAudioInterruptCallback(sessionID, object, clientUid);
     GetServerPtr()->UnsetAudioInterruptCallback(sessionID);
 
     int32_t clientId = *reinterpret_cast<const uint32_t *>(rawData);

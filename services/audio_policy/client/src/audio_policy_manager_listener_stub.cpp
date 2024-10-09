@@ -82,6 +82,12 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             OnAvailableDeviceChange(usage, deviceChangeAction);
             return AUDIO_OK;
         }
+        case ON_QUERY_CLIENT_TYPE: {
+            std::string bundleName = data.ReadString();
+            uint32_t uid = data.ReadUint32();
+            OnQueryClientType(bundleName, uid);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -111,6 +117,15 @@ void AudioPolicyManagerListenerStub::OnAvailableDeviceChange(const AudioDeviceUs
     availabledeviceChangedCallback->OnAvailableDeviceChange(usage, deviceChangeAction);
 }
 
+bool AudioPolicyManagerListenerStub::OnQueryClientType(const std::string &bundleName, uint32_t uid)
+{
+    std::shared_ptr<AudioQueryClientTypeCallback> audioQueryClientTypeCallback =
+        audioQueryClientTypeCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioQueryClientTypeCallback != nullptr, false, "queryClientTypeCallback is nullptr");
+    return audioQueryClientTypeCallback->OnQueryClientType(bundleName, uid);
+}
+
 void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
 {
     callback_ = callback;
@@ -120,6 +135,11 @@ void AudioPolicyManagerListenerStub::SetAvailableDeviceChangeCallback(
     const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb)
 {
     audioAvailableDeviceChangeCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStub::SetQueryClientTypeCallback(const std::weak_ptr<AudioQueryClientTypeCallback> &cb)
+{
+    audioQueryClientTypeCallback_ = cb;
 }
 } // namespace AudioStandard
 } // namespace OHOS

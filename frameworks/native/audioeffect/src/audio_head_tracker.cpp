@@ -26,6 +26,9 @@ namespace AudioStandard {
 HeadPostureData HeadTracker::headPostureData_ = {1, 1.0, 0.0, 0.0, 0.0};
 std::mutex HeadTracker::headTrackerMutex_;
 
+const uint32_t ORDER_ONE = 1;
+const uint32_t HP_DATA_PRINT_COUNT = 60; // Print once per second
+
 void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
 {
     std::lock_guard<std::mutex> lock(headTrackerMutex_);
@@ -50,6 +53,9 @@ void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
     headPostureData_.x = headPostureDataTmp->x;
     headPostureData_.y = headPostureDataTmp->y;
     headPostureData_.z = headPostureDataTmp->z;
+    if (headPostureData_.order % HP_DATA_PRINT_COUNT == ORDER_ONE) {
+        AUDIO_DEBUG_LOG("Head posture data of order %{public}d received", headPostureData_.order);
+    }
 }
 
 HeadTracker::HeadTracker()

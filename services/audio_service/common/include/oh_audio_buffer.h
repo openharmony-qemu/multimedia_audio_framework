@@ -155,6 +155,9 @@ public:
     int32_t SetCurWriteFrame(uint64_t writeFrame);
     int32_t SetCurReadFrame(uint64_t readFrame);
 
+    uint32_t GetSessionId();
+    int32_t SetSessionId(uint32_t sessionId);
+
     int32_t GetWriteBuffer(uint64_t writePosInFrame, BufferDesc &bufferDesc);
 
     int32_t GetReadbuffer(uint64_t readPosInFrame, BufferDesc &bufferDesc);
@@ -176,6 +179,7 @@ private:
     int32_t Init(int dataFd, int infoFd);
     int32_t SizeCheck();
 
+    uint32_t sessionId_ = 0;
     AudioBufferHolder bufferHolder_;
     uint32_t totalSizeInFrame_;
     uint32_t spanSizeInFrame_;

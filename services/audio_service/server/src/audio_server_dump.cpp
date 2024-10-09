@@ -300,7 +300,6 @@ void AudioServerDump::PASinkInfoCallback(pa_context *c, const pa_sink_info *i, i
 
 void AudioServerDump::PASinkInputInfoCallback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata)
 {
-    AUDIO_INFO_LOG("jss PASinkInputInfoCallback");
     AudioServerDump *asDump = reinterpret_cast<AudioServerDump *>(userdata);
     CHECK_AND_RETURN_LOG(asDump != nullptr, "Failed to get sink input information");
     pa_threaded_mainloop *mainLoop = reinterpret_cast<pa_threaded_mainloop *>(asDump->mainLoop);

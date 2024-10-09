@@ -219,6 +219,19 @@ void AudioDeviceManager::MakePairedDefaultDeviceImpl(const shared_ptr<AudioDevic
     }
 }
 
+bool AudioDeviceManager::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
+{
+    auto isPresent = [&desc] (const auto &connDesc) {
+        return connDesc->deviceId_ == desc.deviceId_;
+    };
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (itr == connectedDevices_.end()) {
+        return false;
+    }
+
+    return (*itr)->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET;
+}
+
 void AudioDeviceManager::AddConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     connectedDevices_.insert(connectedDevices_.begin(), devDesc);
@@ -345,6 +358,19 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
     return false;
 }
 
+void AudioDeviceManager::RemoveVirtualConnectedDevice(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &descriptor) {
+        return descriptor->deviceType_ == devDesc->deviceType_
+            && descriptor->deviceRole_ == devDesc->deviceRole_
+            && descriptor->networkId_ == devDesc->networkId_
+            && descriptor->macAddress_ == devDesc->macAddress_
+            && descriptor->connectState_ == VIRTUAL_CONNECTED;
+    };
+    connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
+        connectedDevices_.end());
+}
+
 void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
@@ -353,6 +379,7 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     int32_t audioId = deviceDescriptor->deviceId_;
     AUDIO_INFO_LOG("add type:id %{public}d:%{public}d", deviceDescriptor->getType(), audioId);
 
+    RemoveVirtualConnectedDevice(devDesc);
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
         AUDIO_INFO_LOG("The device has been added and will not be added again.");
         return;
@@ -380,10 +407,16 @@ std::string AudioDeviceManager::GetConnDevicesStr()
 std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     std::string devices;
-    devices.append("device type:id ");
+    devices.append("device type:id:(category:constate) ");
     for (auto iter : descs) {
+        CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
+        if (iter->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
+        }
         devices.append(" ");
     }
     return devices;
@@ -399,7 +432,7 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
     };
 
     auto removeBeginIt = std::remove_if(descArray.begin(), descArray.end(), isPresent);
-    size_t deleteNum = descArray.end() - removeBeginIt;
+    size_t deleteNum = static_cast<uint32_t>(descArray.end() - removeBeginIt);
     descArray.erase(removeBeginIt, descArray.end());
 
     AUDIO_INFO_LOG("Remove %{public}zu desc from %{public}s list, and then %{public}s", deleteNum,
@@ -1030,7 +1063,6 @@ bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDev
                 && connectedDevices_[i]->deviceType_ == audioDeviceDescriptors->deviceType_
                 && connectedDevices_[i]->networkId_ == audioDeviceDescriptors->networkId_
                 && connectedDevices_[i]->macAddress_ == audioDeviceDescriptors->macAddress_
-                && connectedDevices_[i]->interruptGroupId_ == audioDeviceDescriptors->interruptGroupId_
                 && connectedDevices_[i]->volumeGroupId_ == audioDeviceDescriptors->volumeGroupId_) {
                 return true;
             }
@@ -1042,6 +1074,40 @@ bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDev
     return false;
 }
 
+bool AudioDeviceManager::IsVirtualConnectedDevice(const sptr<AudioDeviceDescriptor> &selectedDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(selectedDesc != nullptr, false, "Invalid device descriptor");
+    auto isVirtual = [&selectedDesc](const shared_ptr<AudioDeviceDescriptor>& desc) {
+        return desc->connectState_ == VIRTUAL_CONNECTED
+            && desc->deviceRole_ == selectedDesc->deviceRole_
+            && desc->deviceType_ == selectedDesc->deviceType_
+            && desc->networkId_ == selectedDesc->networkId_
+            && desc->macAddress_ == selectedDesc->macAddress_;
+    };
+    bool isVirtualDevice = false;
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isVirtual);
+    if (itr != connectedDevices_.end()) {
+        isVirtualDevice = true;
+        AUDIO_INFO_LOG("Device[%{public}s] is virtual connection",
+            GetEncryptAddr(selectedDesc->macAddress_).c_str());
+    }
+    return isVirtualDevice;
+}
+
+int32_t AudioDeviceManager::UpdateDeviceDescDeviceId(sptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, ERROR, "Invalid device descriptor");
+    auto isPresent = [&deviceDescriptor](const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return desc->deviceRole_ == deviceDescriptor->deviceRole_
+            && desc->deviceType_ == deviceDescriptor->deviceType_
+            && desc->networkId_ == deviceDescriptor->networkId_
+            && desc->macAddress_ == deviceDescriptor->macAddress_;
+    };
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    CHECK_AND_RETURN_RET_LOG(itr != connectedDevices_.end(), ERROR, "Device not found");
+    deviceDescriptor->deviceId_ = (*itr)->deviceId_;
+    return SUCCESS;
+}
 
 int32_t AudioDeviceManager::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)

@@ -33,7 +33,7 @@ public:
         isTimerStarted = false;
         isTimedOut     = false;
         exitLoop       =  false;
-        timerLoop = std::thread(&AudioTimer::TimerLoopFunc, this);
+        timerLoop = std::thread([this] { this->TimerLoopFunc(); });
         pthread_setname_np(timerLoop.native_handle(), "OS_ATimer");
     }
 

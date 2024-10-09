@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../appgallery.gni")
 import("../../config.gni")
 import("../../ressche_part.gni")
 import("../../sensor.gni")
@@ -20,12 +21,14 @@ import("../../window_manager.gni")
 group("audio_service_packages") {
   deps = [
     ":audio_common",
-    ":audio_server_init",
     ":audio_service",
+    ":audio_server_init",
+    ":audio_service_init",
   ]
 }
 
 ohos_shared_library("audio_common") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -44,6 +47,7 @@ ohos_shared_library("audio_common") {
   sources = [
     "common/src/audio_common_converter.cpp",
     "common/src/audio_down_mix_stereo.cpp",
+    "common/src/audio_log_utils.cpp",
     "common/src/audio_process_config.cpp",
     "common/src/audio_resample.cpp",
     "common/src/audio_ring_cache.cpp",
@@ -88,6 +92,11 @@ ohos_shared_library("audio_common") {
   cflags_cc = cflags
   cflags_cc += [ "-std=c++20" ]
 
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
@@ -129,7 +138,9 @@ config("audio_client_public_config") {
 }
 
 config("audio_sasdk_public_config") {
-  include_dirs = [ "../../interfaces/inner_api/native/audiosasdk/include" ]
+  include_dirs = [
+    "../../interfaces/inner_api/native/audiosasdk/include",
+  ]
 
   cflags = [
     "-Wall",
@@ -142,7 +153,7 @@ config("audio_sasdk_public_config") {
 }
 
 ohos_shared_library("audio_client") {
-  stack_protector_ret = false
+  branch_protector_ret = "pac_ret"
   install_enable = true
   sources = [
     "client/src/audio_device_descriptor.cpp",
@@ -184,6 +195,7 @@ ohos_shared_library("audio_client") {
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -191,13 +203,13 @@ ohos_shared_library("audio_client") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "power_manager:powermgr_client",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
 
   public_external_deps = [
-    "c_utils:utils",
     "libxml2:libxml2",
     "pulseaudio:sonic",
   ]
@@ -208,9 +220,8 @@ ohos_shared_library("audio_client") {
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
-  if (ressche_enable == true) {
-    external_deps += [ "resource_schedule_service:ressched_client" ]
-    defines += [ "RESSCHE_ENABLE" ]
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
   }
 
   version_script = "../../audio_framework.versionscript"
@@ -222,6 +233,13 @@ ohos_shared_library("audio_client") {
 
 ohos_prebuilt_etc("audio_server_init") {
   source = "etc/audio_server.cfg"
+  relative_install_dir = "init"
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_prebuilt_etc("audio_service_init") {
+  source = "etc/pulseaudio.cfg"
   relative_install_dir = "init"
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -276,6 +294,7 @@ config("audio_service_config") {
 }
 
 ohos_shared_library("audio_process_service") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -334,13 +353,12 @@ ohos_shared_library("audio_process_service") {
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
-    "hdf_core:libhdf_utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
-    "samgr:samgr_proxy",
   ]
 
   public_external_deps = [ "bounds_checking_function:libsec_static" ]
@@ -430,16 +448,20 @@ ohos_shared_library("audio_service") {
     defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
   }
 
+  if (appgallery_part_enable == true) {
+    defines += [ "FEATURE_APPGALLERY" ]
+  }
+
   if (sensor_enable == true) {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
 
-  if (window_manager_enable == true) {
-    external_deps += [ "window_manager:libdm" ]
-  }
-
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
+  }
+
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
   }
 
   subsystem_name = "multimedia"
@@ -472,9 +494,7 @@ ohos_shared_library("audio_sasdk") {
 
   external_deps = [
     "c_utils:utils",
-    "eventhandler:libeventhandler",
     "hilog:libhilog",
-    "ipc:ipc_single",
   ]
 
   version_script = "../../audio_framework.versionscript"

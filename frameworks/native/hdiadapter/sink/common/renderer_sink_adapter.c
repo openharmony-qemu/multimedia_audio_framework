@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "renderer_sink_adapter.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,6 +68,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_FILE) ? CLASS_TYPE_FILE : adapter->deviceClass;
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_REMOTE) ? CLASS_TYPE_REMOTE : adapter->deviceClass;
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_OFFLOAD) ? CLASS_TYPE_OFFLOAD : adapter->deviceClass;
+    adapter->deviceClass = !strcmp(device, DEVICE_CLASS_MULTICHANNEL) ? CLASS_TYPE_MULTICHANNEL : adapter->deviceClass;
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_DP) ? CLASS_TYPE_DP : adapter->deviceClass;
 
     adapter->RendererSinkInit = IAudioRendererSinkInit;
@@ -77,6 +78,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
     adapter->RendererSinkPause = IAudioRendererSinkPause;
     adapter->RendererSinkResume = IAudioRendererSinkResume;
     adapter->RendererRenderFrame = IAudioRendererSinkRenderFrame;
+    adapter->RendererSplitRenderFrame = IAudioRendererSinkSplitRenderFrame;
     adapter->RendererSinkSetVolume = IAudioRendererSinkSetVolume;
     adapter->RendererSinkGetVolume = IAudioRendererSinkGetVolume;
     adapter->RendererSinkGetLatency = IAudioRendererSinkGetLatency;
@@ -119,6 +121,8 @@ const char *GetDeviceClass(int32_t deviceClass)
         return DEVICE_CLASS_REMOTE;
     } else if (deviceClass == CLASS_TYPE_OFFLOAD) {
         return DEVICE_CLASS_OFFLOAD;
+    } else if (deviceClass == CLASS_TYPE_MULTICHANNEL) {
+        return DEVICE_CLASS_MULTICHANNEL;
     } else if (deviceClass == CLASS_TYPE_DP) {
         return DEVICE_CLASS_DP;
     } else {

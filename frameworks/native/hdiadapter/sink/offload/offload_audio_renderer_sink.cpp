@@ -33,7 +33,7 @@
 #include "v4_0/iaudio_manager.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
 
@@ -53,7 +53,6 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t OFFLOAD_OUTPUT_STREAM_ID = 53; // 13+5*8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
@@ -152,16 +151,16 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool signalDetected_ = false;
+    size_t detectedTime_ = 0;
+    bool latencyMeasEnabled_ = false;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     // for get amplitude
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
-    bool signalDetected_ = false;
-    size_t detectedTime_ = 0;
-    bool latencyMeasEnabled_ = false;
-    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::mutex renderMutex_;
 
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -169,10 +168,10 @@ private:
     AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
-    void CheckUpdateState(char *frame, uint64_t replyBytes);
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> offloadRunningLockManager_;
@@ -303,7 +302,7 @@ void OffloadAudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
         case SAMPLE_S32LE: {
@@ -335,7 +334,7 @@ void OffloadAudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case SAMPLE_S32LE: {
@@ -399,7 +398,6 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
             impl->registered, impl->cookie == nullptr, impl->renderCallback == nullptr);
     }
     auto *sink = reinterpret_cast<OffloadAudioRendererSinkInner *>(impl->cookie);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "sink is null");
     if (!sink->started_ || sink->isFlushing_) {
         AUDIO_DEBUG_LOG("invalid renderCallback call, started_ %d, isFlushing_ %d", sink->started_, sink->isFlushing_);
         return 0;
@@ -435,6 +433,7 @@ void OffloadAudioRendererSinkInner::DeInit()
 {
     Trace trace("OffloadSink::DeInit");
     std::lock_guard<std::mutex> lock(renderMutex_);
+    std::lock_guard<std::mutex> lockVolume(volumeMutex_);
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
@@ -457,7 +456,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = OFFLOAD_OUTPUT_STREAM_ID;
+    attrs.streamId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD);
     attrs.type = AUDIO_OFFLOAD;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -753,7 +752,7 @@ int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
     float thevolume;
     int32_t ret;
     if (audioRender_ == nullptr) {
-        AUDIO_WARNING_LOG("OffloadAudioRendererSinkInner::SetVolume failed, audioRender_ null, "
+        AUDIO_PRERELEASE_LOGW("OffloadAudioRendererSinkInner::SetVolume failed, audioRender_ null, "
                           "this will happen when set volume on devices which offload not available");
         return ERR_INVALID_HANDLE;
     }

@@ -169,7 +169,8 @@ ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> 
     }
     helper->RegisterObserver(uri, observer);
     helper->NotifyChange(uri);
-    std::thread execCb(AudioSettingProvider::ExecRegisterCb, observer);
+    auto execFirCb = ([observer] { ExecRegisterCb(observer); });
+    std::thread execCb(execFirCb);
     execCb.detach();
     ReleaseDataShareHelper(helper);
     IPCSkeleton::SetCallingIdentity(callingIdentity);

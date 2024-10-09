@@ -19,12 +19,11 @@
 #include "audio_pnp_server.h"
 
 #include <poll.h>
-
-#include "osal_time.h"
 #include "securec.h"
+#include "osal_time.h"
 #include "audio_errors.h"
 #include "audio_input_thread.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_socket_thread.h"
 
 using namespace std;
@@ -76,9 +75,9 @@ bool AudioPnpServer::init(void)
     g_socketRunThread = true;
     g_inputRunThread = true;
 
-    socketThread_ = std::make_unique<std::thread>(&AudioPnpServer::OpenAndReadWithSocket, this);
+    socketThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadWithSocket(); });
     pthread_setname_np(socketThread_->native_handle(), "OS_SocketEvent");
-    inputThread_ = std::make_unique<std::thread>(&AudioPnpServer::OpenAndReadInput, this);
+    inputThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadInput(); });
     pthread_setname_np(inputThread_->native_handle(), "OS_InputEvent");
     return true;
 }
@@ -155,7 +154,7 @@ void AudioPnpServer::OpenAndReadWithSocket()
             continue;
         }
 
-        if (((uint32_t)fd.revents & (POLLIN | POLLERR)) != 0) {
+        if (((uint32_t)fd.revents & POLLIN) == POLLIN) {
             memset_s(&msg, sizeof(msg), 0, sizeof(msg));
             rcvLen = AudioSocketThread::AudioPnpReadUeventMsg(socketFd, msg, UEVENT_MSG_LEN);
             if (rcvLen <= 0) {
@@ -168,6 +167,8 @@ void AudioPnpServer::OpenAndReadWithSocket()
             eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
             CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid socket info");
             OnPnpDeviceStatusChanged(eventInfo_);
+        } else if (((uint32_t)fd.revents & POLLERR) == POLLERR) {
+            AUDIO_ERR_LOG("audio event poll error");
         }
     }
     close(socketFd);
@@ -204,6 +205,7 @@ void AudioPnpServer::DetectAudioDevice()
     int32_t ret;
     AudioEvent audioEvent = {0};
 
+    OsalMSleep(AUDIO_DEVICE_WAIT_USB_ONLINE);
     ret = AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
     if ((ret == SUCCESS) && (audioEvent.eventType == AUDIO_DEVICE_ADD)) {
         AUDIO_INFO_LOG("audio detect analog headset");
@@ -221,7 +223,7 @@ void AudioPnpServer::DetectAudioDevice()
     if ((ret == SUCCESS) && (g_usbHeadset.eventType == AUDIO_DEVICE_ADD)) {
         AUDIO_INFO_LOG("audio detect usb headset");
         std::unique_ptr<std::thread> bootupThread_ = nullptr;
-        bootupThread_ = std::make_unique<std::thread>(&AudioPnpServer::UpdateUsbHeadset, this);
+        bootupThread_ = std::make_unique<std::thread>([this] { this->UpdateUsbHeadset(); });
         pthread_setname_np(bootupThread_->native_handle(), "OS_BootupEvent");
         OsalMSleep(AUDIO_DEVICE_WAIT_USB_EVENT_UPDATE);
         if (AudioSocketThread::audioSocketEvent_.eventType != AUDIO_EVENT_UNKNOWN &&
@@ -255,11 +257,11 @@ void AudioPnpServer::StopPnpServer()
     g_socketRunThread = false;
     g_inputRunThread = false;
     if (socketThread_ && socketThread_->joinable()) {
-        socketThread_->join();
+        socketThread_->detach();
     }
 
     if (inputThread_ && inputThread_->joinable()) {
-        inputThread_->join();
+        inputThread_->detach();
     }
 }
 } // namespace AudioStandard

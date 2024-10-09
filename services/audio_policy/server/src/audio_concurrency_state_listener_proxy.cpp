@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_concurrency_state_listener_proxy.h"
-#include "audio_system_manager.h"
 #include "audio_policy_log.h"
 
 namespace OHOS {

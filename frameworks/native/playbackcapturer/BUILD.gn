@@ -29,6 +29,7 @@ config("playback_capturer_config") {
 }
 
 ohos_shared_library("playback_capturer") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

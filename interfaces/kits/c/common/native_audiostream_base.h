@@ -451,7 +451,7 @@ typedef enum {
 } OH_AudioStream_SourceType;
 
 /**
- * Defines the audio interrupt mode.
+ * @brief Defines the audio interrupt mode.
  *
  * @since 12
  */
@@ -692,9 +692,9 @@ typedef enum {
  * @since 12
  */
 typedef enum {
-    /** Result of audio data callabck is invalid. */
+    /** Result of audio data callback is invalid. */
     AUDIO_DATA_CALLBACK_RESULT_INVALID = -1,
-    /** Result of audio data callabck is valid. */
+    /** Result of audio data callback is valid. */
     AUDIO_DATA_CALLBACK_RESULT_VALID = 0,
 } OH_AudioData_Callback_Result;
 

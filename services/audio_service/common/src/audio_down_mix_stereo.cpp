@@ -57,7 +57,9 @@ AudioDownMixStereo::~AudioDownMixStereo()
         free(mixer_);
     }
     if (handle_) {
-        ::dlclose(handle_);
+#ifndef TEST_COVERAGE
+        dlclose(handle_);
+#endif
         handle_ = nullptr;
     }
 }

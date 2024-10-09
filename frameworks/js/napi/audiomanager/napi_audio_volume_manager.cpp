@@ -84,7 +84,7 @@ void NapiAudioVolumeManager::Destructor(napi_env env, void *nativeObject, void *
 
 napi_value NapiAudioVolumeManager::Construct(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("Construct");
+    AUDIO_PRERELEASE_LOGI("Construct");
     napi_status status;
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -126,7 +126,7 @@ napi_value NapiAudioVolumeManager::CreateVolumeManagerWrapper(napi_env env)
     }
     status = napi_new_instance(env, constructor, PARAM0, nullptr, &result);
     if (status != napi_ok) {
-        AUDIO_ERR_LOG("napi_new_instance failed, sttaus:%{public}d", status);
+        AUDIO_ERR_LOG("napi_new_instance failed, status:%{public}d", status);
         goto fail;
     }
     return result;

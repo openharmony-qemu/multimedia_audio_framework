@@ -35,6 +35,48 @@ bool IpcStreamStub::CheckInterfaceToken(MessageParcel &data)
     return true;
 }
 
+int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    switch (code) {
+        case ON_GET_RATE:
+            return HandleGetRate(data, reply);
+        case ON_SET_LOWPOWER_VOLUME:
+            return HandleSetLowPowerVolume(data, reply);
+        case ON_GET_LOWPOWER_VOLUME:
+            return HandleGetLowPowerVolume(data, reply);
+        case ON_SET_EFFECT_MODE:
+            return HandleSetAudioEffectMode(data, reply);
+        case ON_GET_EFFECT_MODE:
+            return HandleGetAudioEffectMode(data, reply);
+        case ON_SET_PRIVACY_TYPE:
+            return HandleSetPrivacyType(data, reply);
+        case ON_GET_PRIVACY_TYPE:
+            return HandleGetPrivacyType(data, reply);
+        case ON_SET_OFFLOAD_MODE:
+            return HandleSetOffloadMode(data, reply);
+        case ON_UNSET_OFFLOAD_MODE:
+            return HandleUnsetOffloadMode(data, reply);
+        case ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME:
+            return HandleGetOffloadApproximatelyCacheTime(data, reply);
+        case ON_SET_OFFLOAD_VOLUME:
+            return HandleOffloadSetVolume(data, reply);
+        case ON_UPDATE_SPATIALIZATION_STATE:
+            return HandleUpdateSpatializationState(data, reply);
+        case ON_GET_STREAM_MANAGER_TYPE:
+            return HandleGetStreamManagerType(data, reply);
+        case ON_SET_SILENT_MODE_AND_MIX_WITH_OTHERS:
+            return HandleSetSilentModeAndMixWithOthers(data, reply);
+        case ON_SET_CLIENT_VOLUME:
+            return HandleSetClientVolume(data, reply);
+        case ON_REGISTER_THREAD_PRIORITY:
+            return HandleRegisterThreadPriority(data, reply);
+        default:
+            AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+}
+
 int IpcStreamStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (!CheckInterfaceToken(data)) {
@@ -45,7 +87,40 @@ int IpcStreamStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessagePa
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
-    return (this->*funcList_[code])(data, reply);
+    switch (code) {
+        case ON_REGISTER_STREAM_LISTENER:
+            return HandleRegisterStreamListener(data, reply);
+        case ON_RESOLVE_BUFFER:
+            return HandleResolveBuffer(data, reply);
+        case ON_UPDATE_POSITION:
+            return HandleUpdatePosition(data, reply);
+        case ON_GET_AUDIO_SESSIONID:
+            return HandleGetAudioSessionID(data, reply);
+        case ON_START:
+            return HandleStart(data, reply);
+        case ON_PAUSE:
+            return HandlePause(data, reply);
+        case ON_STOP:
+            return HandleStop(data, reply);
+        case ON_RELEASE:
+            return HandleRelease(data, reply);
+        case ON_FLUSH:
+            return HandleFlush(data, reply);
+        case ON_DRAIN:
+            return HandleDrain(data, reply);
+        case ON_UPDATA_PLAYBACK_CAPTURER_CONFIG:
+            return HandleUpdatePlaybackCaptureConfig(data, reply);
+        case OH_GET_AUDIO_TIME:
+            return HandleGetAudioTime(data, reply);
+        case OH_GET_AUDIO_POSITION:
+            return HandleGetAudioPosition(data, reply);
+        case ON_GET_LATENCY:
+            return HandleGetLatency(data, reply);
+        case ON_SET_RATE:
+            return HandleSetRate(data, reply);
+        default:
+            return OnMiddleCodeRemoteRequest(code, data, reply, option);
+    }
 }
 
 int32_t IpcStreamStub::HandleRegisterStreamListener(MessageParcel &data, MessageParcel &reply)
@@ -308,7 +383,7 @@ int32_t IpcStreamStub::HandleSetSilentModeAndMixWithOthers(MessageParcel &data, 
 {
     bool on = data.ReadBool();
     reply.WriteInt32(SetSilentModeAndMixWithOthers(on));
-
+		 
     return AUDIO_OK;
 }
 

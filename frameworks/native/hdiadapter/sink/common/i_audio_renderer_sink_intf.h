@@ -33,7 +33,8 @@ typedef struct {
     const char *filePath;
     const char *deviceNetworkId;
     int32_t deviceType;
-    uint64_t channelLayout;
+    unsigned long channelLayout;
+    const char *aux;
 } SinkAttr;
 
 struct RendererSinkAdapter {
@@ -46,6 +47,8 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkResume)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkStop)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererRenderFrame)(struct RendererSinkAdapter *adapter, char *data, uint64_t len, uint64_t *writeLen);
+    int32_t (*RendererSplitRenderFrame)(struct RendererSinkAdapter *adapter, char *data, uint64_t len,
+        uint64_t *writeLen, char *streamType);
     int32_t (*RendererSinkSetVolume)(struct RendererSinkAdapter *adapter, float left, float right);
     int32_t (*RendererSinkGetVolume)(struct RendererSinkAdapter *adapter, float *left, float *right);
     int32_t (*RendererSinkGetLatency)(struct RendererSinkAdapter *adapter, uint32_t *latency);
@@ -60,7 +63,7 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkOffloadRunningLockUnlock)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkSetPaPower)(struct RendererSinkAdapter *adapter, int32_t flag);
     int32_t (*RendererSinkSetPriPaPower)(struct RendererSinkAdapter *adapter);
-    int32_t (*RendererSinkUpdateAppsUid) (struct RendererSinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
+    int32_t (*RendererSinkUpdateAppsUid)(struct RendererSinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
         const size_t size);
 };
 
@@ -73,6 +76,8 @@ int32_t IAudioRendererSinkPause(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkResume(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkRenderFrame(struct RendererSinkAdapter *adapter, char *data, uint64_t len,
     uint64_t *writeLen);
+int32_t IAudioRendererSinkSplitRenderFrame(struct RendererSinkAdapter *adapter, char *data, uint64_t len,
+    uint64_t *writeLen, char *streamType);
 int32_t IAudioRendererSinkSetVolume(struct RendererSinkAdapter *adapter, float left, float right);
 int32_t IAudioRendererSinkGetVolume(struct RendererSinkAdapter *adapter, float *left, float *right);
 int32_t IAudioRendererSinkGetLatency(struct RendererSinkAdapter *adapter, uint32_t *latency);

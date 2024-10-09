@@ -21,6 +21,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int32_t MAX_DELAY_TIME = 4 * 1000;
+}
 AudioAdapterManagerHandler::AudioAdapterManagerHandler() : AppExecFwk::EventHandler(
     AppExecFwk::EventRunner::Create("OS_APAdapterAsyncRunner"))
 {
@@ -109,6 +112,11 @@ void AudioAdapterManagerHandler::HandleUpdateRingerMode(const AppExecFwk::InnerE
     std::shared_ptr<RingerModeEvent> eventContextObj = event->GetSharedObject<RingerModeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     AudioPolicyManagerFactory::GetAudioPolicyManager().HandleRingerMode(eventContextObj->ringerMode_);
+}
+
+void AudioAdapterManagerHandler::ReleaseEventRunner()
+{
+    SetEventRunner(nullptr);
 }
 
 void AudioAdapterManagerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)

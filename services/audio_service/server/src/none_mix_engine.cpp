@@ -66,6 +66,7 @@ NoneMixEngine::~NoneMixEngine()
     if (renderSink_ && renderSink_->IsInited()) {
         renderSink_->Stop();
         renderSink_->DeInit();
+        renderSink_ = nullptr;
     }
     isStart_ = false;
     startFadein_ = false;

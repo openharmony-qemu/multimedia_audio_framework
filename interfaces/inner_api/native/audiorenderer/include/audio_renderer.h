@@ -443,7 +443,7 @@ public:
      * @return Returns <b>true</b> if the object is successfully released; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Release() const = 0;
+    virtual bool Release() = 0;
 
     /**
      * @brief Obtains a reasonable minimum buffer size for rendering, however, the renderer can
@@ -937,7 +937,7 @@ public:
      * @param deviceType to set. The available deviceTypes are EARPIECE/SPEAKER/DEFAULT.
      * @since 12
      */
-    virtual int32_t SetDefaultOutputDevice(DeviceType deviceType) = 0;
+    virtual int32_t SetDefaultOutputDevice(DeviceType deviceType) { return 0; };
 
 private:
     static int32_t CreateCheckParam(const AudioRendererOptions &rendererOptions,

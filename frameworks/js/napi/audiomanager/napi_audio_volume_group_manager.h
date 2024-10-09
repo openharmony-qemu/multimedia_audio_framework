@@ -59,7 +59,6 @@ private:
         bool inputBArgTransFlag;
         bool outputBArgTransFlag;
         int32_t policyType;
-
         sptr<AudioDeviceDescriptor> inputDeviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();;
         sptr<AudioDeviceDescriptor> outputDeviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();;
     };

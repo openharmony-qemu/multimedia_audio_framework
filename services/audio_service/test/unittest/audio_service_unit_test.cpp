@@ -132,9 +132,6 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
 
     bool isMute = true;
     ret = audioManagerProxy->SetMicrophoneMute(isMute);
-    if (ret == ERR_PERMISSION_DENIED) {
-        return ;
-    }
     EXPECT_EQ(ret, SUCCESS);
 
     ret = audioManagerProxy->RegiestPolicyProvider(object);
@@ -145,7 +142,7 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
     EXPECT_EQ(ERROR_62980101, ret);
 
     bool result = audioManagerProxy->CreatePlaybackCapturerManager();
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(result, SUCCESS);
 
     int32_t deviceType = 1;
     std::string sinkName = "test";

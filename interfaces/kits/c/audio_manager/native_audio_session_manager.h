@@ -218,4 +218,4 @@ OH_AudioCommon_Result OH_AudioSessionManager_UnregisterSessionDeactivatedCallbac
 }
 #endif
 /** @} */
-#endif // NATIVE_AUDIO_SESSION_MANAGER_H
+#endif // NATIVE_AUDIO_ROUTING_MANAGER_H

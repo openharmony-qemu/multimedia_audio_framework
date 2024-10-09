@@ -18,7 +18,7 @@
 
 #include "native_audiocapturer.h"
 #include "audio_capturer.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

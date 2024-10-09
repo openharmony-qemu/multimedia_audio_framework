@@ -32,6 +32,8 @@ public:
 
     virtual AudioStreamInfo GetStreamInfo() = 0;
 
+    virtual uint32_t GetAudioSessionId() = 0;
+
     virtual AudioStreamType GetAudioStreamType() = 0;
 
     virtual void SetInnerCapState(bool isInnerCapped) = 0;
@@ -41,6 +43,8 @@ public:
     virtual AppInfo GetAppInfo() = 0;
 
     virtual BufferDesc &GetConvertedBuffer() = 0;
+
+    virtual bool GetMuteFlag() = 0;
 
     virtual ~IAudioProcessStream() = default;
 };

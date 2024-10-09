@@ -17,7 +17,7 @@
 #endif
 
 #include <cinttypes>
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_channel_blend.h"
 
 namespace OHOS {

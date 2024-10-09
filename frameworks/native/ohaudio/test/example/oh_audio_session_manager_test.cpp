@@ -41,11 +41,11 @@ public:
     SessionNdkTest() = default;
     ~SessionNdkTest() = default;
     void Init();
-    void RegisterCallback(OH_AudioSession_DeactivatedCallback callback);
-    void UnRegisterCallback(OH_AudioSession_DeactivatedCallback callback);
+    static void RegisterCallback(OH_AudioSession_DeactivatedCallback callback);
+    static void UnregisterCallback(OH_AudioSession_DeactivatedCallback callback);
     void ActivateAudioSession(OH_AudioSession_Strategy strategy);
-    void DeActivateAudioSession();
-    void IsAudioSessionActivated();
+    static void DeactivateAudioSession();
+    static void IsAudioSessionActivated();
     void RegisterAndActive(OH_AudioSession_DeactivatedCallback callback, OH_AudioSession_Strategy strategy);
     int32_t MyCallbackFunction(OH_AudioSession_DeactivatedEvent event);
     OH_AudioRenderer* StartPlay();
@@ -157,7 +157,7 @@ void SessionNdkTest::RegisterCallback(OH_AudioSession_DeactivatedCallback callba
     }
 }
 
-void SessionNdkTest::UnRegisterCallback(OH_AudioSession_DeactivatedCallback callback)
+void SessionNdkTest::UnregisterCallback(OH_AudioSession_DeactivatedCallback callback)
 {
     std::cout << "Start UnRegister callback" << std::endl;
     OH_AudioCommon_Result result =
@@ -181,7 +181,7 @@ void SessionNdkTest::ActivateAudioSession(OH_AudioSession_Strategy strategy)
     }
 }
 
-void SessionNdkTest::DeActivateAudioSession()
+void SessionNdkTest::DeactivateAudioSession()
 {
     std::cout << "Start DeActivate AudioSession" << std::endl;
     OH_AudioCommon_Result result = OH_AudioSessionManager_DeactivateAudioSession(audioSessionManager);
@@ -259,7 +259,7 @@ OH_AudioRenderer* SessionNdkTest::StartPlay()
 
 void SessionNdkTest::StopPlay(OH_AudioRenderer* audioRenderer)
 {
-    DeActivateAudioSession();
+    DeactivateAudioSession();
     OH_AudioStream_Result ret = OH_AudioRenderer_Stop(audioRenderer);
     std::cout << "[Renderer] stop ret: " << ret << std::endl;
     ret = OH_AudioRenderer_Release(audioRenderer);
@@ -292,14 +292,14 @@ void SessionNdkTest::LogicPathCheck(int operate, OH_AudioSession_DeactivatedCall
         case CASE_UN_REGISTER:
             event.reason = DEACTIVATED_TIMEOUT;
             callback(event);
-            UnRegisterCallback(callback);
+            UnregisterCallback(callback);
             break;
         case CASE_ACTIVE:
             strategy.concurrencyMode = CONCURRENCY_MIX_WITH_OTHERS;
             ActivateAudioSession(strategy);
             break;
         case CASE_DEACTIVE:
-            DeActivateAudioSession();
+            DeactivateAudioSession();
             break;
         case CASE_IS_ACTIVE:
             IsAudioSessionActivated();

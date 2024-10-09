@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,9 +36,10 @@
 #endif
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
+#include "audio_log_utils.h"
 #include "media_monitor_manager.h"
 
 using namespace std;
@@ -144,8 +145,12 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool signalDetected_ = false;
+    bool latencyMeasEnabled_ = false;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     int32_t initCount_ = 0;
     int32_t logMode_ = 0;
+    AudioSampleFormat audioSampleFormat_ = SAMPLE_S16LE;
 
     // for device switch
     std::mutex switchDeviceMutex_;
@@ -172,9 +177,6 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
-    bool signalDetected_ = false;
-    bool latencyMeasEnabled_ = false;
-    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
     void UnlockRunningLock();
@@ -188,11 +190,14 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     ConvertHdiFormat ConvertToHdiAdapterFormat(AudioFormat format);
     int64_t BytesToNanoTime(size_t lens);
-    void CheckUpdateState(char *frame, uint64_t replyBytes);
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
     FILE *dumpFile_ = nullptr;
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
     std::string dumpFileName_ = "";
 };
 
@@ -207,6 +212,7 @@ BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatenc
 BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
 {
     BluetoothRendererSinkInner::DeInit();
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 BluetoothRendererSink *BluetoothRendererSink::GetInstance()
@@ -293,7 +299,9 @@ void BluetoothRendererSinkInner::DeInit()
     audioManager_ = nullptr;
 
     if (handle_ != nullptr) {
+#ifndef TEST_COVERAGE
         dlclose(handle_);
+#endif
         handle_ = nullptr;
     }
 
@@ -446,6 +454,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
         initCount_++;
         return true;
     }
+    audioSampleFormat_ = static_cast<AudioSampleFormat>(attr.format);
 
     attr_.format = ConvertToHdiFormat(attr.format);
     attr_.sampleRate = attr.sampleRate;
@@ -486,6 +495,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
     }
 
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
+    logUtilsTag_ = "A2dpSink";
 
     rendererInited_ = true;
     initCount_++;
@@ -503,6 +513,8 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
+    DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(&data), len);
@@ -525,7 +537,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
         if (logMode_ || stamp >= STAMP_THRESHOLD_MS) {
-            AUDIO_WARNING_LOG("A2dp RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms " \
+            AUDIO_PRERELEASE_LOGW("A2dp RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms " \
                 "writeLen[%{public}" PRIu64 "] returns: %{public}x", len, stamp, writeLen, ret);
         }
         if (ret == RENDER_FRAME_NUM) {
@@ -558,6 +570,17 @@ void BluetoothRendererSinkInner::UpdateAppsUid()
     }
 }
 #endif
+
+void BluetoothRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
+}
 
 ConvertHdiFormat BluetoothRendererSinkInner::ConvertToHdiAdapterFormat(AudioFormat format)
 {
@@ -643,7 +666,8 @@ int32_t BluetoothRendererSinkInner::Start(void)
             int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (!ret) {
                 started_ = true;
-                CHECK_AND_RETURN_RET_LOG(CheckPositionTime() == SUCCESS, ERR_NOT_STARTED, "CheckPositionTime failed!");
+                CHECK_AND_RETURN_RET_LOG(!isBluetoothLowLatency_ || CheckPositionTime() == SUCCESS,
+                    ERR_NOT_STARTED, "CheckPositionTime failed!");
                 return SUCCESS;
             } else {
                 AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
@@ -931,7 +955,7 @@ void BluetoothRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         case AUDIO_FORMAT_TYPE_PCM_24_BIT: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
         case AUDIO_FORMAT_TYPE_PCM_32_BIT: {
@@ -964,7 +988,7 @@ void BluetoothRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case AUDIO_FORMAT_TYPE_PCM_24_BIT: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_TYPE_PCM_32_BIT: {

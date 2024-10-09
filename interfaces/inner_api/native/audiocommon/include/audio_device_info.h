@@ -187,10 +187,10 @@ inline bool IsInputDevice(DeviceType deviceType)
     return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
 }
 
-inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole, bool isArmUsb)
+inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole)
 {
     // Arm usb device distinguishes input and output through device roles.
-    if ((deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsb) || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
         return deviceRole == INPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
     } else {
         return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
@@ -216,10 +216,10 @@ inline bool IsOutputDevice(DeviceType deviceType)
     return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
 }
 
-inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole, bool isArmUsb)
+inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole)
 {
     // Arm usb device distinguishes input and output through device roles.
-    if ((deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsb) || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
         return deviceRole == OUTPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
     } else {
         return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
@@ -299,6 +299,15 @@ enum ConnectState {
     SUSPEND_CONNECTED,
     VIRTUAL_CONNECTED,
     DEACTIVE_CONNECTED
+};
+
+enum PreferredType {
+    AUDIO_MEDIA_RENDER = 0,
+    AUDIO_CALL_RENDER = 1,
+    AUDIO_CALL_CAPTURE = 2,
+    AUDIO_RING_RENDER = 3,
+    AUDIO_RECORD_CAPTURE = 4,
+    AUDIO_TONE_RENDER = 5,
 };
 
 struct DevicePrivacyInfo {
@@ -397,7 +406,6 @@ public:
     int32_t interruptGroupId;
     int32_t volumeGroupId;
     bool isLowLatencyDevice;
-    bool isArmUsbDevice;
     int32_t a2dpOffloadFlag;
     ConnectState connectState = CONNECTED;
     DeviceCategory deviceCategory = CATEGORY_DEFAULT;
@@ -419,7 +427,6 @@ public:
             && parcel.WriteInt32(interruptGroupId)
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteBool(isLowLatencyDevice)
-            && parcel.WriteBool(isArmUsbDevice)
             && parcel.WriteInt32(a2dpOffloadFlag)
             && parcel.WriteInt32(static_cast<int32_t>(deviceCategory));
     }
@@ -465,7 +472,6 @@ public:
             && parcel.WriteInt32(hasSystemPermission ? interruptGroupId : INVALID_GROUP_ID)
             && parcel.WriteInt32(hasSystemPermission ? volumeGroupId : INVALID_GROUP_ID)
             && parcel.WriteBool(isLowLatencyDevice)
-            && parcel.WriteBool(isArmUsbDevice)
             && parcel.WriteInt32(a2dpOffloadFlag)
             && parcel.WriteInt32(static_cast<int32_t>(deviceCategory));
     }
@@ -484,7 +490,6 @@ public:
         interruptGroupId = parcel.ReadInt32();
         volumeGroupId = parcel.ReadInt32();
         isLowLatencyDevice = parcel.ReadBool();
-        isArmUsbDevice = parcel.ReadBool();
         a2dpOffloadFlag = parcel.ReadInt32();
         deviceCategory = static_cast<DeviceCategory>(parcel.ReadInt32());
     }

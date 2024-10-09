@@ -118,7 +118,7 @@ public:
     bool IsAudioSessionActivated() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
-        const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
+        const sptr<IRemoteObject> &object, uint32_t clientUid, const int32_t zoneID = 0) override;
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0) override;
 
@@ -129,6 +129,8 @@ public:
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
+
+    int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
@@ -219,6 +221,8 @@ public:
 
     bool IsAbsVolumeScene() override;
 
+    bool IsVgsVolumeSupported() override;
+
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
 
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage) override;
@@ -296,6 +300,7 @@ public:
     int32_t DisableSafeMediaVolume() override;
 
     bool IsHeadTrackingDataRequested(const std::string &macAddress) override;
+
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioDeviceRefinerCallback() override;
@@ -315,6 +320,7 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
 
+    int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

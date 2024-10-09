@@ -80,23 +80,6 @@ void SetAudioManagerInterruptCallbackFuzzTest(const uint8_t *rawData, size_t siz
     interruptService->SetAudioManagerInterruptCallback(object);
 }
 
-void ActivateAudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-
-    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.contentType = *reinterpret_cast<const ContentType *>(rawData);
-    audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
-    audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
-
-    interruptService->ActivateAudioInterrupt(zoneId, audioInterrupt);
-}
-
 void DeactivateAudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -104,16 +87,16 @@ void DeactivateAudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     }
     
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-
+ 
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = *reinterpret_cast<const ContentType *>(rawData);
     audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
     audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
-
+ 
     interruptService->DeactivateAudioInterrupt(zoneId, audioInterrupt);
 }
-
+ 
 void CreateAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -121,7 +104,7 @@ void CreateAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
     }
     
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-
+ 
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(rawData, size);
@@ -129,10 +112,10 @@ void CreateAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
     std::set<int32_t> pids;
     pids.insert(data.ReadInt32());
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
-
+ 
     interruptService->CreateAudioInterruptZone(zoneId, pids);
 }
-
+ 
 void ReleaseAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -142,16 +125,16 @@ void ReleaseAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
-
+ 
     interruptService->ReleaseAudioInterruptZone(zoneId);
 }
-
+ 
 void RemoveAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
+ 
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     
     MessageParcel data;
@@ -161,10 +144,10 @@ void RemoveAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
     std::set<int32_t> pids;
     pids.insert(data.ReadInt32());
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
-
+ 
     interruptService->RemoveAudioInterruptZonePids(zoneId, pids);
 }
-
+ 
 void GetStreamInFocusFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -174,10 +157,10 @@ void GetStreamInFocusFuzzTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
-
+ 
     interruptService->GetStreamInFocus(zoneId);
 }
-
+ 
 void GetSessionInfoInFocusFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -185,13 +168,13 @@ void GetSessionInfoInFocusFuzzTest(const uint8_t *rawData, size_t size)
     }
     
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-
+ 
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = *reinterpret_cast<const ContentType *>(rawData);
     audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
     audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
-
+ 
     interruptService->GetSessionInfoInFocus(audioInterrupt, zoneId);
 }
 
@@ -263,11 +246,12 @@ void SetAudioInterruptCallbackFuzzTest(const uint8_t *rawData, size_t size)
 
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
     uint32_t sessionId = *reinterpret_cast<const uint32_t *>(rawData);
+    uint32_t uid = *reinterpret_cast<const uint32_t *>(rawData);
 
-    interruptService->SetAudioInterruptCallback(zoneId, sessionId, object);
+    interruptService->SetAudioInterruptCallback(zoneId, sessionId, object, uid);
 }
 
-void UnsetAudioInterruptCallbackFuzzTest(const uint8_t *rawData, size_t size)
+void UnsetAudioInterruptCallback(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -280,43 +264,6 @@ void UnsetAudioInterruptCallbackFuzzTest(const uint8_t *rawData, size_t size)
 
     interruptService->UnsetAudioInterruptCallback(zoneId, sessionId);
 }
-
-void AddAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-
-    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    std::set<int32_t> pids;
-    pids.insert(data.ReadInt32());
-
-    interruptService->AddAudioInterruptZonePids(zoneId, pids);
-}
-
-void UpdateAudioSceneFromInterruptFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    AudioScene audioScene = *reinterpret_cast<const AudioScene *>(rawData);
-    AudioInterruptChangeType changeType = *reinterpret_cast<const AudioInterruptChangeType *>(rawData);
-
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-
-    interruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
-}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -328,7 +275,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AddDumpInfoFuzzTest(data, size);
     OHOS::AudioStandard::SetCallbackHandlerFuzzTest(data, size);
     OHOS::AudioStandard::SetAudioManagerInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::ActivateAudioInterruptFuzzTest(data, size);
     OHOS::AudioStandard::DeactivateAudioInterruptFuzzTest(data, size);
     OHOS::AudioStandard::CreateAudioInterruptZoneFuzzTest(data, size);
     OHOS::AudioStandard::ReleaseAudioInterruptZoneFuzzTest(data, size);
@@ -339,8 +285,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::RequestAudioFocusFuzzTest(data, size);
     OHOS::AudioStandard::AbandonAudioFocusFuzzTest(data, size);
     OHOS::AudioStandard::SetAudioInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::UnsetAudioInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::AddAudioInterruptZonePidsFuzzTest(data, size);
-    OHOS::AudioStandard::UpdateAudioSceneFromInterruptFuzzTest(data, size);
+    OHOS::AudioStandard::UnsetAudioInterruptCallback(data, size);
     return 0;
 }

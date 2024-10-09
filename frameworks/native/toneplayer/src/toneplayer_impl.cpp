@@ -23,7 +23,7 @@
 #include <cmath>
 #include <cfloat>
 #include "securec.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_policy_manager.h"
 #include "tone_player_impl.h"
 #include "audio_utils.h"
@@ -320,7 +320,7 @@ int32_t TonePlayerImpl::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t req
                 *data = ((sample & 0xFF00) >> BIT8);
                 data++;
             } else {
-                result = *data + (static_cast<uint16_t>(sample) & 0xFF);
+                result = *data + (sample & 0xFF);
                 *data = result & 0xFF;
                 data++;
                 *data += (result >> BIT8) + ((sample & 0xFF00) >> BIT8);
@@ -374,7 +374,7 @@ bool TonePlayerImpl::AudioToneSequenceGen(BufferDesc &bufDesc)
         totalSample_ += reqSamples;
         if (CheckToneStopped()) {
             // in plan: do smooth works
-            AUDIO_INFO_LOG("CheckToneStopped true toneType_ %{public}d", toneType_);
+            AUDIO_PRERELEASE_LOGI("CheckToneStopped true toneType_ %{public}d", toneType_);
             if (toneState_ == TONE_STOPPING) {
                 toneState_ = TONE_STOPPED;
                 totalBufAvailable = 0;

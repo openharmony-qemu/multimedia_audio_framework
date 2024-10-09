@@ -55,7 +55,7 @@ void AudioThreadTask::Start()
     state_ = RunningState::STARTED;
 
     if (!loop_) {
-        loop_ = std::make_unique<std::thread>(&AudioThreadTask::RunJob, this);
+        loop_ = std::make_unique<std::thread>([this] { this->RunJob(); });
         pthread_setname_np(loop_->native_handle(), name_.substr(0, MAX_THREAD_NAME_LENGTH).c_str());
     }
     cond_.notify_all();

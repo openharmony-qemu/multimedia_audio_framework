@@ -27,43 +27,66 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t MAX_BATCH_LEN = 20; // Number of input channel, ec(8) + onBoardMic(4) + headsetMic(2) + buffer(6)
+constexpr uint32_t MAX_BYTE_LEN_PER_FRAME = 19200;
+constexpr uint32_t MAX_BIT_DEPTH = 8;
 
-const uint32_t BITLENGTH = 8;
-const uint32_t MILLISECOND = 1000;
-const uint32_t DEFAULT_FRAMELENGTH = 20;
-const uint32_t DEFAULT_SAMPLE_RATE = 48000;
-const uint32_t DEFAULT_DATAFORMAT = 16;
-const uint32_t DEFAULT_REF_NUM = 0;  // if sceneType is voip, refNum is 8
-const uint32_t DEFAULT_MIC_NUM = 4;
-const uint32_t DEFAULT_OUT_NUM = 4;
-
-AudioEnhanceChain::AudioEnhanceChain(const std::string &scene, const std::string &mode)
+static int32_t GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint8_t> &input,
+    uint32_t inputLen)
 {
-    sceneType_ = scene;
-    enhanceMode_ = mode;
-    
-    InitAudioEnhanceChain();
+    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr->bitDepth != 0 &&
+        enhanceBufferAttr->bitDepth < MAX_BIT_DEPTH, ERROR, "bitDepth is invalid");
+    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr->byteLenPerFrame != 0 &&
+        enhanceBufferAttr->byteLenPerFrame < MAX_BYTE_LEN_PER_FRAME, ERROR, "byteLenPerFrame is out of range");
+    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr->batchLen != 0 &&
+        enhanceBufferAttr->batchLen < MAX_BATCH_LEN, ERROR, "batchLen is out of range");
+
+    input.reserve(inputLen);
+    std::vector<std::vector<uint8_t>> cache;
+    if (enhanceBufferAttr->batchLen > 0) {
+        cache.resize(enhanceBufferAttr->batchLen);
+    }
+    for (auto &it : cache) {
+        it.resize(enhanceBufferAttr->byteLenPerFrame);
+    }
+
+    int32_t ret = 0;
+    // ref channel
+    for (uint32_t j = 0; j < enhanceBufferAttr->refNum; ++j) {
+        ret = memset_s(cache[j].data(), cache[j].size(), 0, cache[j].size());
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memset error in ref channel memcpy");
+    }
+    uint32_t index = 0;
+    for (uint32_t i = 0; i < enhanceBufferAttr->byteLenPerFrame / enhanceBufferAttr->bitDepth; ++i) {
+        // mic channel
+        for (uint32_t j = enhanceBufferAttr->refNum; j < enhanceBufferAttr->batchLen; ++j) {
+            ret = memcpy_s(&cache[j][i * enhanceBufferAttr->bitDepth], enhanceBufferAttr->bitDepth,
+                enhanceBufferAttr->input + index, enhanceBufferAttr->bitDepth);
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in mic channel memcpy");
+            index += enhanceBufferAttr->bitDepth;
+        }
+    }
+    for (uint32_t i = 0; i < enhanceBufferAttr->batchLen; ++i) {
+        input.insert(input.end(), cache[i].begin(), cache[i].end());
+    }
+    return SUCCESS;
 }
 
-void AudioEnhanceChain::InitAudioEnhanceChain()
+AudioEnhanceChain::AudioEnhanceChain(const std::string &scene)
 {
     setConfigFlag_ = false;
-    enhanceLibHandles_.clear();
-    standByEnhanceHandles_.clear();
-
-    algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, DEFAULT_DATAFORMAT, DEFAULT_MIC_NUM,
-        DEFAULT_REF_NUM, DEFAULT_OUT_NUM};
-
-    uint32_t batchLen = algoSupportedConfig_.refNum + algoSupportedConfig_.micNum;
-    uint32_t bitDepth = algoSupportedConfig_.dataFormat / BITLENGTH;
-    uint32_t byteLenPerFrame = algoSupportedConfig_.frameLength * (algoSupportedConfig_.sampleRate / MILLISECOND)
-        * bitDepth;
-    algoAttr_ = {bitDepth, batchLen, byteLenPerFrame};
+    sceneType_ = scene;
+    enhanceMode_ = "EFFECT_DEFAULT";
 }
 
 AudioEnhanceChain::~AudioEnhanceChain()
 {
     ReleaseEnhanceChain();
+}
+
+void AudioEnhanceChain::SetEnhanceMode(const std::string &mode)
+{
+    enhanceMode_ = mode;
 }
 
 void AudioEnhanceChain::ReleaseEnhanceChain()
@@ -91,40 +114,83 @@ void AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLi
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
 
-    cmdInfo.data = static_cast<void *>(&algoSupportedConfig_);
-    cmdInfo.size = sizeof(algoSupportedConfig_);
-
     ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with [%{public}s], either one of libs EFFECT_CMD_INIT fail",
         sceneType_.c_str(), enhanceMode_.c_str());
 
-    setConfigFlag_ = true;
     standByEnhanceHandles_.emplace_back(handle);
     enhanceLibHandles_.emplace_back(libHandle);
+}
+
+void AudioEnhanceChain::SetHandleConfig(AudioEffectHandle handle, DataDescription desc)
+{
+    int32_t ret = 0;
+    AudioEffectTransInfo cmdInfo = {};
+    AudioEffectTransInfo replyInfo = {};
+    cmdInfo.data = static_cast<void *>(&desc);
+    cmdInfo.size = sizeof(desc);
+    
+    ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{publc}s] with mode [%{public}s], either one of libs \
+        EFFECT_CMD_SET_CONFIG fai", sceneType_.c_str(), enhanceMode_.c_str());
+    setConfigFlag_ = true;
+}
+
+int32_t AudioEnhanceChain::ApplyEnhanceChain(EnhanceBufferAttr *enhanceBufferAttr)
+{
+    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr != nullptr, ERROR, "enhance buffer is null");
+    
+    enhanceBufferAttr->refNum = REF_CHANNEL_NUM_MAP.find(sceneType_)->second;
+    enhanceBufferAttr->batchLen = enhanceBufferAttr->refNum + enhanceBufferAttr->micNum;
+    uint32_t inputLen = enhanceBufferAttr->byteLenPerFrame * enhanceBufferAttr->batchLen;
+    uint32_t outputLen = enhanceBufferAttr->byteLenPerFrame * enhanceBufferAttr->outNum;
+    std::vector<uint8_t> input;
+    std::vector<uint8_t> output;
+    output.resize(outputLen);
+
+    if (IsEmptyEnhanceHandles()) {
+        AUDIO_ERR_LOG("audioEnhanceChain->standByEnhanceHandles is empty");
+        CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBufferAttr->output, outputLen, enhanceBufferAttr->input,
+            outputLen) == 0, ERROR, "memcpy error in IsEmptyEnhanceHandles");
+        return ERROR;
+    }
+    if (GetOneFrameInputData(enhanceBufferAttr, input, inputLen) != SUCCESS) {
+        AUDIO_ERR_LOG("GetOneFrameInputData failed");
+        CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBufferAttr->output, outputLen, enhanceBufferAttr->input,
+            outputLen) == 0, ERROR, "memcpy error in GetOneFrameInputData");
+        return ERROR;
+    }
+    AudioBuffer audioBufIn_ = {};
+    AudioBuffer audioBufOut_ = {};
+    audioBufIn_.frameLength = inputLen;
+    audioBufOut_.frameLength = outputLen;
+    audioBufIn_.raw = static_cast<void *>(input.data());
+    audioBufOut_.raw = static_cast<void *>(output.data());
+
+    {
+        std::lock_guard<std::mutex> lock(chainMutex_);
+        for (AudioEffectHandle handle : standByEnhanceHandles_) {
+            int32_t ret = 0;
+            if (!setConfigFlag_) {
+                DataDescription desc = DataDescription(enhanceBufferAttr->frameLength, enhanceBufferAttr->sampleRate,
+                    enhanceBufferAttr->dataFormat, enhanceBufferAttr->micNum, enhanceBufferAttr->refNum,
+                    enhanceBufferAttr->outNum);
+                SetHandleConfig(handle, desc);
+            }
+            ret = (*handle)->process(handle, &audioBufIn_, &audioBufOut_);
+            CHECK_AND_CONTINUE_LOG(ret == 0, "[%{publc}s] with mode [%{public}s], either one of libs process fail",
+                sceneType_.c_str(), enhanceMode_.c_str());
+        }
+        CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBufferAttr->output, outputLen, audioBufOut_.raw, outputLen) == 0,
+            ERROR, "memcpy error in audioBufOut_ to enhanceBufferAttr->output");
+        return SUCCESS;
+    }
 }
 
 bool AudioEnhanceChain::IsEmptyEnhanceHandles()
 {
     std::lock_guard<std::mutex> lock(chainMutex_);
     return standByEnhanceHandles_.size() == 0;
-}
-
-void AudioEnhanceChain::GetAlgoConfig(AudioBufferConfig &algoConfig)
-{
-    algoConfig.samplingRate = algoSupportedConfig_.sampleRate;
-    algoConfig.channels = algoSupportedConfig_.micNum;
-    algoConfig.format = static_cast<uint8_t>(algoSupportedConfig_.dataFormat);
-    return;
-}
-
-uint32_t AudioEnhanceChain::GetAlgoBufferSize()
-{
-    return algoAttr_.byteLenPerFrame * algoSupportedConfig_.micNum;
-}
-
-uint32_t AudioEnhanceChain::GetAlgoBufferSizeEc()
-{
-    return algoAttr_.byteLenPerFrame * algoSupportedConfig_.refNum;
 }
 
 } // namespace AudioStandard

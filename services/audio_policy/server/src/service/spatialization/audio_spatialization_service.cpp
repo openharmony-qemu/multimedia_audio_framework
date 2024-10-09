@@ -54,9 +54,8 @@ static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &s
 
 static uint32_t PackSpatializationState(AudioSpatializationState state)
 {
-    uint32_t spatializationEnabled = state.spatializationEnabled ? 1 : 0;
-    uint32_t headTrackingEnabled = state.headTrackingEnabled ? 1 :0;
-    return (spatializationEnabled << SPATIALIZATION_OFFSET) | (headTrackingEnabled << HEADTRACKING_OFFSET);
+    return (state.spatializationEnabled << SPATIALIZATION_OFFSET) |
+        (state.headTrackingEnabled << HEADTRACKING_OFFSET);
 }
 
 static bool IsAudioSpatialDeviceStateEqual(const AudioSpatialDeviceState &a, const AudioSpatialDeviceState &b)
@@ -323,8 +322,8 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
         "isSpatializationSupported = %{public}d, isHeadTrackingSupported = %{public}d",
         audioSpatialDeviceState.isSpatializationSupported, audioSpatialDeviceState.isHeadTrackingSupported);
     {
-        std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
         std::string encryptedAddress = GetSha256EncryptAddress(audioSpatialDeviceState.address);
+        std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
         if (addressToSpatialDeviceStateMap_.count(encryptedAddress) > 0 &&
             IsAudioSpatialDeviceStateEqual(addressToSpatialDeviceStateMap_[encryptedAddress],
             audioSpatialDeviceState)) {
@@ -389,7 +388,6 @@ void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddres
     }
     std::string preDeviceAddress = currentDeviceAddress_;
     currentDeviceAddress_ = macAddress;
-
     std::string currEncryptedAddress_ = GetSha256EncryptAddress(currentDeviceAddress_);
     if (addressToSpatialDeviceStateMap_.find(currEncryptedAddress_) != addressToSpatialDeviceStateMap_.end()) {
         auto nextSpatialDeviceType{ addressToSpatialDeviceStateMap_[currEncryptedAddress_].spatialDeviceType };
@@ -526,19 +524,6 @@ int32_t AudioSpatializationService::UpdateSpatializationSceneType()
     return SPATIALIZATION_SERVICE_OK;
 }
 
-void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: g_adProxy null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->UpdateSpatialDeviceType(spatialDeviceType);
-    IPCSkeleton::SetCallingIdentity(identity);
-    CHECK_AND_RETURN_LOG(ret == 0, "AudioSpatializationService::UpdateSpatialDeviceType fail");
-
-    return;
-}
-
 void AudioSpatializationService::UpdateDeviceSpatialInfo(const uint32_t deviceID, const std::string deviceSpatialInfo)
 {
     std::stringstream ss(deviceSpatialInfo);
@@ -557,6 +542,19 @@ void AudioSpatializationService::UpdateDeviceSpatialInfo(const uint32_t deviceID
     addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported = std::stoi(token);
     std::getline(ss, token, '|');
     addressToSpatialDeviceStateMap_[address].spatialDeviceType = static_cast<AudioSpatialDeviceType>(std::stoi(token));
+}
+
+void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->UpdateSpatialDeviceType(spatialDeviceType);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_LOG(ret == 0, "AudioSpatializationService::UpdateSpatialDeviceType fail");
+
+    return;
 }
 
 void AudioSpatializationService::HandleSpatializationStateChange(bool outputDeviceChange)
@@ -591,11 +589,10 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
 
     if (!outputDeviceChange) {
         AUDIO_INFO_LOG("notify offload entered");
-        std::thread notifyOffloadThread = std::thread(std::bind(
-            &AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService,
-            &AudioPolicyService::GetAudioPolicyService(),
-            currentDeviceAddress_,
-            sessionIDToSpatializationEnabledMap));
+        std::thread notifyOffloadThread = std::thread([=] () mutable {
+            AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(currentDeviceAddress_,
+                sessionIDToSpatializationEnabledMap);
+        });
         notifyOffloadThread.detach();
     }
 }

@@ -52,8 +52,6 @@ int32_t AudioRoutingManager::SetMicStateChangeCallback(
 int32_t AudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
     std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-
     desc = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
 
     return SUCCESS;

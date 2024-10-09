@@ -43,7 +43,7 @@
 #include <pulsecore/rtpoll.h>
 
 #include "securec.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_utils_c.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
@@ -458,4 +458,5 @@ void pa__done(pa_module*m)
     }
 
     pa_xfree(u);
+    m->userdata = NULL;
 }

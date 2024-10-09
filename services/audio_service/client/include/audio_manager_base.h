@@ -303,8 +303,7 @@ public:
      * @return true/false.
      */
     virtual bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &effectMap,
-        std::unordered_map<std::string, std::string> &enhanceMap) = 0;
+        const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) = 0;
 
     /**
      * Set output device sink for effect chain manager.
@@ -398,6 +397,8 @@ public:
      */
     virtual uint32_t GetEffectLatency(const std::string &sessionId) = 0;
 
+    virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
+
     /**
      * Get max amplitude for device.
      *
@@ -412,8 +413,6 @@ public:
      * Release old endpoint and re-create one.
      */
     virtual void ResetAudioEndpoint() = 0;
-
-    virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 
     // Check if the multi-channel sound effect is working on the DSP
     virtual bool GetEffectOffloadEnabled() = 0;
@@ -437,6 +436,16 @@ public:
      * Set Rotation To Effect.
      */
     virtual void SetRotationToEffect(const uint32_t rotate) = 0;
+
+    /**
+     * Update Session Connection State
+     */
+    virtual void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) = 0;
+
+    /**
+     * Set Non Interrupt Mute
+     */
+    virtual void SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -500,10 +509,13 @@ private:
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
     int HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply);
+    int HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateSessionConnectionState(MessageParcel &data, MessageParcel &reply);
+    int HandleSetNonInterruptMute(MessageParcel &data, MessageParcel &reply);
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
-    int HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply);
+    int HandleFifthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

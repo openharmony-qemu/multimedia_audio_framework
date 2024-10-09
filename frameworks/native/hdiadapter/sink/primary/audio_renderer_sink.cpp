@@ -26,8 +26,8 @@
 #include <string>
 #include <unistd.h>
 #include <mutex>
-#include "ctime"
 #include <thread>
+#include "ctime"
 
 #include "securec.h"
 #ifdef FEATURE_POWER_MANAGER
@@ -36,11 +36,13 @@
 #include "audio_running_lock_manager.h"
 #endif
 #include "v4_0/iaudio_manager.h"
-
+#include "hdf_remote_service.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
+
+#include "audio_log_utils.h"
 #include "media_monitor_manager.h"
 
 using namespace std;
@@ -59,10 +61,8 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
-const uint32_t DIRECT_OUTPUT_STREAM_ID = 69;  // 13 + 7 * 8
-const uint32_t VOIP_OUTPUT_STREAM_ID = 77;    // 13 + 8 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
+const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int BUFFER_CALC_20MS = 20;
 const unsigned int BUFFER_CALC_1000MS = 1000;
 const unsigned int FORMAT_1_BYTE = 1;
@@ -70,7 +70,6 @@ const unsigned int FORMAT_2_BYTE = 2;
 const unsigned int FORMAT_3_BYTE = 3;
 const unsigned int FORMAT_4_BYTE = 4;
 #ifdef FEATURE_POWER_MANAGER
-const unsigned int TIME_OUT_SECONDS = 10;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
 
@@ -140,6 +139,17 @@ static HdiAdapterFormat ParseAudioFormat(const std::string &format)
     } else {
         return HdiAdapterFormat::SAMPLE_S16;
     }
+}
+
+static void AudioHostOnRemoteDied(struct HdfDeathRecipient *recipient, struct HdfRemoteService *service)
+{
+    if (recipient == nullptr || service == nullptr) {
+        AUDIO_ERR_LOG("Receive die message but params are null");
+        return;
+    }
+
+    AUDIO_ERR_LOG("Auto exit for audio host die");
+    _Exit(0);
 }
 
 class AudioRendererSinkInner : public AudioRendererSink {
@@ -217,16 +227,18 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool signalDetected_ = false;
+    size_t detectedTime_ = 0;
+    bool latencyMeasEnabled_ = false;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     // for get amplitude
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
-    bool signalDetected_ = false;
-    size_t detectedTime_ = 0;
-    bool latencyMeasEnabled_ = false;
-    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
     time_t startTime = time(nullptr);
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
@@ -247,10 +259,12 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
     int32_t InitRender();
+
     void ReleaseRunningLock();
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
@@ -263,12 +277,19 @@ private:
     AudioPortPin GetAudioPortPin() const noexcept;
     int32_t SetAudioRoute(DeviceType outputDevice, AudioRoute route);
 
+    // use static because only register once for primary hal
+    static struct HdfRemoteService *hdfRemoteService_;
+    static struct HdfDeathRecipient *hdfDeathRecipient_;
+
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     int32_t currentDevicesSize_ = 0;
 };
+
+struct HdfRemoteService *AudioRendererSinkInner::hdfRemoteService_ = nullptr;
+struct HdfDeathRecipient *AudioRendererSinkInner::hdfDeathRecipient_ = nullptr;
 
 AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
     : sinkInited_(false), adapterInited_(false), renderInited_(false), started_(false), paused_(false),
@@ -281,6 +302,7 @@ AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
 AudioRendererSinkInner::~AudioRendererSinkInner()
 {
     AUDIO_WARNING_LOG("~AudioRendererSinkInner");
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
@@ -484,7 +506,7 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
             break;
         }
         case SAMPLE_S24: {
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
         case SAMPLE_S32: {
@@ -517,7 +539,7 @@ void AudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case SAMPLE_S32LE: {
@@ -562,8 +584,6 @@ void AudioRendererSinkInner::DeInit()
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     adapterInited_ = false;
-
-    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
@@ -572,7 +592,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = PRIMARY_OUTPUT_STREAM_ID;
+    attrs.streamId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -587,6 +607,18 @@ int32_t AudioRendererSinkInner::InitAudioManager()
 
     audioManager_ = IAudioManagerGet(false);
     CHECK_AND_RETURN_RET(audioManager_ != nullptr, ERR_INVALID_HANDLE);
+
+    // Only primary sink register death recipient once
+    if (halName_ == PRIMARY_HAL_NAME && hdfRemoteService_ == nullptr) {
+        AUDIO_INFO_LOG("Add death recipient for primary hdf");
+
+        hdfRemoteService_ = audioManager_->AsObject(audioManager_);
+        // Don't need to free, existing with process
+        hdfDeathRecipient_ = (struct HdfDeathRecipient *)calloc(1, sizeof(*hdfDeathRecipient_));
+        hdfDeathRecipient_->OnRemoteDied = AudioHostOnRemoteDied;
+
+        HdfRemoteServiceAddDeathRecipient(hdfRemoteService_, hdfDeathRecipient_);
+    }
 
     return 0;
 }
@@ -650,10 +682,10 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
         param.type = AUDIO_DP;
     } else if (halName_ == DIRECT_HAL_NAME) {
         param.type = AUDIO_DIRECT;
-        param.streamId = DIRECT_OUTPUT_STREAM_ID;
+        param.streamId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT);
     } else if (halName_ == VOIP_HAL_NAME) {
         param.type = AUDIO_IN_COMMUNICATION;
-        param.streamId = VOIP_OUTPUT_STREAM_ID;
+        param.streamId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP);
     }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
@@ -721,6 +753,9 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     if (audioBalanceState_) {AdjustAudioBalance(&data, len);}
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
+    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(&data), len);
@@ -756,6 +791,17 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 #endif
 
     return SUCCESS;
+}
+
+void AudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void AudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -807,9 +853,10 @@ int32_t AudioRendererSinkInner::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-    dumpFileName_ = halName_ + "_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+    dumpFileName_ = halName_ + "_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    logUtilsTag_ = "AudioSink";
 
     InitLatencyMeasurement();
     if (!started_) {
@@ -1023,7 +1070,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = static_cast<int32_t>(0);
-    source.ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID;
+    source.ext.mix.streamId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
     source.ext.device.desc = (char *)"";
 
     int32_t sinksSize = static_cast<int32_t>(outputDevices.size());
@@ -1123,8 +1170,12 @@ int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
     return SUCCESS;
 }
 
-void AudioRendererSinkInner::ReleaseRunningLock()
+int32_t AudioRendererSinkInner::Stop(void)
 {
+    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
+
+    Trace trace("AudioRendererSinkInner::Stop");
+
 #ifdef FEATURE_POWER_MANAGER
     if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
@@ -1136,13 +1187,6 @@ void AudioRendererSinkInner::ReleaseRunningLock()
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
-}
-
-int32_t AudioRendererSinkInner::Stop(void)
-{
-    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
-
-    Trace trace("AudioRendererSinkInner::Stop");
 
     DeinitLatencyMeasurement();
 
@@ -1166,6 +1210,9 @@ int32_t AudioRendererSinkInner::Stop(void)
         return ERR_OPERATION_FAILED;
     }
     started_ = false;
+
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
+
     return SUCCESS;
 }
 
@@ -1323,17 +1370,18 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
         address_end - address_begin - std::strlen("address="));
 
-    if (!sampleRateStr.empty()) attr_.sampleRate = stoi(sampleRateStr);
+    if (!sampleRateStr.empty()) attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
     if (!channeltStr.empty()) attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
+
     attr_.address = addressStr;
     uint32_t formatByte = 0;
-    if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
+    if (attr_.channel <= 0 || attr_.sampleRate <= 0 || bufferSize.empty()) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
     } else {
         formatByte = static_cast<uint32_t>(stoi(bufferSize)) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
             / attr_.channel / attr_.sampleRate;
     }
-    
+
     attr_.format = static_cast<HdiAdapterFormat>(ConvertByteToAudioFormat(formatByte));
 
     AUDIO_DEBUG_LOG("UpdateDPAttrs sampleRate %{public}d,format:%{public}d,channelCount:%{public}d,address:%{public}s",

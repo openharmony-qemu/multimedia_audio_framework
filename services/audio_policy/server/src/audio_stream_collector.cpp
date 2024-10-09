@@ -20,6 +20,7 @@
 
 #include "audio_client_tracker_callback_proxy.h"
 #include "audio_spatialization_service.h"
+#include "audio_utils.h"
 
 #include "media_monitor_manager.h"
 
@@ -222,6 +223,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     capturerChangeInfo->callerPid = streamChangeInfo.audioCapturerChangeInfo.callerPid;
     capturerChangeInfo->muted = streamChangeInfo.audioCapturerChangeInfo.muted;
+    capturerChangeInfo->appTokenId = streamChangeInfo.audioCapturerChangeInfo.appTokenId;
 
     capturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     capturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
@@ -364,9 +366,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
         streamChangeInfo.audioRendererChangeInfo.sessionId);
     bool stateChanged = CheckRendererStateInfoChanged(streamChangeInfo);
     bool infoChanged = CheckRendererInfoChanged(streamChangeInfo);
-    if (!stateChanged && !infoChanged) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(stateChanged || infoChanged, SUCCESS);
 
     // Update the renderer info in audioRendererChangeInfos_
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
@@ -375,9 +375,9 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             audioRendererChangeInfo.sessionId == streamChangeInfo.audioRendererChangeInfo.sessionId) {
             rendererStatequeue_[make_pair(audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId)] =
                 streamChangeInfo.audioRendererChangeInfo.rendererState;
+            streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = (*it)->rendererInfo.pipeType;
             AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", audioRendererChangeInfo.clientUID,
                 audioRendererChangeInfo.sessionId);
-
             unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED,
                 "Memory Allocation Failed");
@@ -464,6 +464,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                 streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = (*it)->inputDeviceInfo;
                 capturerChangeInfo->inputDeviceInfo = (*it)->inputDeviceInfo;
             }
+            capturerChangeInfo->appTokenId = (*it)->appTokenId;
             *it = move(capturerChangeInfo);
             if (audioPolicyServerHandler_ != nullptr) {
                 audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
@@ -728,9 +729,7 @@ void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid
             audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
         }
         AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
-        rendererStatequeue_.erase(make_pair(audioRendererChangeInfo->clientUID,
-            audioRendererChangeInfo->sessionId));
-
+        rendererStatequeue_.erase(make_pair(audioRendererChangeInfo->clientUID, audioRendererChangeInfo->sessionId));
         auto temp = audioRendererBegin;
         audioRendererBegin = audioRendererChangeInfos_.erase(temp);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
@@ -756,8 +755,7 @@ void AudioStreamCollector::RegisteredCapturerTrackerClientDied(const int32_t uid
         if (audioPolicyServerHandler_ != nullptr) {
             audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
         }
-        capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo->clientUID,
-            audioCapturerChangeInfo->sessionId));
+        capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo->clientUID, audioCapturerChangeInfo->sessionId));
         auto temp = audioCapturerBegin;
         audioCapturerBegin = audioCapturerChangeInfos_.erase(temp);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
@@ -836,7 +834,7 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
         if (changeInfo->rendererState != RENDERER_RUNNING) {
             continue;
         }
-        AudioStreamType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
+        AudioVolumeType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
             (changeInfo->rendererInfo).streamUsage);
         if (rendererVolumeType == volumeType) {
             // An active stream has been found, return true directly.
@@ -886,36 +884,7 @@ AudioStreamType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType 
     if (pos != streamTypeMap_.end()) {
         streamType = pos->second;
     }
-    switch (streamType) {
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_MESSAGE:
-        case STREAM_VOICE_COMMUNICATION:
-        case STREAM_VOICE_CALL_ASSISTANT:
-            return STREAM_VOICE_CALL;
-        case STREAM_RING:
-        case STREAM_SYSTEM:
-        case STREAM_NOTIFICATION:
-        case STREAM_SYSTEM_ENFORCED:
-        case STREAM_DTMF:
-            return STREAM_RING;
-        case STREAM_MUSIC:
-        case STREAM_MEDIA:
-        case STREAM_MOVIE:
-        case STREAM_GAME:
-        case STREAM_SPEECH:
-        case STREAM_NAVIGATION:
-            return STREAM_MUSIC;
-        case STREAM_VOICE_ASSISTANT:
-            return STREAM_VOICE_ASSISTANT;
-        case STREAM_ALARM:
-            return STREAM_ALARM;
-        case STREAM_ACCESSIBILITY:
-            return STREAM_ACCESSIBILITY;
-        case STREAM_ULTRASONIC:
-            return STREAM_ULTRASONIC;
-        default:
-            return STREAM_MUSIC;
-    }
+    return VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 }
 
 AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sourceType)
@@ -924,19 +893,13 @@ AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sou
         case SOURCE_TYPE_MIC:
             return STREAM_MUSIC;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
-        case SOURCE_TYPE_VOICE_CALL:
             return STREAM_VOICE_CALL;
         case SOURCE_TYPE_ULTRASONIC:
             return STREAM_ULTRASONIC;
         case SOURCE_TYPE_WAKEUP:
             return STREAM_WAKEUP;
-        case SOURCE_TYPE_VOICE_RECOGNITION:
-        case SOURCE_TYPE_PLAYBACK_CAPTURE:
-        case SOURCE_TYPE_REMOTE_CAST:
-        case SOURCE_TYPE_VIRTUAL_CAPTURE:
-        case SOURCE_TYPE_VOICE_MESSAGE:
         default:
-            return (AudioStreamType)sourceType;
+            return STREAM_MUSIC;
     }
 }
 
@@ -1093,7 +1056,7 @@ void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInf
     bean->Add("PIPE_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType);
     bean->Add("STREAM_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
     bean->Add("SAMPLE_RATE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.samplingRate);
-    bean->Add("NETWORKID", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId);
+    bean->Add("NETWORKID", ConvertNetworkId(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId));
     bean->Add("ENCODING_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", streamChangeInfo.audioRendererChangeInfo.rendererInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);
@@ -1129,7 +1092,7 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
     bean->Add("STREAM_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
     bean->Add("SAMPLE_RATE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.samplingRate);
     bean->Add("MUTED", streamChangeInfo.audioCapturerChangeInfo.muted);
-    bean->Add("NETWORKID", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId);
+    bean->Add("NETWORKID", ConvertNetworkId(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId));
     bean->Add("ENCODING_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);
@@ -1165,7 +1128,7 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
     bean->Add("PIPE_TYPE", audioRendererChangeInfo->rendererInfo.pipeType);
     bean->Add("STREAM_TYPE", audioRendererChangeInfo->rendererInfo.streamUsage);
     bean->Add("SAMPLE_RATE", audioRendererChangeInfo->rendererInfo.samplingRate);
-    bean->Add("NETWORKID", audioRendererChangeInfo->outputDeviceInfo.networkId);
+    bean->Add("NETWORKID", ConvertNetworkId(audioRendererChangeInfo->outputDeviceInfo.networkId));
     bean->Add("ENCODING_TYPE", audioRendererChangeInfo->rendererInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", audioRendererChangeInfo->rendererInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);
@@ -1200,7 +1163,7 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     bean->Add("STREAM_TYPE", audioCapturerChangeInfo->capturerInfo.sourceType);
     bean->Add("SAMPLE_RATE", audioCapturerChangeInfo->capturerInfo.samplingRate);
     bean->Add("MUTED", audioCapturerChangeInfo->muted);
-    bean->Add("NETWORKID", audioCapturerChangeInfo->inputDeviceInfo.networkId);
+    bean->Add("NETWORKID", ConvertNetworkId(audioCapturerChangeInfo->inputDeviceInfo.networkId));
     bean->Add("ENCODING_TYPE", audioCapturerChangeInfo->capturerInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", audioCapturerChangeInfo->capturerInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);

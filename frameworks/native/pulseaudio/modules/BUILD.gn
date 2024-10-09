@@ -18,5 +18,6 @@ group("pa_extend_modules") {
     "capturer:module-inner-capturer-sink",
     "hdi:module-hdi-sink",
     "hdi:module-hdi-source",
+    "hdi:module-split-stream-sink",
   ]
 }

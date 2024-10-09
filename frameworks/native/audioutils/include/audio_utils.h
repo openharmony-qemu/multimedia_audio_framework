@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <mutex>
 #include <ctime>
 #include <sys/time.h>
@@ -45,7 +46,6 @@ namespace OHOS {
 namespace AudioStandard {
 const int64_t PCM_MAYBE_SILENT = 1;
 const int64_t PCM_MAYBE_NOT_SILENT = 5;
-const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
 const int32_t SIGNAL_DATA_SIZE = 96;
 const int32_t SIGNAL_THRESHOLD = 10;
 const int32_t BLANK_THRESHOLD_MS = 100;
@@ -57,8 +57,8 @@ const int32_t YEAR_BASE = 1900;
 const int32_t DECIMAL_EXPONENT = 10;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
+const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
 const uint32_t STRING_BUFFER_SIZE = 4096;
-
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
 class Util {
@@ -113,6 +113,7 @@ public:
 
 class PermissionUtil {
 public:
+    static bool VerifyIsAudio();
     static bool VerifyIsShell();
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
@@ -125,11 +126,11 @@ public:
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len);
-void AdjustStereoToMonoForPCM24Bit(uint8_t *data, uint64_t len);
+void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len);
 void AdjustAudioBalanceForPCM8Bit(int8_t *data, uint64_t len, float left, float right);
 void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, float right);
-void AdjustAudioBalanceForPCM24Bit(uint8_t *data, uint64_t len, float left, float right);
+void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right);
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right);
 
 void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b);
@@ -138,6 +139,7 @@ void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
 void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
 
 std::string GetEncryptStr(const std::string &str);
+std::string ConvertNetworkId(const std::string &networkId);
 
 enum ConvertHdiFormat {
     SAMPLE_U8_C = 0,
@@ -189,7 +191,7 @@ const std::string DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm
 const std::string DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
 const std::string DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
 const std::string DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";
-const std::string DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink.pcm";
+const std::string DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
 const std::string DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
 const std::string DUMP_ENDPOINT_DCP_FILENAME = "dump_endpoint_dcp_audio.pcm";
 const std::string DUMP_ENDPOINT_HDI_FILENAME = "dump_endpoint_hdi_audio.pcm";
@@ -221,10 +223,20 @@ void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
 class AudioInfoDumpUtils {
 public:
     static const std::string GetStreamName(AudioStreamType streamType);
+    static const std::string GetStreamNameExt(AudioStreamType streamType);
     static const std::string GetDeviceTypeName(DeviceType deviceType);
     static const std::string GetConnectTypeName(ConnectType connectType);
     static const std::string GetSourceName(SourceType sourceType);
     static const std::string GetDeviceVolumeTypeName(DeviceVolumeType deviceType);
+};
+
+class VolumeUtils {
+public:
+    static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
+
+private:
+    static std::unordered_map<AudioStreamType, AudioVolumeType> defaultVolumeMap_;
+    static std::unordered_map<AudioStreamType, AudioVolumeType>& GetVolumeMap();
 };
 
 template<typename T>
@@ -521,6 +533,17 @@ public:
         return true;
     }
 
+    std::queue<T> PopAllNotWait()
+    {
+        std::queue<T> retQueue = {};
+        std::unique_lock<std::mutex> lock(mutexLock_);
+        retQueue.swap(queueT_);
+
+        cvNotFull_.notify_all();
+
+        return retQueue;
+    }
+
     unsigned int Size()
     {
         std::unique_lock<std::mutex> lock(mutexLock_);
@@ -564,6 +587,40 @@ protected:
     std::condition_variable cvNotFull_;
     std::queue<T> queueT_;
 };
+
+enum AudioHdiUniqueIDBase : uint32_t {
+    // 0-4 is reserved for other modules
+    AUDIO_HDI_RENDER_ID_BASE = 5,
+    AUDIO_HDI_CAPTURE_ID_BASE = 6,
+};
+
+enum HdiCaptureOffset : uint32_t {
+    HDI_CAPTURE_OFFSET_PRIMARY = 1,
+    HDI_CAPTURE_OFFSET_FAST = 2,
+    HDI_CAPTURE_OFFSET_REMOTE = 3,
+    HDI_CAPTURE_OFFSET_REMOTE_FAST = 4,
+    HDI_CAPTURE_OFFSET_USB = 5,
+    HDI_CAPTURE_OFFSET_EC = 6,
+    HDI_CAPTURE_OFFSET_MIC_REF = 7,
+    HDI_CAPTURE_OFFSET_WAKEUP = 8,
+};
+
+enum HdiRenderOffset : uint32_t {
+    HDI_RENDER_OFFSET_PRIMARY = 1,
+    HDI_RENDER_OFFSET_FAST = 2,
+    HDI_RENDER_OFFSET_REMOTE = 3,
+    HDI_RENDER_OFFSET_REMOTE_FAST = 4,
+    HDI_RENDER_OFFSET_BLUETOOTH = 5,
+    HDI_RENDER_OFFSET_OFFLOAD = 6,
+    HDI_RENDER_OFFSET_MULTICHANNEL = 7,
+    HDI_RENDER_OFFSET_DIRECT = 8,
+    HDI_RENDER_OFFSET_VOIP = 9,
+    HDI_RENDER_OFFSET_DP = 10,
+    HDI_RENDER_OFFSET_USB = 11,
+    HDI_RENDER_OFFSET_VOIP_FAST = 12,
+};
+
+uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

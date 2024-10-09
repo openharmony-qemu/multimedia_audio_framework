@@ -80,7 +80,6 @@ if (!audio_framework_feature_opensl_es) {
     ]
 
     external_deps = [
-      "c_utils:utils",
       "hilog:libhilog",
       "ipc:ipc_single",
       "opensles:libSLES",
@@ -88,7 +87,6 @@ if (!audio_framework_feature_opensl_es) {
 
     output_name = "OpenSLES"
     output_extension = "so"
-    innerapi_tags = [ "platformsdk" ]
     subsystem_name = "multimedia"
     part_name = "audio_framework"
   }

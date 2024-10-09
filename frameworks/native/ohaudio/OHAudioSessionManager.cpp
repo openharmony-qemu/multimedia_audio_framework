@@ -30,10 +30,11 @@ static OHOS::AudioStandard::OHAudioSessionManager *convertManager(OH_AudioSessio
     return (OHAudioSessionManager*) manager;
 }
 
+
 OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(OH_AudioSessionManager **audioSessionManager)
 {
     OHAudioSessionManager* ohAudioSessionManager = OHAudioSessionManager::GetInstance();
-    *audioSessionManager = (OH_AudioSessionManager*)ohAudioSessionManager;
+    *audioSessionManager = reinterpret_cast<OH_AudioSessionManager*>(ohAudioSessionManager);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
@@ -86,8 +87,10 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
     return ohAudioSessionManager->IsAudioSessionActivated();
 }
 
+
 namespace OHOS {
 namespace AudioStandard {
+
 OHAudioSessionManager::OHAudioSessionManager()
 {
     AUDIO_INFO_LOG("OHAudioSessionManager created!");
@@ -104,7 +107,7 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionCallback(OH_AudioSes
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
     std::shared_ptr<OHAudioSessionCallback> ohAudioSessionCallback =
         std::make_shared<OHAudioSessionCallback>(callback);
-    if (ohAudioSessionCallback) {
+    if (ohAudioSessionCallback != nullptr) {
         audioSessionManager_->SetAudioSessionCallback(ohAudioSessionCallback);
         return AUDIOCOMMON_RESULT_SUCCESS;
     }
@@ -157,5 +160,6 @@ void OHAudioSessionCallback::OnAudioSessionDeactive(const AudioSessionDeactiveEv
     event.reason = static_cast<OH_AudioSession_DeactivatedReason>(deactiveEvent.deactiveReason);
     callback_(event);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

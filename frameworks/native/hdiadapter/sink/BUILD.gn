@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 import("../../../../config.gni")
 
 ohos_shared_library("audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -34,17 +35,20 @@ ohos_shared_library("audio_renderer_sink") {
     "../common/include",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include/",
   ]
 
-  deps = [ "../../audioutils:audio_utils" ]
+  deps = [
+    "../../../../services/audio_service:audio_common",
+    "../../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
-    "hdf_core:libhdf_utils",
+    "hdf_core:libhdf_ipc_adapter",
     "hilog:libhilog",
     "init:libbegetutil",
-    "ipc:ipc_single",
     "media_foundation:media_monitor_client",
   ]
   defines = []
@@ -58,6 +62,7 @@ ohos_shared_library("audio_renderer_sink") {
 }
 
 ohos_shared_library("fast_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -81,9 +86,7 @@ ohos_shared_library("fast_audio_renderer_sink") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
-    "ipc:ipc_single",
   ]
   defines = []
   if (audio_framework_feature_power_manager) {
@@ -96,6 +99,7 @@ ohos_shared_library("fast_audio_renderer_sink") {
 }
 
 ohos_shared_library("bluetooth_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -116,20 +120,23 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "../common/include",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
+    "//drivers/peripheral/bluetooth/audio/interfaces/include",
+    "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
+    "../../../../services/audio_service/common/include/",
   ]
 
-  deps = [ "../../audioutils:audio_utils" ]
+  deps = [
+    "../../../../services/audio_service:audio_common",
+    "../../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
-    "c_utils:utils",
-    "drivers_peripheral_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdf_utils",
     "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
     "hilog:libhilog",
     "init:libbegetutil",
-    "ipc:ipc_single",
     "media_foundation:media_monitor_client",
   ]
   defines = []
@@ -138,11 +145,16 @@ ohos_shared_library("bluetooth_renderer_sink") {
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_shared_library("remote_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -163,9 +175,11 @@ ohos_shared_library("remote_audio_renderer_sink") {
     "../devicemanager/interface",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include/",
   ]
 
   deps = [
+    "../../../../services/audio_service:audio_common",
     "../../audioutils:audio_utils",
     "../devicemanager:audio_device_manager",
   ]
@@ -174,7 +188,6 @@ ohos_shared_library("remote_audio_renderer_sink") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
   ]
   defines = []
@@ -187,6 +200,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
 }
 
 ohos_shared_library("remote_fast_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -220,7 +234,6 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
   ]
   defines = []
@@ -233,6 +246,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
 }
 
 ohos_shared_library("audio_renderer_file_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -254,16 +268,14 @@ ohos_shared_library("audio_renderer_file_sink") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-  ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_shared_library("offload_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -289,11 +301,8 @@ ohos_shared_library("offload_audio_renderer_sink") {
   deps = [ "../../audioutils:audio_utils" ]
 
   external_deps = [
-    "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
-    "ipc:ipc_single",
     "media_foundation:media_monitor_client",
   ]
 
@@ -308,6 +317,7 @@ ohos_shared_library("offload_audio_renderer_sink") {
 }
 
 ohos_shared_library("multichannel_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -334,10 +344,8 @@ ohos_shared_library("multichannel_audio_renderer_sink") {
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
     "init:libbegetutil",
-    "ipc:ipc_single",
   ]
   defines = []
   if (audio_framework_feature_power_manager) {
@@ -350,6 +358,7 @@ ohos_shared_library("multichannel_audio_renderer_sink") {
 }
 
 ohos_shared_library("renderer_sink_adapter") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -384,8 +393,8 @@ ohos_shared_library("renderer_sink_adapter") {
     ":audio_renderer_sink",
     ":bluetooth_renderer_sink",
     ":fast_audio_renderer_sink",
-    ":multichannel_audio_renderer_sink",
     ":offload_audio_renderer_sink",
+    ":multichannel_audio_renderer_sink",
   ]
 
   if (audio_framework_feature_daudio_enable == true) {
@@ -398,11 +407,7 @@ ohos_shared_library("renderer_sink_adapter") {
 
   cflags_cc = cflags
 
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-  ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

@@ -61,7 +61,7 @@ void NapiAudioRendererStateCallback::SaveCallbackReference(napi_value args)
 void NapiAudioRendererStateCallback::OnRendererStateChange(
     const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    AUDIO_INFO_LOG("OnRendererStateChange entered");
+    AUDIO_PRERELEASE_LOGI("OnRendererStateChange entered");
 
     std::lock_guard<std::mutex> lock(mutex_);
 

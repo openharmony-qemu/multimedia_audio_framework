@@ -442,37 +442,5 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetCapturerInfo_001, TestSize.Le
     EXPECT_TRUE(sourceType == AUDIOSTREAM_SOURCE_TYPE_MIC);
     OH_AudioStreamBuilder_Destroy(builder);
 }
-
-/**
-* @tc.name  : Test OH_AudioCapturer_GetTimestamp API via illegal state.
-* @tc.number: OH_AudioCapturer_GetTimestamp_001
-* @tc.desc  : Test OH_AudioCapturer_GetTimestamp interface. Return false if clockId is not CLOCK_MONOTONIC
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetTimestamp_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    int64_t framePosition;
-    int64_t timestamp;
-    result = OH_AudioCapturer_GetTimestamp(audioCapturer, CLOCK_REALTIME, &framePosition, &timestamp);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
-* @tc.name  : Test OH_AudioCapturer_GetTimestamp API via illegal state.
-* @tc.number: OH_AudioCapturer_GetTimestamp_002
-* @tc.desc  : Test OH_AudioCapturer_GetTimestamp interface.Returns false if capturer is nullptr.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetTimestamp_002, TestSize.Level0)
-{
-    OH_AudioCapturer* audioCapturer = nullptr;
-    int64_t framePosition;
-    int64_t timestamp;
-    OH_AudioStream_Result result = OH_AudioCapturer_GetTimestamp(audioCapturer, CLOCK_MONOTONIC,
-        &framePosition, &timestamp);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
-}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -26,6 +26,22 @@
 
 namespace OHOS {
 namespace AudioStandard {
+typedef enum {
+    INDEX_PRE_DEFAULT_SCENE = 0,
+    INDEX_PRE_PRIOR_SCENE = 1,
+    INDEX_PRE_NORMAL_SCENE = 2,
+    INDEX_PRE_EXCEPTION = 3,
+    NODE_SIZE_PRE = 4,
+} XmlPreNodeIndex;
+ 
+typedef enum {
+    INDEX_POST_DEFAULT_SCENE = 0,
+    INDEX_POST_PRIOR_SCENE = 1,
+    INDEX_POST_NORMAL_SCENE = 2,
+    INDEX_POST_MAPPING = 3,
+    INDEX_POST_EXCEPTION = 4,
+    NODE_SIZE_POST = 5,
+} XmlPostNodeIndex;
 
 class AudioEffectConfigParser {
 public:

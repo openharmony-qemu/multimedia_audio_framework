@@ -29,6 +29,7 @@ public:
     DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerProxy);
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
+    bool OnQueryClientType(const std::string &bundleName, uint32_t uid) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyManagerListenerProxy> delegator_;

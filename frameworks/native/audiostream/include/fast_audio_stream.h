@@ -172,10 +172,6 @@ public:
 
     IAudioStream::StreamClass GetStreamClass() override;
 
-    int32_t RegisterRendererOrCapturerPolicyServiceDiedCB(
-        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback) override;
-    int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
-
     bool RestoreAudioStream() override;
 
     bool GetOffloadEnable() override;
@@ -188,9 +184,7 @@ public:
 
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
-
-    int32_t RegisterAudioStreamPolicyServerDiedCb();
-    int32_t UnregisterAudioStreamPolicyServerDiedCb();
+    int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;
@@ -216,24 +210,12 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
     bool streamTrackerRegistered_ = false;
-    std::shared_ptr<FastPolicyServiceDiedCallbackImpl> audioStreamPolicyServiceDiedCB_ = nullptr;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     float cacheVolume_ = 1.0f;
     bool silentModeAndMixWithOthers_ = false;
-};
 
-class FastPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {
-public:
-    FastPolicyServiceDiedCallbackImpl();
-    virtual ~FastPolicyServiceDiedCallbackImpl();
-    void OnAudioPolicyServiceDied() override;
-    void SaveRendererOrCapturerPolicyServiceDiedCB(
-        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback);
-    void RemoveRendererOrCapturerPolicyServiceDiedCB();
-
-private:
-    std::mutex mutex_;
-    std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> policyServiceDiedCallback_;
+    std::mutex setPreferredFrameSizeMutex_;
+    std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
 };
 } // namespace AudioStandard
 } // namespace OHOS

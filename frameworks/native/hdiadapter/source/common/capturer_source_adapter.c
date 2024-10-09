@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "i_audio_capturer_source_intf.h"
 
 #ifdef __cplusplus

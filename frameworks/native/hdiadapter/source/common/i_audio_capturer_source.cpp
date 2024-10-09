@@ -21,7 +21,7 @@
 #include <cstring>
 #include <string>
 
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "i_audio_capturer_source_intf.h"
 #include "audio_capturer_source.h"

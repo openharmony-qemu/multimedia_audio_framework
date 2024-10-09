@@ -24,7 +24,7 @@
 #include <string>
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 
 using namespace std;
 
@@ -182,16 +182,16 @@ int32_t AudioCapturerFileSource::Stop(void)
     return SUCCESS;
 }
 
-float AudioCapturerFileSource::GetMaxAmplitude()
-{
-    AUDIO_WARNING_LOG("getMaxAmplitude in audio cap file not support");
-    return 0;
-}
-
 std::string AudioCapturerFileSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     AUDIO_WARNING_LOG("not supported yet");
     return "";
+}
+
+float AudioCapturerFileSource::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in audio cap file not support");
+    return 0;
 }
 
 int32_t AudioCapturerFileSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)

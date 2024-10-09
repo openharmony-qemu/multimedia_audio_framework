@@ -21,53 +21,47 @@
 #include <map>
 
 #include "audio_effect.h"
+#include "audio_enhance_chain_adapter.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-struct EnhanceBuffer {
-    std::vector<uint8_t> ecBuffer;  // voip: ref data = mic data * 2
-    std::vector<uint8_t> micBufferIn; // mic data input
-    std::vector<uint8_t> micBufferOut; // mic data output
-    uint32_t length;  // mic length
-    uint32_t lengthEc;  // EC length
+const std::map<std::string, uint32_t> REF_CHANNEL_NUM_MAP {
+    {"SCENE_VOIP_3A", 2},
+    {"SCENE_RECORD", 0},
 };
 
-struct AlgoAttr {
-    uint32_t bitDepth;
-    uint32_t batchLen;
-    uint32_t byteLenPerFrame;
-};
+struct DataDescription {
+    uint32_t frameLength_;
+    uint32_t sampleRate_;
+    uint32_t dataFormat_;
+    uint32_t micNum_;
+    uint32_t refNum_;
+    uint32_t outChannelNum_;
 
-struct AlgoConfig {
-    uint32_t frameLength;
-    uint32_t sampleRate;
-    uint32_t dataFormat;
-    uint32_t micNum;
-    uint32_t refNum;
-    uint32_t outNum;
-};
+    DataDescription(uint32_t frameLength, uint32_t sampleRate, uint32_t dataFormat,
+        uint32_t micNum, uint32_t refNum, uint32_t outChannelNum)
+        : frameLength_(frameLength), sampleRate_(sampleRate), dataFormat_(dataFormat),
+        micNum_(micNum), refNum_(refNum), outChannelNum_(outChannelNum) {}
+} __attribute__((packed));
 
 class AudioEnhanceChain {
 public:
-    AudioEnhanceChain(const std::string &scene, const std::string &mode);
+    AudioEnhanceChain(const std::string &scene);
     ~AudioEnhanceChain();
+    void SetEnhanceMode(const std::string &mode);
     void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle);
+    void SetHandleConfig(AudioEffectHandle handle, DataDescription desc);
+    int32_t ApplyEnhanceChain(EnhanceBufferAttr *enhanceBufferAttr);
     bool IsEmptyEnhanceHandles();
-    void GetAlgoConfig(AudioBufferConfig &algoConfig);
-    uint32_t GetAlgoBufferSize();
-    uint32_t GetAlgoBufferSizeEc();
 
 private:
-    void InitAudioEnhanceChain();
     void ReleaseEnhanceChain();
 
     bool setConfigFlag_;
     std::mutex chainMutex_;
     std::string sceneType_;
     std::string enhanceMode_;
-    AlgoAttr algoAttr_;
-    AlgoConfig algoSupportedConfig_;
     std::vector<AudioEffectHandle> standByEnhanceHandles_;
     std::vector<AudioEffectLibrary*> enhanceLibHandles_;
 };

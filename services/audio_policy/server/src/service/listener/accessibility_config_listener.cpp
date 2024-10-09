@@ -18,7 +18,7 @@
 
 #include "accessibility_config_listener.h"
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 
 using namespace OHOS::AccessibilityConfig;
 

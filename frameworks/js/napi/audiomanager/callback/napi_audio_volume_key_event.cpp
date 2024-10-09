@@ -39,8 +39,8 @@ NapiAudioVolumeKeyEvent::~NapiAudioVolumeKeyEvent()
 void NapiAudioVolumeKeyEvent::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("OnVolumeKeyEvent is called volumeType=%{public}d, volumeLevel=%{public}d, isUpdateUi=%{public}d",
-        volumeEvent.volumeType, volumeEvent.volume, volumeEvent.updateUi);
+    AUDIO_PRERELEASE_LOGI("OnVolumeKeyEvent is called volumeType=%{public}d, volumeLevel=%{public}d,"
+        "isUpdateUi=%{public}d", volumeEvent.volumeType, volumeEvent.volume, volumeEvent.updateUi);
     CHECK_AND_RETURN_LOG(audioVolumeKeyEventJsCallback_ != nullptr,
         "NapiAudioVolumeKeyEvent:No JS callback registered return");
     std::unique_ptr<AudioVolumeKeyEventJsCallback> cb = std::make_unique<AudioVolumeKeyEventJsCallback>();

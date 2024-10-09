@@ -20,7 +20,7 @@
 #include <mutex>
 #include <vector>
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -47,6 +47,7 @@ public:
 
     auto UnLock()
     {
+        AUDIO_INFO_LOG("AudioRunningLockManager::UnLock in");
         Trace traceUnlock("AudioRunningLockManager:UnLock");
         std::lock_guard<std::mutex> lock(mutex_);
         isLocked_ = false;

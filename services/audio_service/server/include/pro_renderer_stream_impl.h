@@ -32,7 +32,7 @@ public:
     ~ProRendererStreamImpl();
     int32_t InitParams();
     int32_t Start() override;
-    int32_t Pause() override;
+    int32_t Pause(bool isStandby = false) override;
     int32_t Flush() override;
     int32_t Drain() override;
     int32_t Stop() override;
@@ -58,6 +58,7 @@ public:
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override;
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
+    void AbortCallback(int32_t abortTimes) override;
     // offload
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode() override;
@@ -98,12 +99,14 @@ private:
     int32_t privacyType_;
     int32_t renderRate_;
     uint32_t streamIndex_; // invalid index
+    int32_t abortFlag_;
     uint32_t currentRate_;
     uint32_t desSamplingRate_;
     AudioSampleFormat desFormat_;
     size_t byteSizePerFrame_;
     size_t spanSizeInFrame_;
     size_t totalBytesWritten_;
+    size_t sinkBytesWritten_;
     size_t minBufferSize_;
     float powerVolumeFactor_;
     std::atomic<IStatus> status_;
@@ -118,7 +121,7 @@ private:
     LinearPosTimeModel handleTimeModel_;
     AudioProcessConfig processConfig_;
     std::unique_ptr<AudioDownMixStereo> downMixer_;
-
+    
     std::mutex firstFrameMutex;
     std::mutex enqueueMutex;
     std::mutex peekMutex;

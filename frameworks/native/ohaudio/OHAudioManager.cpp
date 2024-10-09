@@ -18,7 +18,7 @@
 #include <set>
 
 #include "audio_info.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_system_manager.h"
 
 namespace {

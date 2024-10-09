@@ -24,6 +24,7 @@
 #include <cstring>
 #include <dlfcn.h>
 #include <list>
+#include <mutex>
 #include <string>
 #include <unistd.h>
 
@@ -37,7 +38,7 @@
 #include "v4_0/iaudio_manager.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 
 using namespace std;
@@ -55,9 +56,9 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t FAST_OUTPUT_STREAM_ID = 21; // 13 + 1 * 8
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int INVALID_FD = -1;
+const unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 }
 
 class FastAudioRendererSinkInner : public FastAudioRendererSink {
@@ -119,6 +120,7 @@ private:
     int32_t CheckPositionTime();
     void PreparePosition();
 
+    void InitAttrs(struct AudioSampleAttributes &attrs);
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
@@ -145,6 +147,7 @@ private:
     int bufferFd_ = INVALID_FD;
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
+    std::mutex mutex_;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -205,7 +208,6 @@ void FastAudioRendererSinkInner::DeInit()
 #ifdef FEATURE_POWER_MANAGER
     KeepRunningUnlock();
 
-    runningLockManager_ = nullptr;
 #endif
 
     started_ = false;
@@ -227,12 +229,14 @@ void FastAudioRendererSinkInner::DeInit()
     ReleaseMmapBuffer();
 }
 
-void InitAttrs(struct AudioSampleAttributes &attrs)
+void FastAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.interleaved = true;
-    attrs.streamId = FAST_OUTPUT_STREAM_ID;
+    attrs.streamId = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ?
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP_FAST) :
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_FAST);
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;
@@ -377,7 +381,7 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
         "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
         desc.totalBufferFrames, desc.transferFrameSize);
     bufferTotalFrameSize_ = static_cast<uint32_t>(desc.totalBufferFrames); // 1440 ~ 3840
-    eachReadFrameSize_ = desc.transferFrameSize; // 240
+    eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize); // 240
 
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
         "BufferSize will overflow!");
@@ -621,7 +625,9 @@ int32_t FastAudioRendererSinkInner::CheckPositionTime()
 
 int32_t FastAudioRendererSinkInner::Start(void)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("FastAudioRendererSinkInner::Start");
+    AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Start", XCOLLIE_TIME_OUT_SECONDS);
     AUDIO_INFO_LOG("FastAudioRendererSinkInner::Start");
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
@@ -803,7 +809,9 @@ int32_t FastAudioRendererSinkInner::GetLatency(uint32_t *latency)
 
 int32_t FastAudioRendererSinkInner::Stop(void)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("FastAudioRendererSinkInner::Stop");
+    AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Stop", XCOLLIE_TIME_OUT_SECONDS);
     AUDIO_INFO_LOG("Stop.");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -904,13 +912,11 @@ int32_t FastAudioRendererSinkInner::Flush(void)
 
 void FastAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
 {
-    AUDIO_WARNING_LOG("not supported.");
 }
 
 int32_t FastAudioRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
     const size_t size)
 {
-    AUDIO_WARNING_LOG("not supported.");
     return SUCCESS;
 }
 

@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioDumpTest"
-#endif
 
 #include <iostream>
 #include <set>
@@ -33,9 +32,11 @@ namespace AudioDumpTest {
     const int SECOND_ARG = 2;
 }
 
-const string AudioDumpKey = "PCM_DUMP";
-const string AudioDumpType = "R_AND_D";
-const set<string> SupportInput = {"0", "1"};
+namespace {
+    const string AudioDumpKey = "PCM_DUMP";
+    const string AudioDumpType = "R_AND_D";
+    const set<string> SupportInput = {"0", "1"};
+}
 
 static void PrintUsage(void)
 {

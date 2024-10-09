@@ -66,42 +66,8 @@ private:
     int32_t HandleSetClientVolume(MessageParcel &data, MessageParcel &reply);
 
     int32_t HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply);
-    
-    using HandlerFunc = int32_t(IpcStreamStub::*)(MessageParcel &data, MessageParcel &reply);
-    // Using the same order in IpcStreamMsg::Code when add func!
-    static inline HandlerFunc funcList_[IpcStreamMsg::IPC_STREAM_MAX_MSG] = {
-        &IpcStreamStub::HandleRegisterStreamListener,
-        &IpcStreamStub::HandleResolveBuffer,
-        &IpcStreamStub::HandleUpdatePosition,
-        &IpcStreamStub::HandleGetAudioSessionID,
-        &IpcStreamStub::HandleStart,
-        &IpcStreamStub::HandlePause,
-        &IpcStreamStub::HandleStop,
-        &IpcStreamStub::HandleRelease,
-        &IpcStreamStub::HandleFlush,
-        &IpcStreamStub::HandleDrain,
-        &IpcStreamStub::HandleUpdatePlaybackCaptureConfig,
-        &IpcStreamStub::HandleGetAudioTime,
-        &IpcStreamStub::HandleGetAudioPosition,
-        &IpcStreamStub::HandleGetLatency,
-        &IpcStreamStub::HandleSetRate,
-        &IpcStreamStub::HandleGetRate,
-        &IpcStreamStub::HandleSetLowPowerVolume,
-        &IpcStreamStub::HandleGetLowPowerVolume,
-        &IpcStreamStub::HandleSetAudioEffectMode,
-        &IpcStreamStub::HandleGetAudioEffectMode,
-        &IpcStreamStub::HandleSetPrivacyType,
-        &IpcStreamStub::HandleGetPrivacyType,
-        &IpcStreamStub::HandleSetOffloadMode,
-        &IpcStreamStub::HandleUnsetOffloadMode,
-        &IpcStreamStub::HandleGetOffloadApproximatelyCacheTime,
-        &IpcStreamStub::HandleOffloadSetVolume,
-        &IpcStreamStub::HandleUpdateSpatializationState,
-        &IpcStreamStub::HandleGetStreamManagerType,
-        &IpcStreamStub::HandleSetSilentModeAndMixWithOthers,
-        &IpcStreamStub::HandleSetClientVolume,
-        &IpcStreamStub::HandleRegisterThreadPriority,
-    };
+
+    int OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

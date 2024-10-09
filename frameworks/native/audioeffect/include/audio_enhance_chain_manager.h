@@ -35,23 +35,18 @@ public:
     ~AudioEnhanceChainManager();
     static AudioEnhanceChainManager* GetInstance();
     void InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
-        std::unordered_map<std::string, std::string> &enhanceChainNameMap,
+        const EffectChainManagerParam &managerParam,
         std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
-    int32_t CreateAudioEnhanceChainDynamic(const std::string &scene, const std::string &mode, const std::string &up,
-        const std::string &down);
-    int32_t ReleaseAudioEnhanceChainDynamic(const std::string &sceneType, const std::string &upDevice,
-        const std::string &downDevice);
-    bool ExistAudioEnhanceChain(const std::string &sceneKey);
-    AudioBufferConfig AudioEnhanceChainGetAlgoConfig(const std::string &sceneType, const std::string &upDevice,
-        const std::string &downDevice);
-    bool IsEmptyEnhanceChain();
-    int32_t InitEnhanceBuffer();
+    int32_t CreateAudioEnhanceChainDynamic(const std::string &sceneType,
+        const std::string &enhanceMode, const std::string &upAndDownDevice);
+    int32_t ReleaseAudioEnhanceChainDynamic(const std::string &sceneType, const std::string &upAndDownDevice);
+    int32_t ApplyAudioEnhanceChain(const std::string &sceneType, EnhanceBufferAttr *enhanceBufferAttr);
+    bool ExistAudioEnhanceChain(const std::string &sceneType);
+    std::string GetUpAndDownDevice();
 
 private:
-    int32_t SetAudioEnhanceChainDynamic(const std::string &sceneType, const std::string &sceneMode,
-        const std::string &upDevice, const std::string &downDevice);
-    
-    int32_t FreeEnhanceBuffer();
+    int32_t SetAudioEnhanceChainDynamic(const std::string &sceneType, const std::string &enhanceMode,
+        const std::string &upAndDownDevice);
     
     std::map<std::string, std::shared_ptr<AudioEnhanceChain>> sceneTypeToEnhanceChainMap_;
     std::map<std::string, int32_t> sceneTypeToEnhanceChainCountMap_;
@@ -59,9 +54,9 @@ private:
     std::map<std::string, std::vector<std::string>> enhanceChainToEnhancesMap_;
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> enhanceToLibraryEntryMap_;
     std::map<std::string, std::string> enhanceToLibraryNameMap_;
-    std::shared_ptr<EnhanceBuffer> enhanceBuffer_ = nullptr;
     std::mutex chainManagerMutex_;
     bool isInitialized_;
+    std::string upAndDownDevice_;
 };
 
 }  // namespace AudioStandard

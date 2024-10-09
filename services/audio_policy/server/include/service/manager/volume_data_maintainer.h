@@ -92,7 +92,6 @@ private:
     VolumeDataMaintainer();
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
     static std::string GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
-    static AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     static std::string GetDeviceTypeName(DeviceType deviceType);
     bool GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType);
     void SetStreamVolumeInternal(AudioStreamType streamType, int32_t volumeLevel);

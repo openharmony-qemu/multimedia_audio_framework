@@ -101,6 +101,16 @@ std::shared_ptr<RendererInServer> IpcStreamInServer::GetRenderer()
     return rendererInServer_;
 }
 
+std::shared_ptr<CapturerInServer> IpcStreamInServer::GetCapturer()
+{
+    if (mode_ != AUDIO_MODE_RECORD || capturerInServer_ == nullptr) {
+        AUDIO_ERR_LOG("GetCapturer failed, mode is %{public}s", (mode_ != AUDIO_MODE_RECORD ? " not record" :
+            "record, but capturer is null!"));
+        return nullptr;
+    }
+    return capturerInServer_;
+}
+
 int32_t IpcStreamInServer::ConfigRenderer()
 {
     rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);

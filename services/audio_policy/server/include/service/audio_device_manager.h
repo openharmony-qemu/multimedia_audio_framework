@@ -73,14 +73,17 @@ public:
         const std::string &macAddress);
     void UpdateScoState(const std::string &macAddress, bool isConnnected);
     bool GetScoState();
-    void UpdateEarpieceStatus(const bool hasEarPiece);
     vector<shared_ptr<AudioDeviceDescriptor>> GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
         const string &macAddress, const string &networkId, ConnectState connectState);
+    void UpdateEarpieceStatus(const bool hasEarPiece);
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
     std::string GetConnDevicesStr();
     std::string GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs);
+    bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     bool IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors);
+    bool IsVirtualConnectedDevice(const sptr<AudioDeviceDescriptor> &selectedDesc);
+    int32_t UpdateDeviceDescDeviceId(sptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
     int32_t UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
@@ -138,6 +141,8 @@ private:
     bool UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
     bool UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     bool UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+
+    void RemoveVirtualConnectedDevice(const shared_ptr<AudioDeviceDescriptor> &devDesc);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;

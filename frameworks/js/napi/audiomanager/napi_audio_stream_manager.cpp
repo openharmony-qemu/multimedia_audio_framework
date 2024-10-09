@@ -123,7 +123,7 @@ napi_value NapiAudioStreamMgr::CreateStreamManagerWrapper(napi_env env)
     }
     status = napi_new_instance(env, constructor, PARAM0, nullptr, &result);
     if (status != napi_ok) {
-        AUDIO_ERR_LOG("napi_new_instance failed, sttaus:%{public}d", status);
+        AUDIO_ERR_LOG("napi_new_instance failed, status:%{public}d", status);
         goto fail;
     }
     return result;
@@ -347,7 +347,6 @@ napi_value NapiAudioStreamMgr::IsStreamActive(napi_env env, napi_callback_info i
 
 napi_value NapiAudioStreamMgr::IsStreamActiveSync(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("IsStreamActiveSync");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
