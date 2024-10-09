@@ -4291,5 +4291,4 @@ void PaHdiSinkFree(pa_sink *s)
     pa_assert_se(u = s->userdata);
 
     UserdataFree(u);
-    s->userdata = NULL;
 }

@@ -581,5 +581,4 @@ void PaHdiSourceFree(pa_source *s)
     pa_source_assert_ref(s);
     pa_assert_se(u = s->userdata);
     UserdataFree(u);
-    s->userdata = NULL;
 }
