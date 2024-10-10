@@ -959,20 +959,20 @@ int32_t AudioService::GetCurrentRendererStreamCnt()
 bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, 
     int32_t maxStreamCntPerUid)
 {
-    if (callingUid == MEDIA_SERVICE_UID) {
-        callingUid = appUid;
+    if (callingUid != MEDIA_SERVICE_UID) {
+        appUid = callingUid;
     }
 
-    auto appUseNum = appUseNumMap.find(callingUid);
+    auto appUseNum = appUseNumMap.find(appUid);
     if (appUseNum != appUseNumMap.end()) {
         ++appUseNum->second;
     } else {
         int32_t initValue = 1;
-        appUseNumMap.emplace(callingUid, initValue);
+        appUseNumMap.emplace(appUid, initValue);
     }
 
-    if (appUseNumMap[callingUid] > maxStreamCntPerUid) {
-        --appUseNumMap[callingUid]; // actual created stream num is stream num decrease one
+    if (appUseNumMap[appUid] > maxStreamCntPerUid) {
+        --appUseNumMap[appUid]; // actual created stream num is stream num decrease one
         return true;
     }
     return false;
