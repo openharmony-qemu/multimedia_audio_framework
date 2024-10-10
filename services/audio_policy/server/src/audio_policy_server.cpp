@@ -590,7 +590,11 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeType(const int32_t clien
 
 AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32_t clientUid)
 {
-    AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus(clientUid));
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC;
+    if (clientUid != 0) {
+        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus(clientUid));
+    }
+
     AUDIO_INFO_LOG("Get active volume type success:= %{public}d", streamInFocus);
     return streamInFocus;
 }

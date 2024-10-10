@@ -246,7 +246,8 @@ napi_value NapiAudioVolumeGroupManager::GetActiveVolumeTypeSync(napi_env env, na
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
     AudioStreamType volType = napiAudioVolumeGroupManager->audioGroupMngr_->GetActiveVolumeType(clientUid);
-    NapiParamUtils::SetValueInt32(env, volType, result);
+    int32_t jsVolType = NapiAudioEnum::GetJsAudioVolumeType(volType);
+    NapiParamUtils::SetValueInt32(env, jsVolType, result);
 
     return result;
 }
