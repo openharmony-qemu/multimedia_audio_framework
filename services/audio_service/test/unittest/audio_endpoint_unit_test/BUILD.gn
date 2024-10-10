@@ -29,6 +29,7 @@ ohos_unittest("audio_endpoint_unit_test") {
     "../../../../audio_service/common/include",
     "../../../../audio_service/common",
     "./include",
+    "../../../../../frameworks/native/audioqosmanager/include",
     "../../../../../frameworks/native/hdiadapter/common/",
     "../../../../../frameworks/native/hdiadapter/common/include",
     "../../../../../frameworks/native/hdiadapter/sink/common",
@@ -44,6 +45,7 @@ ohos_unittest("audio_endpoint_unit_test") {
 
   deps = [
     "../../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../../frameworks/native/audioutils:audio_utils",
     "../../../../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
