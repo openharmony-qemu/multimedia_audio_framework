@@ -75,6 +75,9 @@ IpcStreamInServer::IpcStreamInServer(const AudioProcessConfig &config, AudioMode
 IpcStreamInServer::~IpcStreamInServer()
 {
     AUDIO_INFO_LOG("~IpcStreamInServer(), uid: %{public}d", config_.appInfo.appUid); // waiting for review: add uid.
+    if (rendererInServer_) {
+        rendererInServer_->Release();
+    }
 }
 
 int32_t IpcStreamInServer::Config()
