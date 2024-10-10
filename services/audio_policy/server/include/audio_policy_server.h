@@ -270,9 +270,9 @@ public:
 
     void RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id);
 
-    void RegisteredTrackerClientDied(int uid);
+    void RegisteredTrackerClientDied(int pid, int uid);
 
-    void RegisteredStreamListenerClientDied(int pid);
+    void RegisteredStreamListenerClientDied(int pid, int uid);
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 

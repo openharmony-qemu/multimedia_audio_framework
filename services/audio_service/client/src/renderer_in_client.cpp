@@ -346,9 +346,10 @@ const sptr<IStandardAudioService> RendererInClientInner::GetAudioServerProxy()
         }
 
         // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioServerDied(pid, uid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
@@ -359,7 +360,7 @@ const sptr<IStandardAudioService> RendererInClientInner::GetAudioServerProxy()
     return gasp;
 }
 
-void RendererInClientInner::AudioServerDied(pid_t pid)
+void RendererInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
     std::lock_guard<std::mutex> lock(g_serverProxyMutex);

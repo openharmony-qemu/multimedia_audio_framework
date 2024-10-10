@@ -58,9 +58,11 @@ inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 
         AUDIO_DEBUG_LOG("Init g_apProxy is assigned.");
         pid_t pid = 0;
-        sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
+        pid_t uid = 0;
+        sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
         if (deathRecipient_ != nullptr) {
-            deathRecipient_->SetNotifyCb([] (pid_t pid) { AudioPolicyManager::AudioPolicyServerDied(pid); });
+            deathRecipient_->SetNotifyCb(
+                [] (pid_t pid, pid_t uid) { AudioPolicyManager::AudioPolicyServerDied(pid, uid); });
             AUDIO_DEBUG_LOG("Register audio policy server death recipient");
             bool result = object->AddDeathRecipient(deathRecipient_);
             if (!result) {
@@ -143,7 +145,7 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
     }
 }
 
-void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
+void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
 {
     if (g_apProxy == nullptr) {
         AUDIO_ERR_LOG("Audio policy server has already died!");

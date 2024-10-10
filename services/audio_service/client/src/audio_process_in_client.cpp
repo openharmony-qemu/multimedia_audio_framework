@@ -118,7 +118,7 @@ public:
     bool Init(const AudioProcessConfig &config);
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
-    static void AudioServerDied(pid_t pid);
+    static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
 
 private:
@@ -281,9 +281,10 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
         CHECK_AND_RETURN_RET_LOG(gAudioServerProxy != nullptr, nullptr, "get audio service proxy failed");
 
         // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioServerDied(pid, uid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_WARNING_LOG("failed to add deathRecipient");
@@ -298,7 +299,7 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
  * When AudioServer died, all stream in client should be notified. As they were proxy stream ,the stub stream
  * has been destoried in server.
 */
-void AudioProcessInClientInner::AudioServerDied(pid_t pid)
+void AudioProcessInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("audio server died, will restore proxy in next call");
     std::lock_guard<std::mutex> lock(g_audioServerProxyMutex);

@@ -171,9 +171,10 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
         xcollieGetSystemAbility.CancelXCollieTimer();
 
         // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioSystemManager::AudioServerDied(pid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioSystemManager::AudioServerDied(pid, uid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("failed to add deathRecipient");
@@ -184,7 +185,7 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
     return gasp;
 }
 
-void AudioSystemManager::AudioServerDied(pid_t pid)
+void AudioSystemManager::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("audio server died, will restore proxy in next call");
     lock_guard<mutex> lock(g_asProxyMutex);

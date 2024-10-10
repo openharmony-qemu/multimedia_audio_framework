@@ -191,7 +191,7 @@ public:
 
     bool GetSilentModeAndMixWithOthers() override;
 
-    static void AudioServerDied(pid_t pid);
+    static void AudioServerDied(pid_t pid, pid_t uid);
 
     void OnHandle(uint32_t code, int64_t data) override;
     void InitCallbackHandler();
@@ -539,9 +539,10 @@ const sptr<IStandardAudioService> CapturerInClientInner::GetAudioServerProxy()
         }
 
         // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioServerDied(pid, uid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
@@ -552,7 +553,7 @@ const sptr<IStandardAudioService> CapturerInClientInner::GetAudioServerProxy()
     return gasp;
 }
 
-void CapturerInClientInner::AudioServerDied(pid_t pid)
+void CapturerInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
     std::lock_guard<std::mutex> lock(g_serverMutex);

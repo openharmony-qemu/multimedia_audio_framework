@@ -190,7 +190,7 @@ private:
     int32_t GetHapBuildApiVersion(int32_t callerUid);
 
     void NotifyProcessStatus(bool isStart);
-    void AudioServerDied(pid_t pid);
+    void AudioServerDied(pid_t pid, pid_t uid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,

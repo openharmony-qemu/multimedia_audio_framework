@@ -1297,7 +1297,7 @@ public:
      */
     int32_t DisableSafeMediaVolume();
 
-    static void AudioServerDied(pid_t pid);
+    static void AudioServerDied(pid_t pid, pid_t uid);
 
     int32_t SetMicrophoneBlockedCallback(const std::shared_ptr<AudioManagerMicrophoneBlockedCallback>& callback);
     int32_t UnsetMicrophoneBlockedCallback(std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = nullptr);

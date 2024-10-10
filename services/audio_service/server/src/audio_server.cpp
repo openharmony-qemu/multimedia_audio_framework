@@ -1977,7 +1977,7 @@ bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::Access
     return true;
 }
 
-void AudioServer::AudioServerDied(pid_t pid)
+void AudioServer::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("Policy server died: restart pulse audio");
     _Exit(0);
@@ -1987,13 +1987,14 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
 {
     AUDIO_INFO_LOG("Register policy server death recipient");
     pid_t pid = IPCSkeleton::GetCallingPid();
-    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
+    pid_t uid = IPCSkeleton::GetCallingUid();
+    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
     if (deathRecipient_ != nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_POLICY_SERVICE_ID);
         CHECK_AND_RETURN_LOG(object != nullptr, "Policy service unavailable");
-        deathRecipient_->SetNotifyCb([this] (pid_t pid) { this->AudioServerDied(pid); });
+        deathRecipient_->SetNotifyCb([this] (pid_t pid, pid_t uid) { this->AudioServerDied(pid, uid); });
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (!result) {
             AUDIO_ERR_LOG("Failed to add deathRecipient");
