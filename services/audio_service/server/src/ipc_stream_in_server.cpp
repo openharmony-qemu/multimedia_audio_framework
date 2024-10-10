@@ -75,7 +75,9 @@ IpcStreamInServer::IpcStreamInServer(const AudioProcessConfig &config, AudioMode
 IpcStreamInServer::~IpcStreamInServer()
 {
     AUDIO_INFO_LOG("~IpcStreamInServer(), uid: %{public}d", config_.appInfo.appUid); // waiting for review: add uid.
-    if (rendererInServer_) {
+    // avoid unexpected release in proRenderStreamImpl working thread
+    if (rendererInServer_ && (rendererInServer_->GetActualStreamManagerType() == DIRECT_PLAYBACK ||
+        rendererInServer_->GetActualStreamManagerType() == VOIP_PLAYBACK)) {
         rendererInServer_->Release();
     }
 }

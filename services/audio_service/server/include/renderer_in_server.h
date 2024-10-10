@@ -99,7 +99,7 @@ public:
     int32_t SetMute(bool isMute);
 
     void OnDataLinkConnectionUpdate(IOperation operation);
-
+    int32_t GetActualStreamManagerType() const noexcept;
     bool Dump(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
     void RestoreSession();
