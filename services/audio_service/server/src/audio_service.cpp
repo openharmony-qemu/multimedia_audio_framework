@@ -956,7 +956,7 @@ int32_t AudioService::GetCurrentRendererStreamCnt()
 }
 
 // need call with streamLifeCycleMutex_ lock
-bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, 
+bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid,
     int32_t maxStreamCntPerUid)
 {
     if (callingUid != MEDIA_SERVICE_UID) {
