@@ -351,6 +351,8 @@ public:
 
     int32_t GetUid(int32_t sessionId);
 
+    void RemoveDeviceForUid(int32_t uid);
+
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
@@ -369,7 +371,7 @@ public:
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
 
 #ifdef BLUETOOTH_ENABLE
-    static void BluetoothServiceCrashedCallback(pid_t pid);
+    static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
 
     void RegisterBluetoothListener();

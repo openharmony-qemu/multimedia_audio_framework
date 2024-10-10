@@ -261,7 +261,7 @@ public:
 
     int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId);
 
-    static void AudioPolicyServerDied(pid_t pid);
+    static void AudioPolicyServerDied(pid_t pid, pid_t uid);
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 

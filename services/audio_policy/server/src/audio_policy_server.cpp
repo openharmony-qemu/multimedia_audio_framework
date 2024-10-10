@@ -1817,25 +1817,22 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL!!");
 
-    pid_t uid = 0;
-    if (id == TRACKER_CLIENT) {
-        // Deliberately casting UID to pid_t
-        uid = static_cast<pid_t>(IPCSkeleton::GetCallingUid());
-    } else {
-        uid = IPCSkeleton::GetCallingPid();
-    }
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    pid_t uid = IPCSkeleton::GetCallingUid();
     if (id == TRACKER_CLIENT && std::find(clientDiedListenerState_.begin(), clientDiedListenerState_.end(), uid)
         != clientDiedListenerState_.end()) {
         AUDIO_INFO_LOG("Tracker has been registered for %{public}d!", uid);
         return;
     }
-    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(uid);
+    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
     if (deathRecipient_ != nullptr) {
         if (id == TRACKER_CLIENT) {
-            deathRecipient_->SetNotifyCb([this] (int uid) { this->RegisteredTrackerClientDied(uid); });
+            deathRecipient_->SetNotifyCb(
+                [this] (pid_t pid, pid_t uid) { this->RegisteredTrackerClientDied(pid, uid); });
         } else {
             AUDIO_PRERELEASE_LOGI("RegisteredStreamListenerClientDied register!!");
-            deathRecipient_->SetNotifyCb([this] (pid_t pid) { this->RegisteredStreamListenerClientDied(pid); });
+            deathRecipient_->SetNotifyCb(
+                [this] (pid_t pid, pid_t uid) { this->RegisteredStreamListenerClientDied(pid, uid); });
         }
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (result && id == TRACKER_CLIENT) {
@@ -1847,9 +1844,10 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
     }
 }
 
-void AudioPolicyServer::RegisteredTrackerClientDied(pid_t uid)
+void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
 {
-    AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", uid);
+    AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
+    audioPolicyService_.RemoveDeviceForUid(uid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     audioPolicyService_.RegisteredTrackerClientDied(uid);
 
@@ -1860,9 +1858,10 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t uid)
         filter), clientDiedListenerState_.end());
 }
 
-void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
+void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
 {
-    AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, uid %{public}d", pid);
+    AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
+    audioPolicyService_.RemoveDeviceForUid(uid);
     if (pid == lastMicMuteSettingPid_) {
         // The last app with the non-persistent microphone setting died, restore the default non-persistent value
         AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");

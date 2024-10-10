@@ -23,17 +23,17 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioServerDeathRecipient : public IRemoteObject::DeathRecipient {
 public:
-    explicit AudioServerDeathRecipient(pid_t pid) : pid_(pid) {}
+    explicit AudioServerDeathRecipient(pid_t pid, pid_t uid) : pid_(pid), uid_(uid) {}
     virtual ~AudioServerDeathRecipient() = default;
     DISALLOW_COPY_AND_MOVE(AudioServerDeathRecipient);
     void OnRemoteDied(const wptr<IRemoteObject> &remote)
     {
         (void)remote;
         if (diedCb_ != nullptr) {
-            diedCb_(pid_);
+            diedCb_(pid_, uid_);
         }
     }
-    using NotifyCbFunc = std::function<void(pid_t)>;
+    using NotifyCbFunc = std::function<void(pid_t, pid_t)>;
     void SetNotifyCb(NotifyCbFunc func)
     {
         diedCb_ = func;
@@ -41,6 +41,7 @@ public:
 
 private:
     pid_t pid_ = 0;
+    pid_t uid_ = 0;
     NotifyCbFunc diedCb_ = nullptr;
 };
 } // namespace AudioStandard

@@ -5442,7 +5442,6 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamChangeInfo.audioRendererChangeInfo.sessionId);
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
-            audioAffinityManager_.DelSelectRendererDevice(streamChangeInfo.audioRendererChangeInfo.clientUID);
         }
         FetchDevice(true);
     }
@@ -5471,7 +5470,6 @@ void AudioPolicyService::HandleAudioCaptureState(AudioMode &mode, AudioStreamCha
             BluetoothScoDisconectForRecongnition();
             Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
         }
-        audioAffinityManager_.DelSelectCapturerDevice(streamChangeInfo.audioCapturerChangeInfo.clientUID);
         audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
     }
 }
@@ -6508,6 +6506,12 @@ int32_t AudioPolicyService::GetUid(int32_t sessionId)
     return streamCollector_.GetUid(sessionId);
 }
 
+void AudioPolicyService::RemoveDeviceForUid(int32_t uid)
+{
+    audioAffinityManager_.DelSelectCapturerDevice(uid);
+    audioAffinityManager_.DelSelectRendererDevice(uid);
+}
+
 DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)
 {
     switch (hdiPin) {
@@ -7096,10 +7100,11 @@ const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
             "get audio service proxy failed");
 
         // register death recipent
-        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid) {
-                AudioPolicyService::BluetoothServiceCrashedCallback(pid);
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
+                AudioPolicyService::BluetoothServiceCrashedCallback(pid, uid);
             });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
@@ -7111,7 +7116,7 @@ const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
     return gasp;
 }
 
-void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid)
+void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("Bluetooth sa crashed, will restore proxy in next call");
     lock_guard<mutex> lock(g_btProxyMutex);

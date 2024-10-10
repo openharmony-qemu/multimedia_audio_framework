@@ -161,7 +161,7 @@ public:
     IAudioStream::StreamClass GetStreamClass() override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
-    static void AudioServerDied(pid_t pid);
+    static void AudioServerDied(pid_t pid, pid_t uid);
 
     void OnHandle(uint32_t code, int64_t data) override;
     void InitCallbackHandler();
