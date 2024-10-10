@@ -29,7 +29,7 @@ public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
     void SetAudioDeviceAnahsCallback(const std::weak_ptr<AudioDeviceAnahs> &callback);
-    int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus) override;
+    int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) override;
 private:
     void OnExtPnpDeviceStatusChangedInternal(MessageParcel &data, MessageParcel &reply);
     std::weak_ptr<AudioDeviceAnahs> audioDeviceAnahsCallback_;

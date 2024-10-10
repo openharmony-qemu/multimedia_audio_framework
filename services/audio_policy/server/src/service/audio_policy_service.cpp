@@ -3720,6 +3720,12 @@ void AudioPolicyService::OnUpdateRouteSupport(bool isSupported)
     isUpdateRouteSupported_ = isSupported;
 }
 
+void AudioPolicyService::OnUpdateAnahsSupport(std::string anahsShowType)
+{
+    AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
+    deviceStatusListener_->UpdateAnahsPlatformType(anahsShowType);
+}
+
 bool AudioPolicyService::GetActiveDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo)
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
