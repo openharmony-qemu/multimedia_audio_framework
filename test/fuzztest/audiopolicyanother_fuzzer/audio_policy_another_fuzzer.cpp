@@ -214,7 +214,7 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     }
 
     int pid = *reinterpret_cast<const int *>(rawData);
-    GetServerPtr()->RegisteredTrackerClientDied(pid);
+    GetServerPtr()->RegisteredTrackerClientDied(pid, 0);
 
     AudioStreamInfo audioStreamInfo = {};
     audioStreamInfo.samplingRate = *reinterpret_cast<const AudioSamplingRate *>(rawData);

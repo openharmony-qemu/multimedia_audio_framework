@@ -406,7 +406,7 @@ void AudioPolicyOtherMoreFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     int pid = *reinterpret_cast<const int *>(rawData);
-    GetServerPtr()->RegisteredTrackerClientDied(pid);
+    GetServerPtr()->RegisteredTrackerClientDied(pid, 0);
     AudioStreamInfo audioStreamInfo;
     audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
     audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
