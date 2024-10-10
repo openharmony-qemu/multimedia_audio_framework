@@ -32,6 +32,8 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t DEFAULT_STREAM_ID = 10;
+constexpr uint64_t AUDIO_ENDPOINT_ID = 123;
 
 void AudioEndpointUnitTest::SetUpTestCase(void)
 {
@@ -66,10 +68,72 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {
-        AUDIO_ERR_LOG("Config AudioEndpoint failed.");
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
+}
+
+static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoint::EndpointType type)
+{
+    AudioProcessConfig config = {};
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpointInner> audioEndpoint =
+        std::make_shared<AudioEndpointInner>(type, AUDIO_ENDPOINT_ID, config);
+    if (!audioEndpoint->Config(deviceInfo)) {
+        audioEndpoint = nullptr;
+    }
+    return audioEndpoint;
+}
+
+static std::shared_ptr<AudioEndpointInner> CreateOutputEndpointInner(AudioEndpoint::EndpointType type)
+{
+    AudioProcessConfig config = {};
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::OUTPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.audioStreamInfo.channelLayout = CH_LAYOUT_STEREO;
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner =
+        CreateEndpointInner(type, AUDIO_ENDPOINT_ID, config, deviceInfo);
+    EXPECT_NE(nullptr, audioEndpointInner);
+    EXPECT_NE(nullptr, audioEndpointInner->fastSink_);
+
+    return audioEndpointInner;
+}
+
+static AudioProcessConfig InitServerProcessConfig()
+{
+    AudioProcessConfig config;
+    config.appInfo.appUid = DEFAULT_STREAM_ID;
+    config.appInfo.appPid = DEFAULT_STREAM_ID;
+    config.streamInfo.format = SAMPLE_S32LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    config.audioMode = AudioMode::AUDIO_MODE_RECORD;
+    config.streamType = AudioStreamType::STREAM_MUSIC;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    return config;
+}
+
+static sptr<AudioProcessInServer> CreateAudioProcessInServer()
+{
+    AudioService *audioServicePtr = AudioService::GetInstance();
+    DeviceInfo deviceInfo = {};
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    AudioProcessConfig serverConfig = InitServerProcessConfig();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(serverConfig, audioServicePtr);
+    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, deviceInfo.audioStreamInfo, buffer);
+    return processStream;
 }
 
 /**
@@ -88,6 +152,36 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_001, TestSize.Level1
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpoint);
+}
+
+/**
+ * @tc.name  : Test CreateEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointCreateEndpoint_002
+ * @tc.desc  : Test CreateEndpoint interface.
+ */
+HWTEST_F(AudioEndpointUnitTest, CreateEndpoint_002, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner =
+        CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::INVALID_WIDTH;
+    audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
+    EXPECT_NE(nullptr, audioEndpointInner);
 }
 
 /**
@@ -482,6 +576,202 @@ HWTEST_F(AudioEndpointUnitTest, GetFastSink_001, TestSize.Level1)
     deviceInfo.a2dpOffloadFlag = A2DP_OFFLOAD;
     ret = audioEndpointInner->GetFastSink(deviceInfo, AudioEndpoint::TYPE_INVALID);
     EXPECT_EQ(nullptr, ret);
+}
+
+/*
+ * @tc.name  : Test AudioEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointMix_001
+ * @tc.desc  : Test AudioEndpointInner interface
+ */
+HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    sptr<AudioProcessInServer> processStream = CreateAudioProcessInServer();
+    sptr<AudioProcessInServer> newpProcessStream = CreateAudioProcessInServer();
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    bool result = audioEndpointInner->UnlinkProcessStream(processStream);
+    EXPECT_FALSE(result);
+
+    int32_t ret = audioEndpointInner->OnUpdateHandleInfo(processStream);
+    EXPECT_NE(SUCCESS, ret);
+
+    ret = audioEndpointInner->LinkProcessStream(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnUpdateHandleInfo(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioProcessConfig config = {};
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
+    result = audioEndpointInner->Config(deviceInfo);
+    EXPECT_FALSE(result);
+
+    processStream->SetInnerCapState(true);
+    result = audioEndpointInner->ShouldInnerCap();
+    EXPECT_TRUE(result);
+
+    processStream->SetInnerCapState(false);
+    result = audioEndpointInner->ShouldInnerCap();
+    EXPECT_FALSE(result);
+ 
+    result = audioEndpointInner->UnlinkProcessStream(newpProcessStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    result = audioEndpointInner->UnlinkProcessStream(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/*
+ * @tc.name  : Test AudioEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointMix_002
+ * @tc.desc  : Test AudioEndpointInner interface
+ */
+HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    sptr<AudioProcessInServer> processStream = CreateAudioProcessInServer();
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnPause(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStart(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStart(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnPause(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/*
+ * @tc.name  : Test AudioEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointMix_003
+ * @tc.desc  : Test AudioEndpointInner interface
+ */
+HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    sptr<AudioProcessInServer> processStream = CreateAudioProcessInServer();
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnPause(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStart(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStart(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnPause(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/*
+ * @tc.name  : Test HandleStartDeviceFailed API
+ * @tc.type  : FUNC
+ * @tc.number: HandleStartDeviceFailed_001
+ * @tc.desc  : Test HandleStartDeviceFailed interface
+ */
+HWTEST_F(AudioEndpointUnitTest, HandleStartDeviceFailed_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    sptr<AudioProcessInServer> processStream = CreateAudioProcessInServer();
+    sptr<AudioProcessInServer> newpProcessStream = CreateAudioProcessInServer();
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    audioEndpointInner->HandleStartDeviceFailed();
+    EXPECT_EQ(AudioEndpoint::EndpointStatus::UNLINKED, audioEndpointInner->endpointStatus_);
+
+    int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioEndpointInner->LinkProcessStream(newpProcessStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioEndpointInner->HandleStartDeviceFailed();
+    EXPECT_EQ(AudioEndpoint::EndpointStatus::IDEL, audioEndpointInner->endpointStatus_);
+
+    audioEndpointInner->isInnerCapEnabled_ = true;
+    EXPECT_TRUE(audioEndpointInner->StartDevice());
+
+    EXPECT_TRUE(audioEndpointInner->StopDevice());
+
+    audioEndpointInner->fastSource_->DeInit();
+    audioEndpointInner->fastSource_ = nullptr;
+    audioEndpointInner->isInnerCapEnabled_ = true;
+    EXPECT_FALSE(audioEndpointInner->StartDevice());
+}
+
+/*
+ * @tc.name  : Test EndpointWorkLoopFuc API
+ * @tc.type  : FUNC
+ * @tc.number: EndpointWorkLoopFuc_001
+ * @tc.desc  : Test EndpointWorkLoopFuc interface
+ */
+HWTEST_F(AudioEndpointUnitTest, EndpointWorkLoopFuc_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    sptr<AudioProcessInServer> processStream = CreateAudioProcessInServer();
+    sptr<AudioProcessInServer> newpProcessStream = CreateAudioProcessInServer();
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    audioEndpointInner->HandleStartDeviceFailed();
+    EXPECT_EQ(AudioEndpoint::EndpointStatus::UNLINKED, audioEndpointInner->endpointStatus_);
+
+    int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioEndpointInner->LinkProcessStream(newpProcessStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioEndpointInner->HandleStartDeviceFailed();
+    EXPECT_EQ(AudioEndpoint::EndpointStatus::IDEL, audioEndpointInner->endpointStatus_);
+
+    EXPECT_TRUE(audioEndpointInner->StartDevice());
+}
+
+/*
+ * @tc.name  : Test DelayStopDevice API
+ * @tc.type  : FUNC
+ * @tc.number: DelayStopDevice_001
+ * @tc.desc  : Test DelayStopDevice interface
+ */
+HWTEST_F(AudioEndpointUnitTest, DelayStopDevice_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    sptr<AudioProcessInServer> processStream = CreateAudioProcessInServer();
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    audioEndpointInner->delayStopTime_ = 0;
+    int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    EXPECT_TRUE(audioEndpointInner->DelayStopDevice());
+
+    audioEndpointInner->fastSource_->DeInit();
+    audioEndpointInner->fastSource_ = nullptr;
+    audioEndpointInner->isInnerCapEnabled_ = true;
+    EXPECT_FALSE(audioEndpointInner->DelayStopDevice());
+
+    audioEndpointInner->deviceInfo_.deviceRole = OUTPUT_DEVICE;
+    EXPECT_FALSE(audioEndpointInner->DelayStopDevice());
 }
 } // namespace AudioStandard
 } // namespace OHOS
