@@ -267,7 +267,7 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
     for (Stream &ss: supportedEffectConfig_.postProcessNew.stream) {
         postSceneTypeSet_.push_back(ss.scene);
     }
-    AUDIO_INFO_LOG("postSceneTypeSet_ size is %{public}lu", supportedEffectConfig_.postProcessNew.stream.size());
+    AUDIO_INFO_LOG("postSceneTypeSet_ size is %{public}zu", supportedEffectConfig_.postProcessNew.stream.size());
     std::vector<SceneMappingItem> postSceneMap;
     for (SceneMappingItem &item: aeConfig.postProcess.sceneMap) {
         if (!VerifySceneMappingItem(item)) {
