@@ -78,9 +78,9 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
     return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, false, volumeFlag);
 }
 
-AudioStreamType AudioGroupManager::GetActiveVolumeType()
+AudioStreamType AudioGroupManager::GetActiveVolumeType(const int32_t clientUid)
 {
-    return AudioPolicyManager::GetInstance().GetSystemActiveVolumeType();
+    return AudioPolicyManager::GetInstance().GetSystemActiveVolumeType(clientUid);
 }
 
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)

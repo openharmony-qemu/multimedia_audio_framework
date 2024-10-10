@@ -655,14 +655,18 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
     return SetSystemVolumeLevelInternal(streamType, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
 }
 
-AudioStreamType AudioPolicyServer::GetSystemActiveVolumeType()
+AudioStreamType AudioPolicyServer::GetSystemActiveVolumeType(const int32_t clientUid)
 {
-    return GetSystemActiveVolumeTypeInternal();
+    return GetSystemActiveVolumeTypeInternal(clientUid);
 }
 
-AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal()
+AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32_t clientUid)
 {
-    AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC;
+    if (clientUid != 0) {
+        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus(clientUid));
+    }
+
     AUDIO_INFO_LOG("Get active volume type success:= %{public}d", streamInFocus);
     return streamInFocus;
 }

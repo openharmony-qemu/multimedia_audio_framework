@@ -296,11 +296,11 @@ AudioScene AudioPolicyManager::GetAudioScene()
     return gsp->GetAudioScene();
 }
 
-AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType()
+AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType(const int32_t clientUid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, STREAM_DEFAULT, "audio policy manager proxy is NULL.");
-    return gsp->GetSystemActiveVolumeType();
+    return gsp->GetSystemActiveVolumeType(clientUid);
 }
 
 int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
