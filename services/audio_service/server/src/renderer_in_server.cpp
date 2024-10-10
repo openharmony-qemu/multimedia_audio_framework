@@ -836,7 +836,7 @@ int32_t RendererInServer::Stop()
 int32_t RendererInServer::Release()
 {
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        AudioService::GetInstance()->CleanUpStream(processConfig_.callerUid);
+        AudioService::GetInstance()->CleanUpStream(processConfig_.appInfo.appUid);
     }
 
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
