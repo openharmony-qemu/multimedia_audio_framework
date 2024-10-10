@@ -77,8 +77,8 @@ public:
     int32_t UpdateSourceType(SourceType sourceType);
     void SetIncMaxRendererStreamCnt(AudioMode audioMode);
     int32_t GetCurrentRendererStreamCnt();
-    void CleanUpStream(int32_t callingUid);
-    bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t maxStreamCntPerUid);
+    void CleanUpStream(int32_t appUid);
+    bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, int32_t maxStreamCntPerUid);
     int32_t GetCreatedAudioStreamMostUid();
 
 private:

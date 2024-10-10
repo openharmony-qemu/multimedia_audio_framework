@@ -36,6 +36,7 @@ static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
+static const int32_t MEDIA_SERVICE_UID = 1013;
 
 AudioService *AudioService::GetInstance()
 {
@@ -939,13 +940,13 @@ void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
     }
 }
 
-void AudioService::CleanUpStream(int32_t callingUid)
+void AudioService::CleanUpStream(int32_t appUid)
 {
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     currentRendererStreamCnt_--;
-    auto appUseNum = appUseNumMap.find(callingUid);
+    auto appUseNum = appUseNumMap.find(appUid);
     if (appUseNum != appUseNumMap.end()) {
-        appUseNumMap[callingUid] = --appUseNum->second;
+        appUseNumMap[appUid] = --appUseNum->second;
     }
 }
 
@@ -955,18 +956,23 @@ int32_t AudioService::GetCurrentRendererStreamCnt()
 }
 
 // need call with streamLifeCycleMutex_ lock
-bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t maxStreamCntPerUid)
+bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid,
+    int32_t maxStreamCntPerUid)
 {
-    auto appUseNum = appUseNumMap.find(callingUid);
+    if (callingUid != MEDIA_SERVICE_UID) {
+        appUid = callingUid;
+    }
+
+    auto appUseNum = appUseNumMap.find(appUid);
     if (appUseNum != appUseNumMap.end()) {
         ++appUseNum->second;
     } else {
         int32_t initValue = 1;
-        appUseNumMap.emplace(callingUid, initValue);
+        appUseNumMap.emplace(appUid, initValue);
     }
 
-    if (appUseNumMap[callingUid] > maxStreamCntPerUid) {
-        --appUseNumMap[callingUid]; // actual created stream num is stream num decrease one
+    if (appUseNumMap[appUid] > maxStreamCntPerUid) {
+        --appUseNumMap[appUid]; // actual created stream num is stream num decrease one
         return true;
     }
     return false;

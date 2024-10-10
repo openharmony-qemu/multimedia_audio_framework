@@ -1633,7 +1633,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         return nullptr;
     }
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, maxRendererStreamCntPerUid_)) {
+    if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
+        maxRendererStreamCntPerUid_)) {
         errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
         return nullptr;
     }
