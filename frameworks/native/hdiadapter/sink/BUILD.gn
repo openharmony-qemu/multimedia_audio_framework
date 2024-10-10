@@ -120,8 +120,6 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "../common/include",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
-    "//drivers/peripheral/bluetooth/audio/interfaces/include",
-    "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
     "../../../../services/audio_service/common/include/",
   ]
 
@@ -132,6 +130,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
+    "drivers_peripheral_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
