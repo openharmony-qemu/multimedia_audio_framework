@@ -1235,6 +1235,11 @@ void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
     }
 }
 
+int32_t RendererInServer::GetActualStreamManagerType() const noexcept
+{
+    return managerType_;
+}
+
 static std::string GetStatusStr(IStatus status)
 {
     switch (status) {

@@ -1794,10 +1794,14 @@ static void UpdateStreamAvailableMap(struct Userdata *u, const char *sceneType)
         memset_s(u->bufferAttr->bufOut, outLength, 0, outLength);
     }
 
-    char *scene = strdup(sceneType);
-    if (scene != NULL) {
+    if (pa_hashmap_get(u->streamAvailableMap, sceneType) != NULL) {
         (*num) = u->streamAvailable;
-        pa_hashmap_put(u->streamAvailableMap, scene, num);
+    } else {
+        char *scene = strdup(sceneType);
+        if (scene != NULL) {
+            (*num) = u->streamAvailable;
+            pa_hashmap_put(u->streamAvailableMap, scene, num);
+        }
     }
 }
 
@@ -4291,5 +4295,4 @@ void PaHdiSinkFree(pa_sink *s)
     pa_assert_se(u = s->userdata);
 
     UserdataFree(u);
-    s->userdata = NULL;
 }
