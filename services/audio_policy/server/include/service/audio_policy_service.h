@@ -51,6 +51,7 @@
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
 #include "audio_affinity_manager.h"
+#include "audio_ec_info.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -1013,6 +1014,28 @@ private:
 
     void UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
+    
+    void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
+    int32_t GetAudioModuleInfoByName(const std::string &halName, const std::string &moduleName,
+        AudioModuleInfo &moudleInfo);
+    std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
+    std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
+    int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType, PipeInfo &pipeInfo);
+    EcType GetEcType(const DeviceType inputDevice, const DeviceType outputDevice);
+    std::string GetEcSamplingRate(const std::string &halName, StreamPropInfo &streamPropInfo);
+    std::string GetEcFormat(const std::string &halName, StreamPropInfo &streamPropInfo);
+    std::string GetEcChannels(const std::string &halName, StreamPropInfo &streamPropInfo);
+    AudioEcInfo GetAudioEcInfo();
+    std::string ShouldOpenMicRef(SourceType source);
+    void UpdateEcAndQcFeatureState();
+    void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType sourceType);
+    void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice);
+    void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
+    void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
+    void ReloadSourceForSession(SessionInfo sessionInfo);
 
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
@@ -1068,6 +1091,12 @@ private:
     void CancelSafeVolumeNotification(int32_t notificationId);
 
     void CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+
+    void PrepareAndOpenNormalSource(SessionInfo &sessionInfo, StreamPropInfo &targetInfo, SourceType targetSource);
+
+    void CloseNormalSource();
+
+    void HandleRemainingSource();
 
     bool GetAudioEffectOffloadFlag();
 
@@ -1192,7 +1221,9 @@ private:
     std::atomic<bool> moveDeviceFinished_ = false;
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
-
+    SourceType normalSourceOpened_ = SOURCE_TYPE_INVALID;
+    uint64_t sessionIdUsedToOpenSource_ = 0;
+    
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
@@ -1202,7 +1233,7 @@ private:
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
 
     static std::map<std::string, std::string> sinkPortStrToClassStrMap_;
-    static std::map<std::string, uint32_t> formatStrToEnum;
+    static std::map<std::string, AudioSampleFormat> formatStrToEnum;
     static std::map<std::string, ClassType> classStrToEnum;
     static std::map<std::string, ClassType> portStrToEnum;
 
@@ -1223,6 +1254,17 @@ private:
     bool safeVolumeExit_ = false;
     bool isAbsBtFirstBoot_ = true;
     bool normalVoipFlag_ = false;
+
+    static std::map<DeviceType, std::string> ecDeviceToPipeName;
+    bool isEcFeatureEnable_ = false;
+    bool isQcFeatureEnable_ = false;
+    bool isQcSwitchOn_ = false;
+    bool isRecordNrOn_ = false;
+    std::mutex audioEcInfoMutex_;
+    AudioEcInfo audioEcInfo_;
+    AudioModuleInfo usbSinkModuleInfo_ = {};
+    AudioModuleInfo usbSourceModuleInfo_ = {};
+    AudioModuleInfo dpSinkModuleInfo_ = {};
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;

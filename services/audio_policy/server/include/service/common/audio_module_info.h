@@ -115,6 +115,17 @@ public:
     std::string sceneName;
     std::string sourceType;
     std::string offloadEnable;
+
+    std::string ecType;
+    std::string ecAdapter;
+    std::string ecSamplingRate;
+    std::string ecFormat;
+    std::string ecChannels;
+    std::string openMicRef;
+    std::string micRefRate;
+    std::string micRefFormat;
+    std::string micRefChannels;
+
     std::list<AudioModuleInfo> ports;
     std::string extra;
 };
