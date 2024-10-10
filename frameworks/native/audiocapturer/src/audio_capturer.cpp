@@ -611,6 +611,7 @@ bool AudioCapturerPrivate::Flush() const
 bool AudioCapturerPrivate::Release()
 {
     AUDIO_INFO_LOG("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
+    std::lock_guard<std::mutex> lockCapture(captureMutex_);
 
     abortRestore_ = true;
     std::lock_guard<std::mutex> lock(lock_);
@@ -1122,6 +1123,7 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     bool switchResult = false;
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
+        std::lock_guard<std::mutex> lockCapture(captureMutex_);
         isSwitching_ = true;
         CapturerState previousState = GetStatus();
         AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
