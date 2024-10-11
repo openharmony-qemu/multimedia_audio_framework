@@ -1555,6 +1555,10 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
             }
             MuteSinkPort(oldSinkName, sinkName, AudioStreamDeviceChangeReason::OVERRODE);
         }
+        if (sinkName == BLUETOOTH_SPEAKER) {
+            std::string activePort = BLUETOOTH_SPEAKER;
+            audioPolicyManager_.SuspendAudioDevice(activePort, false);
+        }
         AUDIO_INFO_LOG("move for session [%{public}d], portName %{public}s pipeType %{public}d",
             sinkInputIds[i].streamId, sinkName.c_str(), pipeType);
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
@@ -1949,6 +1953,10 @@ int32_t AudioPolicyService::MoveToOutputDevice(uint32_t sessionId, std::string p
 {
     std::vector<SinkInput> sinkInputIds = FilterSinkInputs(sessionId);
 
+    if (portName == BLUETOOTH_SPEAKER) {
+        std::string activePort = BLUETOOTH_SPEAKER;
+        audioPolicyManager_.SuspendAudioDevice(activePort, false);
+    }
     AUDIO_INFO_LOG("move for session [%{public}d], portName %{public}s", sessionId, portName.c_str());
     // start move.
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
@@ -8326,6 +8334,8 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
         UpdateEffectBtOffloadSupported(true);
         ResetOffloadModeOnSpatializationChanged(allSessions);
         GetA2dpOffloadCodecAndSendToDsp();
+        std::string activePort = BLUETOOTH_SPEAKER;
+        audioPolicyManager_.SuspendAudioDevice(activePort, true);
     }
 }
 
