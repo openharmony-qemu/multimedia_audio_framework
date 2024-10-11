@@ -6647,8 +6647,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
             std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList =
                 (lockFlag ? GetPreferredOutputDeviceDescriptors(rendererInfo, LOCAL_NETWORK_ID)
                           : GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID));
-            int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-                rendererInfo.originalFlag, preferredDeviceList[0]->networkId_);
+            int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
+                preferredDeviceList[0]->deviceType_, rendererInfo.originalFlag, preferredDeviceList[0]->networkId_);
             deviceInfo.deviceRole = OUTPUT_DEVICE;
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
@@ -6662,8 +6662,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
             std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList =
                 (lockFlag ? GetPreferredInputDeviceDescriptors(capturerInfo, LOCAL_NETWORK_ID)
                           : GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID));
-            int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
-                capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
+            int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
+                preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
             deviceInfo.deviceRole = INPUT_DEVICE;
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
