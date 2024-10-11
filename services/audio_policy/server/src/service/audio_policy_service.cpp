@@ -4457,13 +4457,12 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
                 audioPolicyManager_.SuspendAudioDevice(portName, false);
 
-                auto isPresent = [&macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
-                    return descriptor->macAddress_ == macAddress;
+                auto isPresent = [&macAddress, &deviceType] (const sptr<AudioDeviceDescriptor> &descriptor) {
+                    return descriptor->macAddress_ == macAddress && descriptor->deviceType_ == deviceType;
                 };
 
                 auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
                 if (itr != connectedDevices_.end()) {
-                    (*itr)->deviceType_ = deviceType;
                     (*itr)->deviceName_ = deviceName;
                     (*itr)->audioStreamInfo_ = streamInfo;
                 }
