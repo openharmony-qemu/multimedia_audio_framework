@@ -844,7 +844,8 @@ int32_t RendererInServer::Stop()
 int32_t RendererInServer::Release()
 {
     AUDIO_INFO_LOG("Start release");
-    AudioXCollie audioXCollie("RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr, XCOLLIE_FLAG_DEFAULT);
+    AudioXCollie audioXCollie(
+        "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr, XCOLLIE_FLAG_DEFAULT);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         AudioService::GetInstance()->CleanUpStream(processConfig_.appInfo.appUid);
     }
