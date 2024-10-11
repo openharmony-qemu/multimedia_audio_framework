@@ -24,27 +24,15 @@ namespace OHOS {
 namespace AudioStandard {
 static const int32_t WRITE_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
 
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
-vector<NapiAudioRenderer*> NapiRendererWriteDataCallback::activeRenderers_;
-#endif
 NapiRendererWriteDataCallback::NapiRendererWriteDataCallback(napi_env env, NapiAudioRenderer *napiRenderer)
     : env_(env), napiRenderer_(napiRenderer)
 {
     AUDIO_DEBUG_LOG("instance create");
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
-    activeRenderers_.emplace_back(napiRenderer_);
-#endif
 }
 
 NapiRendererWriteDataCallback::~NapiRendererWriteDataCallback()
 {
     AUDIO_DEBUG_LOG("instance destroy");
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
-    auto iter = std::find(activeRenderers_.begin(), activeRenderers_.end(), napiRenderer_);
-    if (iter != activeRenderers_.end()) {
-        activeRenderers_.erase(iter);
-    }
-#endif
     if (napiRenderer_ != nullptr) {
         napiRenderer_->writeCallbackCv_.notify_all();
     }
@@ -105,12 +93,6 @@ void NapiRendererWriteDataCallback::OnWriteData(size_t length)
     cb->rendererNapiObj = napiRenderer_;
 
     CHECK_AND_RETURN_LOG(napiRenderer_ != nullptr, "Cannot find the reference to audio renderer napi");
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
-    if (!napiRenderer_->audioRenderer_) {
-        AUDIO_INFO_LOG("OnWriteData audioRenderer_ is null.");
-        return;
-    }
-#endif
     napiRenderer_->audioRenderer_->GetBufferDesc(cb->bufDesc);
     if (cb->bufDesc.buffer == nullptr) {
         return;
@@ -225,20 +207,7 @@ void NapiRendererWriteDataCallback::WorkCallbackRendererWriteDataInner(uv_work_t
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "fail to call %{public}s callback", request.c_str());
         CheckWriteDataCallbackResult(env, event->bufDesc, result);
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
-        auto iter = std::find(activeRenderers_.begin(), activeRenderers_.end(), event->rendererNapiObj);
-        if (iter != activeRenderers_.end()) {
-            if (event->rendererNapiObj->audioRenderer_) {
-                event->rendererNapiObj->audioRenderer_->Enqueue(event->bufDesc);
-            } else {
-                AUDIO_INFO_LOG("WorkCallbackRendererWriteData audioRenderer_ is null");
-            }
-        } else {
-            AUDIO_INFO_LOG("NapiRendererWriteDataCallback is finalize.");
-        }
-#else
         event->rendererNapiObj->audioRenderer_->Enqueue(event->bufDesc);
-#endif
     } while (0);
     napi_close_handle_scope(env, scope);
 }

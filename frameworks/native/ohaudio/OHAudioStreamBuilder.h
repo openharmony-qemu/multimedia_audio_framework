@@ -89,8 +89,8 @@ private:
 
     OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
     void *outputDeviceChangeuserData_ = nullptr;
-    void *metadataUserData_ = nullptr;
     InterruptMode interruptMode_ = SHARE_MODE;
+    void *metadataUserData_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

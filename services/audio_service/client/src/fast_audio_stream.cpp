@@ -76,20 +76,8 @@ void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
     capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
-int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
-    const std::shared_ptr<AudioClientTracker> &proxyObj)
+int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info)
 {
-    AUDIO_INFO_LOG("FastAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
-        " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);
-    CHECK_AND_RETURN_RET_LOG(processClient_ == nullptr, ERR_INVALID_OPERATION,
-        "Process is already inited, reset stream info is not supported.");
-    streamInfo_ = info;
-    if (state_ != NEW) {
-        AUDIO_INFO_LOG("FastAudioStream: State is not new, release existing stream");
-        StopAudioStream();
-        ReleaseAudioStream(false);
-    }
-    AudioProcessConfig config;
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
     config.audioMode = eMode_;
@@ -98,6 +86,7 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     config.streamInfo.format = static_cast<AudioSampleFormat>(info.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
     config.streamType = eStreamType_;
+    config.originalSessionId = info.originalSessionId;
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize playback");
         config.rendererInfo.contentType = rendererInfo_.contentType;
@@ -112,6 +101,25 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     } else {
         return ERR_INVALID_OPERATION;
     }
+    return SUCCESS;
+}
+
+int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
+    const std::shared_ptr<AudioClientTracker> &proxyObj)
+{
+    AUDIO_INFO_LOG("FastAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
+        " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);
+    CHECK_AND_RETURN_RET_LOG(processClient_ == nullptr, ERR_INVALID_OPERATION,
+        "Process is already inited, reset stream info is not supported.");
+    streamInfo_ = info;
+    if (state_ != NEW) {
+        AUDIO_INFO_LOG("FastAudioStream: State is not new, release existing stream");
+        StopAudioStream();
+        ReleaseAudioStream(false);
+    }
+    AudioProcessConfig config;
+    int32_t ret = InitializeAudioProcessConfig(config, info);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Initialize failed.");
     CHECK_AND_RETURN_RET_LOG(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
         "Stream is not supported.");
     processconfig_ = config;
@@ -370,6 +378,8 @@ int32_t FastAudioStream::Enqueue(const BufferDesc &bufDesc)
 
 void FastAudioStream::SetPreferredFrameSize(int32_t frameSize)
 {
+    std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
+    userSettedPreferredFrameSize_ = frameSize;
     CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
     processClient_->SetPreferredFrameSize(frameSize);
 }
@@ -467,7 +477,7 @@ int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("StartAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("StartAudioStream enter.");
     CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
         false, "Illegal state:%{public}u", state_);
 
@@ -501,7 +511,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
 
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    AUDIO_INFO_LOG("PauseAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("PauseAudioStream enter.");
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
         "state is not RUNNING. Illegal state:%{public}u", state_);
     State oldState = state_;
@@ -548,7 +558,7 @@ bool FastAudioStream::StopAudioStream()
 
 bool FastAudioStream::FlushAudioStream()
 {
-    AUDIO_INFO_LOG("FlushAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("FlushAudioStream enter.");
     return true;
 }
 
@@ -748,6 +758,13 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.underFlowCount = GetUnderflowCount();
     info.overFlowCount = GetOverflowCount();
 
+    info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
+
+    {
+        std::lock_guard<std::mutex> lock(setPreferredFrameSizeMutex_);
+        info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
+    }
+
     if (spkProcClientCb_) {
         info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();
     }
@@ -824,59 +841,11 @@ void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &regist
     registerTrackerInfo.capturerInfo = capturerInfo_;
 }
 
-int32_t FastAudioStream::RegisterAudioStreamPolicyServerDiedCb()
-{
-    AUDIO_DEBUG_LOG("RegisterAudioStreamPolicyServerDiedCb enter");
-    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ == nullptr,
-        ERROR, "audioStreamPolicyServiceDiedCB_ existence, do not create duplicate");
-
-    audioStreamPolicyServiceDiedCB_ = std::make_shared<FastPolicyServiceDiedCallbackImpl>();
-    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ != nullptr,
-        ERROR, "create audioStreamPolicyServiceDiedCB_ failed");
-
-    return AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(audioStreamPolicyServiceDiedCB_);
-}
-
-int32_t FastAudioStream::UnregisterAudioStreamPolicyServerDiedCb()
-{
-    AUDIO_DEBUG_LOG("AudioRendererPrivate:: UnregisterAudioStreamPolicyServerDiedCb enter");
-    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ != nullptr,
-        ERROR, "audioStreamPolicyServiceDiedCB_ is null");
-    return AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(audioStreamPolicyServiceDiedCB_);
-}
-
-int32_t FastAudioStream::RegisterRendererOrCapturerPolicyServiceDiedCB(
-    const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
-{
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "Callback is null");
-
-    if (RegisterAudioStreamPolicyServerDiedCb() != SUCCESS) {
-        return ERROR;
-    }
-
-    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ != nullptr,
-        ERROR, "audioStreamPolicyServiceDiedCB_ is null");
-    audioStreamPolicyServiceDiedCB_->SaveRendererOrCapturerPolicyServiceDiedCB(callback);
-    return SUCCESS;
-}
-
-int32_t FastAudioStream::RemoveRendererOrCapturerPolicyServiceDiedCB()
-{
-    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ != nullptr,
-        ERROR, "audioStreamPolicyServiceDiedCB_ is null");
-
-    audioStreamPolicyServiceDiedCB_->RemoveRendererOrCapturerPolicyServiceDiedCB();
-    if (UnregisterAudioStreamPolicyServerDiedCb() != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
 bool FastAudioStream::RestoreAudioStream()
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
-    CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID, true,
-        "state_ is NEW/INVALID, no need for restore");
+    CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
+        "state_ is %{public}d, no need for restore", state_);
     bool result = false;
     State oldState = state_;
     state_ = NEW;
@@ -892,11 +861,7 @@ bool FastAudioStream::RestoreAudioStream()
     }
     switch (oldState) {
         case RUNNING:
-            if (eMode_ == AUDIO_MODE_PLAYBACK) {
-                ret = processClient_->SaveDataCallback(spkProcClientCb_);
-            } else if (eMode_ == AUDIO_MODE_RECORD) {
-                ret = processClient_->SaveDataCallback(micProcClientCb_);
-            }
+            ret = processClient_->SaveDataCallback(spkProcClientCb_);
             if (ret != SUCCESS) {
                 goto error;
             }
@@ -916,6 +881,7 @@ bool FastAudioStream::RestoreAudioStream()
         goto error;
     }
     return result;
+
 error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
@@ -938,40 +904,6 @@ bool FastAudioStream::GetHighResolutionEnabled()
 {
     AUDIO_WARNING_LOG("not supported in fast audio stream");
     return false;
-}
-
-FastPolicyServiceDiedCallbackImpl::FastPolicyServiceDiedCallbackImpl()
-{
-    AUDIO_DEBUG_LOG("FastPolicyServiceDiedCallbackImpl instance create");
-}
-
-FastPolicyServiceDiedCallbackImpl::~FastPolicyServiceDiedCallbackImpl()
-{
-    AUDIO_DEBUG_LOG("FastPolicyServiceDiedCallbackImpl instance destory");
-}
-
-void FastPolicyServiceDiedCallbackImpl::OnAudioPolicyServiceDied()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("FastPolicyServiceDiedCallbackImpl OnAudioPolicyServiceDied");
-    if (policyServiceDiedCallback_ != nullptr) {
-        policyServiceDiedCallback_->OnAudioPolicyServiceDied();
-    }
-}
-
-void FastPolicyServiceDiedCallbackImpl::SaveRendererOrCapturerPolicyServiceDiedCB(
-    const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (callback != nullptr) {
-        policyServiceDiedCallback_ = callback;
-    }
-}
-
-void FastPolicyServiceDiedCallbackImpl::RemoveRendererOrCapturerPolicyServiceDiedCB()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    policyServiceDiedCallback_ = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

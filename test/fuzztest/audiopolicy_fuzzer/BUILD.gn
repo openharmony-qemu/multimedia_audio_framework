@@ -30,7 +30,16 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
+
+  defines = []
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
 
   sources = [ "audio_policy_fuzzer.cpp" ]
 

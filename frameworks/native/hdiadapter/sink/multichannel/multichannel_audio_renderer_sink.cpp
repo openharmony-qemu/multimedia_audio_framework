@@ -36,7 +36,7 @@
 #include "v4_0/iaudio_manager.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
 
@@ -55,7 +55,6 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t MULTICHANNEL_OUTPUT_STREAM_ID = 61; // 13 + 6 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 
@@ -303,7 +302,7 @@ void MultiChannelRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         case SAMPLE_S24: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
         case SAMPLE_S32: {
@@ -338,7 +337,7 @@ void MultiChannelRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case SAMPLE_S32LE: {
@@ -393,7 +392,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = CHANNEL_6;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = MULTICHANNEL_OUTPUT_STREAM_ID;
+    attrs.streamId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_MULTICHANNEL);
     attrs.type = AUDIO_MULTI_CHANNEL;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -793,7 +792,7 @@ int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = 0;
-    source.ext.mix.streamId = MULTICHANNEL_OUTPUT_STREAM_ID;
+    source.ext.mix.streamId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_MULTICHANNEL);
     source.ext.device.desc = (char *)"";
 
     sink.portId = static_cast<int32_t>(audioPort_.portId);
@@ -1061,7 +1060,7 @@ int32_t MultiChannelRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfo
         sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
 
     // usb default config
-    attr_.sampleRate = static_cast<uint32_t>((stoi(sampleRateStr)));
+    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
 

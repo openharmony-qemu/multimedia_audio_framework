@@ -16,7 +16,6 @@ import("//build/test.gni")
 module_output_path = "multimedia_audio_framework/audio_spatialization_manager"
 
 ohos_unittest("audio_spatialization_manager_test") {
-  testonly = true
   module_out_path = module_output_path
   include_dirs = [
     "./include",

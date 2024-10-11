@@ -24,9 +24,16 @@ namespace AudioStandard {
 // PaLockGuard is used to auto-call unlock.
 class PaLockGuard {
 public:
-    PaLockGuard(pa_threaded_mainloop *mainloop) : mainloop_(mainloop)
+    PaLockGuard(pa_threaded_mainloop *mainloop, bool mainloopCheck = false) : mainloop_(mainloop)
     {
-        pa_threaded_mainloop_lock(mainloop_);
+        if (mainloopCheck) {
+            isInMainloop_ = pa_threaded_mainloop_in_thread(mainloop_) ? true : false;
+        } else {
+            isInMainloop_ = false;
+        }
+        if (!isInMainloop_) {
+            pa_threaded_mainloop_lock(mainloop_);
+        }
     }
 
     ~PaLockGuard()
@@ -36,13 +43,22 @@ public:
 
     void Unlock()
     {
-        if (!isUnlocked_) {
+        if (!isInMainloop_ && !isUnlocked_) {
             pa_threaded_mainloop_unlock(mainloop_);
             isUnlocked_ = true;
         }
     }
+
+    void Relock()
+    {
+        if (!isInMainloop_ && isUnlocked_) {
+            isUnlocked_ = false;
+            pa_threaded_mainloop_lock(mainloop_);
+        }
+    }
 private:
     bool isUnlocked_ = false;
+    bool isInMainloop_ = false;
     pa_threaded_mainloop *mainloop_ = nullptr;
 };
 } // namespace AudioStandard

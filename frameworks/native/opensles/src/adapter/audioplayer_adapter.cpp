@@ -50,7 +50,6 @@ void AudioPlayerAdapter::EraseAudioRenderById(SLuint32 id)
     renderMap_.erase(id);
     callbackMap_.erase(id);
     if (pRender) {
-        pRender->Release();
         delete pRender;
         pRender = nullptr;
     }
@@ -98,6 +97,7 @@ SLresult AudioPlayerAdapter::SetPlayStateAdapter(SLuint32 id, SLuint32 state)
     SLresult slResult = SL_RESULT_SUCCESS;
     bool result = false;
     bool rtStop = false;
+    bool rtRelease = false;
     int32_t rtClear = -1;
     switch (state) {
         case SL_PLAYSTATE_PLAYING:
@@ -109,7 +109,8 @@ SLresult AudioPlayerAdapter::SetPlayStateAdapter(SLuint32 id, SLuint32 state)
         case SL_PLAYSTATE_STOPPED: {
             rtStop = pRender->Stop();
             rtClear = pRender->Clear();
-            result = rtStop && !rtClear;
+            rtRelease = pRender->Release();
+            result = rtStop && !rtClear && rtRelease;
             break;
         }
         default:

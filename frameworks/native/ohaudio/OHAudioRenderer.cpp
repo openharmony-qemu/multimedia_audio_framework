@@ -238,7 +238,16 @@ OH_AudioStream_Result OH_AudioRenderer_SetSpeed(OH_AudioRenderer *renderer, floa
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioRenderer_SetVolume(OH_AudioRenderer *renderer, float volume)
+OH_AudioStream_Result OH_AudioRenderer_GetUnderflowCount(OH_AudioRenderer* renderer, uint32_t* count)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(count != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "count is nullptr");
+    *count = audioRenderer->GetUnderflowCount();
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_SetVolume(OH_AudioRenderer* renderer, float volume)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
@@ -310,15 +319,6 @@ OH_AudioStream_Result OH_AudioRenderer_SetEffectMode(OH_AudioRenderer *renderer,
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioRenderer_GetUnderflowCount(OH_AudioRenderer* renderer, uint32_t* count)
-{
-    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    CHECK_AND_RETURN_RET_LOG(count != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "count is nullptr");
-    *count = audioRenderer->GetUnderflowCount();
-    return AUDIOSTREAM_SUCCESS;
-}
-
 OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(
     OH_AudioRenderer* renderer, bool on)
 {
@@ -379,9 +379,8 @@ bool OHAudioRenderer::Initialize(AudioRendererOptions &rendererOptions)
     }
     std::string cacheDir = "/data/storage/el2/base/temp";
     audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
-
-    // if caller do not set usage, do not allow to use offload output
     if (audioRenderer_ != nullptr) {
+        // if caller do not set usage, do not allow to use offload output
         audioRenderer_->SetOffloadAllowed(offloadAllowed);
     }
 
@@ -790,6 +789,16 @@ void OHAudioRenderer::SetInterruptMode(InterruptMode mode)
     audioRenderer_->SetInterruptMode(mode);
 }
 
+void OHAudioRenderer::SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType)
+{
+    writeDataCallbackType_ = writeDataCallbackType;
+}
+
+WriteDataCallbackType OHAudioRenderer::GetRendererCallbackType()
+{
+    return writeDataCallbackType_;
+}
+
 void OHAudioRenderer::SetSilentModeAndMixWithOthers(bool on)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
@@ -806,16 +815,6 @@ int32_t OHAudioRenderer::SetDefaultOutputDevice(DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->SetDefaultOutputDevice(deviceType);
-}
-
-void OHAudioRenderer::SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType)
-{
-    writeDataCallbackType_ = writeDataCallbackType;
-}
-
-WriteDataCallbackType OHAudioRenderer::GetRendererCallbackType()
-{
-    return writeDataCallbackType_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

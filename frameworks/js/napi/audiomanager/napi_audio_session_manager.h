@@ -55,7 +55,7 @@ private:
     static napi_value IsAudioSessionActivated(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis, napi_value *args, const std::string &cbName);
     static void UnregisterCallback(napi_env env, napi_value jsThis);
-    static void UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args);
+    static void UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args, size_t len);
     static void RegisterAudioSessionCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioSessionMgr *napiSessionMgr);
     static void UnsetAudioSessionCallback(napi_env env, napi_value *args,

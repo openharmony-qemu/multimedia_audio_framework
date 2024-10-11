@@ -44,9 +44,9 @@ void AudioDialogAbilityConnection::OnAbilityConnectDone(const AppExecFwk::Elemen
     MessageOption option;
     data.WriteInt32(MESSAGE_PARCEL_KEY_SIZE);
     data.WriteString16(u"bundleName");
-    data.WriteString16(u"com.hmos.mediacontroller");
+    data.WriteString16(u"com.huawei.hmos.mediacontroller");
     data.WriteString16(u"abilityName");
-    data.WriteString16(u"SafeDialogAbility");
+    data.WriteString16(u"SafeVolumeAbility");
     data.WriteString16(u"parameters");
     nlohmann::json param;
     param["ability.want.params.uiExtensionType"] = "sys/commonUI";

@@ -22,11 +22,12 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_service_log.h"
+#include "audio_service.h"
 #include "audio_process_config.h"
 #include "i_stream_manager.h"
 #include "playback_capturer_manager.h"
+#include "policy_handler.h"
 #include "media_monitor_manager.h"
-#include "audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -131,9 +132,9 @@ int32_t CapturerInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
 
-    // eg: /data/data/.pulse_dir/10000_100009_capturer_server_out_48000_2_1.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
-    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + std::to_string(streamIndex_)
+    // eg: /data/data/.pulse_dir/10000_100009_capturer_server_out_48000_2_1.pcm
+    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
         + "_capturer_server_out_" + std::to_string(tempInfo.samplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpS2C_);
@@ -192,15 +193,9 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
     return stream_->DequeueBuffer(length);
 }
 
-void CapturerInServer::ReadData(size_t length)
+bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
+    std::shared_ptr<IStreamListener> stateListener)
 {
-    CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
-        "Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
-    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
-
-    uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-
     if (audioServerBuffer_->GetAvailableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
         if (overFlowLogFlag_ == 0) {
             AUDIO_INFO_LOG("OverFlow!!!");
@@ -211,9 +206,21 @@ void CapturerInServer::ReadData(size_t length)
         BufferDesc dstBuffer = stream_->DequeueBuffer(length);
         stream_->EnqueueBuffer(dstBuffer);
         stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+        return true;
+    }
+    return false;
+}
+
+void CapturerInServer::ReadData(size_t length)
+{
+    CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
+        "Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
+    if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
         return;
     }
-
     Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "RingCache write invalid size %{public}zu", result.size);
@@ -230,9 +237,12 @@ void CapturerInServer::ReadData(size_t length)
     if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
         return;
     }
-    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
-        LEGACY_MUTE_CAP) {
+    if ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
+        LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
+    }
+    if (muteFlag_) {
+        memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
     DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
@@ -332,11 +342,11 @@ int32_t CapturerInServer::Pause()
 int32_t CapturerInServer::Flush()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
-    if (status_ == I_STATUS_STARTED) {
+    if (status_ != I_STATUS_STARTED) {
         status_ = I_STATUS_FLUSHING_WHEN_STARTED;
-    } else if (status_ == I_STATUS_PAUSED) {
+    } else if (status_ != I_STATUS_PAUSED) {
         status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
-    } else if (status_ == I_STATUS_STOPPED) {
+    } else if (status_ != I_STATUS_STOPPED) {
         status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
         AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_);
@@ -391,6 +401,7 @@ int32_t CapturerInServer::Stop()
 
 int32_t CapturerInServer::Release()
 {
+    AudioService::GetInstance()->RemoveCapturer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ == I_STATUS_RELEASED) {
@@ -518,6 +529,13 @@ int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)
     }
 
     return SUCCESS;
+}
+
+void CapturerInServer::SetNonInterruptMute(const bool muteFlag)
+{
+    AUDIO_INFO_LOG("muteFlag: %{public}d", muteFlag);
+    muteFlag_ = muteFlag;
+    AudioService::GetInstance()->UpdateMuteControlSet(streamIndex_, muteFlag);
 }
 } // namespace AudioStandard
 } // namespace OHOS

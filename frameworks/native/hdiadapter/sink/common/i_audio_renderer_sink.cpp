@@ -20,7 +20,7 @@
 #include "i_audio_renderer_sink_intf.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 
 #include "audio_renderer_sink.h"
 #include "audio_renderer_file_sink.h"
@@ -129,6 +129,7 @@ int32_t IAudioRendererSinkInit(struct RendererSinkAdapter *adapter, const SinkAt
     iAttr.deviceNetworkId = attr->deviceNetworkId;
     iAttr.deviceType = attr->deviceType;
     iAttr.channelLayout = attr->channelLayout;
+    iAttr.aux = attr->aux;
 
     return audioRendererSink->Init(iAttr);
 }
@@ -199,6 +200,20 @@ int32_t IAudioRendererSinkRenderFrame(struct RendererSinkAdapter *adapter, char 
     CHECK_AND_RETURN_RET_LOG(isInited, ERR_NOT_STARTED, "audioRenderer Not Inited! Init the renderer first\n");
 
     int32_t ret = audioRendererSink->RenderFrame(*data, len, *writeLen);
+    return ret;
+}
+
+int32_t IAudioRendererSinkSplitRenderFrame(struct RendererSinkAdapter *adapter, char *data, uint64_t len,
+    uint64_t *writeLen, char *streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");
+
+    IRemoteAudioRendererSink *audioRendererSink = static_cast<IRemoteAudioRendererSink *>(adapter->wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    bool isInited = audioRendererSink->IsInited();
+    CHECK_AND_RETURN_RET_LOG(isInited, ERR_NOT_STARTED, "audioRenderer Not Inited! Init the renderer first\n");
+
+    int32_t ret = audioRendererSink->SplitRenderFrame(*data, len, *writeLen, streamType);
     return ret;
 }
 

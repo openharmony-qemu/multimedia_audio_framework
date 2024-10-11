@@ -31,22 +31,22 @@ public:
     }
 
     // Set media render device selected by the user
-    void SetPerferredMediaRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void SetPreferredMediaRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Set call render device selected by the user
-    void SetPerferredCallRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void SetPreferredCallRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Set call capture device selected by the user
-    void SetPerferredCallCaptureDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void SetPreferredCallCaptureDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Set ring render device selected by the user
-    void SetPerferredRingRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void SetPreferredRingRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Set record capture device selected by the user
-    void SetPerferredRecordCaptureDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void SetPreferredRecordCaptureDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Set tone render device selected by the user
-    void SetPerferredToneRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void SetPreferredToneRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Get media render device selected by the user
     unique_ptr<AudioDeviceDescriptor> GetPreferredMediaRenderDevice();
@@ -55,26 +55,31 @@ public:
     unique_ptr<AudioDeviceDescriptor> GetPreferredCallRenderDevice();
 
     // Get call capture device selected by the user
-    unique_ptr<AudioDeviceDescriptor> GetPerferredCallCaptureDevice();
+    unique_ptr<AudioDeviceDescriptor> GetPreferredCallCaptureDevice();
 
     // Get ring render device selected by the user
-    unique_ptr<AudioDeviceDescriptor> GetPerferredRingRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> GetPreferredRingRenderDevice();
 
     // Get record capture device selected by the user
-    unique_ptr<AudioDeviceDescriptor> GetPerferredRecordCaptureDevice();
+    unique_ptr<AudioDeviceDescriptor> GetPreferredRecordCaptureDevice();
 
     // Get tone render device selected by the user
-    unique_ptr<AudioDeviceDescriptor> GetPerferredToneRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> GetPreferredToneRenderDevice();
+
+    void UpdatePreferredMediaRenderDeviceConnectState(ConnectState state);
+    void UpdatePreferredCallRenderDeviceConnectState(ConnectState state);
+    void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
+    void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
 private:
     AudioStateManager() {};
     ~AudioStateManager() {};
-    sptr<AudioDeviceDescriptor> perferredMediaRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
-    sptr<AudioDeviceDescriptor> perferredCallRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
-    sptr<AudioDeviceDescriptor> perferredCallCaptureDevice_ = new(std::nothrow) AudioDeviceDescriptor();
-    sptr<AudioDeviceDescriptor> perferredRingRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
-    sptr<AudioDeviceDescriptor> perferredRecordCaptureDevice_ = new(std::nothrow) AudioDeviceDescriptor();
-    sptr<AudioDeviceDescriptor> perferredToneRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> preferredMediaRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> preferredCallRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> preferredCallCaptureDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> preferredRingRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
     std::mutex mutex_;
 };
 

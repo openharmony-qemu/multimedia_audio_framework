@@ -21,7 +21,7 @@
 #include <securec.h>
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

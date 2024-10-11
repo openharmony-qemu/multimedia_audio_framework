@@ -41,9 +41,6 @@ public:
 
     bool InitVolumeMap();
 
-    // keep same with AudioPolicyServer
-    AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
-
     bool GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol);
 
     void SetActiveOutputDevice(DeviceType deviceType);
@@ -60,9 +57,13 @@ public:
 
     bool IsAbsVolumeSupported();
 
+    int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+
     bool GetHighResolutionExist();
 
     void SetHighResolutionExist(bool isHighResExist);
+
+    int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
 
 private:
     PolicyHandler();

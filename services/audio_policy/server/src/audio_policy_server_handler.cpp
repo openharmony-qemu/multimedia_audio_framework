@@ -22,6 +22,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace  {
+    constexpr int32_t MAX_DELAY_TIME = 4 * 1000;
+}
 AudioPolicyServerHandler::AudioPolicyServerHandler() : AppExecFwk::EventHandler(
     AppExecFwk::EventRunner::Create("OS_APAsyncRunner"))
 {
@@ -271,7 +274,6 @@ bool AudioPolicyServerHandler::SendInterruptEventWithSessionIdCallback(const Int
     eventContextObj->interruptEvent = interruptEvent;
     eventContextObj->sessionId = sessionId;
     lock_guard<mutex> runnerlock(runnerMutex_);
-    AUDIO_INFO_LOG("Send interrupt event with sessionId callback");
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_SESSIONID,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_SESSIONID event failed");
@@ -500,6 +502,21 @@ bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &en
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendKvDataUpdate(const bool &isFirstBoot)
+{
+    auto eventContextObj = std::make_shared<bool>(isFirstBoot);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = true;
+    if (isFirstBoot) {
+        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DATABASE_UPDATE, eventContextObj),
+            MAX_DELAY_TIME);
+    } else {
+        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DATABASE_UPDATE, eventContextObj));
+    }
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendKvDataUpdate event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeForAnyDeviceEvent(const sptr<AudioDeviceDescriptor>
     &selectedAudioDevice,
     const bool &enabled)
@@ -562,15 +579,14 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
         AudioDeviceUsage usage = it->first.second;
-        DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
-        deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
-            DeviceFilterByUsageInner(it->first.second, deviceChangeAction.deviceDescriptors);
-        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
+        eventContextObj->deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
+            DeviceFilterByUsageInner(it->first.second, eventContextObj->deviceChangeAction.deviceDescriptors);
+        if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().
-                    UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
+                    UpdateDescWhenNoBTPermission(eventContextObj->deviceChangeAction.deviceDescriptors);
             }
-            it->second->OnAvailableDeviceChange(usage, deviceChangeAction);
+            it->second->OnAvailableDeviceChange(usage, eventContextObj->deviceChangeAction);
         }
     }
 }
@@ -586,7 +602,10 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
-        AUDIO_DEBUG_LOG("SetA2dpDeviceVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
+        AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
+            " volume : %{public}d, updateUi : %{public}d ", it->first,
+            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
         volumeChangeCb->OnVolumeKeyEvent(eventContextObj->volumeEvent);
     }
 }
@@ -991,6 +1010,14 @@ void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeEvent(const AppExe
     }
 }
 
+void AudioPolicyServerHandler::HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<bool> eventContextObj = event->GetSharedObject<bool>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    bool isFristBoot = *eventContextObj;
+    AudioPolicyManagerFactory::GetAudioPolicyManager().HandleKvData(isFristBoot);
+}
+
 void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeForAnyDeviceEvent(
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -1029,7 +1056,6 @@ void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExec
     }
 }
 
-// Run with event-runner mutex hold, lock any mutex that SendSyncEvent-calling holds may cause dead lock.
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -1070,6 +1096,9 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT:
             HandleSendRecreateCapturerStreamEvent(event);
+            break;
+        case EventAudioServerCmd::DATABASE_UPDATE:
+            HandleUpdateKvDataEvent(event);
             break;
         case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
             HandlePipeStreamCleanEvent(event);

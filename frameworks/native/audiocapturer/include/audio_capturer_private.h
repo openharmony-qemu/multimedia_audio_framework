@@ -91,10 +91,11 @@ public:
 
     uint32_t GetOverflowCount() const override;
 
-    int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
-
     void SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
+
+    int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
+
     void ConcedeStream();
 
     std::shared_ptr<IAudioStream> audioStream_;
@@ -132,11 +133,11 @@ private:
     int32_t InitAudioConcurrencyCallback();
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
     void ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass);
-    void WriteOverflowEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
     mutable std::shared_mutex switchStreamMutex_;
+    void WriteOverflowEvent() const;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     AppInfo appInfo_ = {};
@@ -169,6 +170,7 @@ public:
 
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);
+    void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
@@ -177,6 +179,7 @@ private:
     std::weak_ptr<AudioCapturerCallback> callback_;
     bool isForcePaused_ = false;
     std::shared_ptr<AudioCapturerCallback> cb_;
+    std::mutex mutex_;
 };
 
 class AudioStreamCallbackCapturer : public AudioStreamCallback {
@@ -239,11 +242,11 @@ public:
         capturer_ = nullptr;
     }
 private:
-    AudioCapturerPrivate *capturer_ = nullptr;
+    AudioCapturerPrivate *capturer_;
     std::mutex mutex_;
 };
 
-class CapturerPolicyServiceDiedCallback : public RendererOrCapturerPolicyServiceDiedCallback {
+class CapturerPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback {
 public:
     CapturerPolicyServiceDiedCallback();
     virtual ~CapturerPolicyServiceDiedCallback();

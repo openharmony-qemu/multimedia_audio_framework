@@ -194,8 +194,6 @@ public:
      */
     virtual int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) = 0;
 
-    virtual int32_t UpdateSwapDeviceStatus() = 0;
-
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard

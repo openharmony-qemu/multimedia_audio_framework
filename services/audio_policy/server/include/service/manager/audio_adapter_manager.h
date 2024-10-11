@@ -20,14 +20,16 @@
 #include <unordered_map>
 #include <cinttypes>
 
+#include "audio_adapter_manager_handler.h"
 #include "audio_service_adapter.h"
 #include "distributed_kv_data_manager.h"
 #include "iaudio_policy_interface.h"
 #include "types.h"
 #include "audio_policy_log.h"
-#include "audio_policy_server_handler.h"
 #include "audio_volume_config.h"
+#include "audio_policy_server_handler.h"
 #include "volume_data_maintainer.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,6 +39,7 @@ class AudioOsAccountInfo;
 
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
+    static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
     static constexpr std::string_view HDI_SINK = "libmodule-hdi-sink.z.so";
     static constexpr std::string_view HDI_SOURCE = "libmodule-hdi-source.z.so";
     static constexpr std::string_view PIPE_SINK = "libmodule-pipe-sink.z.so";
@@ -121,8 +124,6 @@ public:
 
     float GetMaxStreamVolume(void) const;
 
-    int32_t UpdateSwapDeviceStatus();
-
     bool IsVolumeUnadjustable();
 
     float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType, int32_t volumeLevel);
@@ -146,6 +147,10 @@ public:
     void SetAbsVolumeMute(bool mute);
 
     bool IsAbsVolumeMute() const;
+
+    void SetVgsVolumeSupported(bool isVgsSupported);
+
+    bool IsVgsVolumeSupported() const;
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
 
@@ -214,7 +219,6 @@ private:
     }
 
     AudioStreamType GetStreamIDByType(std::string streamType);
-    AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     int32_t ReInitKVStore();
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
@@ -285,6 +289,8 @@ private:
     bool isBtFirstSetVolume_ = true;
     int32_t curActiveCount_ = 0;
 
+    std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
+
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     AudioStreamRemovedCallback *sessionCallback_ = nullptr;
@@ -295,6 +301,7 @@ private:
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;
+    bool isVgsVolumeSupported_ = false;
     bool isNeedCopyVolumeData_ = false;
     bool isNeedCopyMuteData_ = false;
     bool isNeedCopyRingerModeData_ = false;
@@ -318,7 +325,7 @@ public:
 
     virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType)
     {
-        AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(streamType);
+        AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = audioAdapterManager_->GetStreamVolume(streamForVolumeMap);
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();

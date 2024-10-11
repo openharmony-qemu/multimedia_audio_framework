@@ -23,14 +23,12 @@ config("module_private_config") {
   include_dirs = [
     "../../common/include",
     "../../client/include",
-    "../../server/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
   ]
 }
 
 ohos_unittest("audio_balance_unit_test") {
-  testonly = true
   module_out_path = module_output_path
   sources = [
     "audio_balance_unit_test.cpp",

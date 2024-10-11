@@ -59,6 +59,8 @@ public:
     uint32_t GetLatency();
     int32_t UpdateEffectParam();
     void ResetIoBufferConfig();
+    void SetFinalVolume(float volume);
+    float GetFinalVolume();
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
 
 private:
@@ -80,9 +82,10 @@ private:
     AudioBuffer audioBufOut_ = {};
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
+    float finalVolume_ = 1.0f;
+    AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     std::string dumpNameIn_ = "";
     std::string dumpNameOut_ = "";
-    AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

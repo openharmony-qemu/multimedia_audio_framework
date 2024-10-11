@@ -238,6 +238,7 @@ struct AudioStreamParams {
     uint8_t format = 0;
     uint8_t channels = 0;
     uint64_t channelLayout = 0ULL;
+    uint32_t originalSessionId = 0;
 };
 
 // sampling rate

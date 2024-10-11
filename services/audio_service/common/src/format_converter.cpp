@@ -26,7 +26,7 @@ int32_t FormatConverter::S16MonoToS16Stereo(const BufferDesc &srcDesc, const Buf
     }
     int16_t *stcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
     int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
-    size_t count = srcDesc.bufLength / half;
+    size_t count = srcDesc.bufLength / sizeof(int16_t);
     for (size_t idx = 0; idx < count; idx++) {
         *(dstPtr++) = *stcPtr;
         *(dstPtr++) = *stcPtr++;
@@ -42,7 +42,7 @@ int32_t FormatConverter::S16StereoToS16Mono(const BufferDesc &srcDesc, const Buf
     }
     int16_t *stcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
     int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
-    size_t count = srcDesc.bufLength / half;
+    size_t count = srcDesc.bufLength / half / sizeof(int16_t);
     for (size_t idx = 0; idx < count; idx++) {
         *(dstPtr++) = (*stcPtr + *(stcPtr + 1)) / 2; // To obtain mono channel, add left to right, then divide by 2
         stcPtr += 2; // ptr++ on mono is equivalent to ptr+=2 on stereo

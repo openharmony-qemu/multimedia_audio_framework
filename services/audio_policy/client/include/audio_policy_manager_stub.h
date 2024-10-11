@@ -24,6 +24,7 @@ class AudioPolicyManagerStub : public IRemoteStub<IAudioPolicy> {
 public:
     virtual int32_t OnRemoteRequest(uint32_t code, MessageParcel &data,
         MessageParcel &reply, MessageOption &option) override;
+    virtual bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) = 0;
 
 private:
     void GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
@@ -67,8 +68,8 @@ private:
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
     void GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
-    void GetPerferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
-    void GetPerferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
@@ -106,6 +107,7 @@ private:
     void GetAvailableMicrophonesInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceAbsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsAbsVolumeSceneInternal(MessageParcel &data, MessageParcel &reply);
+    void IsVgsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
@@ -152,11 +154,12 @@ private:
     void SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply);
-    void MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInnerInternal(MessageParcel &data, MessageParcel &reply);
+    void MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateAudioConcurrencyInternal(MessageParcel &data, MessageParcel &reply);
+    void SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply);
@@ -164,148 +167,19 @@ private:
     void DeactivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
     void IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply);
     void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
 
-    using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
-    static inline HandlerFunc handlers[] = {
-        &AudioPolicyManagerStub::GetMaxVolumeLevelInternal,
-        &AudioPolicyManagerStub::GetMinVolumeLevelInternal,
-        &AudioPolicyManagerStub::SetSystemVolumeLevelLegacyInternal,
-        &AudioPolicyManagerStub::SetSystemVolumeLevelInternal,
-        &AudioPolicyManagerStub::GetSystemVolumeLevelInternal,
-        &AudioPolicyManagerStub::SetStreamMuteLegacyInternal,
-        &AudioPolicyManagerStub::SetStreamMuteInternal,
-        &AudioPolicyManagerStub::GetStreamMuteInternal,
-        &AudioPolicyManagerStub::IsStreamActiveInternal,
-        &AudioPolicyManagerStub::SetDeviceActiveInternal,
-        &AudioPolicyManagerStub::IsDeviceActiveInternal,
-        &AudioPolicyManagerStub::GetActiveOutputDeviceInternal,
-        &AudioPolicyManagerStub::GetActiveInputDeviceInternal,
-        &AudioPolicyManagerStub::SetRingerModeLegacyInternal,
-        &AudioPolicyManagerStub::SetRingerModeInternal,
-        &AudioPolicyManagerStub::GetRingerModeInternal,
-        &AudioPolicyManagerStub::SetAudioSceneInternal,
-        &AudioPolicyManagerStub::GetAudioSceneInternal,
-        &AudioPolicyManagerStub::SetMicrophoneMuteInternal,
-        &AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal,
-        &AudioPolicyManagerStub::IsMicrophoneMuteLegacyInternal,
-        &AudioPolicyManagerStub::IsMicrophoneMuteInternal,
-        &AudioPolicyManagerStub::SetInterruptCallbackInternal,
-        &AudioPolicyManagerStub::UnsetInterruptCallbackInternal,
-        &AudioPolicyManagerStub::ActivateInterruptInternal,
-        &AudioPolicyManagerStub::DeactivateInterruptInternal,
-        &AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal,
-        &AudioPolicyManagerStub::UnsetAudioManagerInterruptCbInternal,
-        &AudioPolicyManagerStub::RequestAudioFocusInternal,
-        &AudioPolicyManagerStub::AbandonAudioFocusInternal,
-        &AudioPolicyManagerStub::GetStreamInFocusInternal,
-        &AudioPolicyManagerStub::GetSessionInfoInFocusInternal,
-        &AudioPolicyManagerStub::GetDevicesInternal,
-        &AudioPolicyManagerStub::NotifyCapturerAddedInternal,
-        &AudioPolicyManagerStub::CheckRecordingCreateInternal,
-        &AudioPolicyManagerStub::SelectOutputDeviceInternal,
-        &AudioPolicyManagerStub::GetSelectedDeviceInfoInternal,
-        &AudioPolicyManagerStub::SelectInputDeviceInternal,
-        &AudioPolicyManagerStub::ReconfigureAudioChannelInternal,
-        &AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal,
-        &AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal,
-        &AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal,
-        &AudioPolicyManagerStub::GetPerferredInputStreamTypeInternal,
-        &AudioPolicyManagerStub::RegisterTrackerInternal,
-        &AudioPolicyManagerStub::UpdateTrackerInternal,
-        &AudioPolicyManagerStub::GetRendererChangeInfosInternal,
-        &AudioPolicyManagerStub::GetCapturerChangeInfosInternal,
-        &AudioPolicyManagerStub::SetLowPowerVolumeInternal,
-        &AudioPolicyManagerStub::GetLowPowerVolumeInternal,
-        &AudioPolicyManagerStub::UpdateStreamStateInternal,
-        &AudioPolicyManagerStub::GetSingleStreamVolumeInternal,
-        &AudioPolicyManagerStub::GetVolumeGroupInfoInternal,
-        &AudioPolicyManagerStub::GetNetworkIdByGroupIdInternal,
-#ifdef FEATURE_DTMF_TONE
-        &AudioPolicyManagerStub::GetToneInfoInternal,
-        &AudioPolicyManagerStub::GetSupportedTonesInternal,
-#endif
-        &AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal,
-        &AudioPolicyManagerStub::CheckRecordingStateChangeInternal,
-        &AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal,
-        &AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal,
-        &AudioPolicyManagerStub::SetClientCallbacksEnableInternal,
-        &AudioPolicyManagerStub::GetAudioFocusInfoListInternal,
-        &AudioPolicyManagerStub::SetSystemSoundUriInternal,
-        &AudioPolicyManagerStub::GetSystemSoundUriInternal,
-        &AudioPolicyManagerStub::GetMinStreamVolumeInternal,
-        &AudioPolicyManagerStub::GetMaxStreamVolumeInternal,
-        &AudioPolicyManagerStub::GetMaxRendererInstancesInternal,
-        &AudioPolicyManagerStub::IsVolumeUnadjustableInternal,
-        &AudioPolicyManagerStub::AdjustVolumeByStepInternal,
-        &AudioPolicyManagerStub::AdjustSystemVolumeByStepInternal,
-        &AudioPolicyManagerStub::GetSystemVolumeInDbInternal,
-        &AudioPolicyManagerStub::QueryEffectSceneModeInternal,
-        &AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal,
-        &AudioPolicyManagerStub::SetCaptureSilentStateInternal,
-        &AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal,
-        &AudioPolicyManagerStub::GetAudioCapturerMicrophoneDescriptorsInternal,
-        &AudioPolicyManagerStub::GetAvailableMicrophonesInternal,
-        &AudioPolicyManagerStub::SetDeviceAbsVolumeSupportedInternal,
-        &AudioPolicyManagerStub::IsAbsVolumeSceneInternal,
-        &AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal,
-        &AudioPolicyManagerStub::GetAvailableDevicesInternal,
-        &AudioPolicyManagerStub::SetAvailableDeviceChangeCallbackInternal,
-        &AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal,
-        &AudioPolicyManagerStub::IsSpatializationEnabledInternal,
-        &AudioPolicyManagerStub::IsSpatializationEnabledForDeviceInternal,
-        &AudioPolicyManagerStub::SetSpatializationEnabledInternal,
-        &AudioPolicyManagerStub::SetSpatializationEnabledForDeviceInternal,
-        &AudioPolicyManagerStub::IsHeadTrackingEnabledInternal,
-        &AudioPolicyManagerStub::IsHeadTrackingEnabledForDeviceInternal,
-        &AudioPolicyManagerStub::SetHeadTrackingEnabledInternal,
-        &AudioPolicyManagerStub::SetHeadTrackingEnabledForDeviceInternal,
-        &AudioPolicyManagerStub::GetSpatializationStateInternal,
-        &AudioPolicyManagerStub::IsSpatializationSupportedInternal,
-        &AudioPolicyManagerStub::IsSpatializationSupportedForDeviceInternal,
-        &AudioPolicyManagerStub::IsHeadTrackingSupportedInternal,
-        &AudioPolicyManagerStub::IsHeadTrackingSupportedForDeviceInternal,
-        &AudioPolicyManagerStub::UpdateSpatialDeviceStateInternal,
-        &AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal,
-        &AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal,
-        &AudioPolicyManagerStub::SetDistributedRoutingRoleCallbackInternal,
-        &AudioPolicyManagerStub::UnsetDistributedRoutingRoleCallbackInternal,
-        &AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal,
-        &AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal,
-        &AudioPolicyManagerStub::CreateAudioInterruptZoneInternal,
-        &AudioPolicyManagerStub::AddAudioInterruptZonePidsInternal,
-        &AudioPolicyManagerStub::RemoveAudioInterruptZonePidsInternal,
-        &AudioPolicyManagerStub::ReleaseAudioInterruptZoneInternal,
-        &AudioPolicyManagerStub::SetCallDeviceActiveInternal,
-        &AudioPolicyManagerStub::GetConverterConfigInternal,
-        &AudioPolicyManagerStub::GetActiveBluetoothDeviceInternal,
-        &AudioPolicyManagerStub::FetchOutputDeviceForTrackInternal,
-        &AudioPolicyManagerStub::FetchInputDeviceForTrackInternal,
-        &AudioPolicyManagerStub::IsHighResolutionExistInternal,
-        &AudioPolicyManagerStub::SetHighResolutionExistInternal,
-        &AudioPolicyManagerStub::GetSpatializationSceneTypeInternal,
-        &AudioPolicyManagerStub::SetSpatializationSceneTypeInternal,
-        &AudioPolicyManagerStub::GetMaxAmplitudeInternal,
-        &AudioPolicyManagerStub::IsHeadTrackingDataRequestedInternal,
-        &AudioPolicyManagerStub::SetAudioDeviceRefinerCallbackInternal,
-        &AudioPolicyManagerStub::UnsetAudioDeviceRefinerCallbackInternal,
-        &AudioPolicyManagerStub::TriggerFetchDeviceInternal,
-        &AudioPolicyManagerStub::MoveToNewTypeInternal,
-        &AudioPolicyManagerStub::DisableSafeMediaVolumeInternal,
-        &AudioPolicyManagerStub::GetDevicesInnerInternal,
-        &AudioPolicyManagerStub::SetConcurrencyCallbackInternal,
-        &AudioPolicyManagerStub::UnsetConcurrencyCallbackInternal,
-        &AudioPolicyManagerStub::ActivateAudioConcurrencyInternal,
-        &AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal,
-        &AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal,
-        &AudioPolicyManagerStub::InjectInterruptionInternal,
-        &AudioPolicyManagerStub::ActivateAudioSessionInternal,
-        &AudioPolicyManagerStub::DeactivateAudioSessionInternal,
-        &AudioPolicyManagerStub::IsAudioSessionActivatedInternal,
-        &AudioPolicyManagerStub::SetDefaultOutputDeviceInternal,
-    };
-    static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
-    static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),
-        "please check audio_policy_ipc_interface_code");
+    void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMiddleEigRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMiddleSevRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMiddleSixRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMiddleFifRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMiddleFouRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMiddleTirRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMiddleSecRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMiddleFirRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMiddlesRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

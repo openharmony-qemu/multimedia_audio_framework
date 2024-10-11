@@ -39,10 +39,8 @@ ohos_shared_library("audio_capturer_source") {
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
     "init:libbegetutil",
-    "ipc:ipc_single",
     "media_foundation:media_monitor_client",
   ]
   defines = []
@@ -78,11 +76,8 @@ ohos_shared_library("fast_audio_capturer_source") {
   deps = [ "../../audioutils:audio_utils" ]
 
   external_deps = [
-    "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
-    "ipc:ipc_single",
   ]
   defines = []
   if (audio_framework_feature_power_manager) {
@@ -123,7 +118,6 @@ ohos_shared_library("remote_audio_capturer_source") {
   external_deps = [
     "c_utils:utils",
     "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
   ]
   defines = []
@@ -136,6 +130,7 @@ ohos_shared_library("remote_audio_capturer_source") {
 }
 
 ohos_shared_library("remote_fast_audio_capturer_source") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -164,7 +159,6 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   external_deps = [
     "c_utils:utils",
     "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
   ]
   defines = []
@@ -198,7 +192,6 @@ ohos_shared_library("audio_capturer_file_source") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
   external_deps = [
-    "c_utils:utils",
     "hilog:libhilog",
     "pulseaudio:pulse",
   ]
@@ -248,8 +241,8 @@ ohos_shared_library("capturer_source_adapter") {
   }
 
   cflags_cc = cflags
+
   external_deps = [
-    "c_utils:utils",
     "hilog:libhilog",
     "pulseaudio:pulse",
   ]

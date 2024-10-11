@@ -115,6 +115,7 @@ public:
     std::string sourceType;
     std::string offloadEnable;
     std::list<AudioModuleInfo> ports;
+    std::string extra;
 };
 
 } // namespace AudioStandard

@@ -102,5 +102,23 @@ void AudioPolicyManagerListenerProxy::OnAvailableDeviceChange(const AudioDeviceU
     int error = Remote()->SendRequest(ON_AVAILABLE_DEVICE_CAHNGE, data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnAvailableDeviceChange failed, error: %{public}d", error);
 }
+
+bool AudioPolicyManagerListenerProxy::OnQueryClientType(const std::string &bundleName, uint32_t uid)
+{
+    AUDIO_DEBUG_LOG("In");
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), false,
+        "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+    data.WriteString(bundleName);
+    data.WriteUint32(uid);
+
+    int error = Remote()->SendRequest(ON_QUERY_CLIENT_TYPE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
 } // namespace AudioStandard
 } // namespace OHOS

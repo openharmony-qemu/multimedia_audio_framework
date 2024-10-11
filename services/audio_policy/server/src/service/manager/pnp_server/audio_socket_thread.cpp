@@ -17,24 +17,17 @@
 #endif
 
 #include "audio_socket_thread.h"
-
 #include <cctype>
 #include <cstdlib>
 #include <dirent.h>
-#include <fcntl.h>
-#include <functional>
 #include <linux/netlink.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <string>
-
-#include "hdf_base.h"
-#include "hdf_device_object.h"
 #include "osal_time.h"
-#include "securec.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "securec.h"
+#include "audio_policy_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

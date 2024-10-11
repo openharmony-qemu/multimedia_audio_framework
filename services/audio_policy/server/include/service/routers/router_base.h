@@ -69,7 +69,10 @@ public:
         std::vector<std::unique_ptr<AudioDeviceDescriptor>> &captureDescs)
     {
         for (auto &captureDesc : captureDescs) {
-            if (captureDesc->deviceId_ != desc->deviceId_) {
+            if (captureDesc->deviceRole_ != desc->deviceRole_
+                || captureDesc->deviceType_ != desc->deviceType_
+                || captureDesc->networkId_ != desc->networkId_
+                || captureDesc->macAddress_ != desc->macAddress_) {
                 continue;
             }
             if (!captureDesc->exceptionFlag_ && captureDesc->isEnable_ &&

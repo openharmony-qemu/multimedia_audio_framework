@@ -23,8 +23,10 @@
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
+#include "audio_service.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,7 +45,11 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
-    sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
+    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+        sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
+    } else {
+        sessionId_ = processConfig.originalSessionId;
+    }
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -58,6 +64,23 @@ int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
 {
     sessionId = sessionId_;
     return SUCCESS;
+}
+
+void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
+{
+    muteFlag_ = muteFlag;
+    AUDIO_INFO_LOG("muteFlag_: %{public}d", muteFlag);
+    AudioService::GetInstance()->UpdateMuteControlSet(sessionId_, muteFlag);
+}
+
+bool AudioProcessInServer::GetMuteFlag()
+{
+    return muteFlag_;
+}
+
+uint32_t AudioProcessInServer::GetSessionId()
+{
+    return sessionId_;
 }
 
 int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
@@ -111,7 +134,8 @@ int32_t AudioProcessInServer::Start()
     }
 
     if (streamStatus_->load() == STREAM_STAND_BY) {
-        AUDIO_INFO_LOG("Call start while in stand-by");
+        AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
+        WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
     }
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
@@ -136,7 +160,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
         listenerList_[i]->OnPause(this);
     }
 
-    AUDIO_INFO_LOG("Pause in server success!");
+    AUDIO_PRERELEASE_LOGI("Pause in server success!");
     return SUCCESS;
 }
 
@@ -164,7 +188,7 @@ int32_t AudioProcessInServer::Resume()
         listenerList_[i]->OnStart(this);
     }
 
-    AUDIO_INFO_LOG("Resume in server success!");
+    AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
 
@@ -281,6 +305,11 @@ std::shared_ptr<OHAudioBuffer> AudioProcessInServer::GetStreamBuffer()
 AudioStreamInfo AudioProcessInServer::GetStreamInfo()
 {
     return processConfig_.streamInfo;
+}
+
+uint32_t AudioProcessInServer::GetAudioSessionId()
+{
+    return sessionId_;
 }
 
 AudioStreamType AudioProcessInServer::GetAudioStreamType()
@@ -428,6 +457,16 @@ int32_t AudioProcessInServer::RegisterThreadPriority(uint32_t tid, const std::st
         AUDIO_ERR_LOG("client thread priority requested");
         return ERR_OPERATION_FAILED;
     }
+}
+
+void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_STANDBY,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("STREAMID", static_cast<int32_t>(sessionId));
+    bean->Add("STANDBY", standby);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 } // namespace AudioStandard
 } // namespace OHOS

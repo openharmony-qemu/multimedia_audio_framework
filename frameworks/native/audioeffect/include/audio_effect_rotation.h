@@ -18,10 +18,6 @@
 
 #include <cstdint>
 #include <mutex>
-#ifdef WINDOW_MANAGER_ENABLE
-#include "display_manager.h"
-#include "dm_common.h"
-#endif
 
 namespace OHOS {
 namespace AudioStandard {

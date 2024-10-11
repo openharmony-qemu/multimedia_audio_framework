@@ -223,7 +223,7 @@ OptResult AudioRingCache::Enqueue(const BufferWrap &buffer)
     size_t offset = writeIndex_ >= baseIndex_ + cacheTotalSize_ ? (writeIndex_ - baseIndex_ - cacheTotalSize_) :
         (writeIndex_ - baseIndex_);
     void *writePtr = static_cast<void *>(basePtr_.get() + offset);
-    if ((memcpy_s(writePtr, buffer.dataSize, static_cast<void *>(buffer.dataPtr), buffer.dataSize)) == EOK) {
+    if ((memcpy_s(writePtr, cacheTotalSize_ - offset, static_cast<void *>(buffer.dataPtr), buffer.dataSize)) == EOK) {
         writeIndex_ = tempWriteIndex; // move write index
         result = {OPERATION_SUCCESS, buffer.dataSize};
         return result;

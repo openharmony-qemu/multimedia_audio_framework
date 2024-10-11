@@ -41,6 +41,7 @@ if (!audio_framework_feature_dtmf_tone) {
   }
 } else {
   ohos_shared_library("audio_toneplayer") {
+    branch_protector_ret = "pac_ret"
     sanitize = {
       cfi = true
       cfi_cross_dso = true
@@ -66,7 +67,6 @@ if (!audio_framework_feature_dtmf_tone) {
 
     external_deps = [
       "c_utils:utils",
-      "eventhandler:libeventhandler",
       "hilog:libhilog",
       "ipc:ipc_single",
       "pulseaudio:pulse",

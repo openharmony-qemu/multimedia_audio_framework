@@ -23,9 +23,11 @@
 #include <ostream>
 #include <climits>
 #include <string>
+#include <climits>
+#include "audio_utils.h"
 #include "audio_utils_c.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #ifdef FEATURE_HITRACE_METER
 #include "hitrace_meter.h"
 #endif
@@ -45,6 +47,7 @@ using OHOS::Security::AccessToken::AccessTokenKit;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
@@ -54,18 +57,12 @@ constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 
+const uint32_t UNIQUE_ID_INTERVAL = 8;
+
 constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
 constexpr size_t HEAD_STR_LEN = 2;
 constexpr size_t TAIL_STR_LEN = 5;
-
-const int32_t DATA_INDEX_0 = 0;
-const int32_t DATA_INDEX_1 = 1;
-const int32_t DATA_INDEX_2 = 2;
-const int32_t DATA_INDEX_3 = 3;
-const int32_t DATA_INDEX_4 = 4;
-const int32_t DATA_INDEX_5 = 5;
-const int32_t STEREO_CHANNEL_COUNT = 2;
 
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -77,6 +74,7 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_DISTRIBUTED_AUDIO_SA,
     UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
+    UID_AUDIO,
     UID_TELEPHONY_SA // used in distributed communication call
 };
 
@@ -211,13 +209,28 @@ bool PermissionUtil::VerifyIsShell()
     return false;
 }
 
+bool PermissionUtil::VerifyIsAudio()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (UID_AUDIO == callingUid) {
+        return true;
+    }
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    if (callingUid == 0) {
+        AUDIO_WARNING_LOG("Root calling!");
+        return true;
+    }
+#endif
+    return false;
+}
+
 bool PermissionUtil::VerifyIsSystemApp()
 {
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_ERR_LOG("Check system app permission reject");
+    AUDIO_PRERELEASE_LOGE("Check system app permission reject");
     return false;
 }
 
@@ -250,7 +263,7 @@ bool PermissionUtil::VerifySystemPermission()
     bool tmp = VerifyIsSystemApp();
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_ERR_LOG("Check system permission reject");
+    AUDIO_PRERELEASE_LOGE("Check system permission reject");
     return false;
 }
 
@@ -288,12 +301,16 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     if (!ret) {
         AUDIO_ERR_LOG("failed: not allowed!");
     }
+    AUDIO_INFO_LOG("tokenId:%{public}u fullTokenId:%{public}" PRIu64": %{public}s", tokenId, fullTokenId, (ret ? "true"
+        : "false"));
     return ret;
 }
 
 bool PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacy", TIME_OUT_SECONDS);
+    AUDIO_INFO_LOG("tokenId:%{public}d notify state is %{public}s", targetTokenId, (state == AUDIO_PERMISSION_START ?
+        "START" : "STOP"));
     if (state == AUDIO_PERMISSION_START) {
         Trace trace("PrivacyKit::StartUsingPermission");
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
@@ -349,31 +366,9 @@ void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
     }
 }
 
-void AdjustStereoToMonoForPCM24Bit(uint8_t *data, uint64_t len)
+void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len)
 {
-    uint64_t count = len / STEREO_CHANNEL_COUNT / 3; // 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
-
-    while (count > 0) {
-        uint32_t leftData = (static_cast<uint32_t>(data[DATA_INDEX_2]) << BIT_16) |
-            (static_cast<uint32_t>(data[DATA_INDEX_1]) << BIT_8) |
-            (static_cast<uint32_t>(data[DATA_INDEX_0]));
-        uint32_t rightData = (static_cast<uint32_t>(data[DATA_INDEX_5]) << BIT_16) |
-            (static_cast<uint32_t>(data[DATA_INDEX_4]) << BIT_8) |
-            (static_cast<uint32_t>(data[DATA_INDEX_3]));
-
-        leftData = static_cast<uint32_t>(static_cast<int32_t>(leftData << BIT_8) / STEREO_CHANNEL_COUNT +
-            static_cast<int32_t>(rightData << BIT_8) / STEREO_CHANNEL_COUNT) >> BIT_8;
-        rightData = leftData;
-
-        data[DATA_INDEX_0] = static_cast<uint8_t>(leftData);
-        data[DATA_INDEX_1] = static_cast<uint8_t>(leftData >> BIT_8);
-        data[DATA_INDEX_2] = static_cast<uint8_t>(leftData >> BIT_16);
-        data[DATA_INDEX_3] = static_cast<uint8_t>(rightData);
-        data[DATA_INDEX_4] = static_cast<uint8_t>(rightData >> BIT_8);
-        data[DATA_INDEX_5] = static_cast<uint8_t>(rightData >> BIT_16);
-        data += 6; // 6: 2 channels, 24 bits (3 bytes), 2 * 3 = 6
-        count--;
-    }
+    // 24bit is not supported for audio balance.
 }
 
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
@@ -420,33 +415,9 @@ void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, floa
     }
 }
 
-void AdjustAudioBalanceForPCM24Bit(uint8_t *data, uint64_t len, float left, float right)
+void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right)
 {
-    uint64_t count = len / STEREO_CHANNEL_COUNT / 3; // 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
-
-    while (count > 0) {
-        uint32_t leftData = (static_cast<uint32_t>(data[DATA_INDEX_2]) << BIT_16) |
-            (static_cast<uint32_t>(data[DATA_INDEX_1]) << BIT_8) |
-            (static_cast<uint32_t>(data[DATA_INDEX_0]));
-        int32_t leftTemp = static_cast<int32_t>(leftData << BIT_8);
-        leftTemp *= left;
-        leftData = static_cast<uint32_t>(leftTemp) >> BIT_8;
-        data[DATA_INDEX_0] = static_cast<uint8_t>(leftData);
-        data[DATA_INDEX_1] = static_cast<uint8_t>(leftData >> BIT_8);
-        data[DATA_INDEX_2] = static_cast<uint8_t>(leftData >> BIT_16);
-
-        uint32_t rightData = (static_cast<uint32_t>(data[DATA_INDEX_5]) << BIT_16) |
-            (static_cast<uint32_t>(data[DATA_INDEX_4]) << BIT_8) |
-            (static_cast<uint32_t>(data[DATA_INDEX_3]));
-        int32_t rightTemp = static_cast<int32_t>(rightData << BIT_8);
-        rightTemp *= right;
-        rightData = static_cast<uint32_t>(rightTemp) >> BIT_8;
-        data[DATA_INDEX_3] = static_cast<uint8_t>(rightData);
-        data[DATA_INDEX_4] = static_cast<uint8_t>(rightData >> BIT_8);
-        data[DATA_INDEX_5] = static_cast<uint8_t>(rightData >> BIT_16);
-        data += 6; // 6: 2 channels, 24 bits (3 bytes), 2 * 3 = 6
-        count--;
-    }
+    // 24bit is not supported for audio balance.
 }
 
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
@@ -755,6 +726,10 @@ std::string GetTime()
     struct tm *t;
     gettimeofday(&tv, &tz);
     t = localtime(&tv.tv_sec);
+    if (t == nullptr) {
+        return "";
+    }
+
     curTime += std::to_string(YEAR_BASE + t->tm_year);
     curTime += (1 + t->tm_mon < DECIMAL_EXPONENT ? "0" + std::to_string(1 + t->tm_mon) :
         std::to_string(1 + t->tm_mon));
@@ -856,7 +831,7 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
             lastPeakSignalPos_ = currentPeakIndex;
         }
         blankHaveOutput_ = false;
-        blankPeriod_ = static_cast<int32_t>(frameCount - rightZeroSignal);
+        blankPeriod_ = static_cast<int32_t>(frameCount) - static_cast<int32_t>(rightZeroSignal);
     }
     int32_t thresholdBlankPeriod = BLANK_THRESHOLD_MS * sampleRate_ / MILLISECOND_PER_SECOND;
     if (blankPeriod_ > thresholdBlankPeriod) {
@@ -880,7 +855,7 @@ bool AudioLatencyMeasurement::MockPcmData(uint8_t *buffer, size_t bufferLen)
     memset_s(buffer, bufferLen, 0, bufferLen);
     int16_t *signal = signalData_.get();
     size_t newlyMocked = bufferLen * MILLISECOND_PER_SECOND /
-        static_cast<size_t>(channelCount_ * sampleRate_ * formatByteSize_);
+        static_cast<uint32_t>(channelCount_ * sampleRate_ * formatByteSize_);
     mockedTime_ += newlyMocked;
     if (mockedTime_ >= MOCK_INTERVAL) {
         mockedTime_ = 0;
@@ -1025,9 +1000,7 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
             name = "VOICE_ASSISTANT";
             break;
         case STREAM_VOICE_CALL:
-        case STREAM_VOICE_COMMUNICATION:
             name = "VOICE_CALL";
-
             break;
         case STREAM_SYSTEM:
             name = "SYSTEM";
@@ -1061,6 +1034,54 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
             break;
         case STREAM_WAKEUP:
             name = "WAKEUP";
+            break;
+        default:
+            name = GetStreamNameExt(streamType);
+    }
+
+    const std::string streamName = name;
+    return streamName;
+}
+
+const std::string AudioInfoDumpUtils::GetStreamNameExt(AudioStreamType streamType)
+{
+    std::string name;
+    switch (streamType) {
+        case STREAM_ENFORCED_AUDIBLE:
+            name = "ENFORCED_AUDIBLE";
+            break;
+        case STREAM_MOVIE:
+            name = "MOVIE";
+            break;
+        case STREAM_GAME:
+            name = "GAME";
+            break;
+        case STREAM_SPEECH:
+            name = "SPEECH";
+            break;
+        case STREAM_SYSTEM_ENFORCED:
+            name = "SYSTEM_ENFORCED";
+            break;
+        case STREAM_VOICE_MESSAGE:
+            name = "VOICE_MESSAGE";
+            break;
+        case STREAM_NAVIGATION:
+            name = "NAVIGATION";
+            break;
+        case STREAM_INTERNAL_FORCE_STOP:
+            name = "INTERNAL_FORCE_STOP";
+            break;
+        case STREAM_SOURCE_VOICE_CALL:
+            name = "SOURCE_VOICE_CALL";
+            break;
+        case STREAM_VOICE_COMMUNICATION:
+            name = "VOICE_COMMUNICATION";
+            break;
+        case STREAM_VOICE_RING:
+            name = "VOICE_RING";
+            break;
+        case STREAM_VOICE_CALL_ASSISTANT:
+            name = "VOICE_CALL_ASSISTANT";
             break;
         default:
             name = "UNKNOWN";
@@ -1181,6 +1202,48 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
     return deviceTypeName;
 }
 
+std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeMap_ = {
+    {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
+    {STREAM_VOICE_MESSAGE, STREAM_VOICE_CALL},
+    {STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL},
+
+    {STREAM_RING, STREAM_RING},
+    {STREAM_SYSTEM, STREAM_RING},
+    {STREAM_NOTIFICATION, STREAM_RING},
+    {STREAM_SYSTEM_ENFORCED, STREAM_RING},
+    {STREAM_DTMF, STREAM_RING},
+    {STREAM_VOICE_RING, STREAM_RING},
+
+    {STREAM_MUSIC, STREAM_MUSIC},
+    {STREAM_MEDIA, STREAM_MUSIC},
+    {STREAM_MOVIE, STREAM_MUSIC},
+    {STREAM_GAME, STREAM_MUSIC},
+    {STREAM_SPEECH, STREAM_MUSIC},
+    {STREAM_NAVIGATION, STREAM_MUSIC},
+
+    {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
+    {STREAM_ALARM, STREAM_ALARM},
+    {STREAM_ACCESSIBILITY, STREAM_ACCESSIBILITY},
+    {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
+    {STREAM_ALL, STREAM_ALL},
+};
+
+std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
+{
+    return defaultVolumeMap_;
+}
+
+AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType)
+{
+    std::unordered_map<AudioStreamType, AudioVolumeType> map = GetVolumeMap();
+    auto it = map.find(streamType);
+    if (it != map.end()) {
+        return it->second;
+    }
+    return STREAM_MUSIC;
+}
+
 std::string GetEncryptStr(const std::string &src)
 {
     if (src.empty()) {
@@ -1204,6 +1267,20 @@ std::string GetEncryptStr(const std::string &src)
     }
 
     return dst;
+}
+
+std::string ConvertNetworkId(const std::string &networkId)
+{
+    if (!networkId.empty() && networkId != LOCAL_NETWORK_ID) {
+        return REMOTE_NETWORK_ID;
+    }
+
+    return networkId;
+}
+
+uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset)
+{
+    return base + offset * UNIQUE_ID_INTERVAL;
 }
 
 AudioDump& AudioDump::GetInstance()

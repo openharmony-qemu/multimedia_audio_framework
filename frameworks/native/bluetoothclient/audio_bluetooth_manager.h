@@ -25,6 +25,10 @@
 
 namespace OHOS {
 namespace Bluetooth {
+class AudioA2dpPlayingStateChangedListener {
+public:
+    virtual void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState) = 0;
+};
 
 // Audio bluetooth a2dp feature support
 class AudioA2dpListener : public A2dpSourceObserver {
@@ -36,6 +40,7 @@ public:
     virtual void OnConfigurationChanged(const BluetoothRemoteDevice &device, const A2dpCodecInfo &info, int error);
     virtual void OnPlayingStatusChanged(const BluetoothRemoteDevice &device, int playingState, int error);
     virtual void OnMediaStackChanged(const BluetoothRemoteDevice &device, int action);
+    virtual void OnVirtualDeviceChanged(int32_t action, std::string macAddress);
 
 private:
     BLUETOOTH_DISALLOW_COPY_AND_ASSIGN(AudioA2dpListener);
@@ -58,6 +63,11 @@ public:
     static int32_t A2dpOffloadSessionRequest(const std::vector<A2dpStreamInfo> &info);
     static int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsID);
     static int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsID);
+    static int32_t GetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+    static int32_t RegisterA2dpPlayingStateChangedListener(
+        std::shared_ptr<AudioA2dpPlayingStateChangedListener> listener);
+    static void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState);
+    static int32_t Connect(const std::string &macAddress);
 
     static void SetConnectionState(int state)
     {
@@ -77,6 +87,7 @@ private:
     static std::shared_ptr<AudioA2dpListener> a2dpListener_;
     static int connectionState_;
     static BluetoothRemoteDevice activeA2dpDevice_;
+    static std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> a2dpPlayingStateChangedListeners_;
 };
 
 // Audio bluetooth sco feature support
@@ -89,6 +100,7 @@ public:
     void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause);
     void OnActiveDeviceChanged(const BluetoothRemoteDevice &device) {}
     void OnHfEnhancedDriverSafetyChanged(const BluetoothRemoteDevice &device, int indValue) {}
+    void OnVirtualDeviceChanged(int32_t action, std::string macAddress);
     virtual void OnHfpStackChanged(const BluetoothRemoteDevice &device, int action);
 
 private:
@@ -116,6 +128,7 @@ public:
     static void SetAudioSceneFromPolicy(AudioStandard::AudioScene scene);
     static int32_t HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device);
     static ScoCategory GetScoCategory();
+    static int32_t Connect(const std::string &macAddress);
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;

@@ -134,7 +134,7 @@ int32_t PaCapturerStreamImpl::Start()
     return SUCCESS;
 }
 
-int32_t PaCapturerStreamImpl::Pause()
+int32_t PaCapturerStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Pause");
     PaLockGuard lock(mainloop_);
@@ -212,7 +212,7 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
 
     // Get PA latency
     while (true) {
-        pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
+        pa_operation *operation = pa_stream_update_timing_info(paStream_, PAStreamUpdateTimingInfoSuccessCb, NULL);
         if (operation != nullptr) {
             pa_operation_unref(operation);
         } else {
@@ -355,6 +355,11 @@ void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void
         return;
     }
     auto streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
+    if (streamImpl->abortFlag_ != 0) {
+        AUDIO_ERR_LOG("PAStreamReadCb: Abort pa stream read callback");
+        streamImpl->abortFlag_--;
+        return ;
+    }
     std::shared_ptr<IReadCallback> readCallback = streamImpl->readCallback_.lock();
     if (readCallback != nullptr) {
         readCallback->OnReadData(length);
@@ -507,6 +512,18 @@ void PaCapturerStreamImpl::SetStreamIndex(uint32_t index)
 uint32_t PaCapturerStreamImpl::GetStreamIndex()
 {
     return streamIndex_;
+}
+
+void PaCapturerStreamImpl::AbortCallback(int32_t abortTimes)
+{
+    abortFlag_ += abortTimes;
+}
+
+void PaCapturerStreamImpl::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    PaCapturerStreamImpl *capturerStreamImpl = (PaCapturerStreamImpl *)userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)capturerStreamImpl->mainloop_;
+    pa_threaded_mainloop_signal(mainLoop, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

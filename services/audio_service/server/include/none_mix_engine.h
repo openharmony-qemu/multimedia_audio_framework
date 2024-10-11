@@ -47,10 +47,11 @@ private:
     int32_t SinkStopTimeOut();
     void DoFadeinOut(bool isFadeOut, char* buffer, size_t bufferSize);
 
+    int32_t GetDirectFormatByteSize(HdiAdapterFormat format);
+
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
     HdiAdapterFormat GetDirectDeviceFormate(AudioSampleFormat format);
-    int32_t GetDirectFormatByteSize(HdiAdapterFormat format);
 
 private:
     bool isVoip_;

@@ -66,6 +66,7 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
         AUDIO_ERR_LOG("Missing tag - audio_volume_config in : %s", path);
         WriteVolumeConfigErrorEvent();
         xmlFreeDoc(doc);
+        xmlCleanupParser();
         return ERROR;
     }
     if (currNode->children) {
@@ -74,6 +75,7 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
         AUDIO_ERR_LOG("empty volume config in : %s", path);
         WriteVolumeConfigErrorEvent();
         xmlFreeDoc(doc);
+        xmlCleanupParser();
         return ERROR;
     }
 
@@ -88,6 +90,7 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
     }
 
     xmlFreeDoc(doc);
+    xmlCleanupParser();
     return SUCCESS;
 }
 

@@ -25,6 +25,7 @@
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "audio_utils.h"
+#include "xpower_event_js.h"
 #include "napi_audio_spatialization_manager_callback.h"
 
 namespace OHOS {
@@ -131,7 +132,7 @@ napi_value NapiAudioSpatializationManager::CreateSpatializationManagerWrapper(na
     }
     status = napi_new_instance(env, constructor, 0, nullptr, &result);
     if (status != napi_ok) {
-        AUDIO_ERR_LOG("napi_new_instance failed, sttaus:%{public}d", status);
+        AUDIO_ERR_LOG("napi_new_instance failed, status:%{public}d", status);
         goto fail;
     }
     return result;
@@ -469,7 +470,6 @@ napi_value NapiAudioSpatializationManager::IsSpatializationSupportedForDevice(na
     CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
         "invalid parameter");
-
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
         "napiAudioSpatializationManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,

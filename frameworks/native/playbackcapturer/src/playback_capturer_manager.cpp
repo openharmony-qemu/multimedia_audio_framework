@@ -26,7 +26,7 @@
 #include <unordered_set>
 
 #include "audio_info.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_errors.h"
 #include "playback_capturer_adapter.h"
 

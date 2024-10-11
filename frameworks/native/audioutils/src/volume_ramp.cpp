@@ -18,7 +18,7 @@
 
 #include "volume_ramp.h"
 #include <cinttypes>
-#include "audio_log.h"
+#include "audio_common_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

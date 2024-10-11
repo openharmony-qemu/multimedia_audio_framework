@@ -18,16 +18,12 @@
 #include <cstdint>
 #include <map>
 #include <list>
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
-#include <securec.h>
-#else
 #include "ability.h"
-#endif
 #include "napi/native_api.h"
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
 #include "napi_base_context.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_info.h"
 #include "audio_capturer.h"
 #include "audio_system_manager.h"
@@ -151,7 +147,7 @@ public:
     static napi_status SetDeviceDescriptors(const napi_env &env,
         const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result);
     static napi_status SetAudioSpatialEnabledStateForDevice(const napi_env &env,
-        const AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice, napi_value &result);
+    const AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice, napi_value &result);
     static napi_status SetValueDeviceInfo(const napi_env &env, const DeviceInfo &deviceInfo, napi_value &result);
     static napi_status SetInterruptEvent(const napi_env &env, const InterruptEvent &interruptEvent,
         napi_value &result);

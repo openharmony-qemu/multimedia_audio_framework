@@ -102,6 +102,7 @@ public:
         std::shared_ptr<AudioRendererFirstFrameWritingCallback> rendererFirstFrameWritingCallback;
 
         std::optional<int32_t> userSettedPreferredFrameSize = std::nullopt;
+        bool silentModeAndMixWithOthers = false;
     };
 
     virtual ~IAudioStream() = default;
@@ -246,17 +247,6 @@ public:
     virtual void SetCapturerSource(int capturerSource) = 0;
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
-
-    virtual int32_t RegisterRendererOrCapturerPolicyServiceDiedCB(
-        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
-    {
-        return 0;
-    }
-
-    virtual int32_t RemoveRendererOrCapturerPolicyServiceDiedCB()
-    {
-        return 0;
-    }
 
     virtual bool RestoreAudioStream()
     {

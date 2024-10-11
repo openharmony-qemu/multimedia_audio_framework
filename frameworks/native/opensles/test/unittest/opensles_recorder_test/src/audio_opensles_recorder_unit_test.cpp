@@ -314,12 +314,6 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_002, TestSi
     EXPECT_TRUE(true);
 }
 
-HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_003, TestSize.Level0)
-{
-    SLresult result = AudioRecorderDestroy(nullptr);
-    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
-}
-
 HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_CreateEngine_001, TestSize.Level0)
 {
     struct timespec tv1 = {0};

@@ -30,9 +30,6 @@ ohos_unittest("audio_capturer_unit_test") {
     "-Werror",
   ]
 
-  cflags_cc = cflags
-  cflags_cc += [ "-fno-access-control" ]
-
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
@@ -47,6 +44,33 @@ ohos_unittest("audio_capturer_unit_test") {
   deps = [
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
+  ]
+}
+
+ohos_unittest("inner_capturer_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+
+  sources = [ "src/inner_capturer_unit_test.cpp" ]
+
+  deps = [
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../audiocapturer:audio_capturer",
+    "../../../../audiorenderer:audio_renderer",
   ]
 }
 

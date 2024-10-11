@@ -43,10 +43,6 @@ static constexpr int32_t NODE_SIZE = 6;
 static constexpr int32_t MODULE_SIZE = 5;
 static constexpr uint32_t XML_PARSE_NOERROR = 1 << 5;
 static constexpr uint32_t XML_PARSE_NOWARNING = 1 << 6;
-static constexpr int32_t INDEX_POST_STREAMS = 0;
-static constexpr int32_t INDEX_POST_MAPPING = 1;
-static constexpr int32_t INDEX_POST_EXCEPTION = 2;
-static constexpr int32_t NODE_SIZE_POST = 3;
 
 AudioEffectConfigParser::AudioEffectConfigParser()
 {
@@ -100,6 +96,7 @@ static int32_t LoadConfigCheck(xmlDoc *doc, xmlNode *currNode)
     if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_effects_conf"))) {
         AUDIO_ERR_LOG("Missing tag - audio_effects_conf");
         xmlFreeDoc(doc);
+        xmlCleanupParser();
         return FILE_CONTENT_ERROR;
     }
 
@@ -108,6 +105,7 @@ static int32_t LoadConfigCheck(xmlDoc *doc, xmlNode *currNode)
     } else {
         AUDIO_ERR_LOG("Missing node - audio_effects_conf");
         xmlFreeDoc(doc);
+        xmlCleanupParser();
         return FILE_CONTENT_ERROR;
     }
 }
@@ -173,10 +171,45 @@ static void LoadEffectConfigLibraries(OriginalEffectConfig &result, const xmlNod
     }
 }
 
+static void LoadEffectProperty(OriginalEffectConfig &result, const xmlNode *thirdNode, const int32_t effectIdx)
+{
+    CHECK_AND_RETURN_LOG(thirdNode->xmlChildrenNode, "effect '%{public}s' does not support effectProperty settings.",
+        result.effects[effectIdx].name.c_str());
+    int32_t countProperty = 0;
+    xmlNode *currNode = thirdNode->xmlChildrenNode;
+    while (currNode != nullptr) {
+        CHECK_AND_RETURN_LOG(countProperty < AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+            "the number of effectProperty nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
+        if (currNode->type != XML_ELEMENT_NODE) {
+            currNode = currNode->next;
+            continue;
+        }
+        if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("effectProperty"))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("mode"))) {
+                AUDIO_WARNING_LOG("missing information: EFFECTPROPERTY has no MODE attribute");
+            } else {
+                std::string pMode = reinterpret_cast<char*>
+                                     (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("mode")));
+                result.effects[effectIdx].effectProperty.push_back(pMode);
+            }
+        } else {
+            AUDIO_WARNING_LOG("wrong name: %{public}s, should be effectProperty", currNode->name);
+        }
+        countProperty++;
+        currNode = currNode->next;
+    }
+    if (countProperty == 0) {
+        AUDIO_WARNING_LOG("effect '%{public}s' does not support effectProperty settings.",
+            result.effects[effectIdx].name.c_str());
+    }
+}
+
 static void LoadEffect(OriginalEffectConfig &result, xmlNode *secondNode)
 {
     xmlNode *currNode = secondNode;
     int32_t countEffect = 0;
+    std::vector<std::string> effectProperty = {};
+    int32_t effectIdx = 0;
     while (currNode != nullptr) {
         CHECK_AND_RETURN_LOG(countEffect < AUDIO_EFFECT_COUNT_UPPER_LIMIT,
             "the number of effect nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
@@ -194,8 +227,10 @@ static void LoadEffect(OriginalEffectConfig &result, xmlNode *secondNode)
                               (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name")));
                 std::string pEffectLib = reinterpret_cast<char*>
                              (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("library")));
-                Effect tmp = {pEffectName, pEffectLib};
+                Effect tmp = {pEffectName, pEffectLib, effectProperty};
                 result.effects.push_back(tmp);
+                LoadEffectProperty(result, currNode, effectIdx);
+                effectIdx++;
             }
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be effect", currNode->name);
@@ -314,12 +349,11 @@ static void LoadEffectConfigEffectChains(OriginalEffectConfig &result, const xml
     }
 }
 
-static void LoadPreDevice(OriginalEffectConfig &result, const xmlNode *fourthNode,
-                          const int32_t modeNum, const int32_t streamNum)
+static void LoadPreDevice(std::vector<Device> &devices, const xmlNode *fifthNode)
 {
-    CHECK_AND_RETURN_LOG(fourthNode->xmlChildrenNode, "missing information: streamEffectMode has no child devicePort");
+    CHECK_AND_RETURN_LOG(fifthNode->xmlChildrenNode, "missing information: streamEffectMode has no child devicePort");
     int32_t countDevice = 0;
-    xmlNode *currNode = fourthNode->xmlChildrenNode;
+    xmlNode *currNode = fifthNode->xmlChildrenNode;
     while (currNode != nullptr) {
         CHECK_AND_RETURN_LOG(countDevice < AUDIO_EFFECT_COUNT_UPPER_LIMIT,
             "the number of devicePort nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
@@ -338,7 +372,7 @@ static void LoadPreDevice(OriginalEffectConfig &result, const xmlNode *fourthNod
                 std::string pChain = reinterpret_cast<char*>
                          (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("effectChain")));
                 Device tmpdev = {pDevType, pChain};
-                result.preProcess[streamNum].device[modeNum].push_back(tmpdev);
+                devices.push_back(tmpdev);
             }
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be devicePort", currNode->name);
@@ -351,13 +385,13 @@ static void LoadPreDevice(OriginalEffectConfig &result, const xmlNode *fourthNod
     }
 }
 
-static void LoadPreMode(OriginalEffectConfig &result, const xmlNode *thirdNode, const int32_t streamNum)
+static void LoadPreMode(PreStreamScene &scene, const xmlNode *fourthNode)
 {
-    CHECK_AND_RETURN_LOG(thirdNode->xmlChildrenNode,
+    CHECK_AND_RETURN_LOG(fourthNode->xmlChildrenNode,
         "missing information: stream has no child streamEffectMode");
     int32_t countMode = 0;
     int32_t modeNum = 0;
-    xmlNode *currNode = thirdNode->xmlChildrenNode;
+    xmlNode *currNode = fourthNode->xmlChildrenNode;
     while (currNode != nullptr) {
         CHECK_AND_RETURN_LOG(countMode < AUDIO_EFFECT_COUNT_UPPER_LIMIT,
             "the number of streamEffectMode nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
@@ -371,9 +405,9 @@ static void LoadPreMode(OriginalEffectConfig &result, const xmlNode *thirdNode, 
             } else {
                 std::string pStreamAEMode = reinterpret_cast<char*>
                                 (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("mode")));
-                result.preProcess[streamNum].mode.push_back(pStreamAEMode);
-                result.preProcess[streamNum].device.push_back({});
-                LoadPreDevice(result, currNode, modeNum, streamNum);
+                scene.mode.push_back(pStreamAEMode);
+                scene.device.push_back({});
+                LoadPreDevice(scene.device[modeNum], currNode);
                 modeNum++;
             }
         } else {
@@ -387,13 +421,13 @@ static void LoadPreMode(OriginalEffectConfig &result, const xmlNode *thirdNode, 
     }
 }
 
-static void LoadPreProcess(OriginalEffectConfig &result, xmlNode *secondNode)
+static void LoadPreStreamScenes(std::vector<PreStreamScene> &scenes, xmlNode *thirdNode)
 {
     std::string stream;
     std::vector<std::string> mode;
     std::vector<std::vector<Device>> device;
-    Preprocess tmp = {stream, mode, device};
-    xmlNode *currNode = secondNode;
+    PreStreamScene tmp = {stream, mode, device};
+    xmlNode *currNode = thirdNode;
     int32_t countPreprocess = 0;
     int32_t streamNum = 0;
     while (currNode != nullptr) {
@@ -410,8 +444,8 @@ static void LoadPreProcess(OriginalEffectConfig &result, xmlNode *secondNode)
                 std::string pStreamType = reinterpret_cast<char*>
                                          (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("scene")));
                 tmp.stream = pStreamType;
-                result.preProcess.push_back(tmp);
-                LoadPreMode(result, currNode, streamNum);
+                scenes.push_back(tmp);
+                LoadPreMode(scenes[streamNum], currNode);
                 streamNum++;
             }
         } else {
@@ -425,8 +459,73 @@ static void LoadPreProcess(OriginalEffectConfig &result, xmlNode *secondNode)
     }
 }
 
-static void LoadEffectConfigPreProcess(OriginalEffectConfig &result, const xmlNode *currNode,
-                                       int32_t (&countFirstNode)[NODE_SIZE])
+static void LoadPreStreamScenesCheck(std::vector<PreStreamScene> &scenes, const xmlNode *currNode,
+                                     int32_t &nodeCounter)
+{
+    if (nodeCounter >= AUDIO_EFFECT_COUNT_PRE_SECOND_NODE_UPPER_LIMIT) {
+        if (nodeCounter == AUDIO_EFFECT_COUNT_PRE_SECOND_NODE_UPPER_LIMIT) {
+            nodeCounter++;
+            AUDIO_WARNING_LOG("the number of preprocessStreams nodes exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_PRE_SECOND_NODE_UPPER_LIMIT);
+        }
+    } else if (currNode->xmlChildrenNode) {
+        LoadPreStreamScenes(scenes, currNode->xmlChildrenNode);
+        nodeCounter++;
+    } else {
+        AUDIO_WARNING_LOG("missing information: preprocessStreams has no child stream");
+        nodeCounter++;
+    }
+}
+ 
+static void LoadPreprocessExceptionCheck(OriginalEffectConfig &result, const xmlNode *currNode,
+                                         int32_t (&countPreSecondNode)[NODE_SIZE_PRE])
+{
+    if (countPreSecondNode[INDEX_PRE_EXCEPTION] >= AUDIO_EFFECT_COUNT_PRE_SECOND_NODE_UPPER_LIMIT) {
+        if (countPreSecondNode[INDEX_PRE_EXCEPTION] == AUDIO_EFFECT_COUNT_PRE_SECOND_NODE_UPPER_LIMIT) {
+            countPreSecondNode[INDEX_PRE_EXCEPTION]++;
+            AUDIO_ERR_LOG("the number of postprocess nodes with wrong name exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_PRE_SECOND_NODE_UPPER_LIMIT);
+        }
+    } else {
+        AUDIO_WARNING_LOG("wrong name: %{public}s", currNode->name);
+        countPreSecondNode[INDEX_PRE_EXCEPTION]++;
+    }
+}
+ 
+static void LoadPreProcessCfg(OriginalEffectConfig &result, xmlNode *secondNode)
+{
+    int32_t countPreSecondNode[NODE_SIZE_PRE] = {0};
+    xmlNode *currNode = secondNode;
+    while (currNode != nullptr) {
+        if (currNode->type != XML_ELEMENT_NODE) {
+            currNode = currNode->next;
+            continue;
+        }
+ 
+        if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("defaultScene"))) {
+            LoadPreStreamScenesCheck(result.preProcess.defaultScenes, currNode,
+                countPreSecondNode[INDEX_PRE_DEFAULT_SCENE]);
+        } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("priorScene"))) {
+            LoadPreStreamScenesCheck(result.preProcess.priorScenes, currNode,
+                countPreSecondNode[INDEX_PRE_PRIOR_SCENE]);
+        } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("normalScene"))) {
+            int32_t maxExtraNum = 0;
+            if (xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("maxExtSceneNumber"))) {
+                maxExtraNum = atoi(reinterpret_cast<char*>(xmlGetProp(currNode,
+                    reinterpret_cast<const xmlChar*>("maxExtSceneNumber"))));
+            }
+            result.preProcess.maxExtSceneNum = maxExtraNum;
+            LoadPreStreamScenesCheck(result.preProcess.normalScenes, currNode,
+                countPreSecondNode[INDEX_PRE_NORMAL_SCENE]);
+        } else {
+            LoadPreprocessExceptionCheck(result, currNode, countPreSecondNode);
+        }
+        currNode = currNode->next;
+    }
+}
+ 
+static void LoadEffectConfigPreProcessCfg(OriginalEffectConfig &result,
+    const xmlNode *currNode, int32_t (&countFirstNode)[NODE_SIZE])
 {
     if (countFirstNode[INDEX_PREPROCESS] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
         if (countFirstNode[INDEX_PREPROCESS] == AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
@@ -435,7 +534,7 @@ static void LoadEffectConfigPreProcess(OriginalEffectConfig &result, const xmlNo
                 AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
-        LoadPreProcess(result, currNode->xmlChildrenNode);
+        LoadPreProcessCfg(result, currNode->xmlChildrenNode);
         countFirstNode[INDEX_PREPROCESS]++;
     } else {
         AUDIO_WARNING_LOG("missing information: preProcess has no child stream");
@@ -477,8 +576,7 @@ static void LoadStreamUsageMapping(OriginalEffectConfig &result, xmlNode *thirdN
     }
 }
 
-static void LoadPostDevice(OriginalEffectConfig &result, const xmlNode *fifthNode,
-                           const int32_t modeNum, const int32_t streamNum)
+static void LoadPostDevice(std::vector<Device> &devices, const xmlNode *fifthNode)
 {
     CHECK_AND_RETURN_LOG(fifthNode->xmlChildrenNode, "missing information: streamEffectMode has no child devicePort");
     int32_t countDevice = 0;
@@ -501,7 +599,7 @@ static void LoadPostDevice(OriginalEffectConfig &result, const xmlNode *fifthNod
                 std::string pChain = reinterpret_cast<char*>
                          (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("effectChain")));
                 Device tmpdev = {pDevType, pChain};
-                result.postProcess.effectSceneStreams[streamNum].device[modeNum].push_back(tmpdev);
+                devices.push_back(tmpdev);
             }
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be devicePort", currNode->name);
@@ -514,7 +612,7 @@ static void LoadPostDevice(OriginalEffectConfig &result, const xmlNode *fifthNod
     }
 }
 
-static void LoadPostMode(OriginalEffectConfig &result, const xmlNode *fourthNode, const int32_t streamNum)
+static void LoadPostMode(PostStreamScene &scene, const xmlNode *fourthNode)
 {
     CHECK_AND_RETURN_LOG(fourthNode->xmlChildrenNode,
         "missing information: stream has no child streamEffectMode");
@@ -534,9 +632,9 @@ static void LoadPostMode(OriginalEffectConfig &result, const xmlNode *fourthNode
             } else {
                 std::string pStreamAEMode = reinterpret_cast<char*>
                                 (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("mode")));
-                result.postProcess.effectSceneStreams[streamNum].mode.push_back(pStreamAEMode);
-                result.postProcess.effectSceneStreams[streamNum].device.push_back({});
-                LoadPostDevice(result, currNode, modeNum, streamNum);
+                scene.mode.push_back(pStreamAEMode);
+                scene.device.push_back({});
+                LoadPostDevice(scene.device[modeNum], currNode);
                 modeNum++;
             }
         } else {
@@ -550,12 +648,12 @@ static void LoadPostMode(OriginalEffectConfig &result, const xmlNode *fourthNode
     }
 }
 
-static void LoadEffectSceneStreams(OriginalEffectConfig &result, xmlNode *thirdNode)
+static void LoadPostStreamScenes(std::vector<PostStreamScene> &scenes, xmlNode *thirdNode)
 {
     std::string stream;
     std::vector<std::string> mode;
     std::vector<std::vector<Device>> device;
-    EffectSceneStream tmp = {stream, mode, device};
+    PostStreamScene tmp = {stream, mode, device};
     xmlNode *currNode = thirdNode;
     int32_t countPostProcess = 0;
     int32_t streamNum = 0;
@@ -573,8 +671,8 @@ static void LoadEffectSceneStreams(OriginalEffectConfig &result, xmlNode *thirdN
                 std::string pStreamType = reinterpret_cast<char*>
                                          (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("scene")));
                 tmp.stream = pStreamType;
-                result.postProcess.effectSceneStreams.push_back(tmp);
-                LoadPostMode(result, currNode, streamNum);
+                scenes.push_back(tmp);
+                LoadPostMode(scenes[streamNum], currNode);
                 streamNum++;
             }
         } else {
@@ -588,21 +686,21 @@ static void LoadEffectSceneStreams(OriginalEffectConfig &result, xmlNode *thirdN
     }
 }
 
-static void LoadEffectSceneStreamsCheck(OriginalEffectConfig &result, const xmlNode *currNode,
-                                        int32_t (&countPostSecondNode)[NODE_SIZE_POST])
+static void LoadPostStreamScenesCheck(std::vector<PostStreamScene> &scenes, const xmlNode *currNode,
+                                      int32_t &nodeCounter)
 {
-    if (countPostSecondNode[INDEX_POST_STREAMS] >= AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
-        if (countPostSecondNode[INDEX_POST_STREAMS] == AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
-            countPostSecondNode[INDEX_POST_STREAMS]++;
+    if (nodeCounter >= AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
+        if (nodeCounter == AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
+            nodeCounter++;
             AUDIO_WARNING_LOG("the number of postprocessStreams nodes exceeds limit: %{public}d",
                 AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
-        LoadEffectSceneStreams(result, currNode->xmlChildrenNode);
-        countPostSecondNode[INDEX_POST_STREAMS]++;
+        LoadPostStreamScenes(scenes, currNode->xmlChildrenNode);
+        nodeCounter++;
     } else {
         AUDIO_WARNING_LOG("missing information: postprocessStreams has no child stream");
-        countPostSecondNode[INDEX_POST_STREAMS]++;
+        nodeCounter++;
     }
 }
 
@@ -649,8 +747,25 @@ static void LoadPostProcessCfg(OriginalEffectConfig &result, xmlNode *secondNode
             continue;
         }
 
-        if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("effectSceneStreams"))) {
-            LoadEffectSceneStreamsCheck(result, currNode, countPostSecondNode);
+        if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("defaultScene"))) {
+            LoadPostStreamScenesCheck(result.postProcess.defaultScenes, currNode,
+                countPostSecondNode[INDEX_POST_DEFAULT_SCENE]);
+        } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("priorScene"))) {
+            LoadPostStreamScenesCheck(result.postProcess.priorScenes, currNode,
+                countPostSecondNode[INDEX_POST_PRIOR_SCENE]);
+        } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("normalScene"))) {
+            int32_t maxExtraNum = 0;
+            if (xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("maxExtSceneNumber"))) {
+                maxExtraNum = atoi(reinterpret_cast<char*>(xmlGetProp(currNode,
+                    reinterpret_cast<const xmlChar*>("maxExtSceneNumber"))));
+            }
+            result.postProcess.maxExtSceneNum = maxExtraNum;
+            LoadPostStreamScenesCheck(result.postProcess.normalScenes, currNode,
+                countPostSecondNode[INDEX_POST_NORMAL_SCENE]);
+        } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("effectSceneStreams"))) {
+            // TO BE COMPATIBLE WITH OLDER VERSION XML
+            LoadPostStreamScenesCheck(result.postProcess.normalScenes, currNode,
+                countPostSecondNode[INDEX_POST_NORMAL_SCENE]);
         } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("sceneMap"))) {
             LoadStreamUsageMappingCheck(result, currNode, countPostSecondNode);
         } else {
@@ -725,7 +840,7 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
         } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("effectChains"))) {
             LoadEffectConfigEffectChains(result, currNode, countFirstNode);
         } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("preProcess"))) {
-            LoadEffectConfigPreProcess(result, currNode, countFirstNode);
+            LoadEffectConfigPreProcessCfg(result, currNode, countFirstNode);
         } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("postProcess"))) {
             LoadEffectConfigPostProcessCfg(result, currNode, countFirstNode);
         } else {
@@ -743,6 +858,7 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
 
     if (doc) {
         xmlFreeDoc(doc);
+        xmlCleanupParser();
     }
     return 0;
 }

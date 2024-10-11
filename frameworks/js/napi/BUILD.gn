@@ -97,22 +97,14 @@ ohos_shared_library("audio") {
   }
 
   external_deps = [
-    "ability_base:want",
     "ability_runtime:abilitykit_native",
     "ability_runtime:extensionkit_native",
     "ability_runtime:napi_base_context",
-    "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "hilog:libhilog",
-    "libuv:uv",
+    "hiview:libxpower_event_js",
     "napi:ace_napi",
   ]
-
-  if (audio_framework_feature_hiview_enable) {
-    defines += [ "FEATURE_HIVIEW_ENABLE" ]
-    external_deps += [ "hiview:libxpower_event_js" ]
-  }
-
   relative_install_dir = "module/multimedia"
   part_name = "audio_framework"
   subsystem_name = "multimedia"
