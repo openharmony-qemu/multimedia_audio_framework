@@ -323,7 +323,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_015, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_029
+* @tc.number: AudioPolicyServer_016
 * @tc.desc  : Test ActivateAudioInterrupt.
 */
 HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
@@ -333,6 +333,20 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
     int32_t zoneID = 456;
     int32_t result = policyServerTest->ActivateAudioInterrupt(audioInterrupt, zoneID);
     EXPECT_EQ(result, ERR_UNKNOWN);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_017
+* @tc.desc  : Test SetRingerModeLegacy.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_017, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+
+    AudioRingerMode audioRingerMode = AudioRingerMode::RINGER_MODE_NORMAL;
+    int32_t result = policyServerTest->SetRingerModeLegacy(audioRingerMode);
+    EXPECT_EQ(result, 0);
 }
 }
 }

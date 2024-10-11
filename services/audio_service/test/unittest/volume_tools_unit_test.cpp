@@ -202,5 +202,51 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_010, TestSize.Level1)
     int32_t ret = VolumeTools::Process(desc, format, volMaps);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
+
+/**
+ * @tc.name  : Test Process.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_011
+ * @tc.desc  : Test Process.
+ */
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_011, TestSize.Level1)
+{
+    uint8_t *buffer = nullptr;
+    BufferDesc desc;
+    desc.buffer = buffer;
+    desc.bufLength = (MIN_FRAME_SIZE - 1) * 3 * STEREO + 3;
+    desc.dataLength = (MIN_FRAME_SIZE - 1) * 3 * STEREO + 1;
+    desc.metaBuffer = nullptr;
+    desc.metaLength = 0;
+    ChannelVolumes volMaps;
+    AudioSampleFormat format =  SAMPLE_S24LE;
+    int32_t ret = VolumeTools::Process(desc, format, volMaps);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test Process.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_012
+ * @tc.desc  : Test Process.
+ */
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_012, TestSize.Level1)
+{
+    uint8_t *buffer = new uint8_t[(MIN_FRAME_SIZE) * 3 * STEREO];
+    for (size_t i = 0; i < (MIN_FRAME_SIZE) * 3 * STEREO; ++i) {
+        buffer[i] = static_cast<uint8_t>(i);
+    }
+    BufferDesc desc;
+    desc.buffer = buffer;
+    desc.bufLength = (MIN_FRAME_SIZE - 1) * 3 * STEREO + 6;
+    desc.dataLength = (MIN_FRAME_SIZE - 1) * 3 * STEREO + 6;
+    desc.metaBuffer = nullptr;
+    desc.metaLength = 0;
+    ChannelVolumes volMaps;
+    AudioSampleFormat format =  SAMPLE_S24LE;
+    int32_t ret = VolumeTools::Process(desc, format, volMaps);
+    EXPECT_EQ(ret, SUCCESS);
+    delete[] buffer;
+}
 }
 }
