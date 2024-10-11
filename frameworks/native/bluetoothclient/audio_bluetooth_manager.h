@@ -129,6 +129,7 @@ public:
     static int32_t HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device);
     static void ClearRecongnitionStatus();
     static ScoCategory GetScoCategory();
+    static RecognitionStatus GetRecognitionStatus();
     static int32_t Connect(const std::string &macAddress);
 
 private:
@@ -138,6 +139,7 @@ private:
     static AudioStandard::AudioScene sceneFromPolicy_;
     static BluetoothRemoteDevice activeHfpDevice_;
     static ScoCategory scoCategory;
+    static RecognitionStatus recognitionStatus;
 };
 }
 }

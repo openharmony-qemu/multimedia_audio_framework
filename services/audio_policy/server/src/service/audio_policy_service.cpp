@@ -2521,13 +2521,15 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
 void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 {
     unique_ptr<AudioDeviceDescriptor> desc;
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION) {
+    AudioDeviceDescriptor tempDesc = GetCurrentInputDevice();
+    if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
+        Bluetooth::AudioHfpManager::GetRecognitionStatus() == Bluetooth::RecognitionStatus::RECOGNITION_CONNECTING)) {
         desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1);
     } else {
         desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
     }
-    AudioDeviceDescriptor tempDesc = GetCurrentInputDevice();
+
     if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, tempDesc)) {
         AUDIO_DEBUG_LOG("input device is not change");
         return;

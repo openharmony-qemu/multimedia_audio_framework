@@ -39,6 +39,8 @@ std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shar
 AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 AudioScene AudioHfpManager::sceneFromPolicy_ = AUDIO_SCENE_DEFAULT;
 OHOS::Bluetooth::ScoCategory AudioHfpManager::scoCategory = OHOS::Bluetooth::ScoCategory::SCO_DEFAULT;
+OHOS::Bluetooth::RecognitionStatus AudioHfpManager::recognitionStatus =
+    OHOS::Bluetooth::RecognitionStatus::RECOGNITION_DISCONNECTED;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
@@ -416,9 +418,11 @@ int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRem
         if (scoCategory == ScoCategory::SCO_DEFAULT &&
             AudioHfpManager::scoCategory != ScoCategory::SCO_RECOGNITION) {
             AUDIO_INFO_LOG("Recongnition sco connect");
+            AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_CONNECTING;
             ret = hfpInstance_->OpenVoiceRecognition(device);
             if (ret) {
                 AudioHfpManager::scoCategory = ScoCategory::SCO_RECOGNITION;
+                AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_CONNECTED;
             }
         } else {
             AUDIO_INFO_LOG("Sco Connected OR Connecting, No Need to Create");
@@ -426,9 +430,11 @@ int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRem
     } else {
         if (AudioHfpManager::scoCategory == ScoCategory::SCO_RECOGNITION) {
             AUDIO_INFO_LOG("Recongnition sco close");
+            AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_DISCONNECTING;
             ret = hfpInstance_->CloseVoiceRecognition(device);
             if (ret) {
                 AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
+                AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_DISCONNECTED;
             }
         }
     }
@@ -440,12 +446,18 @@ void AudioHfpManager::ClearRecongnitionStatus()
 {
     if (AudioHfpManager::scoCategory == ScoCategory::SCO_RECOGNITION) {
         AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
+        AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_DISCONNECTED;
     }
 }
 
 ScoCategory AudioHfpManager::GetScoCategory()
 {
     return scoCategory;
+}
+
+RecognitionStatus AudioHfpManager::GetRecognitionStatus()
+{
+    return recognitionStatus;
 }
 
 int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
