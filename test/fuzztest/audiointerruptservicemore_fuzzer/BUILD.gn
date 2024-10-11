@@ -1,0 +1,77 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("../../../accessibility.gni")
+import("../../../config.gni")
+
+ohos_fuzztest("AudioInterruptServiceMoreFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_route"
+  fuzz_config_file = "../audiointerruptservicemore_fuzzer"
+
+  include_dirs = [
+    "../../../services/audio_policy/server/include",
+    "../../../../../communication/bluetooth/interfaces/inner_api/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../frameworks/native/commcon/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../services/audio_policy/server/src/service/interrupt",
+    "../../../utils/system/safwk/native/include",
+    "../../../../communication/bluetooth/interfaces/inner_api/include",
+  ]
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-fno-omit-frame-pointer",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  sources = [ "audio_interrupt_service_more_fuzzer.cpp" ]
+
+  deps = [ "../../../services/audio_policy:audio_policy_service" ]
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokensetproc_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+  ]
+  if (accessibility_enable == true) {
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
+  }
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = [ ":AudioInterruptServiceMoreFuzzTest" ]
+}
