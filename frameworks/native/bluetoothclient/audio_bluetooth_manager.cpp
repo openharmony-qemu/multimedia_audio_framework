@@ -225,7 +225,8 @@ int32_t AudioA2dpManager::GetRenderPosition(uint32_t &delayValue, uint64_t &send
         AUDIO_DEBUG_LOG("Invalid mac address, return error.");
         return ERROR;
     }
-    return a2dpInstance_->GetRenderPosition(activeA2dpDevice_, delayValue, sendDataSize, timeStamp);
+    return ERROR;
+    // a2dpInstance_->GetRenderPosition(activeA2dpDevice_, delayValue, sendDataSize, timeStamp);
 }
 
 int32_t AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(
