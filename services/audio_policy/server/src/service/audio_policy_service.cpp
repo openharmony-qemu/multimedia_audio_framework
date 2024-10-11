@@ -1251,12 +1251,11 @@ void AudioPolicyService::RestoreSession(const int32_t &sessionID, bool isOutput)
 int32_t AudioPolicyService::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    bool isVirtualDevice = false;
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         selectedDesc[0]->isEnable_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(selectedDesc[0], ENABLE_UPDATE);
-        isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
+        bool isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
         if (isVirtualDevice == true) {
             selectedDesc[0]->connectState_ = VIRTUAL_CONNECTED;
         }
