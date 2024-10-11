@@ -61,7 +61,7 @@ void NapiAudioRendererStateCallback::SaveCallbackReference(napi_value args)
 void NapiAudioRendererStateCallback::OnRendererStateChange(
     const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    AUDIO_INFO_LOG("OnRendererStateChange entered");
+    AUDIO_PRERELEASE_LOGI("OnRendererStateChange entered");
 
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -93,6 +93,7 @@ void NapiAudioRendererStateCallback::WorkCallbackInterruptDone(uv_work_t *work, 
     AudioRendererStateJsCallback *event = reinterpret_cast<AudioRendererStateJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
     CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
+    CHECK_AND_RETURN_LOG(event->callback->jsTid_ == pthread_self(), "JsCallback not in js thread");
     napi_env env = event->callback->env_;
     napi_ref callback = event->callback->cb_;
     napi_handle_scope scope = nullptr;

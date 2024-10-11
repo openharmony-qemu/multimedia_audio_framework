@@ -25,7 +25,7 @@
 #include "napi/native_node_api.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -73,6 +73,7 @@ struct AutoRef {
     AutoRef(napi_env env, napi_ref cb)
         : env_(env), cb_(cb)
     {
+        jsTid_ = pthread_self();
     }
     ~AutoRef()
     {
@@ -117,6 +118,7 @@ struct AutoRef {
     }
     napi_env env_;
     napi_ref cb_;
+    uint64_t jsTid_;
 };
 
 class NapiAsyncWork {

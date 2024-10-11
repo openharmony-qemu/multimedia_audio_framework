@@ -34,15 +34,18 @@ public:
         MessageParcel &reply, MessageOption &option) override;
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
+    bool OnQueryClientType(const std::string &bundleName, uint32_t uid) override;
     // AudioManagerListenerStub
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetAvailableDeviceChangeCallback(const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb);
+    void SetQueryClientTypeCallback(const std::weak_ptr<AudioQueryClientTypeCallback> &cb);
 private:
     void ReadInterruptEventParams(MessageParcel &data, InterruptEventInternal &interruptEvent);
     void ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange);
 
     std::weak_ptr<AudioInterruptCallback> callback_;
     std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> audioAvailableDeviceChangeCallback_;
+    std::weak_ptr<AudioQueryClientTypeCallback> audioQueryClientTypeCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

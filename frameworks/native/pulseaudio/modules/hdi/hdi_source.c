@@ -17,7 +17,6 @@
 #endif
 
 #include <config.h>
-#include <inttypes.h>
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
 #include <pulse/util.h>
@@ -30,17 +29,23 @@
 #include <pulsecore/rtpoll.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
-#include <stdbool.h>
+
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
+#include "audio_types.h"
+#include "audio_manager.h"
+
+#include "audio_hdi_log.h"
+#include "securec.h"
 #include "audio_hdiadapter_info.h"
-#include "audio_log.h"
+#include "audio_schedule.h"
 #include "audio_source_type.h"
-#include "audio_utils_c.h"
+#include "audio_hdiadapter_info.h"
 #include "capturer_source_adapter.h"
-#include "v4_0/audio_types.h"
-#include "v4_0/iaudio_manager.h"
+#include "audio_utils_c.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
@@ -101,7 +106,10 @@ static char *GetStateInfo(pa_source_state_t state)
 
 static void UserdataFree(struct Userdata *u)
 {
-    pa_assert(u);
+    if (u == NULL) {
+        AUDIO_INFO_LOG("Userdata is null, free done");
+        return;
+    }
     if (u->source) {
         pa_source_unlink(u->source);
     }
@@ -272,7 +280,7 @@ static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
     pa_source_output *sourceOutput;
     while ((sourceOutput = pa_hashmap_iterate(u->source->thread_info.outputs, &state, NULL))) {
         const char *cstringClientUid = pa_proplist_gets(sourceOutput->proplist, "stream.client.uid");
-        if (cstringClientUid && (sourceOutput->state == PA_SOURCE_OUTPUT_RUNNING)) {
+        if (cstringClientUid && (sourceOutput->thread_info.state == PA_SOURCE_OUTPUT_RUNNING)) {
             appsUid[count++] = atoi(cstringClientUid);
         }
     }
@@ -295,11 +303,9 @@ static void ThreadFuncCapturerTimer(void *userdata)
     struct Userdata *u = userdata;
     bool timerElapsed = false;
 
+    //set audio thread priority
+    ScheduleThreadInServer(getpid(), gettid());
     pa_assert(u);
-
-    if (u->core->realtime_scheduling) {
-        pa_thread_make_realtime(u->core->realtime_priority);
-    }
 
     pa_thread_mq_install(&u->thread_mq);
     u->timestamp = pa_rtclock_now();
@@ -314,6 +320,7 @@ static void ThreadFuncCapturerTimer(void *userdata)
         AUTO_CTRACE("FuncCapturerLoop");
         bool result = PaRtpollSetTimerFunc(u, timerElapsed);
         if (!result) {
+            AUDIO_ERR_LOG("PaRtpollSetTimerFunc failed");
             break;
         }
         /* Hmm, nothing to do. Let's sleep */
@@ -331,9 +338,11 @@ static void ThreadFuncCapturerTimer(void *userdata)
         timerElapsed = pa_rtpoll_timer_elapsed(u->rtpoll);
 
         if (ret == 0) {
+            AUDIO_INFO_LOG("Thread OS_ReadHdi shutting down, pid %{public}d, tid %{public}d", getpid(), gettid());
             return;
         }
     }
+    UnscheduleThreadInServer(getpid(), gettid());
 }
 
 static int PaHdiCapturerInit(struct Userdata *u)
@@ -400,7 +409,7 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
         return -1;
     }
 
-    u->source = pa_source_new(m->core, &data, PA_SOURCE_HARDWARE | PA_SOURCE_LATENCY);
+    u->source = pa_source_new(m->core, &data, PA_SOURCE_HARDWARE | PA_SOURCE_LATENCY | PA_SOURCE_DYNAMIC_LATENCY);
     pa_source_new_data_done(&data);
 
     if (!u->source) {
@@ -572,4 +581,5 @@ void PaHdiSourceFree(pa_source *s)
     pa_source_assert_ref(s);
     pa_assert_se(u = s->userdata);
     UserdataFree(u);
+    s->userdata = NULL;
 }

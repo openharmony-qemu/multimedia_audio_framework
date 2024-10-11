@@ -51,6 +51,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_MICROPHONE_MUTE",
     "SET_CALLBACK",
     "UNSET_CALLBACK",
+    "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
     "SET_INTERRUPT_CALLBACK",
@@ -107,6 +108,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_AVAILABLE_MICROPHONE_DESCRIPTORS",
     "SET_DEVICE_ABSOLUTE_VOLUME_SUPPORTED",
     "GET_ABS_VOLUME_SCENE",
+    "GET_VGS_VOLUME_SUPPORTED",
     "SET_A2DP_DEVICE_VOLUME",
     "GET_AVAILABLE_DESCRIPTORS",
     "SET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
@@ -161,6 +163,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "ACTIVATE_AUDIO_SESSION",
     "DEACTIVATE_AUDIO_SESSION",
     "IS_AUDIO_SESSION_ACTIVATED",
+    "LOAD_SPLIT_MODULE",
     "SET_DEFAULT_OUTPUT_DEVICE",
 };
 
@@ -519,6 +522,9 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
     for (int i = 0; i < size; i++) {
         sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+        if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+            audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+        }
         targetOutputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -548,6 +554,9 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
     for (int i = 0; i < size; i++) {
         sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+        if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+            audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+        }
         targetInputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -560,8 +569,9 @@ void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, M
     uint32_t sessionID = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     uint32_t zoneID = data.ReadUint32();
+    uint32_t clientUid = data.ReadUint32();
     CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-    int32_t result = SetAudioInterruptCallback(sessionID, object, zoneID);
+    int32_t result = SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
     reply.WriteInt32(result);
 }
 
@@ -675,7 +685,7 @@ void AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal(MessageParcel &data, 
     reply.WriteUint32(ret);
 }
 
-void AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.Unmarshalling(data);
@@ -683,7 +693,7 @@ void AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::GetPerferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioCapturerInfo capturerInfo;
     capturerInfo.Unmarshalling(data);
@@ -963,6 +973,9 @@ void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
 
+    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
     int32_t result =  GetHardwareOutputSamplingRate(audioDeviceDescriptor);
     reply.WriteInt32(result);
 }
@@ -999,6 +1012,12 @@ void AudioPolicyManagerStub::SetDeviceAbsVolumeSupportedInternal(MessageParcel &
 void AudioPolicyManagerStub::IsAbsVolumeSceneInternal(MessageParcel &data, MessageParcel &reply)
 {
     bool result = IsAbsVolumeScene();
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::IsVgsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = IsVgsVolumeSupported();
     reply.WriteBool(result);
 }
 
@@ -1043,6 +1062,9 @@ void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageP
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    if (IsArmUsbDevice(*descriptor)) {
+        descriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
     CastType type = static_cast<CastType>(data.ReadInt32());
     int32_t result = ConfigDistributedRoutingRole(descriptor, type);
     reply.WriteInt32(result);
@@ -1086,6 +1108,9 @@ void AudioPolicyManagerStub::SetSpatializationEnabledForDeviceInternal(MessagePa
 {
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
     bool enable = data.ReadBool();
     int32_t result = SetSpatializationEnabled(audioDeviceDescriptor, enable);
     reply.WriteInt32(result);
@@ -1115,6 +1140,10 @@ void AudioPolicyManagerStub::SetHeadTrackingEnabledForDeviceInternal(MessageParc
 {
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+
+    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
     bool enable = data.ReadBool();
     int32_t result = SetHeadTrackingEnabled(audioDeviceDescriptor, enable);
     reply.WriteInt32(result);
@@ -1275,13 +1304,532 @@ void AudioPolicyManagerStub::SetDefaultOutputDeviceInternal(MessageParcel &data,
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioInterruptCallback obj is null");
+    int32_t result = SetQueryClientTypeCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED_FOR_DEVICE):
+            IsSpatializationEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SPATIALIZATION_ENABLED_FOR_DEVICE):
+            SetSpatializationEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_ENABLED_FOR_DEVICE):
+            IsHeadTrackingEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HEAD_TRACKING_ENABLED_FOR_DEVICE):
+            SetHeadTrackingEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEFAULT_OUTPUT_DEVICE):
+            SetDefaultOutputDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_CLIENT_TYPE_CALLBACK):
+            SetQueryClientTypeCallbackInternal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::TRIGGER_FETCH_DEVICE):
+            TriggerFetchDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::MOVE_TO_NEW_PIPE):
+            MoveToNewTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::DISABLE_SAFE_MEDIA_VOLUME):
+            DisableSafeMediaVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES_INNER):
+            GetDevicesInnerInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_CONCURRENCY_CALLBACK):
+            SetConcurrencyCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_CONCURRENCY_CALLBACK):
+            UnsetConcurrencyCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_AUDIO_CONCURRENCY):
+            ActivateAudioConcurrencyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_PERSISTENT):
+            SetMicrophoneMutePersistentInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MICROPHONE_MUTE_PERSISTENT):
+            GetMicrophoneMutePersistentInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPTION):
+            InjectInterruptionInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_AUDIO_SESSION):
+            ActivateAudioSessionInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_AUDIO_SESSION):
+            DeactivateAudioSessionInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_SESSION_ACTIVATED):
+            IsAudioSessionActivatedInternal(data, reply);
+            break;
+        default:
+            OnMiddleNinRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
+void AudioPolicyManagerStub::OnMiddleSevRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::RELEASE_AUDIO_INTERRUPT_ZONE):
+            ReleaseAudioInterruptZoneInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALL_DEVICE_ACTIVE):
+            SetCallDeviceActiveInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_CONVERTER_CONFIG):
+            GetConverterConfigInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_BLUETOOTH_DESCRIPTOR):
+            GetActiveBluetoothDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::FETCH_OUTPUT_DEVICE_FOR_TRACK):
+            FetchOutputDeviceForTrackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::FETCH_INPUT_DEVICE_FOR_TRACK):
+            FetchInputDeviceForTrackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIGH_RESOLUTION_EXIST):
+            IsHighResolutionExistInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST):
+            SetHighResolutionExistInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_SCENE_TYPE):
+            GetSpatializationSceneTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE):
+            SetSpatializationSceneTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_AMPLITUDE):
+            GetMaxAmplitudeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_DATA_REQUESTED):
+            IsHeadTrackingDataRequestedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_REFINER_CALLBACK):
+            SetAudioDeviceRefinerCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_DEVICE_REFINER_CALLBACK):
+            UnsetAudioDeviceRefinerCallbackInternal(data, reply);
+            break;
+        default:
+            OnMiddleEigRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
+void AudioPolicyManagerStub::OnMiddleSixRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE):
+            IsSpatializationSupportedForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_SUPPORTED):
+            IsHeadTrackingSupportedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE):
+            IsHeadTrackingSupportedForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_SPATIAL_DEVICE_STATE):
+            UpdateSpatialDeviceStateInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_SPATIALIZATION_STATE_EVENT):
+            RegisterSpatializationStateEventListenerInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CONFIG_DISTRIBUTED_ROUTING_ROLE):
+            ConfigDistributedRoutingRoleInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DISTRIBUTED_ROUTING_ROLE_CALLBACK):
+            SetDistributedRoutingRoleCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_DISTRIBUTED_ROUTING_ROLE_CALLBACK):
+            UnsetDistributedRoutingRoleCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_SPATIALIZATION_STATE_EVENT):
+            UnregisterSpatializationStateEventListenerInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_POLICY_CALLBACK_CLIENT):
+            RegisterPolicyCallbackClientInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_AUDIO_INTERRUPT_ZONE):
+            CreateAudioInterruptZoneInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ADD_AUDIO_INTERRUPT_ZONE_PIDS):
+            AddAudioInterruptZonePidsInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REMOVE_AUDIO_INTERRUPT_ZONE_PIDS):
+            RemoveAudioInterruptZonePidsInternal(data, reply);
+            break;
+        default:
+            OnMiddleSevRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
+void AudioPolicyManagerStub::OnMiddleFifRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AVAILABLE_MICROPHONE_DESCRIPTORS):
+            GetAvailableMicrophonesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ABSOLUTE_VOLUME_SUPPORTED):
+            SetDeviceAbsVolumeSupportedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ABS_VOLUME_SCENE):
+            IsAbsVolumeSceneInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_A2DP_DEVICE_VOLUME):
+            SetA2dpDeviceVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AVAILABLE_DESCRIPTORS):
+            GetAvailableDevicesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AVAILABLE_DEVICE_CHANGE_CALLBACK):
+            SetAvailableDeviceChangeCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AVAILABLE_DEVICE_CHANGE_CALLBACK):
+            UnsetAvailableDeviceChangeCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED):
+            IsSpatializationEnabledInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SPATIALIZATION_ENABLED):
+            SetSpatializationEnabledInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_ENABLED):
+            IsHeadTrackingEnabledInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HEAD_TRACKING_ENABLED):
+            SetHeadTrackingEnabledInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_STATE):
+            GetSpatializationStateInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_SUPPORTED):
+            IsSpatializationSupportedInternal(data, reply);
+            break;
+        default:
+            OnMiddleSixRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
+void AudioPolicyManagerStub::OnMiddleFouRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_SOUND_URI):
+            GetSystemSoundUriInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUME_STREAM):
+            GetMinStreamVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUME_STREAM):
+            GetMaxStreamVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_RENDERER_INSTANCES):
+            GetMaxRendererInstancesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_VOLUME_UNADJUSTABLE):
+            IsVolumeUnadjustableInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ADJUST_VOLUME_BY_STEP):
+            AdjustVolumeByStepInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ADJUST_SYSTEM_VOLUME_BY_STEP):
+            AdjustSystemVolumeByStepInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUME_IN_DB):
+            GetSystemVolumeInDbInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_EFFECT_SCENEMODE):
+            QueryEffectSceneModeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO):
+            SetPlaybackCapturerFilterInfosInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE):
+            SetCaptureSilentStateInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_HARDWARE_OUTPUT_SAMPLING_RATE):
+            GetHardwareOutputSamplingRateInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_CAPTURER_MICROPHONE_DESCRIPTORS):
+            GetAudioCapturerMicrophoneDescriptorsInternal(data, reply);
+            break;
+        default:
+            OnMiddleFifRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
+void AudioPolicyManagerStub::OnMiddleTirRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SINGLE_STREAM_VOLUME):
+            GetSingleStreamVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_GROUP_INFO):
+            GetVolumeGroupInfoInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_NETWORKID_BY_GROUP_ID):
+            GetNetworkIdByGroupIdInternal(data, reply);
+            break;
+#ifdef FEATURE_DTMF_TONE
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_TONEINFO):
+            GetToneInfoInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_TONES):
+            GetSupportedTonesInternal(data, reply);
+            break;
+#endif
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED):
+            IsAudioRendererLowLatencySupportedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY):
+            CheckRecordingStateChangeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS):
+            GetPreferredOutputDeviceDescriptorsInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS):
+            GetPreferredInputDeviceDescriptorsInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACKS_ENABLE):
+            SetClientCallbacksEnableInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_FOCUS_INFO_LIST):
+            GetAudioFocusInfoListInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_SOUND_URI):
+            SetSystemSoundUriInternal(data, reply);
+            break;
+        default:
+            OnMiddleFouRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
+void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_INPUT_DEVICE):
+            SelectInputDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::RECONFIGURE_CHANNEL):
+            ReconfigureAudioChannelInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_LATENCY):
+            GetAudioLatencyFromXmlInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SINK_LATENCY):
+            GetSinkLatencyFromXmlInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_OUTPUT_STREAM_TYPE):
+            GetPreferredOutputStreamTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INPUT_STREAM_TYPE):
+            GetPreferredInputStreamTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_TRACKER):
+            RegisterTrackerInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_TRACKER):
+            UpdateTrackerInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RENDERER_CHANGE_INFOS):
+            GetRendererChangeInfosInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_CAPTURER_CHANGE_INFOS):
+            GetCapturerChangeInfosInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREM_VOLUME):
+            SetLowPowerVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWRR_STREM_VOLUME):
+            GetLowPowerVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_STREAM_STATE):
+            UpdateStreamStateInternal(data, reply);
+            break;
+        default:
+            OnMiddleTirRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
+void AudioPolicyManagerStub::OnMiddleFirRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT):
+            ActivateInterruptInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT):
+            DeactivateInterruptInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_INTERRUPT_CALLBACK):
+            SetAudioManagerInterruptCbInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_INTERRUPT_CALLBACK):
+            UnsetAudioManagerInterruptCbInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REQUEST_AUDIO_FOCUS):
+            RequestAudioFocusInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS):
+            AbandonAudioFocusInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_IN_FOCUS):
+            GetStreamInFocusInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SESSION_INFO_IN_FOCUS):
+            GetSessionInfoInFocusInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES):
+            GetDevicesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER):
+            NotifyCapturerAddedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION):
+            CheckRecordingCreateInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_OUTPUT_DEVICE):
+            SelectOutputDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SELECTED_DEVICE_INFO):
+            GetSelectedDeviceInfoInternal(data, reply);
+            break;
+        default:
+            OnMiddleSecRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
+void AudioPolicyManagerStub::OnMiddlesRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE):
+            GetActiveOutputDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_INPUT_DEVICE):
+            GetActiveInputDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGER_MODE_LEGACY):
+            SetRingerModeLegacyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGER_MODE):
+            SetRingerModeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RINGER_MODE):
+            GetRingerModeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_SCENE):
+            SetAudioSceneInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_SCENE):
+            GetAudioSceneInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE):
+            SetMicrophoneMuteInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_AUDIO_CONFIG):
+            SetMicrophoneMuteAudioConfigInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_MICROPHONE_MUTE_LEGACY):
+            IsMicrophoneMuteLegacyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_MICROPHONE_MUTE):
+            IsMicrophoneMuteInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK):
+            SetInterruptCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK):
+            UnsetInterruptCallbackInternal(data, reply);
+            break;
+        default:
+            OnMiddleFirRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1, "ReadInterfaceToken failed");
     Trace trace(code >= codeNums ? "invalid audio policy code" : g_audioPolicyCodeStrs[code]);
     if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
-        (this->*handlers[code])(data, reply);
+        switch (code) {
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUMELEVEL):
+                GetMaxVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUMELEVEL):
+                GetMinVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_LEGACY):
+                SetSystemVolumeLevelLegacyInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL):
+                SetSystemVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
+                GetSystemVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE_LEGACY):
+                SetStreamMuteLegacyInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE):
+                SetStreamMuteInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE):
+                GetStreamMuteInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
+                IsStreamActiveInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE):
+                SetDeviceActiveInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_DEVICE_ACTIVE):
+                IsDeviceActiveInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
+                LoadSplitModuleInternal(data, reply);
+                break;
+            default:
+                OnMiddlesRemoteRequest(code, data, reply, option);
+                break;
+        }
         return AUDIO_OK;
     }
     AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
@@ -1447,5 +1995,14 @@ void AudioPolicyManagerStub::InjectInterruptionInternal(MessageParcel &data, Mes
     int32_t result = InjectInterruption(networkId, event);
     reply.WriteInt32(result);
 }
+
+void AudioPolicyManagerStub::LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string splitArgs = data.ReadString();
+    std::string netWorkId = data.ReadString();
+    int32_t result = LoadSplitModule(splitArgs, netWorkId);
+    reply.WriteInt32(result);
+}
+
 } // namespace audio_policy
 } // namespace OHOS

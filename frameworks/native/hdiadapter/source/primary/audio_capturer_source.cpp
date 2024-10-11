@@ -22,6 +22,8 @@
 #include <dlfcn.h>
 #include <string>
 #include <cinttypes>
+#include <thread>
+#include <future>
 
 #include "securec.h"
 #ifdef FEATURE_POWER_MANAGER
@@ -31,7 +33,7 @@
 #endif
 #include "v4_0/iaudio_manager.h"
 
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "parameters.h"
@@ -94,7 +96,6 @@ private:
     static constexpr int32_t HALF_FACTOR = 2;
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
     static constexpr float MAX_VOLUME_LEVEL = 15.0f;
-    static constexpr uint32_t PRIMARY_INPUT_STREAM_ID = 14; // 14 + 0 * 8
     static constexpr uint32_t USB_DEFAULT_BUFFERSIZE = 3840;
     static constexpr uint32_t STEREO_CHANNEL_COUNT = 2;
 
@@ -112,6 +113,7 @@ private:
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
+    int32_t DoStop();
 
     IAudioSourceAttr attr_ = {};
     bool sourceInited_ = false;
@@ -159,6 +161,8 @@ private:
     std::mutex signalDetectAgentMutex_;
 
     std::mutex managerAndAdapterMutex_;
+
+    std::mutex statusMutex_;
 
     std::mutex sourceAttrMutex_;
 };
@@ -396,6 +400,20 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
     return hdiAudioInputType;
 }
 
+static uint32_t GenerateUniqueIDBySource(int32_t source)
+{
+    uint32_t sourceId = 0;
+    switch (source) {
+        case SOURCE_TYPE_WAKEUP:
+            sourceId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_WAKEUP);
+            break;
+        default:
+            sourceId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
+            break;
+    }
+    return sourceId;
+}
+
 AudioCapturerSource *AudioCapturerSource::GetMicInstance()
 {
     static AudioCapturerSourceInner audioCapturer;
@@ -419,6 +437,7 @@ bool AudioCapturerSourceInner::IsInited(void)
 
 void AudioCapturerSourceInner::DeInit()
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     Trace trace("AudioCapturerSourceInner::DeInit");
     AudioXCollie sourceXCollie("AudioCapturerSourceInner::DeInit", DEINIT_TIME_OUT_SECONDS);
     AUDIO_INFO_LOG("Start deinit of source inner");
@@ -463,7 +482,7 @@ void AudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes &at
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = PRIMARY_INPUT_STREAM_ID;
+    attrs.streamId = GenerateUniqueIDBySource(attr_.sourceType);
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
@@ -586,6 +605,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
 
 int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     std::lock_guard<std::mutex> lock(sourceAttrMutex_);
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
@@ -656,10 +676,10 @@ float AudioCapturerSourceInner::GetMaxAmplitude()
 
 int32_t AudioCapturerSourceInner::Start(void)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     std::lock_guard<std::mutex> lock(sourceAttrMutex_);
 
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
-
     Trace trace("AudioCapturerSourceInner::Start");
 
     InitLatencyMeasurement();
@@ -861,13 +881,13 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
         AUDIO_INFO_LOG("SetInputRoute input device not change. currentActiveDevice %{public}d", currentActiveDevice_);
         return SUCCESS;
     }
-    currentActiveDevice_ = inputDevice;
+
     attr_.sourceType = sourceType;
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
     int32_t ret = SetInputPortPin(inputDevice, source);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetInputRoute FAILED: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOutputRoute FAILED: %{public}d", ret);
 
     inputPortPin = source.ext.device.type;
     AUDIO_INFO_LOG("Input PIN is: 0x%{public}X", inputPortPin);
@@ -881,7 +901,7 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = PRIMARY_INPUT_STREAM_ID;
+    sink.ext.mix.streamId = GenerateUniqueIDBySource(attr_.sourceType);
     sink.ext.mix.source = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     sink.ext.device.desc = (char *)"";
 
@@ -969,11 +989,11 @@ int32_t AudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int6
     return ret;
 }
 
-int32_t AudioCapturerSourceInner::Stop(void)
+int32_t AudioCapturerSourceInner::DoStop()
 {
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
 
-    Trace trace("AudioCapturerSourceInner::Stop");
+    Trace trace("AudioCapturerSourceInner::DoStop");
 
     DeinitLatencyMeasurement();
 
@@ -999,8 +1019,25 @@ int32_t AudioCapturerSourceInner::Stop(void)
     return SUCCESS;
 }
 
+int32_t AudioCapturerSourceInner::Stop(void)
+{
+    Trace trace("AudioCapturerSourceInner::Stop");
+    std::promise<void> promiseEnsueThreadLock;
+    auto futureWaitThreadLock = promiseEnsueThreadLock.get_future();
+    std::thread threadAsyncStop([&promiseEnsueThreadLock, this] {
+        std::lock_guard<std::mutex> statusLock(statusMutex_);
+        promiseEnsueThreadLock.set_value();
+        DoStop();
+    });
+    futureWaitThreadLock.get();
+    threadAsyncStop.detach();
+
+    return SUCCESS;
+}
+
 int32_t AudioCapturerSourceInner::Pause(void)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
 
     Trace trace("AudioCapturerSourceInner::Pause");
@@ -1015,8 +1052,8 @@ int32_t AudioCapturerSourceInner::Pause(void)
 
 int32_t AudioCapturerSourceInner::Resume(void)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
-
     Trace trace("AudioCapturerSourceInner::Resume");
     if (paused_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Resume(audioCapture_);
@@ -1029,8 +1066,8 @@ int32_t AudioCapturerSourceInner::Resume(void)
 
 int32_t AudioCapturerSourceInner::Reset(void)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
-
     Trace trace("AudioCapturerSourceInner::Reset");
     if (started_ && audioCapture_ != nullptr) {
         audioCapture_->Flush(audioCapture_);
@@ -1041,8 +1078,8 @@ int32_t AudioCapturerSourceInner::Reset(void)
 
 int32_t AudioCapturerSourceInner::Flush(void)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
-
     Trace trace("AudioCapturerSourceInner::Flush");
     if (started_ && audioCapture_ != nullptr) {
         audioCapture_->Flush(audioCapture_);

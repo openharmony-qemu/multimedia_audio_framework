@@ -38,7 +38,28 @@ const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_ONE = 0;
 const uint32_t LIMIT_TWO = 30;
 const uint32_t LIMIT_THREE = 60;
-const uint32_t LIMIT_FOUR = 80;
+const uint32_t LIMIT_FOUR = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
+bool g_hasServerInit = false;
+
+AudioPolicyServer* GetServerPtr()
+{
+    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (!g_hasServerInit) {
+        server.OnStart();
+        server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+        server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+#endif
+        server.OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
+        server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server.OnAddSystemAbility(ACCESSIBILITY_MANAGER_SERVICE_ID, "");
+        server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        g_hasServerInit = true;
+    }
+    return &server;
+}
 
 uint32_t Convert2Uint32(const uint8_t *ptr)
 {
@@ -90,7 +111,7 @@ void AudioPolicyFuzzFirstLimitTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    uint32_t code =  Convert2Uint32(rawData) % (LIMIT_TWO - LIMIT_ONE + 1) + LIMIT_ONE;
+    uint32_t code = Convert2Uint32(rawData) % (LIMIT_TWO - LIMIT_ONE + 1) + LIMIT_ONE;
 
     rawData = rawData + OFFSET;
     size = size - OFFSET;
@@ -102,10 +123,8 @@ void AudioPolicyFuzzFirstLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
-        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-        
-    AudioPolicyServerPtr->OnRemoteRequest(code, data, reply, option);
+
+    GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
 
 void AudioPolicyFuzzSecondLimitTest(const uint8_t *rawData, size_t size)
@@ -113,7 +132,7 @@ void AudioPolicyFuzzSecondLimitTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    uint32_t code =  Convert2Uint32(rawData) % (LIMIT_THREE - LIMIT_TWO + 1) + LIMIT_TWO;
+    uint32_t code = Convert2Uint32(rawData) % (LIMIT_THREE - LIMIT_TWO + 1) + LIMIT_TWO;
 
     rawData = rawData + OFFSET;
     size = size - OFFSET;
@@ -125,10 +144,8 @@ void AudioPolicyFuzzSecondLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
-        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-        
-    AudioPolicyServerPtr->OnRemoteRequest(code, data, reply, option);
+
+    GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
 
 void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
@@ -136,7 +153,7 @@ void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    uint32_t code =  Convert2Uint32(rawData) % (LIMIT_FOUR - LIMIT_THREE + 1) + LIMIT_THREE;
+    uint32_t code = Convert2Uint32(rawData) % (LIMIT_FOUR - LIMIT_THREE + 1) + LIMIT_THREE;
 
     rawData = rawData + OFFSET;
     size = size - OFFSET;
@@ -148,10 +165,11 @@ void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
-        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-        
-    AudioPolicyServerPtr->OnRemoteRequest(code, data, reply, option);
+    if (code == static_cast<uint32_t>(AudioPolicyInterfaceCode::ADD_AUDIO_INTERRUPT_ZONE_PIDS)) {
+        return;
+    }
+
+    GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
 } // namespace AudioStandard
 } // namesapce OHOS

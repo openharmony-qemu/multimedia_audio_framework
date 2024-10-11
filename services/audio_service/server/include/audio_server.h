@@ -54,8 +54,7 @@ public:
         std::vector<Effect>& successEffectList) override;
     bool CreatePlaybackCapturerManager() override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &effectMap,
-        std::unordered_map<std::string, std::string> &enhanceMap) override;
+        const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
@@ -68,6 +67,7 @@ public:
     void SetAudioParameter(const std::string& key, const std::string& value) override;
     void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
+    bool CheckAndPrintStacktrace(const std::string &key);
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     const std::string GetAudioParameter(const std::string &key) override;
@@ -132,15 +132,15 @@ public:
 
     uint32_t GetEffectLatency(const std::string &sessionId) override;
 
+    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+
+    void OnCapturerState(bool isActive, int32_t num);
 
     void ResetAudioEndpoint() override;
 
-    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
-
     bool GetEffectOffloadEnabled() override;
-
-    void OnCapturerState(bool isActive, int32_t num);
 
     // IAudioServerInnerCall
     int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
@@ -152,6 +152,10 @@ public:
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 
     void SetRotationToEffect(const uint32_t rotate) override;
+
+    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
+
+    void SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -178,13 +182,13 @@ private:
         BluetoothOffloadState a2dpOffloadFlag);
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
         BluetoothOffloadState a2dpOffloadFlag);
-    bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();
     void WriteServiceStartupError();
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
+    int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     const std::string GetBundleNameFromUid(int32_t uid);
     bool IsFastBlocked(int32_t uid);
 
@@ -197,7 +201,6 @@ private:
     static std::map<std::string, std::string> audioParameters;
     static std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys;
 
-    int32_t audioUid_ = 1041;
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
 
@@ -213,6 +216,7 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
+    bool isFastControlled_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

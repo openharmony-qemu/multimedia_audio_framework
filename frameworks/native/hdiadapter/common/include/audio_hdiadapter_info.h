@@ -16,7 +16,7 @@
 #ifndef AUDIO_HDIADAPTER_INFO_H
 #define AUDIO_HDIADAPTER_INFO_H
 
-#define MAX_MIX_CHANNELS 128
+#define MAX_MIX_CHANNELS 32
 #define PA_MAX_OUTPUTS_PER_SOURCE 256
 
 // should be same with AudioSampleFormat in audio_info.h

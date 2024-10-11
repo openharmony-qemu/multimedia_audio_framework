@@ -227,7 +227,7 @@ int32_t IpcStreamProxy::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp
     int ret = Remote()->SendRequest(IpcStreamMsg::OH_GET_AUDIO_POSITION, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
     ret = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_PRELOG(ret == SUCCESS, ret, "error: %{public}d", ret);
     framePos = reply.ReadUint64();
     timestamp = reply.ReadUint64();
     return ret;
@@ -482,6 +482,7 @@ int32_t IpcStreamProxy::GetStreamManagerType()
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
+
 int32_t IpcStreamProxy::SetSilentModeAndMixWithOthers(bool on)
 {
     MessageParcel data;
@@ -495,7 +496,6 @@ int32_t IpcStreamProxy::SetSilentModeAndMixWithOthers(bool on)
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
-
     return ret;
 }
 

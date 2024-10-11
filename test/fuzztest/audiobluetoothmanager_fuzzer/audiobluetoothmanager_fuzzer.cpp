@@ -19,7 +19,6 @@
 #include "audio_info.h"
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
-#include "audio_bluetooth_manager.h"
 #include "audio_device_info.h"
 using namespace std;
 
@@ -58,36 +57,6 @@ void AudioBluetoothManagerFuzzTest(const uint8_t *rawData, size_t size)
         .OnDeviceConfigurationChanged(devType, macAddress, deviceName, audioStreamInfo);
 }
 
-void AudioA2dpManagerFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::string macAddress(reinterpret_cast<const char*>(rawData), size);
-    int32_t volume = *reinterpret_cast<const int32_t*>(rawData);
-    std::vector<Bluetooth::A2dpStreamInfo> info;
-    std::vector<int32_t> sessionsID = {};
-
-    Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, volume);
-    Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionsID);
-    Bluetooth::AudioA2dpManager::OffloadStopPlaying(sessionsID);
-    Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(info);
-}
-
-void AudioHfpManagerFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioScene scene = *reinterpret_cast<const AudioScene*>(rawData);
-    std::string macAddress(reinterpret_cast<const char*>(rawData), size);
-
-    Bluetooth::AudioHfpManager::SetActiveHfpDevice(macAddress);
-    Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(scene);
-    Bluetooth::AudioHfpManager::GetScoCategoryFromScene(scene);
-    Bluetooth::AudioHfpManager::UpdateAudioScene(scene);
-}
-
 void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -114,8 +83,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
     OHOS::AudioStandard::AudioBluetoothManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioA2dpManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioHfpManagerFuzzTest(data, size);
     OHOS::AudioStandard::FetchOutputDeviceForTrackInternalFuzzTest(data, size);
     return 0;
 }

@@ -16,6 +16,7 @@ import("../../../config.gni")
 import("../../../ressche_part.gni")
 
 ohos_shared_library("audio_schedule") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

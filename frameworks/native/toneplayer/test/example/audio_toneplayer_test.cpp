@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "tone_player_impl.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 
 using namespace std;
 using namespace OHOS;

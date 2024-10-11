@@ -34,11 +34,29 @@ unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetMediaRenderDevice(St
     return desc;
 }
 
+void PrivacyPriorityRouter::RemoveArmUsb(vector<unique_ptr<AudioDeviceDescriptor>> &descs)
+{
+    auto isPresent = [] (const unique_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+        return desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET;
+    };
+
+    auto removeBeginIt = std::remove_if(descs.begin(), descs.end(), isPresent);
+    size_t deleteNum = static_cast<uint32_t>(descs.end() - removeBeginIt);
+    descs.erase(removeBeginIt, descs.end());
+    AUDIO_INFO_LOG("Remove %{public}zu desc from privacy list", deleteNum);
+}
+
 unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
+
+    if (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        RemoveArmUsb(descs);
+    }
+
     unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
         clientUID, desc->deviceType_);

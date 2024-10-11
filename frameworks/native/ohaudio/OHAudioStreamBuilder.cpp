@@ -160,7 +160,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererPrivacy(OH_AudioStreamBui
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
 
     if (privacy != AUDIO_STREAM_PRIVACY_TYPE_PUBLIC && privacy != AUDIO_STREAM_PRIVACY_TYPE_PRIVATE) {
-        AUDIO_ERR_LOG("Invalid param: privacy type");
+        AUDIO_WARNING_LOG("Invalid param: privacy type");
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
 

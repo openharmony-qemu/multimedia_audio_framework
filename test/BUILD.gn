@@ -28,6 +28,7 @@ group("audio_unit_test") {
     "../frameworks/js/napi/audiorenderer/toneplayer/test/unittest/tone_player_test:jsunittest",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_fast_capturer_unit_test",
+    "../frameworks/native/audiocapturer/test/unittest/capturer_test:inner_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/multiple_capturer_test:multiple_audio_capturer_unit_test",
     "../frameworks/native/audioeffect/test/unittest/effect_unit_test:audio_effect_chain_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/group_manager_test:audio_group_manager_unit_test",
@@ -46,7 +47,6 @@ group("audio_unit_test") {
     "../frameworks/native/examples:pa_stream_test",
     "../frameworks/native/hdiadapter/sink/test/unittest/audio_running_lock_manager_unit_test:audio_running_lock_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_capture_test:audio_oh_capture_unit_test",
-    "../frameworks/native/ohaudio/test/unittest/oh_audio_device_change_test:audio_oh_device_change_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
     "../frameworks/native/playbackcapturer/test/unittest:playback_capturer_manager_unit_test",
@@ -86,6 +86,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicyanother_fuzzer:fuzztest",
     "fuzztest/audioserver_fuzzer:fuzztest",
     "fuzztest/audioserverbalance_fuzzer:fuzztest",
+    "fuzztest/audiostream_fuzzer:fuzztest",
   ]
 }
 

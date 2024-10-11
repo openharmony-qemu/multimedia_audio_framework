@@ -155,7 +155,7 @@ AudioStreamType AudioSystemManager::GetStreamType(ContentType contentType, Strea
 
 inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
 {
-    AudioXCollie xcollieGetSystemAbilityManager("GetAudioSystemManagerProxy", XCOLLIE_TIME_OUT_SECONDS);
+    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioSystemManagerProxy", XCOLLIE_TIME_OUT_SECONDS);
     lock_guard<mutex> lock(g_asProxyMutex);
     if (g_asProxy == nullptr) {
         AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS);
@@ -173,8 +173,7 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb(std::bind(&AudioSystemManager::AudioServerDied,
-                std::placeholders::_1));
+            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioSystemManager::AudioServerDied(pid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("failed to add deathRecipient");
@@ -348,14 +347,12 @@ int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &
 int32_t AudioSystemManager::SetAsrWhisperDetectionMode(const AsrWhisperDetectionMode asrWhisperDetectionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->SetAsrWhisperDetectionMode(asrWhisperDetectionMode);
 }
 
 int32_t AudioSystemManager::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     int32_t ret = gasp->GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
     CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrWhisperDetection Mode audio parameters failed");
     return 0;
@@ -364,14 +361,12 @@ int32_t AudioSystemManager::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &
 int32_t AudioSystemManager::SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool on)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->SetAsrVoiceControlMode(asrVoiceControlMode, on);
 }
 
 int32_t AudioSystemManager::SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->SetAsrVoiceMuteMode(asrVoiceMuteMode, on);
 }
 
@@ -599,6 +594,13 @@ int32_t AudioSystemManager::UnsetDeviceChangeCallback(DeviceFlag flag,
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     int32_t clientId = GetCallingPid();
     return AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId, flag, cb);
+}
+
+int32_t AudioSystemManager::SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback>& callback)
+{
+    AUDIO_INFO_LOG("Entered");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetQueryClientTypeCallback(callback);
 }
 
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
@@ -856,6 +858,7 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange(
 void AudioFocusInfoChangeCallbackImpl::OnAudioFocusRequested(const AudioInterrupt &requestFocus)
 {
     AUDIO_DEBUG_LOG("on callback Entered OnAudioFocusRequested %{public}s", __func__);
+
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> temp_;
     std::unique_lock<mutex> cbListLock(cbListMutex_);
     for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
@@ -877,7 +880,6 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusRequested(const AudioInterrup
 void AudioFocusInfoChangeCallbackImpl::OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus)
 {
     AUDIO_DEBUG_LOG("on callback Entered OnAudioFocusAbandoned %{public}s", __func__);
-
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> temp_;
     std::unique_lock<mutex> cbListLock(cbListMutex_);
     for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
@@ -1512,5 +1514,11 @@ int32_t AudioSystemManager::InjectInterruption(const std::string networkId, Inte
 {
     return AudioPolicyManager::GetInstance().InjectInterruption(networkId, event);
 }
+
+int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
+{
+    return AudioPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

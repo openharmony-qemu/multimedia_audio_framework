@@ -28,10 +28,8 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-constexpr int32_t MAX_DELAY_TIME = 4 * 1000;
 
 class AudioAdapterManagerHandler : public AppExecFwk::EventHandler {
-    DECLARE_DELAYED_SINGLETON(AudioAdapterManagerHandler)
 public:
     enum EventAdapterManagerServerCmd  {
         DATABASE_UPDATE,
@@ -39,6 +37,10 @@ public:
         STREAM_MUTE_STATUS_UPDATE,
         RINGER_MODE_UPDATE,
     };
+    AudioAdapterManagerHandler();
+    ~AudioAdapterManagerHandler();
+
+    void ReleaseEventRunner();
 
     struct VolumeDataEvent {
         VolumeDataEvent() = delete;

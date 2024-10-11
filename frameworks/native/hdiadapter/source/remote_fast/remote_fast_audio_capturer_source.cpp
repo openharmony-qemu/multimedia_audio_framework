@@ -24,7 +24,7 @@
 #include "securec.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
@@ -337,7 +337,7 @@ int32_t RemoteFastAudioCapturerSourceInner::InitAshmem(const struct AudioSampleA
         desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
         "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
         desc.totalBufferFrames, desc.transferFrameSize);
-    bufferTotalFrameSize_ = desc.totalBufferFrames;
+    bufferTotalFrameSize_ = static_cast<uint32_t>(desc.totalBufferFrames);
     eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize);
 
 #ifdef DEBUG_DIRECT_USE_HDI
@@ -672,7 +672,7 @@ int32_t RemoteFastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice
     int32_t ret = SetInputPortPin(inputDevice, source);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set input port pin fail, ret %{public}d", ret);
 
-    source.portId = audioPort_.portId;
+    source.portId = static_cast<int32_t>(audioPort_.portId);
     source.role = AudioPortRole::AUDIO_PORT_SOURCE_ROLE;
     source.type = AudioPortType::AUDIO_PORT_DEVICE_TYPE;
     source.ext.device.moduleId = 0;

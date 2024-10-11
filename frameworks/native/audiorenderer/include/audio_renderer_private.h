@@ -53,7 +53,7 @@ public:
     bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool Stop() override;
     bool Flush() const override;
-    bool Release() const override;
+    bool Release() override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
     int32_t GetAudioStreamId(uint32_t &sessionID) const override;
     int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) override;
@@ -114,13 +114,27 @@ public:
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
     int32_t RegisterRendererPolicyServiceDiedCallback();
-    int32_t RemoveRendererPolicyServiceDiedCallback() const;
+    int32_t RemoveRendererPolicyServiceDiedCallback();
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
 
+    bool IsFastRenderer() override;
+
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    bool IsFastRenderer() override;
+#ifdef SONIC_ENABLE
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize);
+    int32_t ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedForFloat(float *buffer, int32_t bufferSize, float* outBuffer, int32_t &outBufferSize);
+    int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize);
+#endif
     void ConcedeStream();
 
     void SetSilentModeAndMixWithOthers(bool on) override;
@@ -167,9 +181,10 @@ private:
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     int32_t InitAudioConcurrencyCallback();
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
+    void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
+    void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
         const AudioStreamDeviceChangeReasonExt reason);
-    void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
     void ActivateAudioConcurrency(const AudioStreamParams &audioStreamParams,
@@ -177,6 +192,7 @@ private:
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
+    void WriteSwitchStreamLogMsg();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -200,8 +216,8 @@ private:
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;
     bool isEnableVoiceModemCommunicationStartStream_ = false;
-    DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
     RendererState state_ = RENDERER_INVALID;
+    DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
 
     float speed_ = 1.0;
 
@@ -209,7 +225,7 @@ private:
     std::mutex policyServiceDiedCallbackMutex_;
 
     std::vector<uint32_t> usedSessionId_ = {};
-
+    std::mutex silentModeAndMixWithOthersMutex_;
     std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
 };
@@ -222,6 +238,7 @@ public:
 
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
+    void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
@@ -234,6 +251,7 @@ private:
     bool isForcePaused_ = false;
     bool isForceDucked_ = false;
     uint32_t sessionID_ = INVALID_SESSION_ID;
+    std::mutex mutex_;
 };
 
 class AudioStreamCallbackRenderer : public AudioStreamCallback {
@@ -288,13 +306,12 @@ public:
     }
 private:
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks_;
-    std::shared_ptr<AudioRendererDeviceChangeCallback> oldCallback_;
     AudioRendererPrivate *renderer_ = nullptr;
     std::mutex audioRendererObjMutex_;
     std::mutex callbackMutex_;
 };
 
-class RendererPolicyServiceDiedCallback : public RendererOrCapturerPolicyServiceDiedCallback {
+class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback {
 public:
     RendererPolicyServiceDiedCallback();
     virtual ~RendererPolicyServiceDiedCallback();

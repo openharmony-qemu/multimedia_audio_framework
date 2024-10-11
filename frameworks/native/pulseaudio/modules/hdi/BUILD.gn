@@ -39,6 +39,7 @@ config("hdi_config") {
     "../../../../../services/audio_service/common/include",
   ]
 
+  include_dirs += [ multimedia_audio_framework_drivers ]
   cflags = [
     "-Wall",
     "-Werror",
@@ -81,7 +82,6 @@ ohos_shared_library("module-hdi-sink") {
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
-    "drivers_interface_audio:libaudio_proxy_4.0",
     "hilog:libhilog",
     "pulseaudio:pulse",
     "pulseaudio:pulsecommon",
@@ -113,19 +113,60 @@ ohos_shared_library("module-hdi-source") {
 
   deps = [
     "../../../audioeffect:audio_effect",
+    "../../../audioschedule:audio_schedule",
     "../../../audioutils:audio_utils",
     "../../../hdiadapter/source:capturer_source_adapter",
   ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
-    "drivers_interface_audio:libaudio_proxy_4.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
     "pulseaudio:pulse",
     "pulseaudio:pulsecommon",
     "pulseaudio:pulsecore",
   ]
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("module-split-stream-sink") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  sources = [ "module_split_stream_sink.c" ]
+
+  configs = [ ":hdi_config" ]
+
+  cflags = [ "-DPA_MODULE_NAME=libmodule_split_stream_sink_z_so" ]
+
+  ldflags = [
+    "-Wl",
+    "--no-undefined",
+  ]
+
+  deps = [
+    "../../../../../services/audio_service:audio_common",
+    "../../../audioschedule:audio_schedule",
+    "../../../audioutils:audio_utils",
+    "../../../hdiadapter/sink:renderer_sink_adapter",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "pulseaudio:pulse",
+    "pulseaudio:pulsecommon",
+    "pulseaudio:pulsecore",
+  ]
+
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+  }
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

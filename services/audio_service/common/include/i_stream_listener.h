@@ -32,6 +32,8 @@ enum Operation : int32_t {
     BUFFER_OVERFLOW,
     SET_OFFLOAD_ENABLE,
     UNDERFLOW_COUNT_ADD, // notify client underflow count increment
+    DATA_LINK_CONNECTING,  // a2dp offload connecting
+    DATA_LINK_CONNECTED,
     MAX_OPERATION_CODE // in plan add underrun overflow
 };
 class IStreamListener {

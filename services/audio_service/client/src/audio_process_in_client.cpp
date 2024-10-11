@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,6 +40,7 @@
 #include "audio_server_death_recipient.h"
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
+#include "audio_log_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,6 +48,7 @@ namespace AudioStandard {
 namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
+static const int32_t HALF_FACTOR = 2;
 }
 
 class ProcessCbImpl;
@@ -154,6 +156,7 @@ private:
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime);
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost);
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     void DoFadeInOut(uint64_t &curWritePos);
 
@@ -167,7 +170,7 @@ private:
     static constexpr int64_t RECORD_RESYNC_SLEEP_NANO = 2000000; // 2ms
     static constexpr int64_t RECORD_HANDLE_DELAY_NANO = 3000000; // 3ms
     static constexpr size_t MAX_TIMES = 4; // 4 times spanSizeInFrame_
-    static constexpr size_t DIV = 2; // halt of span
+    static constexpr size_t DIV = 2; // half of span
     static constexpr int64_t MAX_STOP_FADING_DURATION_NANO = 10000000; // 10ms
     static constexpr int64_t WAKE_UP_LATE_COUNT = 20; // late for 20 times
     enum ThreadStatus : uint32_t {
@@ -218,6 +221,8 @@ private:
 
     std::string cachePath_;
     FILE *dumpFile_ = nullptr;
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
 
     std::atomic<bool> startFadein_ = false; // true-fade  in  when start or resume stream
     std::atomic<bool> startFadeout_ = false; // true-fade out when pause or stop stream
@@ -275,8 +280,7 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb(std::bind(&AudioProcessInClientInner::AudioServerDied,
-                std::placeholders::_1));
+            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_WARNING_LOG("failed to add deathRecipient");
@@ -343,6 +347,7 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
         AudioProcessInClientInner::Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
@@ -602,13 +607,16 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
     AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
     bool isIndependent = bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
     if (config.audioMode == AUDIO_MODE_RECORD) {
-        callbackLoop_ = std::thread(&AudioProcessInClientInner::RecordProcessCallbackFuc, this);
+        logUtilsTag_ = "ProcessRec::" + std::to_string(sessionId_);
+        callbackLoop_ = std::thread([this] { this->RecordProcessCallbackFuc(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
     } else if (isIndependent) {
-        callbackLoop_ = std::thread(&AudioProcessInClientInner::ProcessCallbackFucIndependent, this);
+        logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
+        callbackLoop_ = std::thread([this] { this->ProcessCallbackFucIndependent(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     } else {
-        callbackLoop_ = std::thread(&AudioProcessInClientInner::ProcessCallbackFuc, this);
+        logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
+        callbackLoop_ = std::thread([this] { this->ProcessCallbackFuc(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     }
 
@@ -661,6 +669,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
+    DfxOperation(readbufDesc, processConfig_.streamInfo.format, processConfig_.streamInfo.channels);
 
     ret = memset_s(readbufDesc.buffer, readbufDesc.bufLength, 0, readbufDesc.bufLength);
     if (ret != EOK) {
@@ -883,6 +892,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             writeProcessDataTrace.End();
 
             DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer), offSet);
+            DfxOperation(curCallbackBuffer, processConfig_.streamInfo.format, processConfig_.streamInfo.channels);
         }
     }
 
@@ -891,6 +901,17 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
     }
 
     return SUCCESS;
+}
+
+void AudioProcessInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t AudioProcessInClientInner::SetVolume(int32_t vol)
@@ -1091,7 +1112,7 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
     cb->OnHandleData(clientSpanSizeInByte_);
     stamp = ClockTime::GetCurNano() - stamp;
     if (stamp > MAX_WRITE_COST_DURATION_NANO) {
-        AUDIO_WARNING_LOG("Client write cost too long...");
+        AUDIO_PRERELEASE_LOGW("Client write cost too long...");
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
             underflowCount_++;
         } else {
@@ -1452,7 +1473,7 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
     SpanStatus targetStatus = SpanStatus::SPAN_READ_DONE;
     while (!tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_WRITTING) && tryCount > 0) {
         tryCount--;
-        AUDIO_WARNING_LOG("span %{public}" PRIu64" not ready, status: %{public}d, wait 2ms.", curWritePos,
+        AUDIO_PRERELEASE_LOGW("span %{public}" PRIu64" not ready, status: %{public}d, wait 2ms.", curWritePos,
             targetStatus);
         targetStatus = SpanStatus::SPAN_READ_DONE;
         ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION + ONE_MILLISECOND_DURATION);
@@ -1701,7 +1722,7 @@ void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &
     if (wakeUpTime - curTime > clientBufferDurationInMs + clientWriteCost) {
         Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
             "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
-        AUDIO_WARNING_LOG("wakeUpTime is too late...");
+        AUDIO_PRERELEASE_LOGW("wakeUpTime is too late...");
     }
 }
 } // namespace AudioStandard

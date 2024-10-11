@@ -18,7 +18,7 @@
 
 #include "native_audiorenderer.h"
 #include "audio_renderer.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,7 +136,7 @@ private:
 class OHRendererPositionCallback : public RendererPositionCallback {
 public:
     OHRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
-        OH_AudioRenderer *ohAudioRenderer, void *userData)
+        OH_AudioRenderer* ohAudioRenderer, void* userData)
         : callback_(callback), ohAudioRenderer_(ohAudioRenderer), userData_(userData)
     {
     }
@@ -144,8 +144,8 @@ public:
 
 private:
     OH_AudioRenderer_OnMarkReachedCallback callback_;
-    OH_AudioRenderer *ohAudioRenderer_;
-    void *userData_;
+    OH_AudioRenderer* ohAudioRenderer_;
+    void* userData_;
 };
 
 struct RendererCallback {
@@ -191,22 +191,22 @@ class OHAudioRenderer {
             void *userData);
         bool IsFastRenderer();
 
+        uint32_t GetUnderflowCount();
         int32_t SetVolume(float volume) const;
         int32_t SetVolumeWithRamp(float volume, int32_t duration);
         float GetVolume() const;
         int32_t SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
-            uint32_t markPosition, void *userData);
+            uint32_t markPosition, void* userData);
         void UnsetRendererPositionCallback();
-        uint32_t GetUnderflowCount();
         void SetInterruptMode(InterruptMode mode);
-        void SetSilentModeAndMixWithOthers(bool on);
-        bool GetSilentModeAndMixWithOthers();
         int32_t SetDefaultOutputDevice(DeviceType deviceType);
 
         void SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType);
         WriteDataCallbackType GetRendererCallbackType();
 
         void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
+        void SetSilentModeAndMixWithOthers(bool on);
+        bool GetSilentModeAndMixWithOthers();
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;

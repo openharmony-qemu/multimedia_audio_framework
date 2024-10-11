@@ -25,12 +25,12 @@
 #include "audio_service.h"
 #include "futex_tool.h"
 #include "i_stream_manager.h"
+#include "volume_tools.h"
+#include "policy_handler.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
 #endif
-#include "volume_tools.h"
-#include "policy_handler.h"
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
 
@@ -39,14 +39,15 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const int64_t MOCK_LATENCY = 45000000; // 45000000 -> 45ms
+    static const int64_t START_MIN_COST = 80000000; // 80000000 -> 80ms
+    const float AUDIO_VOLOMUE_EPSILON = 0.0001;
+    const int32_t MEDIA_UID = 1013;
+    static constexpr int32_t ONE_MINUTE = 60;
     static const int32_t NO_FADING = 0;
     static const int32_t DO_FADINGOUT = 1;
     static const int32_t FADING_OUT_DONE = 2;
     static const float FADINGOUT_BEGIN = 1.0f;
     static const float FADINGOUT_END = 0.0f;
-    static constexpr int32_t ONE_MINUTE = 60;
-    const int32_t MEDIA_UID = 1013;
-    const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
 }
 
@@ -136,8 +137,7 @@ int32_t RendererInServer::InitBufferStatus()
 
 int32_t RendererInServer::Init()
 {
-    if (IsHighResolution()) {
-        Trace trace("current stream marked as high resolution");
+    if (IsHightResolution()) {
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
     }
@@ -172,12 +172,22 @@ int32_t RendererInServer::Init()
 
     // eg: /data/data/.pulse_dir/10000_100001_48000_2_1_server_in.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
-    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + std::to_string(streamIndex_)
-        + "renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
+    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
+        + "_renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpC2S_);
 
     return SUCCESS;
+}
+
+void RendererInServer::WriterRenderStreamStandbySysEvent()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_STANDBY,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("STREAMID", static_cast<int32_t>(streamIndex_));
+    bean->Add("STANDBY", standByEnable_ ? 1 : 0);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
@@ -194,17 +204,20 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_STARTED:
             if (standByEnable_) {
                 standByEnable_ = false;
-                AUDIO_INFO_LOG("%{public}u recv stand by started", streamIndex_);
+                AUDIO_INFO_LOG("%{public}u recv stand-by started", streamIndex_);
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
-                return;
+                FutexTool::FutexWake(audioServerBuffer_->GetFutex());
+                WriterRenderStreamStandbySysEvent();
             }
             status_ = I_STATUS_STARTED;
+            startedTime_ = ClockTime::GetCurNano();
             stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
             if (standByEnable_) {
-                AUDIO_INFO_LOG("%{public}s recv stand by paused", traceTag_.c_str());
+                AUDIO_INFO_LOG("%{public}u recv stand-by paused", streamIndex_);
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_STAND_BY);
+                WriterRenderStreamStandbySysEvent();
                 return;
             }
             status_ = I_STATUS_PAUSED;
@@ -219,11 +232,10 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             break;
         case OPERATION_DRAINED:
+            // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
+            // Stop will be completed first. After a period of time, when Drain's callback goes here,
+            // state of server should not be changed to STARTED while the client state is Stopped.
             OnStatusUpdateExt(operation, stateListener);
-            break;
-        case OPERATION_RELEASED:
-            stateListener->OnOperationHandled(RELEASE_STREAM, 0);
-            status_ = I_STATUS_RELEASED;
             break;
         default:
             OnStatusUpdateSub(operation);
@@ -232,9 +244,6 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
 
 void RendererInServer::OnStatusUpdateExt(IOperation operation, std::shared_ptr<IStreamListener> stateListener)
 {
-    // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
-    // Stop will be completed first. After a period of time, when Drain's callback goes here,
-    // state of server should not be changed to STARTED while the client state is Stopped.
     if (status_ == I_STATUS_DRAINING) {
         status_ = I_STATUS_STARTED;
         stateListener->OnOperationHandled(DRAIN_STREAM, 0);
@@ -246,6 +255,10 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     switch (operation) {
+        case OPERATION_RELEASED:
+            stateListener->OnOperationHandled(RELEASE_STREAM, 0);
+            status_ = I_STATUS_RELEASED;
+            break;
         case OPERATION_UNDERRUN:
             AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
                 audioServerBuffer_->GetAvailableDataFrames());
@@ -259,8 +272,10 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             }
             break;
         case OPERATION_UNDERFLOW:
-            underrunCount_++;
-            audioServerBuffer_->SetUnderrunCount(underrunCount_);
+            if (ClockTime::GetCurNano() - startedTime_ > START_MIN_COST) {
+                underrunCount_++;
+                audioServerBuffer_->SetUnderrunCount(underrunCount_);
+            }
             StandByCheck(); // if stand by is enbaled here, stream will be paused and not recv UNDERFLOW any more.
             break;
         case OPERATION_SET_OFFLOAD_ENABLE:
@@ -276,9 +291,9 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 
 void RendererInServer::StandByCheck()
 {
-    Trace trace(traceTag_ + " StandByCheck:standByCounter_:" + std::to_string(standByCounter_));
+    Trace trace(traceTag_ + " StandByCheck:standByCounter_:" + std::to_string(standByCounter_.load()));
     AUDIO_INFO_LOG("sessionId:%{public}u standByCounter_:%{public}u standByEnable_:%{public}s ", streamIndex_,
-        standByCounter_, (standByEnable_ ? "true" : "false"));
+        standByCounter_.load(), (standByEnable_ ? "true" : "false"));
 
     // direct standBy need not in here
     if (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) {
@@ -294,9 +309,11 @@ void RendererInServer::StandByCheck()
     }
 
     // call enable stand by
-    std::unique_lock<std::mutex> lock(statusLock_);
     standByEnable_ = true;
-    IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
+    // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
+    if (managerType_ == PLAYBACK) {
+        stream_->Pause(true);
+    }
 }
 
 bool RendererInServer::ShouldEnableStandBy()
@@ -311,7 +328,7 @@ bool RendererInServer::ShouldEnableStandBy()
     }
     if (standByCounter_ >= maxStandByCounter && timeCost >= timeLimit) {
         AUDIO_INFO_LOG("sessionId:%{public}u reach the limit of stand by: %{public}u time:%{public}" PRId64"ns",
-            streamIndex_, standByCounter_, timeCost);
+            streamIndex_, standByCounter_.load(), timeCost);
         return true;
     }
     return false;
@@ -339,61 +356,6 @@ BufferDesc RendererInServer::DequeueBuffer(size_t length)
     return stream_->DequeueBuffer(length);
 }
 
-void RendererInServer::DoFadingOut(BufferDesc& bufferDesc)
-{
-    std::lock_guard<std::mutex> lock(fadeoutLock_);
-    if (fadeoutFlag_ == DO_FADINGOUT) {
-        AUDIO_INFO_LOG("enter. format:%{public}u", processConfig_.streamInfo.format);
-        AudioChannel channel = processConfig_.streamInfo.channels;
-        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, FADINGOUT_BEGIN, FADINGOUT_END);
-        int32_t ret = VolumeTools::Process(bufferDesc, processConfig_.streamInfo.format, mapVols);
-        if (ret != SUCCESS) {
-            AUDIO_WARNING_LOG("VolumeTools::Process failed: %{public}d", ret);
-        }
-        fadeoutFlag_ = FADING_OUT_DONE;
-        AUDIO_INFO_LOG("fadeoutFlag_ = FADING_OUT_DONE");
-    }
-}
-
-void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
-{
-    if (silentModeAndMixWithOthers_) {
-        return;
-    }
-    if (buffer[0] == 0) {
-        if (startMuteTime_ == 0) {
-            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        }
-        std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && silentState_ == 1) { // 1 means unsilent
-            silentState_ = 0; // 0 means silent
-            AUDIO_WARNING_LOG("write invalid data for some time in server");
-            ReportDataToResSched(true);
-        }
-    } else if (buffer[0] != 0) {
-        if (startMuteTime_ != 0) {
-            startMuteTime_ = 0;
-        }
-        if (silentState_ == 0) { // 0 means silent
-            AUDIO_WARNING_LOG("begin write valid data in server");
-            silentState_ = 1; // 1 means unsilent
-            ReportDataToResSched(false);
-        }
-    }
-}
-
-void RendererInServer::ReportDataToResSched(bool isSilent)
-{
-    #ifdef RESSCHE_ENABLE
-    std::unordered_map<std::string, std::string> payload;
-    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
-    payload["sessionId"] = std::to_string(streamIndex_);
-    payload["isSilent"] = std::to_string(isSilent);
-    uint32_t type = ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK;
-    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
-    #endif
-}
-
 void RendererInServer::VolumeHandle(BufferDesc &desc)
 {
     // volume process in server
@@ -401,7 +363,12 @@ void RendererInServer::VolumeHandle(BufferDesc &desc)
         AUDIO_WARNING_LOG("buffer in not inited");
         return;
     }
-    float applyVolume = audioServerBuffer_->GetStreamVolume();
+    float applyVolume = 0.0f;
+    if (muteFlag_) {
+        applyVolume = 0.0f;
+    } else {
+        applyVolume = audioServerBuffer_->GetStreamVolume();
+    }
     float duckVolume_ = audioServerBuffer_->GetDuckFactor();
     if (!IsVolumeSame(MAX_FLOAT_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
         applyVolume *= lowPowerVolume_;
@@ -429,6 +396,61 @@ void RendererInServer::VolumeHandle(BufferDesc &desc)
     }
 }
 
+void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
+{
+    if (silentModeAndMixWithOthers_) {
+        return;
+    }
+    if (buffer[0] == 0) {
+        if (startMuteTime_ == 0) {
+            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        }
+        std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && silentState_ == 1) { // 1 means unsilent
+            silentState_ = 0; // 0 means silent
+            AUDIO_WARNING_LOG("write invalid data for some time in server");
+            ReportDataToResSched(true);
+        }
+    } else {
+        if (startMuteTime_ != 0) {
+            startMuteTime_ = 0;
+        }
+        if (silentState_ == 0) { // 0 means silent
+            AUDIO_WARNING_LOG("begin write valid data in server");
+            silentState_ = 1; // 1 means unsilent
+            ReportDataToResSched(false);
+        }
+    }
+}
+
+void RendererInServer::ReportDataToResSched(bool isSilent)
+{
+    #ifdef RESSCHE_ENABLE
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+    payload["sessionId"] = std::to_string(streamIndex_);
+    payload["isSilent"] = std::to_string(isSilent);
+    uint32_t type = ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK;
+    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
+    #endif
+}
+
+void RendererInServer::DoFadingOut(BufferDesc& bufferDesc)
+{
+    std::lock_guard<std::mutex> lock(fadeoutLock_);
+    if (fadeoutFlag_ == DO_FADINGOUT) {
+        AUDIO_INFO_LOG("enter. format:%{public}u", processConfig_.streamInfo.format);
+        AudioChannel channel = processConfig_.streamInfo.channels;
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, FADINGOUT_BEGIN, FADINGOUT_END);
+        int32_t ret = VolumeTools::Process(bufferDesc, processConfig_.streamInfo.format, mapVols);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("VolumeTools::Process failed: %{public}d", ret);
+        }
+        fadeoutFlag_ = FADING_OUT_DONE;
+        AUDIO_INFO_LOG("fadeoutFlag_ = FADING_OUT_DONE");
+    }
+}
+
 int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -441,19 +463,18 @@ int32_t RendererInServer::WriteData()
     }
 
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
-
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
         if (bufferDesc.buffer == nullptr) {
             AUDIO_ERR_LOG("The buffer is null!");
             return ERR_INVALID_PARAM;
         }
         VolumeHandle(bufferDesc);
+        Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         if (processConfig_.streamType != STREAM_ULTRASONIC) {
             if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
                 DoFadingOut(bufferDesc);
             }
         }
-        Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
@@ -465,9 +486,10 @@ int32_t RendererInServer::WriteData()
 
         WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
-        // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
+    } else {
+        Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
     FutexTool::FutexWake(audioServerBuffer_->GetFutex());
     standByCounter_ = 0;
@@ -483,7 +505,7 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
             if (renderEmptyCountForInnerCap_ > 0) {
-                size_t emptyBufferSize = renderEmptyCountForInnerCap_ * spanSizeInByte_;
+                size_t emptyBufferSize = static_cast<size_t>(renderEmptyCountForInnerCap_) * spanSizeInByte_;
                 auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
                 BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
                 memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
@@ -563,9 +585,12 @@ int32_t RendererInServer::UpdateWriteIndex()
     }
 
     if (afterDrain == true) {
-        afterDrain = false;
-        AUDIO_DEBUG_LOG("After drain, start write data");
-        WriteData();
+        if (writeLock_.try_lock()) {
+            afterDrain = false;
+            AUDIO_DEBUG_LOG("After drain, start write data");
+            WriteData();
+            writeLock_.unlock();
+        }
     }
     return SUCCESS;
 }
@@ -591,6 +616,8 @@ int32_t RendererInServer::Start()
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
+        standByCounter_ = 0;
+        startedTime_ = ClockTime::GetCurNano();
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
         int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
             IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
@@ -612,10 +639,11 @@ int32_t RendererInServer::Start()
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
+    startedTime_ = ClockTime::GetCurNano();
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     int64_t tempTime = ClockTime::GetCurNano() + MOCK_LATENCY;
     audioServerBuffer_->SetHandleInfo(currentReadFrame, tempTime);
-    AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time%{public} " PRId64".", currentReadFrame, tempTime);
+    AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time %{public}" PRId64" ", currentReadFrame, tempTime);
     resetTime_ = true;
 
     if (isInnerCapEnabled_) {
@@ -628,6 +656,8 @@ int32_t RendererInServer::Start()
     if (isDualToneEnabled_) {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
+            stream_->GetAudioEffectMode(effectModeWhenDual_);
+            stream_->SetAudioEffectMode(EFFECT_NONE);
             dualToneStream_->Start();
         }
     }
@@ -648,6 +678,7 @@ int32_t RendererInServer::Pause()
         standByEnable_ = false;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
     }
+    standByCounter_ = 0;
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_) : stream_->Pause();
     if (isInnerCapEnabled_) {
@@ -659,6 +690,7 @@ int32_t RendererInServer::Pause()
     if (isDualToneEnabled_) {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
+            stream_->SetAudioEffectMode(effectModeWhenDual_);
             dualToneStream_->Pause();
         }
     }
@@ -669,7 +701,7 @@ int32_t RendererInServer::Pause()
 
 int32_t RendererInServer::Flush()
 {
-    AUDIO_INFO_LOG("Flush.");
+    AUDIO_PRERELEASE_LOGI("Flush.");
     Trace trace(traceTag_ + " Flush");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_STARTED) {
@@ -788,6 +820,7 @@ int32_t RendererInServer::Stop()
     if (isDualToneEnabled_) {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
+            stream_->SetAudioEffectMode(effectModeWhenDual_);
             dualToneStream_->Stop();
         }
     }
@@ -843,7 +876,7 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
 {
     if (status_ == I_STATUS_STOPPED) {
-        AUDIO_WARNING_LOG("Current status is stopped");
+        AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
     stream_->GetCurrentPosition(framePos, timestamp);
@@ -996,6 +1029,8 @@ int32_t RendererInServer::InitDualToneStream()
 
     if (status_ == I_STATUS_STARTED) {
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", dualToneStreamIndex_);
+        stream_->GetAudioEffectMode(effectModeWhenDual_);
+        stream_->SetAudioEffectMode(EFFECT_NONE);
         dualToneStream_->Start();
     }
     return SUCCESS;
@@ -1033,7 +1068,7 @@ int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
         }
     }
     // monitor
-    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(processConfig_.streamType);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
     AUDIO_DEBUG_LOG("sessionId %{public}u monitor volume:%{public}f [volumeType:%{public}d]",
         streamIndex_, volume, volumeType);
@@ -1072,7 +1107,7 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
         return ERR_INVALID_PARAM;
     }
 
-    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(processConfig_.streamType);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     float systemVol = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
     AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d systemVol:"
         "%{public}f]", streamIndex_, volume, volumeType, systemVol);
@@ -1089,7 +1124,7 @@ int32_t RendererInServer::GetStreamManagerType() const noexcept
     return managerType_ == DIRECT_PLAYBACK ? AUDIO_DIRECT_MANAGER_TYPE : AUDIO_NORMAL_MANAGER_TYPE;
 }
 
-bool RendererInServer::IsHighResolution() const noexcept
+bool RendererInServer::IsHightResolution() const noexcept
 {
     Trace trace("CheckHighResolution");
     if (processConfig_.deviceType != DEVICE_TYPE_WIRED_HEADSET &&
@@ -1097,19 +1132,14 @@ bool RendererInServer::IsHighResolution() const noexcept
         AUDIO_INFO_LOG("normal stream,device type:%{public}d", processConfig_.deviceType);
         return false;
     }
-    if (processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) {
-        DeviceInfo deviceInfo;
-        bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(processConfig_, deviceInfo);
-        CHECK_AND_RETURN_RET_LOG(result, false, "GetProcessDeviceInfo failed.");
-        if (deviceInfo.isArmUsbDevice) {
-            AUDIO_INFO_LOG("normal stream,device is arm usb");
-            return false;
-        }
-    }
     if (processConfig_.streamType != STREAM_MUSIC || processConfig_.streamInfo.samplingRate < SAMPLE_RATE_48000 ||
         processConfig_.streamInfo.format < SAMPLE_S24LE ||
         processConfig_.rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
         AUDIO_INFO_LOG("normal stream because stream info");
+        return false;
+    }
+    if (processConfig_.streamInfo.samplingRate > SAMPLE_RATE_192000) {
+        AUDIO_INFO_LOG("sample rate over 192k");
         return false;
     }
     if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() > 0) {
@@ -1154,6 +1184,119 @@ int32_t RendererInServer::SetMute(bool isMute)
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
     }
     return SUCCESS;
+}
+
+void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
+    switch (operation) {
+        case OPERATION_DATA_LINK_CONNECTING:
+            AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTING received");
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTING, 0);
+            break;
+        case OPERATION_DATA_LINK_CONNECTED:
+            AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTED received");
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTED, 0);
+            break;
+        default:
+            return;
+    }
+}
+
+static std::string GetStatusStr(IStatus status)
+{
+    switch (status) {
+        case I_STATUS_INVALID:
+            return "INVALID";
+        case I_STATUS_IDLE:
+            return "IDEL";
+        case I_STATUS_STARTING:
+            return "STARTING";
+        case I_STATUS_STARTED:
+            return "STARTED";
+        case I_STATUS_PAUSING:
+            return "PAUSING";
+        case I_STATUS_PAUSED:
+            return "PAUSED";
+        case I_STATUS_FLUSHING_WHEN_STARTED:
+            return "FLUSHING_WHEN_STARTED";
+        case I_STATUS_FLUSHING_WHEN_PAUSED:
+            return "FLUSHING_WHEN_PAUSED";
+        case I_STATUS_FLUSHING_WHEN_STOPPED:
+            return "FLUSHING_WHEN_STOPPED";
+        case I_STATUS_DRAINING:
+            return "DRAINING";
+        case I_STATUS_DRAINED:
+            return "DRAINED";
+        case I_STATUS_STOPPING:
+            return "STOPPING";
+        case I_STATUS_STOPPED:
+            return "STOPPED";
+        case I_STATUS_RELEASING:
+            return "RELEASING";
+        case I_STATUS_RELEASED:
+            return "RELEASED";
+        default:
+            break;
+    }
+    return "NO_SUCH_STATUS";
+}
+
+static std::string GetManagerTypeStr(ManagerType type)
+{
+    switch (type) {
+        case PLAYBACK:
+            return "Normal";
+        case DUP_PLAYBACK:
+            return "Dup Playback";
+        case DUAL_PLAYBACK:
+            return "DUAL Playback";
+        case DIRECT_PLAYBACK:
+            return "Direct";
+        case VOIP_PLAYBACK:
+            return "Voip";
+        case RECORDER:
+            return "Recorder";
+        default:
+            break;
+    }
+    return "NO_SUCH_TYPE";
+}
+
+bool RendererInServer::Dump(std::string &dumpString)
+{
+    if (managerType_ != DIRECT_PLAYBACK && managerType_ != VOIP_PLAYBACK) {
+        return false;
+    }
+    // dump audio stream info
+    dumpString += "audio stream info:\n";
+    AppendFormat(dumpString, "  - session id:%u\n", streamIndex_);
+    AppendFormat(dumpString, "  - appid:%d\n", processConfig_.appInfo.appPid);
+    AppendFormat(dumpString, "  - stream type:%d\n", processConfig_.streamType);
+
+    AppendFormat(dumpString, "  - samplingRate: %d\n", processConfig_.streamInfo.samplingRate);
+    AppendFormat(dumpString, "  - channels: %u\n", processConfig_.streamInfo.channels);
+    AppendFormat(dumpString, "  - format: %u\n", processConfig_.streamInfo.format);
+    AppendFormat(dumpString, "  - device type: %u\n", processConfig_.deviceType);
+    AppendFormat(dumpString, "  - sink type: %s\n", GetManagerTypeStr(managerType_).c_str());
+
+    // dump status info
+    AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_).c_str());
+    if (audioServerBuffer_ != nullptr) {
+        AppendFormat(dumpString, "  - Current read position: %u\n", audioServerBuffer_->GetCurReadFrame());
+        AppendFormat(dumpString, "  - Current write position: %u\n", audioServerBuffer_->GetCurWriteFrame());
+    }
+
+    dumpString += "\n";
+    return true;
+}
+
+void RendererInServer::SetNonInterruptMute(const bool muteFlag)
+{
+    AUDIO_INFO_LOG("mute flag %{public}d", muteFlag);
+    muteFlag_ = muteFlag;
+    AudioService::GetInstance()->UpdateMuteControlSet(streamIndex_, muteFlag);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -63,7 +63,31 @@ int AudioProcessStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
-    return (this->*funcList_[code])(data, reply);
+    switch (code) {
+        case ON_RESOLVE_BUFFER:
+            return HandleResolveBuffer(data, reply);
+        case OH_GET_SESSIONID:
+            return HandleGetSessionId(data, reply);
+        case ON_START:
+            return HandleStart(data, reply);
+        case ON_PAUSE:
+            return HandlePause(data, reply);
+        case ON_RESUME:
+            return HandleResume(data, reply);
+        case ON_STOP:
+            return HandleStop(data, reply);
+        case ON_REQUEST_HANDLE_INFO:
+            return HandleRequestHandleInfo(data, reply);
+        case ON_RELEASE:
+            return HandleRelease(data, reply);
+        case ON_REGISTER_PROCESS_CB:
+            return HandleRegisterProcessCb(data, reply);
+        case ON_REGISTER_THREAD_PRIORITY:
+            return HandleRegisterThreadPriority(data, reply);
+        default:
+            AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+}
 }
 
 int32_t AudioProcessStub::HandleResolveBuffer(MessageParcel &data, MessageParcel &reply)

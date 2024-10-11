@@ -19,6 +19,7 @@ import("../../../config.gni")
 ohos_fuzztest("AudioInterruptServiceFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
   fuzz_config_file = "../audiointerruptservice_fuzzer"
+  pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
   include_dirs = [
     "../../../services/audio_policy/server/include",
@@ -29,6 +30,10 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
     "../../../services/audio_policy/server/src/service/interrupt",
     "../../../utils/system/safwk/native/include",
     "../../../../communication/bluetooth/interfaces/inner_api/include",
+    "$pulseaudio_build_path/include",
+    "//third_party/pulseaudio/src",
+    "//third_party/pulseaudio/confgure/src",
+    "//third_party/pulseaudio/include",
   ]
 
   cflags = [
@@ -36,9 +41,6 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
     "-O0",
     "-fno-omit-frame-pointer",
   ]
-
-  cflags_cc = cflags
-  cflags_cc += [ "-fno-access-control" ]
 
   sources = [ "audio_interrupt_service_fuzzer.cpp" ]
 
@@ -60,7 +62,6 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
   if (accessibility_enable == true) {

@@ -43,7 +43,7 @@
 #include <pulsecore/rtpoll.h>
 
 #include "securec.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_utils_c.h"
 #include "audio_volume_c.h"
 
@@ -521,4 +521,5 @@ void pa__done(pa_module*m)
     }
 
     pa_xfree(u);
+    m->userdata = NULL;
 }

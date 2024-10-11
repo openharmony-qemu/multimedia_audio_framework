@@ -1463,12 +1463,12 @@ describe("AudioGroupManagerJsUnitTest", function () {
 
         await routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, (e, desc)=>{
             if (e) {
-                console.error(`get output device failed ERROR: ${e.message}`);
+                console.error(`get ouput device failed ERROR: ${e.message}`);
                 expect(false).assertTrue();
                 done();
             }
             if (desc.length === 0) {
-                console.error("get output device failed");
+                console.error("get ouput device failed");
                 return;
             }
             outputDeviceDesc = desc[0];
@@ -1530,7 +1530,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         };
     })
 
-    
     /*
      * @tc.name:SUB_AUDIO_GROUP_MANAGER_GET_MAX_AMPLITUDE_FOR_OUTPUT_DEVICE_002
      * @tc.desc:verify getMaxAmplitudeForOutputDevice get output devive max amplitude without render successfully - <Random Id>
@@ -1543,7 +1542,7 @@ describe("AudioGroupManagerJsUnitTest", function () {
             content : audio.ContentType.CONTENT_TYPE_MUSIC,
             usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
             rendererFlags : 0 }
-
+ 
         routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo).then(
             (desc) => {
                 if (desc.length === 0) {
@@ -1557,7 +1556,7 @@ describe("AudioGroupManagerJsUnitTest", function () {
                 console.error("get outputDeviceId error" + JSON.stringify(err));
                 return;
             });
-
+ 
         try {
             audioVolumeGroupManager.getMaxAmplitudeForOutputDevice(outputDeviceDesc).then(
                 (maxAmplitude) => {
@@ -1574,7 +1573,7 @@ describe("AudioGroupManagerJsUnitTest", function () {
             done();
         }
     })
-
+ 
     /*
      * @tc.name:SUB_AUDIO_GROUP_MANAGER_GET_MAX_AMPLITUDE_FOR_INPUT_DEVICE_003
      * @tc.desc:verify getMaxAmplitude get inputDevice max amplitude successfully - <MIC>
@@ -1587,7 +1586,7 @@ describe("AudioGroupManagerJsUnitTest", function () {
             content : audio.ContentType.CONTENT_TYPE_MUSIC,
             usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
             capturerFlags : 0 }
-
+ 
         routingManager.getPreferredInputDeviceForCapturerInfo(capturerInfo).then(
             (desc) => {
                 if (desc.length === 0) {
@@ -1601,7 +1600,7 @@ describe("AudioGroupManagerJsUnitTest", function () {
                 console.error("get inputDeviceId error" + JSON.stringify(err));
                 return;
             });
-
+ 
         try {
             audioVolumeGroupManager.getMaxAmplitudeForInputDevice(inputDeviceDesc).then(
                 (maxAmplitude) => {

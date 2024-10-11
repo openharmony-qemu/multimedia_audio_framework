@@ -116,7 +116,7 @@ napi_value NapiAudioSessionMgr::CreateSessionManagerWrapper(napi_env env)
     }
     status = napi_new_instance(env, constructor, PARAM0, nullptr, &result);
     if (status != napi_ok) {
-        AUDIO_ERR_LOG("napi_new_instance failed, sttaus:%{public}d", status);
+        AUDIO_ERR_LOG("napi_new_instance failed, status:%{public}d", status);
         goto fail;
     }
     return result;
@@ -312,7 +312,7 @@ void NapiAudioSessionMgr::UnregisterCallback(napi_env env, napi_value jsThis)
     AUDIO_ERR_LOG("Unset AudioSessionCallback Success");
 }
 
-void NapiAudioSessionMgr::UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args)
+void NapiAudioSessionMgr::UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args, size_t len)
 {
     AUDIO_INFO_LOG("UnregisterCallback");
     NapiAudioSessionMgr *napiSessionMgr = nullptr;
@@ -359,7 +359,7 @@ napi_value NapiAudioSessionMgr::Off(napi_env env, napi_callback_info info)
         napi_valuetype handler = napi_undefined;
         napi_typeof(env, args[PARAM1], &handler);
         if (handler == napi_function) {
-            UnregisterCallbackCarryParam(env, jsThis, args);
+            UnregisterCallbackCarryParam(env, jsThis, args, sizeof(args));
         } else {
             UnregisterCallback(env, jsThis);
         }

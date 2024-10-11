@@ -17,7 +17,7 @@
 #endif
 
 #include "audio_speed.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
 
@@ -56,28 +56,38 @@ int32_t AudioSpeed::LoadChangeSpeedFunc()
     switch (format_) {
         case SAMPLE_U8:
             formatSize_ = 1; // size is 1
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor8Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor8Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
             break;
         case SAMPLE_S16LE:
             formatSize_ = 2; // size is 2
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor16Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor16Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
             break;
         case SAMPLE_S24LE:
             formatSize_ = 3; // size is 3
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor24Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor24Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
             break;
         case SAMPLE_S32LE:
             formatSize_ = 4; // size is 4
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor32Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor32Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
             break;
         default:
             formatSize_ = 2; // size is 2
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor16Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor16Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
     }
     AUDIO_INFO_LOG("load change speed func for format %{public}zu", format_);
     return SUCCESS;
@@ -136,15 +146,15 @@ int32_t AudioSpeed::ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
         AUDIO_ERR_LOG("BufferSize is illegal");
         return ERR_MEMORY_ALLOC_FAILED;
     }
-    float* bitTofloat = new(std::nothrow) float[bufferSize];
-    if (!bitTofloat) {
+    float *bitTofloat = new (std::nothrow) float[bufferSize];
+    if (bitTofloat == nullptr) {
         AUDIO_ERR_LOG("bitTofloat nullptr, No memory");
         return ERR_MEMORY_ALLOC_FAILED;
     }
     ConvertFrom24BitToFloat(bufferSize / formatSize_, buffer, bitTofloat);
 
-    float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
-    if (!speedBuf) {
+    float *speedBuf = new (std::nothrow) float[MAX_BUFFER_SIZE];
+    if (speedBuf == nullptr) {
         AUDIO_ERR_LOG("speedBuf nullptr, No memory");
         delete [] bitTofloat;
         return ERR_MEMORY_ALLOC_FAILED;
@@ -166,15 +176,15 @@ int32_t AudioSpeed::ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
         AUDIO_ERR_LOG("BufferSize is illegal");
         return ERR_MEMORY_ALLOC_FAILED;
     }
-    float* bitTofloat = new(std::nothrow) float[bufferSize];
-    if (!bitTofloat) {
+    float *bitTofloat = new (std::nothrow) float[bufferSize];
+    if (bitTofloat == nullptr) {
         AUDIO_ERR_LOG("bitTofloat nullptr, No memory");
         return ERR_MEMORY_ALLOC_FAILED;
     }
     ConvertFrom32BitToFloat(bufferSize / formatSize_, reinterpret_cast<int32_t *>(buffer), bitTofloat);
 
-    float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
-    if (!speedBuf) {
+    float *speedBuf = new (std::nothrow) float[MAX_BUFFER_SIZE];
+    if (speedBuf == nullptr) {
         AUDIO_ERR_LOG("speedBuf nullptr, No memory");
         delete [] bitTofloat;
         return ERR_MEMORY_ALLOC_FAILED;

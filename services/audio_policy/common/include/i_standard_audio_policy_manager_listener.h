@@ -29,6 +29,7 @@ public:
     virtual void OnInterrupt(const InterruptEventInternal &interruptEvent) = 0;
     virtual void OnAvailableDeviceChange(const AudioDeviceUsage usage,
         const DeviceChangeAction &deviceChangeAction) = 0;
+    virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
@@ -37,6 +38,7 @@ public:
         ON_ERROR = 0,
         ON_INTERRUPT,
         ON_AVAILABLE_DEVICE_CAHNGE,
+        ON_QUERY_CLIENT_TYPE,
     };
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioManagerListener");
 };

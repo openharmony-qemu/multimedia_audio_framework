@@ -28,7 +28,7 @@ public:
     ~PaRendererStreamImpl();
     int32_t InitParams();
     int32_t Start() override;
-    int32_t Pause() override;
+    int32_t Pause(bool isStandby = false) override;
     int32_t Flush() override;
     int32_t Drain() override;
     int32_t Stop() override;
@@ -54,6 +54,7 @@ public:
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override;
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
+    void AbortCallback(int32_t abortTimes) override;
     // offload
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode() override;
@@ -92,7 +93,11 @@ private:
     int32_t OffloadUpdatePolicy(AudioOffloadType statePolicy, bool force);
     void ResetOffload();
     int32_t OffloadUpdatePolicyInWrite();
+    int32_t UpdateEffectSessionInfo();
     // offload end
+
+    uint32_t GetEffectChainLatency();
+    uint32_t GetA2dpOffloadLatency();
 
     void UpdatePaTimingInfo();
 
@@ -122,10 +127,12 @@ private:
     int32_t privacyType_ = 0;
 
     float powerVolumeFactor_ = 1.0f;
+    bool isStandbyPause_ = false;
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
-
+    // Only for debug
+    int32_t abortFlag_ = 0;
     // offload
     bool offloadEnable_ = false;
     int64_t offloadTsOffset_ = 0;
@@ -134,10 +141,11 @@ private:
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
     // offload end
-    std::mutex fadingMutex_;
-    std::condition_variable fadingCondition_;
+    float clientVolume_ = 1.0f;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
+    std::mutex fadingMutex_;
+    std::condition_variable fadingCondition_;
 
     // record latency
     uint64_t preLatency_ = 50000; // 50000 default
