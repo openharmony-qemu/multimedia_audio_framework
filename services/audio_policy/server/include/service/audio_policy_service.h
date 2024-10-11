@@ -662,7 +662,7 @@ private:
 
     int32_t HandleActiveDevice(DeviceType deviceType);
 
-    int32_t LoadA2dpModule(DeviceType deviceType);
+    int32_t LoadA2dpModule();
 
     int32_t LoadUsbModule(string deviceInfo, DeviceRole deviceRole);
 
@@ -780,7 +780,7 @@ private:
 
     std::string GetVolumeGroupType(DeviceType deviceType);
 
-    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
+    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo);
 
     void RemoveDeviceInRouterMap(std::string networkId);
 
@@ -876,7 +876,7 @@ private:
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
 
-    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc);
+    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc);
 
     void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
 
