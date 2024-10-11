@@ -619,7 +619,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
         }
         if (!PA_STREAM_IS_GOOD(state)) {
             int32_t error = pa_context_errno(context_);
-            AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
+            AUDIO_ERR_LOG("connection to stream error: %{public}s, state: %{public}d", pa_strerror(error), state);
             return ERR_INVALID_OPERATION;
         }
         AudioXCollie audioXCollie("PaAdapterManager::ConnectStreamToPA", CONNECT_STREAM_TIMEOUT_IN_SEC,

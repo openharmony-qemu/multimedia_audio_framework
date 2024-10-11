@@ -1135,5 +1135,10 @@ int32_t RendererInServer::SetClientVolume()
     int32_t ret = stream_->SetClientVolume(clientVolume);
     return ret;
 }
+
+int32_t RendererInServer::GetActualStreamManagerType() const noexcept
+{
+    return managerType_;
+}
 } // namespace AudioStandard
 } // namespace OHOS
