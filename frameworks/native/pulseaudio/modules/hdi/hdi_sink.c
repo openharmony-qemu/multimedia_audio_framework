@@ -2802,6 +2802,14 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     pa_assert(i);
     pa_sink_input_assert_ref(i);
     pa_assert(i->sink);
+
+    const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
+    const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
+    const bool stopping = state == PA_SINK_INPUT_UNLINKED;
+
+    corking ? pa_atomic_store(&i->isFirstReaded, 0) : (void)0;
+    starting ? pa_atomic_store(&i->isFirstReaded, 1) : (void)0;
+
     if (!strcmp(i->sink->name, SINK_NAME_INNER_CAPTURER) ||
         !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER) ||
         !strcmp(i->sink->driver, "module_split_stream_sink.c")) {
@@ -2825,13 +2833,6 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     if (i->thread_info.state == state) {
         return;
     }
-
-    const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
-    const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
-    const bool stopping = state == PA_SINK_INPUT_UNLINKED;
-
-    corking ? pa_atomic_store(&i->isFirstReaded, 0) : (void)0;
-    starting ? pa_atomic_store(&i->isFirstReaded, 1) : (void)0;
 
     if (!corking && !starting && !stopping) {
         AUDIO_WARNING_LOG("PaInputStateChangeCb, input state change: invalid");
