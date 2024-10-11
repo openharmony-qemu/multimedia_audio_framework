@@ -61,6 +61,13 @@ enum ScoCategory : int32_t {
     SCO_VIRTUAL = 1,
     SCO_RECOGNITION = 2,
 };
+
+enum RecognitionStatus : int32_t {
+    RECOGNITION_CONNECTING = 0,
+    RECOGNITION_CONNECTED = 1,
+    RECOGNITION_DISCONNECTING = 2,
+    RECOGNITION_DISCONNECTED = 3,
+};
 } // namespace Bluetooth
 } // namespace OHOS
 
