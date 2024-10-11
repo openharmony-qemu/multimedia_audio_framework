@@ -8341,8 +8341,6 @@ void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int
             }
         } else {
             OffloadStreamReleaseCheck(*offloadSessionID_);
-
-
         }
     }
 }
@@ -8589,7 +8587,7 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
     GetAllRunningStreamSession(allSessions);
     OffloadStopPlaying(allSessions);
     a2dpOffloadFlag_ = NO_A2DP_DEVICE;
-    for(auto it = allSessions.begin(); it != allSessions.end(); it++) {
+    for (auto it = allSessions.begin(); it != allSessions.end(); ++it) {
         ResetOffloadMode(*it);
     }
 }
