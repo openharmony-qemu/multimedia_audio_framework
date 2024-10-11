@@ -985,13 +985,13 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
         pa_xfree, pa_xfree);
 
     u->sceneToPreResamplerMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
-        NULL, (pa_free_cb_t) pa_resampler_free);
+        pa_xfree, (pa_free_cb_t) pa_resampler_free);
 
     u->sceneToEcResamplerMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
-        NULL, (pa_free_cb_t) pa_resampler_free);
+        pa_xfree, (pa_free_cb_t) pa_resampler_free);
 
     u->sceneToMicRefResamplerMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
-        NULL, (pa_free_cb_t) pa_resampler_free);
+        pa_xfree, (pa_free_cb_t) pa_resampler_free);
 }
 
 static void InitDifferentAdapterEcAttr(struct Userdata *u, CaptureAttr *attr)
@@ -1225,5 +1225,4 @@ void PaHdiSourceFree(pa_source *s)
     pa_source_assert_ref(s);
     pa_assert_se(u = s->userdata);
     UserdataFree(u);
-    s->userdata = NULL;
 }
