@@ -73,7 +73,7 @@ public:
     MockPolicyProvider() {};
     ~MockPolicyProvider() {};
 
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo) override;
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) override;
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
 
@@ -95,7 +95,7 @@ public:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 
-int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo)
 {
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         deviceInfo.deviceRole = OUTPUT_DEVICE;
@@ -227,7 +227,7 @@ void InitAudioServer()
     wrapper->InitSharedVolume(buffer);
     AudioProcessConfig config;
     DeviceInfo deviceInfo;
-    wrapper->GetProcessDeviceInfo(config, deviceInfo);
+    wrapper->GetProcessDeviceInfo(config, true, deviceInfo);
     wrapper->SetWakeUpAudioCapturerFromAudioServer(config);
     wrapper->NotifyCapturerAdded(config.capturerInfo, config.streamInfo, 0);
     wrapper->NotifyWakeUpCapturerRemoved();

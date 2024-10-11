@@ -316,7 +316,7 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
         "Wrong usage ,should not be dualtone");
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (!ret) {
         AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
         return false;
@@ -701,7 +701,7 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 {
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (ret) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
             "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
