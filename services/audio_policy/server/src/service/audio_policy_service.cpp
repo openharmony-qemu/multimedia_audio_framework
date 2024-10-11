@@ -6332,7 +6332,8 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
     if (isFastControlled_ && (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
         std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
         const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_NORMAL, "GetPreferredOutputStreamType, Audio server Proxy is null");
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_NORMAL,
+            "GetPreferredOutputStreamType, Audio server Proxy is null");
         std::string result = gsp->GetAudioParameter(bundleNamePre);
         if (result == "true") {
             AUDIO_INFO_LOG("%{public}s not in fast list", bundleName.c_str());
