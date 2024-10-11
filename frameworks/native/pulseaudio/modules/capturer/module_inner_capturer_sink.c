@@ -45,6 +45,7 @@
 #include "securec.h"
 #include "audio_common_log.h"
 #include "audio_utils_c.h"
+#include "audio_volume_c.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Inner Capturer Sink"));
@@ -63,6 +64,7 @@ PA_MODULE_USAGE(
 #define DEFAULT_SINK_NAME "InnerCapturer"
 #define DEFAULT_BUFFER_SIZE 8192  // same as HDI Sink
 #define PA_ERR (-1)
+const char *SINK_NAME_INNER_CAPTURER = "InnerCapturerSink";
 
 struct userdata {
     pa_core *core;
@@ -78,6 +80,8 @@ struct userdata {
     pa_usec_t timestamp;
 
     pa_idxset *formats;
+
+    bool update_volume;
 };
 
 static const char * const VALID_MODARGS[] = {
@@ -205,11 +209,59 @@ do_nothing:
     pa_sink_process_rewind(u->sink, 0);
 }
 
+static const char *SafeProplistGets(const pa_proplist *p, const char *key, const char *defstr)
+{
+    const char *res = pa_proplist_gets(p, key);
+    if (res == NULL) {
+        return defstr;
+    }
+    return res;
+}
+
+static void SetSinkVolumeBySinkName(pa_sink *s)
+{
+    pa_assert(s);
+    void *state = NULL;
+    pa_sink_input *input;
+    while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
+        pa_sink_input_assert_ref(input);
+        if (input->thread_info.state != PA_SINK_INPUT_RUNNING) {
+            continue;
+        }
+        const char *streamType = SafeProplistGets(input->proplist, "stream.type", "NULL");
+        const char *sessionIDStr = SafeProplistGets(input->proplist, "stream.sessionID", "NULL");
+        uint32_t sessionID = sessionIDStr != NULL ? atoi(sessionIDStr) : 0;
+        float volumeFloat = GetCurVolume(sessionID, streamType, s->name);
+        uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
+        pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
+    }
+}
+
+static void UnsetSinkVolume(pa_sink *s)
+{
+    pa_assert(s);
+    void *state = NULL;
+    pa_sink_input *input;
+    while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
+        pa_sink_input_assert_ref(input);
+        if (input->thread_info.state != PA_SINK_INPUT_RUNNING) {
+            continue;
+        }
+        uint32_t volume = pa_sw_volume_from_linear(1.0f);
+        pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
+    }
+}
+
 static void ProcessRender(struct userdata *u, pa_usec_t now)
 {
     size_t ate = 0;
 
     pa_assert(u);
+
+    // update use volume
+    if (u->update_volume) {
+        SetSinkVolumeBySinkName(u->sink);
+    }
 
     /* This is the configured latency. Sink inputs connected to us
     might not have a single frame more than the maxrequest value
@@ -231,6 +283,10 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
         if (ate >= u->sink->thread_info.max_request) {
             break;
         }
+    }
+
+    if (u->update_volume) {
+        UnsetSinkVolume(u->sink);
     }
 }
 
@@ -356,6 +412,13 @@ int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
     u->sink->get_formats = SinkGetFormatsCb;
     u->sink->set_formats = SinkSetFormatsCb;
     u->sink->userdata = u;
+
+    // InnerCapturer not need update volume, others need.
+    if (!strcmp(u->sink->name, SINK_NAME_INNER_CAPTURER)) {
+        u->update_volume = false;
+    } else {
+        u->update_volume = true;
+    }
 
     return 0;
 }

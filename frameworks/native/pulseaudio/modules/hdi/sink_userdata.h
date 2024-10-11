@@ -82,7 +82,6 @@ struct Userdata {
     pa_hashmap *streamAvailableMap;
     struct {
         int32_t sessionID;
-        bool firstWrite;
         bool firstWriteHdi; // for set volume onstart, avoid mute
         pa_usec_t pos;
         pa_usec_t hdiPos;

@@ -188,6 +188,8 @@ public:
     void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
 
     void HandleRingerMode(AudioRingerMode ringerMode);
+
+    void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
 private:
     friend class PolicyCallbackImpl;
 
@@ -237,6 +239,8 @@ private:
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
+    void SetAudioVolume(AudioStreamType streamType, float volumeDb);
+    void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
@@ -309,6 +313,7 @@ private:
     bool isLoaded_ = false;
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
+    sptr<IStandardAudioService> audioServerProxy_ = nullptr;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -361,8 +366,30 @@ public:
         }
     }
 
+    void OnSetVolumeDbCb()
+    {
+        if (!isFirstBoot_) {
+            return;
+        }
+        isFirstBoot_ = false;
+        static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
+            STREAM_VOICE_CALL,
+            STREAM_RING,
+            STREAM_MUSIC,
+            STREAM_VOICE_ASSISTANT,
+            STREAM_ALARM,
+            STREAM_ACCESSIBILITY,
+            STREAM_ULTRASONIC,
+            STREAM_ALL
+        };
+        for (auto &volumeType : VOLUME_TYPE_LIST) {
+            audioAdapterManager_->SetVolumeDb(volumeType);
+        }
+    }
+
 private:
     AudioAdapterManager *audioAdapterManager_;
+    bool isFirstBoot_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

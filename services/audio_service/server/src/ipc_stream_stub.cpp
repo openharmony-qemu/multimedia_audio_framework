@@ -69,6 +69,8 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetSilentModeAndMixWithOthers(data, reply);
         case ON_SET_CLIENT_VOLUME:
             return HandleSetClientVolume(data, reply);
+        case ON_SET_MUTE:
+            return HandleSetMute(data, reply);
         case ON_REGISTER_THREAD_PRIORITY:
             return HandleRegisterThreadPriority(data, reply);
         default:
@@ -391,6 +393,13 @@ int32_t IpcStreamStub::HandleSetClientVolume(MessageParcel &data, MessageParcel 
 {
     (void)data;
     reply.WriteInt32(SetClientVolume());
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleSetMute(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    reply.WriteInt32(SetMute(isMute));
     return AUDIO_OK;
 }
 

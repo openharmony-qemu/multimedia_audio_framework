@@ -24,6 +24,7 @@
 
 #include "audio_volume_parser.h"
 #include "audio_utils.h"
+#include "audio_volume.h"
 
 using namespace std;
 
@@ -361,6 +362,12 @@ void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
     volumeDataMaintainer_.SaveRingerMode(ringerMode);
 }
 
+void AudioAdapterManager::SetAudioServerProxy(sptr<IStandardAudioService> gsp)
+{
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "audioServerProxy null");
+    audioServerProxy_ = gsp;
+}
+
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
     AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
@@ -400,6 +407,9 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         AUDIO_INFO_LOG("volumeDb: %{public}f", volumeDb);
     }
 
+    // audio volume
+    SetAudioVolume(streamType, volumeDb);
+
     return audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
 }
 
@@ -407,6 +417,11 @@ int32_t AudioAdapterManager::SetVolumeDbForVolumeTypeGroup(const std::vector<Aud
     float volumeDb)
 {
     int32_t result = SUCCESS;
+    // audio volume
+    if (volumeTypeGroup.size() > 0) {
+        SetAudioVolume(volumeTypeGroup[0], volumeDb);
+    }
+
     for (auto &streamType: volumeTypeGroup) {
         result = audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
         if (result != SUCCESS) {
@@ -415,6 +430,62 @@ int32_t AudioAdapterManager::SetVolumeDbForVolumeTypeGroup(const std::vector<Aud
         }
     }
     return result;
+}
+ 
+void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volumeDb)
+{
+    static std::unordered_map<DeviceType, std::vector<std::string>> deviceClassMap = {
+        {DEVICE_TYPE_SPEAKER, {PRIMARY_CLASS, MCH_CLASS, REMOTE_CLASS, OFFLOAD_CLASS}},
+        {DEVICE_TYPE_USB_HEADSET, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS}},
+        {DEVICE_TYPE_BLUETOOTH_A2DP, {A2DP_CLASS, PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS}},
+        {DEVICE_TYPE_BLUETOOTH_SCO, {PRIMARY_CLASS, MCH_CLASS}},
+        {DEVICE_TYPE_EARPIECE, {PRIMARY_CLASS, MCH_CLASS}},
+        {DEVICE_TYPE_WIRED_HEADSET, {PRIMARY_CLASS, MCH_CLASS}},
+        {DEVICE_TYPE_WIRED_HEADPHONES, {PRIMARY_CLASS, MCH_CLASS}},
+        {DEVICE_TYPE_USB_ARM_HEADSET, {USB_CLASS}},
+        {DEVICE_TYPE_REMOTE_CAST, {REMOTE_CAST_INNER_CAPTURER_SINK_NAME}},
+        {DEVICE_TYPE_DP, {DP_CLASS}},
+        {DEVICE_TYPE_FILE_SINK, {FILE_CLASS}},
+        {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
+    };
+
+    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    bool isMuted = GetStreamMute(volumeType);
+    int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
+    if (GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && volumeType == STREAM_MUSIC) {
+        volumeDb = isMuted ? 0.0f : 0.63957f; // 0.63957 = -4dB
+    }
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
+    auto it = deviceClassMap.find(GetActiveDevice());
+    if (it == deviceClassMap.end()) {
+        AUDIO_ERR_LOG("unkown device type %{public}d", GetActiveDevice());
+        return;
+    }
+    for (auto &deviceClass : it->second) {
+        SystemVolume systemVolume(volumeType, deviceClass, volumeDb, volumeLevel, isMuted);
+        if (deviceClass != OFFLOAD_CLASS) {
+            audioVolume->SetSystemVolume(systemVolume);
+        } else if (deviceClass == OFFLOAD_CLASS && volumeType == STREAM_MUSIC) {
+            audioVolume->SetSystemVolume(systemVolume);
+            SetOffloadVolume(volumeType, volumeDb);
+        }
+    }
+}
+
+void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float volumeDb)
+{
+    if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
+        return;
+    }
+    DeviceType dev = GetActiveDevice();
+    if (!(dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_BLUETOOTH_A2DP || dev == DEVICE_TYPE_USB_HEADSET)) {
+        return;
+    }
+    CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    audioServerProxy_->OffloadSetVolume(volumeDb);
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
@@ -554,7 +625,33 @@ int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSu
 
 bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
+    static std::unordered_map<std::string, std::string> sinkNameMap = {
+        {PRIMARY_SPEAKER, PRIMARY_CLASS},
+        {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
+        {BLUETOOTH_SPEAKER, A2DP_CLASS},
+        {MCH_PRIMARY_SPEAKER, MCH_CLASS},
+        {USB_SPEAKER, USB_CLASS},
+        {DP_SINK, DP_CLASS},
+        {FILE_SINK, FILE_CLASS},
+        {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CAST_INNER_CAPTURER_SINK_NAME},
+    };
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "SetSinkMute audio adapter null");
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume, false, "SetSinkMute audioVolume handle null");
+    auto it = sinkNameMap.find(sinkName);
+    for (auto &volumeType : VOLUME_TYPE_LIST) {
+        if (it != sinkNameMap.end()) {
+            if ((it->second == OFFLOAD_CLASS && volumeType == STREAM_MUSIC) ||
+                it->second != OFFLOAD_CLASS) {
+                audioVolume->SetSystemVolumeMute(volumeType, it->second, isMute);
+            }
+        } else if (sinkName.find("_out") != std::string::npos &&
+            sinkName.find(LOCAL_NETWORK_ID) == std::string::npos) {
+            audioVolume->SetSystemVolumeMute(volumeType, REMOTE_CLASS, isMute);
+        } else {
+            AUDIO_ERR_LOG("unkown sink name %{public}s", sinkName.c_str());
+        }
+    }
 
     return audioServiceAdapter_->SetSinkMute(sinkName, isMute, isSync);
 }

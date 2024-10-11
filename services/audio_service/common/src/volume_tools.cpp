@@ -199,14 +199,14 @@ int32_t VolumeTools::Process(const BufferDesc &buffer, AudioSampleFormat format,
     }
 
     size_t frameSize = buffer.bufLength / byteSizePerFrame;
-    if (frameSize <= MIN_FRAME_SIZE) {
+    if (frameSize < MIN_FRAME_SIZE) {
         AUDIO_ERR_LOG("Process failed with invalid frameSize, size is %{public}zu", frameSize);
         return ERR_INVALID_PARAM;
     }
 
     float volStep[CHANNEL_MAX] = {};
     for (size_t channelIdx = 0; channelIdx < vols.channel; channelIdx++) {
-        if (vols.volEnd[channelIdx] == vols.volStart[channelIdx]) {
+        if (vols.volEnd[channelIdx] == vols.volStart[channelIdx] || frameSize == MIN_FRAME_SIZE) {
             volStep[channelIdx] = 0.0;
         } else {
             volStep[channelIdx] = (static_cast<float>(vols.volEnd[channelIdx] - vols.volStart[channelIdx])) /

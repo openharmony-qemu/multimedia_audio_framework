@@ -33,6 +33,7 @@ static const std::string DP_CLASS = "dp";
 static const std::string FILE_CLASS = "file_io";
 static const std::string REMOTE_CLASS = "remote";
 static const std::string OFFLOAD_CLASS = "offload";
+static const std::string MCH_CLASS = "multichannel";
 static const std::string INVALID_CLASS = "invalid";
 static const std::string BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const std::string PRIMARY_SPEAKER = "Speaker";

@@ -512,6 +512,20 @@ int32_t IpcStreamProxy::SetClientVolume()
     return reply.ReadInt32();
 }
 
+int32_t IpcStreamProxy::SetMute(bool isMute)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteBool(isMute);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_MUTE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set mute failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
 int32_t IpcStreamProxy::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
 {
     MessageParcel data;

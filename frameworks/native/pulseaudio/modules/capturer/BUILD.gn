@@ -17,8 +17,10 @@ import("../../../../../config.gni")
 config("capturer_config") {
   visibility = [ ":*" ]
 
-  include_dirs =
-      [ "../../../../../interfaces/inner_api/native/audiocommon/include" ]
+  include_dirs = [
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../services/audio_service/common/include",
+  ]
 
   cflags = [
     "-Wall",
@@ -47,7 +49,10 @@ ohos_shared_library("module-inner-capturer-sink") {
     "--no-undefined",
   ]
 
-  deps = [ "../../../audioutils:audio_utils" ]
+  deps = [
+    "../../../../../services/audio_service:audio_common",
+    "../../../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "hilog:libhilog",

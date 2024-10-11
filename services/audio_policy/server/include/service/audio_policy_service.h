@@ -756,12 +756,6 @@ private:
 
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
 
-    void SetOffloadVolume(AudioStreamType streamType, int32_t volume);
-
-    void SetOffloadMute(AudioStreamType streamType, bool mute);
-
-    AudioStreamType OffloadStreamType();
-
     void RemoveDeviceInRouterMap(std::string networkId);
 
     void RemoveDeviceInFastRouterMap(std::string networkId);

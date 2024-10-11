@@ -32,6 +32,7 @@
 #include "res_sched_client.h"
 #endif
 #include "media_monitor_manager.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -160,6 +161,8 @@ int32_t RendererInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
+    AudioVolume::GetInstance()->AddStreamVolume(streamIndex_, processConfig_.streamType,
+        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
@@ -836,6 +839,7 @@ int32_t RendererInServer::Release()
         }
     }
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
+    AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
@@ -948,6 +952,7 @@ int32_t RendererInServer::DisableInnerCap()
     AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_);
     // in plan: call stop?
     IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
+    AudioVolume::GetInstance()->RemoveStreamVolume(dupStreamIndex_);
     dupStream_ = nullptr;
 
     return ERROR;
@@ -959,6 +964,8 @@ int32_t RendererInServer::InitDupStream()
     int32_t ret = IStreamManager::GetDupPlaybackManager().CreateRender(processConfig_, dupStream_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dupStream_ != nullptr, ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     dupStreamIndex_ = dupStream_->GetStreamIndex();
+    AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex_, processConfig_.streamType,
+        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid);
 
     dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex_);
     dupStream_->RegisterStatusCallback(dupStreamCallback_);
@@ -1000,6 +1007,7 @@ int32_t RendererInServer::DisableDualTone()
     isDualToneEnabled_ = false;
     AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d", dualToneStreamIndex_, status_);
     IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
+    AudioVolume::GetInstance()->RemoveStreamVolume(dualToneStreamIndex_);
     dupStream_ = nullptr;
 
     return ERROR;
@@ -1014,6 +1022,8 @@ int32_t RendererInServer::InitDualToneStream()
         ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
     AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
+    AudioVolume::GetInstance()->AddStreamVolume(dualToneStreamIndex_, processConfig_.streamType,
+        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid);
 
     isDualToneEnabled_ = true;
 
@@ -1057,6 +1067,12 @@ int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
             dualToneStream_->UpdateMaxLength(350); // 350 for cover offload
         }
     }
+    // monitor
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
+    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
+    AUDIO_DEBUG_LOG("sessionId %{public}u monitor volume:%{public}f [volumeType:%{public}d]",
+        streamIndex_, volume, volumeType);
+    AudioVolume::GetInstance()->Monitor(streamIndex_, true);
     return ret;
 }
 
@@ -1092,16 +1108,9 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
     }
 
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
-    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    Volume vol = {false, 0.0f, 0};
-    PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-    float systemVol = vol.isMute ? 0.0f : vol.volumeFloat;
-    if (PolicyHandler::GetInstance().IsAbsVolumeSupported() &&
-        PolicyHandler::GetInstance().GetActiveOutPutDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        systemVol = 1.0f; // 1.0f for a2dp abs volume
-    }
-    AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d deviceType:%{public}d systemVol:"
-        "%{public}f]", streamIndex_, volume, volumeType, deviceType, systemVol);
+    float systemVol = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
+    AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d systemVol:"
+        "%{public}f]", streamIndex_, volume, volumeType, systemVol);
     return stream_->OffloadSetVolume(systemVol * volume);
 }
 
@@ -1143,6 +1152,11 @@ bool RendererInServer::IsHightResolution() const noexcept
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
+    if (silentModeAndMixWithOthers_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
+    } else {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
+    }
     return SUCCESS;
 }
 
@@ -1154,7 +1168,22 @@ int32_t RendererInServer::SetClientVolume()
     }
     float clientVolume = audioServerBuffer_->GetStreamVolume();
     int32_t ret = stream_->SetClientVolume(clientVolume);
+    if (IsVolumeSame(MIN_FLOAT_VOLUME, clientVolume, AUDIO_VOLOMUE_EPSILON)) {
+        AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, 0.0f);
+    } else {
+        AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, 1.0f);
+    }
     return ret;
+}
+
+int32_t RendererInServer::SetMute(bool isMute)
+{
+    if (isMute) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
+    } else {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
+    }
+    return SUCCESS;
 }
 
 void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)

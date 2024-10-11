@@ -56,9 +56,6 @@ public:
     static void PaMoveSourceOutputCb(pa_context *c, int success, void *userdata);
     static void PaContextStateCb(pa_context *c, void *userdata);
     static void PaModuleLoadCb(pa_context *c, uint32_t idx, void *userdata);
-    static void PaGetSinkInputInfoVolumeNoSignalCb(pa_context *c, const pa_sink_input_info *i, int eol,
-        void *userdata);
-    static void HandleSinkInputInfoVolume(pa_context *c, const pa_sink_input_info *i, void *userdata);
     static void PaSubscribeCb(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
     static void PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PaGetAllSourceOutputsCb(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);
