@@ -869,6 +869,7 @@ bool FastAudioStream::RestoreAudioStream()
     }
     switch (oldState) {
         case RUNNING:
+            CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
             if (eMode_ == AUDIO_MODE_PLAYBACK) {
                 ret = processClient_->SaveDataCallback(spkProcClientCb_);
             } else if (eMode_ == AUDIO_MODE_RECORD) {

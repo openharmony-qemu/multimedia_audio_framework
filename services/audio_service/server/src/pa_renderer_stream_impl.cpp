@@ -107,6 +107,7 @@ int32_t PaRendererStreamImpl::InitParams()
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    CHECK_AND_RETURN_RET_LOG(sampleSpec != nullptr, ERR_OPERATION_FAILED, "pa_sample_spec sampleSpec is nullptr");
     AUDIO_INFO_LOG("sampleSpec: channels: %{public}u, formats: %{public}d, rate: %{public}d", sampleSpec->channels,
         sampleSpec->format, sampleSpec->rate);
 
