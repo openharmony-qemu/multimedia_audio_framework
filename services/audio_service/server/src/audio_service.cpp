@@ -903,7 +903,14 @@ int32_t AudioService::SetOffloadMode(uint32_t sessionId, int32_t state, bool isA
     }
     AUDIO_INFO_LOG("Set offload mode for renderer %{public}u", sessionId);
     std::shared_ptr<RendererInServer> renderer = allRendererMap_[sessionId].lock();
-    return renderer->SetOffloadMode(state, isAppBack);
+    if (renderer == nullptr) {
+        AUDIO_WARNING_LOG("RendererInServer is nullptr");
+        lock.unlock();
+        return ERROR;
+    }
+    int32_t ret = renderer->SetOffloadMode(state, isAppBack);
+    lock.unlock();
+    return ret;
 }
 
 int32_t AudioService::UnsetOffloadMode(uint32_t sessionId)
@@ -915,6 +922,11 @@ int32_t AudioService::UnsetOffloadMode(uint32_t sessionId)
     }
     AUDIO_INFO_LOG("Set offload mode for renderer %{public}u", sessionId);
     std::shared_ptr<RendererInServer> renderer = allRendererMap_[sessionId].lock();
+    if (renderer == nullptr) {
+        AUDIO_WARNING_LOG("RendererInServer is nullptr");
+        lock.unlock();
+        return ERROR;
+    }
     int32_t ret = renderer->UnsetOffloadMode();
     lock.unlock();
     return ret;
