@@ -25,7 +25,7 @@ public:
     explicit PolicyProviderProxy(const sptr<IRemoteObject>& impl);
     virtual ~PolicyProviderProxy();
 
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo) override;
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) override;
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
 

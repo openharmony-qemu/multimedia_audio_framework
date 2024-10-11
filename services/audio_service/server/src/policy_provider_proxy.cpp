@@ -30,7 +30,7 @@ PolicyProviderProxy::~PolicyProviderProxy()
 {
 }
 
-int32_t PolicyProviderProxy::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+int32_t PolicyProviderProxy::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -39,6 +39,7 @@ int32_t PolicyProviderProxy::GetProcessDeviceInfo(const AudioProcessConfig &conf
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
     ProcessConfig::WriteConfigToParcel(config, data);
+    data.WriteBool(lockFlag);
     int ret = Remote()->SendRequest(IPolicyProviderMsg::GET_DEVICE_INFO, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "GetProcessDeviceInfo failed, error: %{public}d",
         ret);
