@@ -1218,7 +1218,6 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
     int32_t result = MEDIA;
     switch (volumeType) {
         case AudioStreamType::STREAM_VOICE_CALL:
-        case AudioStreamType::STREAM_VOICE_MESSAGE:
         case AudioStreamType::STREAM_VOICE_COMMUNICATION:
         case AudioStreamType::STREAM_VOICE_CALL_ASSISTANT:
             result = NapiAudioEnum::VOICE_CALL;
@@ -1237,6 +1236,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
         case AudioStreamType::STREAM_SPEECH:
         case AudioStreamType::STREAM_NAVIGATION:
         case AudioStreamType::STREAM_CAMCORDER:
+        case AudioStreamType::STREAM_VOICE_MESSAGE:
             result = NapiAudioEnum::MEDIA;
             break;
         case AudioStreamType::STREAM_ALARM:
