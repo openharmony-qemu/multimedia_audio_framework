@@ -52,7 +52,7 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static constexpr int64_t RECORD_DELAY_TIME = 4000000; // 4ms
-    static constexpr int64_t RECORD_VOIP_DELAY_TIME = 10000000; // 10ms
+    static constexpr int64_t RECORD_VOIP_DELAY_TIME = 20000000; // 20ms
     static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
     static constexpr int64_t PLAYBACK_DELAY_STOP_HDI_TIME = 10000000000; // 10s
     static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME = 200000000; // 200ms
