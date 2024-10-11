@@ -207,5 +207,12 @@ int32_t ProAudioStreamManager::ReleaseCapturer(uint32_t streamIndex)
     AUDIO_ERR_LOG("Unsupported operation: ReleaseCapturer");
     return SUCCESS;
 }
+
+int32_t ProAudioStreamManager::AddUnprocessStream(int32_t appUid)
+{
+    AUDIO_ERR_LOG("Unsupported operation: AddUnprocessStream");
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

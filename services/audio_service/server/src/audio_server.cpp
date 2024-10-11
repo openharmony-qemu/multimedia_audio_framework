@@ -453,6 +453,12 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
             value += it->first + "=" + it->second + ";";
+            if (it->first == "unprocess_audio_effect") {
+                int appUid = IPCSkeleton::GetCallingUid();
+                AUDIO_INFO_LOG("add unprocess UID [%{public}d]", appUid);
+                IStreamManager::GetRecorderManager().AddUnprocessStream(appUid);
+                continue;
+            }
             auto valueIter = subKeyIt->second.find("effect");
             if (valueIter != subKeyIt->second.end()) {
                 RecognizeAudioEffectType(key, it->first, it->second);
