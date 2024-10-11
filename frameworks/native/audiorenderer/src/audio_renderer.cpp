@@ -44,6 +44,7 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
 };
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
+constexpr int32_t TIME_OUT_SECONDS = 10;
 
 static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
 {
@@ -759,6 +760,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Pause");
+    AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
