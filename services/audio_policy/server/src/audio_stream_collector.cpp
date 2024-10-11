@@ -298,7 +298,8 @@ void AudioStreamCollector::ResetRendererStreamDeviceInfo(const AudioDeviceDescri
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
         if ((*it)->outputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
             (*it)->outputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
-            (*it)->outputDeviceInfo.networkId == updatedDesc.networkId_) {
+            (*it)->outputDeviceInfo.networkId == updatedDesc.networkId_ &&
+            (*it)->rendererState != RENDERER_RUNNING) {
             (*it)->outputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
             (*it)->outputDeviceInfo.macAddress = "";
             (*it)->outputDeviceInfo.networkId = LOCAL_NETWORK_ID;
@@ -312,7 +313,8 @@ void AudioStreamCollector::ResetCapturerStreamDeviceInfo(const AudioDeviceDescri
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
         if ((*it)->inputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
             (*it)->inputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
-            (*it)->inputDeviceInfo.networkId == updatedDesc.networkId_) {
+            (*it)->inputDeviceInfo.networkId == updatedDesc.networkId_ &&
+            (*it)->capturerState != CAPTURER_RUNNING) {
             (*it)->inputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
             (*it)->inputDeviceInfo.macAddress = "";
             (*it)->inputDeviceInfo.networkId = LOCAL_NETWORK_ID;
