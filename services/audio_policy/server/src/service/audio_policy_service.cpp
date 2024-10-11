@@ -8318,11 +8318,30 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
             a2dpOffloadFlag_ = receiveOffloadFlag;
         }
     } else if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
-        GetA2dpOffloadCodecAndSendToDsp();
         std::vector<int32_t> allSessions;
         GetAllRunningStreamSession(allSessions);
         OffloadStartPlaying(allSessions);
         UpdateEffectBtOffloadSupported(true);
+        ResetOffloadModeOnSpatializationChanged(allSessions);
+        GetA2dpOffloadCodecAndSendToDsp();
+    }
+}
+
+void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions)
+{
+    AudioSpatializationState spatialState =
+        AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState();
+    bool effectOffloadFlag = GetAudioEffectOffloadFlag();
+    AUDIO_INFO_LOG("spatialization: %{public}d, headTracking: %{public}d, effectOffloadFlag: %{public}d",
+        spatialState.spatializationEnabled, spatialState.headTrackingEnabled, effectOffloadFlag);
+    if (spatialState.spatializationEnabled) {
+        if (effectOffloadFlag) {
+            for (auto it = allSessions.begin(); it != allSessions.end(); it++) {
+                OffloadStreamSetCheck(*it);
+            }
+        } else {
+            OffloadStreamReleaseCheck(*offloadSessionID_);
+        }
     }
 }
 #endif
@@ -8568,6 +8587,9 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
     GetAllRunningStreamSession(allSessions);
     OffloadStopPlaying(allSessions);
     a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    for (auto it = allSessions.begin(); it != allSessions.end(); ++it) {
+        ResetOffloadMode(*it);
+    }
 }
 
 int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)

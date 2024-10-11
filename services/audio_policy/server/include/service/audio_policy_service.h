@@ -1101,6 +1101,7 @@ private:
     void HandleRemainingSource();
 
     bool GetAudioEffectOffloadFlag();
+    void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
 
     bool CheckSpatializationAndEffectState();
 
