@@ -362,7 +362,7 @@ public:
     void RegiestPolicy();
 
     // override for IPolicyProvider
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo);
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
 
@@ -940,10 +940,6 @@ private:
     void SetSafeVolumeCallback(AudioStreamType streamType);
 
     int32_t CheckActiveMusicTime();
-
-    int32_t GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
-
-    int32_t GetVoipRecordDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
 
     int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo, int32_t type,
         std::vector<sptr<AudioDeviceDescriptor>> &preferredDeviceList);
