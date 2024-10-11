@@ -6637,13 +6637,20 @@ void AudioPolicyService::RegiestPolicy()
     AUDIO_DEBUG_LOG("result:%{public}d", ret);
 }
 
-int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-            return GetVoipPlaybackDeviceInfo(config, deviceInfo);
+            AudioRendererInfo rendererInfo = config.rendererInfo;
+            std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList =
+                (lockFlag ? GetPreferredOutputDeviceDescriptors(rendererInfo, LOCAL_NETWORK_ID)
+                          : GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID));
+            int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
+                rendererInfo.originalFlag, preferredDeviceList[0]->networkId_);
+            deviceInfo.deviceRole = OUTPUT_DEVICE;
+            return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
         deviceInfo.deviceId = currentActiveDevice_.deviceId_;
         deviceInfo.networkId = currentActiveDevice_.networkId_;
@@ -6651,7 +6658,14 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.deviceRole = OUTPUT_DEVICE;
     } else {
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-            return GetVoipRecordDeviceInfo(config, deviceInfo);
+            AudioCapturerInfo capturerInfo = config.capturerInfo;
+            std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList =
+                (lockFlag ? GetPreferredInputDeviceDescriptors(capturerInfo, LOCAL_NETWORK_ID)
+                          : GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID));
+            int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
+                capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
+            deviceInfo.deviceRole = INPUT_DEVICE;
+            return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
         deviceInfo.deviceId = GetCurrentInputDevice().deviceId_;
         deviceInfo.networkId = LOCAL_NETWORK_ID;
@@ -6674,26 +6688,6 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     }
     deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
     return SUCCESS;
-}
-
-int32_t AudioPolicyService::GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
-{
-    AudioRendererInfo rendererInfo = config.rendererInfo;
-    std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredOutputDeviceDescriptors(rendererInfo);
-    int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-        rendererInfo.originalFlag, preferredDeviceList[0]->networkId_);
-    deviceInfo.deviceRole = OUTPUT_DEVICE;
-    return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
-}
-
-int32_t AudioPolicyService::GetVoipRecordDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
-{
-    AudioCapturerInfo capturerInfo = config.capturerInfo;
-    std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredInputDeviceDescriptors(capturerInfo);
-    int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
-        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
-    deviceInfo.deviceRole = INPUT_DEVICE;
-    return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }
 
 int32_t AudioPolicyService::GetVoipDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo, int32_t type,
