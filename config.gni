@@ -76,9 +76,6 @@ declare_args() {
   }
 
   audio_framework_feature_new_napi = true
-
-  multimedia_audio_framework_drivers = 
-    "//drivers/peripheral/audio/interfaces/include/"
 }
 
 third_party_path = "//third_party"

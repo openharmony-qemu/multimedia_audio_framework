@@ -40,7 +40,6 @@ config("hdi_config") {
     "../../../../../services/audio_service/common/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
   cflags = [
     "-Wall",
     "-Werror",
