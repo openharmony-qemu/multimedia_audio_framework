@@ -861,54 +861,6 @@ void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
     }
 }
 
-void UpdateEcAndMicRefArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
-{
-    if (!audioModuleInfo.ecType.empty()) {
-        args.append(" ec_type=");
-        args.append(audioModuleInfo.ecType);
-    }
-
-    if (!audioModuleInfo.ecAdapter.empty()) {
-        args.append(" ec_adapter=");
-        args.append(audioModuleInfo.ecAdapter);
-    }
-
-    if (!audioModuleInfo.ecSamplingRate.empty()) {
-        args.append(" ec_sampling_rate=");
-        args.append(audioModuleInfo.ecSamplingRate);
-    }
-
-    if (!audioModuleInfo.ecFormat.empty()) {
-        args.append(" ec_format=");
-        args.append(audioModuleInfo.ecFormat);
-    }
-
-    if (!audioModuleInfo.ecChannels.empty()) {
-        args.append(" ec_channels=");
-        args.append(audioModuleInfo.ecChannels);
-    }
-
-    if (!audioModuleInfo.openMicRef.empty()) {
-        args.append(" open_mic_ref=");
-        args.append(audioModuleInfo.openMicRef);
-    }
-
-    if (!audioModuleInfo.micRefRate.empty()) {
-        args.append(" mic_ref_rate=");
-        args.append(audioModuleInfo.micRefRate);
-    }
-
-    if (!audioModuleInfo.micRefFormat.empty()) {
-        args.append(" mic_ref_format=");
-        args.append(audioModuleInfo.micRefFormat);
-    }
-
-    if (!audioModuleInfo.micRefChannels.empty()) {
-        args.append(" mic_ref_channels=");
-        args.append(audioModuleInfo.micRefChannels);
-    }
-}
-
 void UpdateSourceArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.name.empty()) {
