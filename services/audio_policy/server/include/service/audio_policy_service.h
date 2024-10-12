@@ -903,9 +903,6 @@ private:
 
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
 
-    void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
-        SourceInfo &targetInfo);
-
     void ClearScoDeviceSuspendState(string macAddress = "");
 
     PipeInfo& GetPipeInfoByPipeName(std::string &supportPipe, AudioAdapterInfo &adapterInfo);
@@ -1018,8 +1015,6 @@ private:
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
     
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
-    int32_t GetAudioModuleInfoByName(const std::string &halName, const std::string &moduleName,
-        AudioModuleInfo &moudleInfo);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
     int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType, PipeInfo &pipeInfo);

@@ -845,23 +845,6 @@ HWTEST(AudioPolicyServiceExtUnitTest, GetPipeInfoByDeviceTypeForEc_001, TestSize
 }
 
 /**
- * @tc.name  : Test GetAudioModuleInfoByName.
- * @tc.number: GetAudioModuleInfoByName_001
- * @tc.desc  : Test GetAudioModuleInfoByName interfaces.
- */
-HWTEST(AudioPolicyServiceExtUnitTest, GetAudioModuleInfoByName_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    AudioEcInfo currentEcInfo = server->audioPolicyService_.GetAudioEcInfo();
-    AudioModuleInfo currentModule;
-    PipeInfo currentPipeInfo;
-
-    int32_t currentModuleRet = server->audioPolicyService_.GetAudioModuleInfoByName(
-        currentEcInfo.ecInputAdapter, currentPipeInfo.moduleName_, currentModule);
-    EXPECT_EQ(currentModuleRet, ERROR);
-}
-
-/**
  * @tc.name  : Test ReloadSourceModuleForEc.
  * @tc.number: ReloadSourceModuleForEc_001
  * @tc.desc  : Test ReloadSourceModuleForEc interfaces.
@@ -1086,22 +1069,6 @@ HWTEST(AudioPolicyServiceExtUnitTest, UpdateStreamMicRefInfo_001, TestSize.Level
     EXPECT_NE(moduleInfo.micRefChannels, "999");
 }
 #endif
-
-/**
- * @tc.name  : Test RectifyModuleInfo.
- * @tc.number: RectifyModuleInfo_001
- * @tc.desc  : Test RectifyModuleInfo interfaces.
- */
-HWTEST(AudioPolicyServiceExtUnitTest, RectifyModuleInfo_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    AudioModuleInfo moduleInfo;
-    std::list<AudioModuleInfo> moduleInfoList;
-    SourceInfo targetInfo;
-
-    server->audioPolicyService_.RectifyModuleInfo(moduleInfo, moduleInfoList, targetInfo);
-    EXPECT_EQ(moduleInfo.sourceType, "0");
-}
 
 /**
  * @tc.name  : Test TriggerAvailableDeviceChangedCallback.
