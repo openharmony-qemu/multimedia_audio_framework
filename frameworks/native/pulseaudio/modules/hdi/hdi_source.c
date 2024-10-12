@@ -30,7 +30,7 @@
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
 #include <pulsecore/mix.h>
-#include <pulsecore/memblockq.c>
+#include <pulsecore/memblockq.h>
 #include <pulsecore/source.h>
 #include <pulsecore/source-output.h>
 
