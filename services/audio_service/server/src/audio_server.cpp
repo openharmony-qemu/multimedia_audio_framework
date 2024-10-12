@@ -95,6 +95,7 @@ static const int32_t FAST_DUMPINFO_LEN = 2;
 static const int32_t BUNDLENAME_LENGTH_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
 constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 40;
+const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -1610,6 +1611,10 @@ int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
 int32_t AudioServer::CheckMaxRendererInstances()
 {
     int32_t maxRendererInstances = PolicyHandler::GetInstance().GetMaxRendererInstances();
+    if (maxRendererInstances <= 0) {
+        maxRendererInstances = DEFAULT_MAX_RENDERER_INSTANCES;
+    }
+
     if (AudioService::GetInstance()->GetCurrentRendererStreamCnt() >= maxRendererInstances) {
         int32_t mostAppUid = AudioService::GetInstance()->GetCreatedAudioStreamMostUid();
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
