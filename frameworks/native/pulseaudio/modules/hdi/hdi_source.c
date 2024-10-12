@@ -39,9 +39,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "audio_types.h"
-#include "audio_manager.h"
-
 #include "source_userdata.h"
 #include "securec.h"
 #include "audio_hdi_log.h"
@@ -50,6 +47,8 @@
 #include "audio_source_type.h"
 #include "audio_hdiadapter_info.h"
 #include "capturer_source_adapter.h"
+#include "v4_0/audio_types.h"
+#include "v4_0/iaudio_manager.h"
 #include "audio_enhance_chain_adapter.h"
 #include "hdi_adapter_manager_api.h"
 #include "audio_utils_c.h"
