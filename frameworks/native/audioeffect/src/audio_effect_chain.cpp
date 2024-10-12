@@ -33,6 +33,7 @@ const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t MAX_UINT_VOLUME = 65535;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
+constexpr int32_t CROSS_FADE_FRAME_COUNT = 5;
 
 template <typename T>
 static void Swap(T &a, T &b)
@@ -132,6 +133,16 @@ void AudioEffectChain::SetSpatializationSceneType(AudioSpatializationSceneType s
 void AudioEffectChain::SetSpatializationEnabled(bool enabled)
 {
     spatializationEnabled_ = enabled;
+    spatializationEnabledFading_ = enabled;
+}
+
+void AudioEffectChain::SetSpatializationEnabledForFading(bool enabled)
+{
+    std::lock_guard<std::mutex> lock(reloadMutex_);
+    CHECK_AND_RETURN_LOG(spatializationEnabledFading_ != enabled,
+        "no need to update spatialization enabled for fading: %{public}d", enabled);
+    spatializationEnabledFading_ = enabled;
+    fadingCounts = CROSS_FADE_FRAME_COUNT;
 }
 
 void AudioEffectChain::ReleaseEffectChain()
@@ -264,16 +275,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
 int32_t AudioEffectChain::UpdateEffectParam()
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
-    latency_ = 0;
-    for (AudioEffectHandle handle : standByEffectHandles_) {
-        int32_t replyData;
-        int32_t ret = SetEffectParamToHandle(handle, replyData);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_PARAM fail");
-        AUDIO_DEBUG_LOG("Set Effect Param Scene Type: %{public}d Success", currSceneType_);
-        latency_ += static_cast<uint32_t>(replyData);
-    }
-    UpdateMultichannelIoBufferConfigInner();
-    return SUCCESS;
+    return UpdateEffectParamInner();
 }
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo)
@@ -322,6 +324,8 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     if ((count & 1) == 0) {
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error when last copy");
     }
+
+    CrossFadeProcess(bufOut, frameLen);
 
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
     DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
@@ -479,6 +483,65 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
         + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
     return SUCCESS;
+}
+
+int32_t AudioEffectChain::UpdateEffectParamInner()
+{
+    latency_ = 0;
+    for (AudioEffectHandle handle : standByEffectHandles_) {
+        int32_t replyData;
+        int32_t ret = SetEffectParamToHandle(handle, replyData);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_PARAM fail");
+        AUDIO_DEBUG_LOG("Set Effect Param Scene Type: %{public}d Success", currSceneType_);
+        latency_ += static_cast<uint32_t>(replyData);
+    }
+    UpdateMultichannelIoBufferConfigInner();
+    return SUCCESS;
+}
+
+void AudioEffectChain::CrossFadeProcess(float *bufOut, uint32_t frameLen)
+{
+    if (fadingCounts == 0) {
+        return;
+    }
+
+    int32_t channelNum = static_cast<int32_t>(ioBufferConfig_.outputCfg.channels);
+    int32_t frameLength = static_cast<int32_t>(frameLen);
+
+    // fading out to zero
+    if (fadingCounts > 0) {
+        for (int32_t i = 0; i < frameLength; ++i) {
+            for (int32_t j = 0; j < channelNum; ++j) {
+                bufOut[i * channelNum + j] *=
+                    (fadingCounts * frameLength - i) / static_cast<float>(frameLength * CROSS_FADE_FRAME_COUNT);
+            }
+        }
+        fadingCounts--;
+        // fading out finish, update spatialization enabled and start fading in
+        if (fadingCounts == 0) {
+            fadingCounts = -CROSS_FADE_FRAME_COUNT;
+            spatializationEnabled_ = spatializationEnabledFading_;
+            UpdateEffectParamInner();
+            AUDIO_INFO_LOG("fading out finish, switch to %{public}d and start fading in", spatializationEnabled_);
+        }
+        return;
+    }
+
+    // fading in to one
+    if (fadingCounts < 0) {
+        for (int32_t i = 0; i < frameLength; ++i) {
+            for (int32_t j = 0; j < channelNum; ++j) {
+                bufOut[i * channelNum + j] *=
+                    (1 - (fadingCounts * frameLength + i) / static_cast<float>(frameLength * CROSS_FADE_FRAME_COUNT));
+            }
+        }
+        fadingCounts++;
+        // fading in finish, start normally processing
+        if (fadingCounts == 0) {
+            AUDIO_INFO_LOG("fading in finish, start normally processing for %{public}d", spatializationEnabled_);
+        }
+        return;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
