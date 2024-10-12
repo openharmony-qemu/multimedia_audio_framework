@@ -1097,11 +1097,7 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
         if (audioEffectChain == nullptr) {
             continue;
         }
-        audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
-        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
-            AUDIO_WARNING_LOG("Update param to effect chain failed");
-            continue;
-        }
+        audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
     }
 }
 
