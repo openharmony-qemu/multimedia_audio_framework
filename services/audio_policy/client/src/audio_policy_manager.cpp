@@ -42,36 +42,64 @@ std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback
 sptr<AudioPolicyClientStubImpl> AudioPolicyManager::audioStaticPolicyClientStubCB_;
 std::vector<std::shared_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
 
+inline bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
+{
+    pid_t pid = 0;
+    pid_t uid = 0;
+    sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
+    CHECK_AND_RETURN_RET_LOG(deathRecipient != nullptr, false, "deathRecipient is null");
+    deathRecipient->SetNotifyCb(
+        [] (pid_t pid, pid_t uid) { AudioPolicyManager::AudioPolicyServerDied(pid, uid); });
+    AUDIO_DEBUG_LOG("Register audio policy server death recipient");
+    CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(deathRecipient), false, "AddDeathRecipient failed");
+    return true;
+}
+
+inline sptr<IAudioPolicy> GetAudioPolicyProxyFromSamgr()
+{
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "samgr init failed.");
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "Object is NULL.");
+    sptr<IAudioPolicy> apProxy = iface_cast<IAudioPolicy>(object);
+    CHECK_AND_RETURN_RET_LOG(apProxy != nullptr, nullptr, "Init apProxy is NULL.");
+    return apProxy;
+}
+
 inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 {
-    AUDIO_DEBUG_LOG("Start to get audio manager service proxy.");
+    AUDIO_DEBUG_LOG("In");
     lock_guard<mutex> lock(g_apProxyMutex);
 
-    if (g_apProxy == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "samgr init failed.");
-
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
-        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "Object is NULL.");
-
-        g_apProxy = iface_cast<IAudioPolicy>(object);
-        CHECK_AND_RETURN_RET_LOG(g_apProxy != nullptr, nullptr, "Init g_apProxy is NULL.");
-
-        AUDIO_DEBUG_LOG("Init g_apProxy is assigned.");
-        pid_t pid = 0;
-        sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
-        if (deathRecipient_ != nullptr) {
-            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyManager::AudioPolicyServerDied,
-                std::placeholders::_1));
-            AUDIO_DEBUG_LOG("Register audio policy server death recipient");
-            bool result = object->AddDeathRecipient(deathRecipient_);
-            if (!result) {
-                AUDIO_ERR_LOG("failed to add deathRecipient");
-            }
-        }
+    if (g_apProxy != nullptr) {
+        return g_apProxy;
     }
 
-    const sptr<IAudioPolicy> gsp = g_apProxy;
+    sptr<IAudioPolicy> gsp = GetAudioPolicyProxyFromSamgr();
+    CHECK_AND_RETURN_RET_LOG(gsp, nullptr, "gsp is null");
+
+    AUDIO_DEBUG_LOG("Init g_apProxy is assigned.");
+
+    if (RegisterDeathRecipientInner(gsp->AsObject())) {
+        g_apProxy = gsp;
+    }
+
+    return gsp;
+}
+
+inline const sptr<IAudioPolicy> RecoverAndGetAudioPolicyManagerProxy()
+{
+    AUDIO_DEBUG_LOG("In");
+    lock_guard<mutex> lock(g_apProxyMutex);
+    g_apProxy = nullptr;
+
+    sptr<IAudioPolicy> gsp = GetAudioPolicyProxyFromSamgr();
+    CHECK_AND_RETURN_RET_LOG(gsp, nullptr, "gsp is null");
+
+    AUDIO_DEBUG_LOG("Init g_apProxy is assigned.");
+    CHECK_AND_RETURN_RET_LOG(RegisterDeathRecipientInner(gsp->AsObject()), nullptr, "RegisterDeathRecipient failed");
+
+    g_apProxy = gsp;
     return gsp;
 }
 
@@ -109,7 +137,7 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
     while (retry--) {
         // Sleep and wait for 1 second;
         sleep(SLEEP_TIME);
-        gsp = GetAudioPolicyManagerProxy();
+        gsp = RecoverAndGetAudioPolicyManagerProxy();
         if (gsp != nullptr) {
             AUDIO_INFO_LOG("Reconnect audio policy service success!");
             break;
@@ -148,7 +176,6 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
 {
     if (g_apProxy == nullptr) {
         AUDIO_ERR_LOG("Audio policy server has already died!");
-        return;
     }
     {
         std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
@@ -161,10 +188,7 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
             }
         }
     }
-    {
-        std::lock_guard<std::mutex> lock(g_apProxyMutex);
-        g_apProxy = nullptr;
-    }
+
     GetInstance().RecoverAudioPolicyCallbackClient();
 
     {
