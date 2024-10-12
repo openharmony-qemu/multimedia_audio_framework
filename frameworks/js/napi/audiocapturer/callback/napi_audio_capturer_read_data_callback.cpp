@@ -15,7 +15,9 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiCapturerReadDataCallback"
 #endif
+#include <thread>
 
+#include "js_native_api.h"
 #include "napi_audio_capturer_read_data_callback.h"
 #include "audio_capturer_log.h"
 
@@ -23,7 +25,6 @@ namespace OHOS {
 namespace AudioStandard {
 static bool g_napiAudioCapturerIsNullptr = true;
 static std::mutex g_asynccallbackMutex;
-
 static const int32_t READ_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
 
 NapiCapturerReadDataCallback::NapiCapturerReadDataCallback(napi_env env, NapiAudioCapturer *napiCapturer)
@@ -127,17 +128,17 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
         return;
     }
 
-    auto obj = static_cast<NapiAudioCapturer *>(napiCapturer_);
-    ObjectRefMap<NapiAudioCapturer>::IncreaseRef(obj);
-    CapturerReadDataJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        WorkCallbackCapturerReadData(event);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCapturerReadDataCallback: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    CapturerReadDataJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCapturerReadDataCallback: event is nullptr.");
+
+    napi_value cbName;
+    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
+        CaptureReadDataTsfnFinalize, nullptr, SafeJsCallbackCapturerReadDataWork, &event->acReadDataTsfn);
+
+    napi_acquire_threadsafe_function(event->acReadDataTsfn);
+    napi_call_threadsafe_function(event->acReadDataTsfn, event, napi_tsfn_blocking);
 
     if (napiCapturer_ == nullptr) {
         return;
@@ -151,26 +152,31 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
     readCallbackLock.unlock();
 }
 
-void NapiCapturerReadDataCallback::WorkCallbackCapturerReadData(CapturerReadDataJsCallback *event)
+void NapiCapturerReadDataCallback::CaptureReadDataTsfnFinalize(napi_env env, void *data, void *hint)
 {
-    // Js Thread
-    std::lock_guard<std::mutex> asyncLock(g_asynccallbackMutex);
-    CHECK_AND_RETURN_LOG(!g_napiAudioCapturerIsNullptr, "napiAudioCapturer released");
-    std::shared_ptr<CapturerReadDataJsCallback> context(
-        static_cast<CapturerReadDataJsCallback*>(event),
-        [](CapturerReadDataJsCallback* ptr) {
+    AUDIO_INFO_LOG("CaptureReadDataTsfnFinalize: safe thread resource release.");
+}
+
+void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
+{
+    CapturerReadDataJsCallback *event = reinterpret_cast<CapturerReadDataJsCallback *>(data);
+    CHECK_AND_RETURN_LOG(event != nullptr, "capturer read data event is nullptr");
+    std::shared_ptr<CapturerReadDataJsCallback> safeContext(
+        static_cast<CapturerReadDataJsCallback*>(data),
+        [event](CapturerReadDataJsCallback *ptr) {
+            napi_release_threadsafe_function(event->acReadDataTsfn, napi_tsfn_abort);
             delete ptr;
     });
-    WorkCallbackCapturerReadDataInner(event);
+    SafeJsCallbackCapturerReadDataWorkInner(event);
 
-    CHECK_AND_RETURN_LOG(event != nullptr, "capturer read data event is nullptr");
     CHECK_AND_RETURN_LOG(event->capturerNapiObj != nullptr, "NapiAudioCapturer object is nullptr");
     event->capturerNapiObj->readCallbackCv_.notify_all();
     auto napiObj = static_cast<NapiAudioCapturer *>(event->capturerNapiObj);
     ObjectRefMap<NapiAudioCapturer>::DecreaseRef(napiObj);
 }
 
-void NapiCapturerReadDataCallback::WorkCallbackCapturerReadDataInner(CapturerReadDataJsCallback *event)
+void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWorkInner(CapturerReadDataJsCallback *event)
 {
     CHECK_AND_RETURN_LOG(event != nullptr, "capture read data event is nullptr");
     CHECK_AND_RETURN_LOG(event->readDataCallbackPtr != nullptr, "CapturerReadDataCallback is already released");

@@ -15,7 +15,9 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioVolumeKeyEvent"
 #endif
+#include <thread>
 
+#include "js_native_api.h"
 #include "napi_audio_volume_key_event.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
@@ -73,6 +75,48 @@ void NapiAudioVolumeKeyEvent::SaveCallbackReference(const std::string &callbackN
     }
 }
 
+void NapiAudioVolumeKeyEvent::SafeJsCallbackVolumeEventWork(napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioVolumeKeyEventJsCallback *event = reinterpret_cast<AudioVolumeKeyEventJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackVolumeEvent: no memory");
+    std::shared_ptr<AudioVolumeKeyEventJsCallback> safeContext(
+        static_cast<AudioVolumeKeyEventJsCallback*>(event),
+        [event](AudioVolumeKeyEventJsCallback *ptr) {
+            napi_release_threadsafe_function(event->amVolEntTsfn, napi_tsfn_abort);
+            delete ptr;
+    });
+    std::string request = event->callbackName;
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackVolumeEventWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetValueVolumeEvent(env, event->volumeEvent, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+            "%{public}s fail to create volumeChange callback", request.c_str());
+
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call volumeChange callback",
+            request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAudioVolumeKeyEvent::VolumeEventTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("VolumeEventTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
@@ -80,45 +124,16 @@ void NapiAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
         return;
     }
 
-    AudioVolumeKeyEventJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<AudioVolumeKeyEventJsCallback> context(
-            static_cast<AudioVolumeKeyEventJsCallback*>(event),
-            [](AudioVolumeKeyEventJsCallback* ptr) {
-                delete ptr;
-        });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        std::string request = event->callbackName;
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        AUDIO_INFO_LOG("JsCallBack %{public}s, doWork", request.c_str());
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetValueVolumeEvent(env, event->volumeEvent, args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-                "%{public}s fail to create volumeChange callback", request.c_str());
+    AudioVolumeKeyEventJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call volumeChange callback",
-                request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCallbackVolumeEvent: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    napi_value cbName;
+    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
+        VolumeEventTsfnFinalize, nullptr, SafeJsCallbackVolumeEventWork, &event->amVolEntTsfn);
+    
+    napi_acquire_threadsafe_function(event->amVolEntTsfn);
+    napi_call_threadsafe_function(event->amVolEntTsfn, event, napi_tsfn_blocking);
 }
 
 bool NapiAudioVolumeKeyEvent::ContainSameJsCallback(napi_value args)

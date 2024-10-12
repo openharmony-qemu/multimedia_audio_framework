@@ -40,9 +40,12 @@ private:
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         AudioRingerMode ringerMode = RINGER_MODE_NORMAL;
+        napi_threadsafe_function amRmChgTsfn = nullptr;
     };
 
     void OnJsCallbackRingerMode(std::unique_ptr<AudioRingerModeJsCallback> &jsCb);
+    static void RingModeTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackRingModeWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

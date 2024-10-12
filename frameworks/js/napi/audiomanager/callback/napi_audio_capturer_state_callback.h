@@ -37,9 +37,13 @@ private:
     struct AudioCapturerStateJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> changeInfos;
+        std::string callbackName = "unknown";
+        napi_threadsafe_function amacStateTsfn = nullptr;
     };
 
     void OnJsCallbackCapturerState(std::unique_ptr<AudioCapturerStateJsCallback> &jsCb);
+    static void CapturerStateTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackCapturerStateWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

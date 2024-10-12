@@ -38,9 +38,13 @@ private:
         napi_ref callback_;
         napi_env env_;
         DeviceInfo deviceInfo_;
+        std::string callbackName = "unknown";
+        napi_threadsafe_function arDevInfoTsfn = nullptr;
     };
 
     void OnJsCallbackRendererDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo);
+    static void RendererDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackRendererDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
@@ -63,10 +67,14 @@ private:
         napi_env env_;
         DeviceInfo deviceInfo_;
         AudioStreamDeviceChangeReason reason_;
+        std::string callbackName = "unknown";
+        napi_threadsafe_function arOutputDevChgTsfn = nullptr;
     };
 
     void OnJsCallbackOutputDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo,
         const AudioStreamDeviceChangeReason reason);
+    static void SafeJsCallbackOutputDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void OutputDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
