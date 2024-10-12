@@ -166,7 +166,8 @@ PolicyProviderWrapper::PolicyProviderWrapper(IPolicyProvider *policyWorker) : po
 {
 }
 
-int32_t PolicyProviderWrapper::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo)
+int32_t PolicyProviderWrapper::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    DeviceInfo &deviceInfo)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->GetProcessDeviceInfo(config, lockFlag, deviceInfo);

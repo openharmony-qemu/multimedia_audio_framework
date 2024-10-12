@@ -95,7 +95,8 @@ public:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 
-int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo)
+int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    DeviceInfo &deviceInfo)
 {
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         deviceInfo.deviceRole = OUTPUT_DEVICE;
