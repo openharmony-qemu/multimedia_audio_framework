@@ -33,8 +33,6 @@
 #include "audio_enhance_chain_adapter.h"
 #include "source_userdata.h"
 
-const char *AUDIO_SETTING_BYPASS = "20020062";
-
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSourceFree(pa_source *s);
 
@@ -252,10 +250,9 @@ static pa_hook_result_t GetAlgoSpecs(uint32_t sceneKeyCode, struct AlgoSpecs *al
 static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userdata *u)
 {
     const char *sceneType = pa_proplist_gets(so->proplist, "scene.type");
-    const char *appUid = pa_proplist_gets(so->proplist, "stream.client.uid");
-    if (pa_safe_streq(appUid, AUDIO_SETTING_BYPASS)) {
-        AUDIO_INFO_LOG("Audio set do not need enhance");
-        pa_proplist_sets(so->proplist, "scene.bypass", DEFAULT_SCENE_BYPASS);
+    const char *sceneBypass = pa_proplist_gets(so->proplist, "scene.bypass");
+    if (pa_safe_streq(sceneBypass, DEFAULT_SCENE_BYPASS)) {
+        AUDIO_INFO_LOG("scene:%{public}s has been set to bypass", sceneType);
         return PA_HOOK_OK;
     }
     uint32_t captureId = u->captureId;
@@ -263,6 +260,7 @@ static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userd
     uint32_t sceneTypeCode = 0;
     if (GetSceneTypeCode(sceneType, &sceneTypeCode) != 0) {
         AUDIO_ERR_LOG("GetSceneTypeCode failed");
+        pa_proplist_sets(so->proplist, "scene.bypass", DEFAULT_SCENE_BYPASS);
         return PA_HOOK_OK;
     }
     uint32_t sceneKeyCode = 0;

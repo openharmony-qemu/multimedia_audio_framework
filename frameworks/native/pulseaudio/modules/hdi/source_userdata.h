@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -42,7 +42,7 @@ struct Userdata {
     pa_module *module;
     pa_source *source;
     pa_thread *thread;
-    pa_thread_mq *threadMq;
+    pa_thread_mq threadMq;
     pa_rtpoll *rtpoll;
     uint32_t bufferSize;
     uint32_t openMicSpeaker;
@@ -51,8 +51,8 @@ struct Userdata {
     SourceAttr attrs;
     bool isCapturerStarted;
     EcType ecType;
-    const char *ecAdapterName;
-    uint32_t *ecSamplingRate;
+    const char *ecAdapaterName;
+    uint32_t ecSamplingRate;
     int32_t ecFormat;
     uint32_t ecChannels;
     pa_sample_spec ecSpec;
@@ -66,7 +66,7 @@ struct Userdata {
     pa_hashmap *sceneToCountMap;
     pa_hashmap *sceneToPreResamplerMap;
     pa_hashmap *sceneToEcResamplerMap;
-    pa_hashmap *sceneToMicResamplerMap;
+    pa_hashmap *sceneToMicRefResamplerMap;
     HdiCaptureHandle *captureHandleEc;
     HdiCaptureHandle *captureHandleMicRef;
     uint64_t requestBytesEc;
@@ -75,7 +75,7 @@ struct Userdata {
     void *bufferMicRef;
     uint32_t captureId;
     uint32_t renderId;
-    pa_resample *defaultSceneResampler;
+    pa_resampler *defaultSceneResampler;
 };
 
 struct AlgoSpecs {
