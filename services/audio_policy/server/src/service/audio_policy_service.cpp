@@ -6345,10 +6345,6 @@ int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool i
             CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
             restoreNIsShowing_ = false;
         }
-        if (increaseNIsShowing_) {
-            CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
-            increaseNIsShowing_ = false;
-        }
         PublishSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
         increaseNIsShowing_ = true;
         return sVolumeLevel;
