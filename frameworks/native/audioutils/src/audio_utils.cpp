@@ -1202,7 +1202,6 @@ bool VolumeUtils::isPCVolumeEnable_ = false;
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
-    {STREAM_VOICE_MESSAGE, STREAM_VOICE_CALL},
     {STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL},
     {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL},
 
@@ -1220,6 +1219,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_SPEECH, STREAM_MUSIC},
     {STREAM_NAVIGATION, STREAM_MUSIC},
     {STREAM_CAMCORDER, STREAM_MUSIC},
+    {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
     {STREAM_ALARM, STREAM_ALARM},
