@@ -1011,6 +1011,7 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
         UpdateSourceArgs(audioModuleInfo, args);
+        UpdateEcAndMicRefArgs(audioModuleInfo, args);
     } else if (audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
