@@ -51,7 +51,6 @@
             "drivers_interface_audio",
             "drivers_interface_distributed_audio",
             "drivers_peripheral_bluetooth",
-            "ets_runtime",
             "eventhandler",
             "hdf_core",
             "hicollie",
