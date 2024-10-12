@@ -396,7 +396,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     if (SetPaProplist(propList, map, processConfig, streamName, sessionId) != 0) {
         AUDIO_ERR_LOG("set pa proplist failed");
         pa_proplist_free(propList);
-        return nullptr
+        return nullptr;
     }
 
     pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec,
