@@ -2335,9 +2335,9 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     pa_memchunk *chunk = &(u->offload.chunk);
     chunk->index = 0;
     chunk->length = length;
-    size_t l;
-    size_t d;
-    l = chunk->length;
+    int64_t l;
+    int64_t d;
+    l = (int64_t)chunk->length;
     size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
     blockSize = PA_MAX(blockSize, pa_usec_to_bytes(0.6 * OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC, // 0.6 40% is hdi limit
         &u->sink->sample_spec));
@@ -2345,15 +2345,15 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     while (l > 0) {
         pa_memchunk tchunk;
         tchunk = *chunk;
-        tchunk.index += d;
-        tchunk.length = PA_MIN(l, blockSize - tchunk.index);
+        tchunk.index += (size_t)d;
+        tchunk.length = PA_MIN((size_t)l, blockSize - tchunk.index);
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
-        d += tchunk.length;
-        l -= tchunk.length;
+        d += (int64_t)tchunk.length;
+        l -= (int64_t)tchunk.length;
     }
     if (l < 0) {
-        chunk->length += -l;
+        chunk->length += (size_t)-l;
     }
 
     int32_t appsUid[MAX_MIX_CHANNELS];
