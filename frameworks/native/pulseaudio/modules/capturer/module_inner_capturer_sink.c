@@ -230,7 +230,7 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
         }
         const char *streamType = SafeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = SafeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? atoi(sessionIDStr) : 0;
+        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volumeFloat = GetCurVolume(sessionID, streamType, s->name);
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);

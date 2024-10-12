@@ -1146,7 +1146,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     const char *streamType = safeProplistGets(sinkIn->proplist, "stream.type", "NULL");
     const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-    uint32_t sessionID = sessionIDStr != NULL ? atoi(sessionIDStr) : 0;
+    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
     float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
     float volumeBeg = GetPreVolume(sessionID);
     float fadeBeg = 1.0f;
@@ -1644,7 +1644,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         const char *clientVolumeIsZero = safeProplistGets(input->proplist, "clientVolumeIsZero", "false");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-        uint32_t sessionID = sessionIDStr != NULL ? atoi(sessionIDStr) : 0;
+        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volume = GetCurVolume(sessionID, streamType, deviceClass);
         bool isZeroVolume = IsSameVolume(volume, 0.0f) || pa_safe_streq(clientVolumeIsZero, "true");
         if (EffectChainManagerSceneCheck(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
@@ -1743,7 +1743,7 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
         const char *clientVolumeIsZero = safeProplistGets(input->proplist, "clientVolumeIsZero", "false");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-        uint32_t sessionID = sessionIDStr != NULL ? atoi(sessionIDStr) : 0;
+        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volume = GetCurVolume(sessionID, streamType, deviceClass);
         bool isZeroVolume = IsSameVolume(volume, 0.0f) || pa_safe_streq(clientVolumeIsZero, "true");
         if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
@@ -1960,7 +1960,7 @@ static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
         }
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? atoi(sessionIDStr) : 0;
+        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volumeFloat = GetCurVolume(sessionID, streamType, deviceClass);
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
@@ -2346,7 +2346,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
         pa_memchunk tchunk;
         tchunk = *chunk;
         tchunk.index += (size_t)d;
-        tchunk.length = PA_MIN(l, blockSize - tchunk.index);
+        tchunk.length = PA_MIN((size_t)l, blockSize - tchunk.index);
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
         d += (int64_t)tchunk.length;
@@ -2620,7 +2620,7 @@ static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t 
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     if (corking) {
         const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? atoi(sessionIDStr) : 0;
+        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         SetPreVolume(sessionID, 0.0f);
     }
 }
