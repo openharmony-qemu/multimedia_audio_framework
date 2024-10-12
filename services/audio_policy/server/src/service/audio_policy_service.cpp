@@ -6637,7 +6637,8 @@ void AudioPolicyService::RegiestPolicy()
     AUDIO_DEBUG_LOG("result:%{public}d", ret);
 }
 
-int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo)
+int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    DeviceInfo &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
