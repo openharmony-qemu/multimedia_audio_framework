@@ -1639,15 +1639,17 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     int32_t ret = CheckParam(config);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
-    errorCode = CheckMaxRendererInstances();
-    if (errorCode != SUCCESS) {
-        return nullptr;
-    }
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
-        maxRendererStreamCntPerUid_)) {
-        errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
-        return nullptr;
+    if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        errorCode = CheckMaxRendererInstances();
+        if (errorCode != SUCCESS) {
+            return nullptr;
+        }
+        if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
+            maxRendererStreamCntPerUid_)) {
+            errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
+            return nullptr;
+        }
     }
 
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA
