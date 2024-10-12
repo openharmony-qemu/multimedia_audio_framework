@@ -572,9 +572,6 @@ void AudioPolicyService::Deinit(void)
 
     IOHandles_.clear();
     ioHandleLock.unlock();
-#ifdef ACCESSIBILITY_ENABLE
-    UnregisterAccessibilityMonitorHelper();
-#endif
     deviceStatusListener_->UnRegisterDeviceStatusListener();
     audioPnpServer_.StopPnpServer();
 
@@ -4833,39 +4830,6 @@ void AudioPolicyService::RegisterAccessiblilityMono()
     ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver mono failed");
-    }
-}
-
-void AudioPolicyService::UnregisterAccessibilityMonitorHelper()
-{
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    AudioSettingObserver::UpdateFunc updateFuncBalance = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        float balance = 0;
-        int32_t ret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get balance value failed");
-        if (balance < -1.0f || balance > 1.0f) {
-            AUDIO_WARNING_LOG("audioBalance value is out of range [-1.0, 1.0]");
-        } else {
-            OnAudioBalanceChanged(balance);
-        }
-    };
-    sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_BALANACE_KEY, updateFuncBalance);
-    ErrCode ret = settingProvider.UnregisterObserver(observer, "secure");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("UnregisterObserver balance failed");
-    }
-    AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        int32_t value = 0;
-        ErrCode ret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get mono value failed");
-        OnMonoAudioConfigChanged(value != 0);
-    };
-    observer = settingProvider.CreateObserver(CONFIG_AUDIO_MONO_KEY, updateFuncMono);
-    ret = settingProvider.UnregisterObserver(observer, "secure");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("UnregisterObserver mono failed");
     }
 }
 
