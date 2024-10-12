@@ -15,9 +15,54 @@ import("//build/ohos.gni")
 
 group("pa_extend_modules") {
   deps = [
+    ":pa_client_config",
+    ":pa_daemon_config",
+    ":pa_default_config",
     "capturer:module-inner-capturer-sink",
     "hdi:module-hdi-sink",
     "hdi:module-hdi-source",
     "hdi:module-split-stream-sink",
   ]
+
+  external_deps = [
+    "pulseaudio:cli",
+    "pulseaudio:module-cli-protocol-unix",
+    "pulseaudio:module-native-protocol-fd",
+    "pulseaudio:module-native-protocol-tcp",
+    "pulseaudio:module-native-protocol-unix",
+    "pulseaudio:module-suspend-on-idle",
+    "pulseaudio:protocol-cli",
+    "pulseaudio:protocol-native",
+    "pulseaudio:pulse",
+    "pulseaudio:pulse-simple",
+    "pulseaudio:pulseaudio",
+    "pulseaudio:pulsecommon",
+    "pulseaudio:pulsecore",
+    "pulseaudio:sonic",
+  ]
+}
+
+ohos_prebuilt_etc("pa_daemon_config") {
+  source = "../conf/daemon.conf"
+
+  module_install_dir = "etc/pulse"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("pa_default_config") {
+  source = "../conf/default.pa"
+  module_install_dir = "etc/pulse"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("pa_client_config") {
+  source = "../conf/client.conf"
+  module_install_dir = "etc/pulse"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
 }
