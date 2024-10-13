@@ -2456,14 +2456,7 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
-    if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID
-        || outputDevices.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
-        RemoteOffloadStreamRelease(rendererChangeInfo->sessionId);
-    } else if (outputDevices.front()->deviceType_ == DEVICE_TYPE_SPEAKER) {
-        FetchStreamForSpkMchStream(rendererChangeInfo, outputDevices);
-    } else {
-        ResetOffloadMode(rendererChangeInfo->sessionId);
-    }
+    ResetOffloadAndMchMode(outputDevices, rendererChangeInfo);
     std::unique_lock<std::mutex> lock(moveDeviceMutex_);
     moveDeviceFinished_ = true;
     moveDeviceCV_.notify_all();
@@ -9926,7 +9919,7 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendere
             LoadMchModule();
         }
         std::string oldSinkName = GetSinkName(rendererChangeInfo->outputDeviceInfo, rendererChangeInfo->sessionId);
-        std::string newSinkName = GetSinkName(descs.front()->deciveType_, PIPE_TYPE_MULTICHANNEL);
+        std::string newSinkName = GetSinkName(descs.front()->deviceType_, PIPE_TYPE_MULTICHANNEL);
         AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
         MuteSinkPort(oldSinkName, newSinkName, AudioStreamDeviceChangeReason::OVERRODE);
         int32_t ret  = MoveToOutputDevice(rendererChangeInfo->sessionId, newSinkName);
@@ -9949,6 +9942,19 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendere
         }
         ResetOffloadMode(rendererChangeInfo->sessionId);
         MoveToNewOutputDevice(rendererChangeInfo, descs);
+    }
+}
+
+void AudioPolicyService::ResetOffloadAndMchMode(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices)
+{
+    if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID
+        || outputDevices.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
+        RemoteOffloadStreamRelease(rendererChangeInfo->sessionId);
+    } else if (outputDevices.front()->deviceType_ == DEVICE_TYPE_SPEAKER) {
+        FetchStreamForSpkMchStream(rendererChangeInfo, outputDevices);
+    } else {
+        ResetOffloadMode(rendererChangeInfo->sessionId);
     }
 }
 } // namespace AudioStandard
