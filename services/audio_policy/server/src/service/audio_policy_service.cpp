@@ -9941,7 +9941,6 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendere
             streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_NORMAL_OUT);
         }
         ResetOffloadMode(rendererChangeInfo->sessionId);
-        MoveToNewOutputDevice(rendererChangeInfo, descs);
     }
 }
 
