@@ -9945,6 +9945,7 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendere
             audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
             audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
             IOHandles_.erase(currentActivePort);
+            streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_NORMAL_OUT);
         }
         ResetOffloadMode(rendererChangeInfo->sessionId);
         MoveToNewOutputDevice(rendererChangeInfo, descs);
