@@ -9937,6 +9937,7 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendere
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
         if (pipeType == PIPE_TYPE_MULTICHANNEL) {
+            AUDIO_INFO_LOG("unload multichannel module");
             std::string currentActivePort = MCH_PRIMARY_SPEAKER;
             auto ioHandleIter = IOHandles_.find(currentActivePort);
             CHECK_AND_RETURN_LOG(ioHandleIter != IOHandles_.end(), "Can not find port MCH_PRIMARY_SPEAKER in io map");

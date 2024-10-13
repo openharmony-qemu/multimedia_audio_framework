@@ -1100,6 +1100,9 @@ private:
 
     bool CheckSpatializationAndEffectState();
 
+    void FetchStreamForSpkMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
