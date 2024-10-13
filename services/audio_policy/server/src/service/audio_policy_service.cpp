@@ -2456,7 +2456,7 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
-    ResetOffloadAndMchMode(outputDevices, rendererChangeInfo);
+    ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
     std::unique_lock<std::mutex> lock(moveDeviceMutex_);
     moveDeviceFinished_ = true;
     moveDeviceCV_.notify_all();
@@ -9919,7 +9919,7 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendere
             LoadMchModule();
         }
         std::string oldSinkName = GetSinkName(rendererChangeInfo->outputDeviceInfo, rendererChangeInfo->sessionId);
-        std::string newSinkName = GetSinkName(descs.front()->deviceType_, PIPE_TYPE_MULTICHANNEL);
+        std::string newSinkName = GetSinkPortName(descs.front()->deviceType_, PIPE_TYPE_MULTICHANNEL);
         AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
         MuteSinkPort(oldSinkName, newSinkName, AudioStreamDeviceChangeReason::OVERRODE);
         int32_t ret  = MoveToOutputDevice(rendererChangeInfo->sessionId, newSinkName);
