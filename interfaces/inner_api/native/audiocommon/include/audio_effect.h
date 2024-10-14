@@ -113,14 +113,14 @@ struct SceneMappingItem {
 };
 
 struct PreProcessConfig {
-    int32_t maxExtSceneNum;
+    uint32_t maxExtSceneNum;
     std::vector<PreStreamScene> defaultScenes;
     std::vector<PreStreamScene> priorScenes;
     std::vector<PreStreamScene> normalScenes;
 };
  
 struct PostProcessConfig {
-    int32_t maxExtSceneNum;
+    uint32_t maxExtSceneNum;
     std::vector<PostStreamScene> defaultScenes;
     std::vector<PostStreamScene> priorScenes;
     std::vector<PostStreamScene> normalScenes;
