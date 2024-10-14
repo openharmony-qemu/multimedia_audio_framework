@@ -146,7 +146,11 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == RESTORE_SESSION) {
-        RestoreAudioStream();
+        // fix it when restoreAudioStream work right
+        if (audioStreamTracker_ && audioStreamTracker_.get()) {
+            audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
+                RUNNING, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+        }
         return SUCCESS;
     }
 
