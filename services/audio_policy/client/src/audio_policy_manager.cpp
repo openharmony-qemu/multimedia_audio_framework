@@ -38,7 +38,6 @@ constexpr auto SLEEP_TIMES_RETYT_FAILED = 1min;
 std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
-sptr<AudioPolicyClientStubImpl> AudioPolicyManager::audioStaticPolicyClientStubCB_;
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
 
 inline bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
@@ -108,7 +107,6 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
     std::unique_lock<std::mutex> lock(registerCallbackMutex_);
     if (audioPolicyClientStubCB_ == nullptr) {
         audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
-        audioStaticPolicyClientStubCB_ = audioPolicyClientStubCB_;
     }
     sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
     if (object == nullptr) {
@@ -127,10 +125,12 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
 
 void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 {
-    if (audioStaticPolicyClientStubCB_ == nullptr) {
+    std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+    if (audioPolicyClientStubCB_ == nullptr) {
         AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null.");
         return;
     }
+    lock.unlock();
 
     int32_t retry = RETRY_TIMES;
     sptr<IAudioPolicy> gsp = nullptr;
@@ -151,14 +151,14 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Reconnect audio policy service fail!");
 
-    sptr<IRemoteObject> object = audioStaticPolicyClientStubCB_->AsObject();
+    sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("RegisterPolicyCallbackClientFunc: audioPolicyClientStubCB_->AsObject is nullptr");
         return;
     }
 
     gsp->RegisterPolicyCallbackClient(object);
-    if (audioStaticPolicyClientStubCB_->HasMicStateChangeCallback()) {
+    if (audioPolicyClientStubCB_->HasMicStateChangeCallback()) {
         AUDIO_INFO_LOG("RecoverAudioPolicyCallbackClient has micStateChangeCallback");
         gsp->SetClientCallbacksEnable(CALLBACK_MICMUTE_STATE_CHANGE, true);
     }
