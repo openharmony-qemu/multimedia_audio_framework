@@ -592,7 +592,7 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("No system permission");
-        return AudioStreamType::STREAM_DEFAULT;
+        return AudioStreamType::STREAM_MUSIC;
     }
     AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
     if (clientUid != 0) {
