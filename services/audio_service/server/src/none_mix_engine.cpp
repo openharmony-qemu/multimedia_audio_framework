@@ -61,6 +61,7 @@ NoneMixEngine::~NoneMixEngine()
     failedCount_ = 0;
     fwkSyncTime_ = 0;
     if (playbackThread_) {
+        std::unique_lock lock(playbackThreadMutex_);
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
@@ -139,6 +140,7 @@ int32_t NoneMixEngine::Stop()
         std::unique_lock fadingLock(fadingMutex_);
         cvFading_.wait_for(
             fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
+        std::unique_lock lock(playbackThreadMutex_);
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }

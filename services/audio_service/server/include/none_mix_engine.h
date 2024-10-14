@@ -71,6 +71,7 @@ private:
     uint32_t uChannel_;
     int32_t uFormat_;
     uint32_t uSampleRate_;
+    std::mutex playbackThreadMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
