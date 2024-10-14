@@ -488,6 +488,10 @@ void AudioPolicyService::RecoveryPreferredDevices()
         for (auto iter = preferredDevices.begin(); iter != preferredDevices.end(); ++iter) {
             result = HandleRecoveryPreferredDevices(static_cast<int32_t>(iter->first), iter->second->deviceType_,
                 iter->second->usageOrSourceType_);
+            if (result != SUCCESS) {
+                AUDIO_ERR_LOG("Handle recovery preferred devices failed, deviceType:%{public}d, usageOrSourceType:%{public}d, tryCounter:%{public}d",
+                    iter->second->deviceType_, iter->second->usageOrSourceType_, tryCounter);
+            }
         }
         if (result != SUCCESS) {
             usleep(sleepTime);
@@ -3222,19 +3226,6 @@ int32_t AudioPolicyService::SetSystemSoundUri(const std::string &key, const std:
 std::string AudioPolicyService::GetSystemSoundUri(const std::string &key)
 {
     return audioPolicyManager_.GetSystemSoundUri(key);
-}
-
-bool AudioPolicyService::IsSessionIdValid(int32_t callerUid, int32_t sessionId)
-{
-    AUDIO_INFO_LOG("callerUid: %{public}d, sessionId: %{public}d", callerUid, sessionId);
-
-    constexpr int32_t mediaUid = 1013; // "uid" : "media"
-    if (callerUid == mediaUid) {
-        AUDIO_INFO_LOG("sessionId:%{public}d is an valid id from media", sessionId);
-        return true;
-    }
-
-    return true;
 }
 
 int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -6225,6 +6216,7 @@ int32_t AudioPolicyService::CheckActiveMusicTime()
 
 void AudioPolicyService::CreateCheckMusicActiveThread()
 {
+    std::lock_guard<std::mutex> lock(checkMusicActiveThreadMutex_);
     if (calculateLoopSafeTime_ == nullptr) {
         calculateLoopSafeTime_ = std::make_unique<std::thread>([this] { this->CheckActiveMusicTime(); });
         pthread_setname_np(calculateLoopSafeTime_->native_handle(), "OS_AudioPolicySafe");
@@ -8078,14 +8070,6 @@ void AudioPolicyService::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, Sou
     }
     
     UpdateModuleInfoForMicRef(moduleInfo, sourceType);
-}
-
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsage(AudioDeviceUsage usage,
-    const std::vector<sptr<AudioDeviceDescriptor>>& descs)
-{
-    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-
-    return DeviceFilterByUsageInner(usage, descs);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsageInner(AudioDeviceUsage usage,
