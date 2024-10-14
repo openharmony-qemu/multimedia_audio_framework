@@ -77,7 +77,6 @@ struct Userdata {
     bool isFirstStarted;
     pa_hashmap *sceneToCountMap;
     pa_hashmap *sceneToResamplerMap;
-    // todo resampler map
     uint64_t lastRecodedLatency;
     uint32_t continuesGetLatencyErrCount;
     uint32_t streamAvailable;
