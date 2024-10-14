@@ -1047,7 +1047,7 @@ static HdiAdapterFormat ParseAudioFormat(const std::string &format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
         return HdiAdapterFormat::SAMPLE_S16;
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT" || format == "AUDIO_FORMAT_PCM_24_BIT_PACKED") {
         return HdiAdapterFormat::SAMPLE_S24;
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
         return HdiAdapterFormat::SAMPLE_S32;
