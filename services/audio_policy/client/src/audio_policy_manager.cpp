@@ -188,7 +188,10 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
             }
         }
     }
-
+    {
+        std::lock_guard<std::mutex> lock(g_apProxyMutex);
+        g_apProxy = nullptr;
+    }
     GetInstance().RecoverAudioPolicyCallbackClient();
 
     {
