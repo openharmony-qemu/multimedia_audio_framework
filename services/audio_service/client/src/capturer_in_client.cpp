@@ -136,7 +136,7 @@ public:
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
     bool FlushAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true) override;
+    bool ReleaseAudioStream(bool releaseRunner = true, bool destroyAtOnce = false) override;
 
     // Playback related APIs
     bool DrainAudioStream(bool stopFlag = false) override;
@@ -1420,8 +1420,9 @@ bool CapturerInClientInner::StopAudioStream()
     return true;
 }
 
-bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
+bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool destroyAtOnce)
 {
+    (void)destroyAtOnce;
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");

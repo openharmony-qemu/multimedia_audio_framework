@@ -51,7 +51,7 @@ public:
 
     sptr<AudioProcessInServer> GetAudioProcess(const AudioProcessConfig &config);
     // override for ProcessReleaseCallback, do release process work.
-    int32_t OnProcessRelease(IAudioProcessStream *process) override;
+    int32_t OnProcessRelease(IAudioProcessStream *process, bool destroyAtOnce = false) override;
 
     DeviceInfo GetDeviceInfoForProcess(const AudioProcessConfig &config);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(DeviceInfo &deviceInfo,
@@ -94,6 +94,7 @@ private:
     void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
     void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
+    int32_t GetReleaseDelayTime(DeviceType deviceType, bool destroyAtOnce);
 
 private:
     std::mutex processListMutex_;

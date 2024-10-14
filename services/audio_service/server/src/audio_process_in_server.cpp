@@ -211,7 +211,7 @@ int32_t AudioProcessInServer::Stop()
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::Release()
+int32_t AudioProcessInServer::Release(bool destroyAtOnce)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     UnscheduleReportData(processConfig_.appInfo.appPid, clientTid_, clientBundleName_.c_str());
@@ -224,7 +224,7 @@ int32_t AudioProcessInServer::Release()
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
     }
-    int32_t ret = releaseCallback_->OnProcessRelease(this);
+    int32_t ret = releaseCallback_->OnProcessRelease(this, destroyAtOnce);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
 }
