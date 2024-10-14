@@ -317,6 +317,11 @@ AudioStreamType AudioProcessInServer::GetAudioStreamType()
     return processConfig_.streamType;
 }
 
+AudioProcessConfig AudioProcessInServer::GetAudioProcessConfig()
+{
+    return processConfig_;
+}
+
 inline uint32_t PcmFormatToBits(AudioSampleFormat format)
 {
     switch (format) {

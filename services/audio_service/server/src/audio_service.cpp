@@ -98,6 +98,10 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
         releaseEndpointThread.detach();
     }
 
+    auto processConfig = process->GetAudioProcessConfig();
+    if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        CleanUpStream(processConfig.appInfo.appUid);
+    }
     return SUCCESS;
 }
 
