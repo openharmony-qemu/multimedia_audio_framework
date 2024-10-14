@@ -76,6 +76,7 @@ struct Userdata {
     bool actualSpatializationEnabled; // the spatialization state that actually applies effect
     bool isFirstStarted;
     pa_hashmap *sceneToCountMap;
+    pa_hashmap *sceneToResamplerMap;
     // todo resampler map
     uint64_t lastRecodedLatency;
     uint32_t continuesGetLatencyErrCount;
