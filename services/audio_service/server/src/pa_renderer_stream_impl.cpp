@@ -201,13 +201,15 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
         CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
         pa_operation_unref(updatePropOperation);
         AUDIO_INFO_LOG("pa_stream_proplist_update done");
-        palock.Unlock();
-        {
-            std::unique_lock<std::mutex> lock(fadingMutex_);
-            const int32_t WAIT_TIME_MS = 40;
-            fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+        if (!offloadEnable_) {
+            palock.Unlock();
+            {
+                std::unique_lock<std::mutex> lock(fadingMutex_);
+                const int32_t WAIT_TIME_MS = 40;
+                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+            }
+            palock.Relock();
         }
-        palock.Relock();
     }
     isStandbyPause_ = isStandby;
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
