@@ -291,10 +291,30 @@ int32_t PaRendererStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Enter");
     state_ = STOPPING;
-    PaLockGuard lock(mainloop_);
+    PaLockGuard palock(mainloop_);
 
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
+    }
+
+    pa_proplist *propList = pa_proplist_new();
+    if (propList != nullptr) {
+        pa_proplist_sets(propList, "fadeoutPause", "1");
+        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
+            nullptr, nullptr);
+        pa_proplist_free(propList);
+        CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
+        pa_operation_unref(updatePropOperation);
+        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        if (!offloadEnable_) {
+            palock.Unlock();
+            {
+                std::unique_lock<std::mutex> lock(fadingMutex_);
+                const int32_t WAIT_TIME_MS = 20;
+                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+            }
+            palock.Relock();
+        }
     }
 
     pa_operation *operation = pa_stream_cork(paStream_, 1, PaRendererStreamImpl::PAStreamAsyncStopSuccessCb,
