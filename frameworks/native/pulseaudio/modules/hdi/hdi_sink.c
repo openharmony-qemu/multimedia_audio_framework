@@ -1832,7 +1832,7 @@ static void SampleEffectToSink(const char* sinkSceneType, struct Userdata *u)
     pa_memblock_unref(sampledChunk.memblock);
 }
 
-+static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType)
+static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType)
 {
     AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", sinkSceneType);
     EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
