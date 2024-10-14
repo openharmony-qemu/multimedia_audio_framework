@@ -160,7 +160,7 @@ void AudioEffectChainManager::SetSpkOffloadState()
             spkOffloadEnabled_ = false;
         }
 
-        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && (!spatializationEnabled_ || btOffloadEnabled_)) {
+        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && btOffloadEnabled_) {
             return;
         }
 
@@ -1250,7 +1250,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!btOffloadSupported_)) {
             AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
             btOffloadEnabled_ = false;
-            RecoverAllChains();
             SetSpatializationEnabledToChains();
             return;
         }
@@ -1259,7 +1258,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("set hdi init failed, enter route of escape in ARM");
             btOffloadEnabled_ = false;
-            RecoverAllChains();
         } else {
             AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
             btOffloadEnabled_ = true;
@@ -1273,7 +1271,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         }
         if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             AUDIO_INFO_LOG("delete all chains if device type is bt.");
-            DeleteAllChains();
         }
         btOffloadEnabled_ = false;
     }

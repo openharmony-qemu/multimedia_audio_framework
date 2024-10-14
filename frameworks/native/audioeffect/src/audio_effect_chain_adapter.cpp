@@ -111,10 +111,7 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
         return SUCCESS;
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneTypeString, ADD_SCENE_TYPE);
-    bool curSpatializationEnabled = audioEffectChainManager->GetCurSpatializationEnabled();
-    std::string curDeviceType = audioEffectChainManager->GetDeviceTypeName();
-    if (audioEffectChainManager->GetOffloadEnabled() ||
-        ((curDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") && !curSpatializationEnabled)) {
+    if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }
     if (audioEffectChainManager->CreateAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
@@ -142,10 +139,7 @@ int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID
         return SUCCESS;
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneTypeString, REMOVE_SCENE_TYPE);
-    bool curSpatializationEnabled = audioEffectChainManager->GetCurSpatializationEnabled();
-    std::string curDeviceType = audioEffectChainManager->GetDeviceTypeName();
-    if (audioEffectChainManager->GetOffloadEnabled() ||
-        ((curDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") && !curSpatializationEnabled)) {
+    if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }
     if (audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
