@@ -1091,6 +1091,7 @@ int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<s
 
 std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
 {
+    std::lock_guard<std::mutex> lock(groupManagerMapMutex_);
     std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
     while (iter != groupManagerMap_.end()) {
         if ((*iter)->GetGroupId() == groupId) {
