@@ -45,11 +45,10 @@ std::vector<std::shared_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyMa
 inline bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
 {
     pid_t pid = 0;
-    pid_t uid = 0;
-    sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
+    sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(pid);
     CHECK_AND_RETURN_RET_LOG(deathRecipient != nullptr, false, "deathRecipient is null");
     deathRecipient->SetNotifyCb(
-        [] (pid_t pid, pid_t uid) { AudioPolicyManager::AudioPolicyServerDied(pid, uid); });
+        [] (pid_t pid) { AudioPolicyManager::AudioPolicyServerDied(pid); });
     AUDIO_DEBUG_LOG("Register audio policy server death recipient");
     CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(deathRecipient), false, "AddDeathRecipient failed");
     return true;
