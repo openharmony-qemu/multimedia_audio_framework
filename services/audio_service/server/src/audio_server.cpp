@@ -1648,6 +1648,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
             maxRendererStreamCntPerUid_)) {
             errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
+            AUDIO_ERR_LOG("Current audio renderer stream num exceeds maxRendererStreamCntPerUid");
             return nullptr;
         }
     }
