@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "audio_policy_service_unit_test.h"
+#include "audio_policy_service_first_unit_test.h"
 
 #include <thread>
 #include <memory>
@@ -67,18 +67,17 @@ void AudioPolicyServiceUnitTest::TearDown(void)
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::TearDown start-end");
 }
 
-AudioPolicyServer* GetServerPtr()
+AudioPolicyServer* AudioPolicyServiceUnitTest::GetServerPtr()
 {
     static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit) {
+        AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::GetServerPtr  server.OnStart()");
         server.OnStart();
         server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server.OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
         server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(ACCESSIBILITY_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
         server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
@@ -87,7 +86,12 @@ AudioPolicyServer* GetServerPtr()
     return &server;
 }
 
-void GetPermission()
+static AudioPolicyServer* GetServerPtr()
+{
+    return AudioPolicyServiceUnitTest::GetServerPtr();
+}
+
+static void GetPermission()
 {
     if (!g_hasPermission) {
         uint64_t tokenId;
@@ -178,7 +182,6 @@ static const std::vector<StreamUsage>streamUsages = {
     STREAM_USAGE_NOTIFICATION_RINGTONE,
     STREAM_USAGE_RINGTONE,
     STREAM_USAGE_NOTIFICATION,
-    STREAM_USAGE_ACCESSIBILITY,
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_MOVIE,
     STREAM_USAGE_GAME,
@@ -208,7 +211,6 @@ static const std::vector<AudioStreamType>audioStreamTypes = {
     STREAM_ENFORCED_AUDIBLE,
     STREAM_DTMF,
     STREAM_TTS,
-    STREAM_ACCESSIBILITY,
     STREAM_RECORDING,
     STREAM_MOVIE,
     STREAM_GAME,
