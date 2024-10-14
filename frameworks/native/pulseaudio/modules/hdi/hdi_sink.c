@@ -1810,7 +1810,7 @@ static void SampleEffectToSink(const char* sinkSceneType, struct Userdata *u)
     CHECK_AND_RETURN_LOG(sinkSceneType != NULL, "SampleEffectToSink: sceneType is NULL!");
     CHECK_AND_RETURN_LOG(u != NULL, "SampleEffectToSink: u is null!");
     pa_resampler* resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sinkSceneType);
-    if (resampler == NULL) { 
+    if (resampler == NULL) {
         return;
     }
     const pa_sample_spec *ispec = pa_resampler_input_sample_spec(resampler);
@@ -1839,7 +1839,7 @@ static void SampleEffectToSink(const char* sinkSceneType, struct Userdata *u)
     UpdateStreamAvailableMap(u, sinkSceneType);
     SampleEffectToSink(sinkSceneType, u);
     for (int32_t k = 0; k < u->bufferAttr->frameLen * u->sink->sample_spec.channels; k++) {
-         u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
+        u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
     }
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
 }
@@ -4357,7 +4357,7 @@ static void UserdataFree(struct Userdata *u)
     if (u->sceneToResamplerMap) {
         pa_hashmap_free(u->sceneToResamplerMap);
     }
-    
+
     if (u->streamAvailableMap) {
         pa_hashmap_free(u->streamAvailableMap);
     }
