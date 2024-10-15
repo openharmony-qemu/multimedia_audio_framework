@@ -1825,8 +1825,8 @@ std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType, A
     std::string portName = PORT_NONE;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-            // BTH tells us that a2dpoffload is OK and also a2dpOffload path has setup
-            if (a2dpOffloadFlag_ == A2DP_OFFLOAD && IsA2dpOffloadConnected()) {
+            // BTH tells us that a2dpoffload is OK
+            if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
                 if (pipeType == PIPE_TYPE_OFFLOAD) {
                     portName = OFFLOAD_PRIMARY_SPEAKER;
                 } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
