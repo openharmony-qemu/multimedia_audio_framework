@@ -137,10 +137,10 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
         currentRender = rendererStreamMap_[streamIndex];
         rendererStreamMap_[streamIndex] = nullptr;
         rendererStreamMap_.erase(streamIndex);
-    }
-    if (playbackEngine_) {
-        playbackEngine_->Stop();
-        playbackEngine_->RemoveRenderer(currentRender);
+        if (playbackEngine_) {
+            playbackEngine_->Stop();
+            playbackEngine_->RemoveRenderer(currentRender);
+        }
     }
     if (currentRender->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);

@@ -61,7 +61,6 @@ NoneMixEngine::~NoneMixEngine()
     failedCount_ = 0;
     fwkSyncTime_ = 0;
     if (playbackThread_) {
-        std::lock_guard fadingLock(fadingMutex_);
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }

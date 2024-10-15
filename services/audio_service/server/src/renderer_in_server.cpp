@@ -801,6 +801,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
 
 int32_t RendererInServer::Stop()
 {
+    AUDIO_INFO_LOG("Stop.");
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
