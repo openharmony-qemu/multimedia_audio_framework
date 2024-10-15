@@ -342,6 +342,8 @@ public:
 
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
+    bool IsTransparentCapture(const int32_t pid, const uint32_t sessionId) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

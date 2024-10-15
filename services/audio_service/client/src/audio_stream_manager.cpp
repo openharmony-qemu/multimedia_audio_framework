@@ -236,5 +236,9 @@ int32_t AudioStreamManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
     return AudioPolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray);
 }
 
+bool AudioSystemManager::IsTransparentCapture(const int32_t pid, const uint32_t sessionId)
+{
+    return AudioPolicyManager::GetInstance().IsTransparentCapture(pid, sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

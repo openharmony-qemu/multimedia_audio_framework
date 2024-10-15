@@ -1329,6 +1329,8 @@ public:
     */
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
+    bool IsTransparentCapture(const int32_t pid, const uint32_t sessionId);
+
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

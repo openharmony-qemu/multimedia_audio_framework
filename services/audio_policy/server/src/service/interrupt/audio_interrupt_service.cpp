@@ -1041,9 +1041,15 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         AudioFocusEntry focusEntry =
             focusCfgMap_[std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType)];
         if (focusEntry.actionOn != CURRENT || IsSameAppInShareMode(incomingInterrupt, iterActive->first) ||
-            iterActive->second == PLACEHOLDER || CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) {
+            iterActive->second == PLACEHOLDER || CanMixForSession(incomingInterrupt, iterActive->first, focusEntry) ||
+            (IsLowestPriorityRecording(incomingInterrupt) && !IsRecordingInterruption(iterActive->first))) {
             ++iterActive;
             continue;
+        }
+        if (IsLowestPriorityRecording(iterActive->first) && IsRecordingInterruption(incomingInterrupt)) {
+            focusEntry.actionOn = CURRENT;
+            focusEntry.forceType =  INTERRUPT_FORCE;
+            focusEntry.hintType = INTERRUPT_HINT_STOP;
         }
 
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, focusEntry.forceType, INTERRUPT_HINT_NONE, 1.0f};
@@ -1197,6 +1203,13 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
     for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) { continue; }
+
+        if (IsLowestPriorityRecording(incomingInterrupt) && IsRecordingInterruption(iterActive->first)) {
+            incomingState = STOP;
+            AUDIO_INFO_LOG("PEELING AUDIO fail, there's a device recording");
+            break;
+        }
+
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
         CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(audioFocusTypePair) != focusCfgMap_.end(), ERR_INVALID_PARAM,
@@ -1210,7 +1223,7 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
             SourceType existSourceType = (iterActive->first).audioFocusType.sourceType;
             std::vector<SourceType> existConcurrentSources = (iterActive->first).currencySources.sourcesTypes;
             if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
-                incomingConcurrentSources)) {
+                incomingConcurrentSources) || IsLowestPriorityRecording(iterActive->first)) {
                 continue;
             }
         }
@@ -1234,6 +1247,40 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
     SendInterruptEventToIncomingStream(interruptEvent, incomingInterrupt);
     return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
+}
+
+bool AudioInterruptService::IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.currencySources.sourceTypes.size() == 1 &&
+        audioInterrupt.currencySources.sourceTypes[0] == SOURCE_TYPE_INVALID &&
+        (audioInterrupt.sessionId = 5000 || audioInterrupt.sessionId == 1013)) {
+        AUDIO_INFO_LOG("PEELING AUDIO IsLowestPriorityRecording:%{public}d", audioInterrupt.sessionId);
+        return true;
+    }
+    return false;
+}
+
+bool AudioInterruptService::IsTransparentCapture(int32_t pid, uint320_t sessionId)
+{
+    auto itZone = zonesMap_.find(0);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
+    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
+        audioFocusInfoList = itZone->second->audioFocusInfoList;
+    }
+    for (auto itr = audioFocusInfoList.begin(); itr != audioFocusInfoList.end(); ++itr) {
+        if (itr->first.pid == pid && itr->sessionId == sessionId) {
+            if (IsLowestPriorityRecording(itr->first)) {
+                return true;
+            }
+            return false;
+        }
+    }
+    return false;
+}
+
+bool AudioInterruptService::IsRecordingInterruption(const AudioInterrupt &audioInterrupt)
+{
+    return audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID ? true : false;
 }
 
 void AudioInterruptService::SendInterruptEventToIncomingStream(InterruptEventInternal &interruptEvent,

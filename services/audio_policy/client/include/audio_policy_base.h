@@ -358,6 +358,8 @@ public:
 
     virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
 
+    virtual bool IsTransparentCapture(const int32_t pid, const uint32_t sessionId) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

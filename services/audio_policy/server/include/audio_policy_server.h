@@ -326,7 +326,7 @@ public:
         uint32_t appTokenId) override;
 
     int32_t SetCaptureSilentState(bool state) override;
-    
+
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
@@ -442,6 +442,8 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
+
+    bool IsTransparentCapture(const int32_t pid, const uint32_t sessionId);
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:

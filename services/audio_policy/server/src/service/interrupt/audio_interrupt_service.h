@@ -102,6 +102,7 @@ public:
     void AudioInterruptZoneDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeBySessionId(int32_t sessionId);
+    bool IsTransparentCapture(int32_t pid, uint32_t sessionId);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -219,6 +220,9 @@ private:
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     bool ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptHint hintType);
+
+    bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
+    bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
