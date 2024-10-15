@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include "audio_policy_service_first_unit_test.h"
 #include "audio_policy_service_third_unit_test.h"
-
 #include <thread>
 #include <memory>
 #include <vector>
@@ -22,42 +21,20 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t SYSTEM_ABILITY_ID = 3009;
-const bool RUN_ON_CREATE = false;
-bool g_isInit = false;
 static const std::string PIPE_PRIMARY_OUTPUT_UNITTEST = "primary_output";
 static const std::string PIPE_PRIMARY_INPUT_UNITTEST = "primary_input";
 static const std::string PIPE_USB_ARM_OUTPUT_UNITTEST = "usb_arm_output";
 static const std::string PIPE_DP_OUTPUT_UNITTEST = "dp_output";
 static const std::string PIPE_USB_ARM_INPUT_UNITTEST = "usb_arm_input";
 
-static AudioPolicyServer g_server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 void AudioPolicyServiceThirdUnitTest::SetUpTestCase(void) {}
 void AudioPolicyServiceThirdUnitTest::TearDownTestCase(void) {}
 void AudioPolicyServiceThirdUnitTest::SetUp(void) {}
-void AudioPolicyServiceThirdUnitTest::TearDown(void)
-{
-    g_server.OnStop();
-    g_isInit = false;
-}
+void AudioPolicyServiceThirdUnitTest::TearDown(void) {}
 
-AudioPolicyServer *GetServerPtr()
+static AudioPolicyServer* GetServerPtr()
 {
-    if (!g_isInit) {
-        g_server.OnStart();
-        g_server.OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
-        g_server.OnAddSystemAbility(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID, "");
-        g_server.OnAddSystemAbility(ACCESSIBILITY_MANAGER_SERVICE_ID, "");
-        g_server.OnAddSystemAbility(COMMON_EVENT_SERVICE_ID, "");
-        g_server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
-        g_server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
-        g_server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        g_server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        g_server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        g_server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
-        g_isInit = true;
-    }
-    return &g_server;
+    return AudioPolicyServiceUnitTest::GetServerPtr();
 }
 
 /**
