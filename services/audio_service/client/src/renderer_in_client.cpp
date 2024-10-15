@@ -133,15 +133,12 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
-    }
-
-    if (operation == DATA_LINK_CONNECTING || operation == DATA_LINK_CONNECTED) {
-        if (operation == DATA_LINK_CONNECTING) {
-            isDataLinkConnected_ = false;
-        } else {
-            isDataLinkConnected_ = true;
-            dataConnectionCV_.notify_all();
-        }
+    } else if (operation == DATA_LINK_CONNECTING) {
+        isDataLinkConnected_ = false;
+        return SUCCESS;
+    } else if (operation == DATA_LINK_CONNECTED) {
+        isDataLinkConnected_ = true;
+        dataConnectionCV_.notify_all();
         return SUCCESS;
     }
 
