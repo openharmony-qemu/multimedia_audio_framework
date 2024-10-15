@@ -34,8 +34,6 @@ namespace AudioStandard {
 static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
-static const int32_t INVALID_APP_UID = -1;
-static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
 AudioService *AudioService::GetInstance()
@@ -98,6 +96,10 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
         releaseEndpointThread.detach();
     }
 
+    auto processConfig = process->GetAudioProcessConfig();
+    if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        CleanUpStream(processConfig.appInfo.appUid);
+    }
     return SUCCESS;
 }
 
@@ -903,7 +905,14 @@ int32_t AudioService::SetOffloadMode(uint32_t sessionId, int32_t state, bool isA
     }
     AUDIO_INFO_LOG("Set offload mode for renderer %{public}u", sessionId);
     std::shared_ptr<RendererInServer> renderer = allRendererMap_[sessionId].lock();
-    return renderer->SetOffloadMode(state, isAppBack);
+    if (renderer == nullptr) {
+        AUDIO_WARNING_LOG("RendererInServer is nullptr");
+        lock.unlock();
+        return ERROR;
+    }
+    int32_t ret = renderer->SetOffloadMode(state, isAppBack);
+    lock.unlock();
+    return ret;
 }
 
 int32_t AudioService::UnsetOffloadMode(uint32_t sessionId)
@@ -915,6 +924,11 @@ int32_t AudioService::UnsetOffloadMode(uint32_t sessionId)
     }
     AUDIO_INFO_LOG("Set offload mode for renderer %{public}u", sessionId);
     std::shared_ptr<RendererInServer> renderer = allRendererMap_[sessionId].lock();
+    if (renderer == nullptr) {
+        AUDIO_WARNING_LOG("RendererInServer is nullptr");
+        lock.unlock();
+        return ERROR;
+    }
     int32_t ret = renderer->UnsetOffloadMode();
     lock.unlock();
     return ret;
@@ -978,15 +992,15 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
     return false;
 }
 
-int32_t AudioService::GetCreatedAudioStreamMostUid()
+void AudioService::GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum)
 {
-    int32_t mostAppUid = INVALID_APP_UID;
-    int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
     for (auto it = appUseNumMap.begin(); it != appUseNumMap.end(); it++) {
-        mostAppNum = it->second > mostAppNum ? it->second : mostAppNum;
-        mostAppUid = it->first;
+        if (it->second > mostAppNum) {
+            mostAppNum = it->second;
+            mostAppUid = it->first;
+        }
     }
-    return mostAppUid;
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

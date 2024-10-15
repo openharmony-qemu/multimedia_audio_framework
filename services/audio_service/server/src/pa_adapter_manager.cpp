@@ -241,6 +241,12 @@ int32_t PaAdapterManager::ReleaseCapturer(uint32_t streamIndex)
     return SUCCESS;
 }
 
+int32_t PaAdapterManager::AddUnprocessStream(int32_t appUid)
+{
+    unprocessAppUidSet_.insert(appUid);
+    return SUCCESS;
+}
+
 int32_t PaAdapterManager::ResetPaContext()
 {
     AUDIO_DEBUG_LOG("Enter ResetPaContext");
@@ -393,8 +399,11 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     }
     const std::string streamName = GetStreamName(processConfig.streamType);
     pa_channel_map map;
-    CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName, sessionId) == 0, nullptr,
-        "set pa proplist failed");
+    if (SetPaProplist(propList, map, processConfig, streamName, sessionId) != 0) {
+        AUDIO_ERR_LOG("set pa proplist failed");
+        pa_proplist_free(propList);
+        return nullptr;
+    }
 
     pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec,
         isRecording ? nullptr : &map, propList);
@@ -502,6 +511,10 @@ void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConf
         std::to_string(processConfig.capturerInfo.sourceType).c_str());
     const std::string sceneType = GetEnhanceSceneName(processConfig.capturerInfo.sourceType);
     pa_proplist_sets(propList, "scene.type", sceneType.c_str());
+    if (unprocessAppUidSet_.find(processConfig.appInfo.appUid) != unprocessAppUidSet_.end()) {
+        AUDIO_INFO_LOG("ByPass UID is [%{public}d]", processConfig.appInfo.appUid);
+        pa_proplist_sets(propList, "scene.bypass", "scene.bypass");
+    }
 }
 
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,

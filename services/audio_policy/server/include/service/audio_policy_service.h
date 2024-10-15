@@ -51,6 +51,7 @@
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
 #include "audio_affinity_manager.h"
+#include "audio_ec_info.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -99,7 +100,7 @@ public:
 
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType) const;
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
     float GetSystemVolumeDb(AudioStreamType streamType) const;
 
@@ -116,7 +117,7 @@ public:
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
-    bool GetStreamMute(AudioStreamType streamType) const;
+    bool GetStreamMute(AudioStreamType streamType);
 
     bool IsStreamActive(AudioStreamType streamType) const;
 
@@ -160,11 +161,11 @@ public:
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
-    bool IsDeviceActive(InternalDeviceType deviceType) const;
+    bool IsDeviceActive(InternalDeviceType deviceType);
 
-    DeviceType GetActiveOutputDevice() const;
+    DeviceType GetActiveOutputDevice();
 
-    unique_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor() const;
+    unique_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
 
     DeviceType GetActiveInputDevice();
 
@@ -664,7 +665,7 @@ private:
 
     int32_t HandleActiveDevice(DeviceType deviceType);
 
-    int32_t LoadA2dpModule(DeviceType deviceType);
+    int32_t LoadA2dpModule();
 
     int32_t LoadUsbModule(string deviceInfo, DeviceRole deviceRole);
 
@@ -782,7 +783,7 @@ private:
 
     std::string GetVolumeGroupType(DeviceType deviceType);
 
-    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
+    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo);
 
     void RemoveDeviceInRouterMap(std::string networkId);
 
@@ -816,8 +817,6 @@ private:
     void RegisterAccessiblilityBalance();
 
     void RegisterAccessiblilityMono();
-
-    void UnregisterAccessibilityMonitorHelper();
 
     bool IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc);
 
@@ -878,7 +877,7 @@ private:
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
 
-    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc);
+    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc);
 
     void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
 
@@ -901,9 +900,6 @@ private:
     std::string GetSinkName(const DeviceInfo& desc, int32_t sessionId);
 
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
-
-    void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
-        SourceInfo &targetInfo);
 
     void ClearScoDeviceSuspendState(string macAddress = "");
 
@@ -935,6 +931,8 @@ private:
 
     void CheckWiredActiveMusicTime(int32_t safeVolume);
 
+    bool CheckMixActiveMusicTime(int32_t safeVolume);
+
     void RestoreSafeVolume(AudioStreamType streamType, int32_t safeVolume);
 
     void SetSafeVolumeCallback(AudioStreamType streamType);
@@ -948,7 +946,7 @@ private:
         std::string &networkId);
 
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
-        std::string &networkId);
+        const std::string &networkId);
 
     bool NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -1011,6 +1009,28 @@ private:
 
     void UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
+    
+    void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
+    std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
+    std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
+    int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType, PipeInfo &pipeInfo);
+    EcType GetEcType(const DeviceType inputDevice, const DeviceType outputDevice);
+    std::string GetEcSamplingRate(const std::string &halName, StreamPropInfo &streamPropInfo);
+    std::string GetEcFormat(const std::string &halName, StreamPropInfo &streamPropInfo);
+    std::string GetEcChannels(const std::string &halName, StreamPropInfo &streamPropInfo);
+    AudioEcInfo GetAudioEcInfo();
+    std::string ShouldOpenMicRef(SourceType source);
+    void UpdateEnhanceEffectState();
+    void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType sourceType);
+    void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice);
+    void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
+    void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
+    void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
+        const AudioEnhancePropertyArray &newPropertyArray);
+    void ReloadSourceForSession(SessionInfo sessionInfo);
 
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
@@ -1046,6 +1066,20 @@ private:
 
     void SetCurrentInputDeviceType(DeviceType deviceType);
 
+    void SetCurrentOutputDevice(const AudioDeviceDescriptor &desc);
+
+    void SetCurrentOutputDeviceType(DeviceType deviceType);
+
+    AudioDeviceDescriptor GetCurrentOutputDevice();
+
+    DeviceType GetCurrentOutputDeviceType();
+
+    DeviceCategory GetCurrentOutputDeviceCategory();
+
+    std::string GetCurrentOutputDeviceNetworkId();
+
+    std::string GetCurrentOutputDeviceMacAddr();
+
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
 
     int32_t ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &desc);
@@ -1067,7 +1101,14 @@ private:
 
     void CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
+    void PrepareAndOpenNormalSource(SessionInfo &sessionInfo, StreamPropInfo &targetInfo, SourceType targetSource);
+
+    void CloseNormalSource();
+
+    void HandleRemainingSource();
+
     bool GetAudioEffectOffloadFlag();
+    void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
 
     bool CheckSpatializationAndEffectState();
 
@@ -1099,6 +1140,7 @@ private:
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
+    std::mutex curOutputDevice_; // lock this mutex to operate currentActiveDevice_
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::mutex curInputDevice_; // lock this mutex to operate currentActiveInputDevice_
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
@@ -1190,7 +1232,9 @@ private:
     std::atomic<bool> moveDeviceFinished_ = false;
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
-
+    SourceType normalSourceOpened_ = SOURCE_TYPE_INVALID;
+    uint64_t sessionIdUsedToOpenSource_ = 0;
+    
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
@@ -1200,7 +1244,7 @@ private:
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
 
     static std::map<std::string, std::string> sinkPortStrToClassStrMap_;
-    static std::map<std::string, uint32_t> formatStrToEnum;
+    static std::map<std::string, AudioSampleFormat> formatStrToEnum;
     static std::map<std::string, ClassType> classStrToEnum;
     static std::map<std::string, ClassType> portStrToEnum;
 
@@ -1221,6 +1265,17 @@ private:
     bool safeVolumeExit_ = false;
     bool isAbsBtFirstBoot_ = true;
     bool normalVoipFlag_ = false;
+
+    static std::map<DeviceType, std::string> ecDeviceToPipeName;
+    bool isEcFeatureEnable_ = false;
+    bool isMicRefFeatureEnable_ = false;
+    bool isMicRefVoipUpOn_ = false;
+    bool isMicRefRecordOn_ = false;
+    std::mutex audioEcInfoMutex_;
+    AudioEcInfo audioEcInfo_;
+    AudioModuleInfo usbSinkModuleInfo_ = {};
+    AudioModuleInfo usbSourceModuleInfo_ = {};
+    AudioModuleInfo dpSinkModuleInfo_ = {};
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;

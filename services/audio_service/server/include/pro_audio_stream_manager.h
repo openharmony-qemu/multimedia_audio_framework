@@ -37,6 +37,7 @@ public:
     int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;
     int32_t ReleaseCapturer(uint32_t streamIndex) override;
 
+    int32_t AddUnprocessStream(int32_t appUid) override;
 private:
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig);
     int32_t CreatePlayBackEngine(const std::shared_ptr<IRendererStream> &stream);

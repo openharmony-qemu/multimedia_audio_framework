@@ -1380,6 +1380,7 @@ private:
     std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_ = nullptr;
     std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
     std::mutex ringerModeCallbackMutex_;
+    std::mutex groupManagerMapMutex_;
 
     std::shared_ptr<AudioCapturerSourceCallback> audioCapturerSourceCallback_ = nullptr;
     std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;

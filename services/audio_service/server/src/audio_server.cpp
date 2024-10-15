@@ -81,6 +81,8 @@ const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
+static const int32_t INVALID_APP_UID = -1;
+static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -95,6 +97,7 @@ static const int32_t FAST_DUMPINFO_LEN = 2;
 static const int32_t BUNDLENAME_LENGTH_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
 constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 40;
+const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -453,6 +456,12 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
             value += it->first + "=" + it->second + ";";
+            if (it->first == "unprocess_audio_effect") {
+                int appUid = IPCSkeleton::GetCallingUid();
+                AUDIO_INFO_LOG("add unprocess UID [%{public}d]", appUid);
+                IStreamManager::GetRecorderManager().AddUnprocessStream(appUid);
+                continue;
+            }
             auto valueIter = subKeyIt->second.find("effect");
             if (valueIter != subKeyIt->second.end()) {
                 RecognizeAudioEffectType(key, it->first, it->second);
@@ -1604,12 +1613,19 @@ int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
 int32_t AudioServer::CheckMaxRendererInstances()
 {
     int32_t maxRendererInstances = PolicyHandler::GetInstance().GetMaxRendererInstances();
+    if (maxRendererInstances <= 0) {
+        maxRendererInstances = DEFAULT_MAX_RENDERER_INSTANCES;
+    }
+
     if (AudioService::GetInstance()->GetCurrentRendererStreamCnt() >= maxRendererInstances) {
-        int32_t mostAppUid = AudioService::GetInstance()->GetCreatedAudioStreamMostUid();
+        int32_t mostAppUid = INVALID_APP_UID;
+        int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
+        AudioService::GetInstance()->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
             Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
         bean->Add("CLIENT_UID", mostAppUid);
+        bean->Add("TIMES", mostAppNum);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
         return ERR_EXCEED_MAX_STREAM_CNT;
@@ -1628,15 +1644,18 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     int32_t ret = CheckParam(config);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
-    errorCode = CheckMaxRendererInstances();
-    if (errorCode != SUCCESS) {
-        return nullptr;
-    }
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
-        maxRendererStreamCntPerUid_)) {
-        errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
-        return nullptr;
+    if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        errorCode = CheckMaxRendererInstances();
+        if (errorCode != SUCCESS) {
+            return nullptr;
+        }
+        if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
+            maxRendererStreamCntPerUid_)) {
+            errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
+            AUDIO_ERR_LOG("Current audio renderer stream num exceeds maxRendererStreamCntPerUid");
+            return nullptr;
+        }
     }
 
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA

@@ -50,6 +50,8 @@ namespace {
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
+    constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    const int32_t XCOLLIE_FLAG_DEFAULT = (1 | 2); // dump stack and kill self
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -841,6 +843,9 @@ int32_t RendererInServer::Stop()
 
 int32_t RendererInServer::Release()
 {
+    AUDIO_INFO_LOG("Start release");
+    AudioXCollie audioXCollie(
+        "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr, XCOLLIE_FLAG_DEFAULT);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         AudioService::GetInstance()->CleanUpStream(processConfig_.appInfo.appUid);
     }

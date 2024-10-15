@@ -54,7 +54,6 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
 static const std::vector<AudioStreamType> VOICE_CALL_VOLUME_TYPE_LIST = {
     // all stream types for voice call volume type
     STREAM_VOICE_CALL,
-    STREAM_VOICE_MESSAGE,
     STREAM_VOICE_COMMUNICATION
 };
 
@@ -74,7 +73,8 @@ static const std::vector<AudioStreamType> MEDIA_VOLUME_TYPE_LIST = {
     STREAM_MOVIE,
     STREAM_GAME,
     STREAM_SPEECH,
-    STREAM_NAVIGATION
+    STREAM_NAVIGATION,
+    STREAM_VOICE_MESSAGE
 };
 
 static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
@@ -453,6 +453,8 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     bool isMuted = GetStreamMute(volumeType);
     int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
     if (GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && volumeType == STREAM_MUSIC) {
+        isMuted = IsAbsVolumeMute();
+        volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
         volumeDb = isMuted ? 0.0f : 0.63957f; // 0.63957 = -4dB
     }
     auto audioVolume = AudioVolume::GetInstance();
@@ -861,6 +863,54 @@ void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
     }
 }
 
+void UpdateEcAndMicRefArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
+{
+    if (!audioModuleInfo.ecType.empty()) {
+        args.append(" ec_type=");
+        args.append(audioModuleInfo.ecType);
+    }
+
+    if (!audioModuleInfo.ecAdapter.empty()) {
+        args.append(" ec_adapter=");
+        args.append(audioModuleInfo.ecAdapter);
+    }
+
+    if (!audioModuleInfo.ecSamplingRate.empty()) {
+        args.append(" ec_sampling_rate=");
+        args.append(audioModuleInfo.ecSamplingRate);
+    }
+
+    if (!audioModuleInfo.ecFormat.empty()) {
+        args.append(" ec_format=");
+        args.append(audioModuleInfo.ecFormat);
+    }
+
+    if (!audioModuleInfo.ecChannels.empty()) {
+        args.append(" ec_channels=");
+        args.append(audioModuleInfo.ecChannels);
+    }
+
+    if (!audioModuleInfo.openMicRef.empty()) {
+        args.append(" open_mic_ref=");
+        args.append(audioModuleInfo.openMicRef);
+    }
+
+    if (!audioModuleInfo.micRefRate.empty()) {
+        args.append(" mic_ref_rate=");
+        args.append(audioModuleInfo.micRefRate);
+    }
+
+    if (!audioModuleInfo.micRefFormat.empty()) {
+        args.append(" mic_ref_format=");
+        args.append(audioModuleInfo.micRefFormat);
+    }
+
+    if (!audioModuleInfo.micRefChannels.empty()) {
+        args.append(" mic_ref_channels=");
+        args.append(audioModuleInfo.micRefChannels);
+    }
+}
+
 void UpdateSourceArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.name.empty()) {
@@ -963,6 +1013,7 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
         UpdateSourceArgs(audioModuleInfo, args);
+        UpdateEcAndMicRefArgs(audioModuleInfo, args);
     } else if (audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
@@ -1861,7 +1912,7 @@ bool AudioAdapterManager::IsAbsVolumeScene() const
 void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     isAbsVolumeMute_ = mute;
-    float volumeDb = mute ? 0.0f : 1.0f;
+    float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
     SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
 }
 
