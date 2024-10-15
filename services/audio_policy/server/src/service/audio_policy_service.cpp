@@ -798,6 +798,7 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_DP:
             volumeGroupType = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -806,7 +807,6 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_DP:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             volumeGroupType = "wired";
             break;
@@ -8808,7 +8808,6 @@ void AudioPolicyService::SetDeviceSafeVolumeStatus()
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             safeStatus_ = SAFE_INACTIVE;
             audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
             CreateCheckMusicActiveThread();
