@@ -142,7 +142,7 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
     EXPECT_TRUE(ERROR_62980101 == ret || SUCCESS == ret);
 
     bool result = audioManagerProxy->CreatePlaybackCapturerManager();
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(result, true);
 
     int32_t deviceType = 1;
     std::string sinkName = "test";
