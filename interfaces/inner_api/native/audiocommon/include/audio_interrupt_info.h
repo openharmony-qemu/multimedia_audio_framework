@@ -159,7 +159,6 @@ struct AudioFocusType {
 
 class AudioInterrupt {
 public:
-    AudioSessionStrategy sessionStrategy = { AudioConcurrencyMode::DEFAULT };
     StreamUsage streamUsage;
     ContentType contentType;
     AudioFocusType audioFocusType;
@@ -169,6 +168,7 @@ public:
     InterruptMode mode { SHARE_MODE };
     bool parallelPlayFlag {false};
     AudioFocusConcurrency currencySources;
+    AudioSessionStrategy sessionStrategy = { AudioConcurrencyMode::INVALID };
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,

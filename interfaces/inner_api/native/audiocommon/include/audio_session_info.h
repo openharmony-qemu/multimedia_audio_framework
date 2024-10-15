@@ -18,6 +18,7 @@
 namespace OHOS {
 namespace AudioStandard {
 enum class AudioConcurrencyMode {
+    INVALID = -1,
     DEFAULT = 0,
     MIX_WITH_OTHERS = 1,
     DUCK_OTHERS = 2,
