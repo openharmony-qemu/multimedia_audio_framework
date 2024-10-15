@@ -43,7 +43,6 @@ int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<
     if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("DTMF"))) {
         AUDIO_ERR_LOG("Missing tag - DTMF: %s", AUDIO_TONE_CONFIG_FILE);
         xmlFreeDoc(doc);
-        xmlCleanupParser();
         return ERROR;
     }
     if (currNode->xmlChildrenNode) {
@@ -51,7 +50,6 @@ int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<
     } else {
         AUDIO_ERR_LOG("Missing child - DTMF: %s", AUDIO_TONE_CONFIG_FILE);
         xmlFreeDoc(doc);
-        xmlCleanupParser();
         return ERROR;
     }
 
@@ -71,7 +69,6 @@ int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<
         AUDIO_WARNING_LOG("Missing tag - Tones, ToneInfo: %s", AUDIO_TONE_CONFIG_FILE);
     }
     xmlFreeDoc(doc);
-    xmlCleanupParser();
     AUDIO_INFO_LOG("Done");
     return SUCCESS;
 }
