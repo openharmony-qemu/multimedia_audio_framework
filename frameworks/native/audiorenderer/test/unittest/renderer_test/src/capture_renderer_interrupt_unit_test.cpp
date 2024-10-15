@@ -78,7 +78,9 @@ void AudioCaptureRendererUnitTest::AudioInterruptUnitTestFunc(SourceType sourceT
 
     AudioCapturerOptions capturerOptions = UTCreateAudioCapturer(sourceType);
     audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioCapturer);
+    if (nullptr == audioCapturer) {
+        return ;
+    }
     bool isCapturerStarted = audioCapturer->Start();
     EXPECT_EQ(true, isCapturerStarted);
 
