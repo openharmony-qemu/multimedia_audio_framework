@@ -19,6 +19,7 @@
 #include "audio_policy_client_stub.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_utils.h"
 
 using namespace std;
 namespace OHOS {
@@ -27,7 +28,7 @@ namespace AudioStandard {
 static const int32_t FOCUS_INFO_VALID_SIZE = 128;
 static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;
-static const int32_t STATE_VALID_SIZE = 128;
+static const int32_t STATE_VALID_SIZE = 1024;
 static const int32_t MIC_BLOCKED_VALID_SIZE = 128;
 
 AudioPolicyClientStub::AudioPolicyClientStub()
@@ -252,6 +253,7 @@ void AudioPolicyClientStub::HandleRendererStateChange(MessageParcel &data, Messa
 {
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRenderChangeInfo;
     int32_t size = data.ReadInt32();
+    Trace trace("HandleRendererStateChange size:" + std::to_string(size));
     CHECK_AND_RETURN_LOG(size < STATE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     while (size > 0) {
