@@ -64,7 +64,7 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
 
 RendererInServer::~RendererInServer()
 {
-    if (status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE) {
+    if (status_ != I_STATUS_RELEASED) {
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpC2S_);
