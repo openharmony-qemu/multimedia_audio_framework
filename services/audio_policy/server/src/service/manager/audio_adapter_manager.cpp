@@ -453,6 +453,8 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     bool isMuted = GetStreamMute(volumeType);
     int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
     if (GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && volumeType == STREAM_MUSIC) {
+        isMuted = IsAbsVolumeMute();
+        volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
         volumeDb = isMuted ? 0.0f : 0.63957f; // 0.63957 = -4dB
     }
     auto audioVolume = AudioVolume::GetInstance();
@@ -1910,7 +1912,7 @@ bool AudioAdapterManager::IsAbsVolumeScene() const
 void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     isAbsVolumeMute_ = mute;
-    float volumeDb = mute ? 0.0f : 1.0f;
+    float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
     SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
 }
 
