@@ -426,6 +426,9 @@ public:
     void UpdateA2dpOffloadFlagBySpatialService(
         const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap);
 
+    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsageInner(AudioDeviceUsage usage,
+        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
+
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
 
     std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
@@ -1083,9 +1086,6 @@ private:
         const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
 
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
-
-    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsageInner(AudioDeviceUsage usage,
-        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
     void UnloadA2dpModule();
 
