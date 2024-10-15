@@ -432,9 +432,9 @@ bool AudioPolicyService::Init(void)
     AudioDump::GetInstance().SetVersionType(versionType);
 
     int32_t ecEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
-    int32_t qcEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
+    int32_t micRefEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
     isEcFeatureEnable_ = ecEnableState != 0;
-    isQcFeatureEnable_ = qcEnableState != 0;
+    isMicRefFeatureEnable_ = micRefEnableState != 0;
     return true;
 }
 
@@ -7682,7 +7682,7 @@ void AudioPolicyService::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
     StreamPropInfo &targetInfo, SourceType targetSource)
 {
     AudioModuleInfo moduleInfo;
-    UpdateEcAndQcFeatureState();
+    UpdateEnhanceEffectState();
     UpdateStreamCommonInfo(moduleInfo, targetInfo, targetSource);
     UpdateStreamEcInfo(moduleInfo, targetSource);
     UpdateStreamMicRefInfo(moduleInfo, targetSource);
@@ -7708,29 +7708,30 @@ void AudioPolicyService::CloseNormalSource()
     normalSourceOpened_ = SOURCE_TYPE_INVALID;
 }
 
-void AudioPolicyService::UpdateEcAndQcFeatureState()
+void AudioPolicyService::UpdateEnhanceEffectState()
 {
-    int32_t qcSwitchState = 0;
     AudioEnhancePropertyArray enhancePropertyArray = {};
     int32_t ret = GetAudioEnhanceProperty(enhancePropertyArray);
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
-        enhancePropertyArray.property.clear();
+        return;
     }
     std::string recordProp = "";
+    std::string voipUpProp = "";
     for (const AudioEnhanceProperty &prop : enhancePropertyArray.property) {
         if (prop.enhanceClass == "record") {
             recordProp = prop.enhanceProp;
         }
-        if (prop.enhanceProp == "PNR") {
-            qcSwitchState = 1;
+        if (prop.enhanceClass == "voip_up") {
+            voipUpProp = prop.enhanceProp;
         }
     }
-    isQcSwitchOn_ = qcSwitchState != 0;
-    isRecordNrOn_ = recordProp == "NRON";
+    isMicRefRecordOn_ = (recordProp == "NRON");
+    isMicRefVoipUpOn_ = (voipUpProp == "PNR");
 
-    AUDIO_INFO_LOG("ecEnableState: %{public}d, qcEnableState: %{public}d,"
-        "qcSwitchState: %{public}d,", isEcFeatureEnable_, isQcFeatureEnable_, qcSwitchState);
+    AUDIO_INFO_LOG("ecEnableState: %{public}d, micRefEnableState: %{public}d, "
+        "isMicRefRecordOn_: %{public}d, isMicRefVoipUp: %{public}d",
+        isEcFeatureEnable_, isMicRefFeatureEnable_, isMicRefRecordOn_, isMicRefVoipUpOn_);
 }
 
 EcType AudioPolicyService::GetEcType(const DeviceType inputDevice, const DeviceType outputDevice)
@@ -7764,28 +7765,21 @@ std::string AudioPolicyService::GetHalNameForDevice(const std::string &role, con
 
 std::string AudioPolicyService::ShouldOpenMicRef(SourceType source)
 {
-    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
     std::string shouldOpen = "0";
-    if (!isQcFeatureEnable_) {
-        AUDIO_INFO_LOG("isQcFeatureEnable_ is off");
+    if (!isMicRefFeatureEnable_) {
+        AUDIO_INFO_LOG("isMicRefFeatureEnable_ is off");
         return shouldOpen;
     }
 
+    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
     auto iter = std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), inputDesc->deviceType_);
-    if (source == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        if (isQcSwitchOn_ && iter != MIC_REF_DEVICES.end()) {
-            shouldOpen = "1";
-        }
-    } else if (source == SOURCE_TYPE_MIC) {
-        if (isRecordNrOn_ && iter != MIC_REF_DEVICES.end()) {
-            shouldOpen = "1";
-        }
-    } else {
-        shouldOpen = "0";
+    if ((source == SOURCE_TYPE_VOICE_COMMUNICATION && isMicRefVoipUpOn_ && iter != MIC_REF_DEVICES.end()) ||
+        (source == SOURCE_TYPE_MIC && isMicRefRecordOn_ && iter != MIC_REF_DEVICES.end())) {
+        shouldOpen = "1";
     }
 
-    AUDIO_INFO_LOG("enable: %{public}d, switch: %{public}d, device: %{public}d",
-        isQcFeatureEnable_, isQcSwitchOn_, inputDesc->deviceType_);
+    AUDIO_INFO_LOG("source: %{public}d, voipUpMicOn: %{public}d, recordMicOn: %{public}d, device: %{public}d",
+        source, isMicRefVoipUpOn_, isMicRefRecordOn_, inputDesc->deviceType_);
     return shouldOpen;
 }
 
@@ -7857,6 +7851,45 @@ void AudioPolicyService::ReloadSourceForSession(SessionInfo sessionInfo)
     PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
 
     UpdateActiveDeviceRoute(GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG);
+}
+
+void AudioPolicyService::ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
+    const AudioEnhancePropertyArray &newPropertyArray)
+{
+    if (!isMicRefFeatureEnable_) {
+        AUDIO_INFO_LOG("reload ignore for feature not enable");
+        return;
+    }
+    if (normalSourceOpened_ != SOURCE_TYPE_VOICE_COMMUNICATION && normalSourceOpened_ != SOURCE_TYPE_MIC) {
+        AUDIO_INFO_LOG("reload ignore for source not voip or mic");
+        return;
+    }
+
+    std::string oldRecordProp = "";
+    std::string oldVoipUpProp = "";
+    std::string newRecordProp = "";
+    std::string newVoipUpProp = "";
+    for (const AudioEnhanceProperty &prop : oldPropertyArray.property) {
+        if (prop.enhanceClass == "record") {
+            oldRecordProp = prop.enhanceProp;
+        }
+        if (prop.enhanceClass == "voip_up") {
+            oldVoipUpProp = prop.enhanceProp;
+        }
+    }
+    for (const AudioEnhanceProperty &prop : newPropertyArray.property) {
+        if (prop.enhanceClass == "record") {
+            newRecordProp = prop.enhanceProp;
+        }
+        if (prop.enhanceClass == "voip_up") {
+            newVoipUpProp = prop.enhanceProp;
+        }
+    }
+    if ((normalSourceOpened_ == SOURCE_TYPE_MIC && oldRecordProp != newRecordProp) ||
+        (normalSourceOpened_ == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR")))) {
+        ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
+    }
 }
 
 void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
@@ -9635,11 +9668,19 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
             ERR_INVALID_PARAM, "set audio enhance property not valid %{public}s:%{public}s",
             item.enhanceClass.c_str(), item.enhanceProp.c_str());
     }
+    AudioEnhancePropertyArray oldPropertyArray = {};
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "set audio enhance property: gsp null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetAudioEnhanceProperty(propertyArray);
+    int32_t ret = gsp->GetAudioEnhanceProperty(oldPropertyArray);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("get audio enhance property fail");
+        IPCSkeleton::SetCallingIdentity(identity);
+        return ret;
+    }
+    ret = gsp->SetAudioEnhanceProperty(propertyArray);
     IPCSkeleton::SetCallingIdentity(identity);
+    ReloadSourceForEffect(oldPropertyArray, propertyArray);
     return ret;
 }
 
