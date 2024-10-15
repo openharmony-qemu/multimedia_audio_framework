@@ -298,7 +298,7 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
         return false;
     }
-    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS){
+    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
         AUDIO_INFO_LOG("incoming stream is explicitly MIX_WITH_OTHERS");
         return true;
     }
