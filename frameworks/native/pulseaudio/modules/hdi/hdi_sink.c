@@ -1934,11 +1934,7 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
             char* newSceneType = strdup(sceneType);
             pa_hashmap_put(sceneToResamplerMap, newSceneType, resampler);
         } else {
-            if (resampler->i_ss.rate != sink_spec.rate) {
-                pa_resampler_set_input_rate(resampler, sink_spec.rate);
-            } else if (resampler->o_ss.rate != sink_spec.rate) {
-                pa_resampler_set_output_rate(resampler, sink_spec.rate);
-            } else if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
+            if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
                 !pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
                 pa_resampler_free(resampler);
                 resampler = pa_resampler_new(
