@@ -149,6 +149,7 @@ public:
 
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
+    AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     std::string cachePath_;
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
