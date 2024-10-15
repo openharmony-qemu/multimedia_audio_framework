@@ -298,6 +298,10 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
         return false;
     }
+    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS){
+        AUDIO_INFO_LOG("incoming stream is explicitly MIX_WITH_OTHERS");
+        return true;
+    }
     if (!sessionService_->IsAudioSessionActivated(incomingInterrupt.pid)) {
         AUDIO_INFO_LOG("No active audio session for the pid of incomming stream");
         return false;
