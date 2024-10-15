@@ -127,6 +127,12 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSink()
             static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
     }
 
+    auto virtualDevices = MediaBluetoothDeviceManager::GetA2dpVirtualDeviceList();
+    for (const auto &virtualDevice : virtualDevices) {
+        a2dpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_REMOVE),
+            virtualDevice.GetDeviceAddr());
+    }
+
     MediaBluetoothDeviceManager::ClearAllA2dpBluetoothDevice();
 }
 
@@ -281,8 +287,10 @@ void AudioA2dpManager::CheckA2dpDeviceReconnect()
 int32_t AudioA2dpManager::Connect(const std::string &macAddress)
 {
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance unavailable");
+    BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     if (MediaBluetoothDeviceManager::IsA2dpBluetoothDeviceConnecting(macAddress)) {
         AUDIO_PRERELEASE_LOGI("A2dp device %{public}s is connecting, ignore connect request", macAddress.c_str());
+        virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
         return SUCCESS;
     }
     std::vector<std::string> virtualDevices;
@@ -292,7 +300,6 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
             macAddress.c_str());
         return SUCCESS;
     }
-    BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     int32_t ret = a2dpInstance_->Connect(virtualDevice);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "A2dp Connect Failed");
     virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
@@ -563,6 +570,12 @@ void AudioHfpManager::DisconnectBluetoothHfpSink()
         hfpListener_->OnConnectionStateChanged(device, connectionState,
             static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
     }
+
+    auto virtualDevices = HfpBluetoothDeviceManager::GetHfpVirtualDeviceList();
+    for (const auto &virtualDevice : virtualDevices) {
+        hfpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_REMOVE),
+            virtualDevice.GetDeviceAddr());
+    }
     HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice();
 }
 
@@ -603,8 +616,10 @@ AudioStandard::AudioScene AudioHfpManager::GetPolicyAudioScene()
 int32_t AudioHfpManager::Connect(const std::string &macAddress)
 {
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
+    BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     if (HfpBluetoothDeviceManager::IsHfpBluetoothDeviceConnecting(macAddress)) {
         AUDIO_PRERELEASE_LOGI("Hfp device %{public}s is connecting, ignore connect request", macAddress.c_str());
+        virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
         return SUCCESS;
     }
     std::vector<std::string> virtualDevices;
@@ -614,7 +629,6 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
             macAddress.c_str());
         return SUCCESS;
     }
-    BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     int32_t ret = hfpInstance_->Connect(virtualDevice);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Hfp Connect Failed");
     virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
