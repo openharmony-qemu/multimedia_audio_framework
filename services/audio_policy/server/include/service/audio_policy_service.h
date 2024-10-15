@@ -496,6 +496,7 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
 
     AudioScene GetLastAudioScene() const;
+    void FetchStreamForA2dpOffload(const bool &requireReset);
     void SetRotationToEffect(const uint32_t rotate);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     bool getFastControlParam();
@@ -1092,8 +1093,6 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
-
-    void FetchStreamForA2dpOffload(const bool &requireReset);
 private:
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
