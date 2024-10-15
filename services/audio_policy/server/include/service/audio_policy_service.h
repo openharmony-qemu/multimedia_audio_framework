@@ -1024,7 +1024,7 @@ private:
     std::string GetEcChannels(const std::string &halName, StreamPropInfo &streamPropInfo);
     AudioEcInfo GetAudioEcInfo();
     std::string ShouldOpenMicRef(SourceType source);
-    void UpdateEcAndQcFeatureState();
+    void UpdateEnhanceEffectState();
     void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType sourceType);
     void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
@@ -1032,6 +1032,8 @@ private:
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
+    void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
+        const AudioEnhancePropertyArray &newPropertyArray);
     void ReloadSourceForSession(SessionInfo sessionInfo);
 
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
@@ -1255,9 +1257,9 @@ private:
 
     static std::map<DeviceType, std::string> ecDeviceToPipeName;
     bool isEcFeatureEnable_ = false;
-    bool isQcFeatureEnable_ = false;
-    bool isQcSwitchOn_ = false;
-    bool isRecordNrOn_ = false;
+    bool isMicRefFeatureEnable_ = false;
+    bool isMicRefVoipUpOn_ = false;
+    bool isMicRefRecordOn_ = false;
     std::mutex audioEcInfoMutex_;
     AudioEcInfo audioEcInfo_;
     AudioModuleInfo usbSinkModuleInfo_ = {};
