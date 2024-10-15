@@ -57,6 +57,7 @@ AudioService::~AudioService()
 
 int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destoryAtOnce)
 {
+    CHECK_AND_RETURN_RET_LOG(process != nullptr, ERROR, "process is nullptr");
     auto processConfig = process->GetAudioProcessConfig();
     if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
         CleanUpStream(processConfig.appInfo.appUid);
