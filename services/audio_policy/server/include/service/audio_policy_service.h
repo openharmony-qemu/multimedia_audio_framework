@@ -100,7 +100,7 @@ public:
 
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType) const;
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
     float GetSystemVolumeDb(AudioStreamType streamType) const;
 
@@ -117,7 +117,7 @@ public:
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
-    bool GetStreamMute(AudioStreamType streamType) const;
+    bool GetStreamMute(AudioStreamType streamType);
 
     bool IsStreamActive(AudioStreamType streamType) const;
 
@@ -161,11 +161,11 @@ public:
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
-    bool IsDeviceActive(InternalDeviceType deviceType) const;
+    bool IsDeviceActive(InternalDeviceType deviceType);
 
-    DeviceType GetActiveOutputDevice() const;
+    DeviceType GetActiveOutputDevice();
 
-    unique_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor() const;
+    unique_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
 
     DeviceType GetActiveInputDevice();
 
@@ -1070,6 +1070,20 @@ private:
 
     void SetCurrentInputDeviceType(DeviceType deviceType);
 
+    void SetCurrentOutputDevice(const AudioDeviceDescriptor &desc);
+
+    void SetCurrentOutputDeviceType(DeviceType deviceType);
+
+    AudioDeviceDescriptor GetCurrentOutputDevice();
+
+    DeviceType GetCurrentOutputDeviceType();
+
+    DeviceCategory GetCurrentOutputDeviceCategory();
+
+    std::string GetCurrentOutputDeviceNetworkId();
+
+    std::string GetCurrentOutputDeviceMacAddr();
+
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
 
     int32_t ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &desc);
@@ -1130,6 +1144,7 @@ private:
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
+    std::mutex curOutputDevice_; // lock this mutex to operate currentActiveDevice_
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::mutex curInputDevice_; // lock this mutex to operate currentActiveInputDevice_
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
