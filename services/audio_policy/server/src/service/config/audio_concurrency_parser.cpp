@@ -27,7 +27,6 @@ int32_t AudioConcurrencyParser::LoadConfig(std::map<std::pair<AudioPipeType, Aud
     if (xmlStrcmp(root->name, reinterpret_cast<const xmlChar*>("audioConcurrencyPolicy"))) {
         AUDIO_ERR_LOG("Missing tag - audioConcurrencyPolicy");
         xmlFreeDoc(doc_);
-        xmlCleanupParser();
         return ERR_OPERATION_FAILED;
     }
     ParseInternal(root, concurrencyMap);
