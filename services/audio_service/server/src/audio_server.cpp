@@ -50,8 +50,6 @@
 #include "i_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
-#include "audio_effect_chain_manager.h"
-#include "audio_enhance_chain_manager.h"
 #include "playback_capturer_manager.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
@@ -78,6 +76,7 @@ const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
+const std::string PCM_DUMP_KEY = "PCM_DUMP";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
@@ -413,15 +412,13 @@ void AudioServer::OnStop()
     NotifyProcessStatus(false);
 }
 
-void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
-    const std::string &extraSceneType)
+bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params)
 {
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
-        return;
-    }
-    audioEffectChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+    bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
+    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(params);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor SetMediaParameters failed.");
+    return true;
 }
 
 int32_t AudioServer::SetExtraParameters(const std::string& key,
@@ -432,11 +429,10 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
 
-    if (key == "PCM_DUMP") {
-        ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set audiodump parameters failed: no permission.");
-        ret = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(kvpairs);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetMediaParameters failed.");
+    if (key == PCM_DUMP_KEY) {
+        ret = SetPcmDumpParameter(kvpairs);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set audiodump parameters failed");
+        return SUCCESS;
     }
 
     if (audioParameterKeys.empty()) {
@@ -832,9 +828,25 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
     audioRendererSinkInstance->SetAudioParameter(key, condition, value);
 }
 
+bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
+    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().GetMediaParameters(subKeys, result);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor GetMediaParameters failed");
+    return true;
+}
+
 int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
     const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
+    if (mainKey == PCM_DUMP_KEY) {
+        bool ret = GetPcmDumpParameter(subKeys, result);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get audiodump parameters failed");
+        return SUCCESS;
+    }
+
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
@@ -1040,34 +1052,6 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
         AUDIO_WARNING_LOG("Load audio effect failed, please check log");
     }
     return loadSuccess;
-}
-
-bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-    const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam)
-{
-    if (!PermissionUtil::VerifyIsAudio()) {
-        AUDIO_ERR_LOG("not audio calling!");
-        return false;
-    }
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectParam,
-        audioEffectServer_->GetEffectEntries());
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceParam,
-        audioEffectServer_->GetEffectEntries());
-    return true;
-}
-
-void AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
-{
-    Trace trace("AudioServer::SetOutputDeviceSink:" + std::to_string(deviceType) + " sink:" + sinkName);
-    if (!PermissionUtil::VerifyIsAudio()) {
-        AUDIO_ERR_LOG("not audio calling!");
-        return;
-    }
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName);
-    return;
 }
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
