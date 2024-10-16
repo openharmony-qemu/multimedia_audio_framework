@@ -603,9 +603,10 @@ void AudioPolicyManagerStub::UnsetInterruptCallbackInternal(MessageParcel &data,
 void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t zoneID = data.ReadInt32();
+    bool isUpdatedAudioStrategy = data.ReadBool();
     AudioInterrupt audioInterrupt = {};
     AudioInterrupt::Unmarshalling(data, audioInterrupt);
-    int32_t result = ActivateAudioInterrupt(audioInterrupt, zoneID);
+    int32_t result = ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
     reply.WriteInt32(result);
 }
 

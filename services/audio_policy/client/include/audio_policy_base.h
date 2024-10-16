@@ -122,7 +122,8 @@ public:
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
-        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+        const int32_t zoneID = 0 /* default value: 0 -- local device */,
+        const bool isUpdatedAudioStrategy = false /* default value: false -- is update audio strategy */) = 0;
 
     virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
