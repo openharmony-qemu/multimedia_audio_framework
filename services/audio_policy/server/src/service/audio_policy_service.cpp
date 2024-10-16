@@ -277,13 +277,38 @@ static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
 static string ParseAudioFormat(string format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
-        return "s16";
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
-        return "s24";
+        return "s16le";
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT" || format == "AUDIO_FORMAT_PCM_24_BIT_PACKED") {
+        return "s24le";
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
-        return "s32";
+        return "s32le";
     } else {
-        return "";
+        return "s16le";
+    }
+}
+
+static int64_t GetCurrentTimeMS()
+{
+    timespec tm {};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+}
+
+static uint32_t PcmFormatToBits(AudioSampleFormat format)
+{
+    switch (format) {
+        case SAMPLE_U8:
+            return 1; // 1 byte
+        case SAMPLE_S16LE:
+            return 2; // 2 byte
+        case SAMPLE_S24LE:
+            return 3; // 3 byte
+        case SAMPLE_S32LE:
+            return 4; // 4 byte
+        case SAMPLE_F32LE:
+            return 4; // 4 byte
+        default:
+            return 2; // 2 byte
     }
 }
 
@@ -309,6 +334,13 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
         string format = deviceInfo.substr(sourceFormat_begin + std::strlen("source_format:"),
             sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
         moduleInfo.format = ParseAudioFormat(format);
+    }
+    
+    if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
+        int32_t bufferSize = stoi(moduleInfo.rate) * stoi(moduleInfo.channels) *
+            PcmFormatToBits(static_cast<AudioSampleFormat>(formatFromParserStrToEnum[moduleInfo.format])) *
+            BUFFER_CALC_20MS / MS_PER_S;
+        moduleInfo.bufferSize = std::to_string(bufferSize);
     }
 }
 
@@ -337,31 +369,6 @@ static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
         string bufferSize = deviceInfo.substr(sinkBSize_begin + std::strlen("buffer_size="),
             sinkBSize_end - sinkBSize_begin - std::strlen("buffer_size="));
         moduleInfo.bufferSize = bufferSize;
-    }
-}
-
-static int64_t GetCurrentTimeMS()
-{
-    timespec tm {};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
-}
-
-static uint32_t PcmFormatToBits(AudioSampleFormat format)
-{
-    switch (format) {
-        case SAMPLE_U8:
-            return 1; // 1 byte
-        case SAMPLE_S16LE:
-            return 2; // 2 byte
-        case SAMPLE_S24LE:
-            return 3; // 3 byte
-        case SAMPLE_S32LE:
-            return 4; // 4 byte
-        case SAMPLE_F32LE:
-            return 4; // 4 byte
-        default:
-            return 2; // 2 byte
     }
 }
 
