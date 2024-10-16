@@ -514,6 +514,7 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 bool AudioCapturerPrivate::Start() const
 {
     Trace trace("AudioCapturer::Start" + std::to_string(sessionID_));
+    std::lock_guard lock(switchStreamMutex_);
     AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
 
@@ -568,6 +569,7 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 bool AudioCapturerPrivate::Pause() const
 {
     Trace trace("AudioCapturer::Pause" + std::to_string(sessionID_));
+    std::lock_guard lock(switchStreamMutex_);
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
@@ -585,6 +587,7 @@ bool AudioCapturerPrivate::Pause() const
 bool AudioCapturerPrivate::Stop() const
 {
     Trace trace("AudioCapturer::Stop" + std::to_string(sessionID_));
+    std::lock_guard lock(switchStreamMutex_);
     AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
