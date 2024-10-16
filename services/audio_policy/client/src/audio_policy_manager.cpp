@@ -2108,12 +2108,5 @@ AudioPolicyManager& AudioPolicyManager::GetInstance()
     static AudioPolicyManager policyManager;
     return policyManager;
 }
-
-bool AudioPolicyManager::IsTransparentCapture(const int32_t pid, const uint32_t sessionId)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is nullptr.");
-    return gsp->IsTransparentCapture(pid, sessionId);
-}
 } // namespace AudioStandard
 } // namespace OHOS

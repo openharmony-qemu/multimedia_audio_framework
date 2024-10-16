@@ -438,8 +438,6 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
-    bool IsTransparentCapture(const int32_t pid, const uint32_t sessionId);
-
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);

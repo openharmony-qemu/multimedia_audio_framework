@@ -28,6 +28,8 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+constexpr uint32_t THP_EXTRA_SA_UID = 5000;
+
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
 
@@ -236,27 +238,43 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     return SUCCESS;
 }
 
-void AudioStreamCollector::SendCapturerInfoEvent(std::vector<std::unique_ptr<AudioCapturerChangeInfo>>
-    &audioCapturerChangeInfo)
+void AudioStreamCollector::SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>>
+    &audioCapturerChangeInfos)
 {
-    auto itr = audioCapturerChangeInfo.begin();
-    while (itr != audioCapturerChangeInfo.end()) {
-        if (IsTransparentCapture((*itr)->clientPid, (*itr)->sessionId)) {
-            itr = audioCapturerChangeInfos_.erase(itr);
-            AUDIO_INFO_LOG("audioCapturerChangeInfos_ erase pid:%{public}d", (*itr)->clientPid);
-        } else {
-            ++itr;
+    bool earseFlag = false;
+    for (const auto &capChangeinfoUPtr : audioCapturerChangeInfos) {
+        if (IsTransparentCapture(capChangeinfoUPtr->clientUID)) {
+            earseFlag = true;
+            break;
         }
     }
-    if (audioCapturerChangeInfos_.empty()) {
+    if (earseFlag == false) {
+        if (!audioCapturerChangeInfos.empty()) {
+            audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos);
+        }
         return;
     }
-    audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfoSent;
+    for (const auto &capChangeinfoUPtr : audioCapturerChangeInfos) {
+        if (IsTransparentCapture(capChangeinfoUPtr->clientUID)) {
+            AUDIO_INFO_LOG("bypass uid:%{public}d", capChangeinfoUPtr->clientUID);
+        } else {
+            audioCapturerChangeInfoSent.push_back(make_unique<AudioCapturerChangeInfo>(*capChangeinfoUPtr));
+        }
+    }
+    if (audioCapturerChangeInfoSent.empty()) {
+        return;
+    }
+    audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfoSent);
 }
 
-bool AudioStreamCollector::IsTransparentCapture(const int32_t pid, const uint32_t sessionId)
+bool AudioStreamCollector::IsTransparentCapture(const uint32_t clientUid)
 {
-    return audioSystemMgr_->IsTransparentCapture(pid, sessionId);
+    if (clientUid == THP_EXTRA_SA_UID) {
+        return true;
+    }
+    return false;
 }
 
 int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -731,10 +749,10 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        if (!IsTransparentCapture(changeInfo->clientPid, changeInfo->sessionId)) {
+        if (!IsTransparentCapture(changeInfo->clientUID)) {
             capturerChangeInfos.push_back(make_unique<AudioCapturerChangeInfo>(*changeInfo));
         } else {
-            AUDIO_INFO_LOG("GetCurrentCapturerChangeInfos remove pid:%{public}d", changeInfo->clientPid);
+            AUDIO_INFO_LOG("GetCurrentCapturerChangeInfos remove uid:%{public}d", changeInfo->clientUID);
         }
         AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos returned");
     }

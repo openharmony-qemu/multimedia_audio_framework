@@ -443,8 +443,6 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
 
-    bool IsTransparentCapture(const int32_t pid, const uint32_t sessionId) override;
-
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

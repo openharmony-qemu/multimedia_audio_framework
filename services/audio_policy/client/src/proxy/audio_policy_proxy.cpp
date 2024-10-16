@@ -2080,21 +2080,5 @@ int32_t AudioPolicyProxy::SetDefaultOutputDevice(const DeviceType deviceType, co
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
-
-bool AudioPolicyProxy::IsTransparentCapture(const int32_t pid, const uint32_t sessionId)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
-    data.WriteInt32(pid);
-    data.WriteUint32(sessionId);
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_TRANSPARENT_CAPTURER), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "load split moudle failed, error :%{public}d", error);
-    return reply.ReadBool();
-}
 } // namespace AudioStandard
 } // namespace OHOS

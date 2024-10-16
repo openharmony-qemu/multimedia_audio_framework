@@ -179,7 +179,6 @@ private:
     void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
     void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void IsTransparentCaptureInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

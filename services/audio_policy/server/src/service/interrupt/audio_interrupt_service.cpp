@@ -1052,7 +1052,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         // other new recording should stop the existing peeling anyway
         if (IsLowestPriorityRecording(iterActive->first) && IsRecordingInterruption(incomingInterrupt)) {
             focusEntry.actionOn = CURRENT;
-            focusEntry.forceType =  INTERRUPT_FORCE;
+            focusEntry.forceType = INTERRUPT_FORCE;
             focusEntry.hintType = INTERRUPT_HINT_STOP;
         }
 
@@ -1207,7 +1207,7 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
     for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) { continue; }
-        // if peeling is the aicomming interrupt while at the mount there are already some existing recordings
+        // if peeling is the incomming interrupt while at the momount there are already some existing recordings
         // peeling should be rejected
         if (IsLowestPriorityRecording(incomingInterrupt) && IsRecordingInterruption(iterActive->first)) {
             incomingState = STOP;
@@ -1220,14 +1220,15 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
         CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(audioFocusTypePair) != focusCfgMap_.end(), ERR_INVALID_PARAM,
             "audio focus type pair is invalid");
         AudioFocusEntry focusEntry = focusCfgMap_[audioFocusTypePair];
+        CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingConcurrentSources);
         if (focusEntry.actionOn == CURRENT || iterActive->second == PLACEHOLDER ||
             CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) { continue; }
-        if ((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject) {
-            SourceType existSourceType = (iterActive->first).audioFocusType.sourceType;
-            std::vector<SourceType> existConcurrentSources = (iterActive->first).currencySources.sourcesTypes;
-            if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
-                // if the rejection is caused by the existing peeling recording, just ignore it
-                incomingConcurrentSources) || IsLowestPriorityRecording(iterActive->first)) { continue; }
+        if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject)
+            && (IsAudioSourceConcurrency((iterActive->first).audioFocusType.sourceType, incomingSourceType,
+            (iterActive->first).currencySources.sourcesTypes, incomingConcurrentSources)
+            // if the rejection is caused by the existing peeling recording, just ignore it
+            || IsLowestPriorityRecording(iterActive->first))) {
+            continue;
         }
         if (focusEntry.isReject) {
             if (GetClientTypeBySessionId((iterActive->first).sessionId) == CLIENT_TYPE_GAME) {
@@ -1254,28 +1255,9 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
 bool AudioInterruptService::IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt)
 {
     if (audioInterrupt.currencySources.sourcesTypes.size() == 1 &&
-        audioInterrupt.currencySources.sourcesTypes[0] == SOURCE_TYPE_INVALID &&
-        (audioInterrupt.sessionId == THP_EXTRA_SA_UID || audioInterrupt.sessionId == MEDIA_SA_UID)) {
+        audioInterrupt.currencySources.sourcesTypes[0] == SOURCE_TYPE_INVALID) {
         AUDIO_INFO_LOG("PEELING AUDIO IsLowestPriorityRecording:%{public}d", audioInterrupt.sessionId);
         return true;
-    }
-    return false;
-}
-
-bool AudioInterruptService::IsTransparentCapture(int32_t pid, uint32_t sessionId)
-{
-    auto itZone = zonesMap_.find(0);
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
-    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
-        audioFocusInfoList = itZone->second->audioFocusInfoList;
-    }
-    for (auto itr = audioFocusInfoList.begin(); itr != audioFocusInfoList.end(); ++itr) {
-        if (itr->first.pid == pid && itr->first.sessionId == sessionId) {
-            if (IsLowestPriorityRecording(itr->first)) {
-                return true;
-            }
-            return false;
-        }
     }
     return false;
 }
@@ -1283,6 +1265,17 @@ bool AudioInterruptService::IsTransparentCapture(int32_t pid, uint32_t sessionId
 bool AudioInterruptService::IsRecordingInterruption(const AudioInterrupt &audioInterrupt)
 {
     return audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID ? true : false;
+}
+
+void AudioInterruptService::CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry,
+    const AudioInterrupt &incomingInterrupt, std::vector<SourceType> incomingConcurrentSources)
+{
+    auto uid = interruptClients_[incomingInterrupt.sessionId]->GetCallingUid();
+    if (IsRecordingInterruption(incomingInterrupt) && incomingConcurrentSources.size() != 0 &&
+        (uid == THP_EXTRA_SA_UID || uid == MEDIA_SA_UID)) {
+            focusEntry.actionOn = INCOMING;
+            focusEntry.isReject = true;
+    }
 }
 
 void AudioInterruptService::SendInterruptEventToIncomingStream(InterruptEventInternal &interruptEvent,

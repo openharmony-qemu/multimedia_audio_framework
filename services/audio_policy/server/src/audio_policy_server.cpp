@@ -3045,14 +3045,5 @@ int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, c
 {
     return audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
 }
-
-bool AudioPolicyServer::IsTransparentCapture(int32_t pid, uint32_t sessionId)
-{
-    if (interruptService_ == nullptr) {
-        AUDIO_ERR_LOG("interruptService_ is nullptr!");
-        return ERR_UNKNOWN;
-    }
-    return interruptService_->IsTransparentCapture(pid, sessionId);
-}
 } // namespace AudioStandard
 } // namespace OHOS
