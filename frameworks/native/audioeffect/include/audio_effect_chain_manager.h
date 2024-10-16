@@ -143,6 +143,7 @@ public:
 
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    void UpdateStreamUsage();
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -164,6 +165,7 @@ private:
     void CheckAndReleaseCommonEffectChain(const std::string &sceneType);
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
+    void UpdateCurrSceneTypeAndStreamUsageForDsp();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -203,7 +205,7 @@ private:
     bool debugArmFlag_ = false;
     int32_t defaultEffectChainCount_ = 0;
     int32_t maxEffectChainCount_ = 1;
-    uint32_t maxSessionID = 0;
+    uint32_t maxSessionID_ = 0;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
 
 #ifdef SENSOR_ENABLE
