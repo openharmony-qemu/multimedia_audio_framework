@@ -298,6 +298,10 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
         return false;
     }
+    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SLIENT) {
+        AUDIO_INFO_LOG("incoming stream is explicitly SLIENT");
+        return true;
+    }
     if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
         AUDIO_INFO_LOG("incoming stream is explicitly MIX_WITH_OTHERS");
         return true;
@@ -347,6 +351,10 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
         return false;
     }
     AudioConcurrencyMode concurrencyMode = (activeSession->GetSessionStrategy()).concurrencyMode;
+    if (concurrencyMode == AudioConcurrencyMode::SLIENT) {
+        AUDIO_INFO_LOG("The concurrency mode of active session is SLIENT");
+        return true;
+    }
     if (concurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
         AUDIO_INFO_LOG("The concurrency mode of active session is not MIX_WITH_OTHERS");
         return false;
@@ -573,7 +581,8 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
     return false;
 }
 
-int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
+int32_t AudioInterruptService::ActivateAudioInterrupt(
+    const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy)
 {
     std::unique_lock<std::mutex> lock(mutex_);
 
@@ -584,7 +593,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, cons
         incomingSessionId, audioInterrupt.pid, streamType,
         audioInterrupt.streamUsage, (audioInterrupt.audioFocusType).sourceType);
 
-    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId)) {
+    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId) && !isUpdatedAudioStrategy) {
         AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
         return SUCCESS;
     }

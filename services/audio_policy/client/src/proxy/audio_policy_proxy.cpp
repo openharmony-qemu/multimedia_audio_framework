@@ -648,7 +648,8 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
     }
 }
 
-int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyProxy::ActivateAudioInterrupt(
+    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -657,6 +658,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInte
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
+    data.WriteBool(isUpdatedAudioStrategy);
     AudioInterrupt::Marshalling(data, audioInterrupt);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT), data, reply, option);

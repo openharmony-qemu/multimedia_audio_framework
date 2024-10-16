@@ -1406,10 +1406,11 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyServer::ActivateAudioInterrupt(
+    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     if (interruptService_ != nullptr) {
-        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt);
+        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;
 }
