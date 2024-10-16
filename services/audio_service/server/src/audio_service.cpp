@@ -53,7 +53,7 @@ AudioService::~AudioService()
     AUDIO_INFO_LOG("~AudioService()");
 }
 
-int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
+int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destroyAtOnce)
 {
     std::lock_guard<std::mutex> processListLock(processListMutex_);
     bool isFind = false;
@@ -70,8 +70,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
                 needRelease = true;
                 endpointName = (*paired).second->GetEndpointName();
-                delayTime = (*paired).second->GetDeviceInfo().deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ?
-                    A2DP_ENDPOINT_RELEASE_DELAY_TIME : NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
+                delayTime = GetReleaseDelayTime((*paired).second->GetDeviceInfo().deviceType, destroyAtOnce);
             }
             linkedPairedList_.erase(paired);
             isFind = true;
@@ -98,6 +97,17 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
     }
 
     return SUCCESS;
+}
+
+int32_t AudioService::GetReleaseDelayTime(DeviceType deviceType, bool destroyAtOnce)
+{
+    if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) {
+        return NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
+    }
+    if (!destroyAtOnce) {
+        return A2DP_ENDPOINT_RELEASE_DELAY_TIME;
+    }
+    return 0;
 }
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
@@ -644,18 +654,20 @@ int32_t AudioService::UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process
 
 void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs)
 {
-    AUDIO_INFO_LOG("Delay release endpoint [%{public}s] start.", endpointName.c_str());
+    AUDIO_INFO_LOG("Delay release endpoint [%{public}s] start, delayInMs %{public}d.", endpointName.c_str(), delayInMs);
     CHECK_AND_RETURN_LOG(endpointList_.count(endpointName),
         "Find no such endpoint: %{public}s", endpointName.c_str());
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
-    releaseEndpointCV_.wait_for(lock, std::chrono::milliseconds(delayInMs), [this, endpointName] {
-        if (releasingEndpointSet_.count(endpointName)) {
-            AUDIO_DEBUG_LOG("Wake up but keep release endpoint %{public}s in delay", endpointName.c_str());
-            return false;
-        }
-        AUDIO_DEBUG_LOG("Delay release endpoint break when reuse: %{public}s", endpointName.c_str());
-        return true;
-    });
+    if (delayInMs != 0) {
+        releaseEndpointCV_.wait_for(lock, std::chrono::milliseconds(delayInMs), [this, endpointName] {
+            if (releasingEndpointSet_.count(endpointName)) {
+                AUDIO_DEBUG_LOG("Wake up but keep release endpoint %{public}s in delay", endpointName.c_str());
+                return false;
+            }
+            AUDIO_DEBUG_LOG("Delay release endpoint break when reuse: %{public}s", endpointName.c_str());
+            return true;
+        });
+    }
 
     if (!releasingEndpointSet_.count(endpointName)) {
         AUDIO_DEBUG_LOG("Timeout or not need to release: %{public}s", endpointName.c_str());
