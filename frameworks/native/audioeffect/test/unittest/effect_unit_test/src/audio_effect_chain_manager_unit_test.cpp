@@ -1940,15 +1940,15 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationEnabled_001, TestSiz
 }
 
 /**
-* @tc.name   : Test UpdateRealAudioEffect API
-* @tc.number : UpdateRealAudioEffect_001
-* @tc.desc   : Test UpdateRealAudioEffect interface.
+* @tc.name   : Test UpdateDefaultAudioEffect API
+* @tc.number : UpdateDefaultAudioEffect_001
+* @tc.desc   : Test UpdateDefaultAudioEffect interface.
 */
-HWTEST(AudioEffectChainManagerUnitTest, UpdateRealAudioEffect_001, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, UpdateDefaultAudioEffect_001, TestSize.Level1)
 {
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    AudioEffectChainManager::GetInstance()->UpdateRealAudioEffect();
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
     const char *sceneType = "SCENE_MUSIC";
     std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
     std::shared_ptr<AudioEffectChain> audioEffectChain =
@@ -1956,7 +1956,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateRealAudioEffect_001, TestSize.Leve
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->UpdateRealAudioEffect();
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
 }
 
 /**
@@ -1968,7 +1968,7 @@ HWTEST(AudioEffectChainManagerUnitTest, GetSceneTypeToChainCount_001, TestSize.L
 {
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    AudioEffectChainManager::GetInstance()->UpdateRealAudioEffect();
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
     std::string sceneType = "DEFAULT_SCENE_TYPE";
     uint32_t ret = AudioEffectChainManager::GetInstance()->GetSceneTypeToChainCount(sceneType);
     EXPECT_EQ(ret, 0);
@@ -1994,7 +1994,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSceneTypeList_001, TestSize.Level1
 {
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    AudioEffectChainManager::GetInstance()->UpdateRealAudioEffect();
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
     std::string sceneType = "DEFAULT_SCENE_TYPE";
     uint32_t ret = AudioEffectChainManager::GetInstance()->GetSceneTypeToChainCount(sceneType);
     EXPECT_EQ(ret, 0);
