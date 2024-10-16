@@ -28,6 +28,7 @@
           "audio_framework_feature_double_pnp_detect",
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_opensl_es",
+          "audio_framework_suport_svsession_manager",
           "audio_framework_feature_support_os_account",
           "audio_framework_feature_hitrace_enable"
         ],
@@ -36,6 +37,7 @@
         "ram": "11000KB",
         "deps": {
           "components": [
+            "av_session",
             "ability_base",
             "ability_runtime",
             "access_token",
