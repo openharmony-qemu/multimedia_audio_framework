@@ -57,10 +57,6 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
 {
     std::lock_guard<std::mutex> processListLock(processListMutex_);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, ERROR, "process is nullptr");
-    auto processConfig = process->GetAudioProcessConfig();
-    if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
-        CleanUpStream(processConfig.appInfo.appUid);
-    }
 
     bool isFind = false;
     int32_t ret = ERROR;
@@ -71,6 +67,10 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             AUDIO_INFO_LOG("SessionId %{public}u", (*paired).first->GetSessionId());
+            auto processConfig = process->GetAudioProcessConfig();
+            if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+                CleanUpStream(processConfig.appInfo.appUid);
+            }
             RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
             ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
