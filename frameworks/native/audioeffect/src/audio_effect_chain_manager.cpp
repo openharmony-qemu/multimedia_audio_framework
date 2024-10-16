@@ -1541,8 +1541,9 @@ void AudioEffectChainManager::UpdateCurrSceneTypeAndStreamUsageForDsp()
         effectHdiInput_[0] = HDI_STREAM_USAGE;
         effectHdiInput_[1] = info.streamUsage;
         int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
+        AUDIO_INFO_LOG("set hdi streamUsage: %{public}d", info.streamUsage);
         if (ret != SUCCESS) {
-            AUDIO_WARNING_LOG("set hdi stream usage failed");
+            AUDIO_WARNING_LOG("set hdi streamUsage failed");
         }
     }
 }
