@@ -3605,11 +3605,7 @@ int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType, DeviceRole 
 
         ret = HandleSpecialDeviceType(deviceType, isConnected, address);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Rehandle special device type failed");
-        if (deviceType == DEVICE_TYPE_USB_HEADSET) {
-            AUDIO_INFO_LOG("Hifi device, don't load module");
-            hasArmUsbDevice_ = false;
-            return ret;
-        }
+        CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_USB_HEADSET, ret, "Hifi device, don't load module");
         if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
             if (HandleArmUsbDevice(deviceType, deviceRole, address) == SUCCESS) {
                 return SUCCESS;
