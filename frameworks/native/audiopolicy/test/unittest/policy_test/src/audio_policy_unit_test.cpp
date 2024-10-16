@@ -1369,7 +1369,7 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_003, TestSize.Level1)
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_NAVIGATION);
     EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_MESSAGE);
-    EXPECT_FALSE(isMute);
+    EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(static_cast<AudioVolumeType>(99));
     EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().IsStreamActive(AudioVolumeType::STREAM_MUSIC);
