@@ -79,6 +79,7 @@ public:
     float GetFinalVolume();
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     int32_t SetEffectProperty(const std::string &effect, const std::string &property);
+
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
