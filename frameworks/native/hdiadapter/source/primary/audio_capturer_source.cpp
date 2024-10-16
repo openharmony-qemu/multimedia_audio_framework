@@ -162,8 +162,6 @@ private:
     std::mutex signalDetectAgentMutex_;
 
     std::mutex statusMutex_;
-
-    std::mutex sourceAttrMutex_;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
