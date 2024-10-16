@@ -2085,15 +2085,15 @@ bool AudioPolicyProxy::IsTransparentCapture(const int32_t pid, const uint32_t se
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageParcel option;
+    MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
     data.WriteInt32(pid);
     data.WriteUint32(sessionId);
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_TRANSPARENT_CAPTURE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "load split moudle failed, error :%{public}d", error);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_TRANSPARENT_CAPTURER), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "load split moudle failed, error :%{public}d", error);
     return reply.ReadBool();
 }
 } // namespace AudioStandard

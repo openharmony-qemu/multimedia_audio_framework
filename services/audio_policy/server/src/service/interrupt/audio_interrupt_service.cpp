@@ -1251,16 +1251,16 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
 
 bool AudioInterruptService::IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt)
 {
-    if (audioInterrupt.currencySources.sourceTypes.size() == 1 &&
-        audioInterrupt.currencySources.sourceTypes[0] == SOURCE_TYPE_INVALID &&
-        (audioInterrupt.sessionId = 5000 || audioInterrupt.sessionId == 1013)) {
+    if (audioInterrupt.currencySources.sourcesTypes.size() == 1 &&
+        audioInterrupt.currencySources.sourcesTypes[0] == SOURCE_TYPE_INVALID &&
+        (audioInterrupt.sessionId == 5000 || audioInterrupt.sessionId == 1013)) {
         AUDIO_INFO_LOG("PEELING AUDIO IsLowestPriorityRecording:%{public}d", audioInterrupt.sessionId);
         return true;
     }
     return false;
 }
 
-bool AudioInterruptService::IsTransparentCapture(int32_t pid, uint320_t sessionId)
+bool AudioInterruptService::IsTransparentCapture(int32_t pid, uint32_t sessionId)
 {
     auto itZone = zonesMap_.find(0);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
@@ -1268,7 +1268,7 @@ bool AudioInterruptService::IsTransparentCapture(int32_t pid, uint320_t sessionI
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
     for (auto itr = audioFocusInfoList.begin(); itr != audioFocusInfoList.end(); ++itr) {
-        if (itr->first.pid == pid && itr->sessionId == sessionId) {
+        if (itr->first.pid == pid && itr->first.sessionId == sessionId) {
             if (IsLowestPriorityRecording(itr->first)) {
                 return true;
             }

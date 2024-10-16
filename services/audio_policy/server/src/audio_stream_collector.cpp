@@ -236,13 +236,13 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     return SUCCESS;
 }
 
-void AudioStreamCollector::SendCapturerInfoEvent(std::vector<std::unique_ptr<AudioCaptureInfo>>
+void AudioStreamCollector::SendCapturerInfoEvent(std::vector<std::unique_ptr<AudioCapturerChangeInfo>>
     &audioCapturerChangeInfo)
 {
     auto itr = audioCapturerChangeInfo.begin();
     while (itr != audioCapturerChangeInfo.end()) {
         if (IsTransparentCapture((*itr)->clientPid, (*itr)->sessionId)) {
-            itr = audioCapturerChangeInfos_.erase(it);
+            itr = audioCapturerChangeInfos_.erase(itr);
             AUDIO_INFO_LOG("audioCapturerChangeInfos_ erase pid:%{public}d", (*itr)->clientPid);
         } else {
             ++itr;
@@ -251,10 +251,10 @@ void AudioStreamCollector::SendCapturerInfoEvent(std::vector<std::unique_ptr<Aud
     if (audioCapturerChangeInfos_.empty()) {
         return;
     }
-    AudioPolicyServerHandler->SendCaptureInfoEvent(audioCapturerChangeInfos_);
+    audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
 }
 
-bool AudioStreamCollector::IsTransparentCapture(const int32_t pid, const uint32_t sesionId)
+bool AudioStreamCollector::IsTransparentCapture(const int32_t pid, const uint32_t sessionId)
 {
     return audioSystemMgr_->IsTransparentCapture(pid, sessionId);
 }

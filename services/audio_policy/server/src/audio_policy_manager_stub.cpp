@@ -175,6 +175,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_INPUT_DEVICE",
     "SET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "UNSET_AUDIO_DEVICE_ANAHS_CALLBACK",
+    "IS_TRANSPARENT_CAPTURER",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1882,7 +1883,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 LoadSplitModuleInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_TRANSPARENT_CAPTURER):
-                IsTransparentCapture(data, reply);
+                IsTransparentCaptureInternal(data, reply);
                 break;
             default:
                 OnMiddlesRemoteRequest(code, data, reply, option);
@@ -2181,7 +2182,7 @@ void AudioPolicyManagerStub::GetInputDeviceInternal(MessageParcel &data, Message
     }
 }
 
-void AudioPolicyManagerStub::IsTransparentCapture(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::IsTransparentCaptureInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t pid = data.ReadInt32();
     int32_t sessionId = data.ReadUint32();
