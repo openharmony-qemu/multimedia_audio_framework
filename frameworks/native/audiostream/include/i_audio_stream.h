@@ -189,7 +189,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) = 0;
     virtual bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
     virtual bool StopAudioStream() = 0;
-    virtual bool ReleaseAudioStream(bool releaseRunner = true) = 0;
+    virtual bool ReleaseAudioStream(bool releaseRunner = true, bool destroyAtOnce = false) = 0;
     virtual bool FlushAudioStream() = 0;
 
     // Playback related APIs

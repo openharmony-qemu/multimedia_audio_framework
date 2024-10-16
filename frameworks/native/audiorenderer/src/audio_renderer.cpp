@@ -1487,7 +1487,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
                 framesAlreadyWritten_, framesWritten);
         }
 
-        switchResult = audioStream_->ReleaseAudioStream();
+        switchResult = audioStream_->ReleaseAudioStream(true, true);
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, info.params,
             info.eStreamType, appInfo_.appPid);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");

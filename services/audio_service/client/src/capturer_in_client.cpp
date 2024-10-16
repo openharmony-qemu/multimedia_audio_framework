@@ -136,7 +136,7 @@ public:
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
     bool FlushAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true) override;
+    bool ReleaseAudioStream(bool releaseRunner = true, bool destroyAtOnce = false) override;
 
     // Playback related APIs
     bool DrainAudioStream(bool stopFlag = false) override;
@@ -244,7 +244,7 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
 
-    uint32_t readLogTimes_ = 0;
+    std::atomic<uint32_t> readLogTimes_ = 0;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_ = nullptr;
     bool streamTrackerRegistered_ = false;
@@ -1420,8 +1420,9 @@ bool CapturerInClientInner::StopAudioStream()
     return true;
 }
 
-bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
+bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool destroyAtOnce)
 {
+    (void)destroyAtOnce;
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");
@@ -1613,12 +1614,10 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     CHECK_AND_RETURN_RET_LOG(userSize < MAX_CLIENT_READ_SIZE && userSize > 0,
         ERR_INVALID_PARAM, "invalid size %{public}zu", userSize);
 
-    std::lock_guard<std::mutex> lock(readMutex_);
-
     std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
     if (state_ != RUNNING) {
         if (readLogTimes_ < LOGLITMITTIMES) {
-            readLogTimes_++;
+            readLogTimes_.fetch_add(1);
             AUDIO_ERR_LOG("Illegal state:%{public}u", state_.load());
         } else {
             AUDIO_DEBUG_LOG("Illegal state:%{public}u", state_.load());
@@ -1630,6 +1629,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 
     statusLock.unlock();
 
+    std::lock_guard<std::mutex> lock(readMutex_);
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");

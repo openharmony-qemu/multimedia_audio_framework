@@ -154,8 +154,8 @@ int32_t AudioProcessStub::HandleRequestHandleInfo(MessageParcel &data, MessagePa
 
 int32_t AudioProcessStub::HandleRelease(MessageParcel &data, MessageParcel &reply)
 {
-    (void)data;
-    reply.WriteInt32(Release());
+    bool destroyAtOnce = data.ReadBool();
+    reply.WriteInt32(Release(destroyAtOnce));
     return AUDIO_OK;
 }
 
