@@ -256,7 +256,7 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
         sessionIDString = sessionID;
         sceneModeString = pack.sceneMode;
         spatializationEnabledString = pack.spatializationEnabled;
-        streamUsage = static_cast<int32_t>(std::strtol(pack.streamUsage));
+        streamUsage = static_cast<int32_t>(std::strtol(pack.streamUsage, nullptr, BASE_TEN));
     } else {
         AUDIO_ERR_LOG("map input parameters missing.");
         return ERROR;

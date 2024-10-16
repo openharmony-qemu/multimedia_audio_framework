@@ -1161,7 +1161,7 @@ void AudioEffectChainManager::UpdateDefaultAudioEffect()
     AUDIO_INFO_LOG("newest stream, maxDefaultSessionID: %{public}u, sceneType: %{public}s,"
         "maxSessionID: %{public}u, sceneType: %{public}s",
         maxDefaultSessionID, maxDefaultSessionIDToSceneType_.c_str(),
-        maxSessionID, maxSessionIDToSceneType_.c_str());
+        maxSessionID_, maxSessionIDToSceneType_.c_str());
 
     std::string key = maxDefaultSessionIDToSceneType_ + "_&_" + GetDeviceTypeName();
     std::string maxDefaultSession = std::to_string(maxDefaultSessionID);
@@ -1180,19 +1180,18 @@ void AudioEffectChainManager::UpdateDefaultAudioEffect()
 void AudioEffectChainManager::UpdateStreamUsage()
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    uint32_t maxSessionID = 0;
     // for special scene type
     for (auto& specialSceneType : sceneTypeToSpecialEffectSet_) {
         uint32_t maxSpecialSessionID = 0;
         std::string maxSpecialSceneType = "";
         auto it = sceneTypeToSessionIDMap_.find(specialSceneType);
         if (it != sceneTypeToSessionIDMap_.end()) {
-            std::set<std::string> &sessions = it.second;
+            std::set<std::string> &sessions = it->second;
             FindMaxSessionID(maxSpecialSessionID, maxSpecialSceneType, specialSceneType, sessions);
         }
         std::string maxSpecialSession = std::to_string(maxSpecialSessionID);
         std::string key = maxSpecialSceneType + "_&_" + GetDeviceTypeName();
-        if (!maxSpecialSceneType.empty() && sessionIDToEffectInfoMap_.count(maxSpecialSessionID) &&
+        if (!maxSpecialSceneType.empty() && sessionIDToEffectInfoMap_.count(maxSpecialSession) &&
             sceneTypeToEffectChainMap_.count(key) && sceneTypeToEffectChainMap_[key] != nullptr) {
             SessionEffectInfo info = sessionIDToEffectInfoMap_[maxSpecialSession];
             std::shared_ptr<AudioEffectChain> audioEffectChain = sceneTypeToEffectChainMap_[key];
@@ -1208,7 +1207,7 @@ void AudioEffectChainManager::UpdateStreamUsage()
         std::string maxPriorSceneType = "";
         auto it = sceneTypeToSessionIDMap_.find(priorSceneType);
         if (it != sceneTypeToSessionIDMap_.end()) {
-            std::set<std::string> &sessions = it.second;
+            std::set<std::string> &sessions = it->second;
             FindMaxSessionID(maxPriorSessionID, maxPriorSceneType, priorSceneType, sessions);
         }
         std::string key = maxPriorSceneType + "_&_" + GetDeviceTypeName();
@@ -1541,7 +1540,7 @@ void AudioEffectChainManager::UpdateCurrSceneTypeAndStreamUsageForDsp()
         SessionEffectInfo info = sessionIDToEffectInfoMap_[maxSession];
         effectHdiInput_[0] = HDI_STREAM_USAGE;
         effectHdiInput_[1] = info.streamUsage;
-        ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
+        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
         if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("set hdi stream usage failed");
         }
