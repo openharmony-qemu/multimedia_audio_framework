@@ -6822,6 +6822,12 @@ void AudioPolicyService::RegiestPolicy()
     AUDIO_DEBUG_LOG("result:%{public}d", ret);
 }
 
+/*
+ * lockFlag is use to determinewhether GetPreferredOutputDeviceDescriptor or GetPreferredOutputDeviceDescInner is invoked.
+ * If deviceStatusUpdateSharedMutex_ write lock is not invoked at the outer layer, lockFlag can be set to true.
+ * When deviceStatusUpdateSharedMutex_ write lock has been invoked, lockFlag must be set to false.
+ */
+
 int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
     DeviceInfo &deviceInfo)
 {
