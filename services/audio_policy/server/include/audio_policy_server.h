@@ -326,7 +326,7 @@ public:
         uint32_t appTokenId) override;
 
     int32_t SetCaptureSilentState(bool state) override;
-    
+
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;

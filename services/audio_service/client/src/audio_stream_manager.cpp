@@ -235,6 +235,5 @@ int32_t AudioStreamManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
 {
     return AudioPolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
