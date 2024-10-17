@@ -650,12 +650,12 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
 
-    if (GetVolume() == 0 && isStillMuted) {
-        AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillMuted=%{public}d",
-            GetVolume(), isStillMuted);
+    if (GetVolume() == 0 && isStillMuted_) {
+        AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillMuted_=%{public}d",
+            GetVolume(), isStillMuted_);
         audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
     } else {
-        isStillMuted = false;
+        isStillMuted_ = false;
     }
 
     {
@@ -910,19 +910,20 @@ int32_t AudioRendererPrivate::SetStreamType(AudioStreamType audioStreamType)
     return audioStream_->SetAudioStreamType(audioStreamType);
 }
 
-int32_t AudioRendererPrivate::SetVolume(float volume)
+int32_t AudioRendererPrivate::SetVolume(float volume) const
 {
     UpdateAudioInterruptStrategy(volume);
     return audioStream_->SetVolume(volume);
 }
 
-void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume)
+void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
 {
     State currentState = audioStream_->GetState();
     if (currentState == NEW || currentState == PREPARED) {
-        isStillMuted = (volume == 0);
-    } else if (isStillMuted && volume > 0) {
-        isStillMuted = false;
+        AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
+        isStillMuted_ = (volume == 0);
+    } else if (isStillMuted_ && volume > 0) {
+        isStillMuted_ = false;
         audioInterrupt_.sessionStrategy.concurrencyMode =
             (originalStrategy_.concurrencyMode == AudioConcurrencyMode::INVALID ?
             AudioConcurrencyMode::DEFAULT : originalStrategy_.concurrencyMode);

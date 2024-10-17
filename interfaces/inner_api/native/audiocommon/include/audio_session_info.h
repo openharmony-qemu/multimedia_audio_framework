@@ -27,7 +27,7 @@ enum class AudioConcurrencyMode {
 };
 
 struct AudioSessionStrategy {
-    AudioConcurrencyMode concurrencyMode;
+    mutable AudioConcurrencyMode concurrencyMode;
 };
 
 enum class AudioSessionDeactiveReason {
