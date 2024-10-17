@@ -1465,7 +1465,7 @@ int32_t AudioRendererSinkInner::InitRender()
         } else if (halName_ == "dp") {
             outputDevices.push_back(DEVICE_TYPE_DP);
             ret = SetOutputRoutes(outputDevices);
-        } else {
+        } else if (halName_ == PRIMARY_HAL_NAME) {
             DeviceType type = static_cast<DeviceType>(attr_.deviceType);
             if (type == DEVICE_TYPE_INVALID) {
                 type = DEVICE_TYPE_SPEAKER;
