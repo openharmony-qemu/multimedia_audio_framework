@@ -173,7 +173,7 @@ int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRende
     int32_t ret = SUCCESS;
     DeviceInfo deviceInfo;
     AudioProcessConfig config = stream->GetAudioProcessConfig();
-    bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, true, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(result, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
     CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, ERR_NOT_SUPPORTED, "engine not init");
     playbackEngine_->Init(deviceInfo, managerType_ == VOIP_PLAYBACK);
