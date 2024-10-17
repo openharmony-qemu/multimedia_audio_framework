@@ -293,7 +293,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_004, Test
 {
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    AudioEffectChainManager::GetInstance()->UpdateRealAudioEffect();
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
     std::string sceneType = "SCENE_DEFAULT";
     const char *sceneType1 = "SCENE_DEFAULT";
     std::string sceneTypeAndDeviceKey1 = "SCENE_DEFAULT_&_DEVICE_TYPE_SPEAKER";
@@ -2066,7 +2066,7 @@ HWTEST(AudioEffectChainManagerUnitTest, GetSceneTypeToChainCount_002, TestSize.L
 {
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    AudioEffectChainManager::GetInstance()->UpdateRealAudioEffect();
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
     std::string sceneType = "SCENE_DEFAULT";
     const char *sceneType1 = "SCENE_DEFAULT";
     std::string sceneTypeAndDeviceKey1 = "SCENE_DEFAULT_&_DEVICE_TYPE_SPEAKER";
