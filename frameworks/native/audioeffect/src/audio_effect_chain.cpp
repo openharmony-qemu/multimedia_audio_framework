@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 9;
+const uint32_t NUM_SET_EFFECT_PARAM = 10;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t MAX_UINT_VOLUME = 65535;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
