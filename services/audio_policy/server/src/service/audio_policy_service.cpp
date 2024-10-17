@@ -9915,8 +9915,11 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendere
     vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
-        if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
-            LoadMchModule();
+        {
+            std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+            if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
+                LoadMchModule();
+            }
         }
         std::string oldSinkName = GetSinkName(rendererChangeInfo->outputDeviceInfo, rendererChangeInfo->sessionId);
         std::string newSinkName = GetSinkPortName(descs.front()->deviceType_, PIPE_TYPE_MULTICHANNEL);
@@ -9930,14 +9933,17 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendere
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
         if (pipeType == PIPE_TYPE_MULTICHANNEL) {
-            AUDIO_INFO_LOG("unload multichannel module");
-            std::string currentActivePort = MCH_PRIMARY_SPEAKER;
-            auto ioHandleIter = IOHandles_.find(currentActivePort);
-            CHECK_AND_RETURN_LOG(ioHandleIter != IOHandles_.end(), "Can not find port MCH_PRIMARY_SPEAKER in io map");
-            AudioIOHandle activateDeviceIOHandle = ioHandleIter->second;
-            audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-            audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-            IOHandles_.erase(currentActivePort);
+            std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+            {
+                AUDIO_INFO_LOG("unload multichannel module");
+                std::string currentActivePort = MCH_PRIMARY_SPEAKER;
+                auto ioHandleIter = IOHandles_.find(currentActivePort);
+                CHECK_AND_RETURN_LOG(ioHandleIter != IOHandles_.end(), "Can not find port MCH_PRIMARY_SPEAKER in io map");
+                AudioIOHandle activateDeviceIOHandle = ioHandleIter->second;
+                audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+                audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+                IOHandles_.erase(currentActivePort);
+            }
         }
         ResetOffloadMode(rendererChangeInfo->sessionId);
     }
