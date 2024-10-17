@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 9;
+const uint32_t NUM_SET_EFFECT_PARAM = 10;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t MAX_UINT_VOLUME = 65535;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
@@ -182,12 +182,13 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[SPATIAL_DEVICE_TYPE_INDEX] = spatialDeviceType_;
     data[SPATIALIZATION_SCENE_TYPE_INDEX] = spatializationSceneType_;
     data[SPATIALIZATION_ENABLED_INDEX] = spatializationEnabled_;
+    data[STREAM_USAGE_INDEX] = streamUsage_;
     AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
-        "spatializationSceneType: %{public}d, SpatializationEnabled: %{public}d",
+        "spatializationSceneType: %{public}d, SpatializationEnabled: %{public}d, streamUsage: %{public}d",
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
-        data[SPATIALIZATION_ENABLED_INDEX]);
+        data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     return ret;
