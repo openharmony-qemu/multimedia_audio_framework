@@ -136,7 +136,7 @@ void AudioEffectChain::SetSpatializationEnabled(bool enabled)
 
 void AudioEffectChain::SetStreamUsage(const int32_t streamUsage)
 {
-    streamUsage_ = streamUsage;
+    streamUsage_ = static_cast<StreamUsage>(streamUsage);
 }
 
 void AudioEffectChain::ReleaseEffectChain()
