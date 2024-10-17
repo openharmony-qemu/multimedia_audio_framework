@@ -108,7 +108,7 @@ private:
         std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
     void RegisteredRendererTrackerClientDied(const int32_t uid);
     void RegisteredCapturerTrackerClientDied(const int32_t uid);
-    void SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+    void SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool IsTransparentCapture(const uint32_t clientUid);

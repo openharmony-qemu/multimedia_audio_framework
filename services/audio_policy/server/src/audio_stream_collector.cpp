@@ -238,7 +238,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     return SUCCESS;
 }
 
-void AudioStreamCollector::SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>>
+void AudioStreamCollector::SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>>
     &audioCapturerChangeInfos)
 {
     bool earseFlag = false;
@@ -255,12 +255,12 @@ void AudioStreamCollector::SendCapturerInfoEvent(const std::vector<std::unique_p
         return;
     }
 
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfoSent;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfoSent;
     for (const auto &capChangeinfoUPtr : audioCapturerChangeInfos) {
         if (IsTransparentCapture(capChangeinfoUPtr->clientUID)) {
             AUDIO_INFO_LOG("bypass uid:%{public}d", capChangeinfoUPtr->clientUID);
         } else {
-            audioCapturerChangeInfoSent.push_back(make_unique<AudioCapturerChangeInfo>(*capChangeinfoUPtr));
+            audioCapturerChangeInfoSent.push_back(make_shared<AudioCapturerChangeInfo>(*capChangeinfoUPtr));
         }
     }
     if (audioCapturerChangeInfoSent.empty()) {

@@ -488,7 +488,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_023, TestSize.Le
     int32_t result = audioPolicyClient_->AddRendererStateChangeCallback(cb);
     EXPECT_EQ(result, SUCCESS);
 
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     audioPolicyClient_->OnRendererStateChange(audioRendererChangeInfos);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -529,7 +529,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_025, TestSize.Le
     int32_t result = audioPolicyClient_->AddCapturerStateChangeCallback(cb);
     EXPECT_EQ(result, SUCCESS);
 
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     audioPolicyClient_->OnCapturerStateChange(audioCapturerChangeInfos);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
