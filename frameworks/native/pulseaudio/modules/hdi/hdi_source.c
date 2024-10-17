@@ -725,10 +725,7 @@ static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
     if (timerElapsed) {
         chunk.length = pa_usec_to_bytes(now - u->timestamp, &u->source->sample_spec);
         if (chunk.length > 0) {
-            int ret = GetCapturerFrameFromHdiAndProcess(&chunk, u);
-            if (ret != 0) {
-                return false;
-            }
+            GetCapturerFrameFromHdiAndProcess(&chunk, u);
 
             u->timestamp += pa_bytes_to_usec(chunk.length, &u->source->sample_spec);
             AUDIO_DEBUG_LOG("HDI Source: new u->timestamp : %{public}" PRIu64, u->timestamp);
