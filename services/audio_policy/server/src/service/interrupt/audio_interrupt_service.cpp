@@ -273,6 +273,12 @@ bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInter
         AUDIO_INFO_LOG("The incoming audio capturer should be denied!");
         return false;
     }
+    if (incomingInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP ||
+        activeInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP) {
+        AUDIO_INFO_LOG("STREAM_INTERNAL_FORCE_STOP! incomingInterrupt=%{public}d, activeInterrupt=%{public}d",
+            incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
+        return false;
+    }
     bool result = false;
     result = CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
     if (result) {
@@ -340,6 +346,10 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
         return false;
     }
+    if (activeInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SLIENT) {
+        AUDIO_INFO_LOG("The concurrency mode of active session is SLIENT");
+        return true;
+    }
     if (!sessionService_->IsAudioSessionActivated(activeInterrupt.pid)) {
         AUDIO_INFO_LOG("No active audio session for the pid of active stream");
         return false;
@@ -351,10 +361,6 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
         return false;
     }
     AudioConcurrencyMode concurrencyMode = (activeSession->GetSessionStrategy()).concurrencyMode;
-    if (concurrencyMode == AudioConcurrencyMode::SLIENT) {
-        AUDIO_INFO_LOG("The concurrency mode of active session is SLIENT");
-        return true;
-    }
     if (concurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
         AUDIO_INFO_LOG("The concurrency mode of active session is not MIX_WITH_OTHERS");
         return false;

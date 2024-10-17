@@ -60,7 +60,7 @@ public:
     int32_t GetAudioStreamId(uint32_t &sessionID) const override;
     int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) override;
     int32_t SetStreamType(AudioStreamType audioStreamType) override;
-    int32_t SetVolume(float volume) override;
+    int32_t SetVolume(float volume) const override;
     float GetVolume() const override;
     int32_t SetRenderRate(AudioRendererRate renderRate) const override;
     AudioRendererRate GetRenderRate() const override;
@@ -154,7 +154,7 @@ public:
     std::string cachePath_;
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
-    bool isStillMuted = false;
+    mutable bool isStillMuted_ = false;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -184,7 +184,7 @@ private:
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
-    void UpdateAudioInterruptStrategy(float volume);
+    void UpdateAudioInterruptStrategy(float volume) const;
     bool IsAllowedStartBackgroud();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;

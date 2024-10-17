@@ -504,7 +504,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t SetVolume(float volume) = 0;
+    virtual int32_t SetVolume(float volume) const = 0;
 
     /**
      * @brief Obtains the current track volume
