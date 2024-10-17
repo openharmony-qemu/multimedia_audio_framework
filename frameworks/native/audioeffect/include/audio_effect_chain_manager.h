@@ -151,8 +151,6 @@ private:
     void RecoverAllChains();
     int32_t EffectDspVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     int32_t EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
-    AudioEffectScene GetSceneTypeFromSpatializationSceneType(AudioEffectScene sceneType);
-    void UpdateEffectChainParams(AudioEffectScene sceneType);
     void SetSpatializationSceneTypeToChains();
     void SetSpatializationEnabledToChains();
     void SetSpkOffloadState();

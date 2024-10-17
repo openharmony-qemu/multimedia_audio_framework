@@ -57,10 +57,6 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
 {
     std::lock_guard<std::mutex> processListLock(processListMutex_);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, ERROR, "process is nullptr");
-    auto processConfig = process->GetAudioProcessConfig();
-    if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
-        CleanUpStream(processConfig.appInfo.appUid);
-    }
 
     bool isFind = false;
     int32_t ret = ERROR;
@@ -71,6 +67,10 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             AUDIO_INFO_LOG("SessionId %{public}u", (*paired).first->GetSessionId());
+            auto processConfig = process->GetAudioProcessConfig();
+            if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+                CleanUpStream(processConfig.appInfo.appUid);
+            }
             RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
             ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
@@ -320,7 +320,7 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
         "Wrong usage ,should not be dualtone");
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (!ret) {
         AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
         return false;
@@ -705,7 +705,7 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 {
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (ret) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
             "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);

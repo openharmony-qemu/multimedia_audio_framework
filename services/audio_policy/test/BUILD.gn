@@ -21,11 +21,17 @@ import("../../../config.gni")
 group("audio_policy_unittest_packages") {
   testonly = true
   deps = [
+    ":audio_affinity_parser_test",
+    ":audio_client_tracker_callback_stub_unit_test",
     ":audio_effect_config_parser_test",
     ":audio_interrupt_service_unit_test",
+    ":audio_policy_client_stub_impl_test",
     ":audio_policy_server_unit_test",
-    ":audio_policy_service_all_unit_test",
+    ":audio_routing_manager_listener_stub_unit_test",
+    ":audio_session_timer_test",
     ":audio_socket_thread_unit_test",
+    ":audio_spatialization_service_unit_test",
+    ":stream_filter_router_unit_test",
   ]
 }
 
@@ -95,110 +101,6 @@ ohos_unittest("audio_interrupt_service_unit_test") {
 
   if (audio_framework_feature_device_manager) {
     external_deps += [ "device_manager:devicemanagersdk" ]
-  }
-}
-
-ohos_unittest("audio_policy_service_all_unit_test") {
-  module_out_path = module_output_path
-  include_dirs = [
-    "./unittest/audio_policy_service_unit_test/include",
-    "../../audio_policy/server/include/service",
-    "../../audio_policy/server/include",
-  ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-  ]
-
-  cflags_cc = cflags
-  cflags_cc += [ "-fno-access-control" ]
-
-  external_deps = [
-    "ability_base:want",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
-    "access_token:libprivacy_sdk",
-    "access_token:libtokenid_sdk",
-    "access_token:libtokensetproc_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdi",
-    "hdf_core:libpub_utils",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-    "kv_store:distributeddata_inner",
-    "os_account:os_account_innerkits",
-    "power_manager:powermgr_client",
-    "pulseaudio:pulse",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
-
-  sources = [
-    "./unittest/audio_policy_service_unit_test/src/audio_policy_service_first_unit_test.cpp",
-    "./unittest/audio_policy_service_unit_test/src/audio_policy_service_second_unit_test.cpp",
-    "./unittest/audio_policy_service_unit_test/src/audio_policy_service_third_unit_test.cpp",
-  ]
-
-  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
-
-  deps = [
-    "../../../services/audio_policy:audio_policy_client",
-    "../../audio_policy:audio_policy_service",
-    "../../audio_service:audio_client",
-  ]
-
-  if (accessibility_enable == true) {
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
-
-  defines = []
-
-  if (audio_framework_feature_dtmf_tone) {
-    defines += [ "FEATURE_DTMF_TONE" ]
-  }
-
-  if (audio_framework_feature_support_os_account) {
-    defines += [ "SUPPORT_USER_ACCOUNT" ]
-  }
-
-  if (build_variant == "user") {
-    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
-  } else if (build_variant == "root") {
-    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
-  }
-
-  if (appgallery_part_enable == true) {
-    defines += [ "FEATURE_APPGALLERY" ]
-  }
-
-  if (bluetooth_part_enable == true) {
-    external_deps += [ "bluetooth:btframework" ]
-  }
-
-  if (audio_framework_feature_input) {
-    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
-    external_deps += [ "input:libmmi-client" ]
-  }
-
-  if (audio_framework_feature_device_manager) {
-    defines += [ "FEATURE_DEVICE_MANAGER" ]
-    external_deps += [ "device_manager:devicemanagersdk" ]
-  }
-
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
   }
 }
 
@@ -363,4 +265,438 @@ ohos_unittest("audio_policy_server_unit_test") {
   if (audio_framework_feature_device_manager) {
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
+}
+
+ohos_unittest("audio_routing_manager_listener_stub_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/audio_routing_manager_listener_stub_unit_test/include",
+    "../../audio_policy/client/include/",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+  ]
+
+  sources = [ "./unittest/audio_routing_manager_listener_stub_unit_test/src/audio_routing_manager_listener_stub_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_client" ]
+
+  if (accessibility_enable == true) {
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
+  }
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
+
+  if (audio_framework_feature_input) {
+    external_deps += [ "input:libmmi-client" ]
+  }
+
+  if (audio_framework_feature_device_manager) {
+    external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+}
+
+ohos_unittest("audio_policy_client_stub_impl_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/audio_policy_client_stub_impl_test/include",
+    "../../audio_policy/client/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/audio_policy_client_stub_impl_test/src/audio_policy_client_stub_impl_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_client" ]
+}
+
+ohos_unittest("audio_client_tracker_callback_stub_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/audio_client_tracker_callback_stub_unit_test/include",
+    "../../audio_policy/client/include/",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+  ]
+
+  sources = [ "./unittest/audio_client_tracker_callback_stub_unit_test/src/audio_client_tracker_callback_stub_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_client" ]
+
+  if (accessibility_enable == true) {
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
+  }
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
+
+  if (audio_framework_feature_input) {
+    external_deps += [ "input:libmmi-client" ]
+  }
+
+  if (audio_framework_feature_device_manager) {
+    external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+}
+
+ohos_unittest("audio_spatialization_service_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/audio_spatialization_service_unit_test/include",
+    "../../audio_policy/server/include/service/spatialization",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "googletest:gmock",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+  ]
+
+  sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_spatialization_service_unit_test.cpp" ]
+
+  deps = [
+    "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
+    "../../audio_policy:audio_policy_service",
+  ]
+}
+
+ohos_unittest("stream_filter_router_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/stream_filter_router_unit_test/include",
+    "../../audio_policy/server/include/service/routers",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/stream_filter_router_test/src/stream_filter_router_unit_test.cpp" ]
+
+  deps = [
+    "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
+    "../../audio_policy:audio_policy_client",
+    "../../audio_policy:audio_policy_service",
+    "../../audio_service:audio_client",
+    "../../audio_service:audio_common",
+  ]
+
+  if (accessibility_enable == true) {
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
+  }
+
+  defines = []
+
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
+
+  if (audio_framework_feature_support_os_account) {
+    defines += [ "SUPPORT_USER_ACCOUNT" ]
+  }
+
+  if (build_variant == "user") {
+    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
+  } else if (build_variant == "root") {
+    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
+  }
+
+  if (appgallery_part_enable == true) {
+    defines += [ "FEATURE_APPGALLERY" ]
+  }
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
+
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+    external_deps += [ "input:libmmi-client" ]
+  }
+
+  if (audio_framework_feature_device_manager) {
+    defines += [ "FEATURE_DEVICE_MANAGER" ]
+    external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+
+  if (audio_framework_feature_double_pnp_detect) {
+    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
+  }
+}
+
+ohos_unittest("audio_affinity_parser_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../server/include",
+    "./unittest/audio_affinity_parser_test/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:ability_manager",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [
+    "./unittest/audio_affinity_parser_test/src/audio_affinity_parser_test.cpp",
+  ]
+
+  deps = [ "../../audio_policy:audio_policy_service" ]
+}
+
+ohos_unittest("audio_session_timer_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../server/include",
+    "./unittest/audio_session_timer_test/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:ability_manager",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
+    "googletest:gtest",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  sources =
+      [ "./unittest/audio_session_timer_test/src/audio_session_timer_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service" ]
 }

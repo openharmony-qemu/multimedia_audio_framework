@@ -92,7 +92,7 @@ private:
     std::string effectMode_ = "";
     uint32_t latency_ = 0;
     uint32_t extraEffectChainType_ = 0;
-    int32_t streamUsage_ = 0;
+    StreamUsage streamUsage_ = STREAM_USAGE_UNKNOWN;
     AudioEffectScene currSceneType_ = SCENE_MUSIC;
     std::vector<AudioEffectHandle> standByEffectHandles_;
     std::vector<std::string> effectNames_;

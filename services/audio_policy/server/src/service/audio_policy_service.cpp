@@ -277,13 +277,38 @@ static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
 static string ParseAudioFormat(string format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
-        return "s16";
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
-        return "s24";
+        return "s16le";
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT" || format == "AUDIO_FORMAT_PCM_24_BIT_PACKED") {
+        return "s24le";
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
-        return "s32";
+        return "s32le";
     } else {
-        return "";
+        return "s16le";
+    }
+}
+
+static int64_t GetCurrentTimeMS()
+{
+    timespec tm {};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+}
+
+static uint32_t PcmFormatToBits(AudioSampleFormat format)
+{
+    switch (format) {
+        case SAMPLE_U8:
+            return 1; // 1 byte
+        case SAMPLE_S16LE:
+            return 2; // 2 byte
+        case SAMPLE_S24LE:
+            return 3; // 3 byte
+        case SAMPLE_S32LE:
+            return 4; // 4 byte
+        case SAMPLE_F32LE:
+            return 4; // 4 byte
+        default:
+            return 2; // 2 byte
     }
 }
 
@@ -309,6 +334,13 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
         string format = deviceInfo.substr(sourceFormat_begin + std::strlen("source_format:"),
             sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
         moduleInfo.format = ParseAudioFormat(format);
+    }
+    
+    if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
+        int32_t bufferSize = stoi(moduleInfo.rate) * stoi(moduleInfo.channels) *
+            PcmFormatToBits(static_cast<AudioSampleFormat>(formatFromParserStrToEnum[moduleInfo.format])) *
+            BUFFER_CALC_20MS / MS_PER_S;
+        moduleInfo.bufferSize = std::to_string(bufferSize);
     }
 }
 
@@ -337,31 +369,6 @@ static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
         string bufferSize = deviceInfo.substr(sinkBSize_begin + std::strlen("buffer_size="),
             sinkBSize_end - sinkBSize_begin - std::strlen("buffer_size="));
         moduleInfo.bufferSize = bufferSize;
-    }
-}
-
-static int64_t GetCurrentTimeMS()
-{
-    timespec tm {};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
-}
-
-static uint32_t PcmFormatToBits(AudioSampleFormat format)
-{
-    switch (format) {
-        case SAMPLE_U8:
-            return 1; // 1 byte
-        case SAMPLE_S16LE:
-            return 2; // 2 byte
-        case SAMPLE_S24LE:
-            return 3; // 3 byte
-        case SAMPLE_S32LE:
-            return 4; // 4 byte
-        case SAMPLE_F32LE:
-            return 4; // 4 byte
-        default:
-            return 2; // 2 byte
     }
 }
 
@@ -802,6 +809,7 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_DP:
             volumeGroupType = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -810,7 +818,6 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_DP:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             volumeGroupType = "wired";
             break;
@@ -6824,13 +6831,27 @@ void AudioPolicyService::RegiestPolicy()
     AUDIO_DEBUG_LOG("result:%{public}d", ret);
 }
 
-int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+/*
+ * lockFlag is use to determinewhether GetPreferredOutputDeviceDescriptor or GetPreferredOutputDeviceDescInner is invoked.
+ * If deviceStatusUpdateSharedMutex_ write lock is not invoked at the outer layer, lockFlag can be set to true.
+ * When deviceStatusUpdateSharedMutex_ write lock has been invoked, lockFlag must be set to false.
+ */
+
+int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    DeviceInfo &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-            return GetVoipPlaybackDeviceInfo(config, deviceInfo);
+            AudioRendererInfo rendererInfo = config.rendererInfo;
+            std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList =
+                (lockFlag ? GetPreferredOutputDeviceDescriptors(rendererInfo, LOCAL_NETWORK_ID)
+                          : GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID));
+            int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
+                preferredDeviceList[0]->deviceType_, rendererInfo.originalFlag, preferredDeviceList[0]->networkId_);
+            deviceInfo.deviceRole = OUTPUT_DEVICE;
+            return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
         AudioDeviceDescriptor curOutputDeviceDesc = GetCurrentOutputDevice();
         deviceInfo.deviceId = curOutputDeviceDesc.deviceId_;
@@ -6839,7 +6860,14 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.deviceRole = OUTPUT_DEVICE;
     } else {
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-            return GetVoipRecordDeviceInfo(config, deviceInfo);
+            AudioCapturerInfo capturerInfo = config.capturerInfo;
+            std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList =
+                (lockFlag ? GetPreferredInputDeviceDescriptors(capturerInfo, LOCAL_NETWORK_ID)
+                          : GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID));
+            int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
+                preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
+            deviceInfo.deviceRole = INPUT_DEVICE;
+            return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
         deviceInfo.deviceId = GetCurrentInputDevice().deviceId_;
         deviceInfo.networkId = LOCAL_NETWORK_ID;
@@ -6862,26 +6890,6 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     }
     deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
     return SUCCESS;
-}
-
-int32_t AudioPolicyService::GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
-{
-    AudioRendererInfo rendererInfo = config.rendererInfo;
-    std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredOutputDeviceDescriptors(rendererInfo);
-    int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-        rendererInfo.originalFlag, preferredDeviceList[0]->networkId_);
-    deviceInfo.deviceRole = OUTPUT_DEVICE;
-    return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
-}
-
-int32_t AudioPolicyService::GetVoipRecordDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
-{
-    AudioCapturerInfo capturerInfo = config.capturerInfo;
-    std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredInputDeviceDescriptors(capturerInfo);
-    int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
-        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
-    deviceInfo.deviceRole = INPUT_DEVICE;
-    return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }
 
 int32_t AudioPolicyService::GetVoipDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo, int32_t type,
@@ -8890,7 +8898,6 @@ void AudioPolicyService::SetDeviceSafeVolumeStatus()
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             safeStatus_ = SAFE_INACTIVE;
             audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
             CreateCheckMusicActiveThread();

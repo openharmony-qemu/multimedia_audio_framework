@@ -611,24 +611,24 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetProcessDeviceInfo_001, TestSize.Level
     
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, deviceInfo);
+    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
     EXPECT_EQ(ret, ERROR);
 
     config.rendererInfo.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, deviceInfo);
+    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
     EXPECT_EQ(ret, ERROR);
 
     config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, deviceInfo);
+    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
     EXPECT_EQ(ret, SUCCESS);
 
     config.audioMode = AudioMode::AUDIO_MODE_RECORD;
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, deviceInfo);
+    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
     EXPECT_EQ(ret, ERROR);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, deviceInfo);
+    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
     EXPECT_EQ(ret, SUCCESS);
 }
 

@@ -464,7 +464,7 @@ void AudioPolicyManagerFuzzTest(const uint8_t *rawData, size_t size)
     audioEvent.address = DEFAULTADDRESS;
     int fd = *reinterpret_cast<const int*>(rawData);
     ssize_t strLength = DEFAULTSTRLENGTH;
-    const char *msg = reinterpret_cast<const char *>(rawData);
+    const char *msg = "SCENE";
     AudioSocketThread::IsUpdatePnpDeviceState(&audioEvent);
     AudioSocketThread::UpdatePnpDeviceState(&audioEvent);
     AudioSocketThread::AudioPnpUeventOpen(&fd);

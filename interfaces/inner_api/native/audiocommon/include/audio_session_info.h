@@ -23,10 +23,11 @@ enum class AudioConcurrencyMode {
     MIX_WITH_OTHERS = 1,
     DUCK_OTHERS = 2,
     PAUSE_OTHERS = 3,
+    SLIENT = 4,
 };
 
 struct AudioSessionStrategy {
-    AudioConcurrencyMode concurrencyMode;
+    mutable AudioConcurrencyMode concurrencyMode;
 };
 
 enum class AudioSessionDeactiveReason {
