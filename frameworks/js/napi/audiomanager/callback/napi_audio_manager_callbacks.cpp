@@ -156,7 +156,7 @@ void NapiAudioManagerCallback::OnDeviceChange(const DeviceChangeAction &deviceCh
 void NapiAudioManagerCallback::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("status [%{public}d]", microphoneBlockedInfo.status);
+    AUDIO_INFO_LOG("status [%{public}d]", microphoneBlockedInfo.blockStatus);
 
     for (auto it = microphoneBlockedCbList_.begin(); it != microphoneBlockedCbList_.end(); it++) {
         std::unique_ptr<AudioManagerJsCallback> cb = std::make_unique<AudioManagerJsCallback>();
@@ -333,6 +333,7 @@ void NapiAudioManagerCallback::OnJsCallbackMicrophoneBlocked(std::unique_ptr<Aud
                 "%{public}s fail to create microphoneBlocked callback", request.c_str());
             const size_t argCount = ARGS_ONE;
             napi_value result = nullptr;
+            AUDIO_INFO_LOG("Send microphoneBlocked callback to app");
             nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call microphoneBlocked callback",
                 request.c_str());

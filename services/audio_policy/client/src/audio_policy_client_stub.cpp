@@ -202,12 +202,12 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
 void AudioPolicyClientStub::HandleMicrophoneBlocked(MessageParcel &data, MessageParcel &reply)
 {
     MicrophoneBlockedInfo microphoneBlocked;
-    microphoneBlocked.status = static_cast<DeviceBlockStatus>(data.ReadUint32());
+    microphoneBlocked.blockStatus = static_cast<DeviceBlockStatus>(data.ReadUint32());
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < MIC_BLOCKED_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
-        microphoneBlocked.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
+        microphoneBlocked.devices.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
     OnMicrophoneBlocked(microphoneBlocked);
 }

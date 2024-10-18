@@ -36,7 +36,7 @@ public:
     virtual ~NapiAudioManagerCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
-    void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedinfo) override;
+    void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
     void SaveMicrophoneBlockedCallbackReference(napi_value callback);
     void RemoveMicrophoneBlockedCallbackReference(napi_env env, napi_value callback);
     void RemoveAllMicrophoneBlockedCallback();

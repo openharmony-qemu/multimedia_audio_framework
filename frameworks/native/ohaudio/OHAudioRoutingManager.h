@@ -67,9 +67,7 @@ public:
     ~OHMicrophoneBlockCallback()
     {
         AUDIO_INFO_LOG("~OHMicrophoneBlockCallback called.");
-        if (blockedCallback_ != nullptr) {
-            blockedCallback_ = nullptr;
-        }
+        blockedCallback_ = nullptr;
     }
     void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
 

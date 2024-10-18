@@ -160,8 +160,8 @@ bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(const std::vector<s
     Trace trace("AudioPolicyServerHandler::SendMicrophoneBlockedCallback");
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
-    eventContextObj->microphoneBlockedInfo.status = status;
-    eventContextObj->microphoneBlockedInfo.deviceDescriptors = desc;
+    eventContextObj->microphoneBlockedInfo.blockStatus = status;
+    eventContextObj->microphoneBlockedInfo.devices = desc;
 
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::MICROPHONE_BLOCKED, eventContextObj));
@@ -577,7 +577,7 @@ void AudioPolicyServerHandler::HandleMicrophoneBlockedCallback(const AppExecFwk:
     std::lock_guard<std::mutex> lock(runnerMutex_);
 
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        if (it->second && eventContextObj->microphoneBlockedInfo.deviceDescriptors.size() > 0) {
+        if (it->second && eventContextObj->microphoneBlockedInfo.devices.size() > 0) {
             MicrophoneBlockedInfo microphoneBlockedInfo = eventContextObj->microphoneBlockedInfo;
             it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
         }

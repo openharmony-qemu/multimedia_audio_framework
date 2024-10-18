@@ -899,11 +899,11 @@ napi_status NapiParamUtils::SetValueBlockedDeviceAction(const napi_env& env, con
     napi_value &result)
 {
     napi_create_object(env, &result);
-    NapiParamUtils::SetValueInt32(env, "status", static_cast<int32_t>(action.status), result);
+    NapiParamUtils::SetValueInt32(env, "blockStatus", static_cast<int32_t>(action.blockStatus), result);
 
     napi_value jsArray;
-    NapiParamUtils::SetDeviceDescriptors(env, action.deviceDescriptors, jsArray);
-    napi_set_named_property(env, result, "deviceDescriptors", jsArray);
+    NapiParamUtils::SetDeviceDescriptors(env, action.devices, jsArray);
+    napi_set_named_property(env, result, "devices", jsArray);
     return napi_ok;
 }
 

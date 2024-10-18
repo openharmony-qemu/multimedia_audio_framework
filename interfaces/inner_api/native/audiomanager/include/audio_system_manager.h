@@ -168,8 +168,8 @@ struct DeviceChangeAction {
  * @since 13
  */
 struct MicrophoneBlockedInfo {
-    DeviceBlockStatus status;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    DeviceBlockStatus blockStatus;
+    std::vector<sptr<AudioDeviceDescriptor>> devices;
 };
 
 /**
