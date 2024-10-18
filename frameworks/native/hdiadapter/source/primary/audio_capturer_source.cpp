@@ -823,9 +823,10 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     }
     CheckUpdateState(frame, requestBytes);
 
+    int64_t stampThreshold = 50; // 50ms
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    if (logMode_) {
-        AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
+    if (logMode_ || stamp >= stampThreshold) {
+        AUDIO_WARNING_LOG("CaptureFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     }
     return SUCCESS;
 }
