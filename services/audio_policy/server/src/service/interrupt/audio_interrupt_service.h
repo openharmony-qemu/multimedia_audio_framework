@@ -175,6 +175,8 @@ private:
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     void ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout = false);
+    bool EvaluateWhetherContinue(const AudioInterrupt &incoming, const AudioInterrupt
+        &inprocessing, AudioFocusEntry &focusEntry, bool bConcurrency);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry(const int32_t zoneId);
     void SendActiveInterruptEvent(const uint32_t activeSessionId, const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &incomingInterrupt);

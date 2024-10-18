@@ -1440,6 +1440,22 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
     setAudioSceneThread.detach();
 }
 
+bool AudioInterruptService::EvaluateWhetherContinue(const AudioInterrupt &incoming, const AudioInterrupt
+    &inprocessing, AudioFocusEntry &focusEntry, bool bConcurrency)
+{
+    if (CanMixForSession(incoming, inprocessing, focusEntry) ||
+        ((focusEntry.hintType == INTERRUPT_HINT_PAUSE || focusEntry.hintType == INTERRUPT_HINT_STOP) && bConcurrency)) {
+        return true;
+    }
+    UpdateHintTypeForExistingSession(incoming, focusEntry);
+    if (GetClientTypeBySessionId(incoming.sessionId) == CLIENT_TYPE_GAME &&
+        focusEntry.hintType == INTERRUPT_HINT_STOP) {
+        focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+        AUDIO_INFO_LOG("focusEntry.hintType: %{public}d", focusEntry.hintType);
+    }
+    return false;
+}
+
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::SimulateFocusEntry(const int32_t zoneId)
 {
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList;
@@ -1452,27 +1468,24 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
     for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
         AudioInterrupt incoming = iterActive->first;
         AudioFocuState incomingState = ACTIVE;
+        SourceType incomingSourceType = incoming.audioFocusType.sourceType;
+        std::vector<SourceType> incomingConcurrentSources = incoming.currencySources.sourcesTypes;
         std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpAudioFocuInfoList = newAudioFocuInfoList;
         for (auto iter = newAudioFocuInfoList.begin(); iter != newAudioFocuInfoList.end(); ++iter) {
             AudioInterrupt inprocessing = iter->first;
-            if (iter->second == PAUSE || IsSameAppInShareMode(incoming, inprocessing) || iter->second == PLACEHOLDER) {
-                continue;
-            }
-            std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
-                std::make_pair(inprocessing.audioFocusType, incoming.audioFocusType);
+            if (IsSameAppInShareMode(incoming, inprocessing) || iter->second == PLACEHOLDER) { continue; }
+            auto audioFocusTypePair = std::make_pair(inprocessing.audioFocusType, incoming.audioFocusType);
             if (focusCfgMap_.find(audioFocusTypePair) == focusCfgMap_.end()) {
                 AUDIO_WARNING_LOG("focus type is invalid");
                 incomingState = iterActive->second;
                 break;
             }
             AudioFocusEntry focusEntry = focusCfgMap_[audioFocusTypePair];
-            if (CanMixForSession(incoming, inprocessing, focusEntry)) { continue; }
-            UpdateHintTypeForExistingSession(incoming, focusEntry);
-            if (GetClientTypeBySessionId((iterActive->first).sessionId) == CLIENT_TYPE_GAME &&
-                focusEntry.hintType == INTERRUPT_HINT_STOP) {
-                focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-                AUDIO_INFO_LOG("focusEntry.hintType: %{public}d", focusEntry.hintType);
-            }
+            SourceType existSourceType = inprocessing.audioFocusType.sourceType;
+            std::vector<SourceType> existConcurrentSources = inprocessing.currencySources.sourcesTypes;
+            bool bConcurrency = IsAudioSourceConcurrency(existSourceType, incomingSourceType,
+                existConcurrentSources, incomingConcurrentSources);
+            if (EvaluateWhetherContinue(incoming, inprocessing, focusEntry, bConcurrency)) { continue; }
             auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
             if (pos == HINT_STATE_MAP.end()) { continue; }
             if (focusEntry.actionOn == CURRENT) {
