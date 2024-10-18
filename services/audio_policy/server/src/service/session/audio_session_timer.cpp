@@ -76,8 +76,8 @@ void AudioSessionTimer::StopTimer(const int32_t callerPid)
         {
             std::lock_guard<std::mutex> loopLock(timerLoopMutex_);
             state_ = TimerState::TIMER_STOPPED;
+            timerCond_.notify_all();
         }
-        timerCond_.notify_all();
         if (!isThreadRunning_.load() && timerThread_ != nullptr && timerThread_->joinable()) {
             timerThread_->join();
             timerThread_ = nullptr;
