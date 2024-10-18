@@ -227,7 +227,6 @@ const int32_t A2DP_PLAYING = 2;
 const int32_t A2DP_STOPPED = 1;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
-std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
 static sptr<IStandardAudioService> g_btProxy = nullptr;
@@ -4702,7 +4701,6 @@ int32_t AudioPolicyService::GetDefaultDeviceNameFromDataShareHelper(std::string 
 
 int32_t AudioPolicyService::GetUserSetDeviceNameFromDataShareHelper(std::string &deviceName)
 {
-    lock_guard<mutex> lock(g_dataShareHelperMutex);
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "dataShareHelper is NULL");
 
