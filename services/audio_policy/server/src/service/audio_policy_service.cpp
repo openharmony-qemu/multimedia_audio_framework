@@ -6515,7 +6515,9 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
         const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
         CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_NORMAL,
             "GetPreferredOutputStreamType, Audio server Proxy is null");
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         std::string result = gsp->GetAudioParameter(bundleNamePre);
+        IPCSkeleton::SetCallingIdentity(identity);
         if (result == "true") {
             AUDIO_INFO_LOG("%{public}s not in fast list", bundleName.c_str());
             return AUDIO_FLAG_NORMAL;
