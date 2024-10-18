@@ -204,10 +204,10 @@ void AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedInfo 
 {
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
     MicrophoneBlockedInfo microphoneBlockedInfo;
-    microphoneBlockedInfo.status = blockedInfo.status;
+    microphoneBlockedInfo.blockStatus = blockedInfo.blockStatus;
     for (auto it = microphoneBlockedCallbackList_.begin(); it != microphoneBlockedCallbackList_.end(); ++it) {
-        microphoneBlockedInfo.deviceDescriptors = blockedInfo.deviceDescriptors;
-        if (it->second && microphoneBlockedInfo.deviceDescriptors.size() > 0) {
+        microphoneBlockedInfo.devices= blockedInfo.devices;
+        if (it->second && microphoneBlockedInfo.devices.size() > 0) {
             it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
         }
     }
@@ -228,7 +228,7 @@ int32_t AudioPolicyClientStubImpl::RemoveMicrophoneBlockedCallback(const int32_t
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
     auto iter = microphoneBlockedCallbackList_.begin();
     while (iter != microphoneBlockedCallbackList_.end()) {
-        if ((iter->first & clientId) && (iter->second == cb || cb == nullptr)) {
+        if ((iter->first == clientId) && (iter->second == cb || cb == nullptr)) {
             AUDIO_INFO_LOG("remove mic blocked cb flag:%{public}d", clientId);
             iter = microphoneBlockedCallbackList_.erase(iter);
         } else {
@@ -236,6 +236,12 @@ int32_t AudioPolicyClientStubImpl::RemoveMicrophoneBlockedCallback(const int32_t
         }
     }
     return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetMicrophoneBlockedCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
+    return microphoneBlockedCallbackList_.size();
 }
 
 int32_t AudioPolicyClientStubImpl::AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb)

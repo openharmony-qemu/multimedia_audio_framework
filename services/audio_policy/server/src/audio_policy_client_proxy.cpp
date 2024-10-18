@@ -146,12 +146,12 @@ void AudioPolicyClientProxy::OnMicrophoneBlocked(const MicrophoneBlockedInfo &mi
         return;
     }
 
-    size_t size = microphoneBlockedInfo.deviceDescriptors.size();
+    size_t size = microphoneBlockedInfo.devices.size();
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_MICRO_PHONE_BLOCKED));
-    data.WriteInt32(microphoneBlockedInfo.status);
+    data.WriteInt32(microphoneBlockedInfo.blockStatus);
     data.WriteInt32(static_cast<int32_t>(size));
     for (size_t i = 0; i < size; i++) {
-        microphoneBlockedInfo.deviceDescriptors[i]->Marshalling(data);
+        microphoneBlockedInfo.devices[i]->Marshalling(data);
     }
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {

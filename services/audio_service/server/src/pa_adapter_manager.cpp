@@ -78,7 +78,7 @@ static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
 static bool IsEnhanceMode(SourceType sourceType)
 {
     if (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
-        sourceType == SOURCE_TYPE_VOICE_CALL || sourceType == SOURCE_TYPE_CAMCORDER) {
+        sourceType == SOURCE_TYPE_VOICE_CALL) {
         return true;
     }
     return false;

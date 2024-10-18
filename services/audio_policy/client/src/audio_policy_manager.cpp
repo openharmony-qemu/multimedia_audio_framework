@@ -662,7 +662,6 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
 int32_t AudioPolicyManager::SetMicrophoneBlockedCallback(const int32_t clientId,
     const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::SetMicrophoneBlockedCallback");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
@@ -673,44 +672,14 @@ int32_t AudioPolicyManager::SetMicrophoneBlockedCallback(const int32_t clientId,
             return ret;
         }
     }
-    audioPolicyClientStubCB_->AddMicrophoneBlockedCallback(clientId, callback);
-    return SUCCESS;
-}
-
-int32_t AudioPolicyManager::SetMicrophoneBlockedCallback(const int32_t clientId,
-    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "SetMicrophoneBlockedCallback: callback is nullptr");
-    if (!isAudioPolicyClientRegisted_) {
-        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
-        if (ret != SUCCESS) {
-            return ret;
-        }
-    }
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_MICROPHONE_BLOCKED].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->AddMicrophoneBlockedCallback(clientId, callback);
-    }
-    return SUCCESS;
-}
-
-int32_t AudioPolicyManager::SetMicrophoneBlockedCallback(const int32_t clientId,
-    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "SetMicrophoneBlockedCallback: callback is nullptr");
-    if (!isAudioPolicyClientRegisted_) {
-        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
-        if (ret != SUCCESS) {
-            return ret;
+        size_t callbackSize = audioPolicyClientStubCB_->GetMicrophoneBlockedCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_MICROPHONE_BLOCKED].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_MICROPHONE_BLOCKED, true);
         }
-    }
-    if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddMicrophoneBlockedCallback(clientId, callback);
     }
     return SUCCESS;
 }
@@ -812,30 +781,16 @@ int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback()
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::UnSetMicrophoneBlockedCallback(const int32_t clientId,
-    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
-{
-    AUDIO_DEBUG_LOG("AudioPolicyManager::UnSetMicrophoneBlockedCallback");
-    if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveMicrophoneBlockedCallback(clientId, callback);
-    }
-    return SUCCESS;
-}
-
 int32_t AudioPolicyManager::UnsetMicrophoneBlockedCallback(const int32_t clientId,
     const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
 {
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_MICROPHONE_BLOCKED].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveMicrophoneBlockedCallback(clientId, callback);
-    }
-    return SUCCESS;
-}
-
-int32_t AudioPolicyManager::UnsetMicrophoneBlockedCallback(const int32_t clientId,
-    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
-{
-    if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveMicrophoneBlockedCallback(clientId, callback);
+        if (audioPolicyClientStubCB_->GetMicrophoneBlockedCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_MICROPHONE_BLOCKED].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_MICROPHONE_BLOCKED, false);
+        }
     }
     return SUCCESS;
 }

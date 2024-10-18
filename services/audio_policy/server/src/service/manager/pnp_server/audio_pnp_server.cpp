@@ -39,8 +39,7 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
 {
     int32_t ret;
     char event[AUDIO_PNP_INFO_LEN_MAX] = {0};
-    if ((audioEvent.eventType == PNP_EVENT_UNKNOWN && audioEvent.anahsName == "") ||
-        (audioEvent.deviceType == PNP_DEVICE_UNKNOWN && audioEvent.anahsName == "")) {
+    if (audioEvent.eventType == PNP_EVENT_UNKNOWN || audioEvent.deviceType == PNP_DEVICE_UNKNOWN) {
         AUDIO_ERR_LOG("audio event is not updated");
         return event;
     }
@@ -180,8 +179,12 @@ void AudioPnpServer::OpenAndReadWithSocket()
             }
             eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
             CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid socket info");
-            OnPnpDeviceStatusChanged(eventInfo_);
-            MicrophoneBlocked::GetInstance().OnMicrophoneBlocked(eventInfo_, GetAudioPnpServer());
+            if (AudioSocketThread::audioSocketEvent_.eventType == PNP_EVENT_MIC_BLOCKED ||
+                AudioSocketThread::audioSocketEvent_.eventType == PNP_EVENT_MIC_UNBLOCKED) {
+                MicrophoneBlocked::GetInstance().OnMicrophoneBlocked(eventInfo_, GetAudioPnpServer());
+            } else {
+                OnPnpDeviceStatusChanged(eventInfo_);
+            }
         }
     }
     close(socketFd);

@@ -161,7 +161,7 @@ enum AudioStreamType {
     /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_VOICE_CALL_ASSISTANT,
+    STREAM_TYPE_MAX = STREAM_CAMCORDER,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.

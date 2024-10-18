@@ -904,11 +904,6 @@ AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sou
             return STREAM_WAKEUP;
         case SOURCE_TYPE_CAMCORDER:
             return STREAM_CAMCORDER;
-        case SOURCE_TYPE_VOICE_RECOGNITION:
-        case SOURCE_TYPE_PLAYBACK_CAPTURE:
-        case SOURCE_TYPE_REMOTE_CAST:
-        case SOURCE_TYPE_VIRTUAL_CAPTURE:
-        case SOURCE_TYPE_VOICE_MESSAGE:
         default:
             return STREAM_MUSIC;
     }

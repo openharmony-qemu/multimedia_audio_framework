@@ -70,7 +70,8 @@ public:
     int32_t AddMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb);
     int32_t RemoveMicrophoneBlockedCallback(const int32_t clientId,
-        const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb);    
+        const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb);
+    size_t GetMicrophoneBlockedCallbackSize() const;
     int32_t AddHeadTrackingDataRequestedChangeCallback(const std::string &macAddress,
         const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb);
     int32_t RemoveHeadTrackingDataRequestedChangeCallback(const std::string &macAddress);
@@ -155,7 +156,7 @@ private:
     mutable std::mutex spatializationEnabledChangeMutex_;
     mutable std::mutex headTrackingEnabledChangeMutex_;
     mutable std::mutex audioSessionMutex_;
-    std::mutex microphoneBlockedMutex_;
+    mutable std::mutex microphoneBlockedMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

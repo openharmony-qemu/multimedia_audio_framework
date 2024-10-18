@@ -134,26 +134,6 @@ ssize_t AudioSocketThread::AudioPnpReadUeventMsg(int sockFd, char *buffer, size_
     return len;
 }
 
-int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent)
-{
-    if (strncmp(audioPnpUevent->subSystem, UEVENT_PLATFORM, strlen(UEVENT_PLATFORM)) == 0) {
-        if (strncmp(audioPnpUevent->anahsName, UEVENT_INSERT, strlen(UEVENT_INSERT)) == 0) {
-            AUDIO_INFO_LOG("set anahs event to insert.");
-            audioEvent->anahsName = UEVENT_INSERT;
-            return SUCCESS;
-        } else if (strncmp(audioPnpUevent->anahsName, UEVENT_REMOVE, strlen(UEVENT_REMOVE)) == 0) {
-            AUDIO_INFO_LOG("set anahs event to remove.");
-            audioEvent->anahsName = UEVENT_REMOVE;
-            return SUCCESS;
-        } else {
-            AUDIO_ERR_LOG("set anahs event error.");
-            return ERROR;
-        }
-    }
-    AUDIO_ERR_LOG("set anahs event error and subSystem is not platform.");
-    return ERROR;
-}
-
 static void SetAudioPnpUevent(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent, uint32_t h2wTypeLast)
 {
     switch (audioPnpUevent->switchState[0]) {
