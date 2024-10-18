@@ -192,10 +192,10 @@ void AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedInfo 
 {
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
     MicrophoneBlockedInfo microphoneBlockedInfo;
-    microphoneBlockedInfo.status = blockedInfo.status;
+    microphoneBlockedInfo.blockStatus = blockedInfo.blockStatus;
     for (auto it = microphoneBlockedCallbackList_.begin(); it != microphoneBlockedCallbackList_.end(); ++it) {
-        microphoneBlockedInfo.deviceDescriptors = blockedInfo.deviceDescriptors;
-        if (it->second && microphoneBlockedInfo.deviceDescriptors.size() > 0) {
+        microphoneBlockedInfo.devices= blockedInfo.devices;
+        if (it->second && microphoneBlockedInfo.devices.size() > 0) {
             it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
         }
     }
