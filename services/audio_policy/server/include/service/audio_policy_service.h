@@ -217,6 +217,8 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
+    void OnUpdateAnahsSupport(std::string anahsShowType);
+
     int32_t GetUserSetDeviceNameFromDataShareHelper(std::string &deviceName);
 
     int32_t GetDefaultDeviceNameFromDataShareHelper(std::string &deviceName);

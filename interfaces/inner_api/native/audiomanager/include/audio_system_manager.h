@@ -435,7 +435,7 @@ class AudioDeviceAnahs {
 public:
     virtual ~AudioDeviceAnahs() = default;
 
-    virtual int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus) = 0;
+    virtual int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) = 0;
 };
 
 /**
