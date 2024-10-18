@@ -38,7 +38,6 @@ constexpr auto SLEEP_TIMES_RETYT_FAILED = 1min;
 std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
-sptr<AudioPolicyClientStubImpl> AudioPolicyManager::audioStaticPolicyClientStubCB_;
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
 
 inline bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
@@ -108,7 +107,6 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
     std::unique_lock<std::mutex> lock(registerCallbackMutex_);
     if (audioPolicyClientStubCB_ == nullptr) {
         audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
-        audioStaticPolicyClientStubCB_ = audioPolicyClientStubCB_;
     }
     sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
     if (object == nullptr) {
@@ -127,10 +125,12 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
 
 void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 {
-    if (audioStaticPolicyClientStubCB_ == nullptr) {
+    std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+    if (audioPolicyClientStubCB_ == nullptr) {
         AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null.");
         return;
     }
+    lock.unlock();
 
     int32_t retry = RETRY_TIMES;
     sptr<IAudioPolicy> gsp = nullptr;
@@ -151,14 +151,14 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Reconnect audio policy service fail!");
 
-    sptr<IRemoteObject> object = audioStaticPolicyClientStubCB_->AsObject();
+    sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("RegisterPolicyCallbackClientFunc: audioPolicyClientStubCB_->AsObject is nullptr");
         return;
     }
 
     gsp->RegisterPolicyCallbackClient(object);
-    if (audioStaticPolicyClientStubCB_->HasMicStateChangeCallback()) {
+    if (audioPolicyClientStubCB_->HasMicStateChangeCallback()) {
         AUDIO_INFO_LOG("RecoverAudioPolicyCallbackClient has micStateChangeCallback");
         gsp->SetClientCallbacksEnable(CALLBACK_MICMUTE_STATE_CHANGE, true);
     }
@@ -188,7 +188,10 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
             }
         }
     }
-
+    {
+        std::lock_guard<std::mutex> lock(g_apProxyMutex);
+        g_apProxy = nullptr;
+    }
     GetInstance().RecoverAudioPolicyCallbackClient();
 
     {
@@ -825,11 +828,12 @@ int32_t AudioPolicyManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
     return gsp->SetQueryClientTypeCallback(object);
 }
 
-int32_t AudioPolicyManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyManager::ActivateAudioInterrupt(
+    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID);
+    return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
 }
 
 int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)

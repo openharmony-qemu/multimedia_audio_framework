@@ -1135,5 +1135,23 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_043, TestSize.Level1
     struct BufferDesc readBuf;
     ptr->WriteToProcessBuffers(readBuf);
 }
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_044
+ * @tc.desc  : Test AudioEndpointSeparate::GetDeviceHandleInfo
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_044, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    uint64_t frames = 0;
+    int64_t nanoTime = 0;
+    ptr->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    ptr->GetDeviceHandleInfo(frames, nanoTime);
+}
 } // namespace AudioStandard
 } // namespace OHOS

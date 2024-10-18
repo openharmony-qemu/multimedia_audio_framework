@@ -261,7 +261,6 @@ int32_t ProRendererStreamImpl::Stop()
     if (isFirstFrame_) {
         firstFrameSync_.notify_all();
     }
-    totalBytesWritten_ = 0;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);

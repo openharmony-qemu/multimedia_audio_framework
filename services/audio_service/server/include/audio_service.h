@@ -79,7 +79,7 @@ public:
     int32_t GetCurrentRendererStreamCnt();
     void CleanUpStream(int32_t appUid);
     bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, int32_t maxStreamCntPerUid);
-    int32_t GetCreatedAudioStreamMostUid();
+    void GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum);
 
 private:
     AudioService();

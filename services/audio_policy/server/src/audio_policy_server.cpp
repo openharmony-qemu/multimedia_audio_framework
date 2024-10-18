@@ -662,6 +662,10 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeType(const int32_t clien
 
 AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32_t clientUid)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return AudioStreamType::STREAM_MUSIC;
+    }
     AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
     if (clientUid != 0) {
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus(clientUid));
@@ -1402,10 +1406,11 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyServer::ActivateAudioInterrupt(
+    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     if (interruptService_ != nullptr) {
-        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt);
+        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;
 }

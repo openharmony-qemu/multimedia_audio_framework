@@ -312,8 +312,6 @@ private:
     float duckVolume_ = 1.0;
     float muteVolume_ = 1.0;
     float clientVolume_ = 1.0;
-    bool isMute_ = false;
-    bool isLoadInterrupt_ = true;
     bool silentModeAndMixWithOthers_ = false;
 
     uint64_t clientWrittenBytes_ = 0;

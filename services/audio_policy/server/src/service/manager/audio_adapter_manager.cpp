@@ -453,6 +453,8 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     bool isMuted = GetStreamMute(volumeType);
     int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
     if (GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && volumeType == STREAM_MUSIC) {
+        isMuted = IsAbsVolumeMute();
+        volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
         volumeDb = isMuted ? 0.0f : 0.63957f; // 0.63957 = -4dB
     }
     auto audioVolume = AudioVolume::GetInstance();
@@ -1120,13 +1122,13 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
             return EARPIECE_VOLUME_TYPE;
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_FILE_SOURCE:
+        case DEVICE_TYPE_DP:
             return SPEAKER_VOLUME_TYPE;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_DP:
             return HEADSET_VOLUME_TYPE;
         default:
             return SPEAKER_VOLUME_TYPE;
@@ -1616,6 +1618,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_DP:
             type = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -1625,7 +1628,6 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             type = "wired";
             break;
         default:
@@ -1910,7 +1912,7 @@ bool AudioAdapterManager::IsAbsVolumeScene() const
 void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     isAbsVolumeMute_ = mute;
-    float volumeDb = mute ? 0.0f : 1.0f;
+    float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
     SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
 }
 

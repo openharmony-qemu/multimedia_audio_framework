@@ -28,6 +28,8 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+constexpr uint32_t THP_EXTRA_SA_UID = 5000;
+
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
 
@@ -232,8 +234,47 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
         "audioPolicyServerHandler_ is nullptr, callback error");
-    audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+    SendCapturerInfoEvent(audioCapturerChangeInfos_);
     return SUCCESS;
+}
+
+void AudioStreamCollector::SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>>
+    &audioCapturerChangeInfos)
+{
+    bool earseFlag = false;
+    for (const auto &capChangeinfoUPtr : audioCapturerChangeInfos) {
+        if (IsTransparentCapture(capChangeinfoUPtr->clientUID)) {
+            earseFlag = true;
+            break;
+        }
+    }
+    if (earseFlag == false) {
+        if (!audioCapturerChangeInfos.empty()) {
+            audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos);
+        }
+        return;
+    }
+
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfoSent;
+    for (const auto &capChangeinfoUPtr : audioCapturerChangeInfos) {
+        if (IsTransparentCapture(capChangeinfoUPtr->clientUID)) {
+            AUDIO_INFO_LOG("bypass uid:%{public}d", capChangeinfoUPtr->clientUID);
+        } else {
+            audioCapturerChangeInfoSent.push_back(make_unique<AudioCapturerChangeInfo>(*capChangeinfoUPtr));
+        }
+    }
+    if (audioCapturerChangeInfoSent.empty()) {
+        return;
+    }
+    audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfoSent);
+}
+
+bool AudioStreamCollector::IsTransparentCapture(const uint32_t clientUid)
+{
+    if (clientUid == THP_EXTRA_SA_UID) {
+        return true;
+    }
+    return false;
 }
 
 int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -469,7 +510,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             capturerChangeInfo->appTokenId = (*it)->appTokenId;
             *it = move(capturerChangeInfo);
             if (audioPolicyServerHandler_ != nullptr) {
-                audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+                SendCapturerInfoEvent(audioCapturerChangeInfos_);
             }
             if (streamChangeInfo.audioCapturerChangeInfo.capturerState ==  CAPTURER_RELEASED) {
                 audioCapturerChangeInfos_.erase(it);
@@ -522,7 +563,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceIn
     }
 
     if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+        SendCapturerInfoEvent(audioCapturerChangeInfos_);
     }
 
     return SUCCESS;
@@ -535,7 +576,8 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
     bool deviceInfoUpdated = false;
 
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId
+            && (*it)->outputDeviceInfo.deviceType != outputDeviceInfo.deviceType) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 clientUID, sessionId, (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
             (*it)->outputDeviceInfo = outputDeviceInfo;
@@ -582,7 +624,8 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_
     bool deviceInfoUpdated = false;
 
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId
+            && (*it)->inputDeviceInfo.deviceType != inputDeviceInfo.deviceType) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 (*it)->clientUID, (*it)->sessionId, (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
             (*it)->inputDeviceInfo = inputDeviceInfo;
@@ -591,7 +634,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_
     }
 
     if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+        SendCapturerInfoEvent(audioCapturerChangeInfos_);
     }
 
     return SUCCESS;
@@ -706,7 +749,11 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        capturerChangeInfos.push_back(make_unique<AudioCapturerChangeInfo>(*changeInfo));
+        if (!IsTransparentCapture(changeInfo->clientUID)) {
+            capturerChangeInfos.push_back(make_unique<AudioCapturerChangeInfo>(*changeInfo));
+        } else {
+            AUDIO_INFO_LOG("GetCurrentCapturerChangeInfos remove uid:%{public}d", changeInfo->clientUID);
+        }
         AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos returned");
     }
 
@@ -757,7 +804,7 @@ void AudioStreamCollector::RegisteredCapturerTrackerClientDied(const int32_t uid
         audioCapturerChangeInfo->capturerState = CAPTURER_RELEASED;
         WriteCaptureStreamReleaseSysEvent(audioCapturerChangeInfo);
         if (audioPolicyServerHandler_ != nullptr) {
-            audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+            SendCapturerInfoEvent(audioCapturerChangeInfos_);
         }
         capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo->clientUID,
             audioCapturerChangeInfo->sessionId));
@@ -1035,7 +1082,7 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     }
 
     if (capturerInfoUpdated && audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+        SendCapturerInfoEvent(audioCapturerChangeInfos_);
     }
 
     return SUCCESS;

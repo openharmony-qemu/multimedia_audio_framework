@@ -133,20 +133,21 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
-    }
-
-    if (operation == DATA_LINK_CONNECTING || operation == DATA_LINK_CONNECTED) {
-        if (operation == DATA_LINK_CONNECTING) {
-            isDataLinkConnected_ = false;
-        } else {
-            isDataLinkConnected_ = true;
-            dataConnectionCV_.notify_all();
-        }
+    } else if (operation == DATA_LINK_CONNECTING) {
+        isDataLinkConnected_ = false;
+        return SUCCESS;
+    } else if (operation == DATA_LINK_CONNECTED) {
+        isDataLinkConnected_ = true;
+        dataConnectionCV_.notify_all();
         return SUCCESS;
     }
 
     if (operation == RESTORE_SESSION) {
-        RestoreAudioStream();
+        // fix it when restoreAudioStream work right
+        if (audioStreamTracker_ && audioStreamTracker_.get()) {
+            audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
+                RUNNING, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+        }
         return SUCCESS;
     }
 
@@ -772,20 +773,9 @@ float RendererInClientInner::GetVolume()
 int32_t RendererInClientInner::SetMute(bool mute)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
-    AUDIO_INFO_LOG("sessionId:%{public}d SetMute:%{public}d", sessionId_, mute);
-    if (mute == isMute_) {
-        AUDIO_INFO_LOG("isMute_ = mute : %{public}d", mute);
-        return SUCCESS;
-    }
+    AUDIO_INFO_LOG("sessionId:%{public}d SetDuck:%{public}d", sessionId_, mute);
+    muteVolume_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
-    if (state_ == RUNNING && mute == false && isLoadInterrupt_ == false) {
-        isLoadInterrupt_ = true;
-        muteVolume_ = 1.0f;
-    } else {
-        isLoadInterrupt_ = false;
-        muteVolume_ = 0.0f;
-    }
-    isMute_ = mute;
     clientBuffer_->SetMuteFactor(muteVolume_);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetMute(mute);
@@ -2231,8 +2221,7 @@ void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 
 bool RendererInClientInner::GetSilentModeAndMixWithOthers()
 {
-    AUDIO_INFO_LOG("Background Mute Activate: %{public}d", isLoadInterrupt_);
-    return silentModeAndMixWithOthers_ || !isLoadInterrupt_;
+    return silentModeAndMixWithOthers_;
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()

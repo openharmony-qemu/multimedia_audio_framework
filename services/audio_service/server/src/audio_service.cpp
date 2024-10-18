@@ -34,8 +34,6 @@ namespace AudioStandard {
 static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
-static const int32_t INVALID_APP_UID = -1;
-static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
 AudioService *AudioService::GetInstance()
@@ -58,6 +56,8 @@ AudioService::~AudioService()
 int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destoryAtOnce)
 {
     std::lock_guard<std::mutex> processListLock(processListMutex_);
+    CHECK_AND_RETURN_RET_LOG(process != nullptr, ERROR, "process is nullptr");
+
     bool isFind = false;
     int32_t ret = ERROR;
     auto paired = linkedPairedList_.begin();
@@ -67,6 +67,10 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             AUDIO_INFO_LOG("SessionId %{public}u", (*paired).first->GetSessionId());
+            auto processConfig = process->GetAudioProcessConfig();
+            if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+                CleanUpStream(processConfig.appInfo.appUid);
+            }
             RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
             ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
@@ -316,7 +320,7 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
         "Wrong usage ,should not be dualtone");
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (!ret) {
         AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
         return false;
@@ -701,7 +705,7 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 {
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (ret) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
             "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
@@ -990,15 +994,15 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
     return false;
 }
 
-int32_t AudioService::GetCreatedAudioStreamMostUid()
+void AudioService::GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum)
 {
-    int32_t mostAppUid = INVALID_APP_UID;
-    int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
     for (auto it = appUseNumMap.begin(); it != appUseNumMap.end(); it++) {
-        mostAppNum = it->second > mostAppNum ? it->second : mostAppNum;
-        mostAppUid = it->first;
+        if (it->second > mostAppNum) {
+            mostAppNum = it->second;
+            mostAppUid = it->first;
+        }
     }
-    return mostAppUid;
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

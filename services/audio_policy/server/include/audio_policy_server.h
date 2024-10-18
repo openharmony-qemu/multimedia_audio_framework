@@ -213,7 +213,8 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneId = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0,
+        const bool isUpdatedAudioStrategy = false) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
@@ -325,7 +326,7 @@ public:
         uint32_t appTokenId) override;
 
     int32_t SetCaptureSilentState(bool state) override;
-    
+
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;

@@ -556,6 +556,7 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_DP:
             type = "_builtin";
             return type;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -565,7 +566,6 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             type = "_wired";
             return type;
         case DEVICE_TYPE_REMOTE_CAST:
