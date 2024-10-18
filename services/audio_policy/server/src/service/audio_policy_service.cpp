@@ -1706,7 +1706,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
         for (auto &changeInfo : capturerChangeInfos) {
             if (changeInfo->clientUID == audioCapturerFilter->uid && changeInfo->sessionId != 0) {
-                RestoreSession(changeInfo->sessionId, true);
+                RestoreSession(changeInfo->sessionId, false);
             }
         }
         return SUCCESS;
