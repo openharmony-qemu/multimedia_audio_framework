@@ -1849,7 +1849,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
 static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType)
 {
     AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", sinkSceneType);
-    EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
+    // EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
     UpdateStreamAvailableMap(u, sinkSceneType);
     ResampleAfterEffectChain(sinkSceneType, u);
     for (int32_t k = 0; k < u->bufferAttr->frameLen * u->sink->sample_spec.channels; k++) {
