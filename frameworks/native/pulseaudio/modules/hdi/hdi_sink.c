@@ -167,6 +167,7 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i);
 static void StartPrimaryHdiIfRunning(struct Userdata *u);
 static void StartMultiChannelHdiIfRunning(struct Userdata *u);
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
+static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t state);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -408,10 +409,30 @@ static void OffloadSetHdiVolume(pa_sink_input *i)
     }
 
     struct Userdata *u = i->sink->userdata;
-    float left;
-    float right;
-    u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
-    u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
+    const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
+    const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+    const char *deviceClass = GetDeviceClass(u->offload.sinkAdapter->deviceClass);
+    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
+    float volumeBeg = GetPreVolume(sessionID);
+    float fadeBeg = 1.0f;
+    float fadeEnd = 1.0f;
+    if (!pa_safe_streq(streamType, "ultrasonic")) {
+        GetStreamVolumeFade(sessionID, &fadeBeg, &fadeEnd);
+    }
+    if (volumeBeg != volumeEnd || fadeBeg != fadeEnd) {
+        AUDIO_INFO_LOG("sessionID:%{public}s, volumeBeg:%{public}f, volumeEnd:%{public}f"
+            ", fadeBeg:%{public}f, fadeEnd:%{public}f",
+            sessionIDStr, volumeBeg, volumeEnd, fadeBeg, fadeEnd);
+        if (volumeBeg != volumeEnd) {
+            SetPreVolume(sessionID, volumeEnd);
+            MonitorVolume(sessionID, true);
+        }
+        if (fadeBeg != fadeEnd) {
+            SetStreamVolumeFade(sessionID, fadeEnd, fadeEnd);
+        }
+    }
+    u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, volumeEnd, volumeEnd);
 }
 
 static void OffloadSetHdiBufferSize(pa_sink_input *i)
@@ -445,6 +466,9 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         AUDIO_DEBUG_LOG("StartOffloadHdi before write, because maybe sink switch");
         StartOffloadHdi(u, i);
     }
+    if (u->offload.firstWriteHdi) {
+        OffloadSetHdiVolume(i);
+    }
     int32_t ret = u->offload.sinkAdapter->RendererRenderFrame(u->offload.sinkAdapter, ((char*)p + index),
         (uint64_t)length, &writeLen);
     pa_memblock_release(pchunk->memblock);
@@ -453,17 +477,16 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
             length, writeLen, ret);
         return -1;
     }
-    if (ret == 0 && u->offload.firstWriteHdi == true) {
+    if (ret == 0 && u->offload.firstWriteHdi && writeLen == length) {
         u->offload.firstWriteHdi = false;
         u->offload.hdiPosTs = now;
         u->offload.hdiPos = 0;
-        OffloadSetHdiVolume(i);
     }
-    if (ret == 0 && u->offload.setHdiBufferSizeNum > 0) {
+    if (ret == 0 && u->offload.setHdiBufferSizeNum > 0 && writeLen == length) {
         u->offload.setHdiBufferSizeNum--;
         OffloadSetHdiBufferSize(i);
     }
-    if (ret == 0 && writeLen == 0) { // is full
+    if (ret == 0 && writeLen == 0 && !u->offload.firstWriteHdi) { // is full
         AUDIO_DEBUG_LOG("RenderWriteOffload, hdi is full, break");
         return 1; // 1 indicates full
     } else if (writeLen == 0) {
@@ -2468,28 +2491,26 @@ static void OffloadRewindAndFlush(struct Userdata *u, pa_sink_input *i, bool aft
         uint64_t offloadFade = 180000; // 180000 us fade out
         uint64_t cacheLenInHdi =
             u->offload.pos > u->offload.hdiPos + offloadFade ? u->offload.pos - u->offload.hdiPos - offloadFade : 0;
-        if (cacheLenInHdi != 0) {
-            uint64_t bufSizeInRender = pa_usec_to_bytes(cacheLenInHdi, &i->sink->sample_spec);
-            const pa_sample_spec sampleSpecIn = i->thread_info.resampler ? i->thread_info.resampler->i_ss
-                                                                         : i->sample_spec;
-            uint64_t bufSizeInInput = pa_usec_to_bytes(cacheLenInHdi, &sampleSpecIn);
-            bufSizeInInput += pa_usec_to_bytes(pa_bytes_to_usec(
-                pa_memblockq_get_length(i->thread_info.render_memblockq), &i->sink->sample_spec), &sampleSpecIn);
-            uint64_t rewindSize = afterRender ? bufSizeInRender : bufSizeInInput;
-            uint64_t maxRewind = afterRender ? i->thread_info.render_memblockq->maxrewind : ps->memblockq->maxrewind;
-            if (rewindSize > maxRewind) {
-                AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%u), afterRender(%d)",
-                    rewindSize, (uint32_t)(afterRender ? i->thread_info.render_memblockq->maxrewind :
-                                           ps->memblockq->maxrewind), afterRender);
-                rewindSize = maxRewind;
-            }
+        uint64_t bufSizeInRender = pa_usec_to_bytes(cacheLenInHdi, &i->sink->sample_spec);
+        const pa_sample_spec sampleSpecIn = i->thread_info.resampler ? i->thread_info.resampler->i_ss
+                                                                        : i->sample_spec;
+        uint64_t bufSizeInInput = pa_usec_to_bytes(cacheLenInHdi, &sampleSpecIn);
+        bufSizeInInput += pa_usec_to_bytes(pa_bytes_to_usec(
+            pa_memblockq_get_length(i->thread_info.render_memblockq), &i->sink->sample_spec), &sampleSpecIn);
+        uint64_t rewindSize = afterRender ? bufSizeInRender : bufSizeInInput;
+        uint64_t maxRewind = afterRender ? i->thread_info.render_memblockq->maxrewind : ps->memblockq->maxrewind;
+        if (rewindSize > maxRewind) {
+            AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%u), afterRender(%d)",
+                rewindSize, (uint32_t)(afterRender ? i->thread_info.render_memblockq->maxrewind :
+                                        ps->memblockq->maxrewind), afterRender);
+            rewindSize = maxRewind;
+        }
 
-            if (afterRender) {
-                pa_memblockq_rewind(i->thread_info.render_memblockq, rewindSize);
-            } else {
-                pa_memblockq_rewind(ps->memblockq, rewindSize);
-                pa_memblockq_flush_read(i->thread_info.render_memblockq);
-            }
+        if (afterRender) {
+            pa_memblockq_rewind(i->thread_info.render_memblockq, rewindSize);
+        } else {
+            pa_memblockq_rewind(ps->memblockq, rewindSize);
+            pa_memblockq_flush_read(i->thread_info.render_memblockq);
         }
     }
     OffloadReset(u);
@@ -2622,6 +2643,7 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
         OffloadReset(u);
         u->primary.speakerPaAllStreamStartVolZeroTime = 0;
     }
+    ResetVolumeBySinkInputState(i, state);
 }
 
 static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t state)

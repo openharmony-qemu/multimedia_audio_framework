@@ -783,6 +783,9 @@ int32_t RendererInClientInner::SetMute(bool mute)
         AUDIO_ERR_LOG("Set Mute failed:%{public}u", ret);
         return ERROR;
     }
+    if (offloadEnable_) {
+        ipcStream_->OffloadSetVolume(mute ? 0.0f : clientVolume_ * duckVolume_);
+    }
     return SUCCESS;
 }
 
@@ -2216,6 +2219,9 @@ void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
     ipcStream_->SetSilentModeAndMixWithOthers(on);
+    if (offloadEnable_) {
+        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_ * duckVolume_);
+    }
     return;
 }
 
