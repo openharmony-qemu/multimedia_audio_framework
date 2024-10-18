@@ -227,7 +227,6 @@ const int32_t A2DP_PLAYING = 2;
 const int32_t A2DP_STOPPED = 1;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
-std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
 static sptr<IStandardAudioService> g_btProxy = nullptr;
@@ -495,6 +494,11 @@ void AudioPolicyService::RecoveryPreferredDevices()
         for (auto iter = preferredDevices.begin(); iter != preferredDevices.end(); ++iter) {
             result = HandleRecoveryPreferredDevices(static_cast<int32_t>(iter->first), iter->second->deviceType_,
                 iter->second->usageOrSourceType_);
+            if (result != SUCCESS) {
+                AUDIO_ERR_LOG("Handle recovery preferred devices failed"
+		    ", deviceType:%{public}d, usageOrSourceType:%{public}d, tryCounter:%{public}d",
+                    iter->second->deviceType_, iter->second->usageOrSourceType_, tryCounter);
+            }
         }
         if (result != SUCCESS) {
             usleep(sleepTime);
@@ -3298,19 +3302,6 @@ std::string AudioPolicyService::GetSystemSoundUri(const std::string &key)
     return audioPolicyManager_.GetSystemSoundUri(key);
 }
 
-bool AudioPolicyService::IsSessionIdValid(int32_t callerUid, int32_t sessionId)
-{
-    AUDIO_INFO_LOG("callerUid: %{public}d, sessionId: %{public}d", callerUid, sessionId);
-
-    constexpr int32_t mediaUid = 1013; // "uid" : "media"
-    if (callerUid == mediaUid) {
-        AUDIO_INFO_LOG("sessionId:%{public}d is an valid id from media", sessionId);
-        return true;
-    }
-
-    return true;
-}
-
 int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     auto iter = connectedA2dpDeviceMap_.find(deviceDescriptor->macAddress_);
@@ -4796,7 +4787,6 @@ int32_t AudioPolicyService::GetDefaultDeviceNameFromDataShareHelper(std::string 
 
 int32_t AudioPolicyService::GetUserSetDeviceNameFromDataShareHelper(std::string &deviceName)
 {
-    lock_guard<mutex> lock(g_dataShareHelperMutex);
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "dataShareHelper is NULL");
 
@@ -6313,6 +6303,7 @@ int32_t AudioPolicyService::CheckActiveMusicTime()
 
 void AudioPolicyService::CreateCheckMusicActiveThread()
 {
+    std::lock_guard<std::mutex> lock(checkMusicActiveThreadMutex_);
     if (calculateLoopSafeTime_ == nullptr) {
         calculateLoopSafeTime_ = std::make_unique<std::thread>([this] { this->CheckActiveMusicTime(); });
         pthread_setname_np(calculateLoopSafeTime_->native_handle(), "OS_AudioPolicySafe");
@@ -8199,14 +8190,6 @@ void AudioPolicyService::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, Sou
     }
     
     UpdateModuleInfoForMicRef(moduleInfo, sourceType);
-}
-
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsage(AudioDeviceUsage usage,
-    const std::vector<sptr<AudioDeviceDescriptor>>& descs)
-{
-    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-
-    return DeviceFilterByUsageInner(usage, descs);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsageInner(AudioDeviceUsage usage,
