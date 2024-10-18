@@ -502,6 +502,8 @@ public:
     bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+    
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);

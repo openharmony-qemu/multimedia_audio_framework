@@ -3040,6 +3040,11 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
     return audioPolicyService_.LoadSplitModule(splitArgs, networkId);
 }
 
+bool AudioPolicyServer::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
+{
+    return audioPolicyService_.IsAllowedPlayback(uid, pid);
+}
+
 int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {

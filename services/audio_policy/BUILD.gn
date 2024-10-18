@@ -14,6 +14,7 @@
 import("//build/ohos.gni")
 import("../../accessibility.gni")
 import("../../appgallery.gni")
+import("../../av_session.gni")
 import("../../bluetooth_part.gni")
 import("../../config.gni")
 
@@ -82,6 +83,10 @@ config("audio_policy_public_config") {
 
   if (bluetooth_part_enable == true) {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
+  }
+
+  if (avsession_part_enable == true) {
+    cflags += [ "-DAVSESSION_ENABLE" ]
   }
 
   ldflags = [ "-Wl" ]
@@ -248,6 +253,15 @@ ohos_shared_library("audio_policy_service") {
   if (bluetooth_part_enable == true) {
     deps += [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
     external_deps += [ "bluetooth:btframework" ]
+  }
+
+  if (avsession_part_enable == true) {
+    external_deps += [
+      "ability_base:want",
+      "ability_runtime:wantagent_innerkits",
+      "av_session:avsession_client",
+      "input:libmmi-client",
+    ]
   }
 
   if (audio_framework_feature_input) {

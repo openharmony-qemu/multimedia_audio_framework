@@ -37,6 +37,8 @@
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
 #include "audio_safe_volume_notification.h"
+#include "avsession_manager.h"
+#include "audio_setting_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -9845,6 +9847,14 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
         IPCSkeleton::SetCallingIdentity(identity);
     }
     return openRet;
+}
+
+bool  AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
+{
+#ifdef AVSESSION_ENABLE
+    return OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
+#endif
+    return true;
 }
 
 int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
