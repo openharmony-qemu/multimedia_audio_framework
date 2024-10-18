@@ -725,7 +725,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         return ERR_NOT_STARTED;
     }
 
-    dumpFileName_ = "offload_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+    dumpFileName_ = "offload_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 

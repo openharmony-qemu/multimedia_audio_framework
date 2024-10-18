@@ -669,7 +669,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
         AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
-    dumpFileName_ = "bluetooth_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+    dumpFileName_ = "bluetooth_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
