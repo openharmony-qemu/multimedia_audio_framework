@@ -150,6 +150,7 @@ private:
     bool firstGetLatency_ = true;
     pa_usec_t preTimeGetPaLatency_ = pa_rtclock_now();
     bool firstGetPaLatency_ = true;
+    bool releasedFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
