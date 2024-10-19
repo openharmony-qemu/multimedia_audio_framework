@@ -1041,6 +1041,12 @@ private:
 
     bool CheckSpatializationAndEffectState();
 
+    void FetchStreamForSpkMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
+
+    void ResetOffloadAndMchMode(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
+
     const sptr<IStandardAudioService> GetAudioServerProxy();
 
     int32_t SelectFastInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
