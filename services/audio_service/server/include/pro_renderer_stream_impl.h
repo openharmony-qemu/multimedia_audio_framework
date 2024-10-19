@@ -74,6 +74,7 @@ public:
     int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) override;
     int32_t ReturnIndex(int32_t index) override;
     int32_t SetClientVolume(float clientVolume) override;
+    void BlockStream() noexcept override;
 
 private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
