@@ -644,7 +644,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
 {
     uint32_t tlength = 4; // 4 is tlength of playback
     uint32_t maxlength = 4; // 4 is max buffer length of playback
-    uint32_t prebuf = 2; // 1 is prebuf of playback
+    uint32_t prebuf = 1; // 1 is prebuf of playback
 
     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         maxlength = 20; // 20 for cover offload
