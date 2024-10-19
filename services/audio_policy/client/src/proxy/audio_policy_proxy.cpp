@@ -428,6 +428,22 @@ int32_t AudioPolicyProxy::LoadSplitModule(const std::string &splitArgs, const st
     return reply.ReadInt32();
 }
 
+bool AudioPolicyProxy::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(uid);
+    data.WriteInt32(pid);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "IsAllowedPlayback failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
+
 bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
 {
     MessageParcel data;

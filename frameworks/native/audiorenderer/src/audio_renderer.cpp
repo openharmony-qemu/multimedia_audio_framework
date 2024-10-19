@@ -31,7 +31,6 @@
 #include "audio_utils.h"
 
 #include "media_monitor_manager.h"
-#include "avsession_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -613,7 +612,7 @@ bool AudioRendererPrivate::IsAllowedStartBackgroud()
 {
     bool ret = false;
 #ifdef AVSESSION_ENABLE
-    ret = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(appInfo_.appUid, appInfo_.appPid);
+    ret = AudioPolicyManager::GetInstance().IsAllowedPlayback(appInfo_.appUid, appInfo_.appPid);
     if (ret) {
         AUDIO_INFO_LOG("AVSession IsAudioPlaybackAllowed is: %{public}d", ret);
         return ret;

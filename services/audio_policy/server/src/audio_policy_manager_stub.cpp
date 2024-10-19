@@ -175,6 +175,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_INPUT_DEVICE",
     "SET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "UNSET_AUDIO_DEVICE_ANAHS_CALLBACK",
+    "IS_ALLOWED_PLAYBACK",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1881,6 +1882,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
                 LoadSplitModuleInternal(data, reply);
                 break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK):
+                IsAllowedPlaybackInternal(data, reply);
+                break;
             default:
                 OnMiddlesRemoteRequest(code, data, reply, option);
                 break;
@@ -2152,6 +2156,14 @@ void AudioPolicyManagerStub::LoadSplitModuleInternal(MessageParcel &data, Messag
     std::string netWorkId = data.ReadString();
     int32_t result = LoadSplitModule(splitArgs, netWorkId);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t uid = data.ReadInt32();
+    int32_t pid = data.ReadInt32();
+    bool result = IsAllowedPlayback(uid, pid);
+    reply.WriteBool(result);
 }
 
 void AudioPolicyManagerStub::GetOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
