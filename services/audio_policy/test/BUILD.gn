@@ -474,6 +474,7 @@ ohos_unittest("audio_spatialization_service_unit_test") {
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_service",
+    "../../audio_policy:audio_setting_provider",
   ]
 }
 

@@ -86,8 +86,9 @@ public:
     virtual int32_t GetVolume(float &left, float &right) = 0;
     virtual int32_t SetMute(bool isMute) = 0;
     virtual int32_t GetMute(bool &isMute) = 0;
-    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
-    virtual int32_t SetInputRoute(DeviceType deviceType) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+        const std::string deviceName = "") = 0;
+    virtual int32_t SetInputRoute(DeviceType deviceType, const std::string deviceName = "") = 0;
     virtual uint64_t GetTransactionId() = 0;
     virtual int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;

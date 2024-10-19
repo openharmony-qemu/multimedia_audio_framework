@@ -138,24 +138,26 @@ int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArray &propertyAr
     return audioEffectChainManager->GetAudioEffectProperty(propertyArray);
 }
 
-int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
+int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
+    DeviceType deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "Set Audio Enhance Property refused for %{public}d", callingUid);
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
-    return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray);
+    return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
-int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
+int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    DeviceType deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "Get Audio Enhance Property refused for %{public}d", callingUid);
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
-    return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray);
+    return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
 void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)

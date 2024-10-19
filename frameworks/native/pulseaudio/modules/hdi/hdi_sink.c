@@ -2422,7 +2422,7 @@ static int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int
 
     pa_sink_input *i = infoInputs[0].userdata;
     const char *fadingFlag = pa_proplist_gets(i->proplist, "fadeoutPause");
-    if (!strcmp(fadingFlag, "1")) {
+    if ((fadingFlag != NULL) && (!strcmp(fadingFlag, "1"))) {
         AUDIO_WARNING_LOG("stream is croked, do not need peek");
         return 0;
     }

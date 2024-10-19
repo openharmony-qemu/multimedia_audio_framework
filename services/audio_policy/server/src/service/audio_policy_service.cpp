@@ -37,6 +37,7 @@
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
 #include "audio_safe_volume_notification.h"
+#include "audio_setting_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -2385,17 +2386,18 @@ int32_t AudioPolicyService::SetClientCallbacksEnable(const CallbackChange &callb
     }
 }
 
-void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag)
+void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
+    const std::string deviceName)
 {
     Trace trace("AudioPolicyService::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
-    AUDIO_INFO_LOG("Active route with type[%{public}d]", deviceType);
+    AUDIO_INFO_LOG("Active route with type[%{public}d] name[%{public}s]", deviceType, deviceName.c_str());
     std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back(make_pair(deviceType, deviceFlag));
-    UpdateActiveDevicesRoute(activeDevices);
+    UpdateActiveDevicesRoute(activeDevices, deviceName);
 }
 
 void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>>
-    &activeDevices)
+    &activeDevices, const std::string deviceName)
 {
     CHECK_AND_RETURN_LOG(!activeDevices.empty(), "activeDevices is empty.");
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -2410,7 +2412,7 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
 
     Trace trace("AudioPolicyService::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    ret = gsp->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag_);
+    ret = g_adProxy->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag_, deviceName);
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
@@ -2566,7 +2568,7 @@ void AudioPolicyService::MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo
         inputDevice->deviceType_, GetEncryptAddr(inputDevice->macAddress_).c_str());
 
     if (isUpdateRouteSupported_ && inputDevice->networkId_ == LOCAL_NETWORK_ID) {
-        UpdateActiveDeviceRoute(inputDevice->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
+        UpdateActiveDeviceRoute(inputDevice->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG, inputDevice->deviceName_);
     }
     UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, new AudioDeviceDescriptor(*inputDevice), true, true);
     streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
@@ -3113,7 +3115,8 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchInputDevice(unique_ptr<Aud
             || ((preferredDesc->deviceType_ == DEVICE_TYPE_NONE) && !IsSameDevice(desc, GetCurrentInputDevice()))) {
             SetCurrenInputDevice(*desc);
             OnPreferredInputDeviceUpdated(GetCurrentInputDeviceType(), ""); // networkId is not used.
-            UpdateActiveDeviceRoute(GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG);
+            UpdateActiveDeviceRoute(GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG,
+                GetCurrentInputDevice().deviceName_);
         }
         return ERR_NEED_NOT_SWITCH_DEVICE;
     }
@@ -7769,7 +7772,7 @@ void AudioPolicyService::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
     StreamPropInfo &targetInfo, SourceType targetSource)
 {
     AudioModuleInfo moduleInfo;
-    UpdateEnhanceEffectState();
+    UpdateEnhanceEffectState(targetSource);
     UpdateStreamCommonInfo(moduleInfo, targetInfo, targetSource);
     UpdateStreamEcInfo(moduleInfo, targetSource);
     UpdateStreamMicRefInfo(moduleInfo, targetSource);
@@ -7795,10 +7798,11 @@ void AudioPolicyService::CloseNormalSource()
     normalSourceOpened_ = SOURCE_TYPE_INVALID;
 }
 
-void AudioPolicyService::UpdateEnhanceEffectState()
+void AudioPolicyService::UpdateEnhanceEffectState(SourceType source)
 {
     AudioEnhancePropertyArray enhancePropertyArray = {};
-    int32_t ret = GetAudioEnhanceProperty(enhancePropertyArray);
+    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source,-1);
+    int32_t ret = GetAudioEnhancePropertyByDevice(inputDesc->deviceType_, enhancePropertyArray);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
         return;
@@ -8186,6 +8190,7 @@ void AudioPolicyService::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceT
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
     unique_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
+
     UpdateAudioEcInfo(inputDesc->deviceType_, outputDesc.front()->deviceType_);
     UpdateModuleInfoForEc(moduleInfo);
 }
@@ -9758,7 +9763,7 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
         IPCSkeleton::SetCallingIdentity(identity);
         return ret;
     }
-    ret = gsp->SetAudioEnhanceProperty(propertyArray);
+    ret = gsp->SetAudioEnhanceProperty(propertyArray, GetCurrentInputDeviceType());
     IPCSkeleton::SetCallingIdentity(identity);
     ReloadSourceForEffect(oldPropertyArray, propertyArray);
     return ret;
@@ -9770,6 +9775,17 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "get audio enhance property: gsp null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return ret;
+}
+
+int32_t AudioPolicyService::GetAudioEnhancePropertyByDevice(DeviceType deviceType,
+    AudioEnhancePropertyArray &propertyArray)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "get audio enhance property: gsp null");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray, deviceType);
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }

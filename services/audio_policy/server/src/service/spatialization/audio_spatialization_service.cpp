@@ -25,6 +25,7 @@
 #include "audio_spatialization_state_change_listener_proxy.h"
 
 #include "audio_policy_service.h"
+#include "audio_setting_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {

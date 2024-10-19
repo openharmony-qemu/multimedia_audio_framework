@@ -625,8 +625,8 @@ static int32_t EcResample(const char *sceneKey, struct Userdata *u)
         pa_resampler_run(ecResampler, &ecChunk, &rEcChunk);
         void *srcEc = pa_memblock_acquire_chunk(&rEcChunk);
         AUDIO_DEBUG_LOG("ec chunk length: %{public}zu sceneKey: %{public}s", rEcChunk.length, sceneKey);
-        pa_memblock_release(rEcChunk.memblock);
         CopyEcdataToEnhanceBufferAdapter(srcEc, rEcChunk.length);
+        pa_memblock_release(rEcChunk.memblock);
         pa_memblock_unref(ecChunk.memblock);
         pa_memblock_unref(rEcChunk.memblock);
     } else {
@@ -648,8 +648,8 @@ static int32_t MicRefResample(const char *sceneKey, struct Userdata *u)
         pa_resampler_run(micRefResampler, &micRefChunk, &rMicRefChunk);
         void *srcMicRef = pa_memblock_acquire_chunk(&rMicRefChunk);
         AUDIO_DEBUG_LOG("micRef chunk length: %{public}zu sceneKey: %{public}s", rMicRefChunk.length, sceneKey);
-        pa_memblock_release(rMicRefChunk.memblock);
         CopyMicRefdataToEnhanceBufferAdapter(srcMicRef, rMicRefChunk.length);
+        pa_memblock_release(rMicRefChunk.memblock);
         pa_memblock_unref(micRefChunk.memblock);
         pa_memblock_unref(rMicRefChunk.memblock);
     } else {

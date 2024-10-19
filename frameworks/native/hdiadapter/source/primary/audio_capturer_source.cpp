@@ -151,9 +151,9 @@ public:
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string deviceName = "") override;
 
-    int32_t SetInputRoute(DeviceType inputDevice) override;
+    int32_t SetInputRoute(DeviceType inputDevice, const std::string deviceName = "") override;
     uint64_t GetTransactionId() override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
@@ -198,10 +198,10 @@ private:
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
-    int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice);
+    int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice, const std::string deviceName = "");
     void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
-    int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
-    int32_t DoSetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
+    int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, const std::string deviceName = "");
+    int32_t DoSetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, const std::string deviceName = "");
 
     void CaptureThreadLoop();
     void CaptureFrameEcInternal(const RingBuffer &ringBuf);
@@ -287,9 +287,9 @@ public:
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string deviceName = "") override;
 
-    int32_t SetInputRoute(DeviceType inputDevice) override;
+    int32_t SetInputRoute(DeviceType inputDevice, const std::string deviceName = "") override;
     uint64_t GetTransactionId() override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
@@ -1178,18 +1178,19 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
     return ret;
 }
 
-int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
+int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, const std::string deviceName)
 {
     std::lock_guard<std::mutex> statusLock(statusMutex_);
     AudioPortPin inputPortPin = PIN_IN_MIC;
-    return SetInputRoute(inputDevice, inputPortPin);
+    return SetInputRoute(inputDevice, inputPortPin, deviceName);
 }
 
-int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin)
+int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin,
+    const std::string deviceName)
 {
     if (inputDevice == currentActiveDevice_) {
         if (inputDevice == DEVICE_TYPE_MIC) {
-            int32_t ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_);
+            int32_t ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_, deviceName);
             if (ret != SUCCESS) {
                 AUDIO_WARNING_LOG("SetAudioRouteInfoForEnhanceChain failed.");
             }
@@ -1200,10 +1201,11 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
         return SUCCESS;
     }
 
-    return DoSetInputRoute(inputDevice, inputPortPin);
+    return DoSetInputRoute(inputDevice, inputPortPin, deviceName);
 }
 
-int32_t AudioCapturerSourceInner::DoSetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin)
+int32_t AudioCapturerSourceInner::DoSetInputRoute(DeviceType inputDevice,
+    AudioPortPin &inputPortPin, const std::string deviceName)
 {
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
@@ -1241,14 +1243,15 @@ int32_t AudioCapturerSourceInner::DoSetInputRoute(DeviceType inputDevice, AudioP
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     currentActiveDevice_ = inputDevice;
-    ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_);
+    ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_, deviceName);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("SetAudioRouteInfoForEnhanceChain failed.");
     }
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string deviceName)
 {
     AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
@@ -1276,7 +1279,7 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
         }
 
         std::lock_guard<std::mutex> statusLock(statusMutex_);
-        ret = SetInputRoute(activeDevice, audioSceneInPort);
+        ret = SetInputRoute(activeDevice, audioSceneInPort, deviceName);
         if (ret < 0) {
             AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);
         }
@@ -1667,7 +1670,8 @@ int32_t AudioCapturerSourceInner::GetCaptureId(uint32_t &captureId) const
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice)
+int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice,
+    const std::string deviceName)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
@@ -1677,9 +1681,9 @@ int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceT
         AUDIO_WARNING_LOG("GetCaptureId failed");
     }
     if (halName_ == "usb") {
-        audioEnhanceChainManager->SetInputDevice(captureId, DEVICE_TYPE_USB_ARM_HEADSET);
+        audioEnhanceChainManager->SetInputDevice(captureId, DEVICE_TYPE_USB_ARM_HEADSET, deviceName);
     } else {
-        audioEnhanceChainManager->SetInputDevice(captureId, inputDevice);
+        audioEnhanceChainManager->SetInputDevice(captureId, inputDevice, deviceName);
     }
     return SUCCESS;
 }
@@ -1829,12 +1833,13 @@ int32_t AudioCapturerSourceWakeup::GetMute(bool &isMute)
     return audioCapturerSource_.GetMute(isMute);
 }
 
-int32_t AudioCapturerSourceWakeup::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioCapturerSourceWakeup::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string deviceName)
 {
     return audioCapturerSource_.SetAudioScene(audioScene, activeDevice);
 }
 
-int32_t AudioCapturerSourceWakeup::SetInputRoute(DeviceType inputDevice)
+int32_t AudioCapturerSourceWakeup::SetInputRoute(DeviceType inputDevice, const std::string deviceName)
 {
     return audioCapturerSource_.SetInputRoute(inputDevice);
 }
