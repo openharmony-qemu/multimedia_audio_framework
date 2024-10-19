@@ -306,6 +306,17 @@ int32_t PaCapturerStreamImpl::Release()
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) {
         PolicyHandler::GetInstance().NotifyWakeUpCapturerRemoved();
     }
+
+    PaLockGuard lock(mainloop_);
+    if (paStream_) {
+        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_read_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+        pa_stream_disconnect(paStream_);
+    }
     return SUCCESS;
 }
 
