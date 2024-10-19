@@ -78,6 +78,7 @@ private:
     size_t totalBytesRead_ = 0;
 
     FILE *capturerServerDumpFile_ = nullptr;
+    bool releasedFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
