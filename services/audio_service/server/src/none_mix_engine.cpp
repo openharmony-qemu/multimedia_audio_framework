@@ -37,7 +37,6 @@ const std::string THREAD_NAME = "noneMixThread";
 const std::string VOIP_SINK_NAME = "voip";
 const std::string DIRECT_SINK_NAME = "direct";
 const char *SINK_ADAPTER_NAME = "primary";
-static const int32_t XCOLLIE_FLAG_DEFAULT = (1 | 2); // dump stack and kill self
 
 NoneMixEngine::NoneMixEngine()
     : isVoip_(false),
