@@ -1269,9 +1269,13 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
         if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
             CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed");
+            audioStream_->SetSilentModeAndMixWithOthers(on);
+            return;
         } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
+            audioStream_->SetSilentModeAndMixWithOthers(on);
             int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
             CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
+            return;
         }
     }
     audioStream_->SetSilentModeAndMixWithOthers(on);
