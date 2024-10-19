@@ -320,7 +320,7 @@ void UpdateSpkOffloadEnabledFuzzTest(const uint8_t* rawData, size_t size)
     bool spkOffloadEnabled = *reinterpret_cast<const bool*>(rawData);
     AudioEffectChainManager::GetInstance()->debugArmFlag_ = debugArmFlag;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = spkOffloadEnabled;
-    AudioEffectChainManager::GetInstance()->UpdateRealAudioEffect();
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
     AudioEffectChainManager::GetInstance()->ResetInfo();

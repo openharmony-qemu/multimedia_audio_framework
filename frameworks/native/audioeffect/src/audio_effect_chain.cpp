@@ -134,6 +134,11 @@ void AudioEffectChain::SetSpatializationEnabled(bool enabled)
     spatializationEnabled_ = enabled;
 }
 
+void AudioEffectChain::SetStreamUsage(const int32_t streamUsage)
+{
+    streamUsage_ = static_cast<StreamUsage>(streamUsage);
+}
+
 void AudioEffectChain::ReleaseEffectChain()
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
@@ -185,7 +190,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[STREAM_USAGE_INDEX] = streamUsage_;
     AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
-        "spatializationSceneType: %{public}d, SpatializationEnabled: %{public}d, streamUsage: %{public}d",
+        "spatializationSceneType: %{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d",
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX]);

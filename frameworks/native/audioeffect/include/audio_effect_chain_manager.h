@@ -65,6 +65,7 @@ struct SessionEffectInfo {
     uint32_t channels;
     uint64_t channelLayout;
     std::string spatializationEnabled;
+    int32_t streamUsage;
 };
 
 const std::vector<AudioChannelLayout> AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS {
@@ -131,7 +132,7 @@ public:
     bool GetCurSpatializationEnabled();
     void ResetEffectBuffer();
     void ResetInfo();  // Use for testing temporarily.
-    void UpdateRealAudioEffect();
+    void UpdateDefaultAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType);
@@ -142,6 +143,7 @@ public:
 
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    void UpdateStreamUsage();
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -161,6 +163,7 @@ private:
     void CheckAndReleaseCommonEffectChain(const std::string &sceneType);
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
+    void UpdateCurrSceneTypeAndStreamUsageForDsp();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -186,6 +189,7 @@ private:
     std::string deviceClass_ = "";
     std::string extraSceneType_ = "0";
     std::string maxSessionIDToSceneType_ = "";
+    std::string maxDefaultSessionIDToSceneType_ = "";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     std::atomic<bool> spatializationEnabled_ = false;
@@ -199,6 +203,7 @@ private:
     bool debugArmFlag_ = false;
     int32_t defaultEffectChainCount_ = 0;
     int32_t maxEffectChainCount_ = 1;
+    uint32_t maxSessionID_ = 0;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
 
 #ifdef SENSOR_ENABLE
