@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../../av_session.gni")
 import("../../../config.gni")
 
 config("audio_renderer_config") {
@@ -31,9 +30,6 @@ config("audio_renderer_config") {
   ]
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
-  }
-  if (avsession_part_enable == true) {
-    cflags += [ "-DAVSESSION_ENABLE" ]
   }
 }
 
@@ -64,15 +60,6 @@ ohos_shared_library("audio_renderer") {
   ]
 
   public_configs = [ ":audio_external_library_config" ]
-
-  if (avsession_part_enable == true) {
-    external_deps += [
-      "ability_base:want",
-      "ability_runtime:wantagent_innerkits",
-      "av_session:avsession_client",
-      "input:libmmi-client",
-    ]
-  }
 
   version_script = "../../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
