@@ -57,17 +57,7 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> DefaultRouter::GetRingRenderDevic
     int32_t clientUID)
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
-        AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
-        if (curRingerMode == RINGER_MODE_NORMAL) {
-            descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
-        } else {
-            descs.push_back(make_unique<AudioDeviceDescriptor>());
-        }
-    } else {
-        descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
-    }
-
+    descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
     return descs;
 }
 

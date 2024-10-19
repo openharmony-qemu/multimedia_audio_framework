@@ -1474,6 +1474,9 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
         }
         if (streamType == STREAM_RING) {
             bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+            if (currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
+                continue;
+            }
             AUDIO_INFO_LOG("ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
                 muteStateForStreamRing);
             if (muteStateForStreamRing == GetStreamMute(streamType)) {
