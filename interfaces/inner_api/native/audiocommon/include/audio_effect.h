@@ -196,6 +196,7 @@ enum AudioEnhanceScene {
     SCENE_RECORD = 1,
     SCENE_PRE_ENHANCE = 2,
     SCENE_ASR = 4,
+    SCENE_VOICE_MESSAGE = 5,
 };
 
 /**
@@ -233,6 +234,7 @@ const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_ENHANCE_SUPPORTED
     {SCENE_RECORD, "SCENE_RECORD"},
     {SCENE_ASR, "SCENE_ASR"},
     {SCENE_PRE_ENHANCE, "SCENE_PRE_ENHANCE"},
+    {SCENE_VOICE_MESSAGE, "SCENE_VOICE_MESSAGE"},
 };
 
 const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
