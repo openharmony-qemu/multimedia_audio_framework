@@ -1029,7 +1029,7 @@ int32_t RendererInServer::DisableDualTone()
     AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d", dualToneStreamIndex_, status_);
     IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(dualToneStreamIndex_);
-    dupStream_ = nullptr;
+    dualToneStream_ = nullptr;
 
     return ERROR;
 }
