@@ -1159,7 +1159,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
 }
 
 int32_t  AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState a2dpOffloadFlag)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
 {
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "Invalid audio devices.");
@@ -1171,13 +1171,14 @@ int32_t  AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>>
         AUDIO_INFO_LOG("SetIORoutes device type:%{public}d", activeDevice.first);
         deviceTypes.push_back(activeDevice.first);
     }
-    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, flag: %{public}d", type, flag);
-    int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag);
+    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, flag: %{public}d deviceName:%{public}s",
+        type, flag, deviceName.c_str());
+    int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
     return ret;
 }
 
 int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
-    BluetoothOffloadState a2dpOffloadFlag)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
 {
     IAudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
@@ -1201,9 +1202,9 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
+            audioCapturerSourceInstance->SetAudioScene(audioScene_, type, deviceName);
         } else {
-            audioCapturerSourceInstance->SetInputRoute(type);
+            audioCapturerSourceInstance->SetInputRoute(type, deviceName);
         }
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
@@ -1214,10 +1215,10 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
+            audioCapturerSourceInstance->SetAudioScene(audioScene_, type, deviceName);
             audioRendererSinkInstance->SetAudioScene(audioScene_, deviceTypes);
         } else {
-            audioCapturerSourceInstance->SetInputRoute(type);
+            audioCapturerSourceInstance->SetInputRoute(type, deviceName);
             audioRendererSinkInstance->SetOutputRoutes(deviceTypes);
         }
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
@@ -1239,11 +1240,11 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, B
 }
 
 int32_t AudioServer::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState a2dpOffloadFlag)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    return SetIORoutes(activeDevices, a2dpOffloadFlag);
+    return SetIORoutes(activeDevices, a2dpOffloadFlag, deviceName);
 }
 
 void AudioServer::SetAudioMonoState(bool audioMono)

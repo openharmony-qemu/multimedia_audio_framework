@@ -496,6 +496,7 @@ public:
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    int32_t GetAudioEnhancePropertyByDevice(DeviceType deviceType, AudioEnhancePropertyArray &propertyArray);
 
     AudioScene GetLastAudioScene() const;
     void FetchStreamForA2dpOffload(const bool &requireReset);
@@ -779,9 +780,11 @@ private:
 
     void FetchInputDeviceWhenNoRunningStream();
 
-    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag);
+    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
+        const std::string deviceName = "");
 
-    void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices);
+    void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
+        const std::string deviceName = "");
 
     void UpdateDualToneState(const bool &enable, const int32_t &sessionId);
 
@@ -946,7 +949,7 @@ private:
     std::string GetEcChannels(const std::string &halName, StreamPropInfo &streamPropInfo);
     AudioEcInfo GetAudioEcInfo();
     std::string ShouldOpenMicRef(SourceType source);
-    void UpdateEnhanceEffectState();
+    void UpdateEnhanceEffectState(SourceType source);
     void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType sourceType);
     void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);

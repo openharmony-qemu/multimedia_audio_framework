@@ -448,6 +448,7 @@ struct AudioEnhanceParam {
     const char *preDevice;
     const char *postDevice;
     const char *sceneType;
+    const char *preDeviceName;
 };
 
 struct AlgoConfig {

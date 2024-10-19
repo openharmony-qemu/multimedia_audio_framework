@@ -49,14 +49,16 @@ public:
     int32_t CopyMicRefToEnhanceBuffer(void *data, uint32_t length);
     int32_t CopyFromEnhanceBuffer(void *data, uint32_t length);
     int32_t ApplyAudioEnhanceChain(const uint32_t sceneKeyCode, uint32_t length);
-    int32_t SetInputDevice(const uint32_t &captureId, const DeviceType &inputDevice);
+    int32_t SetInputDevice(const uint32_t &captureId, const DeviceType &inputDevice,
+        const std::string &deviceName = "");
     int32_t SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice);
     int32_t SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol);
     int32_t SetMicrophoneMuteInfo(const bool &isMute);
     int32_t SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol);
 
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE);
     void ResetInfo();  // use for unit test
     int32_t ApplyAudioEnhanceChainDefault(const uint32_t captureId, uint32_t length);
 
@@ -71,6 +73,12 @@ private:
     int32_t DeleteEnhanceChainInner(std::shared_ptr<AudioEnhanceChain> &audioEnhanceChain,
         const uint32_t sceneKeyCode);
     std::string GetEnhanceChainNameBySceneCode(const uint32_t sceneKeyCode, const bool defaultFlag);
+    int32_t UpdatePropertyAndSendToAlgo(const DeviceType &inputDevice);
+    void UpdateEnhancePropertyMapFromDb(DeviceType deviceType);
+    int32_t WriteEnhancePropertyToDb(const std::string &key, const std::string &property);
+    int32_t SetAudioEnhancePropertyToChains(AudioEnhanceProperty property);
+    void GetDeviceTypeName(DeviceType deviceType, std::string &deviceName);
+    void GetDeviceNameByCaptureId(const uint32_t captureId, std::string &deviceName);
     // construct when init
     void ConstructEnhanceChainMgrMaps(std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
@@ -84,6 +92,7 @@ private:
     std::map<std::string, std::string> enhanceToLibraryNameMap_;
     std::unordered_map<std::string, std::string> enhancePropertyMap_;
     std::map<uint32_t, DeviceType> captureIdToDeviceMap_;
+    std::map<uint32_t, std::string> captureIdToDeviceNameMap_;
     std::map<uint32_t, DeviceType> renderIdToDeviceMap_;
 
     std::map<uint32_t, uint32_t> captureId2SceneCount_;
@@ -104,6 +113,7 @@ private:
     float systemVol_ = 0.0f;
     float streamVol_ = 0.0f;
     bool isMute_ = false;
+    std::string deviceName_ = "";
 };
 
 }  // namespace AudioStandard

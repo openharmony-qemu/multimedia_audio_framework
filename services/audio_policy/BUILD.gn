@@ -87,6 +87,39 @@ config("audio_policy_public_config") {
   ldflags = [ "-Wl" ]
 }
 
+ohos_shared_library("audio_setting_provider") {
+  stack_protector_ret = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  install_enable = true
+
+  include_dirs = [
+    "../../services/audio_policy/server/include/service/manager",
+    "../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  sources = [ "server/src/service/manager/audio_setting_provider.cpp" ]
+
+  deps = [ "../../frameworks/native/audioutils:audio_utils" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_shared_library("audio_policy_service") {
   stack_protector_ret = true
   sanitize = {
@@ -135,7 +168,6 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/listener/power_state_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
     "server/src/service/manager/audio_adapter_manager_handler.cpp",
-    "server/src/service/manager/audio_setting_provider.cpp",
     "server/src/service/manager/client_type_manager.cpp",
     "server/src/service/manager/client_type_manager_handler.cpp",
     "server/src/service/manager/pnp_server/audio_input_thread.cpp",
@@ -186,6 +218,7 @@ ohos_shared_library("audio_policy_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_config.para",
     "../audio_policy:audio_config.para.dac",
+    "../audio_policy:audio_setting_provider",
     "../audio_service:audio_client",
     "../audio_service:audio_common",
   ]
