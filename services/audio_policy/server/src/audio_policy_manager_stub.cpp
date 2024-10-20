@@ -26,6 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int MAX_PID_COUNT = 1000;
+const unsigned int ON_REMOTE_REQUEST_TIMEOUT_SEC = 20;
 const char *g_audioPolicyCodeStrs[] = {
     "GET_MAX_VOLUMELEVEL",
     "GET_MIN_VOLUMELEVEL",
@@ -1841,6 +1842,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1, "ReadInterfaceToken failed");
     Trace trace(code >= codeNums ? "invalid audio policy code" : g_audioPolicyCodeStrs[code]);
+    AudioXCollie audioXCollie("AudioPolicy::ProcessIPC", ON_REMOTE_REQUEST_TIMEOUT_SEC);
     if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
         switch (code) {
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUMELEVEL):
