@@ -1276,6 +1276,8 @@ bool AudioInterruptService::IsRecordingInterruption(const AudioInterrupt &audioI
 void AudioInterruptService::CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry,
     const AudioInterrupt &incomingInterrupt, std::vector<SourceType> incomingConcurrentSources)
 {
+    CHECK_AND_RETURN_LOG(interruptClients_.find(incomingInterrupt.sessionId) != interruptClients_.end(),
+        "interruptClients is nullptr");
     auto uid = interruptClients_[incomingInterrupt.sessionId]->GetCallingUid();
     if (IsRecordingInterruption(incomingInterrupt) && incomingConcurrentSources.size() != 0 &&
         (uid == THP_EXTRA_SA_UID || uid == MEDIA_SA_UID)) {
