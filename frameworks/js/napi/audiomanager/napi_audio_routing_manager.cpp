@@ -42,11 +42,13 @@ NapiAudioRoutingManager::~NapiAudioRoutingManager() = default;
 
 void NapiAudioRoutingManager::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioRoutingManager *>(nativeObject);
-        ObjectRefMap<NapiAudioRoutingManager>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    auto obj = static_cast<NapiAudioRoutingManager *>(nativeObject);
+    ObjectRefMap<NapiAudioRoutingManager>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioRoutingManager::Construct(napi_env env, napi_callback_info info)

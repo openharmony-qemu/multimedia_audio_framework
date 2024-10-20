@@ -169,11 +169,13 @@ napi_value NapiAudioManager::Init(napi_env env, napi_value exports)
 
 void NapiAudioManager::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioManager*>(nativeObject);
-        ObjectRefMap<NapiAudioManager>::DecreaseRef(obj);
-        AUDIO_DEBUG_LOG("NapiAudioManager::Destructor delete NapiAudioManager obj done");
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
+    auto obj = static_cast<NapiAudioManager*>(nativeObject);
+    ObjectRefMap<NapiAudioManager>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioManager::Construct(napi_env env, napi_callback_info info)

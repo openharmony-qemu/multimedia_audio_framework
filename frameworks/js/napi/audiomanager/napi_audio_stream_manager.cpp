@@ -38,11 +38,13 @@ NapiAudioStreamMgr::~NapiAudioStreamMgr() = default;
 
 void NapiAudioStreamMgr::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioStreamMgr *>(nativeObject);
-        ObjectRefMap<NapiAudioStreamMgr>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    auto obj = static_cast<NapiAudioStreamMgr *>(nativeObject);
+    ObjectRefMap<NapiAudioStreamMgr>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioStreamMgr::Construct(napi_env env, napi_callback_info info)
