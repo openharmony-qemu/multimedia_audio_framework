@@ -80,6 +80,7 @@ public:
     void CleanUpStream(int32_t appUid);
     bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, int32_t maxStreamCntPerUid);
     void GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum);
+    void SetHibernateEndpointRelease(const bool &isHibernate);
 
 private:
     AudioService();
@@ -102,6 +103,7 @@ private:
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
     void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
     int32_t GetReleaseDelayTime(DeviceType deviceType, bool destoryAtOnce);
+    void ReleaseEndpointThread(std::string endpointName);
 
 private:
     std::mutex processListMutex_;
@@ -131,6 +133,8 @@ private:
     int32_t currentRendererStreamCnt_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     std::map<int32_t, std::int32_t> appUseNumMap;
+
+    bool hibernateEndpointRelease_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

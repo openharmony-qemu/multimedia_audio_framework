@@ -3050,5 +3050,10 @@ int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, c
 {
     return audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
 }
+
+void AudioPolicyServer::SetHibernateEndpointRelease(const bool &isHibernate)
+{
+    audioPolicyService_.SetHibernateEndpointRelease(isHibernate);
+}
 } // namespace AudioStandard
 } // namespace OHOS

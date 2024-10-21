@@ -10111,5 +10111,15 @@ void AudioPolicyService::ResetOffloadAndMchMode(std::unique_ptr<AudioRendererCha
         ResetOffloadMode(rendererChangeInfo->sessionId);
     }
 }
+
+void AudioPolicyService::SetHibernateEndpointRelease(const bool &isHibernate)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: gsp null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->SetHibernateEndpointRelease(isHibernate);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
 } // namespace AudioStandard
 } // namespace OHOS
