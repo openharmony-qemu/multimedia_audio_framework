@@ -2176,6 +2176,9 @@ void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
     ipcStream_->SetSilentModeAndMixWithOthers(on);
+    if (offloadEnable_) {
+        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_ * duckVolume_);
+    }
     return;
 }
 
