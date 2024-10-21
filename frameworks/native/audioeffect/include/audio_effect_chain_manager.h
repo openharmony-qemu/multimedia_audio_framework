@@ -118,7 +118,6 @@ public:
     int32_t InitAudioEffectChainDynamic(const std::string &sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
-    int32_t SetHdiParam(const AudioEffectScene &sceneType);
     int32_t SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info);
     int32_t SessionInfoMapDelete(const std::string &sceneType, const std::string &sessionID);
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
@@ -134,7 +133,6 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     void UpdateDefaultAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
-    void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType);
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
@@ -170,6 +168,16 @@ private:
     int32_t EffectApRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
 #endif
+    int32_t CreateAudioEffectChainDynamicInner(const std::string &sceneType);
+    int32_t ReleaseAudioEffectChainDynamicInner(const std::string &sceneType);
+    bool ExistAudioEffectChainInner(const std::string &sceneType, const std::string &effectMode,
+        const std::string &spatializationEnabled);
+    int32_t UpdateMultichannelConfigInner(const std::string &sceneType);
+    int32_t UpdateSpatializationStateInner(AudioSpatializationState spatializationState);
+    int32_t SetHdiParam(const AudioEffectScene &sceneType);
+    int32_t ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
+    int32_t EffectVolumeUpdateInner(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
+    void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> effectChainToEffectsMap_;
@@ -191,7 +199,7 @@ private:
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
     bool isInitialized_ = false;
-    std::recursive_mutex dynamicMutex_;
+    std::mutex dynamicMutex_;
     std::atomic<bool> spatializationEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool btOffloadEnabled_ = false;
@@ -200,7 +208,6 @@ private:
     bool btOffloadSupported_ = false;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     bool isDefaultEffectChainExisted_ = false;
-    bool debugArmFlag_ = false;
     int32_t defaultEffectChainCount_ = 0;
     int32_t maxEffectChainCount_ = 1;
     uint32_t maxSessionID_ = 0;
