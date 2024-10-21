@@ -2217,7 +2217,8 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         return;
     }
 
-    if (isUpdateRouteSupported_ && outputDevices.front()->networkId_ == LOCAL_NETWORK_ID) {
+    if (isUpdateRouteSupported_ && outputDevices.front()->networkId_ == LOCAL_NETWORK_ID &&
+        !reason.isSetAudioScene()) {
         UpdateRoute(rendererChangeInfo, outputDevices);
     }
 
@@ -3471,7 +3472,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     }
 
     // fetch input&output device
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
     FetchDevice(false);
 
     std::vector<DeviceType> activeOutputDevices;
