@@ -628,12 +628,8 @@ private:
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
     int32_t HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-<<<<<<< HEAD
-        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+        vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-=======
-        vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
->>>>>>> bfbc77c17 (change unique to sp for changeinfo classes)
 
     void FetchOutputDevice(vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
