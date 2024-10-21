@@ -610,21 +610,17 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
 
 bool AudioRendererPrivate::IsAllowedStartBackgroud()
 {
-    bool ret = false;
-#ifdef AVSESSION_ENABLE
-    ret = AudioPolicyManager::GetInstance().IsAllowedPlayback(appInfo_.appUid, appInfo_.appPid);
+    bool ret = AudioPolicyManager::GetInstance().IsAllowedPlayback(appInfo_.appUid, appInfo_.appPid);
     if (ret) {
         AUDIO_INFO_LOG("AVSession IsAudioPlaybackAllowed is: %{public}d", ret);
         return ret;
+    } else {
+        if (std::count(EXEMPT_MUTE_STREAM_USAGE.begin(), EXEMPT_MUTE_STREAM_USAGE.end(),
+            rendererInfo_.streamUsage) != 0) {
+            AUDIO_INFO_LOG("%{public}d is EXEMPT_MUTE_STREAM_USAGE", rendererInfo_.streamUsage);
+            return true;
+        }
     }
-    if (std::count(EXEMPT_MUTE_STREAM_USAGE.begin(), EXEMPT_MUTE_STREAM_USAGE.end(), rendererInfo_.streamUsage) != 0) {
-        ret =true;
-        AUDIO_INFO_LOG("%{public}d is EXEMPT_MUTE_STREAM_USAGE", rendererInfo_.streamUsage);
-        return ret;
-    }
-#else
-    ret = true;
-#endif
     return ret;
 }
 
