@@ -526,6 +526,7 @@ public:
         OVERRODE = 3,
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
+        SET_AUDIO_SCENE = 1001,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -557,6 +558,10 @@ public:
         return reason_ == ExtEnum::OVERRODE;
     }
 
+    bool isSetAudioScene() const
+    {
+        return reason_ == ExtEnum::SET_AUDIO_SCENE;
+    }
 private:
     ExtEnum reason_;
 };
