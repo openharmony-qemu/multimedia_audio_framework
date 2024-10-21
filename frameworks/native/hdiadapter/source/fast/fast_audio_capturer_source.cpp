@@ -187,7 +187,7 @@ void FastAudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes
     attrs.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.interleaved = true;
-    attrs.streamId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST);
+    attrs.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
     attrs.period = 0;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
     attrs.isBigEndian = false;
@@ -620,7 +620,8 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST);
+    sink.ext.mix.streamId = static_cast<int32_t>(
+        GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
     sink.ext.device.desc = const_cast<char*>("");
     sink.ext.mix.source = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
 
