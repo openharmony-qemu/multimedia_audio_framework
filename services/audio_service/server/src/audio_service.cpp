@@ -956,10 +956,13 @@ void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
     }
 }
 
-void AudioService::CleanUpStream(int32_t appUid)
+void AudioService::CleanUpStream(int32_t appUid, bool refreshCurrentRenderStreamCnt)
 {
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
-    currentRendererStreamCnt_--;
+    if (refreshCurrentRenderStreamCnt) {
+        currentRendererStreamCnt_--;
+    }
+
     auto appUseNum = appUseNumMap.find(appUid);
     if (appUseNum != appUseNumMap.end()) {
         appUseNumMap[appUid] = --appUseNum->second;
