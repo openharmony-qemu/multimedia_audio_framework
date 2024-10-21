@@ -6277,11 +6277,11 @@ int32_t AudioPolicyService::CheckActiveMusicTime()
     int32_t safeVolume = audioPolicyManager_.GetSafeVolumeLevel();
     bool activeMusic = false;
     bool isUpSafeVolume = false;
-    DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
     while (!safeVolumeExit_) {
         activeMusic = IsStreamActive(STREAM_MUSIC);
         isUpSafeVolume = GetSystemVolumeLevel(STREAM_MUSIC) > safeVolume ? true : false;
         streamMusicVol_ = isUpSafeVolume ? GetSystemVolumeLevel(STREAM_MUSIC) : streamMusicVol_;
+        DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
         AUDIO_INFO_LOG("activeMusic:%{public}d, deviceType_:%{public}d, isUpSafeVolume:%{public}d",
             activeMusic, curOutputDeviceType, isUpSafeVolume);
         if (activeMusic && (safeStatusBt_ == SAFE_INACTIVE) && isUpSafeVolume &&
