@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_PRIVATE_H
 
 #include <shared_mutex>
+#include <optional>
 
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
@@ -212,7 +213,7 @@ private:
     DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
     RendererState state_ = RENDERER_INVALID;
 
-    float speed_ = 1.0;
+    std::optional<float> speed_ = std::nullopt;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
     std::mutex policyServiceDiedCallbackMutex_;

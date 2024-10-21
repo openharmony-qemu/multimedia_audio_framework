@@ -1438,6 +1438,10 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
 
     audioStream->SetSilentModeAndMixWithOthers(info.silentModeAndMixWithOthers);
 
+    if (speed_.has_value()) {
+        audioStream->SetSpeed(speed_.value());
+    }
+
     // set callback
     if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
         audioStream->SetRendererPositionCallback(info.frameMarkPosition, info.renderPositionCb);
@@ -1791,6 +1795,8 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     AUDIO_INFO_LOG("set speed %{public}f", speed);
     CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL) && (speed <= MAX_STREAM_SPEED_LEVEL),
         ERR_INVALID_PARAM, "invaild speed index");
+
+    std::lock_guard lock(rendererMutex_);
 #ifdef SONIC_ENABLE
     audioStream_->SetSpeed(speed);
 #endif
@@ -1800,10 +1806,11 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
 
 float AudioRendererPrivate::GetSpeed()
 {
+    std::shared_lock lock(rendererMutex_);
 #ifdef SONIC_ENABLE
     return audioStream_->GetSpeed();
 #endif
-    return speed_;
+    return speed_.value_or(1.0f);
 }
 
 bool AudioRendererPrivate::IsFastRenderer()
