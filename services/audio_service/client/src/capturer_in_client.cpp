@@ -399,7 +399,9 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == RESTORE_SESSION) {
-        RestoreAudioStream();
+        if (audioStreamTracker_ && audioStreamTracker_.get()) {
+            audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
+        }
         return SUCCESS;
     }
 
