@@ -241,46 +241,5 @@ int32_t AudioServer::SetMicrophoneMuteForEnhanceChain(const bool &isMute)
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->SetMicrophoneMuteInfo(isMute);
 }
-
-int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
-{
-    AUDIO_INFO_LOG("CheckRemoteDeviceState: device[%{public}s] deviceRole[%{public}d] isStartDevice[%{public}s]",
-        GetEncryptStr(networkId).c_str(), static_cast<int32_t>(deviceRole), (isStartDevice ? "true" : "false"));
-
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    CHECK_AND_RETURN_RET(isStartDevice, SUCCESS);
-
-    int32_t ret = SUCCESS;
-    switch (deviceRole) {
-        case OUTPUT_DEVICE:
-            {
-                IAudioRendererSink* rendererInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
-                if (rendererInstance == nullptr || !rendererInstance->IsInited()) {
-                    AUDIO_ERR_LOG("Remote renderer[%{public}s] is uninit.", networkId.c_str());
-                    return ERR_ILLEGAL_STATE;
-                }
-                ret = rendererInstance->Start();
-                break;
-            }
-        case INPUT_DEVICE:
-            {
-                IAudioCapturerSource *capturerInstance = IAudioCapturerSource::GetInstance("remote", networkId.c_str());
-                if (capturerInstance == nullptr || !capturerInstance->IsInited()) {
-                    AUDIO_ERR_LOG("Remote capturer[%{public}s] is uninit.", networkId.c_str());
-                    return ERR_ILLEGAL_STATE;
-                }
-                ret = capturerInstance->Start();
-                break;
-            }
-        default:
-            AUDIO_ERR_LOG("Remote device role %{public}d is not supported.", deviceRole);
-            return ERR_NOT_SUPPORTED;
-    }
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Check remote device[%{public}s] fail, ret %{public}d.", networkId.c_str(), ret);
-    }
-    return ret;
-}
 } // namespace AudioStandard
 } // namespace OHOS
