@@ -10078,7 +10078,7 @@ bool AudioPolicyService::CheckSpatializationAndEffectState()
     return spatialState.spatializationEnabled && !effectOffloadFlag;
 }
 
-void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+void AudioPolicyService::FetchStreamForSpkMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
@@ -10116,7 +10116,7 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::unique_ptr<AudioRendere
     }
 }
 
-void AudioPolicyService::ResetOffloadAndMchMode(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+void AudioPolicyService::ResetOffloadAndMchMode(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices)
 {
     if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID

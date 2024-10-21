@@ -1044,10 +1044,10 @@ private:
 
     bool CheckSpatializationAndEffectState();
 
-    void FetchStreamForSpkMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    void FetchStreamForSpkMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
 
-    void ResetOffloadAndMchMode(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    void ResetOffloadAndMchMode(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
 
     const sptr<IStandardAudioService> GetAudioServerProxy();
