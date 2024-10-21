@@ -216,6 +216,9 @@ private:
     void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
     int32_t CheckMaxRendererInstances();
+    bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
+    bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result);
     sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
