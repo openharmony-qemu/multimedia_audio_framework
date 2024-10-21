@@ -256,6 +256,7 @@ public:
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * in {@link audio_errors.h} otherwise.
      * @since 8
+     * @deprecated since 12
      */
     virtual int32_t SetParams(const AudioRendererParams params) = 0;
 
