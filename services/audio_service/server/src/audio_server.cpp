@@ -1630,7 +1630,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
         if (ipcStream == nullptr) {
             if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-                AudioService::GetInstance()->CleanUpStream(appUid);
+                AudioService::GetInstance()->CleanUpStream(appUid, false);
             }
             AUDIO_ERR_LOG("GetIpcStream failed.");
             return nullptr;
@@ -1643,7 +1643,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(config);
     if (process == nullptr) {
         if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-            AudioService::GetInstance()->CleanUpStream(appUid);
+            AudioService::GetInstance()->CleanUpStream(appUid, false);
         }
         AUDIO_ERR_LOG("GetAudioProcess failed.");
         return nullptr;
