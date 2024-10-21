@@ -986,6 +986,19 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
         return SUCCESS;
     }
+    
+    effectHdiInput_[0] = HDI_ROOM_MODE;
+    AudioEffectScene lastSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES,
+        maxSessionIDToSceneType_));
+    AudioEffectScene sceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(lastSceneType));
+    effectHdiInput_[1] = static_cast<int32_t>(sceneType);
+    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
+        AUDIO_WARNING_LOG("set hdi room mode failed");
+    }
+    AUDIO_DEBUG_LOG("set spatialization scene type to hdi: %{public}d", effectHdiInput_[1]);
+
+    UpdateEffectChainParams(sceneType);
+
     effectHdiInput_[0] = HDI_SPATIALIZATION_SCENE_TYPE;
     effectHdiInput_[1] = static_cast<int32_t>(spatializationSceneType_);
     if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
@@ -995,6 +1008,22 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     SetSpatializationSceneTypeToChains();
 
     return SUCCESS;
+}
+
+AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneType(AudioEffectScene sceneType)
+{
+    if (spatializationSceneType_ == SPATIALIZATION_SCENE_TYPE_DEFAULT) {
+        return sceneType;
+    } else if (spatializationSceneType_ == SPATIALIZATION_SCENE_TYPE_MUSIC) {
+        return SCENE_MUSIC;
+    } else if (spatializationSceneType_ == SPATIALIZATION_SCENE_TYPE_MOVIE) {
+        return SCENE_MOVIE;
+    } else if (spatializationSceneType_ == SPATIALIZATION_SCENE_TYPE_AUDIOBOOK) {
+        return SCENE_SPEECH;
+    } else {
+        AUDIO_WARNING_LOG("wrong spatialization scene type: %{public}d", spatializationSceneType_);
+    }
+    return sceneType;
 }
 
 void AudioEffectChainManager::UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey,
@@ -1027,6 +1056,22 @@ void AudioEffectChainManager::UpdateExtraSceneType(const std::string &mainkey, c
         AUDIO_INFO_LOG("UpdateExtraSceneType failed, mainkey is %{public}s, subkey is %{public}s, "
             "extraSceneType is %{public}s", mainkey.c_str(), subkey.c_str(), extraSceneType.c_str());
         return;
+    }
+}
+
+void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType)
+{
+    AUDIO_INFO_LOG("Update param: %{public}d to effect chain", sceneType);
+    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
+        auto audioEffectChain = it->second;
+        if (audioEffectChain == nullptr) {
+            continue;
+        }
+        audioEffectChain->SetEffectCurrSceneType(sceneType);
+        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
+            AUDIO_WARNING_LOG("Update param to effect chain failed");
+            continue;
+        }
     }
 }
 
@@ -1146,7 +1191,12 @@ bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneTy
 
 void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneType, const std::string &sceneType)
 {
-    currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
+    if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+        currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
+    } else {
+        currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
+            GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType)));
+    }
 }
 
 void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType,

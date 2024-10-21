@@ -1177,7 +1177,7 @@ HWTEST(AudioEffectChainManagerUnitTest, GetLatency_004, TestSize.Level1)
 * @tc.name   : Test SetSpatializationSceneType API
 * @tc.number : SetSpatializationSceneType_001
 * @tc.desc   : Test SetSpatializationSceneType interface.
-
+*              Test GetSceneTypeFromSpatializationSceneType and UpdateEffectChainParams interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_001, TestSize.Level1)
 {
@@ -1194,6 +1194,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_001, TestSize
 * @tc.name   : Test SetSpatializationSceneType API
 * @tc.number : SetSpatializationSceneType_002
 * @tc.desc   : Test SetSpatializationSceneType interface.
+*              Test GetSceneTypeFromSpatializationSceneType and UpdateEffectChainParams interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_002, TestSize.Level1)
 {
@@ -1204,6 +1205,70 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_002, TestSize
     AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
     int32_t result = AudioEffectChainManager::GetInstance()->SetSpatializationSceneType(spatializationSceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test GetSceneTypeFromSpatializationSceneType API
+* @tc.number : GetSceneTypeFromSpatializationSceneType_001
+* @tc.desc   : Test GetSceneTypeFromSpatializationSceneType interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, GetSceneTypeFromSpatializationSceneType_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    AudioEffectScene sceneTypeRet = AudioEffectChainManager::GetInstance()->GetSceneTypeFromSpatializationSceneType
+        (SCENE_MUSIC);
+    EXPECT_EQ(SCENE_MUSIC, sceneTypeRet);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test GetSceneTypeFromSpatializationSceneType API
+* @tc.number : GetSceneTypeFromSpatializationSceneType_002
+* @tc.desc   : Test GetSceneTypeFromSpatializationSceneType interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, GetSceneTypeFromSpatializationSceneType_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
+    AudioEffectScene sceneTypeRet = AudioEffectChainManager::GetInstance()->GetSceneTypeFromSpatializationSceneType
+        (SCENE_MUSIC);
+    EXPECT_EQ(SCENE_MUSIC, sceneTypeRet);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test GetSceneTypeFromSpatializationSceneType API
+* @tc.number : GetSceneTypeFromSpatializationSceneType_003
+* @tc.desc   : Test GetSceneTypeFromSpatializationSceneType interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, GetSceneTypeFromSpatializationSceneType_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MOVIE;
+    AudioEffectScene sceneTypeRet = AudioEffectChainManager::GetInstance()->GetSceneTypeFromSpatializationSceneType
+        (SCENE_MUSIC);
+    EXPECT_EQ(SCENE_MOVIE, sceneTypeRet);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test GetSceneTypeFromSpatializationSceneType API
+* @tc.number : GetSceneTypeFromSpatializationSceneType_004
+* @tc.desc   : Test GetSceneTypeFromSpatializationSceneType interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, GetSceneTypeFromSpatializationSceneType_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_AUDIOBOOK;
+    AudioEffectScene sceneTypeRet = AudioEffectChainManager::GetInstance()->GetSceneTypeFromSpatializationSceneType
+        (SCENE_MUSIC);
+    EXPECT_EQ(SCENE_SPEECH, sceneTypeRet);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
