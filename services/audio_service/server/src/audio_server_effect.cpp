@@ -25,6 +25,45 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
+    const std::string &extraSceneType)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+        return;
+    }
+    audioEffectChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+}
+
+bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
+    const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam)
+{
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return false;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectParam,
+        audioEffectServer_->GetEffectEntries());
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceParam,
+        audioEffectServer_->GetEffectEntries());
+    return true;
+}
+
+void AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
+{
+    Trace trace("AudioServer::SetOutputDeviceSink:" + std::to_string(deviceType) + " sink:" + sinkName);
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName);
+    return;
+}
+
 int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -73,7 +112,7 @@ int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, f
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     AUDIO_INFO_LOG("streamType : %{public}d , systemVolume : %{public}f", streamType, volume);
     audioEffectChainManager->SetSceneTypeSystemVolume(sceneType, volume);
-    
+
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     audioEffectChainManager->EffectVolumeUpdate(audioEffectVolume);
