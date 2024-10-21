@@ -1618,6 +1618,41 @@ int32_t AudioServer::CheckMaxRendererInstances()
     return SUCCESS;
 }
 
+sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid)
+{
+    int32_t appUid = config.appInfo.appUid;
+    if (callingUid != MEDIA_SERVICE_UID) {
+        appUid = callingUid;
+    }
+    if (IsNormalIpcStream(config) || (isFastControlled_ && IsFastBlocked(config.appInfo.appUid))) {
+        AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
+        int32_t ret = 0;
+        sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
+        if (ipcStream == nullptr) {
+            if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+                AudioService::GetInstance()->CleanUpStream(appUid);
+            }
+            AUDIO_ERR_LOG("GetIpcStream failed.");
+            return nullptr;
+        }
+        AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+        sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
+        return remoteObject;
+    }
+
+    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(config);
+    if (process == nullptr) {
+        if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+            AudioService::GetInstance()->CleanUpStream(appUid);
+        }
+        AUDIO_ERR_LOG("GetAudioProcess failed.");
+        return nullptr;
+    }
+    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+    sptr<IRemoteObject> remoteObject= process->AsObject();
+    return remoteObject;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
 {
     Trace trace("AudioServer::CreateAudioProcess");
@@ -1655,22 +1690,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         GetBundleNameFromUid(resetConfig.appInfo.appUid));
 #endif
 
-    AudioMode audioMode = resetConfig.audioMode;
-    if (IsNormalIpcStream(resetConfig) || (isFastControlled_ && IsFastBlocked(resetConfig.appInfo.appUid))) {
-        AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
-        int32_t ret = 0;
-        sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);
-        CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, nullptr, "GetIpcStream failed.");
-        AudioService::GetInstance()->SetIncMaxRendererStreamCnt(audioMode);
-        sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
-        return remoteObject;
-    }
-
-    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(resetConfig);
-    CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "GetAudioProcess failed.");
-    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(audioMode);
-    sptr<IRemoteObject> remoteObject= process->AsObject();
-    return remoteObject;
+    return CreateAudioStream(resetConfig, callingUid);
 }
 
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
