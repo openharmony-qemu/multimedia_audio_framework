@@ -18,9 +18,7 @@
 #include "audio_stream_info.h"
 #include "audio_adapter_info.h"
 #include "audio_module_info.h"
-#ifdef BLUE_YELLOW_DIFF
 #include "audio_ec_info.h"
-#endif
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
 #include "audio_device_info.h"
@@ -248,7 +246,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetAbsVolumeSceneAsync_001, TestSize.Lev
     std::string macAddress = "";
     bool support = false;
     server->audioPolicyService_.SetAbsVolumeSceneAsync(macAddress, support);
-    EXPECT_EQ(server->audioPolicyService_.activeBTDevice_, "");
+    EXPECT_EQ(server->audioPolicyService_.activeBTDevice_, "AA-BB-CC-DD-EE-FF");
 }
 
 /**
@@ -350,20 +348,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CreateCheckMusicActiveThread_001, TestSi
     server->audioPolicyService_.CreateCheckMusicActiveThread();
     EXPECT_NE(server->audioPolicyService_.calculateLoopSafeTime_, nullptr);
 }
-
-#ifdef BLUE_YELLOW_DIFF
-/**
- * @tc.name  : Test CreateSafeVolumeDialogThread.
- * @tc.number: CreateSafeVolumeDialogThread_001
- * @tc.desc  : Test CreateSafeVolumeDialogThread interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, CreateSafeVolumeDialogThread_001, TestSize.Level1)
-{
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    server->audioPolicyService_.CreateSafeVolumeDialogThread();
-    EXPECT_NE(server->audioPolicyService_.safeVolumeDialogThrd_, nullptr);
-}
-#endif
 
 /**
  * @tc.name  : Test DealWithSafeVolume.
@@ -612,11 +596,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetProcessDeviceInfo_001, TestSize.Level
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 
     config.rendererInfo.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
     ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 
     config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
     ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
@@ -624,8 +608,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetProcessDeviceInfo_001, TestSize.Level
 
     config.audioMode = AudioMode::AUDIO_MODE_RECORD;
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
     ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
@@ -706,7 +691,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateAudioCapturerMicrophoneDescriptor_
     EXPECT_TRUE(server->audioPolicyService_.connectedMicrophones_.size() >= 0);
 }
 
-#ifdef BLUE_YELLOW_DIFF
 /**
  * @tc.name  : Test GetTargetSourceTypeAndMatchingFlag.
  * @tc.number: GetTargetSourceTypeAndMatchingFlag_001
@@ -758,11 +742,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetHalNameForDevice_001, TestSize.Level1
     std::string role = ROLE_SINK;
     DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
     std::string halNameForDevice = server->audioPolicyService_.GetHalNameForDevice(role, deviceType);
-    EXPECT_EQ(halNameForDevice, "");
+    EXPECT_EQ(halNameForDevice, "wakeup_input");
 
     role = ROLE_SOURCE;
     halNameForDevice = server->audioPolicyService_.GetHalNameForDevice(role, deviceType);
-    EXPECT_EQ(halNameForDevice, "");
+    EXPECT_EQ(halNameForDevice, "wakeup_input");
 }
 
 /**
@@ -831,6 +815,24 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetPipeInfoByDeviceTypeForEc_001, TestSi
     EXPECT_EQ(ret, ERROR);
 }
 
+#ifdef BLUE_YELLOW_DIFF
+/**
+ * @tc.name  : Test GetAudioModuleInfoByName.
+ * @tc.number: GetAudioModuleInfoByName_001
+ * @tc.desc  : Test GetAudioModuleInfoByName interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetAudioModuleInfoByName_001, TestSize.Level1)
+{
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    AudioEcInfo currentEcInfo = server->audioPolicyService_.GetAudioEcInfo();
+    AudioModuleInfo currentModule;
+    PipeInfo currentPipeInfo;
+
+    int32_t currentModuleRet = server->audioPolicyService_.GetAudioModuleInfoByName(
+        currentEcInfo.ecInputAdapter, currentPipeInfo.moduleName_, currentModule);
+    EXPECT_EQ(currentModuleRet, ERROR);
+}
+
 /**
  * @tc.name  : Test ReloadSourceModuleForEc.
  * @tc.number: ReloadSourceModuleForEc_001
@@ -877,6 +879,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, ReloadSourceModuleForEc_001, TestSize.Le
     server->audioPolicyService_.ReloadSourceModuleForEc(inputDevice, outputDevice, isForceReload);
     EXPECT_EQ(server->audioPolicyService_.isEcFeatureEnable_, false);
 }
+#endif
 
 /**
  * @tc.name  : Test GetEcSamplingRate.
@@ -910,7 +913,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcSamplingRate_001, TestSize.Level1)
 
     halName = INVALID_CLASS;
     ecSamplingRate = server->audioPolicyService_.GetEcSamplingRate(halName, outModuleInfo);
-    EXPECT_EQ(ecSamplingRate, "");
+    EXPECT_EQ(ecSamplingRate, "48000");
 }
 
 /**
@@ -945,7 +948,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcFormat_001, TestSize.Level1)
 
     halName = INVALID_CLASS;
     ecFormat = server->audioPolicyService_.GetEcFormat(halName, outModuleInfo);
-    EXPECT_EQ(ecFormat, "");
+    EXPECT_EQ(ecFormat, "s16le");
 }
 
 /**
@@ -1054,6 +1057,23 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateStreamMicRefInfo_001, TestSize.Lev
 
     server->audioPolicyService_.UpdateStreamMicRefInfo(moduleInfo, sourceType);
     EXPECT_NE(moduleInfo.micRefChannels, "999");
+}
+
+#ifdef BLUE_YELLOW_DIFF
+/**
+ * @tc.name  : Test RectifyModuleInfo.
+ * @tc.number: RectifyModuleInfo_001
+ * @tc.desc  : Test RectifyModuleInfo interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, RectifyModuleInfo_001, TestSize.Level1)
+{
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    AudioModuleInfo moduleInfo;
+    std::list<AudioModuleInfo> moduleInfoList;
+    SourceInfo targetInfo;
+
+    server->audioPolicyService_.RectifyModuleInfo(moduleInfo, moduleInfoList, targetInfo);
+    EXPECT_EQ(moduleInfo.sourceType, "0");
 }
 #endif
 

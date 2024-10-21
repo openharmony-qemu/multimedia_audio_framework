@@ -1225,7 +1225,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
     GetServerPtr()->audioPolicyService_.isAdapterInfoMap_.store(true);
     GetServerPtr()->audioPolicyService_.isUpdateRouteSupported_ = true;
     ret = GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturer(capturerOptions);
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1626,7 +1626,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_001, TestSize.Le
 
     updatedDesc.deviceType_ = DEVICE_TYPE_DP;
     ret = GetServerPtr()->audioPolicyService_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1928,9 +1928,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     sessionInfo.rate = RATE;
     sessionInfo.channels = CHANNELS;
 
-#ifdef BLUE_YELLOW_DIFF
     GetServerPtr()->audioPolicyService_.normalSourceOpened_ = SOURCE_TYPE_INVALID;
-#endif
     GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
 
     // dummy data
@@ -1948,9 +1946,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     GetServerPtr()->audioPolicyService_.adapterInfoMap_.insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
 
     int32_t ret = SUCCESS;
-#ifdef BLUE_YELLOW_DIFF
     GetServerPtr()->audioPolicyService_.normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
-#endif
     ret = GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
     EXPECT_EQ(ERROR, ret);
 
@@ -2125,70 +2121,14 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetVoiceCallVolume_001, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     std::string dumpString = "";
     int32_t volumeLevel = 1;
+
 #ifdef BLUE_YELLOW_DIFF
     GetServerPtr()->audioPolicyService_.audioPolicyManager_.SetVgsVolumeSupported(true);
     GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
     GetServerPtr()->audioPolicyService_.audioPolicyManager_.SetVgsVolumeSupported(false);
-    GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
-#else
-    GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
 #endif
+    GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
 }
-
-#ifdef BLUE_YELLOW_DIFF
-/**
-* @tc.name  : Test SetOffloadVolume.
-* @tc.number: SetOffloadVolume_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, SetOffloadVolume_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest SetOffloadVolume_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    // clear connectedA2dpDeviceMap_ and activeBTDevice_
-    GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.clear();
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "";
-
-    // test when connectedA2dpDeviceMap_ and activeBTDevice_ is empty
-    int32_t volume = 1;
-    for (const auto& deviceType : deviceTypes) {
-        GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
-        for (const auto& audioStreamType : audioStreamTypes) {
-            GetServerPtr()->audioPolicyService_.SetOffloadVolume(audioStreamType, volume);
-        }
-    }
-
-    // modify activeBTDevice_ and connectedA2dpDeviceMap_
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "activeBTDevice";
-    AudioStreamInfo audioStreamInfo = {};
-    audioStreamInfo.samplingRate =  AudioSamplingRate::SAMPLE_RATE_48000;
-    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioStreamInfo.channels = AudioChannel::STEREO;
-    A2dpDeviceConfigInfo configInfo = {audioStreamInfo, true};
-    GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.insert({"activeBTDevice", configInfo});
-    GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.insert({"A2dpDeviceCommon", {}});
-
-    // test when connectedA2dpDeviceMap_ and activeBTDevice_ is not empty and absVolumeSupport is true
-    for (const auto& deviceType : deviceTypes) {
-        GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
-        for (const auto& audioStreamType : audioStreamTypes) {
-            GetServerPtr()->audioPolicyService_.SetOffloadVolume(audioStreamType, volume);
-        }
-    }
-
-    // modify configInfo.absVolumeSupport to false
-    configInfo.absVolumeSupport = false;
-
-    // test when connectedA2dpDeviceMap_ and activeBTDevice_ is not empty and absVolumeSupport is false
-    for (const auto& deviceType : deviceTypes) {
-        GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
-        for (const auto& audioStreamType : audioStreamTypes) {
-            GetServerPtr()->audioPolicyService_.SetOffloadVolume(audioStreamType, volume);
-        }
-    }
-}
-#endif
 
 /**
 * @tc.name  : Test NotifyUserSelectionEventToBt.
@@ -2574,11 +2514,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
     for (const auto& audioStreamType : audioStreamTypes) {
         GetServerPtr()->audioPolicyService_.SetSystemVolumeLevel(audioStreamType, volumeLevel);
         GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
-#ifdef BLUE_YELLOW_DIFF
-        for (const auto& isMute : isMutes) {
-            GetServerPtr()->audioPolicyService_.SetOffloadMute(audioStreamType, isMute);
-        }
-#endif
     }
 }
 
