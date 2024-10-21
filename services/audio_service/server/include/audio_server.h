@@ -216,7 +216,7 @@ private:
     void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
     int32_t CheckMaxRendererInstances();
-    sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig config, int32_t callingUid);
+    sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
