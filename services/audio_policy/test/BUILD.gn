@@ -37,6 +37,7 @@ group("audio_policy_unittest_packages") {
 }
 
 module_output_path = "multimedia_audio_framework/audio_policy"
+module_output_path1 = "multimedia_audio_framework/service/audio_policy"
 
 ohos_unittest("audio_interrupt_service_unit_test") {
   module_out_path = module_output_path
@@ -106,7 +107,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
 }
 
 ohos_unittest("audio_policy_service_all_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = module_output_path1
   include_dirs = [
     "./unittest/audio_policy_service_unit_test/include",
     "../../audio_policy/server/include/service",
@@ -306,7 +307,7 @@ ohos_unittest("audio_socket_thread_unit_test") {
 }
 
 ohos_unittest("audio_policy_server_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = module_output_path1
   include_dirs = [
     "./unittest/audio_interrupt_service_test/include",
     "../../audio_policy/server/src/service/interrupt",
