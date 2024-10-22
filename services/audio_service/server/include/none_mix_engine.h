@@ -55,7 +55,6 @@ private:
 private:
     bool isVoip_;
     bool isStart_;
-    bool isPause_;
     bool isInit_;
     DeviceInfo device_;
     std::atomic<uint32_t> failedCount_;

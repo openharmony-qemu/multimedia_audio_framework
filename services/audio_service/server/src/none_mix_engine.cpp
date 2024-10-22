@@ -41,7 +41,6 @@ const char *SINK_ADAPTER_NAME = "primary";
 NoneMixEngine::NoneMixEngine()
     : isVoip_(false),
       isStart_(false),
-      isPause_(false),
       isInit_(false),
       failedCount_(0),
       writeCount_(0),
@@ -111,10 +110,6 @@ int32_t NoneMixEngine::Start()
         startFadein_ = true;
         ret = renderSink_->Start();
         isStart_ = true;
-    } else if (isPause_) {
-        startFadeout_ = false;
-        startFadein_ = true;
-        isPause_ = false;
     }
     if (!playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->Start();
@@ -180,6 +175,15 @@ int32_t NoneMixEngine::StopAudioSink()
 int32_t NoneMixEngine::Pause()
 {
     AUDIO_INFO_LOG("Enter");
+    if (!isStart_) {
+        AUDIO_INFO_LOG("already stopped");
+        return SUCCESS;
+    }
+    int32_t xCollieFlagDefault = (1 | 2);
+    AudioXCollie audioXCollie(
+        "NoneMixEngine::Pause", DIRECT_STOP_TIMEOUT_IN_SEC,
+        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr, xCollieFlagDefault);
+
     writeCount_ = 0;
     failedCount_ = 0;
     if (playbackThread_) {
@@ -191,8 +195,10 @@ int32_t NoneMixEngine::Pause()
             fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Pause();
     }
-    isPause_ = true;
-    return SUCCESS;
+    ClockTime::RelativeSleep(PERIOD_NS * DIRECT_SINK_STANDBY_TIMES);
+    int32_t ret = StopAudioSink();
+    isStart_ = false;
+    return ret;
 }
 
 int32_t NoneMixEngine::Flush()
@@ -315,7 +321,7 @@ void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &strea
 
 bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
 {
-    return isStart_ && !isPause_;
+    return isStart_;
 }
 
 void NoneMixEngine::StandbySleep()
