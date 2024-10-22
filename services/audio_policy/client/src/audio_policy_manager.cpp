@@ -320,6 +320,13 @@ AudioScene AudioPolicyManager::GetAudioScene()
     return gsp->GetAudioScene();
 }
 
+AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType(const int32_t clientUid)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, STREAM_DEFAULT, "audio policy manager proxy is NULL.");
+    return gsp->GetSystemActiveVolumeType(clientUid);
+}
+
 int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -763,12 +770,12 @@ int32_t AudioPolicyManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
     return gsp->SetQueryClientTypeCallback(object);
 }
 
-
-int32_t AudioPolicyManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyManager::ActivateAudioInterrupt(
+    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID);
+    return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
 }
 
 int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
