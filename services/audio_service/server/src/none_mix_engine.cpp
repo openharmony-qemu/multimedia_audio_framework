@@ -125,10 +125,10 @@ int32_t NoneMixEngine::Stop()
         AUDIO_INFO_LOG("already stopped");
         return ret;
     }
-    int32_t xCollieFlagDefault = (1 | 2);
     AudioXCollie audioXCollie(
         "NoneMixEngine::Stop", DIRECT_STOP_TIMEOUT_IN_SEC,
-        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr, xCollieFlagDefault);
+        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
     failedCount_ = 0;
@@ -179,10 +179,10 @@ int32_t NoneMixEngine::Pause()
         AUDIO_INFO_LOG("already stopped");
         return SUCCESS;
     }
-    int32_t xCollieFlagDefault = (1 | 2);
     AudioXCollie audioXCollie(
         "NoneMixEngine::Pause", DIRECT_STOP_TIMEOUT_IN_SEC,
-        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr, xCollieFlagDefault);
+        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
     failedCount_ = 0;

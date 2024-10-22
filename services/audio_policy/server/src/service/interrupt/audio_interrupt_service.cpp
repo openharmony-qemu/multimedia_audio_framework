@@ -28,6 +28,7 @@ namespace AudioStandard {
 const int32_t DEFAULT_ZONE_ID = 0;
 constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
+static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
@@ -150,6 +151,10 @@ const sptr<IStandardAudioService> AudioInterruptService::GetAudioServerProxy()
 void AudioInterruptService::OnSessionTimeout(const int32_t pid)
 {
     AUDIO_INFO_LOG("OnSessionTimeout pid %{public}d", pid);
+    AudioXCollie audioXCollie("AudioInterruptService::OnSessionTimeout", INTERRUPT_SERVICE_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("OnSessionTimeout timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::mutex> lock(mutex_);
     HandleSessionTimeOutEvent(pid);
 }
@@ -169,6 +174,10 @@ void AudioInterruptService::HandleSessionTimeOutEvent(const int32_t pid)
 
 int32_t AudioInterruptService::ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy)
 {
+    AudioXCollie audioXCollie("AudioInterruptService::ActivateAudioSession", INTERRUPT_SERVICE_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("ActivateAudioSession timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::mutex> lock(mutex_);
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
@@ -211,6 +220,10 @@ void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
 
 int32_t AudioInterruptService::DeactivateAudioSession(const int32_t callerPid)
 {
+    AudioXCollie audioXCollie("AudioInterruptService::DeactivateAudioSession", INTERRUPT_SERVICE_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("DeactivateAudioSession timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::mutex> lock(mutex_);
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
@@ -591,6 +604,10 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
 int32_t AudioInterruptService::ActivateAudioInterrupt(
     const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy)
 {
+    AudioXCollie audioXCollie("AudioInterruptService::ActivateAudioInterrupt", INTERRUPT_SERVICE_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
 
     AudioStreamType streamType = audioInterrupt.audioFocusType.streamType;
@@ -648,6 +665,10 @@ void AudioInterruptService::ResetNonInterruptControl(uint32_t sessionId)
 
 int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
+    AudioXCollie audioXCollie("AudioInterruptService::DeactivateAudioInterrupt", INTERRUPT_SERVICE_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("DeactivateAudioInterrupt timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::mutex> lock(mutex_);
 
     AUDIO_INFO_LOG("sessionId: %{public}u pid: %{public}d streamType: %{public}d "\
