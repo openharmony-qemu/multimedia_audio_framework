@@ -1071,7 +1071,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = static_cast<int32_t>(0);
-    source.ext.mix.streamId = tatic_cast<int32_t>(
+    source.ext.mix.streamId = static_cast<int32_t>(
         GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
     source.ext.device.desc = (char *)"";
 
