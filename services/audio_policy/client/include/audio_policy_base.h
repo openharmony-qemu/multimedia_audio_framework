@@ -197,7 +197,7 @@ public:
 
     virtual float GetMaxStreamVolume(void) = 0;
 
-    virtual int32_t GetMaxRendererInstances() = 0;
+    virtual int32_t CheckMaxRendererInstances() = 0;
 
     virtual bool IsVolumeUnadjustable(void) = 0;
 

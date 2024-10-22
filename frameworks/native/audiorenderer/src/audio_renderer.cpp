@@ -99,37 +99,10 @@ AudioRendererPrivate::~AudioRendererPrivate()
 
 int32_t AudioRenderer::CheckMaxRendererInstances()
 {
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    AUDIO_INFO_LOG("Audio current renderer change infos size: %{public}zu", audioRendererChangeInfos.size());
-    int32_t maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
-    if (audioRendererChangeInfos.size() >= static_cast<size_t>(maxRendererInstances)) {
-        std::map<int32_t, int32_t> appUseNumMap;
-        int32_t INITIAL_VALUE = 1;
-        int32_t mostAppUid = -1;
-        int32_t mostAppNum = -1;
-        for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
-            auto appUseNum = appUseNumMap.find((*it)->clientUID);
-            if (appUseNum != appUseNumMap.end()) {
-                appUseNumMap[(*it)->clientUID] = ++appUseNum->second;
-            } else {
-                appUseNumMap.emplace((*it)->clientUID, INITIAL_VALUE);
-            }
-        }
-        for (auto iter = appUseNumMap.begin(); iter != appUseNumMap.end(); iter++) {
-            mostAppNum = iter->second > mostAppNum ? iter->second : mostAppNum;
-            mostAppUid = iter->first > mostAppUid ? iter->first : mostAppUid;
-        }
-        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
-            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
-        bean->Add("CLIENT_UID", mostAppUid);
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    int32_t ret = AudioPolicyManager::GetInstance().CheckMaxRendererInstances();
+    if (ret == ERR_OVERFLOW) {
+        return ret;
     }
-
-    CHECK_AND_RETURN_RET_LOG(audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances), ERR_OVERFLOW,
-        "The current number of audio renderer streams is greater than the maximum number of configured instances");
-
     return SUCCESS;
 }
 

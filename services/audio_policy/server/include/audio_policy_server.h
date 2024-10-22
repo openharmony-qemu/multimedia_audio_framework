@@ -281,7 +281,7 @@ public:
 
     float GetMaxStreamVolume(void) override;
 
-    int32_t GetMaxRendererInstances() override;
+    int32_t CheckMaxRendererInstances() override;
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos);
 

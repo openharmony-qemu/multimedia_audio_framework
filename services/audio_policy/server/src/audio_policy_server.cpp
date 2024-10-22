@@ -2024,9 +2024,9 @@ float AudioPolicyServer::GetMaxStreamVolume()
     return audioPolicyService_.GetMaxStreamVolume();
 }
 
-int32_t AudioPolicyServer::GetMaxRendererInstances()
+int32_t AudioPolicyServer::CheckMaxRendererInstances()
 {
-    AUDIO_INFO_LOG("GetMaxRendererInstances");
+    AUDIO_INFO_LOG("CheckMaxRendererInstances");
     int32_t retryCount = 20; // 20 * 200000us = 4s, wait up to 4s
     while (!isFirstAudioServiceStart_) {
         retryCount--;
@@ -2037,7 +2037,7 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
             break;
         }
     }
-    return audioPolicyService_.GetMaxRendererInstances();
+    return audioPolicyService_.CheckMaxRendererInstances();
 }
 
 void AudioPolicyServer::RegisterDataObserver()

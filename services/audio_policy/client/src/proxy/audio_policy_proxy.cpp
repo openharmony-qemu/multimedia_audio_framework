@@ -1067,7 +1067,7 @@ std::string AudioPolicyProxy::GetSystemSoundUri(const std::string &key)
     return reply.ReadString();
 }
 
-int32_t AudioPolicyProxy::GetMaxRendererInstances()
+int32_t AudioPolicyProxy::CheckMaxRendererInstances()
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1076,8 +1076,8 @@ int32_t AudioPolicyProxy::GetMaxRendererInstances()
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_RENDERER_INSTANCES), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "GetMaxRendererInstances failed, error: %d", error);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CHECK_MAX_RENDERER_INSTANCES), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "CheckMaxRendererInstances failed, error: %d", error);
     return reply.ReadInt32();
 }
 
