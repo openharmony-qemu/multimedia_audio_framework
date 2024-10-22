@@ -531,7 +531,7 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(DeviceInfo &outputDeviceI
     bool deviceInfoUpdated = false;
 
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        if ((*it)->outputDeviceInfo.deviceType != outputDeviceInfo.deviceType) {
+        if (!(*it)->outputDeviceInfo.IsSameDeviceInfo(outputDeviceInfo)) {
             AUDIO_DEBUG_LOG("UpdateRendererDeviceInfo: old device: %{public}d new device: %{public}d",
                 (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
             (*it)->outputDeviceInfo = outputDeviceInfo;
@@ -554,7 +554,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceIn
     bool deviceInfoUpdated = false;
 
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        if ((*it)->inputDeviceInfo.deviceType != inputDeviceInfo.deviceType) {
+        if (!(*it)->inputDeviceInfo.IsSameDeviceInfo(inputDeviceInfo)) {
             AUDIO_DEBUG_LOG("UpdateCapturerDeviceInfo: old device: %{public}d new device: %{public}d",
                 (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
             (*it)->inputDeviceInfo = inputDeviceInfo;
@@ -569,18 +569,6 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceIn
     return SUCCESS;
 }
 
-bool AudioStreamCollector::IsSameDeviceInfo(DeviceInfo &audioDeviceInfo, DeviceInfo &deviceInfo)
-{
-    if (audioDeviceInfo.networkId == deviceInfo.networkId && audioDeviceInfo.deviceType == deviceInfo.deviceType
-        && audioDeviceInfo.macAddress == deviceInfo.macAddress
-        && audioDeviceInfo.connectState == deviceInfo.connectState) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId,
     DeviceInfo &outputDeviceInfo)
 {
@@ -588,8 +576,8 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
     bool deviceInfoUpdated = false;
 
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId
-            && !IsSameDeviceInfo((*it)->outputDeviceInfo, outputDeviceInfo)) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
+            !(*it)->outputDeviceInfo.IsSameDeviceInfo(outputDeviceInfo)) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 clientUID, sessionId, (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
             (*it)->outputDeviceInfo = outputDeviceInfo;
@@ -636,8 +624,8 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_
     bool deviceInfoUpdated = false;
 
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId
-            && !IsSameDeviceInfo((*it)->inputDeviceInfo, inputDeviceInfo)) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
+            !(*it)->inputDeviceInfo.IsSameDeviceInfo(inputDeviceInfo)) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 (*it)->clientUID, (*it)->sessionId, (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
             (*it)->inputDeviceInfo = inputDeviceInfo;
