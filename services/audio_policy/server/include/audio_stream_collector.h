@@ -113,6 +113,7 @@ private:
     bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool IsTransparentCapture(const uint32_t clientUid);
     bool IsCallStreamUsage(StreamUsage usage);
+    bool IsSameDeviceInfo(DeviceInfo &audioDeviceInfo, DeviceInfo &deviceInfo);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;
