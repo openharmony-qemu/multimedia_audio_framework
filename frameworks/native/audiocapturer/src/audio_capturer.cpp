@@ -126,10 +126,6 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         AUDIO_ERR_LOG("Failed to create capturer object");
         return capturer;
     }
-    if (!cachePath.empty()) {
-        AUDIO_DEBUG_LOG("Set application cache path");
-        capturer->cachePath_ = cachePath;
-    }
     AUDIO_INFO_LOG("Capturer sourceType: %{public}d, uid: %{public}d", sourceType, appInfo.appUid);
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
     capturer->capturerInfo_.sourceType = sourceType;
@@ -265,7 +261,6 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
             appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetRecordStream faied.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
-        audioStream_->SetApplicationCachePath(cachePath_);
     }
     int32_t ret = InitAudioStream(audioStreamParams);
     // When the fast stream creation fails, a normal stream is created
@@ -652,16 +647,6 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     CHECK_AND_RETURN_RET_LOG(bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC,
         ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 20ms");
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
-}
-
-void AudioCapturerPrivate::SetApplicationCachePath(const std::string cachePath)
-{
-    cachePath_ = cachePath;
-    if (audioStream_ != nullptr) {
-        audioStream_->SetApplicationCachePath(cachePath_);
-    } else {
-        AUDIO_WARNING_LOG("AudioCapturer SetApplicationCachePath while stream is null");
-    }
 }
 
 AudioCapturerInterruptCallbackImpl::AudioCapturerInterruptCallbackImpl(const std::shared_ptr<IAudioStream> &audioStream)
@@ -1093,7 +1078,6 @@ void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     CHECK_AND_RETURN_LOG(audioStream, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
-    audioStream->SetApplicationCachePath(info.cachePath);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetCapturerInfo(info.capturerInfo);
     audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);

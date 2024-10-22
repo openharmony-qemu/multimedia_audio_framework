@@ -7309,26 +7309,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_WriteUnderrunEvent_004, TestSize.Le
 }
 
 /**
- * @tc.name  : Test SetApplicationCachePath
- * @tc.number: Audio_Renderer_SetApplicationCachePath_001
- * @tc.desc  : Test SetApplicationCachePath interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_SetApplicationCachePath_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->SetApplicationCachePath("");
-    audioRendererPrivate->audioStream_ = nullptr;
-    audioRendererPrivate->SetApplicationCachePath("");
-
-    AudioRendererParams rendererParams;
-    int32_t ret = audioRendererPrivate->SetParams(rendererParams);
-    EXPECT_EQ(SUCCESS, ret);
-    ASSERT_NE(nullptr, audioRendererPrivate->audioStream_);
-}
-
-/**
  * @tc.name  : Test OnInterrupt
  * @tc.number: Audio_Renderer_OnInterrupt_001
  * @tc.desc  : Test OnInterrupt interface

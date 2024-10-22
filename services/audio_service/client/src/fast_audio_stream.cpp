@@ -708,12 +708,6 @@ int32_t FastAudioStream::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     return ERR_NOT_SUPPORTED;
 }
 
-void FastAudioStream::SetApplicationCachePath(const std::string cachePath)
-{
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath.c_str());
-
-    cachePath_ = cachePath;
-}
 void FastAudioStream::SetInnerCapturerState(bool isInnerCapturer)
 {
     AUDIO_ERR_LOG("SetInnerCapturerState is not supported");
@@ -752,7 +746,6 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.eStreamType = eStreamType_;
     info.state = state_;
     info.sessionId = sessionId_;
-    info.cachePath = cachePath_;
 
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;

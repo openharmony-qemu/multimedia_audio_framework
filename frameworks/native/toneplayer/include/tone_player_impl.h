@@ -65,7 +65,6 @@ private:
     int32_t GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t samples);
 
     AudioRendererOptions rendererOptions_ = {};
-    std::string cachePath_; // NAPI interface to create AudioRenderer
     std::unique_ptr<AudioRenderer> audioRenderer_;  // Pointer to AudioRenderer used for playback
     bool isRendererInited_ = false;
 
