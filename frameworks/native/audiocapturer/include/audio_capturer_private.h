@@ -65,7 +65,6 @@ public:
     int32_t Enqueue(const BufferDesc &bufDesc)const override;
     int32_t Clear()const override;
     int32_t GetBufQueueState(BufferQueueState &bufState)const override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     void SetValid(bool valid) override;
     int64_t GetFramesRead() const override;
     int32_t GetCurrentInputDevices(DeviceInfo &deviceInfo) const override;
@@ -101,7 +100,6 @@ public:
     AudioCapturerInfo capturerInfo_ = {};
     AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
     AudioStreamType audioStreamType_;
-    std::string cachePath_;
     bool abortRestore_ = false;
 
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);

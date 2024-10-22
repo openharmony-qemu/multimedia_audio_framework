@@ -2074,12 +2074,6 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     return SUCCESS;
 }
 
-void RendererInClientInner::SetApplicationCachePath(const std::string cachePath)
-{
-    cachePath_ = cachePath;
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath_.c_str());
-}
-
 int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     if ((state_ != PREPARED) && (state_ != NEW)) {
@@ -2131,7 +2125,6 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    info.cachePath = cachePath_;
     info.underFlowCount = GetUnderflowCount();
     info.effectMode = effectMode_;
     info.renderRate = rendererRate_;

@@ -85,7 +85,6 @@ public:
     int32_t Enqueue(const BufferDesc &bufDesc) const override;
     int32_t Clear() const override;
     int32_t GetBufQueueState(BufferQueueState &bufState) const override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     void SetInterruptMode(InterruptMode mode) override;
     int32_t SetParallelPlayFlag(bool parallelPlayFlag) override;
     int32_t SetLowPowerVolume(float volume) const override;
@@ -152,7 +151,6 @@ public:
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
-    std::string cachePath_;
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
     mutable bool isStillMuted_ = false;

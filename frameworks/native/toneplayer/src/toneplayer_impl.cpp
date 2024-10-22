@@ -73,10 +73,6 @@ TonePlayerImpl::TonePlayerImpl(const std::string cachePath, const AudioRendererI
     toneInfo_ = NULL;
     initialToneInfo_ = NULL;
     samplingRate_ = rendererOptions_.streamInfo.samplingRate;
-    if (!cachePath.empty()) {
-        AUDIO_INFO_LOG("copy application cache path");
-        cachePath_.assign(cachePath);
-    }
 }
 
 TonePlayerImpl::~TonePlayerImpl()
@@ -420,11 +416,7 @@ bool TonePlayerImpl::InitToneWaveInfo()
 bool TonePlayerImpl::InitAudioRenderer()
 {
     processSize_ = (rendererOptions_.streamInfo.samplingRate * C20MS) / C1000MS;
-    if (!cachePath_.empty()) {
-        audioRenderer_ = AudioRenderer::Create(cachePath_, rendererOptions_);
-    } else {
-        audioRenderer_ = AudioRenderer::Create(rendererOptions_);
-    }
+    audioRenderer_ = AudioRenderer::Create(rendererOptions_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false,
         "Renderer create failed");
 

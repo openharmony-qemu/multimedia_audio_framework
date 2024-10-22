@@ -104,9 +104,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_001, TestSize.Level1)
     EXPECT_EQ(interruptCallback->audioStream_, audioStream);
 
     capturer->audioStream_ = audioStream;
-    capturer->SetApplicationCachePath("/a");
-    EXPECT_EQ(capturer->cachePath_, "/a");
-    EXPECT_EQ(static_cast<FastAudioStream*>(audioStream.get())->cachePath_, "/a");
 
     InterruptEvent interruptEventResume {InterruptType::INTERRUPT_TYPE_BEGIN,
         InterruptForceType::INTERRUPT_SHARE, InterruptHint::INTERRUPT_HINT_RESUME};

@@ -201,10 +201,6 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
             ERR_OPERATION_FAILED);
     }
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
-    if (!cachePath.empty()) {
-        AUDIO_DEBUG_LOG("Set application cache path");
-        audioRenderer->cachePath_ = cachePath;
-    }
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
     AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
@@ -500,7 +496,6 @@ int32_t AudioRendererPrivate::PrepareAudioStream(const AudioStreamParams &audioS
             appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
-        audioStream_->SetApplicationCachePath(cachePath_);
     }
     return SUCCESS;
 }
@@ -1222,16 +1217,6 @@ int32_t AudioRendererPrivate::GetBufQueueState(BufferQueueState &bufState) const
     return audioStream_->GetBufQueueState(bufState);
 }
 
-void AudioRendererPrivate::SetApplicationCachePath(const std::string cachePath)
-{
-    cachePath_ = cachePath;
-    if (audioStream_ != nullptr) {
-        audioStream_->SetApplicationCachePath(cachePath);
-    } else {
-        AUDIO_WARNING_LOG("while stream is null");
-    }
-}
-
 int32_t AudioRendererPrivate::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
 {
     return audioStream_->SetRendererWriteCallback(callback);
@@ -1421,7 +1406,6 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     CHECK_AND_RETURN_LOG(audioStream, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
-    audioStream->SetApplicationCachePath(info.cachePath);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetPrivacyType(info.privacyType);
     audioStream->SetRendererInfo(info.rendererInfo);

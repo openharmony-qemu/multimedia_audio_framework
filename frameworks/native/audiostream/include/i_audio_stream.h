@@ -65,7 +65,6 @@ public:
         AudioCapturerInfo capturerInfo;
         State state;
         uint32_t sessionId;
-        std::string cachePath = "";
         uint32_t rendererSampleRate;
         uint32_t underFlowCount = 0;
         uint32_t overFlowCount = 0;
@@ -227,7 +226,6 @@ public:
     virtual int32_t SetRendererSamplingRate(uint32_t sampleRate) = 0;
     virtual uint32_t GetRendererSamplingRate() = 0;
     virtual int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) = 0;
-    virtual void SetApplicationCachePath(const std::string cachePath) = 0;
     virtual int32_t SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
     virtual int32_t SetVolumeWithRamp(float volume, int32_t duration) = 0;
     virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
