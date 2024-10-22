@@ -161,9 +161,12 @@ public:
 
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
+    AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
+    AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
     std::string cachePath_;
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
+    mutable bool isStillMuted_ = false;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -192,6 +195,7 @@ private:
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
+	void UpdateAudioInterruptStrategy(float volume) const;
     void WriteSwitchStreamLogMsg();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;

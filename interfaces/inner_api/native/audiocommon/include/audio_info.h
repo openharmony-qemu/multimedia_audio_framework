@@ -433,6 +433,7 @@ struct AudioRendererOptions {
     AudioStreamInfo streamInfo;
     AudioRendererInfo rendererInfo;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct MicStateChangeEvent {

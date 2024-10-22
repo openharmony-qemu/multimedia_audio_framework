@@ -228,6 +228,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
+    audioRenderer->strategy_ = rendererOptions.strategy;
+    audioRenderer->originalStrategy_ = rendererOptions.strategy;
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
@@ -341,6 +343,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
     sessionID_ = audioInterrupt_.sessionId;
     audioInterrupt_.streamUsage = rendererInfo_.streamUsage;
     audioInterrupt_.contentType = rendererInfo_.contentType;
+    audioInterrupt_.sessionStrategy = strategy_;
 
     AUDIO_INFO_LOG("interruptMode %{public}d, streamType %{public}d, sessionID %{public}d",
         audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionId);
@@ -672,6 +675,15 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
+
+    if (GetVolume() == 0 && isStillMuted_) {
+        AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillMuted_=%{public}d",
+            GetVolume(), isStillMuted_);
+        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
+    } else {
+        isStillMuted_ = false;
+    }
+
     {
         std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
         if (!audioStream_->GetSilentModeAndMixWithOthers()) {
@@ -905,7 +917,27 @@ int32_t AudioRendererPrivate::SetStreamType(AudioStreamType audioStreamType)
 
 int32_t AudioRendererPrivate::SetVolume(float volume) const
 {
+    UpdateAudioInterruptStrategy(volume);
     return audioStream_->SetVolume(volume);
+}
+
+void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
+{
+    State currentState = audioStream_->GetState();
+    if (currentState == NEW || currentState == PREPARED) {
+        AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
+        isStillMuted_ = (volume == 0);
+    } else if (isStillMuted_ && volume > 0) {
+        isStillMuted_ = false;
+        audioInterrupt_.sessionStrategy.concurrencyMode =
+            (originalStrategy_.concurrencyMode == AudioConcurrencyMode::INVALID ?
+            AudioConcurrencyMode::DEFAULT : originalStrategy_.concurrencyMode);
+        if (currentState == RUNNING) {
+            AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
+            int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
+            CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed at SetVolume");
+        }
+    }
 }
 
 float AudioRendererPrivate::GetVolume() const
