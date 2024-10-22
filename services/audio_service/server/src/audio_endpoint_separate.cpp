@@ -349,6 +349,10 @@ bool AudioEndpointSeparate::IsAnyProcessRunning()
     std::lock_guard<std::mutex> lock(listLock_);
     bool isRunning = false;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
+        if (processBufferList_[i]->GetStreamStatus() == nullptr) {
+            AUDIO_ERR_LOG("%{public}s process buffer %{public}zu has a null stream status.", __func__, i);
+            continue;
+        }
         if (processBufferList_[i]->GetStreamStatus() &&
             processBufferList_[i]->GetStreamStatus()->load() == STREAM_RUNNING) {
             isRunning = true;

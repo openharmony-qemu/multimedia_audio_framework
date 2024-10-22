@@ -861,6 +861,7 @@ bool FastAudioStream::RestoreAudioStream()
     }
     switch (oldState) {
         case RUNNING:
+            CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
             ret = processClient_->SaveDataCallback(spkProcClientCb_);
             if (ret != SUCCESS) {
                 goto error;
