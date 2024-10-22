@@ -893,7 +893,7 @@ int64_t AudioCapturerPrivate::GetFramesRead() const
 
 int32_t AudioCapturerPrivate::GetCurrentInputDevices(DeviceInfo &deviceInfo) const
 {
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
     int32_t ret = GetAudioStreamId(sessionId);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get sessionId failed");
@@ -911,7 +911,7 @@ int32_t AudioCapturerPrivate::GetCurrentInputDevices(DeviceInfo &deviceInfo) con
 
 int32_t AudioCapturerPrivate::GetCurrentCapturerChangeInfo(AudioCapturerChangeInfo &changeInfo) const
 {
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
     int32_t ret = GetAudioStreamId(sessionId);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get sessionId failed");
@@ -1334,7 +1334,7 @@ void AudioCapturerStateChangeCallbackImpl::setAudioCapturerObj(AudioCapturerPriv
 }
 
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     uint32_t sessionId = static_cast<uint32_t>(-1);
     bool found = false;
@@ -1369,7 +1369,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
 }
 
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     DeviceInfo deviceInfo = {};
     {
@@ -1386,7 +1386,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
 }
 
 void AudioCapturerStateChangeCallbackImpl::OnCapturerStateChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     if (deviceChangeCallbacklist_.size() != 0) {
         NotifyAudioCapturerDeviceChange(audioCapturerChangeInfos);

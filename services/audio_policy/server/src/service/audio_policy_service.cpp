@@ -1351,7 +1351,7 @@ int32_t AudioPolicyService::SelectOutputDeviceByFilterInner(sptr<AudioRendererFi
         }
     }
     audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, selectedDesc[0]);
-    vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     for (auto &changeInfo : rendererChangeInfos) {
         if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
@@ -1696,7 +1696,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     CHECK_AND_RETURN_RET(res == SUCCESS, res);
     if (audioCapturerFilter->uid != -1) {
         audioAffinityManager_.AddSelectCapturerDevice(audioCapturerFilter->uid, selectedDesc[0]);
-        vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+        vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
         for (auto &changeInfo : capturerChangeInfos) {
             if (changeInfo->clientUID == audioCapturerFilter->uid && changeInfo->sessionId != 0) {
@@ -2459,7 +2459,7 @@ void AudioPolicyService::SetVoiceCallMuteForSwitchDevice()
     // Unmute in SetVolumeForSwitchDevice after update route.
 }
 
-void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioPolicyService::MuteSinkPortForSwtichDevice(shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::MuteSinkPortForSwtichDevice");
@@ -2478,7 +2478,7 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererCha
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
 
-void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+void AudioPolicyService::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::MoveToNewOutputDevice");
@@ -2536,7 +2536,7 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
     moveDeviceCV_.notify_all();
 }
 
-void AudioPolicyService::MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
+void AudioPolicyService::MoveToNewInputDevice(shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
     unique_ptr<AudioDeviceDescriptor> &inputDevice)
 {
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(capturerChangeInfo->sessionId);
@@ -2605,7 +2605,7 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 }
 
 int32_t AudioPolicyService::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, const AudioStreamDeviceChangeReasonExt reason)
+    vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::ActivateA2dpDevice");
     sptr<AudioDeviceDescriptor> deviceDesc = new AudioDeviceDescriptor(*desc);
@@ -2621,7 +2621,7 @@ int32_t AudioPolicyService::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor>
 }
 
 int32_t AudioPolicyService::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+    vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::HandleScoOutputDeviceFetched");
@@ -2642,7 +2642,7 @@ int32_t AudioPolicyService::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceD
     return SUCCESS;
 }
 
-bool AudioPolicyService::IsRendererStreamRunning(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+bool AudioPolicyService::IsRendererStreamRunning(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     StreamUsage usage = rendererChangeInfo->rendererInfo.streamUsage;
     RendererState rendererState = rendererChangeInfo->rendererState;
@@ -2725,7 +2725,7 @@ void AudioPolicyService::MuteDefaultSinkPort()
 }
 
 int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-    unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+    shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
         !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED &&
@@ -2749,7 +2749,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
 }
 
 bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-    const AudioStreamDeviceChangeReasonExt reason, const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+    const AudioStreamDeviceChangeReasonExt reason, const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     unique_ptr<AudioDeviceDescriptor> preferredDesc =
         audioAffinityManager_.GetRendererDevice(rendererChangeInfo->clientUID);
@@ -2765,7 +2765,7 @@ bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
     return false;
 }
 
-void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+void AudioPolicyService::FetchOutputDevice(vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::FetchOutputDevice");
@@ -2819,7 +2819,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
 }
 
 int32_t AudioPolicyService::ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, const AudioStreamDeviceChangeReasonExt reason)
+    vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (desc->isEnable_) {
         AUDIO_INFO_LOG("descs front is enabled");
@@ -2829,7 +2829,7 @@ int32_t AudioPolicyService::ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDe
 }
 
 bool AudioPolicyService::IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
-    const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (rendererChangeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
         rendererChangeInfo->rendererInfo.originalFlag == AUDIO_FLAG_MMAP &&
@@ -2858,7 +2858,7 @@ void AudioPolicyService::WriteOutputRouteChangeEvent(unique_ptr<AudioDeviceDescr
 }
 
 bool AudioPolicyService::NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
-    const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("New device type: %{public}d, current rendererFlag: %{public}d, origianl flag: %{public}d",
         desc->deviceType_, rendererChangeInfo->rendererInfo.rendererFlags,
@@ -2883,7 +2883,7 @@ bool AudioPolicyService::NotifyRecreateRendererStream(std::unique_ptr<AudioDevic
     return false;
 }
 
-bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+bool AudioPolicyService::NotifyRecreateDirectStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
@@ -2930,7 +2930,7 @@ void AudioPolicyService::TriggerRecreateRendererStreamCallback(int32_t callerPid
     }
 }
 
-void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+void AudioPolicyService::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
@@ -2963,7 +2963,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRender
 
 void AudioPolicyService::FetchStreamForA2dpOffload(const bool &requireReset)
 {
-    vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     AUDIO_INFO_LOG("FetchStreamForA2dpOffload start for %{public}zu stream", rendererChangeInfos.size());
     for (auto &rendererChangeInfo : rendererChangeInfos) {
@@ -3020,7 +3020,7 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, c
 }
 
 int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
+    vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
 #ifdef BLUETOOTH_ENABLE
     int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
@@ -3039,7 +3039,7 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
     return SUCCESS;
 }
 
-void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+void AudioPolicyService::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::FetchInputDevice");
@@ -3093,7 +3093,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
 }
 
 int32_t AudioPolicyService::HandleDeviceChangeForFetchInputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-    unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
+    shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
 {
     if (desc->deviceType_ == DEVICE_TYPE_NONE ||
         (IsSameDevice(desc, capturerChangeInfo->inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED)) {
@@ -3114,7 +3114,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchInputDevice(unique_ptr<Aud
 }
 
 void AudioPolicyService::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
+    vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
 {
     Trace trace("AudioPolicyService::BluetoothScoFetch");
     int32_t ret;
@@ -3163,7 +3163,7 @@ void AudioPolicyService::WriteInputRouteChangeEvent(unique_ptr<AudioDeviceDescri
 }
 
 bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
-    const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
+    const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Is update active device: %{public}d, current capturerFlag: %{public}d, origianl flag: %{public}d",
@@ -3206,11 +3206,11 @@ void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDevic
     AUDIO_DEBUG_LOG("FetchDevice start");
 
     if (isOutputDevice) {
-        vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+        vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
         streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
         FetchOutputDevice(rendererChangeInfos, reason);
     } else {
-        vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+        vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
         FetchInputDevice(capturerChangeInfos, reason);
     }
@@ -4143,7 +4143,7 @@ void AudioPolicyService::OnBlockedStatusUpdated(DeviceType devType, DeviceBlockS
     sptr<AudioDeviceDescriptor> audioDescriptor = new AudioDeviceDescriptor(devType, GetDeviceRole(devType));
     descForCb.push_back(audioDescriptor);
 
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioChangeInfos;
     streamCollector_.GetCurrentCapturerChangeInfos(audioChangeInfos);
     for (auto it = audioChangeInfos.begin(); it != audioChangeInfos.end(); it++) {
         if ((*it)->capturerState == CAPTURER_RUNNING) {
@@ -4520,7 +4520,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(
 #ifdef BLUETOOTH_ENABLE
     vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     std::vector<int32_t> stopPlayingStream(0);
     for (auto &changeInfo : audioRendererChangeInfos) {
@@ -4552,7 +4552,7 @@ int32_t AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceT
 #ifdef BLUETOOTH_ENABLE
     vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     {
         AudioXCollie audioXCollie("AudioPolicyService::UpdateA2dpOffloadFlagForAllStream", BLUETOOTH_TIME_OUT_SECONDS);
@@ -5473,7 +5473,7 @@ int32_t AudioPolicyService::UnsetAvailableDeviceChangeCallback(const int32_t cli
     return SUCCESS;
 }
 
-static void UpdateRendererInfoWhenNoPermission(const unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
+static void UpdateRendererInfoWhenNoPermission(const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
     bool hasSystemPermission)
 {
     if (!hasSystemPermission) {
@@ -5482,7 +5482,7 @@ static void UpdateRendererInfoWhenNoPermission(const unique_ptr<AudioRendererCha
     }
 }
 
-static void UpdateCapturerInfoWhenNoPermission(const unique_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
+static void UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
     bool hasSystemPermission)
 {
     if (!hasSystemPermission) {
@@ -5654,9 +5654,9 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
         return;
     }
 
-    vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
+    vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     rendererChangeInfo.push_back(
-        make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
+        make_shared<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
     streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfo[0]);
 
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(streamChangeInfo.audioRendererChangeInfo.sessionId);
@@ -5670,15 +5670,15 @@ void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
     AUDIO_INFO_LOG("fetch device for track, sessionid:%{public}d start",
         streamChangeInfo.audioRendererChangeInfo.sessionId);
 
-    vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
+    vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(
-        make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
+        make_shared<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
     streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfo[0]);
 
     FetchInputDevice(capturerChangeInfo);
 }
 
-int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>>
+int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
     &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
@@ -5710,7 +5710,7 @@ int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<unique_ptr<Audi
     return status;
 }
 
-int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>>
+int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>>
     &audioCapturerChangeInfos, bool hasBTPermission, bool hasSystemPermission)
 {
     int status = streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
@@ -7593,7 +7593,7 @@ void AudioPolicyService::UpdateAudioCapturerMicrophoneDescriptor(DeviceType devT
 
 void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
 {
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 
     for (auto &info : audioCapturerChangeInfos) {
@@ -8491,7 +8491,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
 void AudioPolicyService::GetAllRunningStreamSession(std::vector<int32_t> &allSessions, bool doStop)
 {
 #ifdef BLUETOOTH_ENABLE
-    vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     std::vector<int32_t> stopPlayingStream(0);
     for (auto &changeInfo : rendererChangeInfos) {
@@ -9375,7 +9375,7 @@ void AudioPolicyService::DeviceVolumeInfosDump(std::string &dumpString, DeviceVo
 void AudioPolicyService::AudioStreamDump(std::string &dumpString)
 {
     dumpString += "\nAudioRenderer stream:\n";
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
 
     AppendFormat(dumpString, " - audiorenderer stream size : %zu\n", audioRendererChangeInfos.size());
@@ -9401,7 +9401,7 @@ void AudioPolicyService::AudioStreamDump(std::string &dumpString)
 void AudioPolicyService::GetCapturerStreamDump(std::string &dumpString)
 {
     dumpString += "\nAudioCapturer stream:\n";
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     AppendFormat(dumpString, " - audiocapturer stream size : %zu\n", audioCapturerChangeInfos.size());
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
@@ -9497,7 +9497,7 @@ int32_t AudioPolicyService::ActivateAudioConcurrency(const AudioPipeType &pipeTy
     return streamCollector_.ActivateAudioConcurrency(pipeType);
 }
 
-void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+void AudioPolicyService::UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices)
 {
     StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
@@ -9557,7 +9557,7 @@ bool AudioPolicyService::IsA2dpOrArmUsbDevice(const InternalDeviceType &deviceTy
 }
 
 bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-    const unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+    const shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     CHECK_AND_RETURN_RET_LOG(descs.size() > 0 && descs.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, false,
         "audio devices not in range for ringer or alarmer.");

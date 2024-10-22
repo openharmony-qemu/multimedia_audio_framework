@@ -121,10 +121,10 @@ void AudioPolicyServSendFuzzTest(const uint8_t *rawData, size_t size)
     CastType type = CAST_TYPE_ALL;
     audioPolicyServerHandler->SendDistributedRoutingRoleChange(descriptor, type);
 
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     audioPolicyServerHandler->SendRendererInfoEvent(audioRendererChangeInfos);
 
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     audioPolicyServerHandler->SendCapturerInfoEvent(audioCapturerChangeInfos);
 
     int32_t clientPid = *reinterpret_cast<const int32_t*>(rawData);

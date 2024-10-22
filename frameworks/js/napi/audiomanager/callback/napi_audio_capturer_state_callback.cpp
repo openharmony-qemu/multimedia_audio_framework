@@ -55,7 +55,7 @@ void NapiAudioCapturerStateCallback::SaveCallbackReference(napi_value args)
 }
 
 void NapiAudioCapturerStateCallback::OnCapturerStateChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     AUDIO_INFO_LOG("OnCapturerStateChange is called");
 
@@ -63,9 +63,9 @@ void NapiAudioCapturerStateCallback::OnCapturerStateChange(
     std::unique_ptr<AudioCapturerStateJsCallback> cb = std::make_unique<AudioCapturerStateJsCallback>();
     CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
 
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
     for (const auto &changeInfo : audioCapturerChangeInfos) {
-        capturerChangeInfos.push_back(std::make_unique<AudioCapturerChangeInfo>(*changeInfo));
+        capturerChangeInfos.push_back(std::make_shared<AudioCapturerChangeInfo>(*changeInfo));
     }
 
     cb->callback = capturerStateCallback_;

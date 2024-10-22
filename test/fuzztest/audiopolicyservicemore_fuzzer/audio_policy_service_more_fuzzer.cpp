@@ -230,7 +230,7 @@ void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)
         insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
     GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
 
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     unique_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = make_unique<AudioDeviceDescriptor>();
     GetServerPtr()->audioPolicyService_.MoveToNewInputDevice(*audioCapturerChangeInfos.begin(), remoteDeviceDescriptor);
@@ -333,7 +333,7 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.SetA2dpDeviceVolume("activeBTDevice_1", volumeLevel, true);
     GetServerPtr()->audioPolicyService_.SetA2dpDeviceVolume("activeBTDevice_1", volumeLevel, false);
     GetServerPtr()->audioPolicyService_.OnMicrophoneBlockedUpdate(DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_UNBLOCKED);
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     for (auto &capturerChangeInfo : audioCapturerChangeInfos) {
         capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
@@ -382,7 +382,7 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     audioRendererChangeInfo.rendererInfo = rendererInfo;
     GetServerPtr()->audioPolicyService_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     GetServerPtr()->audioPolicyService_.streamCollector_.audioRendererChangeInfos_.
-        push_back(make_unique<AudioRendererChangeInfo>(audioRendererChangeInfo));
+        push_back(make_shared<AudioRendererChangeInfo>(audioRendererChangeInfo));
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->WaitForConnectionCompleted();
     std::string dumpString = "";
     GetServerPtr()->audioPolicyService_.AudioStreamDump(dumpString);
@@ -446,7 +446,7 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     ads.networkId_ = LOCAL_NETWORK_ID;
     ads.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     GetServerPtr()->audioPolicyService_.GetSinkName(ads, SESSIONID_32);
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->sessionId = SESSIONID_32;
     rendererChangeInfo->outputDeviceInfo = newDeviceInfo;
     vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices =
@@ -454,7 +454,7 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.
         MoveToNewOutputDevice(rendererChangeInfo, outputDevices, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     std::unique_ptr<AudioDeviceDescriptor> adc = std::make_unique<AudioDeviceDescriptor>();
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     GetServerPtr()->audioPolicyService_.
         ActivateA2dpDevice(adc, audioRendererChangeInfos,  AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);

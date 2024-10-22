@@ -226,10 +226,10 @@ public:
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
 
     int32_t GetCurrentRendererChangeInfos(
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
 
     int32_t GetCurrentCapturerChangeInfos(
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
                                     StreamUsage streamUsage);

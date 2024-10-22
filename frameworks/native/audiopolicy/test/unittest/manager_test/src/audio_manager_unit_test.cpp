@@ -1813,7 +1813,7 @@ HWTEST(AudioManagerUnitTest, SetMute_006, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioRendererOptions rendererOptions = {};
     AppInfo appInfo = {};
     appInfo.appUid = static_cast<int32_t>(getuid());
@@ -1853,7 +1853,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SetLowPowerVolume_002, TestSize.Level1)
 {
     int32_t streamId = 0;
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioRendererOptions rendererOptions = {};
     AppInfo appInfo = {};
     appInfo.appUid = static_cast<int32_t>(getuid());
@@ -1892,7 +1892,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_002, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SetLowPowerVolume_003, TestSize.Level1)
 {
     int32_t streamId = 0;
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioCapturerOptions capturerOptions = {};
     AppInfo appInfo = {};
     appInfo.appUid = static_cast<int32_t>(getuid());
@@ -1931,7 +1931,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_003, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioRendererOptions rendererOptions = {};
     AppInfo appInfo = {};
     appInfo.appUid = static_cast<int32_t>(getuid());
@@ -1974,7 +1974,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, GetLowPowerVolume_002, TestSize.Level1)
 {
     int32_t streamId = 0;
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioCapturerOptions capturerOptions = {};
     AppInfo appInfo = {};
     appInfo.appUid = static_cast<int32_t>(getuid());
@@ -2017,7 +2017,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_002, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioRendererOptions rendererOptions = {};
     AppInfo appInfo = {};
     appInfo.appUid = static_cast<int32_t>(getuid());
@@ -2060,7 +2060,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
 {
     int32_t streamId = 0;
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfo;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfo;
     AudioCapturerOptions capturerOptions = {};
     AppInfo appInfo = {};
     appInfo.appUid = static_cast<int32_t>(getuid());

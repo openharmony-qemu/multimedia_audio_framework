@@ -47,8 +47,8 @@ public:
     int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &outputDeviceInfo);
     int32_t UpdateRendererPipeInfo(const int32_t sessionId, const AudioPipeType pipeType);
     int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &inputDeviceInfo);
-    int32_t GetCurrentRendererChangeInfos(std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
-    int32_t GetCurrentCapturerChangeInfos(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    int32_t GetCurrentRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
+    int32_t GetCurrentCapturerChangeInfos(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     bool IsStreamActive(AudioStreamType volumeType);
@@ -82,8 +82,8 @@ private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
     std::map<std::pair<int32_t, int32_t>, int32_t> capturerStatequeue_;
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos_;
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos_;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos_;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos_;
     std::unordered_map<int32_t, std::shared_ptr<AudioClientTracker>> clientTracker_;
     static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
@@ -100,12 +100,12 @@ private:
     void WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriterRenderStreamChangeSysEvent(AudioStreamChangeInfo &streamChangeInfo);
     void WriterCaptureStreamChangeSysEvent(AudioStreamChangeInfo &streamChangeInfo);
-    void WriteRenderStreamReleaseSysEvent(const std::unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo);
-    void WriteCaptureStreamReleaseSysEvent(const std::unique_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfo);
+    void WriteRenderStreamReleaseSysEvent(const std::shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo);
+    void WriteCaptureStreamReleaseSysEvent(const std::shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfo);
     void SetRendererStreamParam(AudioStreamChangeInfo &streamChangeInfo,
-        std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+        std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
-        std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
+        std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
     void RegisteredRendererTrackerClientDied(const int32_t uid);
     void RegisteredCapturerTrackerClientDied(const int32_t uid);
     void SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);

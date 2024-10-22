@@ -194,9 +194,9 @@ public:
     static napi_status SetValueBlockedDeviceAction(const napi_env& env, const MicrophoneBlockedInfo &action,
         napi_value &result);
     static napi_status SetRendererChangeInfos(const napi_env &env,
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &changeInfos, napi_value &result);
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &changeInfos, napi_value &result);
     static napi_status SetCapturerChangeInfos(const napi_env &env,
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &changeInfos, napi_value &result);
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &changeInfos, napi_value &result);
     static napi_status SetEffectInfo(const napi_env &env,
         const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result);
     static napi_status GetAudioInterrupt(const napi_env &env, AudioInterrupt &audioInterrupt, napi_value in);

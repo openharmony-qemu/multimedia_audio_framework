@@ -2059,8 +2059,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetCapturerStreamDump_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetCapturerStreamDump_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
 
-    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
-    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo2 = make_unique<AudioCapturerChangeInfo>();
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo2 = make_shared<AudioCapturerChangeInfo>();
 
     AudioCapturerInfo capturerInfo;
     capturerInfo.capturerFlags = STREAM_FLAG_NORMAL;
@@ -2220,7 +2220,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_002, TestSi
     deviceDescriptorVector.push_back(audioDeviceDescriptor);
 
     // dummy audioRendererChangeInfos_
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     ASSERT_NE(nullptr, rendererChangeInfo) << "audioDeviceDescriptor is nullptr.";
     rendererChangeInfo->clientUID = getuid();
     rendererChangeInfo->sessionId = TEST_SESSIONID;
@@ -2230,7 +2230,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_002, TestSi
     EXPECT_EQ(SUCCESS, result);
 
     GetServerPtr()->audioPolicyService_.streamCollector_.audioRendererChangeInfos_.clear();
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo2 = make_unique<AudioRendererChangeInfo>();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo2 = make_shared<AudioRendererChangeInfo>();
     ASSERT_NE(nullptr, rendererChangeInfo2) << "audioDeviceDescriptor is nullptr.";
     rendererChangeInfo2->clientUID = getuid();
     rendererChangeInfo2->sessionId = 0;
@@ -2240,7 +2240,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_002, TestSi
     EXPECT_EQ(SUCCESS, result);
 
     GetServerPtr()->audioPolicyService_.streamCollector_.audioRendererChangeInfos_.clear();
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo3 = make_unique<AudioRendererChangeInfo>();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo3 = make_shared<AudioRendererChangeInfo>();
     ASSERT_NE(nullptr, rendererChangeInfo3) << "audioDeviceDescriptor is nullptr.";
     rendererChangeInfo3->clientUID = getuid() + 1;
     rendererChangeInfo3->sessionId = 0;

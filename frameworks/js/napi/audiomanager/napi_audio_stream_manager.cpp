@@ -220,7 +220,7 @@ napi_value NapiAudioStreamMgr::GetCurrentAudioRendererInfosSync(napi_env env, na
     }
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr!= nullptr, result, "napiStreamMgr is nullptr");
 
-    vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     int32_t ret = napiStreamMgr->audioStreamMngr_->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, result, "GetCurrentRendererChangeInfos failure!");
 
@@ -268,7 +268,7 @@ napi_value NapiAudioStreamMgr::GetCurrentAudioCapturerInfosSync(napi_env env, na
     }
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr!= nullptr, result, "napiStreamMgr is nullptr");
 
-    vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t ret = napiStreamMgr->audioStreamMngr_->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     if (ret != AUDIO_OK) {
         AUDIO_ERR_LOG("GetCurrentCapturerChangeInfos failure!");

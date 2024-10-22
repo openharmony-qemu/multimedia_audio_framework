@@ -32,12 +32,12 @@ public:
     void SaveCallbackReference(napi_value args);
     void RemoveCallbackReference();
     void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
 
 private:
     struct AudioRendererStateJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> changeInfos;
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> changeInfos;
         std::string callbackName = "unknown";
         napi_threadsafe_function amRendererSatTsfn = nullptr;
     };
