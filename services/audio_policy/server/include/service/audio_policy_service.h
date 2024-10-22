@@ -1030,6 +1030,7 @@ private:
     void CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     bool GetAudioEffectOffloadFlag();
+    void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
 
     bool CheckSpatializationAndEffectState();
 
