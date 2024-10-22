@@ -38,9 +38,13 @@ private:
     struct AudioRendererStateJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> changeInfos;
+        std::string callbackName = "unknown";
+        napi_threadsafe_function amRendererSatTsfn = nullptr;
     };
 
     void OnJsCallbackRendererState(std::unique_ptr<AudioRendererStateJsCallback> &jsCb);
+    static void SafeJsCallbackRendererStateWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void RendererStateTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

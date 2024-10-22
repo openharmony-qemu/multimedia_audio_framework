@@ -39,9 +39,12 @@ private:
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         MicStateChangeEvent micStateChangeEvent;
+        napi_threadsafe_function amMicStateChgTsfn = nullptr;
     };
 
     void OnJsCallbackMicStateChange(std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb);
+    static void MicStateChangeTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackMicStateChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
