@@ -6740,18 +6740,24 @@ DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)
 
 void AudioPolicyService::PublishSafeVolumeNotification(int32_t notificationId)
 {
-    void* libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
+    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
     if (libHandle == nullptr) {
         AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
         return;
     }
-    CreateSafeVolumeNotification* createSafeVolumeNotificationImpl =
+    CreateSafeVolumeNotification *createSafeVolumeNotificationImpl =
         reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
     if (createSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
+        dlclose(libHandle);
         return;
     }
-    AudioSafeVolumeNotification* audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
+    AudioSafeVolumeNotification *audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
+    if (audioSafeVolumeNotificationImpl == nullptr) {
+        AUDIO_ERR_LOG("audioSafeVolumeNotificationImpl is nullptr %{public}s", __func__);
+        dlclose(libHandle);
+        return;
+    }
     audioSafeVolumeNotificationImpl->PublishSafeVolumeNotification(notificationId);
     delete audioSafeVolumeNotificationImpl;
     dlclose(libHandle);
@@ -6759,18 +6765,24 @@ void AudioPolicyService::PublishSafeVolumeNotification(int32_t notificationId)
 
 void AudioPolicyService::CancelSafeVolumeNotification(int32_t notificationId)
 {
-    void* libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
+    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
     if (libHandle == nullptr) {
         AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
         return;
     }
-    CreateSafeVolumeNotification* createSafeVolumeNotificationImpl =
+    CreateSafeVolumeNotification *createSafeVolumeNotificationImpl =
         reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
     if (createSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
+        dlclose(libHandle);
         return;
     }
-    AudioSafeVolumeNotification* audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
+    AudioSafeVolumeNotification *audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
+    if (audioSafeVolumeNotificationImpl == nullptr) {
+        AUDIO_ERR_LOG("audioSafeVolumeNotificationImpl is nullptr %{public}s", __func__);
+        dlclose(libHandle);
+        return;
+    }
     audioSafeVolumeNotificationImpl->CancelSafeVolumeNotification(notificationId);
     delete audioSafeVolumeNotificationImpl;
     dlclose(libHandle);
