@@ -1259,6 +1259,11 @@ int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
 {
     return SUCCESS;
 }
+
+void PaRendererStreamImpl::BlockStream() noexcept
+{
+    return;
+}
 // offload end
 
 int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)

@@ -69,6 +69,7 @@ public:
     int32_t ReturnIndex(int32_t index) override;
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
     int32_t SetClientVolume(float clientVolume) override;
+    void BlockStream() noexcept override;
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);

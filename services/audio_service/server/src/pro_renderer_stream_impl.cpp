@@ -714,5 +714,10 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     handleTimeModel_.ConfigSampleRate(currentRate_);
 }
+
+void ProRendererStreamImpl::BlockStream() noexcept
+{
+    isBlock_ = true;
+}
 } // namespace AudioStandard
 } // namespace OHOS
