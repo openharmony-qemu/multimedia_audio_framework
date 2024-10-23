@@ -890,16 +890,16 @@ bool AudioServer::CheckAndPrintStacktrace(const std::string &key)
 {
     AUDIO_WARNING_LOG("Start handle forced xcollie event for key %{public}s", key.c_str());
     if (key == "dump_pulseaudio_stacktrace") {
-        AudioXCollie audioXCollie("AudioServer::PrintStackTrace", 1); // 1 means XCOLLIE_FLAG_LOG
+        AudioXCollie audioXCollie("AudioServer::PrintStackTrace", 1);
         sleep(2); // sleep 2 seconds to dump stacktrace
         return true;
     } else if (key == "recovery_audio_server") {
-        AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+        AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_RECOVERY);
         sleep(2); // sleep 2 seconds to dump stacktrace
         return true;
     } else if (key == "dump_pa_stacktrace_and_kill") {
-        uint32_t targetFlag = 3; // 3 means LOG & RECOVERY
-        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr, targetFlag);
+        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         sleep(2); // sleep 2 seconds to dump stacktrace
         return true;
     }
