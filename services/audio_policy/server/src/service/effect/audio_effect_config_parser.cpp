@@ -512,7 +512,7 @@ static void LoadPreProcessCfg(OriginalEffectConfig &result, xmlNode *secondNode)
                 maxExtraNum = atoi(reinterpret_cast<char*>(xmlGetProp(currNode,
                     reinterpret_cast<const xmlChar*>("maxExtSceneNumber"))));
             }
-            result.preProcess.maxExtSceneNum = maxExtraNum;
+            result.preProcess.maxExtSceneNum = static_cast<uint32_t>(maxExtraNum);
             LoadPreStreamScenesCheck(result.preProcess.normalScenes, currNode,
                 countPreSecondNode[INDEX_PRE_NORMAL_SCENE]);
         } else {
@@ -757,7 +757,7 @@ static void LoadPostProcessCfg(OriginalEffectConfig &result, xmlNode *secondNode
                 maxExtraNum = atoi(reinterpret_cast<char*>(xmlGetProp(currNode,
                     reinterpret_cast<const xmlChar*>("maxExtSceneNumber"))));
             }
-            result.postProcess.maxExtSceneNum = maxExtraNum;
+            result.postProcess.maxExtSceneNum = static_cast<uint32_t>(maxExtraNum);
             LoadPostStreamScenesCheck(result.postProcess.normalScenes, currNode,
                 countPostSecondNode[INDEX_POST_NORMAL_SCENE]);
         } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("effectSceneStreams"))) {
