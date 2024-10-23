@@ -1118,6 +1118,9 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
     float systemVol = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
     AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d systemVol:"
         "%{public}f]", streamIndex_, volume, volumeType, systemVol);
+    if (IsVolumeSame(MIN_FLOAT_VOLUME, volume, AUDIO_VOLOMUE_EPSILON)) {
+        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.0f);
+    }
     return stream_->OffloadSetVolume(systemVol * volume);
 }
 

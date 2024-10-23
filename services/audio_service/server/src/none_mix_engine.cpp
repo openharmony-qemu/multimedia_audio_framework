@@ -36,6 +36,7 @@ const std::string THREAD_NAME = "noneMixThread";
 const std::string VOIP_SINK_NAME = "voip";
 const std::string DIRECT_SINK_NAME = "direct";
 const char *SINK_ADAPTER_NAME = "primary";
+static const int32_t XCOLLIE_FLAG_DEFAULT = (1 | 2); // dump stack and kill self
 
 NoneMixEngine::NoneMixEngine()
     : isVoip_(false),
@@ -142,7 +143,7 @@ int32_t NoneMixEngine::Stop()
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
-    ret = SinkStopTimeOut();
+    ret = StopAudioSink();
     isStart_ = false;
     return ret;
 }
@@ -153,23 +154,20 @@ void NoneMixEngine::PauseAsync()
     if (playbackThread_ && playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->PauseAsync();
     }
-    int32_t ret = SinkStopTimeOut();
+    int32_t ret = StopAudioSink();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("sink stop failed.ret:%{public}d", ret);
     }
     isStart_ = false;
 }
 
-int32_t NoneMixEngine::SinkStopTimeOut()
+int32_t NoneMixEngine::StopAudioSink()
 {
     int32_t ret = SUCCESS;
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file,flag 2 die when timeout, restart server
-    AudioXCollie audioXCollie(
-        "NoneMixEngine::Stop", DIRECT_STOP_TIMEOUT_IN_SEC,
-        [this](void *) { AUDIO_ERR_LOG("%{public}d renderSink_ stop timeout, trigger signal", isVoip_); }, nullptr,
-        XcollieFlag);
     if (renderSink_ && renderSink_->IsInited()) {
         ret = renderSink_->Stop();
+    } else {
+        AUDIO_ERR_LOG("sink is null or not init");
     }
     return ret;
 }
@@ -177,7 +175,11 @@ int32_t NoneMixEngine::SinkStopTimeOut()
 int32_t NoneMixEngine::Pause()
 {
     AUDIO_INFO_LOG("Enter");
-    int32_t ret = SUCCESS;
+
+    AudioXCollie audioXCollie(
+        "NoneMixEngine::Pause", DIRECT_STOP_TIMEOUT_IN_SEC,
+        [this](void *) { AUDIO_ERR_LOG("%{public}d pause timeout", isVoip_); }, nullptr, XCOLLIE_FLAG_DEFAULT);
+
     writeCount_ = 0;
     failedCount_ = 0;
     if (playbackThread_) {
@@ -189,7 +191,7 @@ int32_t NoneMixEngine::Pause()
             fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Pause();
     }
-    ret = SinkStopTimeOut();
+    int32_t ret = StopAudioSink();
     isStart_ = false;
     return ret;
 }

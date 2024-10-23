@@ -2463,7 +2463,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
-            int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos, reason);
+            int32_t ret = ActivateA2dpDeviceWhenDescEnabled(descs.front(), rendererChangeInfos, reason);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
         } else if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             int32_t ret = HandleScoOutputDeviceFetched(descs.front(), rendererChangeInfos);
@@ -2486,6 +2486,16 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     if (runningStreamCount == 0) {
         FetchOutputDeviceWhenNoRunningStream();
     }
+}
+
+int32_t AudioPolicyService::ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
+    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (desc->isEnable_) {
+        AUDIO_INFO_LOG("descs front is enabled");
+        return ActivateA2dpDevice(desc, rendererChangeInfos, reason);
+    }
+    return SUCCESS;
 }
 
 bool AudioPolicyService::IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
@@ -7334,11 +7344,30 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
             a2dpOffloadFlag_ = receiveOffloadFlag;
         }
     } else if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
-        GetA2dpOffloadCodecAndSendToDsp();
         std::vector<int32_t> allSessions;
         GetAllRunningStreamSession(allSessions);
         OffloadStartPlaying(allSessions);
         UpdateEffectBtOffloadSupported(true);
+        ResetOffloadModeOnSpatializationChanged(allSessions);
+        GetA2dpOffloadCodecAndSendToDsp();
+    }
+}
+
+void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions)
+{
+    AudioSpatializationState spatialState =
+        AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState();
+    bool effectOffloadFlag = GetAudioEffectOffloadFlag();
+    AUDIO_INFO_LOG("spatialization: %{public}d, headTracking: %{public}d, effectOffloadFlag: %{public}d",
+        spatialState.spatializationEnabled, spatialState.headTrackingEnabled, effectOffloadFlag);
+    if (spatialState.spatializationEnabled) {
+        if (effectOffloadFlag) {
+            for (auto it = allSessions.begin(); it != allSessions.end(); it++) {
+                OffloadStreamSetCheck(*it);
+            }
+        } else {
+            OffloadStreamReleaseCheck(*offloadSessionID_);
+        }
     }
 }
 #endif
@@ -7602,6 +7631,9 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
     GetAllRunningStreamSession(allSessions);
     OffloadStopPlaying(allSessions);
     a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    for (auto it = allSessions.begin(); it != allSessions.end(); ++it) {
+        ResetOffloadMode(*it);
+    }
 }
 
 int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)

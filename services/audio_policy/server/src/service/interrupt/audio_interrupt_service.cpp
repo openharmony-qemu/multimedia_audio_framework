@@ -272,6 +272,12 @@ bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInter
         AUDIO_INFO_LOG("The incoming audio capturer should be denied!");
         return false;
     }
+    if (incomingInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP ||
+        activeInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP) {
+        AUDIO_INFO_LOG("STREAM_INTERNAL_FORCE_STOP! incomingInterrupt=%{public}d, activeInterrupt=%{public}d",
+            incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
+        return false;
+    }
     bool result = false;
     result = CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
     if (result) {
@@ -296,6 +302,14 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
         return false;
+    }
+    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SLIENT) {
+        AUDIO_INFO_LOG("incoming stream is explicitly SLIENT");
+        return true;
+    }
+    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+        AUDIO_INFO_LOG("incoming stream is explicitly MIX_WITH_OTHERS");
+        return true;
     }
     if (!sessionService_->IsAudioSessionActivated(incomingInterrupt.pid)) {
         AUDIO_INFO_LOG("No active audio session for the pid of incomming stream");
@@ -330,6 +344,10 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
         return false;
+    }
+    if (activeInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SLIENT) {
+        AUDIO_INFO_LOG("The concurrency mode of active session is SLIENT");
+        return true;
     }
     if (!sessionService_->IsAudioSessionActivated(activeInterrupt.pid)) {
         AUDIO_INFO_LOG("No active audio session for the pid of active stream");
@@ -568,7 +586,8 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
     return false;
 }
 
-int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
+int32_t AudioInterruptService::ActivateAudioInterrupt(
+    const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy)
 {
     std::unique_lock<std::mutex> lock(mutex_);
 
@@ -579,7 +598,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, cons
         incomingSessionId, audioInterrupt.pid, streamType,
         audioInterrupt.streamUsage, (audioInterrupt.audioFocusType).sourceType);
 
-    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId)) {
+    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId) && !isUpdatedAudioStrategy) {
         AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
         return SUCCESS;
     }
@@ -991,6 +1010,10 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
             removeFocusInfo = true;
             break;
         case INTERRUPT_HINT_PAUSE:
+            if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
+                incomingConcurrentSources)) {
+                break;
+            }
             if (iterActive->second == ACTIVE || iterActive->second == DUCK) {
                 iterActive->second = PAUSE;
                 interruptEvent.hintType = focusEntry.hintType;
@@ -1188,13 +1211,15 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
             CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) {
             continue;
         }
-        if (focusEntry.isReject) {
+        if ((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject) {
             SourceType existSourceType = (iterActive->first).audioFocusType.sourceType;
             std::vector<SourceType> existConcurrentSources = (iterActive->first).currencySources.sourcesTypes;
             if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
                 incomingConcurrentSources)) {
                 continue;
             }
+        }
+        if (focusEntry.isReject) {
             if (GetClientTypeBySessionId((iterActive->first).sessionId) == CLIENT_TYPE_GAME) {
                 incomingState = PAUSE;
                 AUDIO_INFO_LOG("incomingState: %{public}d", incomingState);

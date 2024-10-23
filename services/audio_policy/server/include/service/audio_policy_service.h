@@ -831,6 +831,10 @@ private:
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    
+    int32_t ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void ResetToSpeaker(DeviceType devType);
 
@@ -1030,6 +1034,7 @@ private:
     void CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     bool GetAudioEffectOffloadFlag();
+    void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
 
     bool CheckSpatializationAndEffectState();
 

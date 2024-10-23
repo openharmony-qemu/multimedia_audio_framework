@@ -56,6 +56,8 @@ public:
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0);
 
+    AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
+
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
@@ -142,7 +144,8 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0);
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+    int32_t ActivateAudioInterrupt(
+        const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 

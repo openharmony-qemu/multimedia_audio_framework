@@ -42,6 +42,8 @@ public:
 
     virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
+    virtual AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) = 0;
+
     virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
 
     virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
@@ -114,7 +116,8 @@ public:
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
-        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+        const int32_t zoneID = 0 /* default value: 0 -- local device */,
+        const bool isUpdatedAudioStrategy = false /* default value: false -- is update audio strategy */) = 0;
 
     virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
