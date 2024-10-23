@@ -1816,17 +1816,17 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     // for now, use sample_spec from sink
     // update input channellayout and sample spec
     pa_channel_map ichannelmap;
-    ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, ichannelmap);
+    ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &ichannelmap);
     if((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &ichannelmap))) {
         AUDIO_INFO_LOG("new sceneType: [%{public}s], input channels to the resampler: %{public}d",
-            (char *)sceneType, u->bufferAttr->numChanOut);
+            (char *)sinkSceneType, u->bufferAttr->numChanOut);
         pa_sample_spec ispec = u->sink->sample_spec;
         ispec.channels = (uint8_t)u->bufferAttr->numChanOut;
         pa_channel_spec sink_spec = *(pa_resampler_output_sample_spec(resampler));
         pa_channel_map sink_channelmap = (*pa_resampler_output_channel_map(resampler));
         pa_resampler_free(resampler);
         resampler = pa_resampler_new(
-            si->core->mempool,
+            u->sink->core->mempool,
             &ispec, &ichannelmap,
             &sink_spec, &sink_channelmap,
             si->core->lfe_crossover_freq,
@@ -1952,8 +1952,8 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
                 !pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
                 AUDIO_INFO_LOG("sceneType: [%{public}s], new output channels from the resampler: %{public}d",
                     (char *)sceneType, sink_spec.channels);
-                pa_sample_spec ispec = *(pa_input_sample_spec(resampler));
-                pa_channel_map ichannelmap = *(pa_input_channel_map(resampler));
+                pa_sample_spec ispec = *(pa_resampler_input_sample_spec(resampler));
+                pa_channel_map ichannelmap = *(pa_resampler_input_channel_map(resampler));
                 pa_resampler_free(resampler);
                 resampler = pa_resampler_new(
                     si->core->mempool,
