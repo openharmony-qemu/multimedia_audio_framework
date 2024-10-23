@@ -1813,6 +1813,25 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     if (resampler == NULL) {
         return;
     }
+    // for now, use sample_spec from sink
+    // update input channellayout and sample spec
+    pa_channel_map ichannelmap;
+    ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, ichannelmap);
+    if((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &ichannelmap))) {
+        AUDIO_INFO_LOG("new sceneType: [%{public}s], input channels to the resampler: %{public}d",
+            (char *)sceneType, u->bufferAttr->numChanOut);
+        pa_sample_spec ispec = u->sink->sample_spec;
+        ispec.channels = (uint8_t)u->bufferAttr->numChanOut;
+        pa_channel_spec sink_spec = *(pa_resampler_output_sample_spec(resampler));
+        pa_channel_map sink_channelmap = (*pa_resampler_output_channel_map(resampler));
+        pa_resampler_free(resampler);
+        resampler = pa_resampler_new(
+            si->core->mempool,
+            &ispec, &ichannelmap,
+            &sink_spec, &sink_channelmap,
+            si->core->lfe_crossover_freq,
+            PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+    }
     const pa_sample_spec *ispec = pa_resampler_input_sample_spec(resampler);
     const pa_sample_spec *ospec = pa_resampler_output_sample_spec(resampler);
     size_t inBufferLen = u->bufferAttr->frameLen * ispec->channels * sizeof(float);
@@ -1912,19 +1931,14 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
     const void* sceneType = NULL;
     void* count = NULL;
     while ((pa_hashmap_iterate(sceneToCountMap, &count, &sceneType))) {
-        uint32_t processChannels = DEFAULT_NUM_CHANNEL;
-        uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
-        EffectChainManagerReturnEffectChannelInfo((char *)sceneType, &processChannels, &processChannelLayout);
-        pa_channel_map ichannelmap;
-        ConvertChLayoutToPaChMap(processChannelLayout, &ichannelmap);
-        pa_sample_spec ispec = sink_spec;
-        ispec.channels = processChannels;
         pa_resampler* resampler = NULL;
         resampler = (pa_resampler*)pa_hashmap_get(sceneToResamplerMap, sceneType);
         if (resampler == NULL) {
             // for now, use sample_spec from sink
-            AUDIO_INFO_LOG("new sceneType: [%{public}s], input channels: %{public}d, output channels: %{public}d",
-            (char *)sceneType, processChannels, sink_spec.channels);
+            AUDIO_INFO_LOG("new sceneType: [%{public}s], output channels from the resampler: %{public}d",
+                (char *)sceneType, sink_spec.channels);
+            pa_sample_spec ispec = sink_spec;
+            pa_channel_map ichannelmap = sink_channelmap;
             resampler = pa_resampler_new(
                 si->core->mempool,
                 &ispec, &ichannelmap,
@@ -1936,6 +1950,10 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
         } else {
             if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
                 !pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
+                AUDIO_INFO_LOG("sceneType: [%{public}s], new output channels from the resampler: %{public}d",
+                    (char *)sceneType, sink_spec.channels);
+                pa_sample_spec ispec = *(pa_input_sample_spec(resampler));
+                pa_channel_map ichannelmap = *(pa_input_channel_map(resampler));
                 pa_resampler_free(resampler);
                 resampler = pa_resampler_new(
                     si->core->mempool,
