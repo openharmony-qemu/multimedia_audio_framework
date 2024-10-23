@@ -39,6 +39,13 @@ public:
         lastAppsUid_ = {};
 
         Trace traceRunningLock("AudioRunningLockManager:runningLock_->Lock");
+
+        int32_t xcollieFlag = (1 | 2);
+        uint32_t lockTimeOutSeconds = 8;
+        AudioXCollie audioXCollie("PowerMgr::RunningLock::Lock", lockTimeOutSeconds,
+            [](void *) {
+                AUDIO_ERR_LOG("PowerMgr Lock timeout");
+            }, nullptr, xcollieFlag);
         auto ret = runningLock_->Lock(TimeoutMs);
         isLocked_ = true;
         AUDIO_INFO_LOG("Lock runninglock, ret: %{public}d", ret);
