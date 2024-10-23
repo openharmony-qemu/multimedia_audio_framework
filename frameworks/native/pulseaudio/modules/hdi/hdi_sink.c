@@ -1822,14 +1822,14 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
             (char *)sinkSceneType, u->bufferAttr->numChanOut);
         pa_sample_spec ispec = u->sink->sample_spec;
         ispec.channels = (uint8_t)u->bufferAttr->numChanOut;
-        pa_channel_spec sink_spec = *(pa_resampler_output_sample_spec(resampler));
+        pa_sample_spec sink_spec = *(pa_resampler_output_sample_spec(resampler));
         pa_channel_map sink_channelmap = (*pa_resampler_output_channel_map(resampler));
         pa_resampler_free(resampler);
         resampler = pa_resampler_new(
             u->sink->core->mempool,
             &ispec, &ichannelmap,
             &sink_spec, &sink_channelmap,
-            si->core->lfe_crossover_freq,
+            u->sink->core->lfe_crossover_freq,
             PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
     }
     const pa_sample_spec *ispec = pa_resampler_input_sample_spec(resampler);
