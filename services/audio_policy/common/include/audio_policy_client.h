@@ -67,9 +67,9 @@ public:
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
     virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
     virtual void OnRendererStateChange(
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
     virtual void OnCapturerStateChange(
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
     virtual void OnRendererDeviceChange(const uint32_t sessionId,
         const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
     virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,

@@ -996,7 +996,7 @@ void AudioPolicyProxy::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamCha
 }
 
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
-    vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1011,7 +1011,7 @@ int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
 
     int32_t size = reply.ReadInt32();
     while (size > 0) {
-        unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
+        shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
         CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");
         rendererChangeInfo->Unmarshalling(reply);
         audioRendererChangeInfos.push_back(move(rendererChangeInfo));
@@ -1022,7 +1022,7 @@ int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
 }
 
 int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
-    vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1039,7 +1039,7 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
 
     int32_t size = reply.ReadInt32();
     while (size > 0) {
-        unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+        shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
         CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");
         capturerChangeInfo->Unmarshalling(reply);
         audioCapturerChangeInfos.push_back(move(capturerChangeInfo));

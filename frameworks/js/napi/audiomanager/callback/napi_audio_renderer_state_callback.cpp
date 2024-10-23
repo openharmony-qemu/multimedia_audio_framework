@@ -61,7 +61,7 @@ void NapiAudioRendererStateCallback::SaveCallbackReference(napi_value args)
 }
 
 void NapiAudioRendererStateCallback::OnRendererStateChange(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     AUDIO_PRERELEASE_LOGI("OnRendererStateChange entered");
 
@@ -72,9 +72,9 @@ void NapiAudioRendererStateCallback::OnRendererStateChange(
     std::unique_ptr<AudioRendererStateJsCallback> cb = std::make_unique<AudioRendererStateJsCallback>();
     CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
 
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     for (const auto &changeInfo : audioRendererChangeInfos) {
-        rendererChangeInfos.push_back(std::make_unique<AudioRendererChangeInfo>(*changeInfo));
+        rendererChangeInfos.push_back(std::make_shared<AudioRendererChangeInfo>(*changeInfo));
     }
 
     cb->callback = rendererStateCallback_;

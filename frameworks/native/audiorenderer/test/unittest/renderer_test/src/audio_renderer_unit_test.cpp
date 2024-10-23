@@ -5328,7 +5328,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Max_Renderer_Instances_001, TestSiz
     AudioRendererOptions rendererOptions;
     AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
     vector<unique_ptr<AudioRenderer>> rendererList;
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos = {};
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos = {};
     AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
 
     // Create renderer instance with the maximum number of configured instances

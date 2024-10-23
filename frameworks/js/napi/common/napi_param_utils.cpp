@@ -908,7 +908,7 @@ napi_status NapiParamUtils::SetValueBlockedDeviceAction(const napi_env& env, con
 }
 
 napi_status NapiParamUtils::SetRendererChangeInfos(const napi_env &env,
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &changeInfos, napi_value &result)
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &changeInfos, napi_value &result)
 {
     int32_t position = 0;
     napi_value jsChangeInfoObj = nullptr;
@@ -933,7 +933,7 @@ napi_status NapiParamUtils::SetRendererChangeInfos(const napi_env &env,
 }
 
 napi_status NapiParamUtils::SetCapturerChangeInfos(const napi_env &env,
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &changeInfos, napi_value &result)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &changeInfos, napi_value &result)
 {
     int32_t position = 0;
     napi_value jsChangeInfoObj = nullptr;

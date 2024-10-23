@@ -465,7 +465,7 @@ void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
 }
 
 void AudioPolicyClientStubImpl::OnRendererStateChange(
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> callbacks;
     {
@@ -541,7 +541,7 @@ size_t AudioPolicyClientStubImpl::GetCapturerStateChangeCallbackSize() const
 }
 
 void AudioPolicyClientStubImpl::OnCapturerStateChange(
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     std::vector<std::shared_ptr<AudioCapturerStateChangeCallback>> tmpCallbackList;
     {

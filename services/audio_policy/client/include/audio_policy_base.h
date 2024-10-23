@@ -165,10 +165,10 @@ public:
     virtual int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) = 0;
 
     virtual int32_t GetCurrentRendererChangeInfos(
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
 
     virtual int32_t GetCurrentCapturerChangeInfos(
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 
     virtual int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
                                             StreamUsage streamUsage) = 0;

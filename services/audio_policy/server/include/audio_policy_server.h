@@ -264,10 +264,10 @@ public:
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
 
     int32_t GetCurrentRendererChangeInfos(
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
 
     int32_t GetCurrentCapturerChangeInfos(
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
     void RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id);
 

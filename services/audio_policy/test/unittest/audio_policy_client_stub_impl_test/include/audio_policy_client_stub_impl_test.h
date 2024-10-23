@@ -81,7 +81,7 @@ class ConcreteAudioPreferredInputDeviceChangeCallback : public AudioPreferredInp
 
 class ConcreteAudioRendererStateChangeCallback : public AudioRendererStateChangeCallback {
     void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override {}
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override {}
 };
 
 class ConcreteDeviceChangeWithInfoCallback : public DeviceChangeWithInfoCallback {
@@ -93,7 +93,7 @@ class ConcreteDeviceChangeWithInfoCallback : public DeviceChangeWithInfoCallback
 
 class ConcreteAudioCapturerStateChangeCallback : public AudioCapturerStateChangeCallback {
     void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override {}
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override {}
 };
 
 class ConcreteHeadTrackingDataRequestedChangeCallback : public HeadTrackingDataRequestedChangeCallback {

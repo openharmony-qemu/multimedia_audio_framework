@@ -274,7 +274,7 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
         RendererStateChangeCallback = default;
         ~RendererStateChangeCallback = default;
     void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override
     {
         cout<<"OnRendererStateChange entered"<<endl;
     }
@@ -294,7 +294,7 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
         CapturerStateChangeCallback = default;
         ~CapturerStateChangeCallback = default;
     void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override
     {
         cout<<"OnCapturerStateChange entered"<<endl;
     }
@@ -306,13 +306,13 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
     ```
 4. 使用 **GetCurrentRendererChangeInfos** 获取所有当前正在运行的流渲染器信息，包括clientuid、sessionid、renderinfo、renderstate和输出设备详细信息。
     ```
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     int32_t currentRendererChangeInfo = audioStreamMgr->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     ```
 
 5. 使用 **GetCurrentCapturerChangeInfos** 获取所有当前正在运行的流捕获器信息，包括clientuid、sessionid、capturerInfo、capturerState和输入设备详细信息。
     ```
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t currentCapturerChangeInfo = audioStreamMgr->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     ```
     有关结构，请参阅[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) **audioRendererChangeInfos** 和 **audioCapturerChangeInfos**.

@@ -753,7 +753,7 @@ void AudioPolicyManagerStub::UpdateTrackerInternal(MessageParcel &data, MessageP
 void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
 {
     size_t size = 0;
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     int ret = GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub:GetRendererChangeInfos Error!!");
@@ -763,7 +763,7 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
 
     size = audioRendererChangeInfos.size();
     reply.WriteInt32(size);
-    for (const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
+    for (const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
         if (!rendererChangeInfo) {
             AUDIO_ERR_LOG("AudioPolicyManagerStub:Renderer change info null, something wrong!!");
             continue;
@@ -775,7 +775,7 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
 void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
 {
     size_t size = 0;
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t ret = GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub:GetCapturerChangeInfos Error!!");
@@ -785,7 +785,7 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
 
     size = audioCapturerChangeInfos.size();
     reply.WriteInt32(size);
-    for (const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
+    for (const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
         if (!capturerChangeInfo) {
             AUDIO_ERR_LOG("AudioPolicyManagerStub:Capturer change info null, something wrong!!");
             continue;

@@ -31,12 +31,12 @@ public:
     virtual ~NapiAudioCapturerStateCallback();
     void SaveCallbackReference(napi_value args);
     void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
 private:
     struct AudioCapturerStateJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> changeInfos;
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> changeInfos;
         std::string callbackName = "unknown";
         napi_threadsafe_function amacStateTsfn = nullptr;
     };

@@ -251,13 +251,13 @@ void AudioPolicyClientStub::HandlePreferredInputDeviceUpdated(MessageParcel &dat
 
 void AudioPolicyClientStub::HandleRendererStateChange(MessageParcel &data, MessageParcel &reply)
 {
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRenderChangeInfo;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRenderChangeInfo;
     int32_t size = data.ReadInt32();
     Trace trace("HandleRendererStateChange size:" + std::to_string(size));
     CHECK_AND_RETURN_LOG(size < STATE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     while (size > 0) {
-        std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+        std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
         if (rendererChangeInfo == nullptr) {
             AUDIO_ERR_LOG("AudioPolicyClientStub::HandleRendererStateChange, No memory!");
             return;
@@ -271,12 +271,12 @@ void AudioPolicyClientStub::HandleRendererStateChange(MessageParcel &data, Messa
 
 void AudioPolicyClientStub::HandleCapturerStateChange(MessageParcel &data, MessageParcel &reply)
 {
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfo;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfo;
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < STATE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     while (size > 0) {
-        std::unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_unique<AudioCapturerChangeInfo>();
+        std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
         if (capturerChangeInfo == nullptr) {
             AUDIO_ERR_LOG("AudioPolicyClientStub::HandleCapturerStateChange, No memory!");
             return;

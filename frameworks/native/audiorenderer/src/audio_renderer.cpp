@@ -90,7 +90,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
 
 int32_t AudioRenderer::CheckMaxRendererInstances()
 {
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     AUDIO_INFO_LOG("Audio current renderer change infos size: %{public}zu", audioRendererChangeInfos.size());
     int32_t maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
@@ -1323,7 +1323,7 @@ float AudioRendererPrivate::GetMaxStreamVolume() const
 
 int32_t AudioRendererPrivate::GetCurrentOutputDevices(DeviceInfo &deviceInfo) const
 {
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
     int32_t ret = GetAudioStreamId(sessionId);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, " Get sessionId failed");

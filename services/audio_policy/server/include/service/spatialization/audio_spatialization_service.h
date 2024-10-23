@@ -72,7 +72,7 @@ public:
     AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
-    void UpdateRendererInfo(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
+    void UpdateRendererInfo(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
     void InitSpatializationState();
     std::string GetCurrentDeviceAddress() const;
 private:

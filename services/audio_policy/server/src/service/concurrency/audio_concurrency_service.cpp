@@ -132,8 +132,8 @@ void AudioConcurrencyService::AudioConcurrencyClient::OnConcedeStream()
 }
 
 int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incomingPipeType,
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     AUDIO_DEBUG_LOG("ActivateAudioConcurrency incoming pipe %{public}d", incomingPipeType);
     if (concurrencyCfgMap_.empty()) {
