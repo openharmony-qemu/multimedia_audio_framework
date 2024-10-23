@@ -478,7 +478,7 @@ void AudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes &at
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = GenerateUniqueIDBySource(attr_.sourceType);
+    attrs.streamId = static_cast<int32_t>(GenerateUniqueIDBySource(attr_.sourceType));
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
@@ -900,7 +900,7 @@ int32_t AudioCapturerSourceInner::DoSetInputRoute(DeviceType inputDevice, AudioP
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = GenerateUniqueIDBySource(attr_.sourceType);
+    sink.ext.mix.streamId = static_cast<int32_t>(GenerateUniqueIDBySource(attr_.sourceType));
     sink.ext.mix.source = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     sink.ext.device.desc = (char *)"";
 
