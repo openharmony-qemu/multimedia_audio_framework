@@ -130,7 +130,7 @@ int32_t NoneMixEngine::Stop()
     AudioXCollie audioXCollie(
         "NoneMixEngine::Stop", DIRECT_STOP_TIMEOUT_IN_SEC,
         [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr, xCollieFlagDefault);
-        
+
     writeCount_ = 0;
     failedCount_ = 0;
     if (playbackThread_) {
