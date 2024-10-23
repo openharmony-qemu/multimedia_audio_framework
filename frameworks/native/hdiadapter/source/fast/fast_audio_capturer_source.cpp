@@ -472,7 +472,7 @@ int32_t FastAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
 
 int32_t FastAudioCapturerSourceInner::CheckPositionTime()
 {
-    int32_t tryCount = 20; // max try count is 20
+    int32_t tryCount = 50; // max try count
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
