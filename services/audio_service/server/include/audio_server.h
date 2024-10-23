@@ -194,6 +194,7 @@ private:
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
+    static constexpr int32_t VASSISTANT_UID = 3001;
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
     static uint32_t paDaemonTid_;

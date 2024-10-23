@@ -41,6 +41,7 @@
 #include "audio_manager_listener_proxy.h"
 #include "audio_service.h"
 #include "audio_schedule.h"
+#include "audio_info.h"
 #include "audio_utils.h"
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
@@ -1336,12 +1337,17 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
     if (config.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         config.isInnerCapturer = true;
         config.innerCapMode = LEGACY_INNER_CAP;
-        if (config.callerUid == MEDIA_SERVICE_UID) {
+        if (PermissionUtil::VerifyPermission(CAPTURE_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
+            AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission granted");
+            config.innerCapMode = MODERN_INNER_CAP;
+        } else if (config.callerUid == MEDIA_SERVICE_UID || config.callerUid == VASSISTANT_UID) {
             config.innerCapMode = MODERN_INNER_CAP;
         } else if (GetHapBuildApiVersion(config.callerUid) >= MODERN_INNER_API_VERSION) { // check build api-version
             config.innerCapMode = LEGACY_MUTE_CAP;
         }
+        AUDIO_INFO_LOG("callerUid %{public}d, innerCapMode %{public}d", config.callerUid, config.innerCapMode);
     } else {
+        AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission denied");
         config.isInnerCapturer = false;
     }
 #ifdef AUDIO_BUILD_VARIANT_ROOT
