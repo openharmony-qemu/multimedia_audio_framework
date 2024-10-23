@@ -395,14 +395,15 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     // Use struct to save spec size
     pa_sample_spec sampleSpec = ConvertToPAAudioParams(processConfig);
     pa_proplist *propList = pa_proplist_new();
-    if (propList == nullptr) {
-        AUDIO_ERR_LOG("pa_proplist_new failed");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(propList != nullptr, nullptr, "pa_proplist_new failed");
+    
     const std::string streamName = GetStreamName(processConfig.streamType);
     pa_channel_map map;
-    CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName, sessionId) == 0, nullptr,
-        "set pa proplist failed");
+    if (SetPaProplist(propList, map, processConfig, streamName, sessionId) != 0) {
+        AUDIO_ERR_LOG("set pa proplist failed");
+        pa_proplist_free(propList);
+        return nullptr;
+    }
 
     pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec,
         isRecording ? nullptr : &map, propList);

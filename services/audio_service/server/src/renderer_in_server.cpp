@@ -618,6 +618,8 @@ int32_t RendererInServer::Start()
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+            ERR_OPERATION_FAILED, "stream status is nullptr");
         standByCounter_ = 0;
         startedTime_ = ClockTime::GetCurNano();
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
@@ -677,6 +679,8 @@ int32_t RendererInServer::Pause()
     status_ = I_STATUS_PAUSING;
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+            ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
     }
@@ -804,6 +808,8 @@ int32_t RendererInServer::Stop()
     }
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+            ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
     }
