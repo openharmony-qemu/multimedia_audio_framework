@@ -382,8 +382,8 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
     std::lock_guard<std::mutex> lock(dynamicMutex_);
-    auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);
 
+    auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);
     if (it == sceneTypeToEffectChainMap_.end() || it->second == nullptr) {
         CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
             "memcpy error when no effect applied");
