@@ -49,6 +49,8 @@ namespace {
     static const float FADINGOUT_BEGIN = 1.0f;
     static const float FADINGOUT_END = 0.0f;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
+    constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    const int32_t XCOLLIE_FLAG_DEFAULT = (1 | 2); // dump stack and kill self
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -831,6 +833,9 @@ int32_t RendererInServer::Stop()
 
 int32_t RendererInServer::Release()
 {
+    AUDIO_INFO_LOG("Start release");
+    AudioXCollie audioXCollie(
+        "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr, XCOLLIE_FLAG_DEFAULT);
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
