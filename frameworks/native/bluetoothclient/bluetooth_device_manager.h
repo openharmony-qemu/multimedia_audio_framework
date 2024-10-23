@@ -66,6 +66,7 @@ public:
         const AudioStandard::AudioStreamInfo &streamInfo);
     static std::vector<BluetoothRemoteDevice> GetAllA2dpBluetoothDevice();
     static void ClearAllA2dpBluetoothDevice();
+    static std::vector<BluetoothRemoteDevice> GetA2dpVirtualDeviceList();
 
 private:
     static std::map<std::string, BluetoothRemoteDevice> a2dpBluetoothDeviceMap_;
@@ -74,6 +75,7 @@ private:
     static std::vector<BluetoothRemoteDevice> commonDevices_;
     static std::vector<BluetoothRemoteDevice> negativeDevices_;
     static std::vector<BluetoothRemoteDevice> connectingDevices_;
+    static std::vector<BluetoothRemoteDevice> virtualDevices_;
 };
 
 struct BluetoothStopVirtualCallHandle {
@@ -115,6 +117,7 @@ public:
     static int32_t GetConnectedHfpBluetoothDevice(const std::string& macAddress, BluetoothRemoteDevice &device);
     static std::vector<BluetoothRemoteDevice> GetAllHfpBluetoothDevice();
     static void ClearAllHfpBluetoothDevice();
+    static std::vector<BluetoothRemoteDevice> GetHfpVirtualDeviceList();
 
 private:
     static std::map<std::string, BluetoothRemoteDevice> hfpBluetoothDeviceMap_;
@@ -123,6 +126,7 @@ private:
     static std::vector<BluetoothRemoteDevice> commonDevices_;
     static std::vector<BluetoothRemoteDevice> negativeDevices_;
     static std::vector<BluetoothRemoteDevice> connectingDevices_;
+    static std::vector<BluetoothRemoteDevice> virtualDevices_;
     static std::mutex stopVirtualCallHandleLock_;
     static BluetoothStopVirtualCallHandle stopVirtualCallHandle_;
 };
