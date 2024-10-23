@@ -35,7 +35,7 @@ public:
         audioMngr_ = nullptr;
     }
 
-    int64_t GetVolumeGroupManager(int32_t *errorCode);
+    int64_t GetVolumeGroupManager(int32_t groupId, int32_t *errorCode);
 
 private:
     AudioSystemManager *audioMngr_ = nullptr;

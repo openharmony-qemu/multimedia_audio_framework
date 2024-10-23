@@ -27,9 +27,10 @@ namespace AudioStandard {
 extern "C" {
 // Audio Volume Group Manager
 
-MMAAudioVolumeGroupManagerImpl::MMAAudioVolumeGroupManagerImpl()
+MMAAudioVolumeGroupManagerImpl::MMAAudioVolumeGroupManagerImpl(int32_t groupId)
 {
     audioMngr_ = AudioSystemManager::GetInstance();
+    audioGroupMngr_ = audioMngr_->GetGroupManager(groupId);
 }
 int32_t MMAAudioVolumeGroupManagerImpl::GetMaxVolume(int32_t volumeType)
 {

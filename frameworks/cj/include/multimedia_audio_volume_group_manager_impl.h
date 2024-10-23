@@ -29,7 +29,7 @@ namespace AudioStandard {
 class MMAAudioVolumeGroupManagerImpl : public OHOS::FFI::FFIData {
     DECL_TYPE(MMAAudioVolumeGroupManagerImpl, OHOS::FFI::FFIData)
 public:
-    MMAAudioVolumeGroupManagerImpl();
+    MMAAudioVolumeGroupManagerImpl(int32_t groupId);
     ~MMAAudioVolumeGroupManagerImpl()
     {
         audioMngr_ = nullptr;
