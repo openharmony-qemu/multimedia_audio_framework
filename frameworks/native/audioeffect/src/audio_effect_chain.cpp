@@ -201,6 +201,13 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         data[SPATIALIZATION_ENABLED_INDEX]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
+        sceneType_.c_str(), effectMode_.c_str());
+
+    ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "[%{public}s] with mode [%{public}s], EFFECT_CMD_GET_CONFIG fail",
+        sceneType_.c_str(), effectMode_.c_str());
+    UpdateOutputChannelInfo(ioBufferConfig_.outputCfg);
     return ret;
 }
 
@@ -265,6 +272,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
 
     Swap(ioBufferConfig_.inputCfg, ioBufferConfig_.outputCfg); // pass outputCfg to next algo as inputCfg
+    UpdateOutputChannelInfo(ioBufferConfig_.inputCfg);
 
     standByEffectHandles_.emplace_back(handle);
     effectNames_.emplace_back(effectName);
@@ -329,6 +337,18 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
     DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
+}
+
+void AudioEffectChain::UpdateBufferConfig(uint32_t &channels, uint64_t &channelLayout)
+{
+    channels = outChannels_;
+    channelLayout = outChannelLayout_;
+}
+
+void AudioEffectChain::UpdateOutputChannelInfo(AudioBufferConfig &outputCfg)
+{
+    outChannels_ = outputCfg.channels;
+    outChannelLayout_ = outputCfg.channelLayout;
 }
 
 bool AudioEffectChain::IsEmptyEffectHandles()
@@ -465,6 +485,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
         }
         preHandle = handle;
     }
+    UpdateOutputChannelInfo(ioBufferConfig_.inputCfg);
     ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     if (preHandle == nullptr) {

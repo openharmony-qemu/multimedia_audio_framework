@@ -68,7 +68,7 @@ int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
         sceneTypeString = sceneType;
     }
     auto eBufferAttr = std::make_unique<EffectBufferAttr>(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->numChanIn,
-        bufferAttr->frameLen);
+        bufferAttr->frameLen, bufferAttr->numChanOut, bufferAttr->outChanLayout);
     if (audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, eBufferAttr) != SUCCESS) {
         return ERROR;
     }

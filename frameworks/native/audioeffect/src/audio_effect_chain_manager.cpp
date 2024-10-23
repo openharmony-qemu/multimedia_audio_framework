@@ -494,7 +494,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType
 }
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneType,
-    const std::unique_ptr<EffectBufferAttr> &bufferAttr)
+    std::unique_ptr<EffectBufferAttr> &bufferAttr)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
@@ -517,6 +517,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     auto audioEffectChain = it->second;
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
+    audioEffectChain->UpdateBufferConfig(bufferAttr->outChannels, bufferAttr->outChannelLayout);
     return SUCCESS;
 }
 
