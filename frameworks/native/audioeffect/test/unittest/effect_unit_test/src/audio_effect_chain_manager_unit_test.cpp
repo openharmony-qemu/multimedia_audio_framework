@@ -2322,9 +2322,6 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckIfSpkDsp_001, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->debugArmFlag_ = true;
-    ret = AudioEffectChainManager::GetInstance()->CheckIfSpkDsp();
-    EXPECT_EQ(true, ret);
 }
 
 /**

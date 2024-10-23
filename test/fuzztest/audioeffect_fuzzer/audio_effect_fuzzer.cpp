@@ -316,9 +316,7 @@ void UpdateSpkOffloadEnabledFuzzTest(const uint8_t* rawData, size_t size)
     }
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
-    bool debugArmFlag = *reinterpret_cast<const bool*>(rawData);
     bool spkOffloadEnabled = *reinterpret_cast<const bool*>(rawData);
-    AudioEffectChainManager::GetInstance()->debugArmFlag_ = debugArmFlag;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = spkOffloadEnabled;
     AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
