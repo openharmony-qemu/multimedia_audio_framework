@@ -253,7 +253,7 @@ private:
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     bool streamTrackerRegistered_ = false;
 
-    bool needSetThreadPriority_ = true;
+    std::atomic<bool> needSetThreadPriority_ = true;
 
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
@@ -279,7 +279,8 @@ private:
     std::string logUtilsTag_ = "";
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
-    bool hasFirstFrameWrited_ = false;
+    std::mutex firstFrameWritingMutex_;
+    std::atomic<bool> hasFirstFrameWrited_ = false;
 
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
