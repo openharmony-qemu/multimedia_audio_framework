@@ -224,6 +224,27 @@ public:
     /**
      * @brief create renderer instance.
      *
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @return Returns shared pointer to the AudioRenderer object
+     * @since 12
+    */
+    static std::shared_ptr<AudioRenderer> CreateShared(const AudioRendererOptions &rendererOptions);
+
+    /**
+     * @brief create renderer instance.
+     *
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns shared pointer to the AudioRenderer object
+     * @since 12
+    */
+    static std::shared_ptr<AudioRenderer> CreateShared(const AudioRendererOptions &options, const AppInfo &appInfo);
+
+    /**
+     * @brief create renderer instance.
+     *
      * @param cachePath Application cache path
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.

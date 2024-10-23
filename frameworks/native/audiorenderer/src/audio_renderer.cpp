@@ -181,6 +181,22 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return Create(cachePath, rendererOptions, appInfo);
 }
 
+std::shared_ptr<AudioRenderer> AudioRenderer::CreateShared(const AudioRendererOptions &rendererOptions)
+{
+    AppInfo appInfo = {};
+    auto tempUniquePtr = Create("", rendererOptions, appInfo);
+    std::shared_ptr<AudioRenderer> sharedPtr(tempUniquePtr.release());
+    return sharedPtr;
+}
+
+std::shared_ptr<AudioRenderer> AudioRenderer::CreateShared(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
+{
+    auto tempUniquePtr = Create("", rendererOptions, appInfo);
+    std::shared_ptr<AudioRenderer> sharedPtr(tempUniquePtr.release());
+    return sharedPtr;
+}
+
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath,
     const AudioRendererOptions &rendererOptions, const AppInfo &appInfo)
 {
