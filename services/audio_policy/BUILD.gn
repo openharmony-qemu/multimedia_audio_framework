@@ -121,6 +121,11 @@ ohos_shared_library("audio_setting_provider") {
     "samgr:samgr_proxy",
   ]
 
+  defines = []
+  if (audio_framework_feature_support_os_account) {
+    defines += [ "SUPPORT_USER_ACCOUNT" ]
+  }
+
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

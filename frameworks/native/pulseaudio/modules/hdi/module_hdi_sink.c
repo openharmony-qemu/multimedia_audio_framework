@@ -82,7 +82,7 @@ static const char * const VALID_MODARGS[] = {
 
 static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
 {
-    pa_assert(c);
+    CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
 
     const char *flush = pa_proplist_gets(si->proplist, "stream.flush");
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
@@ -123,7 +123,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
 
 static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u)
 {
-    pa_assert(c);
+    CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
 
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
     const char *deviceString = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_STRING);
@@ -153,8 +153,8 @@ static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u
 
 static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, void *u)
 {
-    pa_assert(c);
-    pa_sink_input_assert_ref(si);
+    CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+    CHECK_AND_RETURN_RET_LOG(si != NULL, PA_HOOK_OK, "sink input is null");
 
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
@@ -193,7 +193,7 @@ int pa__init(pa_module *m)
 {
     pa_modargs *ma = NULL;
 
-    pa_assert(m);
+    CHECK_AND_RETURN_RET_LOG(m != NULL, 0, "pa module is null");
 
     if (!(ma = pa_modargs_new(m->argument, VALID_MODARGS))) {
         pa_log("Failed to parse module arguments");
@@ -228,19 +228,20 @@ fail:
 
 int pa__get_n_used(pa_module *m)
 {
-    pa_sink *sink = NULL;
+    CHECK_AND_RETURN_RET_LOG(m != NULL, 0, "pa module is null");
 
-    pa_assert(m);
-    pa_assert_se(sink = m->userdata);
+    pa_sink *sink = m->userdata;
+
+    CHECK_AND_RETURN_RET_LOG(sink == m->userdata, 0, "sink is not equal to m->userdata");
 
     return pa_sink_linked_by(sink);
 }
 
 void pa__done(pa_module *m)
 {
-    pa_sink *sink = NULL;
+    CHECK_AND_RETURN_LOG(m != NULL, "pa module is null");
 
-    pa_assert(m);
+    pa_sink *sink = m->userdata;
 
     if ((sink = m->userdata)) {
         PaHdiSinkFree(sink);

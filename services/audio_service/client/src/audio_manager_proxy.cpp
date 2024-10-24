@@ -497,7 +497,7 @@ int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag f
 }
 
 int32_t AudioManagerProxy::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
 {
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_NONE, "Invalid active output devices.");

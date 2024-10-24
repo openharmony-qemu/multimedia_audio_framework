@@ -1143,7 +1143,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
 }
 
 int32_t  AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
 {
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "Invalid audio devices.");
@@ -1162,7 +1162,7 @@ int32_t  AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>>
 }
 
 int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
-    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
 {
     IAudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
@@ -1224,7 +1224,7 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, B
 }
 
 int32_t AudioServer::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);

@@ -336,11 +336,10 @@ static pa_hook_result_t CheckIfAvailSource(pa_source_output *so, struct Userdata
 static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, struct Userdata *u)
 {
     AUDIO_INFO_LOG("Trigger SourceOutputPutCb");
-    if (u == NULL) {
-        AUDIO_ERR_LOG("Get Userdata failed! userdata is NULL");
-        return PA_HOOK_OK;
-    }
-    pa_assert(c);
+
+    CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
+    CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
     }
@@ -350,11 +349,10 @@ static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, stru
 static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so, struct Userdata *u)
 {
     AUDIO_INFO_LOG("Trigger SourceOutputUnlinkCb");
-    if (u == NULL) {
-        AUDIO_ERR_LOG("Get Userdata failed! userdata is NULL");
-        return PA_HOOK_OK;
-    }
-    pa_assert(c);
+
+    CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
+    CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+    
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
     }
@@ -364,11 +362,10 @@ static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so, s
 static pa_hook_result_t SourceOutputMoveFinishCb(pa_core *c, pa_source_output *so, struct Userdata *u)
 {
     AUDIO_INFO_LOG("Trigger SourceOutputMoveFinishCb");
-    if (u == NULL) {
-        AUDIO_ERR_LOG("Get Userdata failed! userdata is NULL");
-        return PA_HOOK_OK;
-    }
-    pa_assert(c);
+    
+    CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
+    CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
     }
@@ -379,7 +376,7 @@ int pa__init(pa_module *m)
 {
     pa_modargs *ma = NULL;
 
-    pa_assert(m);
+    CHECK_AND_RETURN_RET_LOG(m != NULL, PA_HOOK_OK, "pa core is null");
 
     if (!(ma = pa_modargs_new(m->argument, VALID_MODARGS))) {
         pa_log("Failed to parse module arguments");
@@ -416,10 +413,11 @@ fail:
 
 int pa__get_n_used(pa_module *m)
 {
-    pa_source *source = NULL;
+    CHECK_AND_RETURN_RET_LOG(m != NULL, PA_HOOK_OK, "pa core is null");
 
-    pa_assert(m);
-    pa_assert_se(source = m->userdata);
+    pa_source *source = m->userdata;
+
+    CHECK_AND_RETURN_RET_LOG(source == m->userdata, 0, "source is not equal to m->userdata");
 
     return pa_source_linked_by(source);
 }
@@ -441,7 +439,7 @@ void pa__done(pa_module *m)
 {
     pa_source *source = NULL;
 
-    pa_assert(m);
+    CHECK_AND_RETURN_LOG(m != NULL, "pa core is null");
 
     if ((source = m->userdata)) {
         struct Userdata *u = (struct Userdata *)source->userdata;

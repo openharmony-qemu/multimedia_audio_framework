@@ -2376,7 +2376,7 @@ int32_t AudioPolicyService::SetClientCallbacksEnable(const CallbackChange &callb
 }
 
 void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
-    const std::string deviceName)
+    const std::string &deviceName)
 {
     Trace trace("AudioPolicyService::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
     AUDIO_INFO_LOG("Active route with type[%{public}d] name[%{public}s]", deviceType, deviceName.c_str());
@@ -2386,7 +2386,7 @@ void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType, 
 }
 
 void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>>
-    &activeDevices, const std::string deviceName)
+    &activeDevices, const std::string &deviceName)
 {
     CHECK_AND_RETURN_LOG(!activeDevices.empty(), "activeDevices is empty.");
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
