@@ -34,6 +34,7 @@ namespace AudioStandard {
 static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
+static const uint32_t HIBERNATE_ENDPOINT_RELEASE_DELAY_TIME = 0; // 0s
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
 AudioService *AudioService::GetInstance()
@@ -107,6 +108,9 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
 
 int32_t AudioService::GetReleaseDelayTime(DeviceType deviceType, bool destoryAtOnce)
 {
+    if (hibernateEndpointRelease_) {
+        return HIBERNATE_ENDPOINT_RELEASE_DELAY_TIME;
+    }
     if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) {
         return NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
     }
@@ -1006,6 +1010,39 @@ void AudioService::GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mo
         }
     }
     return;
+}
+
+void AudioService::ReleaseEndpointThread(std::string endpointName)
+{
+    int32_t delayTime = HIBERNATE_ENDPOINT_RELEASE_DELAY_TIME;
+    auto releaseMidpointThread = [this, endpointName, delayTime] () {
+            this->DelayCallReleaseEndpoint(endpointName, delayTime);
+        };
+    std::thread releaseEndpointThread(releaseMidpointThread);
+    releaseEndpointThread.detach();
+}
+
+void AudioService::SetHibernateEndpointRelease(const bool &isHibernate)
+{
+    hibernateEndpointRelease_ = isHibernate;
+    std::lock_guard<std::mutex> processListLock(processListMutex_);
+    AUDIO_INFO_LOG("release all endpoint enter");
+
+    auto paired = linkedPairedList_.begin();
+    while (paired != linkedPairedList_.end()) {
+        AUDIO_INFO_LOG("SessionID %{public}u", (*paired).first->GetSessionId());
+        (*paired).second->SetHibernateEndpointRelease(isHibernate);
+        paired++;
+    }
+
+    if (isHibernate) {
+        AUDIO_INFO_LOG("start release delay endpoint");
+        std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
+        releaseEndpointCV_.notify_all();
+        for (std::string endpointName : releasingEndpointSet_) {
+            this->ReleaseEndpointThread(endpointName);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

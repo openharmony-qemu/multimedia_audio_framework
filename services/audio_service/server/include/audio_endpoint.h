@@ -94,6 +94,8 @@ public:
 
     virtual AudioMode GetAudioMode() const = 0;
 
+    virtual void SetHibernateEndpointRelease(const bool &isHibernate) = 0;
+
     virtual ~AudioEndpoint() = default;
 private:
     virtual bool Config(const DeviceInfo &deviceInfo) = 0;
@@ -157,6 +159,8 @@ public:
     uint32_t GetLinkedProcessCount() override;
 
     AudioMode GetAudioMode() const final;
+
+    void SetHibernateEndpointRelease(const bool &isHibernate) override;
 private:
     int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
     int32_t GetAdapterBufferInfo(const DeviceInfo &deviceInfo);

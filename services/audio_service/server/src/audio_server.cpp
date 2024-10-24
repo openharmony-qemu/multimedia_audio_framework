@@ -2293,5 +2293,12 @@ int32_t AudioServer::UnsetOffloadMode(uint32_t sessionId)
         callingUid);
     return AudioService::GetInstance()->UnsetOffloadMode(sessionId);
 }
+
+void AudioServer::SetHibernateEndpointRelease(const bool &isHibernate)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetHibernateEndpointRelease(isHibernate);
+}
 } // namespace AudioStandard
 } // namespace OHOS
