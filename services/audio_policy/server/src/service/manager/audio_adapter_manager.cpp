@@ -1812,7 +1812,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
     uint32_t pointSize = volumePoints.size();
 
-    CHECK_AND_RETURN_RET_LOG(pointSize != 0, 0.0f, "pointSize is 0");
+    CHECK_AND_RETURN_RET_LOG(pointSize != 0, 1.0f, "pointSize is 0");
     int32_t volSteps = static_cast<int32_t>(1 + volumePoints[pointSize - 1].index - volumePoints[0].index);
     int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
     int32_t position = static_cast<int32_t>(GetPositionInVolumePoints(volumePoints, idxRatio));
