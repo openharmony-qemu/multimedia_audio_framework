@@ -92,6 +92,14 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     return Create(options, cachePath, appInfo);
 }
 
+std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &options,
+    const AppInfo &appInfo)
+{
+    auto tempUniquePtr = Create(options, "", appInfo);
+    std::shared_ptr<AudioCapturer> sharedPtr(tempUniquePtr.release());
+    return sharedPtr;
+}
+
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &capturerOptions,
     const std::string cachePath, const AppInfo &appInfo)
 {

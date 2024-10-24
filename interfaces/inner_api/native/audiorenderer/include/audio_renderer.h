@@ -194,6 +194,7 @@ public:
      * refer AudioRendererOptions in audio_info.h.
      * @return Returns unique pointer to the AudioRenderer object
      * @since 8
+     * @deprecated since 12
     */
     static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &rendererOptions);
 
@@ -205,6 +206,7 @@ public:
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioRenderer object
      * @since 9
+     * @deprecated since 12
     */
     static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &options, const AppInfo &appInfo);
 
@@ -220,6 +222,18 @@ public:
     */
     static std::unique_ptr<AudioRenderer> Create(const std::string cachePath,
         const AudioRendererOptions &rendererOptions);
+
+    /**
+     * @brief create renderer instance.
+     *
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns shared pointer to the AudioRenderer object
+     * @since 12
+    */
+    static std::shared_ptr<AudioRenderer> CreateRenderer(const AudioRendererOptions &rendererOptions,
+        const AppInfo &appInfo = AppInfo());
 
     /**
      * @brief create renderer instance.
