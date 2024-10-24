@@ -1383,7 +1383,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
 }
 
 void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
-    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive)
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo)
 {
     AudioInterrupt audioInterrupt = iterActive->first;
     uint32_t sessionId = audioInterrupt.sessionId;
@@ -1398,6 +1398,7 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
         case ACTIVE:
             if (oldState == PAUSE) {
                 handler_->SendInterruptEventWithSessionIdCallback(forceActive, sessionId);
+                removeFocusInfo = true;
             }
             if (oldState == DUCK) {
                 handler_->SendInterruptEventWithSessionIdCallback(forceUnduck, sessionId);
@@ -1406,8 +1407,10 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
         case DUCK:
             if (oldState == PAUSE) {
                 handler_->SendInterruptEventWithSessionIdCallback(forceActive, sessionId);
+                removeFocusInfo = true;
+            } else if (oldState == ACTIVE) {
+                handler_->SendInterruptEventWithSessionIdCallback(forceDuck, sessionId);
             }
-            handler_->SendInterruptEventWithSessionIdCallback(forceDuck, sessionId);
             break;
         case PAUSE:
             if (oldState == DUCK) {
@@ -1436,6 +1439,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         iterActive != audioFocusInfoList.end() && iterNew != newAudioFocuInfoList.end();) {
         AudioFocuState oldState = iterActive->second;
         AudioFocuState newState = iterNew->second;
+        bool removeFocusInfo = false;
         if (oldState != newState) {
             if (isSessionTimeout && oldState == PAUSE && (newState == ACTIVE || newState == DUCK)) {
                 // When the audio session is timeout, just send unduck event and skip resume event.
@@ -1449,14 +1453,23 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
             }
             AUDIO_INFO_LOG("State change: sessionId %{public}d, oldstate %{public}d, "\
                 "newState %{public}d", (iterActive->first).sessionId, oldState, newState);
-            SendInterruptEvent(oldState, newState, iterActive);
+            SendInterruptEvent(oldState, newState, iterActive, removeFocusInfo);
         }
-        AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(iterActive->first);
-        if (GetAudioScenePriority(targetAudioScene) > GetAudioScenePriority(highestPriorityAudioScene)) {
-            highestPriorityAudioScene = targetAudioScene;
+
+        if (removeFocusInfo) {
+            AudioInterrupt interruptToRemove = iterActive->first;
+            iterActive = audioFocusInfoList.erase(iterActive);
+            iterNew = newAudioFocuInfoList.erase(iterNew);
+            AUDIO_INFO_LOG("Remove focus info from focus list, streamId: %{public}d", interruptToRemove.sessionId);
+            SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, interruptToRemove);
+        } else {
+            AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(iterActive->first);
+            if (GetAudioScenePriority(targetAudioScene) > GetAudioScenePriority(highestPriorityAudioScene)) {
+                highestPriorityAudioScene = targetAudioScene;
+            }
+            ++iterActive;
+            ++iterNew;
         }
-        ++iterActive;
-        ++iterNew;
     }
 
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
