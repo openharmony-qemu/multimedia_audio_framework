@@ -1807,8 +1807,12 @@ static void UpdateStreamAvailableMap(struct Userdata *u, const char *sceneType)
 
 static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata *u)
 {
-    CHECK_AND_RETURN_LOG(sinkSceneType != NULL, "SampleEffectToSink: sceneType is NULL!");
-    CHECK_AND_RETURN_LOG(u != NULL, "SampleEffectToSink: u is null!");
+    CHECK_AND_RETURN_LOG(sinkSceneType != NULL, "ResampleAfterEffectChain: sceneType is NULL!");
+    CHECK_AND_RETURN_LOG(u != NULL, "ResampleAfterEffectChain: u is null!");
+    if (pa_safe_streq(sinkSceneType, "EFFECT_NONE")) {
+        AUDIO_INFO_LOG("ResampleAfterEffectChain: sceneType [EFFECT_NONE] after effectchain");
+        return;
+    }
     pa_resampler* resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sinkSceneType);
     if (resampler == NULL) {
         return;
@@ -1931,11 +1935,14 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
     const void* sceneType = NULL;
     void* count = NULL;
     while ((pa_hashmap_iterate(sceneToCountMap, &count, &sceneType))) {
+        if (pa_safe_streq(sceneType, "EFFECT_NONE")) {
+            continue;
+        }
         pa_resampler* resampler = NULL;
         resampler = (pa_resampler*)pa_hashmap_get(sceneToResamplerMap, sceneType);
         if (resampler == NULL) {
             // for now, use sample_spec from sink
-            AUDIO_INFO_LOG("new sceneType: [%{public}s], output channels from the resampler: %{public}d",
+            AUDIO_INFO_LOG("UpdateSceneToResamplerMap:new sceneType [%{public}s], output channels %{public}d",
                 (char *)sceneType, sink_spec.channels);
             pa_sample_spec ispec = sink_spec;
             pa_channel_map ichannelmap = sink_channelmap;
@@ -1950,7 +1957,7 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
         } else {
             if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
                 !pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
-                AUDIO_INFO_LOG("sceneType: [%{public}s], new output channels from the resampler: %{public}d",
+                AUDIO_INFO_LOG("UpdateSceneToResamplerMap: sceneType [%{public}s], new output channels %{public}d",
                     (char *)sceneType, sink_spec.channels);
                 pa_sample_spec ispec = *(pa_resampler_input_sample_spec(resampler));
                 pa_channel_map ichannelmap = *(pa_resampler_input_channel_map(resampler));
@@ -1967,6 +1974,7 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
     // delete entries that are not in scenemap
     void* resampler = NULL;
     while ((pa_hashmap_iterate(sceneToResamplerMap, &resampler, &sceneType))) {
+        AUDIO_INFO_LOG("UpdateSceneToResamplerMap: sceneType [%{public}s] is removed", (char *)sceneType);
         if (pa_hashmap_get(sceneToCountMap, sceneType) == NULL) {
             pa_hashmap_remove_and_free(sceneToResamplerMap, sceneType);
         }
