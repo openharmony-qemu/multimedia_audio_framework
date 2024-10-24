@@ -15,7 +15,6 @@
 
 #ifndef AUDIO_OH_AUDIO_ROUTING_MANAGER_UNIT_TEST_H
 #define AUDIO_OH_AUDIO_ROUTING_MANAGER_UNIT_TEST_H
-
 #include "OHAudioRoutingManager.h"
 #include "gtest/gtest.h"
 #include "audio_errors.h"
