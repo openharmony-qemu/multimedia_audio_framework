@@ -743,5 +743,101 @@ int32_t AudioSocketThread::DetectUsbHeadsetState(AudioEvent *audioEvent)
     closedir(busDir);
     return ERROR;
 }
+
+int32_t AudioSocketThread::DetectDPState(AudioEvent *audioEvent)
+{
+    for (size_t i = 0; i <= DP_PORT_COUNT; ++i) {
+        std::string statePath = DP_PATH;
+        std::string namePath = DP_PATH;
+
+        if (i == 0) {
+            statePath.append("/state");
+            namePath.append("/name");
+        } else {
+            statePath.append(std::to_string(i) + "/state");
+            namePath.append(std::to_string(i) + "/name");
+        }
+
+        int32_t ret = ReadAndScanDpState(statePath, audioEvent->eventType);
+        if (ret != SUCCESS || audioEvent->eventType != PNP_EVENT_DEVICE_ADD) continue;
+
+        ret = ReadAndScanDpName(namePath, audioEvent->name);
+        if (ret != SUCCESS) continue;
+
+        audioEvent->deviceType = PNP_DEVICE_DP_DEVICE;
+        audioEvent->address = std::to_string(i);
+
+        AUDIO_INFO_LOG("dp device reconnect when server start");
+        return SUCCESS;
+    }
+    return ERROR;
+}
+
+int32_t AudioSocketThread::ReadAndScanDpState(const std::string &path, uint32_t &eventType)
+{
+    int8_t state = 0;
+
+    FILE *fp = fopen(path.c_str(), "r");
+    if (fp == nullptr) {
+        AUDIO_ERR_LOG("audio open dp state node fail, %{public}d", errno);
+        return HDF_ERR_INVALID_PARAM;
+    }
+    size_t ret = fread(&state, STATE_PATH_ITEM_SIZE, STATE_PATH_ITEM_SIZE, fp);
+    if (ret == 0) {
+        fclose(fp);
+        AUDIO_ERR_LOG("audio read dp state node fail, %{public}d", errno);
+        return ERROR;
+    }
+    ret = fclose(fp);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("something wrong when fclose! err:%{public}d", errno);
+    }
+
+    if (state == '1') {
+        eventType = PNP_EVENT_DEVICE_ADD;
+    } else if (state == '0') {
+        eventType = PNP_EVENT_DEVICE_REMOVE;
+        return ERROR;
+    } else {
+        AUDIO_ERR_LOG("audio dp device [%{public}d]", eventType);
+        return ERROR;
+    }
+    AUDIO_DEBUG_LOG("audio read dp state path: %{public}s, event type: %{public}d",
+        path.c_str(), eventType);
+    return SUCCESS;
+}
+
+int32_t AudioSocketThread::ReadAndScanDpName(const std::string &path, std::string &name)
+{
+    char deviceName[AUDIO_PNP_INFO_LEN_MAX];
+
+    FILE *fp = fopen(path.c_str(), "r");
+    if (fp == nullptr) {
+        AUDIO_ERR_LOG("audio open dp name node fail, %{public}d", errno);
+        return HDF_ERR_INVALID_PARAM;
+    }
+    size_t ret = fread(&deviceName, STATE_PATH_ITEM_SIZE, AUDIO_PNP_INFO_LEN_MAX, fp);
+    if (ret == 0) {
+        AUDIO_ERR_LOG("audio read dp name node fail, %{public}d", errno);
+        return ERROR;
+    }
+    ret = fclose(fp);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("something wrong when fclose! err:%{public}d", errno);
+    }
+    AUDIO_DEBUG_LOG("audio read dp name path: %{public}s, name:%{public}s",
+        path.c_str(), deviceName);
+
+    name = deviceName;
+    auto portPos = name.find(DEVICE_PORT);
+    if (portPos == std::string::npos) {
+        name.clear();
+        AUDIO_ERR_LOG("audio read dp name node device port not find, %{public}d", errno);
+        return ERROR;
+    }
+    name = name.substr(portPos + std::strlen(DEVICE_PORT));
+    name.erase(name.find_last_not_of('\n') + 1);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

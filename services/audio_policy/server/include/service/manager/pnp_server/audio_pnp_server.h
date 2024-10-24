@@ -56,6 +56,7 @@ private:
     void OpenAndReadWithSocket();
     void OpenAndReadInput();
     void DetectAudioDevice();
+    void DetectAudioDpDevice();
 #ifdef AUDIO_DOUBLE_PNP_DETECT
     void UpdateUsbHeadset();
 #endif

@@ -4096,35 +4096,20 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     }
 }
 
-void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected)
+void AudioPolicyService::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected)
 {
-    CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
+    CHECK_AND_RETURN_LOG(desc.deviceType_ != DEVICE_TYPE_NONE, "devType is none type");
     if (!hasModulesLoaded) {
         AUDIO_WARNING_LOG("modules has not loaded");
-        pnpDeviceList_.push_back({devType, isConnected});
+        AudioDeviceDescriptor pnpDesc = desc;
+        pnpDeviceList_.push_back({pnpDesc, isConnected});
         return;
     }
     if (g_adProxy == nullptr) {
         GetAudioServerProxy();
     }
     AudioStreamInfo streamInfo = {};
-    OnDeviceStatusUpdated(devType, isConnected, "", "", streamInfo);
-}
-
-void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected,
-    const std::string &name, const std::string &adderess)
-{
-    CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
-    if (!hasModulesLoaded) {
-        AUDIO_WARNING_LOG("modules has not loaded");
-        pnpDeviceList_.push_back({devType, isConnected});
-        return;
-    }
-    if (g_adProxy == nullptr) {
-        GetAudioServerProxy();
-    }
-    AudioStreamInfo streamInfo = {};
-    OnDeviceStatusUpdated(devType, isConnected, adderess, name, streamInfo);
+    OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo);
 }
 
 void AudioPolicyService::OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status)

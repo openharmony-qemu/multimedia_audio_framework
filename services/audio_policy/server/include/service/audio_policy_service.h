@@ -241,10 +241,7 @@ public:
         const AudioStreamInfo &streamInfo);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
-    void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected);
-
-    void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected,
-        const std::string &name, const std::string &adderess);
+    void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
@@ -1152,7 +1149,7 @@ private:
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::mutex curInputDevice_; // lock this mutex to operate currentActiveInputDevice_
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
-    std::vector<std::pair<DeviceType, bool>> pnpDeviceList_;
+    std::vector<std::pair<AudioDeviceDescriptor, bool>> pnpDeviceList_;
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     mutable std::mutex a2dpDeviceMapMutex_;
