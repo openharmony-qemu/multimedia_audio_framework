@@ -75,8 +75,8 @@ public:
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string deviceName = "") override;
-    int32_t SetInputRoute(DeviceType inputDevice, const std::string deviceName = "") override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string &deviceName = "") override;
+    int32_t SetInputRoute(DeviceType inputDevice, const std::string &deviceName = "") override;
     uint64_t GetTransactionId() override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
@@ -677,7 +677,7 @@ int32_t RemoteFastAudioCapturerSourceInner::SetInputPortPin(DeviceType inputDevi
     return ret;
 }
 
-int32_t RemoteFastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, const std::string deviceName)
+int32_t RemoteFastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, const std::string &deviceName)
 {
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
@@ -733,7 +733,7 @@ AudioCategory RemoteFastAudioCapturerSourceInner::GetAudioCategory(AudioScene au
 }
 
 int32_t RemoteFastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
-    const std::string deviceName)
+    const std::string &deviceName)
 {
     AUDIO_INFO_LOG("SetAudioScene enter: scene: %{public}d, device %{public}d.", audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "SetAudioScene: Audio capture is null.");

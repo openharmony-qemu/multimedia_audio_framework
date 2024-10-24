@@ -1668,7 +1668,6 @@ static char *HandleSinkSceneType(struct Userdata *u, time_t currentTime, int32_t
     return sinkSceneType;
 }
 
-
 static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime, const char *sceneType)
 {
     int32_t i;
