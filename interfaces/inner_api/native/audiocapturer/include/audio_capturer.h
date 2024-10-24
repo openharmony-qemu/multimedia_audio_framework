@@ -205,7 +205,8 @@ public:
      * @return Returns shared pointer to the AudioCapturer object
      * @since 12
      */
-    static std::shared_ptr<AudioCapturer> CreateCapturer(const AudioCapturerOptions &options, const AppInfo &appInfo = AppInfo());
+    static std::shared_ptr<AudioCapturer> CreateCapturer(const AudioCapturerOptions &options,
+        const AppInfo &appInfo = AppInfo());
 
     /**
      * @brief create capturer instance.
