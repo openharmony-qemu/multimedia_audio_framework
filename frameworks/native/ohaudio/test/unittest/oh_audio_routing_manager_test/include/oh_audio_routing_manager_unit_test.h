@@ -20,8 +20,6 @@
 #include "audio_errors.h"
 #include "native_audio_routing_manager.h"
 
-
-
 namespace OHOS {
 namespace AudioStandard {
 class OHAudioRoutingManagerUnitTest : public testing::Test {
