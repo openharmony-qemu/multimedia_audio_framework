@@ -15,16 +15,26 @@
 
 #ifndef MULTIMEDIA_AUDIO_COMMON_H
 #define MULTIMEDIA_AUDIO_COMMON_H
-
 #include "cj_common_ffi.h"
-#include "multimedia_audio_ffi.h"
-
 #include "audio_info.h"
 #include "audio_system_manager.h"
+#include "multimedia_audio_ffi.h"
 
 namespace OHOS {
 namespace AudioStandard {
+void Convert2AudioCapturerOptions(AudioCapturerOptions &opions, const CAudioCapturerOptions &cOptions);
 char *MallocCString(const std::string &origin);
+void Convert2CAudioCapturerInfo(CAudioCapturerInfo &cInfo, const AudioCapturerInfo &capturerInfo);
+void Convert2CAudioStreamInfo(CAudioStreamInfo &cInfo, const AudioStreamInfo &streamInfo);
+void Convert2CAudioCapturerChangeInfo(CAudioCapturerChangeInfo &cInfo, const AudioCapturerChangeInfo &changeInfo,
+                                      int32_t *errorCode);
+void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor &devices,
+                                  const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors,
+                                  int32_t *errorCode);
+void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const DeviceInfo &deviceInfo, int32_t *errorCode);
+void Convert2CArrDeviceDescriptorByDeviceInfo(CArrDeviceDescriptor &devices, const DeviceInfo &deviceInfo,
+                                              int32_t *errorCode);
+void ConvertAudioDeviceDescriptor2DeviceInfo(DeviceInfo &deviceInfo, sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // MULTIMEDIA_AUDIO_COMMON_H

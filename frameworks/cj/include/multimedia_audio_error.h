@@ -31,7 +31,7 @@ const int32_t CJ_ERR_TIMEOUT = 6800105;
 const int32_t CJ_ERR_STREAM_LIMIT = 6800201;
 const int32_t CJ_ERR_SYSTEM = 6800301;
 
-const int32_t CJ_ERR_INVALID_RETURN_VALUE = 0;
+const size_t CJ_ERR_INVALID_RETURN_VALUE = 0;
 const int32_t CJ_ERR_INVALID_VALUE = -1;
 
 /* native error code */

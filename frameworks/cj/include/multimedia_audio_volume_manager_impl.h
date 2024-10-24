@@ -15,17 +15,14 @@
 
 #ifndef MULTIMEDIA_AUDIO_VOLUME_MANAGER_IMPL_H
 #define MULTIMEDIA_AUDIO_VOLUME_MANAGER_IMPL_H
-
 #include "cj_common_ffi.h"
 #include "native/ffi_remote_data.h"
-
 #include "audio_group_manager.h"
 #include "audio_system_manager.h"
 #include "multimedia_audio_ffi.h"
 
 namespace OHOS {
 namespace AudioStandard {
-// AudioVolumeManagerImpl
 class MMAAudioVolumeManagerImpl : public OHOS::FFI::FFIData {
     DECL_TYPE(MMAAudioVolumeManagerImpl, OHOS::FFI::FFIData)
 public:
