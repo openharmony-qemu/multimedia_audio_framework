@@ -1031,10 +1031,10 @@ void RendererInClientInner::WriteCallbackFunc()
             // call write here.
             int32_t result = ProcessWriteInner(temp);
             if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
-                BufferDesc tmp = {temp.buffer + result, temp.bufLength - static_cast<size_t>(result),
-                    temp.dataLength - static_cast<size_t>(result)};
+                BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
+                    temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
                 cbBufferQueue_.Push(tmp);
-                AUDIO_INFO_LOG("repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
+                AUDIO_INFO_LOG("Repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
                 break;
             }
         }
