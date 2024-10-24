@@ -234,7 +234,7 @@ private:
 
     bool IsHighResolution() const noexcept;
 
-    void ProcessWriteInner(BufferDesc &bufferDesc);
+    int32_t ProcessWriteInner(BufferDesc &bufferDesc);
 
     void InitDirectPipeType();
 private:

@@ -987,18 +987,19 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
-void RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
+int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
     }
     if (curStreamParams_.encoding == ENCODING_PCM && bufferDesc.dataLength != 0) {
-        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
+        result = WriteInner(bufferDesc.buffer, bufferDesc.dataLength);
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
     }
+    return result;
 }
 
 void RendererInClientInner::WriteCallbackFunc()
@@ -1021,10 +1022,21 @@ void RendererInClientInner::WriteCallbackFunc()
         BufferDesc temp;
         while (cbBufferQueue_.PopNotWait(temp)) {
             Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
-            if (state_ != RUNNING) { break; }
+            if (state_ != RUNNING) {
+                cbBufferQueue_.Push(temp);
+                AUDIO_INFO_LOG("Repush left buffer in queue");
+                break;
+            }
             traceQueuePop.End();
             // call write here.
-            ProcessWriteInner(temp);
+            int32_t result = ProcessWriteInner(temp);
+            if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
+                BufferDesc tmp = {temp.buffer + result, temp.bufLength - static_cast<size_t>(result),
+                    temp.dataLength - static_cast<size_t>(result)};
+                cbBufferQueue_.Push(tmp);
+                AUDIO_INFO_LOG("repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
+                break;
+            }
         }
         if (state_ != RUNNING) { continue; }
         // call client write
