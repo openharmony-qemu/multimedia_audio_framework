@@ -1854,7 +1854,6 @@ static void GetHashMap(struct Userdata *u, const char *sceneType)
     uint32_t curNum = EffectChainManagerGetSceneCount(sceneType);
     uint32_t *num = (uint32_t *)pa_hashmap_get(u->sceneToCountMap, sceneType);
     if (curNum) {
-        u->requireEffectBuffer = true;
         if (num) {
             (*num) = curNum;
         } else {
@@ -1876,8 +1875,6 @@ static void UpdateSceneToCountMap(struct Userdata *u)
     if (u->sceneMap == NULL) {
         return;
     }
-    bool lastRequireEffectBuffer = u->requireEffectBuffer;
-    u->requireEffectBuffer = false;
     for (int32_t i = 0; i < SCENE_TYPE_NUM - 1; i++) {
         GetHashMap(u, SCENE_TYPE_SET[i]);
     }
