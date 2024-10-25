@@ -126,6 +126,7 @@ void NapiAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
 
     AudioVolumeKeyEventJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+    CHECK_AND_RETURN_LOG(event->callback->jsPthread_ == pthread_self(), "JsCallback not in js thread");
 
     napi_value cbName;
     napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
