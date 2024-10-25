@@ -108,7 +108,6 @@ const char *MCH_SINK_NAME = "MCH_Speaker";
 const char *BT_SINK_NAME = "Bt_Speaker";
 const char *OFFLOAD_SINK_NAME = "Offload_Speaker";
 const char *DP_SINK_NAME = "DP_speaker";
-const char *EFFECT_NONE = "EFFECT_NONE";
 
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
 const int32_t MONITOR_CLOSE_PA_TIME_SEC = 5 * 60; // 5min
@@ -1958,7 +1957,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
         int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, (char *)sceneType);
-        if (nSinkInput == 0 || sceneType == "EFFECT_NONE") { continue; }
+        if (nSinkInput == 0) { continue; }
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
         void *src = pa_memblock_acquire_chunk(chunkIn);
