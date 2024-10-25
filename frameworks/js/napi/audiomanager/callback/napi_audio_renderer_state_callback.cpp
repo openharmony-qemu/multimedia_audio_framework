@@ -132,6 +132,7 @@ void NapiAudioRendererStateCallback::OnJsCallbackRendererState(std::unique_ptr<A
 
     AudioRendererStateJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+    CHECK_AND_RETURN_LOG(event->callback->jsPthread_ == pthread_self(), "JsCallback not in js thread");
 
     napi_value cbName;
     event->callbackName = "AudioRendererState";
