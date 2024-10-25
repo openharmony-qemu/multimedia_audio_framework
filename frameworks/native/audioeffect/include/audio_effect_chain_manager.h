@@ -93,6 +93,8 @@ struct EffectBufferAttr {
     frameLen(frameLen),
     outChannels(outChannels),
     outChannelLayout(outChannelLayout)
+    {
+    }
 };
 
 enum SceneTypeOperation {
