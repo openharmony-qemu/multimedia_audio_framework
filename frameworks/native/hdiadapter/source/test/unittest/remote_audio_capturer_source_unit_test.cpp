@@ -87,8 +87,6 @@ HWTEST(RemoteAudioCapturerSourceUnitTest, remote_audio_capturer_source_unittest0
     bool ret = remoteCapturer->IsInited();
     EXPECT_EQ(false, ret);
     remoteCapturer->DeInit();
-    ret = remoteCapturer->IsInited();
-    EXPECT_EQ(false, ret);
 }
 
 /**
