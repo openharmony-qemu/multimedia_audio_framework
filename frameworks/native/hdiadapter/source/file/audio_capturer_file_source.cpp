@@ -59,7 +59,7 @@ int32_t AudioCapturerFileSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
-int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice)
+int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice, const std::string &deviceName)
 {
     return SUCCESS;
 }
@@ -79,7 +79,8 @@ void AudioCapturerFileSource::RegisterParameterCallback(IAudioSourceCallback *ca
     AUDIO_WARNING_LOG("RegisterParameterCallback in file mode is not supported!");
 }
 
-int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string &deviceName)
 {
     return SUCCESS;
 }

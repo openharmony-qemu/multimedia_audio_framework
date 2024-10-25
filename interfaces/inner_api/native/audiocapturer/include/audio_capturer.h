@@ -145,6 +145,7 @@ public:
      * refer AudioCapturerOptions in audio_info.h.
      * @return Returns unique pointer to the AudioCapturer object
      * @since 8
+     * @deprecated since 12
      */
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType);
 
@@ -156,6 +157,7 @@ public:
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioCapturer object
      * @since 9
+     * @deprecated since 12
      */
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
 
@@ -166,6 +168,7 @@ public:
      * refer AudioCapturerOptions in audio_info.h.
      * @return Returns unique pointer to the AudioCapturer object
      * @since 8
+     * @deprecated since 12
      */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options);
 
@@ -177,6 +180,7 @@ public:
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioCapturer object
      * @since 9
+     * @deprecated since 12
      */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const AppInfo &appInfo);
 
@@ -188,8 +192,21 @@ public:
      * @param cachePath Application cache path
      * @return Returns unique pointer to the AudioCapturer object
      * @since 9
+     * @deprecated since 12
      */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath);
+
+    /**
+     * @brief create capturer instance.
+     *
+     * @param options The audio capturer configuration to be used while creating capturer instance.
+     * refer AudioCapturerOptions in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns shared pointer to the AudioCapturer object
+     * @since 12
+     */
+    static std::shared_ptr<AudioCapturer> CreateCapturer(const AudioCapturerOptions &options,
+        const AppInfo &appInfo = AppInfo());
 
     /**
      * @brief create capturer instance.
@@ -200,6 +217,7 @@ public:
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioCapturer object
      * @since 9
+     * @deprecated since 12
      */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath,
         const AppInfo &appInfo);
@@ -212,6 +230,7 @@ public:
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * in {@link audio_errors.h} otherwise.
      * @since 8
+     * @deprecated since 12
      */
     virtual int32_t SetParams(const AudioCapturerParams params) = 0;
 
@@ -428,15 +447,6 @@ public:
      * @since 8
      */
     virtual int32_t SetBufferDuration(uint64_t bufferDuration) const = 0;
-
-    /**
-     * @brief Set the application cache path to access the application resources
-     *
-     * @param cachePath Indicates application cache path.
-     * @return none
-     * @since 8
-     */
-    virtual void SetApplicationCachePath(const std::string cachePath) = 0;
 
     /**
      * @brief Obtains the capturer supported formats.

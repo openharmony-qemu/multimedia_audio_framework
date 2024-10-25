@@ -215,7 +215,7 @@ public:
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag) = 0;
+        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "") = 0;
 
     /**
      * Update the audio dual tone state after devices is detected and route is decided
@@ -420,8 +420,10 @@ public:
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
     // for enhance
-    virtual int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) = 0;
-    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
+    virtual int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
+    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
     /**
      * Load effect hdi model when audio_host online.
@@ -461,6 +463,8 @@ public:
     virtual int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) = 0;
 
     virtual int32_t UnsetOffloadMode(uint32_t sessionId) = 0;
+
+    virtual void SetHibernateEndpointRelease(const bool &isHibernate) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -514,6 +518,7 @@ private:
     int HandleSetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetOffloadMode(MessageParcel &data, MessageParcel &reply);
     int HandleUnsetOffloadMode(MessageParcel &data, MessageParcel &reply);
+    int HandleSetHibernateEndpointRelease(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);

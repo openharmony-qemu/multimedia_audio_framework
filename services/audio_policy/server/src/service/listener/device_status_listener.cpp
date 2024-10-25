@@ -223,7 +223,7 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
         if (strncmp(anahsName.c_str(), UEVENT_INSERT, strlen(UEVENT_INSERT)) == 0 ||
             strncmp(anahsName.c_str(), UEVENT_REMOVE, strlen(UEVENT_REMOVE)) == 0) {
             AUDIO_INFO_LOG("parse anahsName = %{public}s", anahsName.c_str());
-            audioDeviceAnahsCb_->OnExtPnpDeviceStatusChanged(anahsName);
+            audioDeviceAnahsCb_->OnExtPnpDeviceStatusChanged(anahsName, anahsShowType_);
             return;
         }
     }
@@ -276,6 +276,11 @@ int32_t DeviceStatusListener::UnsetAudioDeviceAnahsCallback()
 {
     audioDeviceAnahsCb_ = nullptr;
     return SUCCESS;
+}
+
+void DeviceStatusListener::UpdateAnahsPlatformType(std::string anahsShowType)
+{
+    anahsShowType_ = anahsShowType;
 }
 
 void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)

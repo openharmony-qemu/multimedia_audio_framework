@@ -98,14 +98,14 @@ int32_t AudioStreamManager::UnregisterAudioCapturerEventListener(const int32_t c
 }
 
 int32_t AudioStreamManager::GetCurrentRendererChangeInfos(
-    vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos");
     return AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
 }
 
 int32_t AudioStreamManager::GetCurrentCapturerChangeInfos(
-    vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     return AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
@@ -235,6 +235,5 @@ int32_t AudioStreamManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
 {
     return AudioPolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

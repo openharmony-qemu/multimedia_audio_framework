@@ -151,11 +151,9 @@ public:
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string &deviceName = "") override;
 
-    int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, SourceType sourceType);
-
-    int32_t SetInputRoute(DeviceType inputDevice) override;
+    int32_t SetInputRoute(DeviceType inputDevice, const std::string &deviceName = "") override;
     uint64_t GetTransactionId() override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
@@ -200,8 +198,10 @@ private:
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
-    int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice);
+    int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice, const std::string &deviceName = "");
     void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
+    int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, const std::string &deviceName = "");
+    int32_t DoSetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, const std::string &deviceName = "");
 
     void CaptureThreadLoop();
     void CaptureFrameEcInternal(const RingBuffer &ringBuf);
@@ -258,10 +258,7 @@ private:
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::mutex signalDetectAgentMutex_;
 
-    std::mutex managerAndAdapterMutex_;
-
     std::mutex statusMutex_;
-    std::mutex sourceAttrMutex_;
 
     // ec and mic ref feature
     std::unique_ptr<std::thread> captureThread_ = nullptr;
@@ -290,9 +287,9 @@ public:
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string &deviceName = "") override;
 
-    int32_t SetInputRoute(DeviceType inputDevice) override;
+    int32_t SetInputRoute(DeviceType inputDevice, const std::string &deviceName = "") override;
     uint64_t GetTransactionId() override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
@@ -584,7 +581,6 @@ void AudioCapturerSourceInner::DeInit()
     audioCapture_ = nullptr;
     currentActiveDevice_ = DEVICE_TYPE_INVALID; // the current device must be rest when closing capturer.
 
-    std::lock_guard lock(managerAndAdapterMutex_);
     // Only the usb hal needs to be unloadadapter at the moment.
     if (halName_ == "usb") {
         adapterLoaded_ = false;
@@ -746,7 +742,6 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
 int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
     std::lock_guard<std::mutex> statusLock(statusMutex_);
-    std::lock_guard<std::mutex> lock(sourceAttrMutex_);
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
     openMic_ = attr_.openMicSpeaker;
@@ -828,9 +823,10 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     }
     CheckUpdateState(frame, requestBytes);
 
+    int64_t stampThreshold = 50; // 50ms
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    if (logMode_) {
-        AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
+    if (logMode_ || stamp >= stampThreshold) {
+        AUDIO_WARNING_LOG("CaptureFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     }
     return SUCCESS;
 }
@@ -941,11 +937,11 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
 void AudioCapturerSourceInner::CheckUpdateState(char *frame, uint64_t replyBytes)
 {
     if (startUpdate_) {
+        std::lock_guard<std::mutex> lock(statusMutex_);
         if (capFrameNum_ == 0) {
             last10FrameStartTime_ = ClockTime::GetCurNano();
         }
         capFrameNum_++;
-        std::lock_guard<std::mutex> lock(sourceAttrMutex_);
         maxAmplitude_ = UpdateMaxAmplitude(static_cast<ConvertHdiFormat>(attr_.format), frame, replyBytes);
         if (capFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
             capFrameNum_ = 0;
@@ -988,7 +984,6 @@ int32_t AudioCapturerSourceInner::StartNonblockingCapture()
 int32_t AudioCapturerSourceInner::Start(void)
 {
     std::lock_guard<std::mutex> statusLock(statusMutex_);
-    std::lock_guard<std::mutex> lock(sourceAttrMutex_);
 
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
     Trace trace("AudioCapturerSourceInner::Start");
@@ -1183,33 +1178,40 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
     return ret;
 }
 
-int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
+int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, const std::string &deviceName)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     AudioPortPin inputPortPin = PIN_IN_MIC;
-    std::lock_guard<std::mutex> lock(sourceAttrMutex_);
-    return SetInputRoute(inputDevice, inputPortPin, static_cast<SourceType> (attr_.sourceType));
+    return SetInputRoute(inputDevice, inputPortPin, deviceName);
 }
 
 int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin,
-    SourceType sourceType)
+    const std::string &deviceName)
 {
-    if (inputDevice == currentActiveDevice_ && attr_.sourceType == sourceType) {
+    if (inputDevice == currentActiveDevice_) {
         if (inputDevice == DEVICE_TYPE_MIC) {
-            int32_t ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_);
+            int32_t ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_, deviceName);
             if (ret != SUCCESS) {
                 AUDIO_WARNING_LOG("SetAudioRouteInfoForEnhanceChain failed.");
             }
         }
-        AUDIO_INFO_LOG("input device or sourceType not change. currentActiveDevice %{public}d sourceType %{public}d",
+        AUDIO_INFO_LOG("input device not change. currentActiveDevice %{public}d sourceType %{public}d",
             currentActiveDevice_, attr_.sourceType);
+
         return SUCCESS;
     }
-    attr_.sourceType = sourceType;
+
+    return DoSetInputRoute(inputDevice, inputPortPin, deviceName);
+}
+
+int32_t AudioCapturerSourceInner::DoSetInputRoute(DeviceType inputDevice,
+    AudioPortPin &inputPortPin, const std::string &deviceName)
+{
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
     int32_t ret = SetInputPortPin(inputDevice, source);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetInputRoute FAILED: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoSetInputRoute FAILED: %{public}d", ret);
 
     inputPortPin = source.ext.device.type;
     AUDIO_INFO_LOG("Input PIN is: 0x%{public}X", inputPortPin);
@@ -1241,14 +1243,15 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     currentActiveDevice_ = inputDevice;
-    ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_);
+    ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_, deviceName);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("SetAudioRouteInfoForEnhanceChain failed.");
     }
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string &deviceName)
 {
     AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
@@ -1275,8 +1278,8 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
             currentAudioScene_ = audioScene;
         }
 
-        std::lock_guard<std::mutex> lock(sourceAttrMutex_);
-        ret = SetInputRoute(activeDevice, audioSceneInPort, static_cast<SourceType>(attr_.sourceType));
+        std::lock_guard<std::mutex> statusLock(statusMutex_);
+        ret = SetInputRoute(activeDevice, audioSceneInPort, deviceName);
         if (ret < 0) {
             AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);
         }
@@ -1459,6 +1462,7 @@ int32_t AudioCapturerSourceInner::Preload(const std::string &usbInfoStr)
 {
     CHECK_AND_RETURN_RET_LOG(halName_ == "usb", ERR_INVALID_OPERATION, "Preload only supported for usb");
 
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     int32_t ret = UpdateUsbAttrs(usbInfoStr);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Preload failed when init attr");
 
@@ -1472,7 +1476,7 @@ static HdiAdapterFormat ParseAudioFormat(const std::string &format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
         return HdiAdapterFormat::SAMPLE_S16;
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT" || format == "AUDIO_FORMAT_PCM_24_BIT_PACKED") {
         return HdiAdapterFormat::SAMPLE_S24;
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
         return HdiAdapterFormat::SAMPLE_S32;
@@ -1485,7 +1489,6 @@ int32_t AudioCapturerSourceInner::UpdateUsbAttrs(const std::string &usbInfoStr)
 {
     CHECK_AND_RETURN_RET_LOG(usbInfoStr != "", ERR_INVALID_PARAM, "usb info string error");
 
-    std::lock_guard<std::mutex> lock(sourceAttrMutex_);
     auto sourceRate_begin = usbInfoStr.find("source_rate:");
     auto sourceRate_end = usbInfoStr.find_first_of(";", sourceRate_begin);
     std::string sampleRateStr = usbInfoStr.substr(sourceRate_begin + std::strlen("source_rate:"),
@@ -1511,7 +1514,6 @@ int32_t AudioCapturerSourceInner::UpdateUsbAttrs(const std::string &usbInfoStr)
 
 int32_t AudioCapturerSourceInner::InitManagerAndAdapter()
 {
-    std::lock_guard lock(managerAndAdapterMutex_);
     int32_t err = InitAudioManager();
     CHECK_AND_RETURN_RET_LOG(err == 0, ERR_NOT_STARTED, "Init audio manager Fail");
 
@@ -1562,9 +1564,9 @@ int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
         int32_t ret;
         AudioPortPin inputPortPin = PIN_IN_MIC;
         if (halName_ == "usb") {
-            ret = SetInputRoute(DEVICE_TYPE_USB_ARM_HEADSET, inputPortPin, static_cast<SourceType>(attr_.sourceType));
+            ret = SetInputRoute(DEVICE_TYPE_USB_ARM_HEADSET, inputPortPin);
         } else {
-            ret = SetInputRoute(DEVICE_TYPE_MIC, inputPortPin, static_cast<SourceType>(attr_.sourceType));
+            ret = SetInputRoute(DEVICE_TYPE_MIC, inputPortPin);
         }
         if (ret < 0) {
             AUDIO_WARNING_LOG("update route FAILED: %{public}d", ret);
@@ -1668,7 +1670,8 @@ int32_t AudioCapturerSourceInner::GetCaptureId(uint32_t &captureId) const
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice)
+int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice,
+    const std::string &deviceName)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
@@ -1678,18 +1681,25 @@ int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceT
         AUDIO_WARNING_LOG("GetCaptureId failed");
     }
     if (halName_ == "usb") {
-        audioEnhanceChainManager->SetInputDevice(captureId, DEVICE_TYPE_USB_ARM_HEADSET);
+        audioEnhanceChainManager->SetInputDevice(captureId, DEVICE_TYPE_USB_ARM_HEADSET, deviceName);
     } else {
-        audioEnhanceChainManager->SetInputDevice(captureId, inputDevice);
+        audioEnhanceChainManager->SetInputDevice(captureId, inputDevice, deviceName);
     }
     return SUCCESS;
 }
 
 int32_t AudioCapturerSourceInner::UpdateSourceType(SourceType sourceType)
 {
-    std::lock_guard<std::mutex> lock(sourceAttrMutex_);
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    if (attr_.sourceType == sourceType) {
+        AUDIO_INFO_LOG("input sourceType not change. currentActiveDevice %{public}d sourceType %{public}d",
+            currentActiveDevice_, attr_.sourceType);
+        return SUCCESS;
+    }
+
+    attr_.sourceType = sourceType;
     AudioPortPin inputPortPin = PIN_IN_MIC;
-    return SetInputRoute(currentActiveDevice_, inputPortPin, sourceType);
+    return DoSetInputRoute(currentActiveDevice_, inputPortPin);
 }
 
 int32_t AudioCapturerSourceWakeup::Init(const IAudioSourceAttr &attr)
@@ -1823,12 +1833,13 @@ int32_t AudioCapturerSourceWakeup::GetMute(bool &isMute)
     return audioCapturerSource_.GetMute(isMute);
 }
 
-int32_t AudioCapturerSourceWakeup::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioCapturerSourceWakeup::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string &deviceName)
 {
     return audioCapturerSource_.SetAudioScene(audioScene, activeDevice);
 }
 
-int32_t AudioCapturerSourceWakeup::SetInputRoute(DeviceType inputDevice)
+int32_t AudioCapturerSourceWakeup::SetInputRoute(DeviceType inputDevice, const std::string &deviceName)
 {
     return audioCapturerSource_.SetInputRoute(inputDevice);
 }

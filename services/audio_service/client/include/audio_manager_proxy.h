@@ -47,10 +47,11 @@ public:
         const std::vector<std::pair<std::string, std::string>> &kvpairs) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag) override;
+        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "") override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
+    void SetHibernateEndpointRelease(const bool &isHibernate) override;
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
@@ -91,8 +92,10 @@ public:
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     // for enhance
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) override;
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) override;
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
     int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) override;

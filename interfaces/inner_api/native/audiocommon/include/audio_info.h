@@ -85,9 +85,6 @@ const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUT
 const std::string DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 const std::string CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 
-const std::string LOCAL_NETWORK_ID = "LocalDevice";
-const std::string REMOTE_NETWORK_ID = "RemoteDevice";
-
 constexpr std::string_view PRIMARY_WAKEUP = "Built_in_wakeup";
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
@@ -300,13 +297,17 @@ enum CallbackChange : int32_t {
     CALLBACK_MAX,
 };
 
-constexpr std::array<CallbackChange, CALLBACK_MAX> CALLBACK_ENUMS = {
+constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_UNKNOWN,
     CALLBACK_FOCUS_INFO_CHANGE,
     CALLBACK_RENDERER_STATE_CHANGE,
     CALLBACK_CAPTURER_STATE_CHANGE,
     CALLBACK_MICMUTE_STATE_CHANGE,
+    CALLBACK_AUDIO_SESSION,
 };
+
+static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
+    "check CALLBACK_ENUMS");
 
 struct VolumeEvent {
     AudioVolumeType volumeType;
@@ -436,6 +437,7 @@ struct AudioRendererOptions {
     AudioStreamInfo streamInfo;
     AudioRendererInfo rendererInfo;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct MicStateChangeEvent {
@@ -1028,12 +1030,6 @@ struct SessionInfo {
     uint32_t channels;
 };
 
-enum BluetoothOffloadState {
-    NO_A2DP_DEVICE = 0,
-    A2DP_NOT_OFFLOAD = 1,
-    A2DP_OFFLOAD = 2,
-};
-
 enum CastType {
     CAST_TYPE_NULL = 0,
     CAST_TYPE_ALL,
@@ -1073,10 +1069,10 @@ enum DeviceGroup {
 static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
     {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_BUILT_IN},
     {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
+    {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN},
     {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
-    {DEVICE_TYPE_DP, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
     {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
     {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},

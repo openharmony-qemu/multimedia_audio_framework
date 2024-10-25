@@ -50,6 +50,7 @@ namespace {
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
+    constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -621,6 +622,8 @@ int32_t RendererInServer::Start()
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+            ERR_OPERATION_FAILED, "stream status is nullptr");
         standByCounter_ = 0;
         startedTime_ = ClockTime::GetCurNano();
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
@@ -680,6 +683,8 @@ int32_t RendererInServer::Pause()
     status_ = I_STATUS_PAUSING;
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+            ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
     }
@@ -795,6 +800,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
 
 int32_t RendererInServer::Stop()
 {
+    AUDIO_INFO_LOG("Stop.");
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
@@ -806,6 +812,8 @@ int32_t RendererInServer::Stop()
     }
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+            ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
     }
@@ -835,6 +843,10 @@ int32_t RendererInServer::Stop()
 
 int32_t RendererInServer::Release()
 {
+    AUDIO_INFO_LOG("Start release");
+    AudioXCollie audioXCollie(
+        "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         AudioService::GetInstance()->CleanUpStream(processConfig_.appInfo.appUid);
     }
@@ -1017,7 +1029,7 @@ int32_t RendererInServer::DisableDualTone()
     AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d", dualToneStreamIndex_, status_);
     IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(dualToneStreamIndex_);
-    dupStream_ = nullptr;
+    dualToneStream_ = nullptr;
 
     return ERROR;
 }
@@ -1123,6 +1135,9 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
     float systemVol = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
     AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d systemVol:"
         "%{public}f]", streamIndex_, volume, volumeType, systemVol);
+    if (IsVolumeSame(MIN_FLOAT_VOLUME, volume, AUDIO_VOLOMUE_EPSILON)) {
+        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.0f);
+    }
 
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");

@@ -76,14 +76,16 @@ PaRendererStreamImpl::~PaRendererStreamImpl()
     PaLockGuard lock(mainloop_);
     rendererStreamInstanceMap_.Erase(this);
     if (paStream_) {
-        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_write_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+        if (!releasedFlag_) {
+            pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_write_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_started_callback(paStream_, nullptr, nullptr);
 
-        pa_stream_disconnect(paStream_);
+            pa_stream_disconnect(paStream_);
+        }
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
     }
@@ -107,6 +109,7 @@ int32_t PaRendererStreamImpl::InitParams()
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    CHECK_AND_RETURN_RET_LOG(sampleSpec != nullptr, ERR_OPERATION_FAILED, "pa_sample_spec sampleSpec is nullptr");
     AUDIO_INFO_LOG("sampleSpec: channels: %{public}u, formats: %{public}d, rate: %{public}d", sampleSpec->channels,
         sampleSpec->format, sampleSpec->rate);
 
@@ -127,7 +130,7 @@ int32_t PaRendererStreamImpl::InitParams()
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr count is %{public}d", count);
         if (count >= 5) { // bufferAttr is nullptr 5 times, reboot audioserver
             sleep(3); // sleep 3 seconds to dump stacktrace
-            AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+            AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_RECOVERY);
             sleep(2); // sleep 2 seconds to dump stacktrace
         }
         return ERR_OPERATION_FAILED;
@@ -200,13 +203,15 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
         CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
         pa_operation_unref(updatePropOperation);
         AUDIO_INFO_LOG("pa_stream_proplist_update done");
-        palock.Unlock();
-        {
-            std::unique_lock<std::mutex> lock(fadingMutex_);
-            const int32_t WAIT_TIME_MS = 40;
-            fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+        if (!offloadEnable_) {
+            palock.Unlock();
+            {
+                std::unique_lock<std::mutex> lock(fadingMutex_);
+                const int32_t WAIT_TIME_MS = 40;
+                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+            }
+            palock.Relock();
         }
-        palock.Relock();
     }
     isStandbyPause_ = isStandby;
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
@@ -288,10 +293,30 @@ int32_t PaRendererStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Enter");
     state_ = STOPPING;
-    PaLockGuard lock(mainloop_);
+    PaLockGuard palock(mainloop_);
 
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
+    }
+
+    pa_proplist *propList = pa_proplist_new();
+    if (propList != nullptr) {
+        pa_proplist_sets(propList, "fadeoutPause", "1");
+        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
+            nullptr, nullptr);
+        pa_proplist_free(propList);
+        CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
+        pa_operation_unref(updatePropOperation);
+        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        if (!offloadEnable_) {
+            palock.Unlock();
+            {
+                std::unique_lock<std::mutex> lock(fadingMutex_);
+                const int32_t WAIT_TIME_MS = 20;
+                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+            }
+            palock.Relock();
+        }
     }
 
     pa_operation *operation = pa_stream_cork(paStream_, 1, PaRendererStreamImpl::PAStreamAsyncStopSuccessCb,
@@ -347,6 +372,19 @@ int32_t PaRendererStreamImpl::Release()
         std::string sessionIDTemp = std::to_string(streamIndex_);
         audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
     }
+
+    PaLockGuard lock(mainloop_);
+    if (paStream_) {
+        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_write_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+
+        pa_stream_disconnect(paStream_);
+        releasedFlag_ = true;
+    }
     
     return SUCCESS;
 }
@@ -364,11 +402,10 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentTimeStamp", PA_STREAM_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("pulseAudio timeout");
-        }, nullptr, XcollieFlag);
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     UpdatePaTimingInfo();
 
@@ -390,9 +427,9 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentPosition", PA_STREAM_IMPL_TIMEOUT,
-        [](void *) { AUDIO_ERR_LOG("pulseAudio timeout"); }, nullptr, XcollieFlag);
+        [](void *) { AUDIO_ERR_LOG("pulseAudio timeout"); }, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
     if (curTimeGetLatency - preTimeGetPaLatency_ > AUDIO_CYCLE_TIME_US || firstGetPaLatency_) { // 20000 cycle time
@@ -452,11 +489,10 @@ void PaRendererStreamImpl::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, 
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     Trace trace("PaRendererStreamImpl::GetLatency");
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetLatency", PA_STREAM_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("pulseAudio timeout");
-        }, nullptr, XcollieFlag);
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
     if (curTimeGetLatency - preTimeGetLatency_ < AUDIO_CYCLE_TIME_US && !firstGetLatency_) { // 20000 cycle time
         latency = preLatency_;
@@ -1220,6 +1256,11 @@ int32_t PaRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &inde
 int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
 {
     return SUCCESS;
+}
+
+void PaRendererStreamImpl::BlockStream() noexcept
+{
+    return;
 }
 // offload end
 

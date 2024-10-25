@@ -25,11 +25,13 @@ config("audio_effect_config") {
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/test/example",
+    "../../../services/audio_policy/server/include/service/manager",
   ]
 
   cflags = [
     "-Wall",
     "-Werror",
+    "-fno-access-control",
   ]
 
   if (sensor_enable == true) {
@@ -70,15 +72,21 @@ ohos_shared_library("audio_effect") {
     "src/audio_head_tracker.cpp",
   ]
 
-  deps = [ "../audioutils:audio_utils" ]
+  deps = [
+    "../../../services/audio_policy:audio_setting_provider",
+    "../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hdf_core:libhdf_utils",
     "hilog:libhilog",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
+    "os_account:os_account_innerkits",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]

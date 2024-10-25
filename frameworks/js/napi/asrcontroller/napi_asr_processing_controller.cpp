@@ -173,11 +173,13 @@ napi_value NapiAsrProcessingController::Init(napi_env env, napi_value exports)
 
 void NapiAsrProcessingController::Destructor(napi_env env, void* nativeObject, void* finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAsrProcessingController*>(nativeObject);
-        ObjectRefMap<NapiAsrProcessingController>::DecreaseRef(obj);
-        AUDIO_DEBUG_LOG("delete obj done");
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
+    auto obj = static_cast<NapiAsrProcessingController*>(nativeObject);
+    ObjectRefMap<NapiAsrProcessingController>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("delete obj done");
 }
 
 napi_value NapiAsrProcessingController::Construct(napi_env env, napi_callback_info info)

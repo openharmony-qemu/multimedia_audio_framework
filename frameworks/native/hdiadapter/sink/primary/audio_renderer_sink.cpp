@@ -133,7 +133,7 @@ static HdiAdapterFormat ParseAudioFormat(const std::string &format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
         return HdiAdapterFormat::SAMPLE_S16;
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT" || format == "AUDIO_FORMAT_PCM_24_BIT_PACKED") {
         return HdiAdapterFormat::SAMPLE_S24;
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
         return HdiAdapterFormat::SAMPLE_S32;
@@ -1465,6 +1465,9 @@ int32_t AudioRendererSinkInner::InitRender()
         } else if (halName_ == "dp") {
             outputDevices.push_back(DEVICE_TYPE_DP);
             ret = SetOutputRoutes(outputDevices);
+        } else if (halName_ == VOIP_HAL_NAME) {
+            // voip hal do not need to SetOutputRoute when create render, will SetOutputRoute when start stream
+            AUDIO_INFO_LOG("voip hal do not need to SetOutputRoute when create render");
         } else {
             DeviceType type = static_cast<DeviceType>(attr_.deviceType);
             if (type == DEVICE_TYPE_INVALID) {

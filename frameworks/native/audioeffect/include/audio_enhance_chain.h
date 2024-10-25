@@ -73,6 +73,7 @@ struct AudioEnhanceParamAdapter {
     std::string preDevice;
     std::string postDevice;
     std::string sceneType;
+    std::string preDeviceName;
 };
 
 class AudioEnhanceChain {
@@ -92,7 +93,7 @@ public:
     int32_t SetEnhanceParam(bool mute, uint32_t systemVol);
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
     bool IsDefaultChain();
-    int32_t SetInputDevice(const std::string &inputDevice);
+    int32_t SetInputDevice(const std::string &inputDevice, const std::string &deviceName);
 
 private:
     void InitAudioEnhanceChain();

@@ -42,6 +42,7 @@ typedef struct SessionInfoPack {
     const char *channelLayout;
     const char *sceneMode;
     const char *spatializationEnabled;
+    const char *streamUsage;
 } SessionInfoPack;
 
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
@@ -62,7 +63,7 @@ void EffectChainManagerFlush(void);
 void EffectChainManagerEffectUpdate(void);
 bool EffectChainManagerSceneCheck(const char *sinkSceneType, const char *sceneType);
 uint32_t EffectChainManagerGetSceneCount(const char *sceneType);
-
+void EffectChainManagerStreamUsageUpdate();
 #ifdef __cplusplus
 }
 #endif

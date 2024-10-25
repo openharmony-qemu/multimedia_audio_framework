@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_PRIVATE_H
 
 #include <shared_mutex>
+#include <optional>
 
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
@@ -84,7 +85,6 @@ public:
     int32_t Enqueue(const BufferDesc &bufDesc) const override;
     int32_t Clear() const override;
     int32_t GetBufQueueState(BufferQueueState &bufState) const override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     void SetInterruptMode(InterruptMode mode) override;
     int32_t SetParallelPlayFlag(bool parallelPlayFlag) override;
     int32_t SetLowPowerVolume(float volume) const override;
@@ -149,9 +149,11 @@ public:
 
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
-    std::string cachePath_;
+    AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
+    AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
+    mutable bool isStillMuted_ = false;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -181,6 +183,8 @@ private:
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
+    void UpdateAudioInterruptStrategy(float volume) const;
+    bool IsAllowedStartBackgroud();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -207,7 +211,7 @@ private:
     DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
     RendererState state_ = RENDERER_INVALID;
 
-    float speed_ = 1.0;
+    std::optional<float> speed_ = std::nullopt;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
     std::mutex policyServiceDiedCallbackMutex_;

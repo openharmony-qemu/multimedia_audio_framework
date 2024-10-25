@@ -178,7 +178,6 @@ public:
     uint32_t GetRendererSamplingRate() override;
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
@@ -250,7 +249,7 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
 
-    uint32_t readLogTimes_ = 0;
+    std::atomic<uint32_t> readLogTimes_ = 0;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_ = nullptr;
     bool streamTrackerRegistered_ = false;
@@ -259,7 +258,6 @@ private:
     AudioCapturerInfo capturerInfo_ = {};
 
     int32_t bufferSizeInMsec_ = 20; // 20ms
-    std::string cachePath_ = "";
 
     // callback mode
     AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;
@@ -399,7 +397,9 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == RESTORE_SESSION) {
-        RestoreAudioStream();
+        if (audioStreamTracker_ && audioStreamTracker_.get()) {
+            audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
+        }
         return SUCCESS;
     }
 
@@ -1639,12 +1639,10 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     CHECK_AND_RETURN_RET_LOG(userSize < MAX_CLIENT_READ_SIZE && userSize > 0,
         ERR_INVALID_PARAM, "invalid size %{public}zu", userSize);
 
-    std::lock_guard<std::mutex> lock(readMutex_);
-
     std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
     if (state_ != RUNNING) {
         if (readLogTimes_ < LOGLITMITTIMES) {
-            readLogTimes_++;
+            readLogTimes_.fetch_add(1);
             AUDIO_ERR_LOG("Illegal state:%{public}u", state_.load());
         } else {
             AUDIO_DEBUG_LOG("Illegal state:%{public}u", state_.load());
@@ -1656,6 +1654,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 
     statusLock.unlock();
 
+    std::lock_guard<std::mutex> lock(readMutex_);
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
@@ -1833,12 +1832,6 @@ int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     return SUCCESS;
 }
 
-void CapturerInClientInner::SetApplicationCachePath(const std::string cachePath)
-{
-    cachePath_ = cachePath;
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath_.c_str());
-}
-
 int32_t CapturerInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     AUDIO_WARNING_LOG("not supported in capturer");
@@ -1871,7 +1864,6 @@ void CapturerInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
 void CapturerInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    info.cachePath = cachePath_;
     info.overFlowCount = overflowCount_;
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;

@@ -61,16 +61,17 @@ void AudioAnahsManagerListenerStub::SetAudioDeviceAnahsCallback(const std::weak_
 void AudioAnahsManagerListenerStub::OnExtPnpDeviceStatusChangedInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::string anahsName = data.ReadString();
-    int32_t result = OnExtPnpDeviceStatusChanged(anahsName);
+    std::string anahsShowType = data.ReadString();
+    int32_t result = OnExtPnpDeviceStatusChanged(anahsName, anahsShowType);
     reply.WriteInt32(result);
 }
 
-int32_t AudioAnahsManagerListenerStub::OnExtPnpDeviceStatusChanged(std::string anahsStatus)
+int32_t AudioAnahsManagerListenerStub::OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType)
 {
     std::shared_ptr<AudioDeviceAnahs> audioDeviceAnahsCallback = audioDeviceAnahsCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(audioDeviceAnahsCallback != nullptr, ERR_CALLBACK_NOT_REGISTERED,
         "audioDeviceAnahsCallback_ is nullptr");
-    return audioDeviceAnahsCallback->OnExtPnpDeviceStatusChanged(anahsStatus);
+    return audioDeviceAnahsCallback->OnExtPnpDeviceStatusChanged(anahsStatus, anahsShowType);
 }
 
 } // namespace AudioStandard

@@ -192,10 +192,10 @@ void AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedInfo 
 {
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
     MicrophoneBlockedInfo microphoneBlockedInfo;
-    microphoneBlockedInfo.status = blockedInfo.status;
+    microphoneBlockedInfo.blockStatus = blockedInfo.blockStatus;
     for (auto it = microphoneBlockedCallbackList_.begin(); it != microphoneBlockedCallbackList_.end(); ++it) {
-        microphoneBlockedInfo.deviceDescriptors = blockedInfo.deviceDescriptors;
-        if (it->second && microphoneBlockedInfo.deviceDescriptors.size() > 0) {
+        microphoneBlockedInfo.devices= blockedInfo.devices;
+        if (it->second && microphoneBlockedInfo.devices.size() > 0) {
             it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
         }
     }
@@ -465,7 +465,7 @@ void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
 }
 
 void AudioPolicyClientStubImpl::OnRendererStateChange(
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> callbacks;
     {
@@ -541,7 +541,7 @@ size_t AudioPolicyClientStubImpl::GetCapturerStateChangeCallbackSize() const
 }
 
 void AudioPolicyClientStubImpl::OnCapturerStateChange(
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     std::vector<std::shared_ptr<AudioCapturerStateChangeCallback>> tmpCallbackList;
     {

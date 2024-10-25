@@ -122,7 +122,8 @@ public:
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
-        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+        const int32_t zoneID = 0 /* default value: 0 -- local device */,
+        const bool isUpdatedAudioStrategy = false /* default value: false -- is update audio strategy */) = 0;
 
     virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
@@ -164,10 +165,10 @@ public:
     virtual int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) = 0;
 
     virtual int32_t GetCurrentRendererChangeInfos(
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
 
     virtual int32_t GetCurrentCapturerChangeInfos(
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 
     virtual int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
                                             StreamUsage streamUsage) = 0;
@@ -341,6 +342,8 @@ public:
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
 
     virtual int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) = 0;
+
+    virtual bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) = 0;
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) = 0;

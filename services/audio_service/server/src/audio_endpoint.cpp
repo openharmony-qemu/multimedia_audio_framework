@@ -52,7 +52,7 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static constexpr int64_t RECORD_DELAY_TIME = 4000000; // 4ms
-    static constexpr int64_t RECORD_VOIP_DELAY_TIME = 10000000; // 10ms
+    static constexpr int64_t RECORD_VOIP_DELAY_TIME = 20000000; // 20ms
     static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
     static constexpr int64_t PLAYBACK_DELAY_STOP_HDI_TIME = 10000000000; // 10s
     static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME = 200000000; // 200ms
@@ -173,6 +173,8 @@ public:
     uint32_t GetLinkedProcessCount() override;
 
     AudioMode GetAudioMode() const final;
+
+    void SetHibernateEndpointRelease(const bool &isHibernate) override;
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -308,6 +310,8 @@ private:
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
     bool isStarted_ = false;
     int64_t delayStopTime_ = INT64_MAX;
+    int64_t cacheDelayStopTime_ = INT64_MAX;
+    bool hibernateEndpointRelease_ = false;
     int64_t delayStopTimeForZeroVolume_ = INT64_MAX;
 
     std::atomic<ThreadStatus> threadStatus_ = WAITTING;
@@ -1111,6 +1115,9 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
         AUDIO_PRERELEASE_LOGI("OnPause status is IDEL, need delay call stop");
         delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
             ? PLAYBACK_DELAY_STOP_HDI_TIME : RECORDER_DELAY_STOP_HDI_TIME);
+        if (hibernateEndpointRelease_) {
+            delayStopTime_ = 0;
+        }
     }
     // todo
     return SUCCESS;
@@ -1669,6 +1676,25 @@ float AudioEndpointInner::GetMaxAmplitude()
 AudioMode AudioEndpointInner::GetAudioMode() const
 {
     return clientConfig_.audioMode;
+}
+
+void AudioEndpointInner::SetHibernateEndpointRelease(const bool &isHibernate)
+{
+    hibernateEndpointRelease_ = isHibernate;
+    if (isHibernate) {
+        if (delayStopTime_ == 0) {
+            AUDIO_INFO_LOG("delayStopTime is 0, don't amend");
+            return;
+        }
+        cacheDelayStopTime_ = delayStopTime_;
+        delayStopTime_ = 0;
+        AUDIO_INFO_LOG("amend delayStopTime from %{public}" PRIu64" to %{public}" PRIu64,
+                        cacheDelayStopTime_, delayStopTime_);
+    } else {
+        AUDIO_INFO_LOG("amend delayStopTime from %{public}" PRIu64" to %{public}" PRIu64,
+                        delayStopTime_, cacheDelayStopTime_);
+        delayStopTime_ = cacheDelayStopTime_;
+    }
 }
 
 int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)

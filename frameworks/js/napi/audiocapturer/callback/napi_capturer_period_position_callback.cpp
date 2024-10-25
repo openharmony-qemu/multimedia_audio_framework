@@ -15,7 +15,9 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiCapturerPeriodPositionCallback"
 #endif
+#include <thread>
 
+#include "js_native_api.h"
 #include "napi_capturer_period_position_callback.h"
 
 #include "audio_errors.h"
@@ -68,6 +70,51 @@ void NapiCapturerPeriodPositionCallback::OnPeriodReached(const int64_t &frameNum
     return OnJsCapturerPeriodPositionCallback(cb);
 }
 
+void NapiCapturerPeriodPositionCallback::SafeJsCallbackCapturerPeriodPositionWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
+{
+    CapturerPeriodPositionJsCallback *event = reinterpret_cast<CapturerPeriodPositionJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCapturerPeriodPositionCallback: no memory");
+    std::shared_ptr<CapturerPeriodPositionJsCallback> safeContext(
+        static_cast<CapturerPeriodPositionJsCallback*>(data),
+        [event](CapturerPeriodPositionJsCallback *ptr) {
+            napi_release_threadsafe_function(event->acPeriodPosTsfn, napi_tsfn_abort);
+            delete ptr;
+    });
+    CHECK_AND_RETURN_LOG(event->callback != nullptr, "callback is nullptr");
+    napi_ref callback = event->callback->cb_;
+    std::string request = event->callbackName;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackCapturerPeriodPositionWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+
+        // Call back function
+        napi_value args[ARGS_ONE] = { nullptr };
+        napi_create_int64(env, event->position, &args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+            "%{public}s fail to create position callback", request.c_str());
+
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiCapturerPeriodPositionCallback::CapturerPeriodPositionTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("CapturerPeriodPositionTsfnFinalize: safe thread resource release.");
+}
+
 void NapiCapturerPeriodPositionCallback::OnJsCapturerPeriodPositionCallback(
     std::unique_ptr<CapturerPeriodPositionJsCallback> &jsCb)
 {
@@ -75,46 +122,18 @@ void NapiCapturerPeriodPositionCallback::OnJsCapturerPeriodPositionCallback(
         AUDIO_ERR_LOG("OnJsCapturerPeriodPositionCallback: jsCb.get() is null");
         return;
     }
-    CapturerPeriodPositionJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<CapturerPeriodPositionJsCallback> context(
-            static_cast<CapturerPeriodPositionJsCallback*>(event),
-            [](CapturerPeriodPositionJsCallback* ptr) {
-                delete ptr;
-        });
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        std::string request = event->callbackName;
+    CapturerPeriodPositionJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCapturerPeriodPositionCallback: event is nullptr.");
 
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-
-            // Call back function
-            napi_value args[ARGS_ONE] = { nullptr };
-            napi_create_int64(env, event->position, &args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-                "%{public}s fail to create position callback", request.c_str());
-
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCapturerPeriodPositionCallback: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    napi_value cbName;
+    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
+        CapturerPeriodPositionTsfnFinalize, nullptr, SafeJsCallbackCapturerPeriodPositionWork,
+        &event->acPeriodPosTsfn);
+    
+    napi_acquire_threadsafe_function(event->acPeriodPosTsfn);
+    napi_call_threadsafe_function(event->acPeriodPosTsfn, event, napi_tsfn_blocking);
 }
-
 }  // namespace AudioStandard
 }  // namespace OHOS

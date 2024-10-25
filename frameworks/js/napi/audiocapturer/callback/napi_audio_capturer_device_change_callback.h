@@ -37,10 +37,13 @@ private:
         napi_ref callback_;
         napi_env env_;
         DeviceInfo deviceInfo_;
+        std::string callbackName = "unknown";
+        napi_threadsafe_function acDevChgTsfn = nullptr;
     };
 
-    static void WorkCallbackCompleted(uv_work_t* work, int status);
     void OnJsCallbackCapturerDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo);
+    static void CaptureDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackCapturerDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

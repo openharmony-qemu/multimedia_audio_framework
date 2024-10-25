@@ -53,6 +53,7 @@ constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
+constexpr int32_t UID_THPEXTRA_SA = 5000;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 
 const uint32_t UNIQUE_ID_INTERVAL = 8;
@@ -80,6 +81,7 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_DISTRIBUTED_AUDIO_SA,
     UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
+    UID_THPEXTRA_SA,
     UID_TELEPHONY_SA // used in distributed communication call
 };
 
@@ -1202,7 +1204,6 @@ bool VolumeUtils::isPCVolumeEnable_ = false;
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
-    {STREAM_VOICE_MESSAGE, STREAM_VOICE_CALL},
     {STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL},
     {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL},
 
@@ -1220,6 +1221,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_SPEECH, STREAM_MUSIC},
     {STREAM_NAVIGATION, STREAM_MUSIC},
     {STREAM_CAMCORDER, STREAM_MUSIC},
+    {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
     {STREAM_ALARM, STREAM_ALARM},

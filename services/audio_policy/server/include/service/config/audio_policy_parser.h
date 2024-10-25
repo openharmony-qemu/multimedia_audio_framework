@@ -79,6 +79,7 @@ private:
     void ParseCommonConfigs(xmlNode& node);
 
     void HandleUpdateRouteSupportParsed(std::string &value);
+    void HandleUpdateAnahsSupportParsed(std::string &value);
     PAConfigType GetPaConfigType(std::string &name);
 
     void SplitStringToList(std::string &str, std::list<std::string> &result);

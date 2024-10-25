@@ -29,6 +29,17 @@ config("audio_capturer_config") {
   ]
 }
 
+config("audio_external_library_config") {
+  include_dirs = [
+    "include",
+    "../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../frameworks/native/audiostream/include",
+    "../../../services/audio_service/client/include",
+    "../../../interfaces/kits/c/common",
+  ]
+}
+
 ohos_shared_library("audio_capturer") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -70,17 +81,6 @@ ohos_shared_library("audio_capturer") {
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
-}
-
-config("audio_external_library_config") {
-  include_dirs = [
-    "include",
-    "../../../interfaces/inner_api/native/audiocapturer/include",
-    "../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../frameworks/native/audiostream/include",
-    "../../../services/audio_service/client/include",
-    "../../../interfaces/kits/c/common",
-  ]
 }
 
 group("audio_capturer_test_packages") {

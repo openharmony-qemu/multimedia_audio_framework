@@ -146,12 +146,12 @@ void AudioPolicyClientProxy::OnMicrophoneBlocked(const MicrophoneBlockedInfo &mi
         return;
     }
 
-    size_t size = microphoneBlockedInfo.deviceDescriptors.size();
+    size_t size = microphoneBlockedInfo.devices.size();
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_MICRO_PHONE_BLOCKED));
-    data.WriteInt32(microphoneBlockedInfo.status);
+    data.WriteInt32(microphoneBlockedInfo.blockStatus);
     data.WriteInt32(static_cast<int32_t>(size));
     for (size_t i = 0; i < size; i++) {
-        microphoneBlockedInfo.deviceDescriptors[i]->Marshalling(data);
+        microphoneBlockedInfo.devices[i]->Marshalling(data);
     }
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
@@ -247,7 +247,7 @@ void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const std::vector<spt
 }
 
 void AudioPolicyClientProxy::OnRendererStateChange(
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -260,7 +260,7 @@ void AudioPolicyClientProxy::OnRendererStateChange(
     size_t size = audioRendererChangeInfos.size();
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE));
     data.WriteInt32(size);
-    for (const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
+    for (const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
         if (!rendererChangeInfo) {
             AUDIO_ERR_LOG("Renderer change info null, something wrong!!");
             continue;
@@ -275,7 +275,7 @@ void AudioPolicyClientProxy::OnRendererStateChange(
 }
 
 void AudioPolicyClientProxy::OnCapturerStateChange(
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -288,7 +288,7 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
     size_t size = audioCapturerChangeInfos.size();
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE));
     data.WriteInt32(size);
-    for (const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
+    for (const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
         if (!capturerChangeInfo) {
             AUDIO_ERR_LOG("Capturer change info null, something wrong!!");
             continue;

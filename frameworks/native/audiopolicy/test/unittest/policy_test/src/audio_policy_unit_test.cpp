@@ -576,7 +576,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_UnregisterAudioRendererEventLis
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetCurrentCapturerChangeInfos_001, TestSize.Level1)
 {
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t ret = AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     EXPECT_EQ(true, audioCapturerChangeInfos.size() <= 0);
     EXPECT_EQ(SUCCESS, ret);
@@ -592,7 +592,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Capturer_State_Change_001, TestSize.Level1)
     std::shared_ptr<AudioPolicyClientStubImpl> capturerStub =
         std::make_shared<AudioPolicyClientStubImpl>();
 
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     capturerStub->OnCapturerStateChange(audioCapturerChangeInfos);
 
     std::shared_ptr<AudioCapturerStateChangeCallbackTest> callback =
@@ -617,7 +617,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
     std::shared_ptr<AudioPolicyClientStubImpl> rendererStub =
         std::make_shared<AudioPolicyClientStubImpl>();
 
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     rendererStub->OnRendererStateChange(audioRendererChangeInfos);
 
     std::shared_ptr<AudioRendererStateChangeCallbackTest> callback =
@@ -1189,8 +1189,6 @@ HWTEST(AudioPolicyUnitTest, GetSystemVolumeLevel_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_VOICE_CALL);
     EXPECT_EQ(volumeLevel, ret);
-    ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_VOICE_MESSAGE);
-    EXPECT_EQ(volumeLevel, ret);
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_VOICE_COMMUNICATION);
     EXPECT_EQ(volumeLevel, ret);
 }
@@ -1238,6 +1236,8 @@ HWTEST(AudioPolicyUnitTest, GetSystemVolumeLevel_003, TestSize.Level1)
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_SPEECH);
     EXPECT_EQ(volumeLevel, ret);
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_NAVIGATION);
+    EXPECT_EQ(volumeLevel, ret);
+    ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_VOICE_MESSAGE);
     EXPECT_EQ(volumeLevel, ret);
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(static_cast<AudioVolumeType>(99));
     EXPECT_EQ(volumeLevel, ret);
@@ -1300,8 +1300,6 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_CALL);
     EXPECT_FALSE(isMute);
-    isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_MESSAGE);
-    EXPECT_FALSE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_COMMUNICATION);
     EXPECT_FALSE(isMute);
     isMute = AudioPolicyManager::GetInstance().IsStreamActive(AudioVolumeType::STREAM_VOICE_CALL);
@@ -1309,8 +1307,6 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_001, TestSize.Level1)
     ret = AudioPolicyManager::GetInstance().SetStreamMute(AudioVolumeType::STREAM_VOICE_CALL, false);
     EXPECT_EQ(SUCCESS, ret);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_CALL);
-    EXPECT_FALSE(isMute);
-    isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_MESSAGE);
     EXPECT_FALSE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_COMMUNICATION);
     EXPECT_FALSE(isMute);
@@ -1372,6 +1368,8 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_003, TestSize.Level1)
     EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_NAVIGATION);
     EXPECT_TRUE(isMute);
+    isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_MESSAGE);
+    EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(static_cast<AudioVolumeType>(99));
     EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().IsStreamActive(AudioVolumeType::STREAM_MUSIC);
@@ -1389,6 +1387,8 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_003, TestSize.Level1)
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_SPEECH);
     EXPECT_FALSE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_NAVIGATION);
+    EXPECT_FALSE(isMute);
+    isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_MESSAGE);
     EXPECT_FALSE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(static_cast<AudioVolumeType>(99));
     EXPECT_FALSE(isMute);

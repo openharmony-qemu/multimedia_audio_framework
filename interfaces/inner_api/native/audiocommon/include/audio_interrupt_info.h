@@ -18,6 +18,7 @@
 #include <parcel.h>
 #include <audio_stream_info.h>
 #include <audio_source_type.h>
+#include <audio_session_info.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -167,6 +168,7 @@ public:
     InterruptMode mode { SHARE_MODE };
     bool parallelPlayFlag {false};
     AudioFocusConcurrency currencySources;
+    AudioSessionStrategy sessionStrategy = { AudioConcurrencyMode::INVALID };
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -190,6 +192,7 @@ public:
         for (size_t i = 0; i < vct; i++) {
             res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.currencySources.sourcesTypes[i]));
         }
+        res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.sessionStrategy.concurrencyMode));
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -213,6 +216,7 @@ public:
             SourceType sourceType = static_cast<SourceType>(parcel.ReadInt32());
             interrupt.currencySources.sourcesTypes.push_back(sourceType);
         }
+        interrupt.sessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
     }
 };
 } // namespace AudioStandard

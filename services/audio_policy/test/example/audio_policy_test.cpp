@@ -567,7 +567,7 @@ static void PrintFocusInfoList(const std::list<std::pair<AudioInterrupt, AudioFo
 }
 
 static void PrintAudioRendererChangeInfos(
-    const std::vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    const std::vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     cout << "===============AudioRendererChangeInfo============== size:"<< audioRendererChangeInfos.size() << endl;
     for (const auto& uPtraudioRendererChangeInfo : audioRendererChangeInfos) {
@@ -602,7 +602,7 @@ public:
 class AudioRendererChangeInfoCallbackTest : public AudioRendererStateChangeCallback {
 public:
     void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) final
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) final
     {
         PrintAudioRendererChangeInfos(audioRendererChangeInfos);
     }
@@ -704,7 +704,7 @@ static void HandleAudioRendererChangeInfo()
         cin >> num;
         switch (num) {
             case '1': {
-                std::vector<unique_ptr<AudioRendererChangeInfo>> res;
+                std::vector<shared_ptr<AudioRendererChangeInfo>> res;
                 audioStreamManager->GetCurrentRendererChangeInfos(res);
                 PrintAudioRendererChangeInfos(res);
                 break;

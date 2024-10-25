@@ -45,8 +45,8 @@ public:
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-    int32_t SetInputRoute(DeviceType deviceType) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string &deviceName = "") override;
+    int32_t SetInputRoute(DeviceType deviceType, const std::string &deviceName = "") override;
     uint64_t GetTransactionId() override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;

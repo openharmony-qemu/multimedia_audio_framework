@@ -22,6 +22,8 @@
 #include "audio_device_info.h"
 #include "message_parcel.h"
 #include "accesstoken_kit.h"
+#include "audio_routing_manager.h"
+#include "audio_stream_manager.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "access_token.h"
@@ -228,7 +230,7 @@ void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)
         insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
     GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
 
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     unique_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = make_unique<AudioDeviceDescriptor>();
     GetServerPtr()->audioPolicyService_.MoveToNewInputDevice(*audioCapturerChangeInfos.begin(), remoteDeviceDescriptor);
@@ -331,7 +333,7 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.SetA2dpDeviceVolume("activeBTDevice_1", volumeLevel, true);
     GetServerPtr()->audioPolicyService_.SetA2dpDeviceVolume("activeBTDevice_1", volumeLevel, false);
     GetServerPtr()->audioPolicyService_.OnMicrophoneBlockedUpdate(DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_UNBLOCKED);
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     for (auto &capturerChangeInfo : audioCapturerChangeInfos) {
         capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
@@ -380,7 +382,7 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     audioRendererChangeInfo.rendererInfo = rendererInfo;
     GetServerPtr()->audioPolicyService_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     GetServerPtr()->audioPolicyService_.streamCollector_.audioRendererChangeInfos_.
-        push_back(make_unique<AudioRendererChangeInfo>(audioRendererChangeInfo));
+        push_back(make_shared<AudioRendererChangeInfo>(audioRendererChangeInfo));
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->WaitForConnectionCompleted();
     std::string dumpString = "";
     GetServerPtr()->audioPolicyService_.AudioStreamDump(dumpString);
@@ -408,6 +410,56 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.RestoreSession(SESSIONID_32, true);
 }
 
+void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {return;}
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    if (audioRendererFilter == nullptr) {return;}
+    audioRendererFilter->uid = getuid();
+    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+    audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    AudioRoutingManager::GetInstance()->
+        GetPreferredOutputDeviceForRendererInfo(audioRendererFilter->rendererInfo, desc);
+    GetServerPtr()->audioPolicyService_.SelectOutputDeviceByFilterInner(audioRendererFilter, desc);
+    vector<SinkInput> sinkInputs;
+    sptr<AudioDeviceDescriptor> dis = new AudioDeviceDescriptor();
+    dis->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    dis->macAddress_ = GetServerPtr()->audioPolicyService_.activeBTDevice_;
+    dis->deviceRole_ = OUTPUT_DEVICE;
+    dis->networkId_ = "RemoteDevice";
+    std::string moduleName = dis->networkId_ + (dis->deviceRole_ == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
+    AudioModuleInfo audioModuleInfo;
+    AudioIOHandle ioHandle = GetServerPtr()->audioPolicyService_.audioPolicyManager_.OpenAudioPort(audioModuleInfo);
+    GetServerPtr()->audioPolicyService_.IOHandles_.insert({moduleName, ioHandle});
+    GetServerPtr()->audioPolicyService_.MoveToRemoteOutputDevice(sinkInputs, dis);
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = SYSTEM_ABILITY_ID;
+    GetServerPtr()->audioPolicyService_.SelectFastInputDevice(audioCapturerFilter, dis);
+    GetServerPtr()->audioPolicyService_.SetCaptureDeviceForUsage(AUDIO_SCENE_PHONE_CALL, SOURCE_TYPE_VOICE_CALL, dis);
+    GetServerPtr()->audioPolicyService_.CloseWakeUpAudioCapturer();
+    DeviceInfo newDeviceInfo;
+    newDeviceInfo.networkId = LOCAL_NETWORK_ID;
+    newDeviceInfo.macAddress = GetServerPtr()->audioPolicyService_.activeBTDevice_;
+    GetServerPtr()->audioPolicyService_.GetSinkName(newDeviceInfo, SESSIONID_32);
+    AudioDeviceDescriptor ads;
+    ads.networkId_ = LOCAL_NETWORK_ID;
+    ads.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    GetServerPtr()->audioPolicyService_.GetSinkName(ads, SESSIONID_32);
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->sessionId = SESSIONID_32;
+    rendererChangeInfo->outputDeviceInfo = newDeviceInfo;
+    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices =
+        GetServerPtr()->audioPolicyService_.audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
+    GetServerPtr()->audioPolicyService_.
+        MoveToNewOutputDevice(rendererChangeInfo, outputDevices, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    std::unique_ptr<AudioDeviceDescriptor> adc = std::make_unique<AudioDeviceDescriptor>();
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    GetServerPtr()->audioPolicyService_.
+        ActivateA2dpDevice(adc, audioRendererChangeInfos,  AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -424,5 +476,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioPolicyServiceTest(data, size);
     OHOS::AudioStandard::AudioPolicyServiceTestII(data, size);
     OHOS::AudioStandard::AudioPolicyServiceTestIII(data, size);
+    OHOS::AudioStandard::AudioPolicyServiceTestIV(data, size);
     return 0;
 }

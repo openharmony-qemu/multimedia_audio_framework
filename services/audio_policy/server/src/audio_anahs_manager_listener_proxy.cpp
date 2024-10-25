@@ -34,7 +34,7 @@ AudioAnahsManagerListenerProxy::~AudioAnahsManagerListenerProxy()
 }
 
 
-int32_t AudioAnahsManagerListenerProxy::OnExtPnpDeviceStatusChanged(std::string anahsStatus)
+int32_t AudioAnahsManagerListenerProxy::OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -43,6 +43,7 @@ int32_t AudioAnahsManagerListenerProxy::OnExtPnpDeviceStatusChanged(std::string 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
         "OnAudioOutputDeviceRefined: WriteInterfaceToken failed");
     data.WriteString(anahsStatus);
+    data.WriteString(anahsShowType);
 
     int error = Remote()->SendRequest(ON_AUDIO_ANAHS_DEVICE_CHANGE, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "OnExtPnpDeviceStatusChanged, error: %{public}d", error);

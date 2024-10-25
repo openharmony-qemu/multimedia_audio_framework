@@ -241,6 +241,12 @@ int32_t PaAdapterManager::ReleaseCapturer(uint32_t streamIndex)
     return SUCCESS;
 }
 
+int32_t PaAdapterManager::AddUnprocessStream(int32_t appUid)
+{
+    unprocessAppUidSet_.insert(appUid);
+    return SUCCESS;
+}
+
 int32_t PaAdapterManager::ResetPaContext()
 {
     AUDIO_DEBUG_LOG("Enter ResetPaContext");
@@ -393,8 +399,11 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     }
     const std::string streamName = GetStreamName(processConfig.streamType);
     pa_channel_map map;
-    CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName, sessionId) == 0, nullptr,
-        "set pa proplist failed");
+    if (SetPaProplist(propList, map, processConfig, streamName, sessionId) != 0) {
+        AUDIO_ERR_LOG("set pa proplist failed");
+        pa_proplist_free(propList);
+        return nullptr;
+    }
 
     pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec,
         isRecording ? nullptr : &map, propList);
@@ -502,6 +511,10 @@ void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConf
         std::to_string(processConfig.capturerInfo.sourceType).c_str());
     const std::string sceneType = GetEnhanceSceneName(processConfig.capturerInfo.sourceType);
     pa_proplist_sets(propList, "scene.type", sceneType.c_str());
+    if (unprocessAppUidSet_.find(processConfig.appInfo.appUid) != unprocessAppUidSet_.end()) {
+        AUDIO_INFO_LOG("ByPass UID is [%{public}d]", processConfig.appInfo.appUid);
+        pa_proplist_sets(propList, "scene.bypass", "scene.bypass");
+    }
 }
 
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
@@ -596,13 +609,13 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     }
 
     PaLockGuard lock(mainLoop_);
-    int32_t XcollieFlag = 1; // flag 1 generate log file
+    int32_t XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG;
     if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
     if (managerType_ == RECORDER) {
-        XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
+        XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY;
         int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, source, deviceName);
         CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
     }
@@ -852,6 +865,9 @@ const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
             break;
         case SOURCE_TYPE_VOICE_TRANSCRIPTION:
             name = "SCENE_PRE_ENHANCE";
+            break;
+        case SOURCE_TYPE_VOICE_MESSAGE:
+            name = "SCENE_VOICE_MESSAGE";
             break;
         default:
             name = "SCENE_OTHERS";

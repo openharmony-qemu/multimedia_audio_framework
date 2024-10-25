@@ -30,10 +30,10 @@ namespace {
     std::string g_networkId = "LocalDevice";
 }
 void AudioRendererStateCallbackFuzz::OnRendererStateChange(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) {}
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) {}
 
 void AudioCapturerStateCallbackFuzz::OnCapturerStateChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
 const int32_t LIMITSIZE = 4;
 void AudioManagerFuzzTest(const uint8_t* data, size_t size)
 {
@@ -123,10 +123,10 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
     AudioStreamManager::GetInstance()->RegisterAudioCapturerEventListener(clientPid, audioCapturerStateCallbackFuzz);
     AudioStreamManager::GetInstance()->UnregisterAudioCapturerEventListener(clientPid);
 
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
 
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 
     sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();

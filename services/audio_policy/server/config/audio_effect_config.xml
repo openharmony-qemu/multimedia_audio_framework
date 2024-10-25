@@ -34,9 +34,10 @@
     <effects>
         <effect name="eq" library="BasicEffect"/>
         <effect name="drc" library="BasicEffect"/>
-        <effect name="voip" library="Voip"/>
+        <effect name="voip" library="Voip">
             <effectProperty mode="normal"/>
             <effectProperty mode="personal"/>
+        </effect>
     </effects>
 
     <!-- List of effectChains to create.

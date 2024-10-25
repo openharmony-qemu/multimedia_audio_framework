@@ -130,13 +130,14 @@ void AudioEnhanceChain::ReleaseEnhanceChain()
     enhanceLibHandles_.clear();
 }
 
-int32_t AudioEnhanceChain::SetInputDevice(const std::string &inputDevice)
+int32_t AudioEnhanceChain::SetInputDevice(const std::string &inputDevice, const std::string &deviceName)
 {
     if (inputDevice.size() == 0) {
         return SUCCESS;
     }
     algoParam_.preDevice = inputDevice;
-    AUDIO_INFO_LOG("update input device %{public}s", inputDevice.c_str());
+    algoParam_.preDeviceName = deviceName;
+    AUDIO_INFO_LOG("update input device %{public}s name %{public}s", inputDevice.c_str(), deviceName.c_str());
     std::lock_guard<std::mutex> lock(chainMutex_);
     uint32_t size = standByEnhanceHandles_.size();
     AudioEffectTransInfo cmdInfo = {};
@@ -176,7 +177,7 @@ int32_t AudioEnhanceChain::SetEnhanceParamToHandle(AudioEffectHandle handle)
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
     AudioEnhanceParam setParam = {algoParam_.muteInfo, algoParam_.volumeInfo, algoParam_.preDevice.c_str(),
-        algoParam_.postDevice.c_str(), algoParam_.sceneType.c_str()};
+        algoParam_.postDevice.c_str(), algoParam_.sceneType.c_str(), algoParam_.preDeviceName.c_str()};
     cmdInfo.data = static_cast<void *>(&setParam);
     cmdInfo.size = sizeof(setParam);
     return (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
