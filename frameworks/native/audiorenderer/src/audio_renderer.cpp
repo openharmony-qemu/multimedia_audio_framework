@@ -618,9 +618,9 @@ bool AudioRendererPrivate::IsAllowedStartBackgroud()
         AUDIO_INFO_LOG("AVSession IsAudioPlaybackAllowed is: %{public}d", ret);
         return ret;
     } else {
-        if (std::count(EXEMPT_MUTE_STREAM_USAGE.begin(), EXEMPT_MUTE_STREAM_USAGE.end(),
-            rendererInfo_.streamUsage) != 0) {
-            AUDIO_INFO_LOG("%{public}d is EXEMPT_MUTE_STREAM_USAGE", rendererInfo_.streamUsage);
+        if (std::count(BACKGROUND_NOSTART_STREAM_USAGE.begin(), BACKGROUND_NOSTART_STREAM_USAGE.end(),
+            rendererInfo_.streamUsage) == 0) {
+            AUDIO_INFO_LOG("%{public}d is BACKGROUND_NOSTART_STREAM_USAGE", rendererInfo_.streamUsage);
             return true;
         }
     }
