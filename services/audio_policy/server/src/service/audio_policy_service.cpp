@@ -10082,11 +10082,8 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::shared_ptr<AudioRendere
     vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
-        {
-            std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-            if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
-                LoadMchModule();
-            }
+        if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
+            LoadMchModule();
         }
         std::string oldSinkName = GetSinkName(rendererChangeInfo->outputDeviceInfo, rendererChangeInfo->sessionId);
         std::string newSinkName = GetSinkPortName(descs.front()->deviceType_, PIPE_TYPE_MULTICHANNEL);
