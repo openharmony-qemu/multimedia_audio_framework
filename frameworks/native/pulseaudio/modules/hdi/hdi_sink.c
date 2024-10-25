@@ -169,7 +169,7 @@ static void StartMultiChannelHdiIfRunning(struct Userdata *u);
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
 static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t state);
 static void *AllocateBuffer(size_t size);
-static void AllocateEffectBuffer(struct Userdata *u);
+static int32_t AllocateEffectBuffer(struct Userdata *u);
 static void FreeEffectBuffer(struct Userdata *u);
 static void ResetBufferAttr(struct Userdata *u);
 
@@ -1872,7 +1872,7 @@ static void GetHashMap(struct Userdata *u, const char *sceneType)
 
 static void UpdateSceneToCountMap(struct Userdata *u)
 {
-    if (u->sceneMap == NULL) {
+    if (u->sceneToCountMap == NULL) {
         return;
     }
     for (int32_t i = 0; i < SCENE_TYPE_NUM - 1; i++) {
@@ -1885,7 +1885,7 @@ static void *AllocateBuffer(size_t size)
     return malloc(size);
 }
 
-static void AllocateEffectBuffer(struct Userdata *u)
+static int32_t AllocateEffectBuffer(struct Userdata *u)
 {
     float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
         &u->bufferAttr->tempBufIn, u->bufferAttr->tempBufOut };
@@ -1895,8 +1895,10 @@ static void AllocateEffectBuffer(struct Userdata *u)
         if (*buffers[i] == NULL) {
             AUDIO_ERR_LOG("failed to allocate effect buffer");
             FreeEffectBuffer(u);
+            return -1;
         }
     }
+    return 0;
 }
 
 static void FreeEffectBuffer(struct Userdata *u)
@@ -2003,10 +2005,7 @@ static void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 
     pa_assert(length > 0);
     AUTO_CTRACE("hdi_sink::SinkRenderPrimaryProcess:len:%zu", length);
-    if (u->isEffectBufferAllocated || (!u->isEffectBufferAllocated && (AllocateEffectBuffer(u) != -1))) {
-        u->isEffectBufferAllocated = true;
-        SinkRenderPrimaryProcess(si, length, chunkIn);
-    }
+    SinkRenderPrimaryProcess(si, length, chunkIn);
 
     pa_sink_unref(si);
 }
@@ -2061,7 +2060,10 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
         pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
         UnsetSinkVolume(u->sink); // reset volume 1.0f
     } else {
-        SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
+        if (u->isEffectBufferAllocated || (!u->isEffectBufferAllocated && (AllocateEffectBuffer(u) != -1))) {
+            u->isEffectBufferAllocated = true;
+            SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
+        }
     }
     pa_assert(chunk.length > 0);
 
@@ -3077,6 +3079,7 @@ static void ProcessNormalData(struct Userdata *u)
 
     if (u->sink->thread_info.state == PA_SINK_SUSPENDED) {
         FreeEffectBuffer(u);
+        u->isEffectBufferAllocated = false;
     }
     bool flag = (((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
                 (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
