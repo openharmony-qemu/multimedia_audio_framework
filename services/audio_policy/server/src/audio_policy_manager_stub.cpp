@@ -1842,7 +1842,8 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1, "ReadInterfaceToken failed");
     Trace trace(code >= codeNums ? "invalid audio policy code" : g_audioPolicyCodeStrs[code]);
-    AudioXCollie audioXCollie("AudioPolicy::ProcessIPC", ON_REMOTE_REQUEST_TIMEOUT_SEC);
+    AudioXCollie audioXCollie("AudioPolicy::ProcessIPC", ON_REMOTE_REQUEST_TIMEOUT_SEC, nullptr, nullptr,
+        (AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY));
     if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
         switch (code) {
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUMELEVEL):
