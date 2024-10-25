@@ -171,7 +171,7 @@ int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRende
 {
     Trace trace("ProAudioStreamManager::CreatePlayBackEngine");
     int32_t ret = SUCCESS;
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioProcessConfig config = stream->GetAudioProcessConfig();
     bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, true, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(result, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");

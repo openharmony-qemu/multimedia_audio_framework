@@ -1191,7 +1191,7 @@ napi_value NapiAudioRenderer::GetCurrentOutputDevices(napi_env env, napi_callbac
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        DeviceInfo deviceInfo;
+        AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
         context->intValue = napiAudioRenderer->audioRenderer_->GetCurrentOutputDevices(deviceInfo);
         if (context->intValue == ERR_INVALID_PARAM) {
             context->SignError(NAPI_ERROR_INVALID_PARAM);
@@ -1217,7 +1217,7 @@ napi_value NapiAudioRenderer::GetCurrentOutputDevicesSync(napi_env env, napi_cal
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
 
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     int32_t ret = napiAudioRenderer->audioRenderer_->GetCurrentOutputDevices(deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetCurrentOutputDevices failure!");
 

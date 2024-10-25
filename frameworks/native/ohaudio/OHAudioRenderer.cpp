@@ -726,7 +726,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     audioRenderer->Enqueue(bufDesc);
 }
 
-void OHAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+void OHAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
@@ -775,7 +775,7 @@ void OHAudioRendererErrorCallback::OnError(AudioErrors errorCode)
     callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
 }
 
-void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");

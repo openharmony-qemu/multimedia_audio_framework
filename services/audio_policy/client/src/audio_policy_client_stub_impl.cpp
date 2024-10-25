@@ -490,7 +490,7 @@ size_t AudioPolicyClientStubImpl::GetDeviceChangeWithInfoCallbackkSize() const
 }
 
 void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
-    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
