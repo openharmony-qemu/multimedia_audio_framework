@@ -206,15 +206,18 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
-    int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
+    int32_t ret1 = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_RET_LOG(ret1 == 0, ret1, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
         sceneType_.c_str(), effectMode_.c_str());
 
-    ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "[%{public}s] with mode [%{public}s], EFFECT_CMD_GET_CONFIG fail",
-        sceneType_.c_str(), effectMode_.c_str());
+    cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
+    int ret2 = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+    if (ret2 != 0) {
+        AUDIO_WARNING_LOG("EFFECT_CMD_GET_CONFIG fail, ret is %{public}d", ret2);
+    }
     UpdateOutputChannelInfo(ioBufferConfig_.outputCfg);
-    return ret;
+
+    return ret1;
 }
 
 int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std::string &property)
