@@ -501,6 +501,130 @@ bool FfiMMAAVGMIsVolumeUnadjustable(int64_t id, int32_t *errorCode)
     *errorCode = SUCCESS_CODE;
     return inst->IsVolumeUnadjustable();
 }
+
+/* CAPABILITY FOR LAST CANGJIE VERSION AND WILL BE REMOVED */
+/* Audio Manager */
+int64_t FfiMMAGetVolumeManager(int64_t id, int32_t *errorCode)
+{
+    auto mgr = FFIData::Create<MMAAudioVolumeManagerImpl>();
+    if (mgr == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("FfiMMACreateAudioManager failed.");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return mgr->GetID();
+}
+
+/* Audio Volume Manager */
+int64_t FfiMMAGetVolumeGroupManager(int64_t id, int32_t *errorCode)
+{
+    auto mgr = FFIData::Create<MMAAudioVolumeManagerImpl>();
+    if (mgr == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("FfiMMACreateAudioManager failed.");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return mgr->GetID();
+}
+
+/* Audio Volumne Group Manager */
+int32_t FfiMMAGetMaxVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->GetMaxVolume(volumeType);
+}
+
+int32_t FfiMMAGetMinVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->GetMinVolume(volumeType);
+}
+
+int32_t FfiMMAGetRingerMode(int64_t id, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->GetRingerMode();
+}
+
+float FfiMMAGetSystemVolumeInDb(int64_t id, int32_t volumeType, int32_t volumeLevel, int32_t device, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->GetSystemVolumeInDb(volumeType, volumeLevel, device);
+}
+
+int32_t FfiMMAGetVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->GetVolume(volumeType);
+}
+
+bool FfiMMAIsMicrophoneMute(int64_t id, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->IsMicrophoneMute();
+}
+
+bool FfiMMAIsMute(int64_t id, int32_t volumeType, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->IsMute(volumeType);
+}
+
+bool FfiMMAIsVolumeUnadjustable(int64_t id, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->IsVolumeUnadjustable();
+}
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -166,6 +166,24 @@ FFI_EXPORT int32_t FfiMMAAVGMGetVolume(int64_t id, int32_t volumeType, int32_t *
 FFI_EXPORT bool FfiMMAAVGMIsMicrophoneMute(int64_t id, int32_t *errorCode);
 FFI_EXPORT bool FfiMMAAVGMIsMute(int64_t id, int32_t volumeType, int32_t *errorCode);
 FFI_EXPORT bool FfiMMAAVGMIsVolumeUnadjustable(int64_t id, int32_t *errorCode);
+
+/* CAPABILITY FOR LAST CANGJIE VERSION AND WILL BE REMOVED */
+/* Audio Manager */
+FFI_EXPORT int64_t FfiMMAGetVolumeManager(int64_t id, int32_t *errorCode);
+
+/* Audio Volumne Manager */
+FFI_EXPORT int64_t FfiMMAGetVolumeGroupManager(int64_t id, int32_t *errorCode);
+
+/* Audio Volumne Group Manager */
+FFI_EXPORT int32_t FfiMMAGetMaxVolume(int64_t id, int32_t volumeType, int32_t *errorCode);
+FFI_EXPORT int32_t FfiMMAGetMinVolume(int64_t id, int32_t volumeType, int32_t *errorCode);
+FFI_EXPORT int32_t FfiMMAGetRingerMode(int64_t id, int32_t *errorCode);
+FFI_EXPORT float FfiMMAGetSystemVolumeInDb(int64_t id, int32_t volumeType, int32_t volumeLevel, int32_t device,
+    int32_t *errorCode);
+FFI_EXPORT int32_t FfiMMAGetVolume(int64_t id, int32_t volumeType, int32_t *errorCode);
+FFI_EXPORT bool FfiMMAIsMicrophoneMute(int64_t id, int32_t *errorCode);
+FFI_EXPORT bool FfiMMAIsMute(int64_t id, int32_t volumeType, int32_t *errorCode);
+FFI_EXPORT bool FfiMMAIsVolumeUnadjustable(int64_t id, int32_t *errorCode);
 }
 } // namespace AudioStandard
 } // namespace OHOS
