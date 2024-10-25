@@ -47,10 +47,11 @@ public:
         const std::vector<std::pair<std::string, std::string>> &kvpairs) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName = "") override;
+        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "") override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
+    void SetHibernateEndpointRelease(const bool &isHibernate) override;
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;

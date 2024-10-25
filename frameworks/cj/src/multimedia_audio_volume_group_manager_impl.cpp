@@ -14,22 +14,18 @@
  */
 
 #include "multimedia_audio_volume_group_manager_impl.h"
-#include "multimedia_audio_common.h"
-#include "multimedia_audio_error.h"
-
 #include "audio_info.h"
 #include "audio_log.h"
-#include "timestamp.h"
-// using namespace OHOS::FFI;
+#include "multimedia_audio_common.h"
+#include "multimedia_audio_error.h"
 
 namespace OHOS {
 namespace AudioStandard {
 extern "C" {
-// Audio Volume Group Manager
-
-MMAAudioVolumeGroupManagerImpl::MMAAudioVolumeGroupManagerImpl()
+MMAAudioVolumeGroupManagerImpl::MMAAudioVolumeGroupManagerImpl(int32_t groupId)
 {
     audioMngr_ = AudioSystemManager::GetInstance();
+    audioGroupMngr_ = audioMngr_->GetGroupManager(groupId);
 }
 int32_t MMAAudioVolumeGroupManagerImpl::GetMaxVolume(int32_t volumeType)
 {

@@ -178,7 +178,6 @@ public:
     uint32_t GetRendererSamplingRate() override;
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
@@ -259,7 +258,6 @@ private:
     AudioCapturerInfo capturerInfo_ = {};
 
     int32_t bufferSizeInMsec_ = 20; // 20ms
-    std::string cachePath_ = "";
 
     // callback mode
     AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;
@@ -1834,12 +1832,6 @@ int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     return SUCCESS;
 }
 
-void CapturerInClientInner::SetApplicationCachePath(const std::string cachePath)
-{
-    cachePath_ = cachePath;
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath_.c_str());
-}
-
 int32_t CapturerInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     AUDIO_WARNING_LOG("not supported in capturer");
@@ -1872,7 +1864,6 @@ void CapturerInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
 void CapturerInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    info.cachePath = cachePath_;
     info.overFlowCount = overflowCount_;
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;

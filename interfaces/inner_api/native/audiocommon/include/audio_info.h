@@ -85,9 +85,6 @@ const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUT
 const std::string DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 const std::string CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 
-const std::string LOCAL_NETWORK_ID = "LocalDevice";
-const std::string REMOTE_NETWORK_ID = "RemoteDevice";
-
 constexpr std::string_view PRIMARY_WAKEUP = "Built_in_wakeup";
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
@@ -1031,12 +1028,6 @@ struct SessionInfo {
     SourceType sourceType;
     uint32_t rate;
     uint32_t channels;
-};
-
-enum BluetoothOffloadState {
-    NO_A2DP_DEVICE = 0,
-    A2DP_NOT_OFFLOAD = 1,
-    A2DP_OFFLOAD = 2,
 };
 
 enum CastType {

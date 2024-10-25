@@ -96,6 +96,7 @@ bool AudioSessionTimer::IsSessionTimerRunning(const int32_t callerPid)
 void AudioSessionTimer::TimerLoopFunc()
 {
     AUDIO_INFO_LOG("Start the session timer loop");
+    std::vector<int32_t> interruptCallbackPid = {};
     while (isThreadRunning_.load()) {
         std::unique_lock<std::mutex> lock(sessionTimerMutex_);
         if (timerMap_.empty()) {
@@ -108,13 +109,19 @@ void AudioSessionTimer::TimerLoopFunc()
         auto iter = timerMap_.begin();
         while (iter != timerMap_.end()) {
             if (now - iter->second >= SECONDS_OF_ONE_MINUTE) {
-                SendSessionTimeOutCallback(iter->first);
+                interruptCallbackPid.push_back(iter->first);
                 iter = timerMap_.erase(iter);
             } else {
                 ++iter;
             }
         }
         lock.unlock();
+        if (!interruptCallbackPid.empty()) {
+            for (auto pid : interruptCallbackPid) {
+                SendSessionTimeOutCallback(pid);
+            }
+            interruptCallbackPid.clear();
+        }
 
         // Sleep for one second. Then enter the next cycle.
         std::unique_lock<std::mutex> loopLock(timerLoopMutex_);

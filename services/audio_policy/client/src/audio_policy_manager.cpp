@@ -1161,7 +1161,7 @@ int32_t AudioPolicyManager::GetPreferredInputStreamType(AudioCapturerInfo &captu
 }
 
 int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
-    vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1170,7 +1170,7 @@ int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
 }
 
 int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
-    vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

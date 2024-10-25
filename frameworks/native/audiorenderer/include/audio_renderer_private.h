@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_PRIVATE_H
 
 #include <shared_mutex>
+#include <optional>
 
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
@@ -84,7 +85,6 @@ public:
     int32_t Enqueue(const BufferDesc &bufDesc) const override;
     int32_t Clear() const override;
     int32_t GetBufQueueState(BufferQueueState &bufState) const override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     void SetInterruptMode(InterruptMode mode) override;
     int32_t SetParallelPlayFlag(bool parallelPlayFlag) override;
     int32_t SetLowPowerVolume(float volume) const override;
@@ -151,7 +151,6 @@ public:
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
-    std::string cachePath_;
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
     mutable bool isStillMuted_ = false;
@@ -212,7 +211,7 @@ private:
     DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
     RendererState state_ = RENDERER_INVALID;
 
-    float speed_ = 1.0;
+    std::optional<float> speed_ = std::nullopt;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
     std::mutex policyServiceDiedCallbackMutex_;

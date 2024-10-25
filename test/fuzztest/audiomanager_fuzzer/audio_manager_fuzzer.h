@@ -25,7 +25,7 @@ public:
     explicit AudioRendererStateCallbackFuzz() = default;
     virtual ~AudioRendererStateCallbackFuzz() = default;
     void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
 };
 
 class AudioCapturerStateCallbackFuzz : public AudioCapturerStateChangeCallback {
@@ -33,7 +33,7 @@ public:
     explicit AudioCapturerStateCallbackFuzz() = default;
     virtual ~AudioCapturerStateCallbackFuzz() = default;
     void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 };
 
 class AudioPreferredOutputDeviceChangeCallbackFuzz : public AudioPreferredOutputDeviceChangeCallback {

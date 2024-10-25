@@ -350,12 +350,12 @@ static void StartSplitStreamHdiIfRunning(struct userdata *u)
 
 static void SplitSinkRenderInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
-    AUTO_CTRACE("split_stream_sink::SplitSinkRenderInputsDrop:%u:len:%zu", n, chunkIn->length);
-    pa_sink_assert_ref(si);
+    CHECK_AND_RETURN_LOG(si != NULL, "s is null");
     pa_sink_assert_io_context(si);
-    pa_assert(chunkIn);
-    pa_assert(chunkIn->memblock);
-    pa_assert(chunkIn->length > 0);
+    CHECK_AND_RETURN_LOG(chunkIn != NULL, "chunkIn is null");
+    CHECK_AND_RETURN_LOG(chunkIn->memblock != NULL, "chunkIn->memblock is null");
+    CHECK_AND_RETURN_LOG(chunkIn->length > 0, "chunkIn->length < 0");
+    AUTO_CTRACE("split_stream_sink::SplitSinkRenderInputsDrop:%u:len:%zu", n, chunkIn->length);
 
     /* We optimize for the case where the order of the inputs has not changed */
 
@@ -455,6 +455,8 @@ static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, 
 
 static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, unsigned n, pa_memchunk *result)
 {
+    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
+    CHECK_AND_RETURN_LOG(info != NULL, "info is null");
     if (n == 0) {
         *result = s->silence;
         pa_memblock_ref(result->memblock);
@@ -501,11 +503,11 @@ static unsigned SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result
     unsigned n;
     size_t blockSizeMax;
 
-    pa_sink_assert_ref(s);
+    CHECK_AND_RETURN_RET_LOG(s != NULL, 0, "s is null");
     pa_sink_assert_io_context(s);
     pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
     pa_assert(pa_frame_aligned(length, &s->sample_spec));
-    pa_assert(result);
+    CHECK_AND_RETURN_RET_LOG(result != NULL, 0, "result is null");
 
     pa_assert(!s->thread_info.rewind_requested);
     pa_assert(s->thread_info.rewind_nbytes == 0);
@@ -630,11 +632,11 @@ static void SplitPaSinkRenderIntoFull(pa_sink *s, pa_memchunk *target, char *str
     pa_memchunk chunk;
     size_t l, d;
 
-    pa_sink_assert_ref(s);
+    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     pa_sink_assert_io_context(s);
-    pa_assert(target);
-    pa_assert(target->length > 0);
-    pa_assert(target->memblock);
+    CHECK_AND_RETURN_LOG(target != NULL, "target is null");
+    CHECK_AND_RETURN_LOG(target->memblock != NULL, "target->memblock is null");
+    CHECK_AND_RETURN_LOG(target->length > 0, "target->length < 0");
     pa_assert(pa_frame_aligned(target->length, &s->sample_spec));
 
     if (s->thread_info.state == PA_SINK_SUSPENDED) {
@@ -856,12 +858,12 @@ static ssize_t SplitRenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memc
     ssize_t count = 0;
     void *p = NULL;
 
-    pa_assert(pchunk);
+    CHECK_AND_RETURN_RET_LOG(pchunk != NULL, 0, "pchunk is null");
 
     index = pchunk->index;
     length = pchunk->length;
     p = pa_memblock_acquire(pchunk->memblock);
-    pa_assert(p);
+    CHECK_AND_RETURN_RET_LOG(p != NULL, 0, "p is null");
 
     while (true) {
         uint64_t writeLen = 0;

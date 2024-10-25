@@ -177,6 +177,7 @@ void SyncHibernateListener::ControlAudioFocus(bool isHibernate)
     PowerListerMethods::InitAudioInterruptInfo(audioInterrupt);
  
     int32_t result = -1;
+    audioPolicyServer_->SetHibernateEndpointRelease(isHibernate);
     if (isHibernate) {
         result = audioPolicyServer_->ActivateAudioInterrupt(audioInterrupt);
         if (result != SUCCESS) {

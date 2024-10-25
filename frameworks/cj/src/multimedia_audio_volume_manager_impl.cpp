@@ -14,30 +14,25 @@
  */
 
 #include "multimedia_audio_volume_manager_impl.h"
-#include "multimedia_audio_common.h"
-#include "multimedia_audio_error.h"
-
 #include "audio_info.h"
 #include "audio_log.h"
-#include "timestamp.h"
-// using namespace OHOS::FFI;
+#include "multimedia_audio_error.h"
+#include "multimedia_audio_volume_group_manager_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
 extern "C" {
-// Audio Volume Manager
-
 MMAAudioVolumeManagerImpl::MMAAudioVolumeManagerImpl()
 {
     audioMngr_ = AudioSystemManager::GetInstance();
 }
 
-int64_t MMAAudioVolumeManagerImpl::GetVolumeGroupManager(int32_t *errorCode)
+int64_t MMAAudioVolumeManagerImpl::GetVolumeGroupManager(int32_t groupId, int32_t *errorCode)
 {
-    auto mgr = FFIData::Create<MMAAudioVolumeManagerImpl>();
+    auto mgr = FFIData::Create<MMAAudioVolumeGroupManagerImpl>(groupId);
     if (mgr == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
-        AUDIO_ERR_LOG("GetVolumeManager failed.");
+        AUDIO_ERR_LOG("GetVolumeGroupManager failed.");
         return CJ_ERR_INVALID_RETURN_VALUE;
     }
     *errorCode = SUCCESS_CODE;

@@ -1793,7 +1793,7 @@ void AudioPolicyServer::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamCh
 }
 
 int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
-    std::vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    std::vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     bool hasBTPermission = VerifyBluetoothPermission();
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: BT use permission: %{public}d", hasBTPermission);
@@ -1805,7 +1805,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
 }
 
 int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
-    std::vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    std::vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     bool hasBTPermission = VerifyBluetoothPermission();
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: BT use permission: %{public}d", hasBTPermission);
@@ -2071,7 +2071,7 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
 void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCapturerState(
     bool targetMuteState, uint32_t targetTokenId, int32_t appUid)
 {
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
     server_->audioPolicyService_.GetCurrentCapturerChangeInfos(capturerChangeInfos, true, true);
     for (auto &info : capturerChangeInfos) {
         if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
@@ -3049,6 +3049,11 @@ int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, c
     const StreamUsage streamUsage, bool isRunning)
 {
     return audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+}
+
+void AudioPolicyServer::SetHibernateEndpointRelease(const bool &isHibernate)
+{
+    audioPolicyService_.SetHibernateEndpointRelease(isHibernate);
 }
 } // namespace AudioStandard
 } // namespace OHOS

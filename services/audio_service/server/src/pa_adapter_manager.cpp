@@ -609,13 +609,13 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     }
 
     PaLockGuard lock(mainLoop_);
-    int32_t XcollieFlag = 1; // flag 1 generate log file
+    int32_t XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG;
     if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
     if (managerType_ == RECORDER) {
-        XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
+        XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY;
         int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, source, deviceName);
         CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
     }

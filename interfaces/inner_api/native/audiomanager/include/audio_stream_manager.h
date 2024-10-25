@@ -32,7 +32,7 @@ public:
      * @param rendererChangeInfo Contains the renderer state information.
      */
     virtual void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
 };
 
 class DeviceChangeWithInfoCallback {
@@ -55,7 +55,7 @@ public:
      * @param capturerChangeInfo Contains the renderer state information.
      */
     virtual void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
     std::mutex cbMutex_;
 };
 
@@ -207,7 +207,7 @@ public:
      * @since 9
      */
     int32_t GetCurrentRendererChangeInfos(
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
 
     /**
      * @brief Get current capturer change Infos.
@@ -218,7 +218,7 @@ public:
      * @since 9
      */
     int32_t GetCurrentCapturerChangeInfos(
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 
     /**
      * @brief Is audio renderer low latency supported.

@@ -443,7 +443,7 @@ bool AudioSpatializationService::IsHeadTrackingDataRequested(const std::string &
 }
 
 void AudioSpatializationService::UpdateRendererInfo(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo)
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfo)
 {
     AUDIO_DEBUG_LOG("Start");
     {

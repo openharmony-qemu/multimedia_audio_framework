@@ -203,12 +203,22 @@ enum StreamUsage {
 };
 
 /**
-* exempt mute StreamUsage type.
+* background mute StreamUsage type.
 */
-const std::vector<StreamUsage> EXEMPT_MUTE_STREAM_USAGE {
-    STREAM_USAGE_VOICE_COMMUNICATION,
-    STREAM_USAGE_VIDEO_COMMUNICATION,
-    STREAM_USAGE_NAVIGATION
+const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
+    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_GAME,
+    STREAM_USAGE_AUDIOBOOK
+};
+
+/**
+* background not playback StreamUsage type.
+*/
+const std::vector<StreamUsage> BACKGROUND_NOSTART_STREAM_USAGE {
+    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_AUDIOBOOK
 };
 
 /**

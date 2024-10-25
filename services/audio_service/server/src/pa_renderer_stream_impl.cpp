@@ -130,7 +130,7 @@ int32_t PaRendererStreamImpl::InitParams()
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr count is %{public}d", count);
         if (count >= 5) { // bufferAttr is nullptr 5 times, reboot audioserver
             sleep(3); // sleep 3 seconds to dump stacktrace
-            AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+            AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_RECOVERY);
             sleep(2); // sleep 2 seconds to dump stacktrace
         }
         return ERR_OPERATION_FAILED;
@@ -402,11 +402,10 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentTimeStamp", PA_STREAM_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("pulseAudio timeout");
-        }, nullptr, XcollieFlag);
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     UpdatePaTimingInfo();
 
@@ -428,9 +427,9 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentPosition", PA_STREAM_IMPL_TIMEOUT,
-        [](void *) { AUDIO_ERR_LOG("pulseAudio timeout"); }, nullptr, XcollieFlag);
+        [](void *) { AUDIO_ERR_LOG("pulseAudio timeout"); }, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
     if (curTimeGetLatency - preTimeGetPaLatency_ > AUDIO_CYCLE_TIME_US || firstGetPaLatency_) { // 20000 cycle time
@@ -490,11 +489,10 @@ void PaRendererStreamImpl::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, 
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     Trace trace("PaRendererStreamImpl::GetLatency");
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetLatency", PA_STREAM_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("pulseAudio timeout");
-        }, nullptr, XcollieFlag);
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
     if (curTimeGetLatency - preTimeGetLatency_ < AUDIO_CYCLE_TIME_US && !firstGetLatency_) { // 20000 cycle time
         latency = preLatency_;
@@ -1258,6 +1256,11 @@ int32_t PaRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &inde
 int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
 {
     return SUCCESS;
+}
+
+void PaRendererStreamImpl::BlockStream() noexcept
+{
+    return;
 }
 // offload end
 

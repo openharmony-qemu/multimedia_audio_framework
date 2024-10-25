@@ -338,11 +338,11 @@ bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(const sptr<Audio
 }
 
 bool AudioPolicyServerHandler::SendRendererInfoEvent(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     for (const auto &changeInfo : audioRendererChangeInfos) {
-        rendererChangeInfos.push_back(std::make_unique<AudioRendererChangeInfo>(*changeInfo));
+        rendererChangeInfos.push_back(std::make_shared<AudioRendererChangeInfo>(*changeInfo));
     }
 
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -357,11 +357,11 @@ bool AudioPolicyServerHandler::SendRendererInfoEvent(
 }
 
 bool AudioPolicyServerHandler::SendCapturerInfoEvent(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
     for (const auto &changeInfo : audioCapturerChangeInfos) {
-        capturerChangeInfos.push_back(std::make_unique<AudioCapturerChangeInfo>(*changeInfo));
+        capturerChangeInfos.push_back(std::make_shared<AudioCapturerChangeInfo>(*changeInfo));
     }
 
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -447,7 +447,7 @@ bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(int32_t clientId,
     eventContextObj->sessionId = sessionID;
     eventContextObj->streamFlag = streamFlag;
     eventContextObj->reason_ = reason;
-    return SendSyncEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT,
+    return SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT,
         eventContextObj));
 }
 
@@ -460,7 +460,7 @@ bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(int32_t clientId,
     eventContextObj->sessionId = sessionID;
     eventContextObj->streamFlag = streamFlag;
     eventContextObj->reason_ = reason;
-    return SendSyncEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT,
+    return SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT,
         eventContextObj));
 }
 
@@ -844,10 +844,10 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
     }
 }
 
-void AudioPolicyServerHandler::ResetRingerModeMute(const std::vector<std::unique_ptr<AudioRendererChangeInfo>>
+void AudioPolicyServerHandler::ResetRingerModeMute(const std::vector<std::shared_ptr<AudioRendererChangeInfo>>
     &audioRendererChangeInfos)
 {
-    for (const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
+    for (const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
         if (!rendererChangeInfo) {
             AUDIO_ERR_LOG("Renderer change info null, something wrong!!");
             continue;

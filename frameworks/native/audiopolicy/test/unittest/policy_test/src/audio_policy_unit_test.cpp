@@ -576,7 +576,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_UnregisterAudioRendererEventLis
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetCurrentCapturerChangeInfos_001, TestSize.Level1)
 {
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t ret = AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     EXPECT_EQ(true, audioCapturerChangeInfos.size() <= 0);
     EXPECT_EQ(SUCCESS, ret);
@@ -592,7 +592,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Capturer_State_Change_001, TestSize.Level1)
     std::shared_ptr<AudioPolicyClientStubImpl> capturerStub =
         std::make_shared<AudioPolicyClientStubImpl>();
 
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     capturerStub->OnCapturerStateChange(audioCapturerChangeInfos);
 
     std::shared_ptr<AudioCapturerStateChangeCallbackTest> callback =
@@ -617,7 +617,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
     std::shared_ptr<AudioPolicyClientStubImpl> rendererStub =
         std::make_shared<AudioPolicyClientStubImpl>();
 
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     rendererStub->OnRendererStateChange(audioRendererChangeInfos);
 
     std::shared_ptr<AudioRendererStateChangeCallbackTest> callback =

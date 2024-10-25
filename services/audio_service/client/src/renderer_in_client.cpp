@@ -875,17 +875,24 @@ int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
 {
     AUDIO_INFO_LOG("SetRendererFirstFrameWritingCallback in.");
     CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
+    std::lock_guard lock(firstFrameWritingMutex_);
     firstFrameWritingCb_ = callback;
     return SUCCESS;
 }
 
 void RendererInClientInner::OnFirstFrameWriting()
 {
-    hasFirstFrameWrited_ = true;
-    CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+    AUDIO_DEBUG_LOG("In");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
+
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
+    {
+        std::lock_guard lock(firstFrameWritingMutex_);
+        CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+        cb = firstFrameWritingCb_;
+    }
     AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
-    firstFrameWritingCb_->OnFirstFrameWriting(latency);
+    cb->OnFirstFrameWriting(latency);
 }
 
 void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
@@ -1637,13 +1644,12 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
 void RendererInClientInner::FirstFrameProcess()
 {
     // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_) {
+    if (needSetThreadPriority_.exchange(false)) {
         ipcStream_->RegisterThreadPriority(gettid(),
             AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
-        needSetThreadPriority_ = false;
     }
 
-    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
+    if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
 }
 
 int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached,
@@ -1711,6 +1717,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         int32_t ret = ipcStream_->Start();
         AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     }
+
+    FirstFrameProcess();
+
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     size_t oriBufferSize = bufferSize;
@@ -1720,8 +1729,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     }
 
     WriteMuteDataSysEvent(buffer, bufferSize);
-
-    FirstFrameProcess();
 
     CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
@@ -2074,12 +2081,6 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     return SUCCESS;
 }
 
-void RendererInClientInner::SetApplicationCachePath(const std::string cachePath)
-{
-    cachePath_ = cachePath;
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath_.c_str());
-}
-
 int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     if ((state_ != PREPARED) && (state_ != NEW)) {
@@ -2131,7 +2132,6 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    info.cachePath = cachePath_;
     info.underFlowCount = GetUnderflowCount();
     info.effectMode = effectMode_;
     info.renderRate = rendererRate_;

@@ -77,6 +77,7 @@ public:
      * {@link AudioRendererInfo}.
      * @return Returns unique pointer to the TonePlayer object
      * @since 9
+     * @deprecated since 12
     */
     static std::shared_ptr<TonePlayer> Create(const std::string cachePath, const AudioRendererInfo &rendererInfo);
 

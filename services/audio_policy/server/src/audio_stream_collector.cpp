@@ -116,7 +116,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
         streamChangeInfo.audioRendererChangeInfo.sessionId},
         streamChangeInfo.audioRendererChangeInfo.rendererState});
 
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     if (!rendererChangeInfo) {
         AUDIO_ERR_LOG("AddRendererStream Memory Allocation Failed");
         return ERR_MEMORY_ALLOC_FAILED;
@@ -167,7 +167,7 @@ int32_t AudioStreamCollector::GetPipeType(const int32_t sessionId, AudioPipeType
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
-        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+        [&sessionId](const std::shared_ptr<AudioRendererChangeInfo> &changeInfo) {
             return changeInfo->sessionId == sessionId;
         });
     if (it == audioRendererChangeInfos_.end()) {
@@ -182,7 +182,7 @@ int32_t AudioStreamCollector::GetPipeType(const int32_t sessionId, AudioPipeType
 bool AudioStreamCollector::ExistStreamForPipe(AudioPipeType pipeType)
 {
     const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
-        [&pipeType](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+        [&pipeType](const std::shared_ptr<AudioRendererChangeInfo> &changeInfo) {
             return changeInfo->rendererInfo.pipeType == pipeType;
         });
     if (it == audioRendererChangeInfos_.end()) {
@@ -195,7 +195,7 @@ int32_t AudioStreamCollector::GetRendererDeviceInfo(const int32_t sessionId, Dev
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
-        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+        [&sessionId](const std::shared_ptr<AudioRendererChangeInfo> &changeInfo) {
             return changeInfo->sessionId == sessionId;
         });
     if (it == audioRendererChangeInfos_.end()) {
@@ -215,7 +215,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
         streamChangeInfo.audioCapturerChangeInfo.sessionId},
         streamChangeInfo.audioCapturerChangeInfo.capturerState});
 
-    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
     if (!capturerChangeInfo) {
         AUDIO_ERR_LOG("AddCapturerStream Memory Allocation Failed");
         return ERR_MEMORY_ALLOC_FAILED;
@@ -238,7 +238,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     return SUCCESS;
 }
 
-void AudioStreamCollector::SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>>
+void AudioStreamCollector::SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>>
     &audioCapturerChangeInfos)
 {
     bool earseFlag = false;
@@ -255,12 +255,12 @@ void AudioStreamCollector::SendCapturerInfoEvent(const std::vector<std::unique_p
         return;
     }
 
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfoSent;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfoSent;
     for (const auto &capChangeinfoUPtr : audioCapturerChangeInfos) {
         if (IsTransparentCapture(capChangeinfoUPtr->clientUID)) {
             AUDIO_INFO_LOG("bypass uid:%{public}d", capChangeinfoUPtr->clientUID);
         } else {
-            audioCapturerChangeInfoSent.push_back(make_unique<AudioCapturerChangeInfo>(*capChangeinfoUPtr));
+            audioCapturerChangeInfoSent.push_back(make_shared<AudioCapturerChangeInfo>(*capChangeinfoUPtr));
         }
     }
     if (audioCapturerChangeInfoSent.empty()) {
@@ -305,7 +305,7 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
 }
 
 void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamChangeInfo,
-    unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+    shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
@@ -320,7 +320,7 @@ void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamC
 }
 
 void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
-    unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
+    shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
 {
     capturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
     capturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
@@ -383,7 +383,7 @@ bool AudioStreamCollector::CheckRendererInfoChanged(AudioStreamChangeInfo &strea
 {
     int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
-        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+        [&sessionId](const std::shared_ptr<AudioRendererChangeInfo> &changeInfo) {
             return changeInfo->sessionId == sessionId;
         });
     if (it == audioRendererChangeInfos_.end()) {
@@ -421,7 +421,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = (*it)->rendererInfo.pipeType;
             AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", audioRendererChangeInfo.clientUID,
                 audioRendererChangeInfo.sessionId);
-            unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
+            shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED,
                 "Memory Allocation Failed");
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
@@ -499,7 +499,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                 streamChangeInfo.audioCapturerChangeInfo.clientUID,
                 streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
-            unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+            shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "CapturerChangeInfo Memory Allocation Failed");
             SetCapturerStreamParam(streamChangeInfo, capturerChangeInfo);
@@ -531,7 +531,7 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(DeviceInfo &outputDeviceI
     bool deviceInfoUpdated = false;
 
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        if ((*it)->outputDeviceInfo.deviceType != outputDeviceInfo.deviceType) {
+        if (!(*it)->outputDeviceInfo.IsSameDeviceInfo(outputDeviceInfo)) {
             AUDIO_DEBUG_LOG("UpdateRendererDeviceInfo: old device: %{public}d new device: %{public}d",
                 (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
             (*it)->outputDeviceInfo = outputDeviceInfo;
@@ -554,7 +554,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceIn
     bool deviceInfoUpdated = false;
 
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        if ((*it)->inputDeviceInfo.deviceType != inputDeviceInfo.deviceType) {
+        if (!(*it)->inputDeviceInfo.IsSameDeviceInfo(inputDeviceInfo)) {
             AUDIO_DEBUG_LOG("UpdateCapturerDeviceInfo: old device: %{public}d new device: %{public}d",
                 (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
             (*it)->inputDeviceInfo = inputDeviceInfo;
@@ -576,8 +576,8 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
     bool deviceInfoUpdated = false;
 
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId
-            && (*it)->outputDeviceInfo.deviceType != outputDeviceInfo.deviceType) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
+            !(*it)->outputDeviceInfo.IsSameDeviceInfo(outputDeviceInfo)) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 clientUID, sessionId, (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
             (*it)->outputDeviceInfo = outputDeviceInfo;
@@ -624,8 +624,8 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_
     bool deviceInfoUpdated = false;
 
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId
-            && (*it)->inputDeviceInfo.deviceType != inputDeviceInfo.deviceType) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
+            !(*it)->inputDeviceInfo.IsSameDeviceInfo(inputDeviceInfo)) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 (*it)->clientUID, (*it)->sessionId, (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
             (*it)->inputDeviceInfo = inputDeviceInfo;
@@ -707,7 +707,7 @@ bool AudioStreamCollector::IsOffloadAllowed(const int32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
-        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+        [&sessionId](const std::shared_ptr<AudioRendererChangeInfo> &changeInfo) {
             return changeInfo->sessionId == sessionId;
         });
     if (it == audioRendererChangeInfos_.end()) {
@@ -722,7 +722,7 @@ int32_t AudioStreamCollector::GetChannelCount(int32_t sessionId)
     int32_t channelCount = 0;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
-        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+        [&sessionId](const std::shared_ptr<AudioRendererChangeInfo> &changeInfo) {
             return changeInfo->sessionId == sessionId;
         });
     if (it != audioRendererChangeInfos_.end()) {
@@ -732,11 +732,11 @@ int32_t AudioStreamCollector::GetChannelCount(int32_t sessionId)
 }
 
 int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
-    std::vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
+    std::vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        rendererChangeInfos.push_back(make_unique<AudioRendererChangeInfo>(*changeInfo));
+        rendererChangeInfos.push_back(make_shared<AudioRendererChangeInfo>(*changeInfo));
     }
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos returned");
 
@@ -744,13 +744,13 @@ int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
 }
 
 int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
-    std::vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
+    std::vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
         if (!IsTransparentCapture(changeInfo->clientUID)) {
-            capturerChangeInfos.push_back(make_unique<AudioCapturerChangeInfo>(*changeInfo));
+            capturerChangeInfos.push_back(make_shared<AudioCapturerChangeInfo>(*changeInfo));
         } else {
             AUDIO_INFO_LOG("GetCurrentCapturerChangeInfos remove uid:%{public}d", changeInfo->clientUID);
         }
@@ -843,7 +843,7 @@ int32_t AudioStreamCollector::GetUid(int32_t sessionId)
     int32_t defaultUid = -1;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
-        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+        [&sessionId](const std::shared_ptr<AudioRendererChangeInfo> &changeInfo) {
             return changeInfo->sessionId == sessionId;
         });
     if (it != audioRendererChangeInfos_.end()) {
@@ -880,8 +880,8 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
             streamSetStateEventInternal.streamUsage == changeInfo->rendererInfo.streamUsage) {
             AUDIO_INFO_LOG("UpdateStreamState Found matching uid=%{public}d and usage=%{public}d",
                 clientUid, streamSetStateEventInternal.streamUsage);
-            if (std::count(EXEMPT_MUTE_STREAM_USAGE.begin(), EXEMPT_MUTE_STREAM_USAGE.end(),
-                streamSetStateEventInternal.streamUsage) != 0) {
+            if (std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
+                streamSetStateEventInternal.streamUsage) == 0) {
                 continue;
             }
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
@@ -1188,7 +1188,7 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
 
 
 void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
-    const std::unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo)
+    const std::shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo)
 {
     AudioStreamType streamType = GetVolumeTypeFromContentUsage(audioRendererChangeInfo->rendererInfo.contentType,
         audioRendererChangeInfo->rendererInfo.streamUsage);
@@ -1223,7 +1223,7 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
 }
 
 void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
-    const std::unique_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfo)
+    const std::shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfo)
 {
     AudioStreamType streamType = GetStreamTypeFromSourceType(audioCapturerChangeInfo->capturerInfo.sourceType);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(

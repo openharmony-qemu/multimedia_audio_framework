@@ -151,7 +151,6 @@ public:
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     uint32_t GetRendererSamplingRate() override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
@@ -254,7 +253,7 @@ private:
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     bool streamTrackerRegistered_ = false;
 
-    bool needSetThreadPriority_ = true;
+    std::atomic<bool> needSetThreadPriority_ = true;
 
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
@@ -274,14 +273,14 @@ private:
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
     uint32_t bufferSizeInMsec_ = 20; // 20ms
-    std::string cachePath_ = "";
     std::string dumpOutFile_ = "";
     FILE *dumpOutFd_ = nullptr;
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
-    bool hasFirstFrameWrited_ = false;
+    std::mutex firstFrameWritingMutex_;
+    std::atomic<bool> hasFirstFrameWrited_ = false;
 
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;

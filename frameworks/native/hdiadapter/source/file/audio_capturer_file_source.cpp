@@ -59,7 +59,7 @@ int32_t AudioCapturerFileSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
-int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice, const std::string deviceName)
+int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice, const std::string &deviceName)
 {
     return SUCCESS;
 }
@@ -80,7 +80,7 @@ void AudioCapturerFileSource::RegisterParameterCallback(IAudioSourceCallback *ca
 }
 
 int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
-    const std::string deviceName)
+    const std::string &deviceName)
 {
     return SUCCESS;
 }

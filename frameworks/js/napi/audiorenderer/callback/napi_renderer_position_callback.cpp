@@ -15,14 +15,15 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiRendererPositionCallback"
 #endif
+#include <thread>
 
 #include "napi_renderer_position_callback.h"
 
+#include "js_native_api.h"
 #include "audio_errors.h"
 #include "audio_renderer_log.h"
 #include "napi_audio_error.h"
 #include "napi_audio_renderer_callback.h"
-
 namespace OHOS {
 namespace AudioStandard {
 NapiRendererPositionCallback::NapiRendererPositionCallback(napi_env env)
@@ -67,6 +68,49 @@ void NapiRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
     return OnJsRendererPositionCallback(cb);
 }
 
+void NapiRendererPositionCallback::SafeJsCallbackPositionWork(napi_env env, napi_value js_cb, void *context, void *data)
+{
+    RendererPositionJsCallback *event = reinterpret_cast<RendererPositionJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsRendererPositionCallback: no memory");
+    std::shared_ptr<RendererPositionJsCallback> safeContext(
+        static_cast<RendererPositionJsCallback*>(data),
+        [event](RendererPositionJsCallback *ptr) {
+            napi_release_threadsafe_function(event->arPosTsfn, napi_tsfn_abort);
+            delete ptr;
+    });
+    std::string request = event->callbackName;
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackPositionWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+
+        // Call back function
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetValueInt64(env, event->position, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+            "%{public}s fail to create position callback", request.c_str());
+
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiRendererPositionCallback::PositionTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("PositionTsfnFinalize: safe thread resource release.");
+}
+
 void NapiRendererPositionCallback::OnJsRendererPositionCallback(std::unique_ptr<RendererPositionJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
@@ -74,47 +118,16 @@ void NapiRendererPositionCallback::OnJsRendererPositionCallback(std::unique_ptr<
         return;
     }
 
-    RendererPositionJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<RendererPositionJsCallback> context(
-            static_cast<RendererPositionJsCallback*>(event),
-            [](RendererPositionJsCallback* ptr) {
-                delete ptr;
-            });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        std::string request = event->callbackName;
+    RendererPositionJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event->callback is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
+    napi_value cbName;
+    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event, PositionTsfnFinalize,
+        nullptr, SafeJsCallbackPositionWork, &event->arPosTsfn);
 
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-
-            // Call back function
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetValueInt64(env, event->position, args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-                "%{public}s fail to create position callback", request.c_str());
-
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsRendererPositionCallback: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    napi_acquire_threadsafe_function(event->arPosTsfn);
+    napi_call_threadsafe_function(event->arPosTsfn, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

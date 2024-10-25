@@ -77,7 +77,7 @@ public:
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName = "") override;
+        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "") override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
@@ -172,6 +172,8 @@ public:
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
+
+    void SetHibernateEndpointRelease(const bool &isHibernate) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -196,9 +198,9 @@ private:
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName = "");
+        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName = "");
+        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();
@@ -216,6 +218,10 @@ private:
     void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
     int32_t CheckMaxRendererInstances();
+    bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
+    bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result);
+    sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;

@@ -35,9 +35,12 @@ private:
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         int64_t position = 0;
+        napi_threadsafe_function acPosTsfn = nullptr;
     };
 
     void OnJsCapturerPositionCallback(std::unique_ptr<CapturerPositionJsCallback> &jsCb);
+    static void CapturePostionTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackCapturerPositionWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

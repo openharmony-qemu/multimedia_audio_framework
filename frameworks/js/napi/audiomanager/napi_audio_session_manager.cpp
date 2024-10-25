@@ -39,11 +39,13 @@ NapiAudioSessionMgr::~NapiAudioSessionMgr() = default;
 
 void NapiAudioSessionMgr::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioSessionMgr *>(nativeObject);
-        ObjectRefMap<NapiAudioSessionMgr>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    auto obj = static_cast<NapiAudioSessionMgr *>(nativeObject);
+    ObjectRefMap<NapiAudioSessionMgr>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioSessionMgr::Construct(napi_env env, napi_callback_info info)
