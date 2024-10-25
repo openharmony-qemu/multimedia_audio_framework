@@ -74,7 +74,7 @@ struct Userdata {
     int8_t spatializationFadingCount; // for indicating the fading rate
     bool actualSpatializationEnabled; // the spatialization state that actually applies effect
     bool isFirstStarted;
-    bool requireEffectBuffer;
+    bool isEffectBufferAllocated;
     pa_hashmap *sceneToCountMap;
     // todo resampler map
     uint64_t lastRecodedLatency;

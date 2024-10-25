@@ -108,6 +108,7 @@ const char *MCH_SINK_NAME = "MCH_Speaker";
 const char *BT_SINK_NAME = "Bt_Speaker";
 const char *OFFLOAD_SINK_NAME = "Offload_Speaker";
 const char *DP_SINK_NAME = "DP_speaker";
+const char *EFFECT_NONE = "EFFECT_NONE";
 
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
 const int32_t MONITOR_CLOSE_PA_TIME_SEC = 5 * 60; // 5min
@@ -168,6 +169,10 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u);
 static void StartMultiChannelHdiIfRunning(struct Userdata *u);
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
 static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t state);
+static void *AllocateBuffer(size_t size);
+static void AllocateEffectBuffer(struct Userdata *u);
+static void FreeEffectBuffer(struct Userdata *u);
+static void ResetBufferAttr(struct Userdata *u);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -1847,23 +1852,21 @@ static void PrimaryEffectProcess(struct Userdata *u, pa_memchunk *chunkIn, char 
 
 static void GetHashMap(struct Userdata *u, const char *sceneType)
 {
-    uint32_t *num = NULL;
-    (void)num;
-    uint32_t curNum;
-    if ((curNum = EffectChainManagerGetSceneCount(sceneType))) {
-        u->requireEffectBuffer |= true;
-        if ((num = (uint32_t *)pa_hashmap_get(map, sceneType)) != NULL) {
+    uint32_t curNum = EffectChainManagerGetSceneCount(sceneType);
+    uint32_t *num = (uint32_t *)pa_hashmap_get(u->sceneToCountMap, sceneType);
+    if (curNum) {
+        u->requireEffectBuffer = true;
+        if (num) {
             (*num) = curNum;
         } else {
             char *scene = strdup(sceneType);
-            if (scene != NULL) {
+            if (scene) {
                 num = pa_xnew0(uint32_t, 1);
                 *num = curNum;
                 pa_hashmap_put(map, scene, num);
             }
         }
-    } else {
-        if ((num = (uint32_t *)pa_hashmap_get(map, sceneType)) != NULL) {
+    } else if (num) {
             pa_hashmap_remove_and_free(map, sceneType);
         }
     }
@@ -1875,37 +1878,40 @@ static void UpdateSceneToCountMap(struct Userdata *u)
         return;
     }
     bool lastRequireEffectBuffer = u->requireEffectBuffer;
+    u->requireEffectBuffer = false;
     for (int32_t i = 0; i < SCENE_TYPE_NUM - 1; i++) {
         GetHashMap(u, SCENE_TYPE_SET[i]);
     }
+}
 
-    if (!lastRequireEffectBuffer && u->requireEffectBuffer) {
-        AllocateEffectBuffer(u);
-    } else if (lastRequireEffectBuffer && !u->requireEffectBuffer) {
-        FreeEffectBuffer(u);
-    } else {
-        ResetBufferAttr(u);
-    }
+static void *AllocateBuffer(size_t size)
+{
+    return malloc(size);
 }
 
 static void AllocateEffectBuffer(struct Userdata *u)
 {
-    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
-    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
-    pa_assert_se(u->bufferAttr->tempBufIn = (float *)malloc(u->processSize));
-    pa_assert_se(u->bufferAttr->tempBufOut = (float *)malloc(u->processSize));
+    float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
+        &u->bufferAttr->tempBufIn, u->bufferAttr->tempBufOut };
+    size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
+    for (size_t i = 0; i < numBuffers; i++) {
+        pa_assert_se(*buffers[i] = (float *)AllocateBuffer(u->processSize));
+        if (*buffers[i] == NULL) {
+            AUDIO_ERR_LOG("failed to allocate effect buffer");
+            FreeEffectBuffer(u);
+        }
+    }
 }
 
 static void FreeEffectBuffer(struct Userdata *u)
 {
-    free(u->bufferAttr->bufIn);
-    free(u->bufferAttr->bufOut);
-    free(u->bufferAttr->tempBufIn);
-    free(u->bufferAttr->tempBufOut);
-    u->bufferAttr->bufIn = NULL;
-    u->bufferAttr->bufOut = NULL;
-    u->bufferAttr->tempBufIn = NULL;
-    u->bufferAttr->tempBufOut = NULL;
+    float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
+        &u->bufferAttr->tempBufIn, u->bufferAttr->tempBufOut };
+    size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
+    for (size_t i = 0; i < numBuffers; i++) {
+        free(*buffers[i]);
+        *buffers[i] = NULL;
+    }
 }
 
 static void ResetBufferAttr(struct Userdata *u)
@@ -1931,6 +1937,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
+    ResetBufferAttr(u);
     int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     time_t currentTime = time(NULL);
@@ -2000,7 +2007,10 @@ static void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 
     pa_assert(length > 0);
     AUTO_CTRACE("hdi_sink::SinkRenderPrimaryProcess:len:%zu", length);
-    SinkRenderPrimaryProcess(si, length, chunkIn);
+    if (u->isEffectBufferAllocated || (!u->isEffectBufferAllocated && (AllocateEffectBuffer(u) != -1))) {
+        u->isEffectBufferAllocated = true;
+        SinkRenderPrimaryProcess(si, length, chunkIn);
+    }
 
     pa_sink_unref(si);
 }
@@ -3069,6 +3079,9 @@ static void ProcessNormalData(struct Userdata *u)
     int64_t sleepForUsec = -1;
     pa_usec_t now = 0;
 
+    if (u->sink->thread_info.state == PA_SINK_SUSPENDED) {
+        FreeEffectBuffer(u);
+    }
     bool flag = (((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
                 (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
                 !(u->sink->thread_info.state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED) &&
