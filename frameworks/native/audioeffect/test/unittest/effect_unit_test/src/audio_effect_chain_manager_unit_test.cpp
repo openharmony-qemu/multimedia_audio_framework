@@ -282,7 +282,6 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_003, Test
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    AudioEffectChainManager::GetInstance()->debugArmFlag_ = true;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     int32_t result =  AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
@@ -309,7 +308,6 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_004, Test
     EXPECT_EQ(ret, 0);
     int32_t result =  AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->debugArmFlag_ = true;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     sceneType = "SCENE_MOVIE";
     result =  AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamic(sceneType);
@@ -1629,7 +1627,6 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpkOffloadState_004, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->SetSpkOffloadState();
 
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    AudioEffectChainManager::GetInstance()->debugArmFlag_ = true;
     AudioEffectChainManager::GetInstance()->SetSpkOffloadState();
     bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
     EXPECT_EQ(false, result);
@@ -2387,7 +2384,6 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckIfSpkDsp_001, TestSize.Level1)
     ret = AudioEffectChainManager::GetInstance()->CheckIfSpkDsp();
     EXPECT_EQ(false, ret);
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    AudioEffectChainManager::GetInstance()->debugArmFlag_ =false;
     ret = AudioEffectChainManager::GetInstance()->CheckIfSpkDsp();
     EXPECT_EQ(true, ret);
 
@@ -2408,7 +2404,6 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckIfSpkDsp_001, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->debugArmFlag_ = true;
     ret = AudioEffectChainManager::GetInstance()->CheckIfSpkDsp();
     EXPECT_EQ(true, ret);
 }
