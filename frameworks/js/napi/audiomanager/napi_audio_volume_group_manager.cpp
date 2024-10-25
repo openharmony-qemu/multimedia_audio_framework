@@ -178,11 +178,13 @@ void NapiAudioVolumeGroupManager::Destructor(napi_env env, void *nativeObject, v
 {
     std::lock_guard<mutex> lock(volumeGroupManagerMutex_);
 
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioVolumeGroupManager*>(nativeObject);
-        ObjectRefMap<NapiAudioVolumeGroupManager>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_PRERELEASE_LOGI("Destructor is successful");
+    auto obj = static_cast<NapiAudioVolumeGroupManager*>(nativeObject);
+    ObjectRefMap<NapiAudioVolumeGroupManager>::DecreaseRef(obj);
+    AUDIO_PRERELEASE_LOGI("Decrease obj count");
 }
 
 napi_value NapiAudioVolumeGroupManager::Construct(napi_env env, napi_callback_info info)

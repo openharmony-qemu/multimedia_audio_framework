@@ -353,7 +353,7 @@ HWTEST(AudioPolicyExtUnitTest, RecoverAudioPolicyCallbackClient_002, TestSize.Le
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_MUSIC);
     EXPECT_EQ(volumeLevel, ret);
 
-    AudioPolicyManager::GetInstance().audioStaticPolicyClientStubCB_ = nullptr;
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
     AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
 
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_MUSIC);

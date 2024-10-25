@@ -106,7 +106,6 @@ ohos_shared_library("audio") {
     "ability_runtime:wantagent_innerkits",
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
-    "ets_runtime:libark_jsruntime",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "init:libbegetutil",

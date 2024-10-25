@@ -56,11 +56,11 @@ public:
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string &deviceName = "") override;
 
     int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
 
-    int32_t SetInputRoute(DeviceType inputDevice) override;
+    int32_t SetInputRoute(DeviceType inputDevice, const std::string &deviceName = "") override;
 
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     uint64_t GetTransactionId() override;
@@ -486,7 +486,7 @@ int32_t FastAudioCapturerSourceInner::CaptureFrameWithEc(
 
 int32_t FastAudioCapturerSourceInner::CheckPositionTime()
 {
-    int32_t tryCount = 20; // max try count
+    int32_t tryCount = 50; // max try count
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
@@ -499,7 +499,9 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
         int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
         int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
         if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
-            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d", tryCount, ret);
+            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d, curSec[%{public}" PRId64"], "
+                "curNanoSec[%{public}" PRId64"], dspSec[%{public}" PRId64"], dspNanoSec[%{public}" PRId64"]",
+                tryCount, ret, curSec, curNanoSec, timeSec, timeNanoSec);
             continue;
         } else {
             AUDIO_INFO_LOG("CheckPositionTime end, position and time is ok.");
@@ -608,7 +610,7 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
     return ret;
 }
 
-int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
+int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, const std::string &deviceName)
 {
     AudioPortPin inputPortPin = PIN_IN_MIC;
     return SetInputRoute(inputDevice, inputPortPin);
@@ -653,7 +655,8 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
     return (ret == SUCCESS) ? SUCCESS : ERR_OPERATION_FAILED;
 }
 
-int32_t FastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t FastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string &deviceName)
 {
     return ERR_DEVICE_NOT_SUPPORTED;
 }

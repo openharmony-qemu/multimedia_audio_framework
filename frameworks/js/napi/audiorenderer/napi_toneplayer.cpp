@@ -55,10 +55,13 @@ bool NapiTonePlayer::CheckTonePlayerStatus(NapiTonePlayer *napi,
 
 void NapiTonePlayer::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiTonePlayer *>(nativeObject);
-        ObjectRefMap<NapiTonePlayer>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
+    auto obj = static_cast<NapiTonePlayer *>(nativeObject);
+    ObjectRefMap<NapiTonePlayer>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiTonePlayer::Init(napi_env env, napi_value exports)

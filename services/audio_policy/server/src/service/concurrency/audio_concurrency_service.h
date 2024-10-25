@@ -45,8 +45,8 @@ public:
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     int32_t ActivateAudioConcurrency(AudioPipeType incomingPipeType,
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 private:
     // Inner class for death handler
     class AudioConcurrencyDeathRecipient : public IRemoteObject::DeathRecipient {

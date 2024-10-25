@@ -42,11 +42,13 @@ NapiAudioRoutingManager::~NapiAudioRoutingManager() = default;
 
 void NapiAudioRoutingManager::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioRoutingManager *>(nativeObject);
-        ObjectRefMap<NapiAudioRoutingManager>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    auto obj = static_cast<NapiAudioRoutingManager *>(nativeObject);
+    ObjectRefMap<NapiAudioRoutingManager>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioRoutingManager::Construct(napi_env env, napi_callback_info info)
@@ -109,6 +111,9 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAvailableDevices", GetAvailableDevices),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
+#if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+        DECLARE_NAPI_FUNCTION("isMicBlockDetectionSupported", IsMicBlockDetectionSupported),
+#endif
     };
 
     status = napi_define_class(env, NAPI_AUDIO_ROUTING_MANAGER_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
@@ -1271,16 +1276,23 @@ int32_t NapiAudioManagerCallback::GetMicrophoneBlockedCbListSize()
 }
 
 #if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
-bool NapiAudioRoutingManager::IsMicBlockDetectionSupported()
+napi_value NapiAudioRoutingManager::IsMicBlockDetectionSupported(napi_env env, napi_callback_info info)
 {
-    bool supported = false;
-    supported = OHOS::system::GetBoolParameter("const.multimedia.audio.mic_block_detection", false);
-    if (supported == true) {
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    context->GetCbInfo(env, info);
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        context->supported = OHOS::system::GetBoolParameter("const.multimedia.audio.mic_block_detection", false);
+        if (context->supported == true) {
         AUDIO_INFO_LOG("mic block detection supported");
-    } else {
+        } else {
         AUDIO_ERR_LOG("mic block detection is not supported");
-    }
-    return supported;
+        }
+    };
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueBoolean(env, context->supported, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "IsMicBlockDetectionSupported", executor, complete);
 }
 #endif
 }  // namespace AudioStandard

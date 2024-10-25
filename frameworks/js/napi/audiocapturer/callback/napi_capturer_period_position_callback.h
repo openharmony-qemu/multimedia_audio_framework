@@ -35,9 +35,12 @@ private:
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         int64_t position = 0;
+        napi_threadsafe_function acPeriodPosTsfn = nullptr;
     };
 
     void OnJsCapturerPeriodPositionCallback(std::unique_ptr<CapturerPeriodPositionJsCallback> &jsCb);
+    static void CapturerPeriodPositionTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackCapturerPeriodPositionWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

@@ -164,7 +164,6 @@ public:
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     uint32_t GetRendererSamplingRate() override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
@@ -200,7 +199,6 @@ private:
     AudioProcessConfig processconfig_;
     State state_;
     uint32_t sessionId_ = 0;
-    std::string cachePath_ = "";
     uint32_t underflowCount_ = 0;
     uint32_t overflowCount_ = 0;
     AudioRenderMode renderMode_;

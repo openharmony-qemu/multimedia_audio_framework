@@ -1402,26 +1402,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFramesRead_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetApplicationCachePath API stability.
- * @tc.number: Audio_Capturer_SetApplicationCachePath_001
- * @tc.desc  : Test SetApplicationCachePath interface stability.
- */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetApplicationCachePath_001, TestSize.Level1)
-{
-    string cachePath = "/data/storage/el2/base/temp";
-    AudioCapturerOptions capturerOptions;
-
-    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-
-    audioCapturer->SetApplicationCachePath(cachePath.c_str());
-    ASSERT_NE(nullptr, audioCapturer);
-
-    bool isReleased = audioCapturer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
  * @tc.name  : Test GetCurrentInputDevices API stability.
  * @tc.number: Audio_Capturer_GetCurrentInputDevices_001
  * @tc.desc  : Test GetCurrentInputDevices interface stability.

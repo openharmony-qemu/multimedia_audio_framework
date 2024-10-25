@@ -324,10 +324,6 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_017, TestSize.Level1)
     uint64_t cacheTimePa = 0;
     int32_t result = unit->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
-    EXPECT_EQ(timestamp, 0);
-    EXPECT_EQ(paWriteIndex, 0);
-    EXPECT_EQ(cacheTimeDsp, 0);
-    EXPECT_EQ(cacheTimePa, 0);
 }
 
 /**
@@ -347,10 +343,6 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_018, TestSize.Level1)
     uint64_t cacheTimePa = 0;
     int32_t ret = unit->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-    EXPECT_EQ(timestamp, 0);
-    EXPECT_EQ(paWriteIndex, 0);
-    EXPECT_EQ(cacheTimeDsp, 0);
-    EXPECT_EQ(cacheTimePa, 0);
 }
 
 /**

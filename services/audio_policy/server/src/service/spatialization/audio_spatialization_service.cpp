@@ -25,6 +25,7 @@
 #include "audio_spatialization_state_change_listener_proxy.h"
 
 #include "audio_policy_service.h"
+#include "audio_setting_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -442,7 +443,7 @@ bool AudioSpatializationService::IsHeadTrackingDataRequested(const std::string &
 }
 
 void AudioSpatializationService::UpdateRendererInfo(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo)
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfo)
 {
     AUDIO_DEBUG_LOG("Start");
     {

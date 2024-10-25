@@ -167,7 +167,7 @@ void AudioAffinityManager::RemoveOfflineRendererDevice(const AudioDeviceDescript
                 rendererAffinityDeviceArray_, activeRendererGroupAffinityMap_);
             item = activeRendererDeviceMap_.erase(item);
         } else {
-            item++;
+            ++item;
         }
     }
 }
@@ -184,7 +184,7 @@ void AudioAffinityManager::RemoveOfflineCapturerDevice(const AudioDeviceDescript
                 capturerAffinityDeviceArray_, activeCapturerGroupAffinityMap_);
             item = activeCapturerDeviceMap_.erase(item);
         } else {
-            item++;
+            ++item;
         }
     }
 }
@@ -200,7 +200,7 @@ AffinityDeviceInfo AudioAffinityManager::GetAffinityDeviceInfoByDeviceType(
             affinityDeviceInfo = *item;
             break;
         }
-        item++;
+        ++item;
     }
     return affinityDeviceInfo;
 }
@@ -244,7 +244,7 @@ int32_t AudioAffinityManager::GetAffinityClientUID(
             chooseTimeStamp = item->second.chooseTimeStamp;
             affinityClientID = item->first;
         }
-        item++;
+        ++item;
     }
     return affinityClientID;
 }

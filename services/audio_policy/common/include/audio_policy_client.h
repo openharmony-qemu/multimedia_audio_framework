@@ -36,7 +36,6 @@ enum class AudioPolicyClientCode {
     ON_FOCUS_REQUEST_CHANGED,
     ON_FOCUS_ABANDON_CHANGED,
     ON_DEVICE_CHANGE,
-    ON_MICRO_PHONE_BLOCKED,
     ON_RINGERMODE_UPDATE,
     ON_MIC_STATE_UPDATED,
     ON_ACTIVE_OUTPUT_DEVICE_UPDATED,
@@ -52,7 +51,8 @@ enum class AudioPolicyClientCode {
     ON_HEAD_TRACKING_ENABLED_CHANGE,
     ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE,
     ON_AUDIO_SESSION_DEACTIVE,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_AUDIO_SESSION_DEACTIVE,
+    ON_MICRO_PHONE_BLOCKED,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_MICRO_PHONE_BLOCKED,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -67,9 +67,9 @@ public:
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
     virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
     virtual void OnRendererStateChange(
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
     virtual void OnCapturerStateChange(
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
     virtual void OnRendererDeviceChange(const uint32_t sessionId,
         const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
     virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,

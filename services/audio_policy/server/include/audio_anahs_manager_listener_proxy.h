@@ -25,7 +25,7 @@ class AudioAnahsManagerListenerProxy : public IRemoteProxy<IStandardAudioAnahsMa
 public:
     explicit AudioAnahsManagerListenerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioAnahsManagerListenerProxy();
-    int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus) override;
+    int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS

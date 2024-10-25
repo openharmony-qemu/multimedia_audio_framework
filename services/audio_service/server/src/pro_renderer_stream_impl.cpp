@@ -261,7 +261,6 @@ int32_t ProRendererStreamImpl::Stop()
     if (isFirstFrame_) {
         firstFrameSync_.notify_all();
     }
-    totalBytesWritten_ = 0;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
@@ -714,6 +713,11 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     handleTimeModel_.ConfigSampleRate(currentRate_);
+}
+
+void ProRendererStreamImpl::BlockStream() noexcept
+{
+    isBlock_ = true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

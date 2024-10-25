@@ -112,10 +112,9 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
 /* Called from the IO thread. */
 static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t new_state, pa_suspend_cause_t new_suspend_cause)
 {
-    struct userdata *u;
-
-    pa_assert(s);
-    pa_assert_se(u = s->userdata);
+    CHECK_AND_RETURN_RET_LOG(s != NULL, 0, "s is null");
+    struct userdata *u = s->userdata;
+    CHECK_AND_RETURN_RET_LOG(u == s->userdata, 0, "u is not equal to s->userdata");
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
         if (PA_SINK_IS_OPENED(new_state)) {
@@ -128,11 +127,10 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t new_state, pa_su
 
 static void SinkUpdateRequestedLatencyCb(pa_sink *s)
 {
-    struct userdata *u;
+    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
+    struct userdata *u = s->userdata;
+    CHECK_AND_RETURN_LOG(u == s->userdata, "u is not equal to s->userdata");
     size_t nbytes;
-
-    pa_sink_assert_ref(s);
-    pa_assert_se(u = s->userdata);
 
     u->block_usec = pa_sink_get_requested_latency_within_thread(s);
 
@@ -154,7 +152,7 @@ static bool SinkSetFormatsCb(pa_sink *s, pa_idxset *formats)
 {
     struct userdata *u = s->userdata;
 
-    pa_assert(u);
+    CHECK_AND_RETURN_RET_LOG(u != NULL, false, "u is null");
 
     pa_idxset_free(u->formats, (pa_free_cb_t) pa_format_info_free);
     u->formats = pa_idxset_copy(formats, (pa_copy_func_t) pa_format_info_copy);
@@ -166,7 +164,7 @@ static pa_idxset* SinkGetFormatsCb(pa_sink *s)
 {
     struct userdata *u = s->userdata;
 
-    pa_assert(u);
+    CHECK_AND_RETURN_RET_LOG(u != NULL, NULL, "u is null");
 
     return pa_idxset_copy(u->formats, (pa_copy_func_t) pa_format_info_copy);
 }
@@ -177,7 +175,7 @@ static void ProcessRewind(struct userdata *u, pa_usec_t now)
     size_t inBuffer;
     pa_usec_t delay;
 
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     rewindNbytes = u->sink->thread_info.rewind_nbytes;
     if (!PA_SINK_IS_OPENED(u->sink->thread_info.state) || rewindNbytes <= 0) {
@@ -220,7 +218,7 @@ static const char *SafeProplistGets(const pa_proplist *p, const char *key, const
 
 static void SetSinkVolumeBySinkName(pa_sink *s)
 {
-    pa_assert(s);
+    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     void *state = NULL;
     pa_sink_input *input;
     while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
@@ -230,7 +228,7 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
         }
         const char *streamType = SafeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = SafeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? atoi(sessionIDStr) : 0;
+        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volumeFloat = GetCurVolume(sessionID, streamType, s->name);
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
@@ -239,7 +237,7 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
 
 static void UnsetSinkVolume(pa_sink *s)
 {
-    pa_assert(s);
+    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     void *state = NULL;
     pa_sink_input *input;
     while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
@@ -256,7 +254,7 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
 {
     size_t ate = 0;
 
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     // update use volume
     if (u->update_volume) {
@@ -294,7 +292,7 @@ static void ThreadFunc(void *userdata)
 {
     struct userdata *u = userdata;
 
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     AUDIO_DEBUG_LOG("Thread starting up");
     if (u->core->realtime_scheduling) {
@@ -367,7 +365,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
     pa_sink_new_data data;
     pa_format_info *format;
 
-    pa_assert(m);
+    CHECK_AND_RETURN_RET_LOG(m != NULL, PA_ERR, "m is null");
 
     ss = m->core->default_sample_spec;
     map = m->core->default_channel_map;
@@ -431,7 +429,7 @@ int pa__init(pa_module *m)
     int mq;
     int mg;
 
-    pa_assert(m);
+    CHECK_AND_RETURN_RET_LOG(m != NULL, InitFailed(m, ma), "m is null");
 
     ma = pa_modargs_new(m->argument, VALID_MODARGS);
     CHECK_AND_RETURN_RET_LOG(ma != NULL, InitFailed(m, ma), "Failed to parse module arguments:%{public}s", m->argument);
@@ -479,19 +477,20 @@ int pa__init(pa_module *m)
 
 int pa__get_n_used(pa_module *m)
 {
-    struct userdata *u;
+    CHECK_AND_RETURN_RET_LOG(m != NULL, 0, "m is null");
 
-    pa_assert(m);
-    pa_assert_se(u = m->userdata);
+    struct userdata *u = m->userdata;
+
+    CHECK_AND_RETURN_RET_LOG(u == m->userdata, 0, "u is not equal to m->userdata");
 
     return pa_sink_linked_by(u->sink);
 }
 
 void pa__done(pa_module*m)
 {
-    struct userdata *u;
+    CHECK_AND_RETURN_LOG(m != NULL, "m is null");
 
-    pa_assert(m);
+    struct userdata *u;
 
     if (!(u = m->userdata)) {
         return;

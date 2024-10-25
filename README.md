@@ -251,7 +251,7 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
         RendererStateChangeCallback = default;
         ~RendererStateChangeCallback = default;
     void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override
     {
         cout<<"OnRendererStateChange entered"<<endl;
     }
@@ -271,7 +271,7 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
         CapturerStateChangeCallback = default;
         ~CapturerStateChangeCallback = default;
     void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override
     {
         cout<<"OnCapturerStateChange entered"<<endl;
     }
@@ -283,13 +283,13 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
     ```
 4. Call **GetCurrentRendererChangeInfos()** to obtain information about all running renderers, including the client UID, session ID, renderer information, renderer state, and output device details.
     ```
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     int32_t currentRendererChangeInfo = audioStreamMgr->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     ```
 
 5. Call **GetCurrentCapturerChangeInfos()** to obtain information about all running capturers, including the client UID, session ID, capturer information, capturer state, and input device details.
     ```
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t currentCapturerChangeInfo = audioStreamMgr->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     ```
     For details, see **audioRendererChangeInfos** and **audioCapturerChangeInfos** in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).

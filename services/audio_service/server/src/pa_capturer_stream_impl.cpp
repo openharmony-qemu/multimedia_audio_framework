@@ -56,13 +56,15 @@ PaCapturerStreamImpl::~PaCapturerStreamImpl()
 
     PaLockGuard lock(mainloop_);
     if (paStream_) {
-        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_read_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
-        pa_stream_disconnect(paStream_);
+        if (!releasedFlag_) {
+            pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_read_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+            pa_stream_disconnect(paStream_);
+        }
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
     }
@@ -84,6 +86,8 @@ int32_t PaCapturerStreamImpl::InitParams()
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    CHECK_AND_RETURN_RET_LOG(sampleSpec != nullptr, ERR_OPERATION_FAILED,
+        "pa_sample_spec sampleSpec is nullptr");
     if (sampleSpec->channels != processConfig_.streamInfo.channels) {
         AUDIO_WARNING_LOG("Unequal channels, in server: %{public}d, in client: %{public}d", sampleSpec->channels,
             processConfig_.streamInfo.channels);
@@ -303,6 +307,18 @@ int32_t PaCapturerStreamImpl::Release()
     state_ = RELEASED;
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) {
         PolicyHandler::GetInstance().NotifyWakeUpCapturerRemoved();
+    }
+
+    PaLockGuard lock(mainloop_);
+    if (paStream_) {
+        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_read_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+        pa_stream_disconnect(paStream_);
+        releasedFlag_ = true;
     }
     return SUCCESS;
 }

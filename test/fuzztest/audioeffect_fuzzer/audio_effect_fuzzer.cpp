@@ -316,11 +316,9 @@ void UpdateSpkOffloadEnabledFuzzTest(const uint8_t* rawData, size_t size)
     }
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
-    bool debugArmFlag = *reinterpret_cast<const bool*>(rawData);
     bool spkOffloadEnabled = *reinterpret_cast<const bool*>(rawData);
-    AudioEffectChainManager::GetInstance()->debugArmFlag_ = debugArmFlag;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = spkOffloadEnabled;
-    AudioEffectChainManager::GetInstance()->UpdateRealAudioEffect();
+    AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -404,22 +402,6 @@ void UpdateSpatialDeviceTypeFuzzTest(const uint8_t* rawData, size_t size)
     AudioEffectChainManager::GetInstance()->UpdateSpatialDeviceType(spatialDeviceType);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
-
-void GetSceneTypeFromSpatializationSceneTypeFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE || size < sizeof(AudioSpatializationSceneType)) {
-        return;
-    }
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
-        DEFAULT_EFFECT_LIBRARY_LIST);
-    AudioEffectScene sceneType = *reinterpret_cast<const AudioEffectScene*>(rawData);
-    AudioSpatializationSceneType spatializationSceneType
-        = *reinterpret_cast<const AudioSpatializationSceneType*>(rawData);
-    AudioEffectChainManager::GetInstance()->spatializationSceneType_ = spatializationSceneType;
-    AudioEffectChainManager::GetInstance()->GetSceneTypeFromSpatializationSceneType(sceneType);
-
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -453,6 +435,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
     OHOS::AudioStandard::UpdateCurrSceneTypeFuzzTest(rawData, size);
     OHOS::AudioStandard::CheckSceneTypeMatchFuzzTest(rawData, size);
     OHOS::AudioStandard::UpdateSpatialDeviceTypeFuzzTest(rawData, size);
-    OHOS::AudioStandard::GetSceneTypeFromSpatializationSceneTypeFuzzTest(rawData, size);
     return 0;
 }

@@ -17,7 +17,9 @@
 #define LOG_TAG "AudioEnhanceChainManagerUnitTest"
 
 #include "audio_enhance_chain_manager_unit_test.h"
-
+#include <gtest/gtest.h>
+#include "audio_enhance_chain_manager.h"
+#include "audio_enhance_chain.h"
 #include <chrono>
 #include <thread>
 #include <fstream>
@@ -622,7 +624,6 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_002, TestSize
     propertiesToSet.property.push_back({"effect2", "property5"});
 
     manager_->SetAudioEnhanceProperty(propertiesToSet);
-
     AudioEnhancePropertyArray propertyArray;
     int32_t result = manager_->GetAudioEnhanceProperty(propertyArray);
     EXPECT_EQ(propertyArray.property.size(), 3);
@@ -631,6 +632,49 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_002, TestSize
     EXPECT_EQ(propertyArray.property[1].enhanceClass, "effect2");
     EXPECT_EQ(propertyArray.property[1].enhanceProp, "property5");
     EXPECT_EQ(result, AUDIO_OK);
+}
+
+/*
+ * tc.name   : Test ApplyAudioEnhanceChainDefault API
+ * tc.number : ApplyAudioEnhanceChainDefault_001
+ * tc.desc   : Tests retrieving a property list when properties are set.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyAudioEnhanceChainDefault_001, TestSize.Level1)
+{
+    AudioEnhancePropertyArray propertiesToSet;
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
+    manager_->InitEnhanceBuffer();
+    manager_->SetAudioEnhanceProperty(propertiesToSet);
+    manager_->enhanceBuffer_ = std::make_unique<EnhanceBuffer>();
+    manager_->enhanceBuffer_->micBufferIn.resize(1024);
+    manager_->enhanceBuffer_->micBufferOut.resize(1024);
+    manager_->enhanceBuffer_->ecBuffer.resize(1024);
+    manager_->enhanceBuffer_->micRefBuffer.resize(1024);
+    uint32_t captureId = 1;
+    uint32_t length = 1024;
+    int32_t result = manager_->ApplyAudioEnhanceChainDefault(captureId, length);
+    EXPECT_EQ(result, ERROR);
+}
+
+/*
+ * tc.name   : Test InitEnhanceBuffer API
+ * tc.number : InitEnhanceBuffer_002
+ * tc.desc   : Test InitEnhanceBuffer interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, InitEnhanceBuffer_002, TestSize.Level1)
+{
+    AudioEnhancePropertyArray propertiesToSet;
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    manager_->SetAudioEnhanceProperty(propertiesToSet);
+    manager_->enhanceBuffer_ = std::make_unique<EnhanceBuffer>();
+    manager_->enhanceBuffer_->micBufferIn.resize(0);
+    manager_->enhanceBuffer_->micBufferOut.resize(0);
+    manager_->enhanceBuffer_->ecBuffer.resize(0);
+    manager_->enhanceBuffer_->micRefBuffer.resize(0);
+    int32_t result = manager_->InitEnhanceBuffer();
+    EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

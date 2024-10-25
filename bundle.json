@@ -28,6 +28,7 @@
           "audio_framework_feature_double_pnp_detect",
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_opensl_es",
+          "audio_framework_suport_svsession_manager",
           "audio_framework_feature_support_os_account",
           "audio_framework_feature_hitrace_enable"
         ],
@@ -36,6 +37,7 @@
         "ram": "11000KB",
         "deps": {
           "components": [
+            "av_session",
             "ability_base",
             "ability_runtime",
             "access_token",
@@ -51,7 +53,6 @@
             "drivers_interface_audio",
             "drivers_interface_distributed_audio",
             "drivers_peripheral_bluetooth",
-            "ets_runtime",
             "eventhandler",
             "hdf_core",
             "hicollie",
@@ -94,6 +95,7 @@
             ],
             "fwk_group": [
               "//foundation/multimedia/audio_framework/frameworks/js/napi:audio",
+              "//foundation/multimedia/audio_framework/frameworks/cj:cj_multimedia_audio_ffi",
               "//foundation/multimedia/audio_framework/frameworks/native/ohaudio:ohaudio",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"

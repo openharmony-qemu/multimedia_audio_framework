@@ -238,16 +238,19 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
 
     uint64_t channelLayoutNum = 0;
+    int32_t streamUsage = 0;
     std::string sceneTypeString = "";
     std::string sessionIDString = "";
     std::string sceneModeString = "";
     std::string spatializationEnabledString = "";
-    if (sceneType && pack.channelLayout && sessionID && pack.sceneMode && pack.spatializationEnabled) {
+    if (sceneType && pack.channelLayout && sessionID && pack.sceneMode &&
+        pack.spatializationEnabled && pack.streamUsage) {
         sceneTypeString = sceneType;
         channelLayoutNum = std::strtoull(pack.channelLayout, nullptr, BASE_TEN);
         sessionIDString = sessionID;
         sceneModeString = pack.sceneMode;
         spatializationEnabledString = pack.spatializationEnabled;
+        streamUsage = static_cast<int32_t>(std::strtol(pack.streamUsage, nullptr, BASE_TEN));
     } else {
         AUDIO_ERR_LOG("map input parameters missing.");
         return ERROR;
@@ -259,6 +262,7 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
     info.channels = pack.channels;
     info.channelLayout = channelLayoutNum;
     info.spatializationEnabled = spatializationEnabledString;
+    info.streamUsage = streamUsage;
     return audioEffectChainManager->SessionInfoMapAdd(sessionIDString, info);
 }
 
@@ -319,7 +323,14 @@ void EffectChainManagerEffectUpdate()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
-    audioEffectChainManager->UpdateRealAudioEffect();
+    audioEffectChainManager->UpdateDefaultAudioEffect();
+}
+
+void EffectChainManagerStreamUsageUpdate()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    audioEffectChainManager->UpdateStreamUsage();
 }
 
 bool EffectChainManagerSceneCheck(const char *sinkSceneType, const char *sceneType)

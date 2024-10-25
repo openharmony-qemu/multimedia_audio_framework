@@ -662,7 +662,11 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeType(const int32_t clien
 
 AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32_t clientUid)
 {
-    AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC;
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return AudioStreamType::STREAM_MUSIC;
+    }
+    AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
     if (clientUid != 0) {
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus(clientUid));
     }
@@ -1402,10 +1406,11 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyServer::ActivateAudioInterrupt(
+    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     if (interruptService_ != nullptr) {
-        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt);
+        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;
 }
@@ -1788,7 +1793,7 @@ void AudioPolicyServer::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamCh
 }
 
 int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
-    std::vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    std::vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     bool hasBTPermission = VerifyBluetoothPermission();
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: BT use permission: %{public}d", hasBTPermission);
@@ -1800,7 +1805,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
 }
 
 int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
-    std::vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    std::vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     bool hasBTPermission = VerifyBluetoothPermission();
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: BT use permission: %{public}d", hasBTPermission);
@@ -2066,7 +2071,7 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
 void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCapturerState(
     bool targetMuteState, uint32_t targetTokenId, int32_t appUid)
 {
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
     server_->audioPolicyService_.GetCurrentCapturerChangeInfos(capturerChangeInfos, true, true);
     for (auto &info : capturerChangeInfos) {
         if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
@@ -3035,10 +3040,20 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
     return audioPolicyService_.LoadSplitModule(splitArgs, networkId);
 }
 
+bool AudioPolicyServer::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
+{
+    return audioPolicyService_.IsAllowedPlayback(uid, pid);
+}
+
 int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
     return audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+}
+
+void AudioPolicyServer::SetHibernateEndpointRelease(const bool &isHibernate)
+{
+    audioPolicyService_.SetHibernateEndpointRelease(isHibernate);
 }
 } // namespace AudioStandard
 } // namespace OHOS

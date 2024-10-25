@@ -92,6 +92,14 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     return Create(options, cachePath, appInfo);
 }
 
+std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &options,
+    const AppInfo &appInfo)
+{
+    auto tempUniquePtr = Create(options, "", appInfo);
+    std::shared_ptr<AudioCapturer> sharedPtr(tempUniquePtr.release());
+    return sharedPtr;
+}
+
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &capturerOptions,
     const std::string cachePath, const AppInfo &appInfo)
 {
@@ -125,10 +133,6 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         AUDIO_ERR_LOG("Failed to create capturer object");
         return capturer;
-    }
-    if (!cachePath.empty()) {
-        AUDIO_DEBUG_LOG("Set application cache path");
-        capturer->cachePath_ = cachePath;
     }
     AUDIO_INFO_LOG("Capturer sourceType: %{public}d, uid: %{public}d", sourceType, appInfo.appUid);
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
@@ -265,7 +269,6 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
             appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetRecordStream faied.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
-        audioStream_->SetApplicationCachePath(cachePath_);
     }
     int32_t ret = InitAudioStream(audioStreamParams);
     // When the fast stream creation fails, a normal stream is created
@@ -515,6 +518,7 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 
 bool AudioCapturerPrivate::Start() const
 {
+    std::lock_guard lock(switchStreamMutex_);
     Trace trace("AudioCapturer::Start");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
@@ -569,6 +573,7 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioCapturerPrivate::Pause() const
 {
+    std::lock_guard lock(switchStreamMutex_);
     Trace trace("AudioCapturer::Pause");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
@@ -586,6 +591,7 @@ bool AudioCapturerPrivate::Pause() const
 
 bool AudioCapturerPrivate::Stop() const
 {
+    std::lock_guard lock(switchStreamMutex_);
     Trace trace("AudioCapturer::Stop");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
@@ -649,16 +655,6 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     CHECK_AND_RETURN_RET_LOG(bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC,
         ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 20ms");
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
-}
-
-void AudioCapturerPrivate::SetApplicationCachePath(const std::string cachePath)
-{
-    cachePath_ = cachePath;
-    if (audioStream_ != nullptr) {
-        audioStream_->SetApplicationCachePath(cachePath_);
-    } else {
-        AUDIO_WARNING_LOG("AudioCapturer SetApplicationCachePath while stream is null");
-    }
 }
 
 AudioCapturerInterruptCallbackImpl::AudioCapturerInterruptCallbackImpl(const std::shared_ptr<IAudioStream> &audioStream)
@@ -890,7 +886,7 @@ int64_t AudioCapturerPrivate::GetFramesRead() const
 
 int32_t AudioCapturerPrivate::GetCurrentInputDevices(DeviceInfo &deviceInfo) const
 {
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
     int32_t ret = GetAudioStreamId(sessionId);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get sessionId failed");
@@ -908,7 +904,7 @@ int32_t AudioCapturerPrivate::GetCurrentInputDevices(DeviceInfo &deviceInfo) con
 
 int32_t AudioCapturerPrivate::GetCurrentCapturerChangeInfo(AudioCapturerChangeInfo &changeInfo) const
 {
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
     int32_t ret = GetAudioStreamId(sessionId);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get sessionId failed");
@@ -1090,7 +1086,6 @@ void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     CHECK_AND_RETURN_LOG(audioStream, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
-    audioStream->SetApplicationCachePath(info.cachePath);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetCapturerInfo(info.capturerInfo);
     audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
@@ -1331,7 +1326,7 @@ void AudioCapturerStateChangeCallbackImpl::setAudioCapturerObj(AudioCapturerPriv
 }
 
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     uint32_t sessionId = static_cast<uint32_t>(-1);
     bool found = false;
@@ -1366,7 +1361,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
 }
 
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     DeviceInfo deviceInfo = {};
     {
@@ -1383,7 +1378,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
 }
 
 void AudioCapturerStateChangeCallbackImpl::OnCapturerStateChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     if (deviceChangeCallbacklist_.size() != 0) {
         NotifyAudioCapturerDeviceChange(audioCapturerChangeInfos);

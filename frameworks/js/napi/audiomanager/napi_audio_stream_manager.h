@@ -49,8 +49,8 @@ private:
         bool isActive;
         AudioStreamInfo audioStreamInfo;
         NapiAudioStreamMgr *objectInfo;
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
         AudioSceneEffectInfo audioSceneEffectInfo;
     };
 

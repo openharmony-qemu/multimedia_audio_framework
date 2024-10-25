@@ -380,7 +380,6 @@ bool VolumeDataMaintainer::SaveSafeStatus(DeviceType deviceType, SafeStatus safe
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             ret = settingProvider.PutIntValue(AUDIO_SAFE_VOLUME_STATE, static_cast<int32_t>(safeStatus));
             break;
         default:
@@ -407,7 +406,6 @@ bool VolumeDataMaintainer::GetSafeStatus(DeviceType deviceType, SafeStatus &safe
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             ret = settingProvider.GetIntValue(AUDIO_SAFE_VOLUME_STATE, value);
             break;
         default:
@@ -438,7 +436,6 @@ bool VolumeDataMaintainer::SaveSafeVolumeTime(DeviceType deviceType, int64_t tim
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             ret = settingProvider.PutLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
         default:
@@ -465,7 +462,6 @@ bool VolumeDataMaintainer::GetSafeVolumeTime(DeviceType deviceType, int64_t &tim
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             ret = settingProvider.GetLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
         default:
@@ -556,6 +552,7 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_DP:
             type = "_builtin";
             return type;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -565,7 +562,6 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             type = "_wired";
             return type;
         case DEVICE_TYPE_REMOTE_CAST:
