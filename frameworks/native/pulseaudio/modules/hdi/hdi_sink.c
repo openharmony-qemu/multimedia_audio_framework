@@ -1882,7 +1882,11 @@ static void UpdateSceneToCountMap(struct Userdata *u)
 
 static void *AllocateBuffer(size_t size)
 {
-    return malloc(size);
+    if (size > 0 && size <= sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX) {
+        return malloc(size);
+    } else {
+        return NULL;
+    }
 }
 
 static int32_t AllocateEffectBuffer(struct Userdata *u)
