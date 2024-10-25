@@ -67,3 +67,48 @@ ohos_unittest("remote_fast_audio_capturer_source_unittest") {
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
+
+ohos_unittest("remote_audio_capturer_source_unit_test") {
+  install_enable = false
+
+  module_out_path =
+      "multimedia_audio_framework/remote_audio_capturer_source_unit_test"
+
+  include_dirs = [
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/common/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/remote/",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/devicemanager/interface/",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/common/",
+  ]
+
+  sources = [ "remote_audio_capturer_source_unit_test.cpp" ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  deps = [
+    "../../../../audioutils:audio_utils",
+    "../../../devicemanager:audio_device_manager",
+    "../../../source:remote_audio_capturer_source",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "drivers_interface_audio:libeffect_proxy_1.0",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "pulseaudio:pulse",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
