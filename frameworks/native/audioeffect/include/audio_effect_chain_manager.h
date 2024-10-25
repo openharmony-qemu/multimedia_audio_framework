@@ -86,13 +86,13 @@ struct EffectBufferAttr {
     uint64_t outChannelLayout;
 
     EffectBufferAttr(float *bufIn, float *bufOut, int numChans, int frameLen, uint32_t outChannels,
-    uint64_t outChannelLayout)
-    : bufIn(bufIn),
-    bufOut(bufOut),
-    numChans(numChans),
-    frameLen(frameLen),
-    outChannels(outChannels),
-    outChannelLayout(outChannelLayout)
+        uint64_t outChannelLayout)
+        : bufIn(bufIn),
+          bufOut(bufOut),
+          numChans(numChans),
+          frameLen(frameLen),
+          outChannels(outChannels),
+          outChannelLayout(outChannelLayout)
     {
     }
 };
