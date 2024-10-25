@@ -82,6 +82,8 @@ private:
 
     // Only for debug
     int32_t abortFlag_ = 0;
+
+    bool releasedFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
