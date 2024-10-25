@@ -1784,7 +1784,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
 }
 
 int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,
-    size_t targetSize, BufferDesc* desc)
+    size_t targetSize, BufferDesc *desc)
 {
     if (result.size < clientSpanSizeInByte_ && stopFlag) {
         result = ringCache_->Dequeue({desc->buffer, targetSize});
