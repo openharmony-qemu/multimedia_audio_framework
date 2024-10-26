@@ -72,6 +72,9 @@ static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
 static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
+static const int32_t INITIAL_VALUE = 1;
+static const int32_t INVALID_APP_UID = -1;
+static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -6733,6 +6736,45 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
         }
     }
     return DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES;
+}
+
+int32_t AudioPolicyService::CheckMaxRendererInstances()
+{
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    AUDIO_INFO_LOG("Audio current renderer change infos size: %{public}zu", audioRendererChangeInfos.size());
+    int32_t maxRendererInstances = GetMaxRendererInstances();
+    if (audioRendererChangeInfos.size() >= static_cast<size_t>(maxRendererInstances)) {
+        std::map<int32_t, int32_t> appUseNumMap;
+        int32_t mostAppUid = INVALID_APP_UID;
+        int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
+        for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+            auto appUseNum = appUseNumMap.find((*it)->clientUID);
+            if (appUseNum != appUseNumMap.end()) {
+                appUseNumMap[(*it)->clientUID] = ++appUseNum->second;
+            } else {
+                appUseNumMap.emplace((*it)->clientUID, INITIAL_VALUE);
+            }
+        }
+        for (auto iter = appUseNumMap.begin(); iter != appUseNumMap.end(); iter++) {
+            if (iter->second > mostAppNum) {
+                mostAppNum = iter->second;
+                mostAppUid = iter->first;
+            }
+        }
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
+            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+        bean->Add("CLIENT_UID", mostAppUid);
+        bean->Add("STREAM_NUM", mostAppNum);
+        AUDIO_INFO_LOG("mostAppUid: %{public}d, mostAppNum: %{public}d", mostAppUid, mostAppNum);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances), ERR_OVERFLOW,
+        "The current number of audio renderer streams is greater than the maximum number of configured instances");
+
+    return SUCCESS;
 }
 
 #ifdef BLUETOOTH_ENABLE

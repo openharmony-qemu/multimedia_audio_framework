@@ -389,6 +389,8 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    int32_t CheckMaxRendererInstances();
+
     void RegisterDataObserver();
 
     bool IsVolumeUnadjustable();

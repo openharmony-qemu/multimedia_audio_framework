@@ -34,9 +34,6 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-namespace {
-    constexpr uint32_t MAX_RENDERER_INSTANCES = 128;
-}
 
 class AudioPolicyExtUnitTest : public testing::Test {
 public:
@@ -246,14 +243,14 @@ HWTEST(AudioPolicyExtUnitTest, SetClientCallbacksEnable_005, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetMaxRendererInstances via legal state
- * @tc.number: GetMaxRendererInstances_001
- * @tc.desc  : Test GetMaxRendererInstances interface.Get max renderer instances and return ret.
+ * @tc.name  : Test CheckMaxRendererInstances via legal state
+ * @tc.number: CheckMaxRendererInstances_001
+ * @tc.desc  : Test CheckMaxRendererInstances interface.Check max renderer instances and return ret.
  */
-HWTEST(AudioPolicyExtUnitTest, GetMaxRendererInstances_001, TestSize.Level1)
+HWTEST(AudioPolicyExtUnitTest, CheckMaxRendererInstances_001, TestSize.Level1)
 {
-    int32_t ret = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
-    EXPECT_EQ(MAX_RENDERER_INSTANCES, ret);
+    int32_t ret = AudioPolicyManager::GetInstance().CheckMaxRendererInstances();
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

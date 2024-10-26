@@ -96,7 +96,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_SYSTEM_SOUND_URI",
     "GET_MIN_VOLUME_STREAM",
     "GET_MAX_VOLUME_STREAM",
-    "GET_MAX_RENDERER_INSTANCES",
+    "CHECK_MAX_RENDERER_INSTANCES",
     "IS_VOLUME_UNADJUSTABLE",
     "ADJUST_VOLUME_BY_STEP",
     "ADJUST_SYSTEM_VOLUME_BY_STEP",
@@ -857,9 +857,9 @@ void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, Mes
     reply.WriteFloat(volume);
 }
 
-void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::CheckMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t result =  GetMaxRendererInstances();
+    int32_t result =  CheckMaxRendererInstances();
     reply.WriteInt32(result);
 }
 
@@ -1561,8 +1561,8 @@ void AudioPolicyManagerStub::OnMiddleFouRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUME_STREAM):
             GetMaxStreamVolumeInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_RENDERER_INSTANCES):
-            GetMaxRendererInstancesInternal(data, reply);
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CHECK_MAX_RENDERER_INSTANCES):
+            CheckMaxRendererInstancesInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_VOLUME_UNADJUSTABLE):
             IsVolumeUnadjustableInternal(data, reply);

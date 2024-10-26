@@ -1228,13 +1228,13 @@ int32_t AudioPolicyManager::UnregisterAudioStreamPolicyServerDiedCb(
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::GetMaxRendererInstances()
+int32_t AudioPolicyManager::CheckMaxRendererInstances()
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::GetMaxRendererInstances");
+    AUDIO_DEBUG_LOG("AudioPolicyManager::CheckMaxRendererInstances");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->GetMaxRendererInstances();
+    return gsp->CheckMaxRendererInstances();
 }
 
 bool AudioPolicyManager::IsVolumeUnadjustable()
