@@ -1291,7 +1291,7 @@ void AudioPolicyService::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor
 int32_t AudioPolicyService::SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc)
 {
     // get deviceType
-    auto deviceType = [&desc] {
+    auto deviceType = [&streamUsage] {
         switch (streamUsage) {
             case STREAM_USAGE_VOICE_COMMUNICATION:
             case STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
@@ -1315,7 +1315,7 @@ int32_t AudioPolicyService::SetRenderDeviceForUsage(StreamUsage streamUsage, spt
         tempId, GetEncryptStr(desc->networkId_).c_str());
     // set preferred device
     sptr<AudioDeviceDescriptor> descriptor = new AudioDeviceDescriptor(**itr);
-    CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INTERNAL, "Create device descriptor failed");
+    CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
     SetPreferredDevice(AUDIO_MEDIA_RENDER, descriptor);
     return SUCCESS;
 }
