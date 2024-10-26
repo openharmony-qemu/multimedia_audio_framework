@@ -8933,6 +8933,7 @@ void AudioPolicyService::NotifyAccountsChanged(const int &id)
 {
     audioPolicyManager_.NotifyAccountsChanged(id);
     RegisterDataObserver();
+    SubscribeAccessibilityConfigObserver();
 }
 
 void AudioPolicyService::GetSafeVolumeDump(std::string &dumpString)
