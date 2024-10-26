@@ -848,7 +848,7 @@ int32_t RendererInServer::Release()
         "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        AudioService::GetInstance()->CleanUpStream(processConfig_.appInfo.appUid);
+        AudioService::GetInstance()->CleanUpStream();
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
     }
 

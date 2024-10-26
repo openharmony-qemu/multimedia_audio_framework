@@ -70,7 +70,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
             AUDIO_INFO_LOG("SessionId %{public}u", (*paired).first->GetSessionId());
             auto processConfig = process->GetAudioProcessConfig();
             if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
-                CleanUpStream(processConfig.appInfo.appUid);
+                CleanUpStream();
                 CleanAppUseNumMap(processConfig.appInfo.appUid);
             }
             RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
@@ -961,7 +961,7 @@ void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
     }
 }
 
-void AudioService::CleanUpStream(int32_t appUid)
+void AudioService::CleanUpStream()
 {
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
         currentRendererStreamCnt_--;
