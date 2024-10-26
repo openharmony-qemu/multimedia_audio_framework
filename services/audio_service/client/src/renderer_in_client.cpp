@@ -1030,6 +1030,7 @@ void RendererInClientInner::WriteCallbackFunc()
             traceQueuePop.End();
             // call write here.
             int32_t result = ProcessWriteInner(temp);
+            // only run in pause scene
             if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
                 BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
                     temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
@@ -1791,7 +1792,8 @@ int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopF
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
             "ringCache Dequeue failed %{public}d", result.ret);
         int32_t ret = memset_s(desc->buffer, targetSize, 0, targetSize);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "WriteCacheData memset output failed");
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "DrainIncompleteFrame memset output failed");
+        AUDIO_WARNING_LOG("incomplete frame is set to 0");
     }
     return SUCCESS;
 }
