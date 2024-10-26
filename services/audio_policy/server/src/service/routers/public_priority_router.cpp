@@ -76,7 +76,10 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
         return descs;
     }
 
-    if (latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_SCO ||
+        latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        latestConnDesc->getType() == DEVICE_TYPE_USB_HEADSET ||
+        latestConnDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         // Add the latest connected device.
         descs.push_back(move(latestConnDesc));
         switch (streamUsage) {
