@@ -1910,8 +1910,10 @@ static void FreeEffectBuffer(struct Userdata *u)
         &u->bufferAttr->tempBufIn, u->bufferAttr->tempBufOut };
     size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
     for (size_t i = 0; i < numBuffers; i++) {
-        free(*buffers[i]);
-        *buffers[i] = NULL;
+        if (*buffers[i] != NULL) {
+            free(*buffers[i]);
+            *buffers[i] = NULL;
+        }
     }
 }
 
@@ -3080,7 +3082,7 @@ static void ProcessNormalData(struct Userdata *u)
     int64_t sleepForUsec = -1;
     pa_usec_t now = 0;
 
-    if (u->sink->thread_info.state == PA_SINK_SUSPENDED) {
+    if (u->sink->thread_info.state == PA_SINK_SUSPENDED && u->isEffectBufferAllocated == true) {
         FreeEffectBuffer(u);
         u->isEffectBufferAllocated = false;
     }
