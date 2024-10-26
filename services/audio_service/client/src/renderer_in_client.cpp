@@ -994,7 +994,7 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
-void RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
+int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
@@ -1006,6 +1006,7 @@ void RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
     }
+    return result;
 }
 
 void RendererInClientInner::WriteCallbackFunc()
@@ -1028,10 +1029,22 @@ void RendererInClientInner::WriteCallbackFunc()
         BufferDesc temp;
         while (cbBufferQueue_.PopNotWait(temp)) {
             Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
-            if (state_ != RUNNING) { break; }
+            if (state_ != RUNNING) {
+                cbBufferQueue_.Push(temp);
+                AUDIO_INFO_LOG("Repush left buffer in queue");
+                break;
+            }
             traceQueuePop.End();
             // call write here.
-            ProcessWriteInner(temp);
+            int32_t result = ProcessWriteInner(temp);
+            // only run in pause scene
+            if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
+                BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
+                    temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
+                cbBufferQueue_.Push(tmp);
+                AUDIO_INFO_LOG("Repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
+                break;
+            }
         }
         if (state_ != RUNNING) { continue; }
         // call client write
@@ -1533,7 +1546,7 @@ bool RendererInClientInner::DrainAudioStream(bool stopFlag)
         return false;
     }
     std::lock_guard<std::mutex> lock(writeMutex_);
-    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true) == SUCCESS, false, "Drain cache failed");
+    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true, stopFlag) == SUCCESS, false, "Drain cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
@@ -1778,7 +1791,22 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     }
 }
 
-int32_t RendererInClientInner::WriteCacheData(bool isDrain)
+int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,
+    size_t targetSize, BufferDesc *desc)
+{
+    if (result.size < clientSpanSizeInByte_ && stopFlag) {
+        result = ringCache_->Dequeue({desc->buffer, targetSize});
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
+            "ringCache Dequeue failed %{public}d", result.ret);
+        int32_t ret = memset_s(desc->buffer, targetSize, 0, targetSize);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "DrainIncompleteFrame memset output failed");
+        AUDIO_WARNING_LOG("incomplete frame is set to 0");
+    }
+    return SUCCESS;
+}
+
+
+int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
 {
     Trace traceCache(isDrain ? "RendererInClientInner::DrainCacheData" : "RendererInClientInner::WriteCacheData");
 
@@ -1814,6 +1842,7 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
     int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
+    DrainIncompleteFrame(result, stopFlag, targetSize, &desc);
     result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
 
