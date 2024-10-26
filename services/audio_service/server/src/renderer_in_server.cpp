@@ -847,10 +847,6 @@ int32_t RendererInServer::Release()
     AudioXCollie audioXCollie(
         "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        AudioService::GetInstance()->CleanUpStream(processConfig_.appInfo.appUid);
-    }
-
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
@@ -859,6 +855,12 @@ int32_t RendererInServer::Release()
             return SUCCESS;
         }
     }
+
+    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        AudioService::GetInstance()->SetDecMaxRendererStreamCnt();
+        AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
+    }
+
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
     if (ret < 0) {
