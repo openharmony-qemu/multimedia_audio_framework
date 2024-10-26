@@ -77,7 +77,7 @@ public:
     int32_t UpdateSourceType(SourceType sourceType);
     void SetIncMaxRendererStreamCnt(AudioMode audioMode);
     int32_t GetCurrentRendererStreamCnt();
-    void CleanUpStream();
+    void SetDecMaxRendererStreamCnt();
     bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, int32_t maxStreamCntPerUid);
     void GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum);
     void SetHibernateEndpointRelease(const bool &isHibernate);

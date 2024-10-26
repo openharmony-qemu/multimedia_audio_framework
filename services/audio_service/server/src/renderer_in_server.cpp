@@ -857,7 +857,7 @@ int32_t RendererInServer::Release()
     }
 
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        AudioService::GetInstance()->CleanUpStream();
+        AudioService::GetInstance()->SetDecMaxRendererStreamCnt();
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
     }
 
