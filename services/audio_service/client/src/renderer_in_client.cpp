@@ -994,7 +994,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
         result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
     }
     if (curStreamParams_.encoding == ENCODING_PCM && bufferDesc.dataLength != 0) {
-        result = WriteInner(bufferDesc.buffer, bufferDesc.dataLength);
+        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
