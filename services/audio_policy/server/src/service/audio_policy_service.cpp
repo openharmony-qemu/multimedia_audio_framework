@@ -4958,7 +4958,7 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
     TriggerDeviceChangedCallback(deviceChangeDescriptor, false);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
 
-    FetchDevice(true, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
+    FetchDevice(true);
     FetchDevice(false);
 }
 
