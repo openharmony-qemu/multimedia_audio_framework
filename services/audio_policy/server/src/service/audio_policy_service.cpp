@@ -8000,19 +8000,15 @@ void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevic
     if (normalSourceOpened_ == SOURCE_TYPE_VOICE_COMMUNICATION) {
         DeviceType realInputDevice = inputDevice;
         DeviceType realOutputDevice = outputDevice;
-        if (realInputDevice == DEVICE_TYPE_DEFAULT) {
-            unique_ptr<AudioDeviceDescriptor> inputDesc =
-                audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
-            if (inputDesc != nullptr) {
-                realInputDevice = inputDesc->deviceType_;
-            }
+        unique_ptr<AudioDeviceDescriptor> inputDesc =
+            audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
+        if (inputDesc != nullptr) {
+            realInputDevice = inputDesc->deviceType_;
         }
-        if (realOutputDevice == DEVICE_TYPE_DEFAULT) {
-            vector<std::unique_ptr<AudioDeviceDescriptor>> outputDescs =
-                audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
-            if (outputDescs.size() > 0 && outputDescs.front() != nullptr) {
-                realOutputDevice = outputDescs.front()->deviceType_;
-            }
+        vector<std::unique_ptr<AudioDeviceDescriptor>> outputDescs =
+            audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
+        if (outputDescs.size() > 0 && outputDescs.front() != nullptr) {
+            realOutputDevice = outputDescs.front()->deviceType_;
         }
         AudioEcInfo lastEcInfo = GetAudioEcInfo();
         if (lastEcInfo.inputDevice == realInputDevice && lastEcInfo.outputDevice == realOutputDevice &&
