@@ -34,6 +34,7 @@ namespace AudioStandard {
 static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
+static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t HIBERNATE_ENDPOINT_RELEASE_DELAY_TIME = 0; // 0s
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
@@ -118,7 +119,9 @@ int32_t AudioService::GetReleaseDelayTime(DeviceType deviceType, bool destoryAtO
     if (!destoryAtOnce) {
         return A2DP_ENDPOINT_RELEASE_DELAY_TIME;
     }
-    return 0;
+    // The delay for destruction and reconstruction cannot be set to 0, otherwise there may be a problem:
+    // An endpoint exists at check process, but it may be destroyed immediately - during the re-create process
+    return A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME;
 }
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
