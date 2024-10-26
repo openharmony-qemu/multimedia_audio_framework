@@ -1861,12 +1861,11 @@ static void GetHashMap(struct Userdata *u, const char *sceneType)
             if (scene) {
                 num = pa_xnew0(uint32_t, 1);
                 *num = curNum;
-                pa_hashmap_put(map, scene, num);
+                pa_hashmap_put(u->sceneToCountMap, scene, num);
             }
         }
     } else if (num) {
-            pa_hashmap_remove_and_free(map, sceneType);
-        }
+            pa_hashmap_remove_and_free(u->sceneToCountMap, sceneType);
     }
 }
 
