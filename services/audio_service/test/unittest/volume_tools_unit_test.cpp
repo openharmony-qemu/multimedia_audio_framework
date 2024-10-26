@@ -190,7 +190,7 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_009, TestSize.Level1)
  */
 HWTEST_F(VolumeToolsUnitTest, VolumeTools_010, TestSize.Level1)
 {
-    uint8_t *buffer = 0;
+    uint8_t *buffer = nullptr;
     BufferDesc desc;
     desc.buffer = buffer;
     desc.bufLength = (MIN_FRAME_SIZE - 1) * 3 * STEREO + 1;
