@@ -849,6 +849,7 @@ int32_t RendererInServer::Release()
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         AudioService::GetInstance()->CleanUpStream(processConfig_.appInfo.appUid);
+        AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
     }
 
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
