@@ -847,16 +847,16 @@ int32_t RendererInServer::Release()
     AudioXCollie audioXCollie(
         "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        AudioService::GetInstance()->CleanUpStream();
-        AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
-    }
 
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ == I_STATUS_RELEASED) {
             AUDIO_INFO_LOG("Already released");
+            if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+                AudioService::GetInstance()->CleanUpStream();
+                AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
+            }
             return SUCCESS;
         }
     }
