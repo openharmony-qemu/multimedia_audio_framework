@@ -169,7 +169,7 @@ static void StartMultiChannelHdiIfRunning(struct Userdata *u);
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
 static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t state);
 static void *AllocateBuffer(size_t size);
-static int32_t AllocateEffectBuffer(struct Userdata *u);
+static bool AllocateEffectBuffer(struct Userdata *u);
 static void FreeEffectBuffer(struct Userdata *u);
 static void ResetBufferAttr(struct Userdata *u);
 
@@ -1888,7 +1888,7 @@ static void *AllocateBuffer(size_t size)
     }
 }
 
-static int32_t AllocateEffectBuffer(struct Userdata *u)
+static bool AllocateEffectBuffer(struct Userdata *u)
 {
     float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
         &u->bufferAttr->tempBufIn, u->bufferAttr->tempBufOut };
@@ -1898,10 +1898,10 @@ static int32_t AllocateEffectBuffer(struct Userdata *u)
         if (*buffers[i] == NULL) {
             AUDIO_ERR_LOG("failed to allocate effect buffer");
             FreeEffectBuffer(u);
-            return -1;
+            return false;
         }
     }
-    return 0;
+    return true;
 }
 
 static void FreeEffectBuffer(struct Userdata *u)
@@ -2065,7 +2065,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
         pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
         UnsetSinkVolume(u->sink); // reset volume 1.0f
     } else {
-        if (u->isEffectBufferAllocated || (!u->isEffectBufferAllocated && (AllocateEffectBuffer(u) != -1))) {
+        if (u->isEffectBufferAllocated || (!u->isEffectBufferAllocated && (AllocateEffectBuffer(u)))) {
             u->isEffectBufferAllocated = true;
             SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
         }
