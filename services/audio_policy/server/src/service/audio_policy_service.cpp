@@ -1303,7 +1303,7 @@ int32_t AudioPolicyService::SetRenderDeviceForUsage(StreamUsage streamUsage, spt
     }();
     // find device
     auto devices = GetAvailableDevicesInner(deviceType);
-    auto itr = std::find_if(devices.begin(), devices.end(), [&desc](const auto device) {
+    auto itr = std::find_if(devices.begin(), devices.end(), [&desc](const auto &device) {
         return (desc->deviceType_ == device->deviceType_) &&
             (desc->macAddress_ == device->macAddress_) &&
             (desc->networkId_ == device->networkId_);
