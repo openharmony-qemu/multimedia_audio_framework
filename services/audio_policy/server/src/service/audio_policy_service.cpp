@@ -1822,8 +1822,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("OnPreferredOutputDeviceUpdated start");
 
-    if (audioPolicyServerHandler_ != nullptr && (ringerModeMute_ ||
-        (audioScene_ != AUDIO_SCENE_RINGING && audioScene_ != AUDIO_SCENE_VOICE_RINGING))) {
+    if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
     }
     spatialDeviceMap_.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
@@ -8616,7 +8615,8 @@ bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr
 
     AUDIO_INFO_LOG("select ringer/alarm sessionId:%{public}d, streamUsage:%{public}d", sessionId, streamUsage);
     if (!descs.empty() && allDevicesInDualDevicesRange) {
-        if (IsA2dpOrArmUsbDevice(descs.front()->deviceType_)) {
+        if (descs.size() == AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT &&
+            GetSinkName(*descs.front(), sessionId) != GetSinkName(*descs.back(), sessionId)) {
             AUDIO_INFO_LOG("set dual hal tone, reset primary sink to default before.");
             UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
             if (enableDualHalToneState_ && enableDualHalToneSessionId_ != sessionId) {
