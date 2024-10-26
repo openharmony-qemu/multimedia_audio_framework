@@ -1891,7 +1891,7 @@ static void *AllocateBuffer(size_t size)
 static bool AllocateEffectBuffer(struct Userdata *u)
 {
     float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
-        &u->bufferAttr->tempBufIn, u->bufferAttr->tempBufOut };
+        &u->bufferAttr->tempBufIn, &u->bufferAttr->tempBufOut };
     size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
     for (size_t i = 0; i < numBuffers; i++) {
         pa_assert_se(*buffers[i] = (float *)AllocateBuffer(u->processSize));
@@ -1907,7 +1907,7 @@ static bool AllocateEffectBuffer(struct Userdata *u)
 static void FreeEffectBuffer(struct Userdata *u)
 {
     float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
-        &u->bufferAttr->tempBufIn, u->bufferAttr->tempBufOut };
+        &u->bufferAttr->tempBufIn, &u->bufferAttr->tempBufOut };
     size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
     for (size_t i = 0; i < numBuffers; i++) {
         if (*buffers[i] != NULL) {
