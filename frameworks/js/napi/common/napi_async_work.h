@@ -73,7 +73,6 @@ struct AutoRef {
     AutoRef(napi_env env, napi_ref cb)
         : env_(env), cb_(cb)
     {
-        jsPthread_ = pthread_self();
     }
     ~AutoRef()
     {
@@ -118,7 +117,6 @@ struct AutoRef {
     }
     napi_env env_;
     napi_ref cb_;
-    pthread_t jsPthread_;
 };
 
 class NapiAsyncWork {
