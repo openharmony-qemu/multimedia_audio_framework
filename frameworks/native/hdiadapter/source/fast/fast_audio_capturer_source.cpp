@@ -35,6 +35,11 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const int64_t GENERAL_MAX_HANDLE_COST_IN_NANOSEC = 10000000; // 10ms = 10ns * 1000 * 1000
+const int64_t VOIP_MAX_HANDLE_COST_IN_NANOSEC = 20000000; // 20ms = 20ns * 1000 * 1000
+}
+
 class FastAudioCapturerSourceInner : public FastAudioCapturerSource {
 public:
     int32_t Init(const IAudioSourceAttr &attr) override;
@@ -490,22 +495,18 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
+    int64_t maxHandleCost = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? VOIP_MAX_HANDLE_COST_IN_NANOSEC :
+        GENERAL_MAX_HANDLE_COST_IN_NANOSEC;
     int64_t waitTime = 2000000; // 2ms
-    int64_t maxHandleCost = 10000000; // 10ms
-    if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
-        AUDIO_INFO_LOG("VoIP needs to allow for greater time error - 20ms");
-        maxHandleCost = 20000000; // 20ms
-    }
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(waitTime); // us
         int64_t timeBeforeGetPos = ClockTime::GetCurNano();
         int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
-        int64_t timeAfterGetPos = ClockTime::GetCurNano();
         int64_t curSec = timeBeforeGetPos / AUDIO_NS_PER_SECOND;
         int64_t curNanoSec = timeBeforeGetPos - curSec * AUDIO_NS_PER_SECOND;
         AUDIO_WARNING_LOG("DspSec: %{public}" PRId64 ", dspNanoSec: %{public}" PRId64 ", Time before get pos: "
-            "%{public}" PRId64 ", after get pos: %{public}" PRId64 ", time difference:%{public}" PRId64 "",
-            timeSec, timeNanoSec, timeBeforeGetPos, timeAfterGetPos, timeAfterGetPos - timeBeforeGetPos);
+            "%{public}" PRId64 ", time cost: %{public}" PRId64 "", timeSec, timeNanoSec, timeBeforeGetPos,
+            ClockTime::GetCurNano() - timeBeforeGetPos);
         if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
             continue;
         } else {
