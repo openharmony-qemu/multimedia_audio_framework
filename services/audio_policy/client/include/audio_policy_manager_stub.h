@@ -192,6 +192,7 @@ private:
     void OnMiddleSecRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleFirRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddlesRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnMidRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

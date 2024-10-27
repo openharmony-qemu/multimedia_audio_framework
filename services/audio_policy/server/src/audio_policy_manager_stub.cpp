@@ -764,10 +764,8 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
     size = audioRendererChangeInfos.size();
     reply.WriteInt32(size);
     for (const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
-        if (!rendererChangeInfo) {
-            AUDIO_ERR_LOG("AudioPolicyManagerStub:Renderer change info null, something wrong!!");
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(rendererChangeInfo != nullptr,
+            "AudioPolicyManagerStub:Renderer change info null, something wrong!!");
         rendererChangeInfo->Marshalling(reply);
     }
 }
@@ -786,10 +784,8 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
     size = audioCapturerChangeInfos.size();
     reply.WriteInt32(size);
     for (const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
-        if (!capturerChangeInfo) {
-            AUDIO_ERR_LOG("AudioPolicyManagerStub:Capturer change info null, something wrong!!");
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(capturerChangeInfo != nullptr,
+            "AudioPolicyManagerStub:Capturer change info null, something wrong!!");
         capturerChangeInfo->Marshalling(reply);
     }
 }
@@ -870,8 +866,7 @@ void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, Mes
 
 void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t result =  GetMaxRendererInstances();
-    reply.WriteInt32(result);
+    reply.WriteInt32(GetMaxRendererInstances());
 }
 
 static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int32_t i, int32_t j)
@@ -1031,8 +1026,7 @@ void AudioPolicyManagerStub::SetDeviceAbsVolumeSupportedInternal(MessageParcel &
 
 void AudioPolicyManagerStub::IsAbsVolumeSceneInternal(MessageParcel &data, MessageParcel &reply)
 {
-    bool result = IsAbsVolumeScene();
-    reply.WriteBool(result);
+    reply.WriteBool(IsAbsVolumeScene());
 }
 
 void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply)
@@ -1094,8 +1088,7 @@ void AudioPolicyManagerStub::SetDistributedRoutingRoleCallbackInternal(MessagePa
 
 void AudioPolicyManagerStub::UnsetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t result = UnsetDistributedRoutingRoleCallback();
-    reply.WriteInt32(result);
+    reply.WriteInt32(UnsetDistributedRoutingRoleCallback());
 }
 
 void AudioPolicyManagerStub::IsSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply)
@@ -1837,6 +1830,43 @@ void AudioPolicyManagerStub::OnMiddlesRemoteRequest(
     }
 }
 
+void AudioPolicyManagerStub::OnMidRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
+            GetSystemVolumeLevelInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE_LEGACY):
+            SetStreamMuteLegacyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE):
+            SetStreamMuteInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE):
+            GetStreamMuteInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
+            IsStreamActiveInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE):
+            SetDeviceActiveInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_DEVICE_ACTIVE):
+            IsDeviceActiveInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
+            LoadSplitModuleInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK):
+            IsAllowedPlaybackInternal(data, reply);
+            break;
+        default:
+            OnMiddlesRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1861,35 +1891,8 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):
                 GetSystemActiveVolumeTypeInternal(data, reply);
                 break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
-                GetSystemVolumeLevelInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE_LEGACY):
-                SetStreamMuteLegacyInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE):
-                SetStreamMuteInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE):
-                GetStreamMuteInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
-                IsStreamActiveInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE):
-                SetDeviceActiveInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_DEVICE_ACTIVE):
-                IsDeviceActiveInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
-                LoadSplitModuleInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK):
-                IsAllowedPlaybackInternal(data, reply);
-                break;
             default:
-                OnMiddlesRemoteRequest(code, data, reply, option);
+                OnMidRemoteRequest(code, data, reply, option);
                 break;
         }
         return AUDIO_OK;
