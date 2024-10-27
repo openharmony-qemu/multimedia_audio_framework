@@ -490,7 +490,7 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
-    int64_t maxHandleCost = 10000000; // 10ms
+    int64_t maxHandleCost = 20000000; // 20ms
     int64_t waitTime = 2000000; // 2ms
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(waitTime); // us
