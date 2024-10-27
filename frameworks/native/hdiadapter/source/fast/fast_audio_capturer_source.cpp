@@ -505,7 +505,7 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
         int64_t curNanoSec = timeBeforeGetPos - curSec * AUDIO_NS_PER_SECOND;
         AUDIO_WARNING_LOG("Time before get pos: %{public}" PRId64", after get pos: %{public}" PRId64", "
             "time difference:%{public}" PRId64"", timeBeforeGetPos, timeAfterGetPos,
-            timeBeforeGetPos - timeAfterGetPos);
+            timeAfterGetPos - timeBeforeGetPos);
         if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
             AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d, curSec[%{public}" PRId64"], "
                 "curNanoSec[%{public}" PRId64"], dspSec[%{public}" PRId64"], dspNanoSec[%{public}" PRId64"]",
