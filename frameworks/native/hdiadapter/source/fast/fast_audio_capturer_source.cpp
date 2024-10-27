@@ -490,14 +490,22 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
-    int64_t maxHandleCost = 20000000; // 20ms
     int64_t waitTime = 2000000; // 2ms
+    int64_t maxHandleCost = 10000000; // 10ms
+    if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
+        AUDIO_INFO_LOG("VoIP needs to allow for greater time error - 20ms");
+        maxHandleCost = 20000000; // 20ms
+    }
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(waitTime); // us
+        int64_t timeBeforeGetPos = ClockTime::GetCurNano();
         int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
-        int64_t curTime = ClockTime::GetCurNano();
-        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
-        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        int64_t timeAfterGetPos = ClockTime::GetCurNano();
+        int64_t curSec = timeBeforeGetPos / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = timeBeforeGetPos - curSec * AUDIO_NS_PER_SECOND;
+        AUDIO_WARNING_LOG("Time before get pos: %{public}" PRId64", after get pos: %{public}" PRId64", "
+            "time difference:%{public}" PRId64"", timeBeforeGetPos, timeAfterGetPos,
+            timeBeforeGetPos - timeAfterGetPos);
         if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
             AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d, curSec[%{public}" PRId64"], "
                 "curNanoSec[%{public}" PRId64"], dspSec[%{public}" PRId64"], dspNanoSec[%{public}" PRId64"]",
