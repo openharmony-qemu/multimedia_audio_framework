@@ -1893,16 +1893,9 @@ static bool AllocateEffectBuffer(struct Userdata *u)
     if (u->bufferAttr == NULL) {
         return false;
     }
-    float *bufferPtrs[] = { u->bufferAttr->bufIn, u->bufferAttr->bufOut,
-        u->bufferAttr->tempBufIn, u->bufferAttr->tempBufOut};
-    size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
-    for (size_t i = 0; i < numBuffers; i++) {
-        if (bufferPtrs[i] == NULL) {
-            return false;
-        }
-    }
     float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
         &u->bufferAttr->tempBufIn, &u->bufferAttr->tempBufOut };
+    size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
     for (size_t i = 0; i < numBuffers; i++) {
         *buffers[i] = (float *)AllocateBuffer(u->processSize);
         if (*buffers[i] == NULL) {
