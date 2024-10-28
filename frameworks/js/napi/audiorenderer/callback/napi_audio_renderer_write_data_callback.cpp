@@ -121,6 +121,8 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
         return;
     }
 
+    auto obj = static_cast<NapiAudioRenderer *>(napiRenderer_);
+    ObjectRefMap<NapiAudioRenderer>::IncreaseRef(obj);
     work->data = reinterpret_cast<void *>(jsCb.get());
 
     int ret = uv_queue_work_with_qos(loop, work, [](uv_work_t *work) {},
@@ -175,6 +177,8 @@ void NapiRendererWriteDataCallback::WorkCallbackRendererWriteData(uv_work_t *wor
     CHECK_AND_RETURN_LOG(event != nullptr, "renderer write data event is nullptr");
     CHECK_AND_RETURN_LOG(event->rendererNapiObj != nullptr, "NapiAudioRenderer object is nullptr");
     event->rendererNapiObj->writeCallbackCv_.notify_all();
+    auto napiObj = static_cast<NapiAudioRenderer *>(event->rendererNapiObj);
+    ObjectRefMap<NapiAudioRenderer>::DecreaseRef(napiObj);
 }
 
 void NapiRendererWriteDataCallback::WorkCallbackRendererWriteDataInner(uv_work_t *work, int status)
