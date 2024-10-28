@@ -211,12 +211,11 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         sceneType_.c_str(), effectMode_.c_str());
 
     cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
-    int ret2 = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+    int32_t ret2 = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
     if (ret2 != 0) {
         AUDIO_WARNING_LOG("EFFECT_CMD_GET_CONFIG fail, ret is %{public}d", ret2);
     }
     UpdateOutputChannelInfo(ioBufferConfig_.outputCfg);
-
     return ret1;
 }
 
