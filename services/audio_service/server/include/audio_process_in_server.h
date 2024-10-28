@@ -68,7 +68,7 @@ public:
 
     int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 
-    void AudioProcessInServer::HandleNotifyStartListeners();
+    void HandleNotifyStartListeners();
     
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBuffer> GetStreamBuffer() override;
