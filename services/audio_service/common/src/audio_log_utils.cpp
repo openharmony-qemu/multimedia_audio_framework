@@ -19,7 +19,7 @@
 #include "audio_log_utils.h"
 
 #include <cinttypes>
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,14 +38,16 @@ void AudioLogUtils::ProcessVolumeData(const std::string &logTag, const ChannelVo
     }
     if (isDataSilent) {
         if (count > 0) {
-            AUDIO_INFO_LOG("[%{public}s] 1->0, silent frames %{public}" PRId64 "", logTag.c_str(), count);
+            AUDIO_INFO_LOG("[%{public}s] not slient %{public}" PRId64 "frames change to slient",
+                logTag.c_str(), count);
             count = 0;
         }
         count--;
         IncSilentData(logTag, vols, -count);
     } else {
         if (count < 0) {
-            AUDIO_INFO_LOG("[%{public}s] 0->1, silent frames %{public}" PRId64 "", logTag.c_str(), -count);
+            AUDIO_INFO_LOG("[%{public}s] slient %{public}" PRId64 "frames change to not slient",
+                logTag.c_str(), -count);
             count = 0;
         }
         count++;

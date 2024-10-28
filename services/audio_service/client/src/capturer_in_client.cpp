@@ -34,7 +34,7 @@
 #include "securec.h"
 
 #include "ipc_stream.h"
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "audio_log_utils.h"
 #include "audio_manager_base.h"

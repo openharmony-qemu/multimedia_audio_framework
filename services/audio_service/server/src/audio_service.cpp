@@ -21,7 +21,7 @@
 #include <thread>
 
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
