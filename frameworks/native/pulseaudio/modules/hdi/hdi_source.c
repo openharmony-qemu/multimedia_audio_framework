@@ -261,7 +261,7 @@ static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offse
 {
     AUTO_CTRACE("hdi_source::SourceProcessMsg code: %d", code);
     struct Userdata *u = PA_SOURCE(o)->userdata;
-    pa_assert(u);
+    CHECK_AND_RETURN_RET_LOG(u != NULL, 0, "userdata is null");
 
     switch (code) {
         case PA_SOURCE_MESSAGE_GET_LATENCY: {
@@ -281,9 +281,9 @@ static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offse
 static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     pa_suspend_cause_t newSuspendCause)
 {
-    struct Userdata *u = NULL;
-    pa_assert(s);
-    pa_assert_se(u = s->userdata);
+    CHECK_AND_RETURN_RET_LOG(s != NULL, 0, "source is null");
+    struct Userdata *u = s->userdata;
+    CHECK_AND_RETURN_RET_LOG(u != NULL, 0, "userdata is null");
     AUDIO_INFO_LOG("Source[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass(u->sourceAdapter->deviceClass), GetStateInfo(s->thread_info.state), GetStateInfo(newState));
 
@@ -328,9 +328,9 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
 
 static void PushData(pa_source_output *sourceOutput, pa_memchunk *chunk)
 {
-    pa_source_output_assert_ref(sourceOutput);
+    CHECK_AND_RETURN_LOG(sourceOutput != NULL, "sourceOutput is null");
     pa_source_output_assert_io_context(sourceOutput);
-    pa_assert(chunk);
+    CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
     AUDIO_DEBUG_LOG("chunk length: %{public}zu", chunk->length);
 
     if (!sourceOutput->thread_info.direct_on_input) {
@@ -340,10 +340,10 @@ static void PushData(pa_source_output *sourceOutput, pa_memchunk *chunk)
 
 static void PostSourceData(pa_source *source, pa_source_output *sourceOutput, pa_memchunk *chunk)
 {
-    pa_source_assert_ref(source);
+    CHECK_AND_RETURN_LOG(source != NULL, "source is null");
     pa_source_assert_io_context(source);
     pa_assert(PA_SOURCE_IS_LINKED(source->thread_info.state));
-    pa_assert(chunk);
+    CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
 
     if (source->thread_info.state == PA_SOURCE_SUSPENDED) {
         return;
@@ -367,7 +367,7 @@ static void PostSourceData(pa_source *source, pa_source_output *sourceOutput, pa
 
 static void EnhanceProcess(const uint32_t sceneKeyCode, pa_memchunk *chunk)
 {
-    pa_assert(chunk);
+    CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
     void *src = pa_memblock_acquire_chunk(chunk);
     AUDIO_DEBUG_LOG("chunk length: %{public}zu sceneKey: %{public}u", chunk->length, sceneKeyCode);
     pa_memblock_release(chunk->memblock);
@@ -385,7 +385,7 @@ static void EnhanceProcess(const uint32_t sceneKeyCode, pa_memchunk *chunk)
 
 static void EnhanceProcessDefault(const uint32_t captureId, pa_memchunk *chunk)
 {
-    pa_assert(chunk);
+    CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
     void *src = pa_memblock_acquire_chunk(chunk);
     AUDIO_DEBUG_LOG("chunk length: %{public}zu captureId: %{public}u", chunk->length, captureId);
     pa_memblock_release(chunk->memblock);
@@ -403,10 +403,10 @@ static void EnhanceProcessDefault(const uint32_t captureId, pa_memchunk *chunk)
 
 static void EnhanceProcessAndPost(struct Userdata *u, const uint32_t sceneKeyCode, pa_memchunk *enhanceChunk)
 {
-    pa_assert(u);
-    pa_assert(enhanceChunk);
+    CHECK_AND_RETURN_LOG(u != NULL, "userdata is null");
+    CHECK_AND_RETURN_LOG(enhanceChunk != NULL, "enhanceChunk is null");
     pa_source *source = u->source;
-    pa_source_assert_ref(source);
+    CHECK_AND_RETURN_LOG(source != NULL, "source is null");
 
     void *state = NULL;
     pa_source_output *sourceOutput;
@@ -438,8 +438,8 @@ static void EnhanceProcessAndPost(struct Userdata *u, const uint32_t sceneKeyCod
 
 static void PostDataBypass(pa_source *source, pa_memchunk *chunk)
 {
-    pa_source_assert_ref(source);
-    pa_assert(chunk);
+    CHECK_AND_RETURN_LOG(source != NULL, "source is null");
+    CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
     void *state = NULL;
     pa_source_output *sourceOutput;
     while ((sourceOutput = pa_hashmap_iterate(source->thread_info.outputs, &state, NULL))) {
@@ -519,9 +519,10 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, struct Userdata *u)
     uint64_t replyBytes = 0;
 
     void *p = NULL;
-    pa_assert(chunk->memblock);
+    CHECK_AND_RETURN_RET_LOG(chunk != NULL, 0, "chunk is null");
+    CHECK_AND_RETURN_RET_LOG(chunk->memblock != NULL, 0, "chunk->memblock is null");
     p = pa_memblock_acquire(chunk->memblock);
-    pa_assert(p);
+    CHECK_AND_RETURN_RET_LOG(p != NULL, 0, "p is null");
     requestBytes = pa_memblock_get_length(chunk->memblock);
     HandleCaptureFrame(u, (char *)p, requestBytes, &replyBytes);
     pa_memblock_release(chunk->memblock);
@@ -565,8 +566,8 @@ static int32_t SampleAlignment(const char *sceneKey, pa_memchunk *enhanceChunk, 
 
 static void PostDataDefault(pa_source *source, pa_memchunk *chunk, struct Userdata *u)
 {
-    pa_source_assert_ref(source);
-    pa_assert(chunk);
+    CHECK_AND_RETURN_LOG(source != NULL, "source is null");
+    CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
 
     bool hasDefaultStream = false;
     pa_source_output *sourceOutput;
