@@ -40,12 +40,9 @@ private:
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         InterruptAction interruptAction;
-        napi_threadsafe_function amInterruptTsfn = nullptr;
     };
 
     void OnJsCallbackAudioManagerInterrupt(std::unique_ptr<AudioManagerInterruptJsCallback> &jsCb);
-    static void AudioManagerInterruptTsfnFinalize(napi_env env, void *data, void *hint);
-    static void SafeJsCallbackAudioManagerInterruptWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

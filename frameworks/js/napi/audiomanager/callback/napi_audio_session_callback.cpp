@@ -21,6 +21,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
 NapiAudioSessionCallback::NapiAudioSessionCallback(napi_env env)
     :env_(env)
 {

@@ -57,16 +57,10 @@ private:
         std::string callbackName = "unknown";
         DeviceChangeAction deviceChangeAction;
         MicrophoneBlockedInfo microphoneBlockedInfo;
-        napi_threadsafe_function amMicBlockedTsfn = nullptr;
-        napi_threadsafe_function amDevChgTsfn = nullptr;
     };
 
     void OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb);
     void OnJsCallbackMicrophoneBlocked(std::unique_ptr<AudioManagerJsCallback> &jsCb);
-    static void MicrophoneBlockedTsfnFinalize(napi_env env, void *data, void *hint);
-    static void SafeJsCallbackMicrophoneBlockedWork(napi_env env, napi_value js_cb, void *context, void *data);
-    static void SafeJsCallbackDeviceChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
-    static void DeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

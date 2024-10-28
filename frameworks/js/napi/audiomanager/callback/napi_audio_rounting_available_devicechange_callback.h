@@ -43,12 +43,9 @@ private:
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         DeviceChangeAction deviceChangeAction;
-        napi_threadsafe_function amRouDevChgTsfn = nullptr;
     };
 
     void OnJsCallbackAvailbleDeviceChange(std::unique_ptr<AudioRountingJsCallback> &jsCb);
-    static void AvailbleDeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
-    static void SafeJsCallbackAvailbleDeviceChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

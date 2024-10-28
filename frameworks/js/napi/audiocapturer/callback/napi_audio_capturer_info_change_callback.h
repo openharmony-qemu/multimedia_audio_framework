@@ -37,13 +37,9 @@ private:
         napi_ref callback_;
         napi_env env_;
         AudioCapturerChangeInfo capturerChangeInfo_;
-        std::string callbackName = "unknown";
-        napi_threadsafe_function acInfoChgTsfn = nullptr;
     };
 
     void OnJsCallbackCapturerChangeInfo(napi_ref method, const AudioCapturerChangeInfo &capturerChangeInfo);
-    static void SafeJsCallbackCapturerChangeInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
-    static void CapturerChangeInfoTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
