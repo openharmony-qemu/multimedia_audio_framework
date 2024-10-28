@@ -211,6 +211,10 @@ ohos_shared_library("audio_policy_service") {
     defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
   }
 
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+
   if (audio_framework_feature_support_os_account) {
     defines += [ "SUPPORT_USER_ACCOUNT" ]
   }

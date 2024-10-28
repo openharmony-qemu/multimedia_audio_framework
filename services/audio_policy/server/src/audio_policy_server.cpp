@@ -228,7 +228,9 @@ void AudioPolicyServer::NotifyProcessStatus(bool isStart)
     void *notifyProcessStatusFunc = dlsym(libMemMgrClientHandle, "notify_process_status");
     if (!notifyProcessStatusFunc) {
         AUDIO_ERR_LOG("dlsm notify_process_status failed");
+#ifndef TEST_COVERAGE
         dlclose(libMemMgrClientHandle);
+#endif
         return;
     }
     auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
@@ -241,7 +243,9 @@ void AudioPolicyServer::NotifyProcessStatus(bool isStart)
         // 0 indicates the service is stopped
         notifyProcessStatus(pid, SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_STOP, AUDIO_POLICY_SERVICE_ID);
     }
+#ifndef TEST_COVERAGE
     dlclose(libMemMgrClientHandle);
+#endif
 }
 
 void AudioPolicyServer::HandleKvDataShareEvent()

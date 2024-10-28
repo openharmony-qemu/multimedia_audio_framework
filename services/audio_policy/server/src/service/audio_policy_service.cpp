@@ -6743,18 +6743,24 @@ void AudioPolicyService::PublishSafeVolumeNotification(int32_t notificationId)
         reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
     if (createSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
+#ifndef TEST_COVERAGE
         dlclose(libHandle);
+#endif
         return;
     }
     AudioSafeVolumeNotification *audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
     if (audioSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("audioSafeVolumeNotificationImpl is nullptr %{public}s", __func__);
+#ifndef TEST_COVERAGE
         dlclose(libHandle);
+#endif
         return;
     }
     audioSafeVolumeNotificationImpl->PublishSafeVolumeNotification(notificationId);
     delete audioSafeVolumeNotificationImpl;
+#ifndef TEST_COVERAGE
     dlclose(libHandle);
+#endif
 }
 
 void AudioPolicyService::CancelSafeVolumeNotification(int32_t notificationId)
@@ -6768,18 +6774,24 @@ void AudioPolicyService::CancelSafeVolumeNotification(int32_t notificationId)
         reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
     if (createSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
+#ifndef TEST_COVERAGE
         dlclose(libHandle);
+#endif
         return;
     }
     AudioSafeVolumeNotification *audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
     if (audioSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("audioSafeVolumeNotificationImpl is nullptr %{public}s", __func__);
+#ifndef TEST_COVERAGE
         dlclose(libHandle);
+#endif
         return;
     }
     audioSafeVolumeNotificationImpl->CancelSafeVolumeNotification(notificationId);
     delete audioSafeVolumeNotificationImpl;
+#ifndef TEST_COVERAGE
     dlclose(libHandle);
+#endif
 }
 
 void AudioPolicyService::SetDefaultDeviceLoadFlag(bool isLoad)
