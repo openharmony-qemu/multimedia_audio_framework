@@ -1865,7 +1865,7 @@ static void GetHashMap(struct Userdata *u, const char *sceneType)
             }
         }
     } else if (num) {
-            pa_hashmap_remove_and_free(u->sceneToCountMap, sceneType);
+        pa_hashmap_remove_and_free(u->sceneToCountMap, sceneType);
     }
 }
 
@@ -1890,11 +1890,21 @@ static void *AllocateBuffer(size_t size)
 
 static bool AllocateEffectBuffer(struct Userdata *u)
 {
-    float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
-        &u->bufferAttr->tempBufIn, &u->bufferAttr->tempBufOut };
+    if (u->bufferAttr == NULL) {
+        return false;
+    }
+    float *bufferPtrs[] = { u->bufferAttr->bufIn, u->bufferAttr->bufOut,
+        u->bufferAttr->tempBufIn, u->bufferAttr->tempBufOut};
     size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
     for (size_t i = 0; i < numBuffers; i++) {
-        pa_assert_se(*buffers[i] = (float *)AllocateBuffer(u->processSize));
+        if (bufferPtrs[i] == NULL) {
+            return false;
+        }
+    }
+    float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
+        &u->bufferAttr->tempBufIn, &u->bufferAttr->tempBufOut };
+    for (size_t i = 0; i < numBuffers; i++) {
+        *buffers[i] = (float *)AllocateBuffer(u->processSize);
         if (*buffers[i] == NULL) {
             AUDIO_ERR_LOG("failed to allocate effect buffer");
             FreeEffectBuffer(u);
@@ -1906,14 +1916,15 @@ static bool AllocateEffectBuffer(struct Userdata *u)
 
 static void FreeEffectBuffer(struct Userdata *u)
 {
+    if (u->bufferAttr == NULL) {
+        return false;
+    }
     float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
         &u->bufferAttr->tempBufIn, &u->bufferAttr->tempBufOut };
     size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
     for (size_t i = 0; i < numBuffers; i++) {
-        if (*buffers[i] != NULL) {
-            free(*buffers[i]);
-            *buffers[i] = NULL;
-        }
+        free(*buffers[i]);
+        *buffers[i] = NULL;
     }
 }
 
