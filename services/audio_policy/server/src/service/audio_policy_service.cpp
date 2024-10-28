@@ -1290,32 +1290,31 @@ void AudioPolicyService::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor
 
 int32_t AudioPolicyService::SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc)
 {
-    auto isPresent = [&desc] (const unique_ptr<AudioDeviceDescriptor> &device) {
+    // get deviceUsage and perferedType
+    auto deviceUsage = MEDIA_OUTPUT_DEVICES;
+    auto perferedType = AUDIO_MEDIA_RENDER;
+    auto tempId = desc->deviceId_;
+    if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+        deviceUsage = CALL_OUTPUT_DEVICES;
+        perferedType = AUDIO_CALL_RENDER;
+    } 
+    // find device
+    auto devices = GetAvailableDevicesInner(deviceUsage);
+    auto itr = std::find_if(devices.begin(), devices.end(), [&desc](const auto &device) {
         return (desc->deviceType_ == device->deviceType_) &&
             (desc->macAddress_ == device->macAddress_) &&
             (desc->networkId_ == device->networkId_);
-    };
-    uint32_t tempId = desc->deviceId_;
-    if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-        streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-        std::vector<unique_ptr<AudioDeviceDescriptor>> devices = GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
-        auto itr = std::find_if(devices.begin(), devices.end(), isPresent);
-        CHECK_AND_RETURN_RET_LOG(itr != devices.end(), ERR_INVALID_OPERATION,
-            "device not available type:%{public}d macAddress:%{public}s id:%{public}d networkId:%{public}s",
-            desc->deviceType_, GetEncryptAddr(desc->macAddress_).c_str(),
-            tempId, GetEncryptStr(desc->networkId_).c_str());
-        SetPreferredDevice(AUDIO_CALL_RENDER, new(std::nothrow) AudioDeviceDescriptor(**itr));
-        return SUCCESS;
-    } else {
-        std::vector<unique_ptr<AudioDeviceDescriptor>> devices = GetAvailableDevicesInner(MEDIA_OUTPUT_DEVICES);
-        auto itr = std::find_if(devices.begin(), devices.end(), isPresent);
-        CHECK_AND_RETURN_RET_LOG(itr != devices.end(), ERR_INVALID_OPERATION,
-            "device not available type:%{public}d macAddress:%{public}s id:%{public}d networkId:%{public}s",
-            desc->deviceType_, GetEncryptAddr(desc->macAddress_).c_str(),
-            tempId, GetEncryptStr(desc->networkId_).c_str());
-        SetPreferredDevice(AUDIO_MEDIA_RENDER, new(std::nothrow) AudioDeviceDescriptor(**itr));
-        return SUCCESS;
-    }
+    });
+    CHECK_AND_RETURN_RET_LOG(itr != devices.end(), ERR_INVALID_OPERATION,
+        "device not available type:%{public}d macAddress:%{public}s id:%{public}d networkId:%{public}s",
+        desc->deviceType_, GetEncryptAddr(desc->macAddress_).c_str(),
+        tempId, GetEncryptStr(desc->networkId_).c_str());
+    // set preferred device
+    sptr<AudioDeviceDescriptor> descriptor = new AudioDeviceDescriptor(**itr);
+    CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
+    SetPreferredDevice(perferedType, descriptor);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyService::ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &selectedDesc)
@@ -3428,9 +3427,9 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo, DeviceRole deviceRo
         if (configRole != deviceRole) {continue;}
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         if (isEcFeatureEnable_) {
-            uint32_t bufferSize = (std::stoi(moduleInfo.rate) *
+            uint32_t bufferSize = (static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
                 GetSampleFormatValue(formatStrToEnum[moduleInfo.format]) *
-                std::stoi(moduleInfo.channels)) / PCM_8_BIT * RENDER_FRAME_INTERVAL_IN_SECONDS;
+                static_cast<uint32_t>(std::stoi(moduleInfo.channels))) / PCM_8_BIT * RENDER_FRAME_INTERVAL_IN_SECONDS;
             moduleInfo.bufferSize = std::to_string(bufferSize);
             AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
             if (deviceRole == OUTPUT_DEVICE) {
