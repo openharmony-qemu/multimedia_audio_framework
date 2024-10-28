@@ -2284,7 +2284,7 @@ void SpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
     }
 }
 
-bool RendererInClientInner::RestoreAudioStream()
+bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
@@ -2297,6 +2297,10 @@ bool RendererInClientInner::RestoreAudioStream()
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {
         goto error;
+    }
+    if (!needStoreState) {
+        AUDIO_INFO_LOG("telephony scene, return directly");
+        return ret;
     }
     if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
         rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;

@@ -247,7 +247,7 @@ public:
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 
-    virtual bool RestoreAudioStream()
+    virtual bool RestoreAudioStream(bool needStoreState = true)
     {
         return 0;
     }

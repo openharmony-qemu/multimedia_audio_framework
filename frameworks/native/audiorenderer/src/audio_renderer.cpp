@@ -1762,7 +1762,7 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
 
         if (renderer_->IsNoStreamRenderer()) {
             // no stream renderer don't need to restore stream
-            restoreResult = true;
+            restoreResult = renderer_->audioStream_->RestoreAudioStream(false);
         } else {
             restoreResult = renderer_->audioStream_->RestoreAudioStream();
             if (!restoreResult) {
