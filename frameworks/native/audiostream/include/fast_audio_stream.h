@@ -172,7 +172,7 @@ public:
 
     IAudioStream::StreamClass GetStreamClass() override;
 
-    bool RestoreAudioStream() override;
+    bool RestoreAudioStream(bool needStoreState = true) override;
 
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;

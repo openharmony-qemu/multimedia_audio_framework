@@ -180,7 +180,7 @@ public:
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
-    bool RestoreAudioStream() override;
+    bool RestoreAudioStream(bool needStoreState = true) override;
 
     void GetStreamSwitchInfo(SwitchInfo &info);
 

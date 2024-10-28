@@ -842,7 +842,7 @@ void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &regist
     registerTrackerInfo.capturerInfo = capturerInfo_;
 }
 
-bool FastAudioStream::RestoreAudioStream()
+bool FastAudioStream::RestoreAudioStream(bool needStoreState)
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,

@@ -206,7 +206,7 @@ public:
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 
-    bool RestoreAudioStream() override;
+    bool RestoreAudioStream(bool needStoreState = true) override;
 
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
@@ -1912,7 +1912,7 @@ bool CapturerInClientInner::GetSilentModeAndMixWithOthers()
     return false;
 }
 
-bool CapturerInClientInner::RestoreAudioStream()
+bool CapturerInClientInner::RestoreAudioStream(bool needStoreState)
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
