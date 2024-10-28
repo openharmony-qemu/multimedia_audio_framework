@@ -183,13 +183,16 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t callerPid, con
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
         return ERR_UNKNOWN;
     }
+    bool isActivated = sessionService_->IsAudioSessionActivated(callerPid);
     int32_t result = sessionService_->ActivateAudioSession(callerPid, strategy);
     if (result != SUCCESS) {
         AUDIO_ERR_LOG("Failed to activate audio session for pid %{public}d!", callerPid);
         return result;
     }
-
-    AddActiveInterruptToSession(callerPid);
+    if (!isActivated) {
+        AUDIO_INFO_LOG("The audio session is activated for the first time. Add active streams");
+        AddActiveInterruptToSession(callerPid);
+    }
     return SUCCESS;
 }
 
