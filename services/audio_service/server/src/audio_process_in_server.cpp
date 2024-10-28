@@ -113,7 +113,7 @@ int32_t AudioProcessInServer::Start()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    std::lock_guard<std::mutex> lock(statusLock_);
+    std::lock_guard lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING || streamStatus_->load() == STREAM_STAND_BY,
         ERR_ILLEGAL_STATE, "Start failed, invalid status.");
 
@@ -127,10 +127,9 @@ int32_t AudioProcessInServer::Start()
             processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(processConfig_.appInfo.appTokenId, sessionId_),
             ERR_PERMISSION_DENIED, "NotifyPrivacy failed!");
-
-    for (size_t i = 0; i < listenerList_.size(); i++) {
-        listenerList_[i]->OnStart(this);
     }
+
+    NotifyStartListeners();
 
     if (streamStatus_->load() == STREAM_STAND_BY) {
         AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
@@ -142,6 +141,14 @@ int32_t AudioProcessInServer::Start()
     AUDIO_INFO_LOG("Start in server success!");
     return SUCCESS;
 }
+
+void AudioProcessInServer::NotifyStartListeners()
+{
+    for (size_t i = 0; i < listenerList_.size(); i++) {
+        listenerList_[i]->OnStart(this);
+    }
+}
+
 
 int32_t AudioProcessInServer::Pause(bool isFlush)
 {
@@ -180,7 +187,7 @@ int32_t AudioProcessInServer::Resume()
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(tokenId, sessionId_), ERR_PERMISSION_DENIED,
-        "NotifyPrivacy failed!");
+            "NotifyPrivacy failed!");
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {

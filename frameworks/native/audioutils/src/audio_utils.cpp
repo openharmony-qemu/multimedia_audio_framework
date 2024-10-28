@@ -356,15 +356,18 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
         }
     } else {
         Trace trace("PrivacyKit::StartUsingPermission");
-        AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}d sessionId:%{public}d", targetTokenId, sessionId);
+        AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId: %{public}d sessionId:%{public}d",
+            targetTokenId, sessionId);
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         if (res != 0) {
-            AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d", targetTokenId, res);
+            AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d", 
+                targetTokenId, res);
             return false;
         }
         res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
         if (res != 0) {
-            AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is %{public}d", targetTokenId, res);
+            AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is %{public}d",
+                targetTokenId, res);
             return false;
         }
         g_tokenIdRecordMap_[targetTokenId] = {sessionId};
@@ -384,13 +387,16 @@ bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
     if (g_tokenIdRecordMap_[targetTokenId].count(sessionId)) {
         g_tokenIdRecordMap_[targetTokenId].erase(sessionId);
     }
-    AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId, g_tokenIdRecordMap_[targetTokenId].size());
+    AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
+        g_tokenIdRecordMap_[targetTokenId].size());
     if (g_tokenIdRecordMap_[targetTokenId].empty()) {
         Trace trace("PrivacyKit::StopUsingPermission");
-        AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d sessionId:%{public}d", targetTokenId, sessionId);
+        AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d sessionId:%{public}d",
+            targetTokenId, sessionId);
         int res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         if (res != 0) {
-            AUDIO_ERR_LOG("StopUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d", targetTokenId, res);
+            AUDIO_ERR_LOG("StopUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
+                targetTokenId, res);
             return false;
         }
         g_tokenIdRecordMap_.erase(targetTokenId);
