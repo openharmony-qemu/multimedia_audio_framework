@@ -625,6 +625,7 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
     pa_sink_input *sinkIn;
 
     CHECK_AND_RETURN_RET_LOG(si != NULL, 0, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     CHECK_AND_RETURN_RET_LOG(infoIn != NULL, 0, "infoIn is null");
 
@@ -769,6 +770,7 @@ static void SinkRenderPrimaryMixCap(pa_sink *si, size_t length, pa_mix_info *inf
 static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
     CHECK_AND_RETURN_LOG(si != NULL, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     CHECK_AND_RETURN_LOG(infoIn != NULL, "infoIn is null");
     CHECK_AND_RETURN_LOG(chunkIn != NULL, "chunkIn is null");
@@ -812,6 +814,7 @@ static int32_t SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
     size_t blockSizeMax;
 
     CHECK_AND_RETURN_RET_LOG(si != NULL, 0, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     CHECK_AND_RETURN_RET_LOG(chunkIn != NULL, 0, "chunkIn is null");
@@ -853,6 +856,7 @@ static int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
     size_t l;
     size_t d;
     CHECK_AND_RETURN_RET_LOG(si != NULL, 0, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     CHECK_AND_RETURN_RET_LOG(chunkIn != NULL, 0, "chunkIn is null");
@@ -906,6 +910,7 @@ static void InnerCapSinkInputsRewind(pa_sink *si, size_t length)
     AUTO_CTRACE("hdi_sink::InnerCapSinkInputsRewind:len:%zu", length);
 
     CHECK_AND_RETURN_LOG(si != NULL, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
 
     pa_sink_input *sinkIn = NULL;
@@ -942,6 +947,7 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
     unsigned nUnreffed = 0;
 
     CHECK_AND_RETURN_LOG(si != NULL, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     CHECK_AND_RETURN_LOG(chunkIn != NULL, "chunkIn is null");
     CHECK_AND_RETURN_LOG(chunkIn->memblock != NULL, "chunkIn->memblock is null");
@@ -988,6 +994,7 @@ static void SinkRenderMultiChannelInputsDrop(pa_sink *si, pa_mix_info *infoIn, u
     unsigned nUnreffed = 0;
 
     CHECK_AND_RETURN_LOG(si != NULL, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     CHECK_AND_RETURN_LOG(chunkIn != NULL, "chunkIn is null");
     CHECK_AND_RETURN_LOG(chunkIn->memblock != NULL, "chunkIn->memblock is null");
@@ -1254,6 +1261,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     size_t mixlength = *length;
 
     CHECK_AND_RETURN_RET_LOG(si != NULL, 0, "sink is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     CHECK_AND_RETURN_RET_LOG(infoIn != NULL, 0, "infoIn is null");
 
@@ -1365,6 +1373,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
     size_t mixlength = *length;
 
     CHECK_AND_RETURN_RET_LOG(si != NULL, 0, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     CHECK_AND_RETURN_RET_LOG(infoIn != NULL, 0, "infoIn is null");
 
@@ -1427,6 +1436,7 @@ static int32_t SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, const ch
     size_t blockSizeMax;
 
     CHECK_AND_RETURN_RET_LOG(si != NULL, 0, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     CHECK_AND_RETURN_RET_LOG(chunkIn != NULL, 0, "chunkIn is null");
@@ -1469,6 +1479,7 @@ static int32_t SinkRenderMultiChannelPeek(pa_sink *si, pa_memchunk *chunkIn)
     size_t blockSizeMax;
 
     CHECK_AND_RETURN_RET_LOG(si != NULL, 0, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     CHECK_AND_RETURN_RET_LOG(chunkIn != NULL, 0, "chunkIn is null");
@@ -1512,6 +1523,7 @@ static int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, const
     size_t l;
     size_t d;
     CHECK_AND_RETURN_RET_LOG(si != NULL, 0, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     CHECK_AND_RETURN_RET_LOG(chunkIn != NULL, 0, "chunkIn is null");
@@ -1553,6 +1565,7 @@ static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
     size_t l;
     size_t d;
     CHECK_AND_RETURN_RET_LOG(si != NULL, 0, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     CHECK_AND_RETURN_RET_LOG(chunkIn != NULL, 0, "chunkIn is null");
@@ -1966,6 +1979,7 @@ static void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)
     size_t blockSizeMax;
 
     CHECK_AND_RETURN_LOG(si != NULL, "si is null");
+    pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     CHECK_AND_RETURN_LOG(chunkIn != NULL, "chunkIn is null");

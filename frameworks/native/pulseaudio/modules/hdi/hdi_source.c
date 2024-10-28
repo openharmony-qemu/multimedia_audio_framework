@@ -329,6 +329,7 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
 static void PushData(pa_source_output *sourceOutput, pa_memchunk *chunk)
 {
     CHECK_AND_RETURN_LOG(sourceOutput != NULL, "sourceOutput is null");
+    pa_source_output_assert_ref(sourceOutput);
     pa_source_output_assert_io_context(sourceOutput);
     CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
     AUDIO_DEBUG_LOG("chunk length: %{public}zu", chunk->length);
@@ -341,6 +342,7 @@ static void PushData(pa_source_output *sourceOutput, pa_memchunk *chunk)
 static void PostSourceData(pa_source *source, pa_source_output *sourceOutput, pa_memchunk *chunk)
 {
     CHECK_AND_RETURN_LOG(source != NULL, "source is null");
+    pa_source_assert_ref(source);
     pa_source_assert_io_context(source);
     pa_assert(PA_SOURCE_IS_LINKED(source->thread_info.state));
     CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
@@ -407,6 +409,7 @@ static void EnhanceProcessAndPost(struct Userdata *u, const uint32_t sceneKeyCod
     CHECK_AND_RETURN_LOG(enhanceChunk != NULL, "enhanceChunk is null");
     pa_source *source = u->source;
     CHECK_AND_RETURN_LOG(source != NULL, "source is null");
+    pa_source_assert_ref(source);
 
     void *state = NULL;
     pa_source_output *sourceOutput;
@@ -439,6 +442,7 @@ static void EnhanceProcessAndPost(struct Userdata *u, const uint32_t sceneKeyCod
 static void PostDataBypass(pa_source *source, pa_memchunk *chunk)
 {
     CHECK_AND_RETURN_LOG(source != NULL, "source is null");
+    pa_source_assert_ref(source);
     CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
     void *state = NULL;
     pa_source_output *sourceOutput;
@@ -567,6 +571,7 @@ static int32_t SampleAlignment(const char *sceneKey, pa_memchunk *enhanceChunk, 
 static void PostDataDefault(pa_source *source, pa_memchunk *chunk, struct Userdata *u)
 {
     CHECK_AND_RETURN_LOG(source != NULL, "source is null");
+    pa_source_assert_ref(source);
     CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
 
     bool hasDefaultStream = false;
