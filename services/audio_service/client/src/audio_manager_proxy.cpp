@@ -456,20 +456,6 @@ void AudioManagerProxy::NotifyDeviceInfo(std::string networkId, bool connected)
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "Get audio parameter failed, error: %d", error);
 }
 
-void AudioManagerProxy::SetHibernateEndpointRelease(const bool &isHibernate)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
-    data.WriteBool(isHibernate);
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::SET_HIBERNATE_ENDPOINT_RELEASE), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "hibernate release endpoint failed, error: %d", error);
-}
-
 int32_t AudioManagerProxy::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
 {
     MessageParcel data;

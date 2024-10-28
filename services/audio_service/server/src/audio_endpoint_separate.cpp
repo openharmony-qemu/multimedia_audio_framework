@@ -750,10 +750,5 @@ AudioMode AudioEndpointSeparate::GetAudioMode() const
     // AudioEndpointSeparate only support playback for now
     return AUDIO_MODE_PLAYBACK;
 }
-
-void AudioEndpointSeparate::SetHibernateEndpointRelease(const bool &isHibernate)
-{
-    AUDIO_WARNING_LOG("SetHibernateEndpointRelease in audioEndpointSeparate not support");
-}
 } // namespace AudioStandard
 } // namespace OHOS

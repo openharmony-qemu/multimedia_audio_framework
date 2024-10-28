@@ -172,8 +172,6 @@ public:
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
-
-    void SetHibernateEndpointRelease(const bool &isHibernate) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
