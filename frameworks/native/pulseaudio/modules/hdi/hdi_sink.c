@@ -1910,7 +1910,7 @@ static bool AllocateEffectBuffer(struct Userdata *u)
 static void FreeEffectBuffer(struct Userdata *u)
 {
     if (u->bufferAttr == NULL) {
-        return false;
+        return;
     }
     float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
         &u->bufferAttr->tempBufIn, &u->bufferAttr->tempBufOut };
