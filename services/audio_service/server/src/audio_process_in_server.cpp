@@ -129,23 +129,24 @@ int32_t AudioProcessInServer::Start()
             ERR_PERMISSION_DENIED, "NotifyPrivacy failed!");
     }
 
-    NotifyStartListeners();
+    HandleNotifyStartListeners();
 
-    if (streamStatus_->load() == STREAM_STAND_BY) {
-        AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
-        WriterRenderStreamStandbySysEvent(sessionId_, 0);
-        streamStatus_->store(STREAM_STARTING);
-    }
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
 
     AUDIO_INFO_LOG("Start in server success!");
     return SUCCESS;
 }
 
-void AudioProcessInServer::NotifyStartListeners()
+void AudioProcessInServer::HandleNotifyStartListeners()
 {
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
+    }
+
+    if (streamStatus_->load() == STREAM_STAND_BY) {
+        AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
+        WriterRenderStreamStandbySysEvent(sessionId_, 0);
+        streamStatus_->store(STREAM_STARTING);
     }
 }
 
