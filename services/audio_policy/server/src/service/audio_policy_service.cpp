@@ -6385,7 +6385,7 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
         }
     }
     configInfoPos->second.volumeLevel = sVolumeLevel;
-    bool mute = (configInfoPos->second.mute == true ? true : (sVolumeLevel == 0));
+    bool mute = (configInfoPos->second.mute ? true : (sVolumeLevel == 0));
     configInfoPos->second.mute = mute;
     audioPolicyManager_.SetAbsVolumeMute(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
