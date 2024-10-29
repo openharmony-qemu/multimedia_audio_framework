@@ -129,7 +129,7 @@ public:
     int32_t CaptureFrameWithEc(
         FrameDesc *fdesc, uint64_t &replyBytes,
         FrameDesc *fdescEc, uint64_t &replyBytesEc) override;
-    
+
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetMute(bool isMute) override;
@@ -194,7 +194,7 @@ private:
     struct HDI::Audio_Bluetooth::AudioCapture *audioCapture_;
     struct HDI::Audio_Bluetooth::AudioPort audioPort_ = {};
 
-    void* handle_;
+    void *handle_;
     const std::string halName_;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
