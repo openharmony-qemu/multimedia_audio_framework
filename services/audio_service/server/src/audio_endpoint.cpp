@@ -54,7 +54,7 @@ namespace {
     static constexpr int64_t RECORD_DELAY_TIME = 4000000; // 4ms
     static constexpr int64_t RECORD_VOIP_DELAY_TIME = 20000000; // 20ms
     static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
-    static constexpr int64_t PLAYBACK_DELAY_STOP_HDI_TIME = 10000000000; // 10s
+    static constexpr int64_t PLAYBACK_DELAY_STOP_HDI_TIME_NS = 3000000000; // 3s
     static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME = 200000000; // 200ms
     static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s
     static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME = 4000000000; // 4s
@@ -173,8 +173,6 @@ public:
     uint32_t GetLinkedProcessCount() override;
 
     AudioMode GetAudioMode() const final;
-
-    void SetHibernateEndpointRelease(const bool &isHibernate) override;
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -310,8 +308,6 @@ private:
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
     bool isStarted_ = false;
     int64_t delayStopTime_ = INT64_MAX;
-    int64_t cacheDelayStopTime_ = INT64_MAX;
-    bool hibernateEndpointRelease_ = false;
     int64_t delayStopTimeForZeroVolume_ = INT64_MAX;
 
     std::atomic<ThreadStatus> threadStatus_ = WAITTING;
@@ -1114,10 +1110,7 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
         // delay call sink stop when no process running
         AUDIO_PRERELEASE_LOGI("OnPause status is IDEL, need delay call stop");
         delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
-            ? PLAYBACK_DELAY_STOP_HDI_TIME : RECORDER_DELAY_STOP_HDI_TIME);
-        if (hibernateEndpointRelease_) {
-            delayStopTime_ = 0;
-        }
+            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME);
     }
     // todo
     return SUCCESS;
@@ -1212,7 +1205,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         if (isDeviceRunningInIdel_) {
             CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
             delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
-                ? PLAYBACK_DELAY_STOP_HDI_TIME : RECORDER_DELAY_STOP_HDI_TIME);
+                ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME);
         }
     }
 
@@ -1297,7 +1290,7 @@ void AudioEndpointInner::CheckStandBy()
         // delay call sink stop when no process running
         AUDIO_INFO_LOG("status is IDEL, need delay call stop");
         delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
-            ? PLAYBACK_DELAY_STOP_HDI_TIME : RECORDER_DELAY_STOP_HDI_TIME);
+            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME);
     }
 }
 
@@ -1676,25 +1669,6 @@ float AudioEndpointInner::GetMaxAmplitude()
 AudioMode AudioEndpointInner::GetAudioMode() const
 {
     return clientConfig_.audioMode;
-}
-
-void AudioEndpointInner::SetHibernateEndpointRelease(const bool &isHibernate)
-{
-    hibernateEndpointRelease_ = isHibernate;
-    if (isHibernate) {
-        if (delayStopTime_ == 0) {
-            AUDIO_INFO_LOG("delayStopTime is 0, don't amend");
-            return;
-        }
-        cacheDelayStopTime_ = delayStopTime_;
-        delayStopTime_ = 0;
-        AUDIO_INFO_LOG("amend delayStopTime from %{public}" PRIu64" to %{public}" PRIu64,
-                        cacheDelayStopTime_, delayStopTime_);
-    } else {
-        AUDIO_INFO_LOG("amend delayStopTime from %{public}" PRIu64" to %{public}" PRIu64,
-                        delayStopTime_, cacheDelayStopTime_);
-        delayStopTime_ = cacheDelayStopTime_;
-    }
 }
 
 int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)

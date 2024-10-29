@@ -45,7 +45,6 @@ const char *g_audioServerCodeStrs[] = {
     "GET_REMOTE_AUDIO_PARAMETER",
     "SET_REMOTE_AUDIO_PARAMETER",
     "NOTIFY_DEVICE_INFO",
-    "SET_HIBERNATE_ENDPOINT_RELEASE",
     "CHECK_REMOTE_DEVICE_STATE",
     "SET_VOICE_VOLUME",
     "SET_AUDIO_MONO_STATE",
@@ -389,13 +388,6 @@ int AudioManagerStub::HandleNotifyDeviceInfo(MessageParcel &data, MessageParcel 
     const std::string networkId = data.ReadString();
     const bool connected = data.ReadBool();
     NotifyDeviceInfo(networkId, connected);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetHibernateEndpointRelease(MessageParcel &data, MessageParcel &reply)
-{
-    const bool isHibernate = data.ReadBool();
-    SetHibernateEndpointRelease(isHibernate);
     return AUDIO_OK;
 }
 
@@ -880,8 +872,6 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 return HandleSetRemoteAudioParameter(data, reply);
             case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO):
                 return HandleNotifyDeviceInfo(data, reply);
-            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_HIBERNATE_ENDPOINT_RELEASE):
-                return HandleSetHibernateEndpointRelease(data, reply);
             default:
                 return HandleSecondPartCode(code, data, reply, option);
         }
