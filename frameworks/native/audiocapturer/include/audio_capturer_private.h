@@ -101,6 +101,7 @@ public:
     AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
     AudioStreamType audioStreamType_;
     bool abortRestore_ = false;
+    AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
 
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();

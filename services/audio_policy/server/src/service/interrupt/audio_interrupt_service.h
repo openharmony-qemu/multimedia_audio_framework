@@ -226,6 +226,8 @@ private:
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
     void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         std::vector<SourceType> incomingConcurrentSources);
+    bool IsIncomingInterruptCanMixActiveInterrupt(const AudioInterrupt &incomingInterrupt,
+        const AudioInterrupt &activeInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
