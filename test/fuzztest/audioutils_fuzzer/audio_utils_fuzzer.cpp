@@ -195,9 +195,8 @@ void NotifyPrivacyFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     uint32_t targetTokenId = *(reinterpret_cast<const uint32_t*>(rawData));
-    AudioPermissionState state = *(reinterpret_cast<const AudioPermissionState*>(rawData));
-
-    PermissionUtil::NotifyPrivacy(targetTokenId, state);
+    PermissionUtil::NotifyStart(targetTokenId, 0);
+    PermissionUtil::NotifyStop(targetTokenId, 0);
 }
 
 void GetTimeFuzzTest(const uint8_t *rawData, size_t size)
