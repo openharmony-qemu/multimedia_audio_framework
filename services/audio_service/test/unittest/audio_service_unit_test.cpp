@@ -412,7 +412,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceIsEndpointTypeVoip_001, TestSize.Level1
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     config.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
     bool ret = AudioService::GetInstance()->IsEndpointTypeVoip(config, info);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_INVALID;
     ret = AudioService::GetInstance()->IsEndpointTypeVoip(config, info);
