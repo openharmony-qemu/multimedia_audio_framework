@@ -54,7 +54,6 @@ const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const std::string BLUETOOTH_DEVICE_SINK = "Bt_Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
-const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
 const uint32_t MAX_UINT_VOLUME_NUM = 10000;
 const uint32_t MAX_UINT_DSP_VOLUME = 65535;
 const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
@@ -118,7 +117,7 @@ public:
     int32_t InitAudioEffectChainDynamic(const std::string &sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
-    int32_t SetHdiParam(const std::string &sceneType, const std::string &effectMode, bool enabled);
+    int32_t SetHdiParam(const AudioEffectScene &sceneType);
     int32_t SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info);
     int32_t SessionInfoMapDelete(const std::string &sceneType, const std::string &sessionID);
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
@@ -182,6 +181,7 @@ private:
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     std::string deviceClass_ = "";
     std::string extraSceneType_ = "0";
+    std::string maxSessionIDToSceneType_ = "";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     std::atomic<bool> spatializationEnabled_ = false;
@@ -191,8 +191,6 @@ private:
     bool initializedLogFlag_ = true;
     bool btOffloadSupported_ = false;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
-    int32_t hdiSceneType_ = 0;
-    int32_t hdiEffectMode_ = 0;
     bool isDefaultEffectChainExisted_ = false;
     bool debugArmFlag_ = false;
     int32_t defaultEffectChainCount_ = 0;

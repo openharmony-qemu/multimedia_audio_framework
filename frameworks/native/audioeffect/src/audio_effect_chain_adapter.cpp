@@ -217,21 +217,6 @@ uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *
     return channelNum;
 }
 
-int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString = "";
-    if (sceneType) {
-        sceneTypeString = sceneType;
-    }
-    std::string effectModeString = "";
-    if (effectMode) {
-        effectModeString = effectMode;
-    }
-    return audioEffectChainManager->SetHdiParam(sceneTypeString, effectModeString, enabled);
-}
-
 int32_t EffectChainManagerInitCb(const char *sceneType)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();

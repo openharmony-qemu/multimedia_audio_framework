@@ -849,7 +849,7 @@ int32_t AudioEffectChainManager::SessionInfoMapDelete(const std::string &sceneTy
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const std::string &effectMode, bool enabled)
+int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (!isInitialized_) {
@@ -859,27 +859,12 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
         }
         return ERROR;
     }
-    CHECK_AND_RETURN_RET(sceneType != "", ERROR);
-    hdiSceneType_ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
-    effectHdiInput_[0] = HDI_BYPASS;
-    effectHdiInput_[1] = enabled == true ? 0 : 1;
-    AUDIO_PRERELEASE_LOGI("set hdi bypass: %{public}d", effectHdiInput_[1]);
-    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "set hdi bypass failed, ret is %{public}d", ret);
 
     effectHdiInput_[0] = HDI_ROOM_MODE;
-    if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
-        effectHdiInput_[1] = hdiSceneType_;
-    } else {
-        effectHdiInput_[1] =
-            static_cast<int32_t>(GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(hdiSceneType_)));
-    }
-    hdiEffectMode_ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-    effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO] = hdiEffectMode_;
-    AUDIO_PRERELEASE_LOGI("set hdi room mode sceneType: %{public}d, effectMode: %{public}d", effectHdiInput_[1],
-        effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO]);
-    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
+    effectHdiInput_[1] = sceneType;
+    AUDIO_PRERELEASE_LOGI("set hdi room mode sceneType: %{public}d", effectHdiInput_[1]);
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "set hdi room mode failed, ret is %{public}d", ret);
     return SUCCESS;
 }
@@ -1108,8 +1093,6 @@ void AudioEffectChainManager::ResetInfo()
     spkOffloadEnabled_ = false;
     initializedLogFlag_ = true;
     spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
-    hdiSceneType_ = 0;
-    hdiEffectMode_ = 0;
     isDefaultEffectChainExisted_ = false;
 }
 
@@ -1117,23 +1100,28 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     uint32_t maxSessionID = 0;
-    std::string sceneType = "";
     for (auto& scenePair : sceneTypeToSessionIDMap_) {
         if (!sceneTypeToSpecialEffectSet_.count(scenePair.first) &&
-            std::find(priorSceneList_.begin(), priorSceneList_.end(), sceneType) == priorSceneList_.end()) {
+            std::find(priorSceneList_.begin(), priorSceneList_.end(),
+            maxSessionIDToSceneType_) == priorSceneList_.end()) {
             std::set<std::string> &sessions = scenePair.second;
-            FindMaxSessionID(maxSessionID, sceneType, scenePair.first, sessions);
+            FindMaxSessionID(maxSessionID, maxSessionIDToSceneType_, scenePair.first, sessions);
         }
     }
-    AUDIO_INFO_LOG("newest stream, sessionID: %{public}u, sceneType: %{public}s", maxSessionID, sceneType.c_str());
-    std::string key = sceneType + "_&_" + GetDeviceTypeName();
-    if (!sceneType.empty() && sceneTypeToEffectChainMap_.count(key) && sceneTypeToEffectChainMap_[key] != nullptr) {
+    AUDIO_INFO_LOG("newest stream, sessionID: %{public}u, sceneType: %{public}s",
+        maxSessionID, maxSessionIDToSceneType_.c_str());
+
+    std::string key = maxSessionIDToSceneType_ + "_&_" + GetDeviceTypeName();
+    AudioEffectScene currSceneType;
+    UpdateCurrSceneType(currSceneType, maxSessionIDToSceneType_);
+    if (!maxSessionIDToSceneType_.empty() && sceneTypeToEffectChainMap_.count(key) &&
+        sceneTypeToEffectChainMap_[key] != nullptr) {
         std::shared_ptr<AudioEffectChain> audioEffectChain = sceneTypeToEffectChainMap_[key];
-        AudioEffectScene currSceneType;
-        UpdateCurrSceneType(currSceneType, sceneType);
         audioEffectChain->SetEffectCurrSceneType(currSceneType);
         audioEffectChain->UpdateEffectParam();
     }
+    // update dsp scene type
+    SetHdiParam(currSceneType);
 }
 
 bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType)

@@ -2992,61 +2992,6 @@ static bool POSSIBLY_UNUSED ThreadFuncRendererTimerMultiChannelFlagJudge(struct 
     return flag;
 }
 
-static int32_t GetSinkTypeNum(const char *sinkSceneType)
-{
-    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
-        if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-static void SetHdiParam(struct Userdata *userdata)
-{
-    pa_sink_input *i;
-    void *state = NULL;
-    int sessionIDMax = -1;
-    int32_t sinkSceneTypeMax = -1;
-    int32_t sinkSceneModeMax = -1;
-    bool hdiEffectEnabledMax = false;
-    while ((i = pa_hashmap_iterate(userdata->sink->thread_info.inputs, &state, NULL))) {
-        pa_sink_input_assert_ref(i);
-        const char *clientUid = pa_proplist_gets(i->proplist, "stream.client.uid");
-        const char *bootUpMusic = "1003";
-        if (pa_safe_streq(clientUid, bootUpMusic)) { return; }
-        const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
-        const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
-        const char *sinkSpatialization = pa_proplist_gets(i->proplist, "spatialization.enabled");
-        const char *sinkSessionStr = pa_proplist_gets(i->proplist, "stream.sessionID");
-        bool spatializationEnabled = pa_safe_streq(sinkSpatialization, "1") ? true : false;
-        bool hdiEffectEnabled = spatializationEnabled;
-        int sessionID = atoi(sinkSessionStr == NULL ? "-1" : sinkSessionStr);
-        if (sinkSceneType && sinkSceneMode && sinkSpatialization) {
-            if (sessionID > sessionIDMax) {
-                sessionIDMax = sessionID;
-                sinkSceneTypeMax = GetSinkTypeNum(sinkSceneType);
-                sinkSceneModeMax = pa_safe_streq(sinkSceneMode, "EFFECT_NONE") == true ? 0 : 1;
-                hdiEffectEnabledMax = hdiEffectEnabled;
-            }
-        }
-    }
-
-    if (userdata == NULL) {
-        AUDIO_DEBUG_LOG("SetHdiParam userdata null pointer");
-        return;
-    }
-
-    if ((userdata->sinkSceneType != sinkSceneTypeMax) || (userdata->sinkSceneMode != sinkSceneModeMax) ||
-        (userdata->hdiEffectEnabled != hdiEffectEnabledMax)) {
-        userdata->sinkSceneMode = sinkSceneModeMax;
-        userdata->sinkSceneType = sinkSceneTypeMax;
-        userdata->hdiEffectEnabled = hdiEffectEnabledMax;
-        EffectChainManagerSetHdiParam(userdata->sinkSceneType < 0 ? "" : SCENE_TYPE_SET[userdata->sinkSceneType],
-            userdata->sinkSceneMode == 0 ? "EFFECT_NONE" : "EFFECT_DEFAULT", userdata->hdiEffectEnabled);
-    }
-}
-
 static void ProcessNormalData(struct Userdata *u)
 {
     AUTO_CTRACE("ProcessNormalData");
@@ -3255,8 +3200,6 @@ static void ThreadFuncRendererTimerBus(void *userdata)
             pthread_rwlock_unlock(&u->rwlockSleep);
             break;
         }
-
-        SetHdiParam(u);
 
         ThreadFuncRendererTimerProcessData(u);
     }

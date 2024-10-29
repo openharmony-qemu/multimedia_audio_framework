@@ -665,11 +665,9 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_002, TestSize.
 */
 HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_001, TestSize.Level1)
 {
-    string sceneType = "SCENE_MOVIE";
-    string effectMode = "EFFECT_DEFAULT";
-    bool enabled = true;
+    AudioEffectScene sceneType = SCENE_MUSIC;
 
-    int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
+    int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType);
     EXPECT_TRUE(result == SUCCESS || result == ERROR);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -677,17 +675,15 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_001, TestSize.Level1)
 /**
 * @tc.name   : Test SetHdiParam API
 * @tc.number : SetHdiParam_002
-* @tc.desc   : Test SetHdiParam interface(enabled = true).
+* @tc.desc   : Test SetHdiParam interface.
 */
 HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_002, TestSize.Level1)
 {
-    string sceneType = "SCENE_MOVIE";
-    string effectMode = "EFFECT_DEFAULT";
-    bool enabled = true;
+    AudioEffectScene sceneType = SCENE_MUSIC;
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
+    int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType);
     EXPECT_TRUE(result == SUCCESS || result == ERROR);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -695,53 +691,15 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_002, TestSize.Level1)
 /**
 * @tc.name   : Test SetHdiParam API
 * @tc.number : SetHdiParam_003
-* @tc.desc   : Test SetHdiParam interface(enabled = false).
+* @tc.desc   : Test SetHdiParam interface.
 */
 HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_003, TestSize.Level1)
 {
-    string sceneType = "SCENE_MOVIE";
-    string effectMode = "EFFECT_DEFAULT";
-    bool enabled = false;
+    AudioEffectScene sceneType = SCENE_OTHERS;
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
-    EXPECT_TRUE(result == SUCCESS || result == ERROR);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test SetHdiParam API
-* @tc.number : SetHdiParam_004
-* @tc.desc   : Test SetHdiParam interface(using empty use case).
-*/
-HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_004, TestSize.Level1)
-{
-    string sceneType = "";
-    string effectMode = "";
-    bool enabled = true;
-
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
-    EXPECT_TRUE(result == SUCCESS || result == ERROR);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test SetHdiParam API
-* @tc.number : SetHdiParam_005
-* @tc.desc   : Test SetHdiParam interface(using incorrect use case).
-*/
-HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_005, TestSize.Level1)
-{
-    string sceneType = "123";
-    string effectMode = "123";
-    bool enabled = true;
-
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
+    int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType);
     EXPECT_TRUE(result == SUCCESS || result == ERROR);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

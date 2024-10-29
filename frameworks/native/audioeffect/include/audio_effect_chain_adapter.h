@@ -51,7 +51,6 @@ int32_t EffectChainManagerMultichannelUpdate(const char *sceneType);
 uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *paMap);
 int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack);
 int32_t EffectChainManagerInitCb(const char *sceneType);
-int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled);
 bool EffectChainManagerCheckEffectOffload();
 int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *sessionID);
 int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_t *channels, uint64_t *channelLayout);
