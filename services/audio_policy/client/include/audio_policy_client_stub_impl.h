@@ -31,23 +31,29 @@ class AudioPolicyClientStubImpl : public AudioPolicyClientStub {
 public:
     int32_t AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     int32_t RemoveVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
+    size_t GetVolumeKeyEventCallbackSize() const;
     int32_t AddFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb);
     int32_t RemoveFocusInfoChangeCallback();
     int32_t AddDeviceChangeCallback(const DeviceFlag &flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
     int32_t RemoveDeviceChangeCallback(DeviceFlag flag, std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
+    size_t GetDeviceChangeCallbackSize() const;
     int32_t AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
     int32_t RemoveRingerModeCallback();
     int32_t RemoveRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
+    size_t GetRingerModeCallbackSize() const;
     int32_t AddMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb);
     int32_t RemoveMicStateChangeCallback();
+    size_t GetMicStateChangeCallbackSize() const;
     bool HasMicStateChangeCallback();
     int32_t AddPreferredOutputDeviceChangeCallback(
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb);
     int32_t RemovePreferredOutputDeviceChangeCallback();
+    size_t GetPreferredOutputDeviceChangeCallbackSize() const;
     int32_t AddPreferredInputDeviceChangeCallback(
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb);
     int32_t RemovePreferredInputDeviceChangeCallback();
+    size_t GetPreferredInputDeviceChangeCallbackSize() const;
     int32_t AddRendererStateChangeCallback(const std::shared_ptr<AudioRendererStateChangeCallback> &cb);
     int32_t RemoveRendererStateChangeCallback(
         const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks);
@@ -60,17 +66,22 @@ public:
     int32_t AddDeviceChangeWithInfoCallback(
         const uint32_t sessionId, const std::weak_ptr<DeviceChangeWithInfoCallback> &cb);
     int32_t RemoveDeviceChangeWithInfoCallback(const uint32_t sessionId);
+    size_t GetDeviceChangeWithInfoCallbackkSize() const;
     int32_t AddMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb);
     int32_t RemoveMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb);
+    size_t GetMicrophoneBlockedCallbackSize() const;
     int32_t AddHeadTrackingDataRequestedChangeCallback(const std::string &macAddress,
         const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb);
     int32_t RemoveHeadTrackingDataRequestedChangeCallback(const std::string &macAddress);
+    size_t GetHeadTrackingDataRequestedChangeCallbackSize() const;
     int32_t AddSpatializationEnabledChangeCallback(const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb);
     int32_t RemoveSpatializationEnabledChangeCallback();
+    size_t GetSpatializationEnabledChangeCallbackSize() const;
     int32_t AddHeadTrackingEnabledChangeCallback(const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);
     int32_t RemoveHeadTrackingEnabledChangeCallback();
+    size_t GetHeadTrackingEnabledChangeCallbacSize() const;
     size_t GetFocusInfoChangeCallbackSize() const;
     int32_t AddAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb);
     int32_t RemoveAudioSessionCallback();
@@ -131,21 +142,21 @@ private:
     std::unordered_map<std::string,
         std::shared_ptr<HeadTrackingDataRequestedChangeCallback>> headTrackingDataRequestedChangeCallbackMap_;
 
-    std::mutex volumeKeyEventMutex_;
     mutable std::mutex focusInfoChangeMutex_;
-    std::mutex deviceChangeMutex_;
-    std::mutex ringerModeMutex_;
-    std::mutex micStateChangeMutex_;
-    std::mutex pOutputDeviceChangeMutex_;
-    std::mutex pInputDeviceChangeMutex_;
     mutable std::mutex rendererStateChangeMutex_;
     mutable std::mutex capturerStateChangeMutex_;
-    std::mutex deviceChangeWithInfoCallbackMutex_;
-    std::mutex headTrackingDataRequestedChangeMutex_;
-    std::mutex spatializationEnabledChangeMutex_;
-    std::mutex headTrackingEnabledChangeMutex_;
+    mutable std::mutex pOutputDeviceChangeMutex_;
+    mutable std::mutex pInputDeviceChangeMutex_;
+    mutable std::mutex volumeKeyEventMutex_;
+    mutable std::mutex deviceChangeMutex_;
+    mutable std::mutex ringerModeMutex_;
+    mutable std::mutex micStateChangeMutex_;
+    mutable std::mutex deviceChangeWithInfoCallbackMutex_;
+    mutable std::mutex headTrackingDataRequestedChangeMutex_;
+    mutable std::mutex spatializationEnabledChangeMutex_;
+    mutable std::mutex headTrackingEnabledChangeMutex_;
     mutable std::mutex audioSessionMutex_;
-    std::mutex microphoneBlockedMutex_;
+    mutable std::mutex microphoneBlockedMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
