@@ -1066,12 +1066,8 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute,
             audioPolicyManager_.SetAbsVolumeMute(mute);
 #ifdef BLUETOOTH_ENABLE
             // set to avrcp device
-            if (mute) {
-                return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, 0);
-            } else {
-                return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_,
-                    configInfoPos->second.volumeLevel);
-            }
+            return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_,
+                configInfoPos->second.volumeLevel);
 #endif
         }
     }
@@ -6356,7 +6352,7 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
         }
     }
     configInfoPos->second.volumeLevel = sVolumeLevel;
-    bool mute = sVolumeLevel == 0 ? true : false;
+    bool mute = configInfoPos->second.mute ? true : (sVolumeLevel == 0);
     configInfoPos->second.mute = mute;
     audioPolicyManager_.SetAbsVolumeMute(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
