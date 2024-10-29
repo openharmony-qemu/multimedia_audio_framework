@@ -65,8 +65,7 @@ constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 static AudioFormat ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
-    switch (format)
-    {
+    switch (format) {
         case SAMPLE_U8:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
@@ -99,13 +98,14 @@ static int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32
         }
         AUDIO_DEBUG_LOG("size: %{public}d, adapterNameCase %{public}s, adapterName %{public}s",
             size, adapterNameCase.c_str(), desc->adapterName);
-        if (!adapterNameCase.compare(desc->adapterName)) {
-            for (uint32_t port = 0; port < desc->portNum; port++) {
-                //only find out the port_in in the sound card
-                if (desc->ports[port].dir == portFlag) {
-                    capturePort = desc->ports[port];
-                    return index;
-                }
+        if (adapterNameCase.compare(desc->adapterName)) {
+            continue;
+        }
+        for (uint32_t port = 0; port < desc->portNum; port++) {
+            //only find out the port_in in the sound card
+            if (desc->ports[port].dir == portFlag) {
+                capturePort = desc->ports[port];
+                return index;
             }
         }
     }
