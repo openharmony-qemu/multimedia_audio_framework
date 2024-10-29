@@ -50,6 +50,8 @@ public:
     void RemoveRoutingManagerDeviceChangeCbRef(napi_env env, napi_value callback);
     void RemoveAllRoutingManagerDeviceChangeCb();
     int32_t GetRoutingManagerDeviceChangeCbListSize();
+    void CreateMicBlockedTsfn(napi_env env);
+    void CreateDevChgTsfn(napi_env env);
 
 private:
     struct AudioManagerJsCallback {
@@ -57,8 +59,6 @@ private:
         std::string callbackName = "unknown";
         DeviceChangeAction deviceChangeAction;
         MicrophoneBlockedInfo microphoneBlockedInfo;
-        napi_threadsafe_function amMicBlockedTsfn = nullptr;
-        napi_threadsafe_function amDevChgTsfn = nullptr;
     };
 
     void OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb);
@@ -75,6 +75,10 @@ private:
     std::list<std::pair<std::shared_ptr<AutoRef>, DeviceFlag>> audioManagerDeviceChangeCbList_;
     std::list<std::pair<std::shared_ptr<AutoRef>, DeviceFlag>> routingManagerDeviceChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> microphoneBlockedCbList_;
+    bool regAmMicBlockedTsfn_ = false;
+    bool regAmDevChgTsfn_ = false;
+    napi_threadsafe_function amMicBlockedTsfn_ = nullptr;
+    napi_threadsafe_function amDevChgTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

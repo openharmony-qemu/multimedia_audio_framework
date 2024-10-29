@@ -36,6 +36,9 @@ NapiAudioCapturerStateCallback::NapiAudioCapturerStateCallback(napi_env env)
 
 NapiAudioCapturerStateCallback::~NapiAudioCapturerStateCallback()
 {
+    if (regAmacStateTsfn_) {
+        napi_release_threadsafe_function(amacStateTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioCapturerStateCallback: instance destroy");
 }
 
@@ -52,6 +55,16 @@ void NapiAudioCapturerStateCallback::SaveCallbackReference(napi_value args)
     CHECK_AND_RETURN_LOG(cb != nullptr, "NapiAudioCapturerStateCallback: creating callback failed");
 
     capturerStateCallback_ = cb;
+}
+
+void NapiAudioCapturerStateCallback::CreateCaptureStateTsfn(napi_env env)
+{
+    regAmacStateTsfn_ = true;
+    std::string callbackName = "AudioCapturerState";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        CapturerStateTsfnFinalize, nullptr, SafeJsCallbackCapturerStateWork, &amacStateTsfn_);
 }
 
 void NapiAudioCapturerStateCallback::OnCapturerStateChange(
@@ -82,8 +95,7 @@ void NapiAudioCapturerStateCallback::SafeJsCallbackCapturerStateWork(
         "OnJsCallbackCapturerState: no memory");
     std::shared_ptr<AudioCapturerStateJsCallback> safeContext(
         static_cast<AudioCapturerStateJsCallback*>(data),
-        [event](AudioCapturerStateJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amacStateTsfn, napi_tsfn_abort);
+        [](AudioCapturerStateJsCallback *ptr) {
             delete ptr;
     });
     napi_ref callback = event->callback->cb_;
@@ -123,15 +135,9 @@ void NapiAudioCapturerStateCallback::OnJsCallbackCapturerState(std::unique_ptr<A
 
     AudioCapturerStateJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    event->callbackName = "AudioCapturerState";
     
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        CapturerStateTsfnFinalize, nullptr, SafeJsCallbackCapturerStateWork, &event->amacStateTsfn);
-    
-    napi_acquire_threadsafe_function(event->amacStateTsfn);
-    napi_call_threadsafe_function(event->amacStateTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amacStateTsfn_);
+    napi_call_threadsafe_function(amacStateTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

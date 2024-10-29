@@ -42,6 +42,7 @@ public:
     void OnSpatializationEnabledChange(const bool &enabled) override;
     void OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void CreateSpatEnableTsfn(napi_env env);
 
 private:
     struct AudioSpatializationEnabledJsCallback {
@@ -49,7 +50,6 @@ private:
         sptr<AudioDeviceDescriptor> deviceDescriptor;
         std::string callbackName = "unknown";
         bool enabled;
-        napi_threadsafe_function amSpatEnableTsfn = nullptr;
     };
 
     void OnJsCallbackSpatializationEnabled(std::unique_ptr<AudioSpatializationEnabledJsCallback> &jsCb);
@@ -61,6 +61,8 @@ private:
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForAnyDeviceList_;
     static bool onSpatializationEnabledChangeFlag_;
+    bool regAmSpatEnable_ = false;
+    napi_threadsafe_function amSpatEnableTsfn_ = nullptr;
 };
 
 class NapiAudioHeadTrackingEnabledChangeCallback : public AudioHeadTrackingEnabledChangeCallback {
@@ -74,6 +76,7 @@ public:
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void CreateHeadTrackingTsfn(napi_env env);
 
 private:
     struct AudioHeadTrackingEnabledJsCallback {
@@ -81,7 +84,6 @@ private:
         sptr<AudioDeviceDescriptor> deviceDescriptor;
         std::string callbackName = "unknown";
         bool enabled;
-        napi_threadsafe_function amHeadTrkTsfn = nullptr;
     };
 
     void OnJsCallbackHeadTrackingEnabled(std::unique_ptr<AudioHeadTrackingEnabledJsCallback> &jsCb);
@@ -93,6 +95,8 @@ private:
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbForAnyDeviceList_;
     static bool onHeadTrackingEnabledChangeFlag_;
+    bool regAmHeadTrkTsfn_ = false;
+    napi_threadsafe_function amHeadTrkTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

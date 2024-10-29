@@ -36,10 +36,13 @@ NapiCapturerReadDataCallback::NapiCapturerReadDataCallback(napi_env env, NapiAud
 
 NapiCapturerReadDataCallback::~NapiCapturerReadDataCallback()
 {
-    AUDIO_DEBUG_LOG("instance destroy");
     if (napiCapturer_ != nullptr) {
         napiCapturer_->readCallbackCv_.notify_all();
     }
+    if (regAcReadDataTsfn_) {
+        napi_release_threadsafe_function(acReadDataTsfn_, napi_tsfn_abort);
+    }
+    AUDIO_DEBUG_LOG("instance destroy");
 }
 
 void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callbackName, napi_value args)
@@ -58,6 +61,16 @@ void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callb
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
+}
+
+void NapiCapturerReadDataCallback::CreateReadDataTsfn(napi_env env)
+{
+    regAcReadDataTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "CapturerReadData";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        CaptureReadDataTsfnFinalize, nullptr, SafeJsCallbackCapturerReadDataWork, &acReadDataTsfn_);
 }
 
 void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_value callback)
@@ -132,13 +145,8 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCapturerReadDataCallback: event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        CaptureReadDataTsfnFinalize, nullptr, SafeJsCallbackCapturerReadDataWork, &event->acReadDataTsfn);
-
-    napi_acquire_threadsafe_function(event->acReadDataTsfn);
-    napi_call_threadsafe_function(event->acReadDataTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(acReadDataTsfn_);
+    napi_call_threadsafe_function(acReadDataTsfn_, event, napi_tsfn_blocking);
 
     if (napiCapturer_ == nullptr) {
         return;
@@ -164,8 +172,7 @@ void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(
     CHECK_AND_RETURN_LOG(event != nullptr, "capturer read data event is nullptr");
     std::shared_ptr<CapturerReadDataJsCallback> safeContext(
         static_cast<CapturerReadDataJsCallback*>(data),
-        [event](CapturerReadDataJsCallback *ptr) {
-            napi_release_threadsafe_function(event->acReadDataTsfn, napi_tsfn_abort);
+        [](CapturerReadDataJsCallback *ptr) {
             delete ptr;
     });
     SafeJsCallbackCapturerReadDataWorkInner(event);

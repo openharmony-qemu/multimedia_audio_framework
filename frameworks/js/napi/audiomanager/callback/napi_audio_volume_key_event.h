@@ -33,13 +33,13 @@ public:
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     bool ContainSameJsCallback(napi_value args);
+    void CreateVolumeTsfn(napi_env env);
     
 private:
     struct AudioVolumeKeyEventJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         VolumeEvent volumeEvent;
-        napi_threadsafe_function amVolEntTsfn = nullptr;
     };
 
     void OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb);
@@ -51,6 +51,8 @@ private:
     napi_env env_;
     napi_ref callback_ = nullptr;
     static napi_ref sConstructor_;
+    bool regVolumeTsfn_;
+    napi_threadsafe_function amVolEntTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

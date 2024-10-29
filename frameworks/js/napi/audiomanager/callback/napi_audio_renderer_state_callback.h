@@ -33,13 +33,12 @@ public:
     void RemoveCallbackReference();
     void OnRendererStateChange(
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+    void CreateRendererStateTsfn(napi_env env);
 
 private:
     struct AudioRendererStateJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> changeInfos;
-        std::string callbackName = "unknown";
-        napi_threadsafe_function amRendererSatTsfn = nullptr;
     };
 
     void OnJsCallbackRendererState(std::unique_ptr<AudioRendererStateJsCallback> &jsCb);
@@ -49,6 +48,8 @@ private:
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> rendererStateCallback_ = nullptr;
+    bool regAmRendererSatTsfn_ = false;
+    napi_threadsafe_function amRendererSatTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

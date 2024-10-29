@@ -32,6 +32,9 @@ NapiAudioManagerMicStateChangeCallback::NapiAudioManagerMicStateChangeCallback(n
 
 NapiAudioManagerMicStateChangeCallback::~NapiAudioManagerMicStateChangeCallback()
 {
+    if (regAmMicStateChgTsfn_) {
+        napi_release_threadsafe_function(amMicStateChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioManagerMicStateChangeCallback: instance destroy");
 }
 
@@ -47,6 +50,16 @@ void NapiAudioManagerMicStateChangeCallback::SaveCallbackReference(const std::st
     CHECK_AND_RETURN_LOG(callbackName == MIC_STATE_CHANGE_CALLBACK_NAME,
         "NapiAudioManagerMicStateChangeCallback: Unknown callback type: %{public}s", callbackName.c_str());
     micStateChangeCallback_ = cb;
+}
+
+void NapiAudioManagerMicStateChangeCallback::CreateManagerMicStateChangeTsfn(napi_env env)
+{
+    regAmMicStateChgTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "ManagerMicStateChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        MicStateChangeTsfnFinalize, nullptr, SafeJsCallbackMicStateChangeWork, &amMicStateChgTsfn_);
 }
 
 void NapiAudioManagerMicStateChangeCallback::RemoveCallbackReference(const napi_value args)
@@ -100,8 +113,7 @@ void NapiAudioManagerMicStateChangeCallback::SafeJsCallbackMicStateChangeWork(
         "OnJsCallbackMicStateChange: no memory");
     std::shared_ptr<AudioManagerMicStateChangeJsCallback> safeContext(
         static_cast<AudioManagerMicStateChangeJsCallback*>(data),
-        [event](AudioManagerMicStateChangeJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amMicStateChgTsfn, napi_tsfn_abort);
+        [](AudioManagerMicStateChangeJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -144,13 +156,8 @@ void NapiAudioManagerMicStateChangeCallback::OnJsCallbackMicStateChange
     AudioManagerMicStateChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        MicStateChangeTsfnFinalize, nullptr, SafeJsCallbackMicStateChangeWork, &event->amMicStateChgTsfn);
-    
-    napi_acquire_threadsafe_function(event->amMicStateChgTsfn);
-    napi_call_threadsafe_function(event->amMicStateChgTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amMicStateChgTsfn_);
+    napi_call_threadsafe_function(amMicStateChgTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

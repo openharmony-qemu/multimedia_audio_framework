@@ -917,6 +917,7 @@ void NapiAudioRoutingManager::RegisterDeviceChangeCallback(napi_env env, size_t 
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiRoutingMgr->deviceChangeCallbackNapi_);
     cb->SaveRoutingManagerDeviceChangeCbRef(deviceFlag, args[PARAM2]);
+    cb->CreateDevChgTsfn(env);
 }
 
 void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -953,6 +954,7 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_e
         std::static_pointer_cast<NapiAudioPreferredOutputDeviceChangeCallback>(
         napiRoutingMgr->preferredOutputDeviceCallbackNapi_);
     cb->SaveCallbackReference(streamType, args[PARAM2]);
+    cb->CreatePreferredOutTsfn(env);
 }
 
 void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -988,6 +990,7 @@ void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_en
         std::static_pointer_cast<NapiAudioPreferredInputDeviceChangeCallback>(
         napiRoutingMgr->preferredInputDeviceCallbackNapi_);
     cb->SaveCallbackReference(captureInfo.sourceType, args[PARAM2]);
+    cb->CreatePerferredInTsfn(env);
 }
 
 void NapiAudioRoutingManager::RegisterAvaiableDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -1029,6 +1032,7 @@ void NapiAudioRoutingManager::RegisterAvaiableDeviceChangeCallback(napi_env env,
         std::static_pointer_cast<NapiAudioRountingAvailableDeviceChangeCallback>(
         napiRoutingMgr->availableDeviceChangeCallbackNapi_);
     cb->SaveRoutingAvailbleDeviceChangeCbRef(usage, args[PARAM2]);
+    cb->CreateRouDevChgTsfn(env);
 }
 
 void NapiAudioRoutingManager::RegisterMicrophoneBlockedCallback(napi_env env, size_t argc, napi_value *args,
@@ -1050,6 +1054,7 @@ void NapiAudioRoutingManager::RegisterMicrophoneBlockedCallback(napi_env env, si
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiRoutingMgr->microphoneBlockedCallbackNapi_);
     cb->SaveMicrophoneBlockedCallbackReference(args[PARAM1]);
+    cb->CreateMicBlockedTsfn(env);
 }
 
 napi_value NapiAudioRoutingManager::On(napi_env env, napi_callback_info info)
