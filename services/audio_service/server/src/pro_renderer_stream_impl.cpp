@@ -38,6 +38,7 @@ constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 4;
 constexpr int32_t DRAIN_WAIT_TIMEOUT_TIME = 100;
 constexpr int32_t FIRST_FRAME_TIMEOUT_TIME = 500;
 const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
+const std::string DEVICE_NAME = "primary";
 
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
     : isDirect_(isDirect),
@@ -688,7 +689,7 @@ void ProRendererStreamImpl::GetStreamVolume()
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     bufferInfo_.VolumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
-    bufferInfo_.VolumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "primary");
+    bufferInfo_.VolumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME);
     if (bufferInfo_.VolumeBg != bufferInfo_.VolumeEd) {
         AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, bufferInfo_.VolumeEd);
         AUDIO_INFO_LOG("audio volume begin:%{public}f,end:%{public}f", bufferInfo_.VolumeBg, bufferInfo_.VolumeEd);
