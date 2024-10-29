@@ -157,7 +157,7 @@ public:
 private:
     static constexpr int32_t HALF_FACTOR = 2;
     static constexpr int32_t MAX_AUDIO_ADAPTER_NUM = 8;
-    static constexpr float MAX_VOLUME_LEVEL = 15.0f;
+    static constexpr float MAX_VOLUME_LEVEL = 15.0F;
     static constexpr uint32_t STEREO_CHANNEL_COUNT = 2;
 
     int32_t CreateCapture(struct AudioPort &capturePort);
