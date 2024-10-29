@@ -38,7 +38,21 @@ NapiAudioSpatializationEnabledChangeCallback::NapiAudioSpatializationEnabledChan
 
 NapiAudioSpatializationEnabledChangeCallback::~NapiAudioSpatializationEnabledChangeCallback()
 {
+    if (regAmSpatEnable_) {
+        napi_release_threadsafe_function(amSpatEnableTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioSpatializationEnabledChangeCallback: instance destroy");
+}
+
+void NapiAudioSpatializationEnabledChangeCallback::CreateSpatEnableTsfn(napi_env env)
+{
+    regAmSpatEnable_ = true;
+    napi_value cbName;
+    std::string callbackName = "volumeChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env_, nullptr, nullptr, cbName, 0, 1, nullptr,
+        SpatializationEnabledTsfnFinalize, nullptr, SafeJsCallbackSpatializationEnabledWork,
+        &amSpatEnableTsfn_);
 }
 
 void NapiAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledChangeCallbackReference(napi_value args,
@@ -182,8 +196,7 @@ void NapiAudioSpatializationEnabledChangeCallback::SafeJsCallbackSpatializationE
         "OnJsCallbackSpatializationEnabled: no memory");
     std::shared_ptr<AudioSpatializationEnabledJsCallback> safeContext(
         static_cast<AudioSpatializationEnabledJsCallback*>(data),
-        [event](AudioSpatializationEnabledJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amSpatEnableTsfn, napi_tsfn_abort);
+        [](AudioSpatializationEnabledJsCallback *ptr) {
             delete ptr;
     });
     napi_ref callback = event->callback->cb_;
@@ -236,14 +249,8 @@ void NapiAudioSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEna
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     event->callbackName = "AudioSpatializationEnabled";
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        SpatializationEnabledTsfnFinalize, nullptr, SafeJsCallbackSpatializationEnabledWork,
-        &event->amSpatEnableTsfn);
-
-    napi_acquire_threadsafe_function(event->amSpatEnableTsfn);
-    napi_call_threadsafe_function(event->amSpatEnableTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amSpatEnableTsfn_);
+    napi_call_threadsafe_function(amSpatEnableTsfn_, event, napi_tsfn_blocking);
 }
 
 NapiAudioHeadTrackingEnabledChangeCallback::NapiAudioHeadTrackingEnabledChangeCallback(napi_env env)
@@ -254,6 +261,9 @@ NapiAudioHeadTrackingEnabledChangeCallback::NapiAudioHeadTrackingEnabledChangeCa
 
 NapiAudioHeadTrackingEnabledChangeCallback::~NapiAudioHeadTrackingEnabledChangeCallback()
 {
+    if (regAmHeadTrkTsfn_) {
+        napi_release_threadsafe_function(amHeadTrkTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioHeadTrackingEnabledChangeCallback: instance destroy");
 }
 
@@ -293,6 +303,17 @@ void NapiAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeCa
 
         headTrackingEnabledChangeCbForAnyDeviceList_.push_back(cb);
     }
+}
+
+void NapiAudioHeadTrackingEnabledChangeCallback::CreateHeadTrackingTsfn(napi_env env)
+{
+    regAmHeadTrkTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "AudioHeadTrackingEnabled";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        HeadTrackingEnabledTsfnFinalize, nullptr, SafeJsCallbackHeadTrackingEnabledWork,
+        &amHeadTrkTsfn_);
 }
 
 void NapiAudioHeadTrackingEnabledChangeCallback::RemoveHeadTrackingEnabledChangeCallbackReference(napi_env env,
@@ -397,8 +418,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::SafeJsCallbackHeadTrackingEnabl
         "OnJsCallbackHeadTrackingEnabled: no memory");
     std::shared_ptr<AudioHeadTrackingEnabledJsCallback> safeContext(
         static_cast<AudioHeadTrackingEnabledJsCallback*>(data),
-        [event](AudioHeadTrackingEnabledJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amHeadTrkTsfn, napi_tsfn_abort);
+        [](AudioHeadTrackingEnabledJsCallback *ptr) {
             delete ptr;
     });
     napi_ref callback = event->callback->cb_;
@@ -447,15 +467,9 @@ void NapiAudioHeadTrackingEnabledChangeCallback::OnJsCallbackHeadTrackingEnabled
 
     AudioHeadTrackingEnabledJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    event->callbackName = "AudioHeadTrackingEnabled";
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        HeadTrackingEnabledTsfnFinalize, nullptr, SafeJsCallbackHeadTrackingEnabledWork, &event->amHeadTrkTsfn);
-    
-    napi_acquire_threadsafe_function(event->amHeadTrkTsfn);
-    napi_call_threadsafe_function(event->amHeadTrkTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amHeadTrkTsfn_);
+    napi_call_threadsafe_function(amHeadTrkTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

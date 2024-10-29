@@ -40,6 +40,8 @@ public:
     void RemoveCallbackReference(const std::string &callbackName);
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const CapturerState state) override;
+    void CreateStateChangeTsfn(napi_env env);
+    void CreateInterruptTsfn(napi_env env);
 
 private:
     struct AudioCapturerJsCallback {
@@ -47,8 +49,6 @@ private:
         std::string callbackName = "unknown";
         InterruptEvent interruptEvent;
         CapturerState state;
-        napi_threadsafe_function acStateChgTsfn = nullptr;
-        napi_threadsafe_function acInterruptTsfn = nullptr;
     };
 
     void OnJsCallbackInterrupt(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
@@ -62,6 +62,10 @@ private:
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> stateChangeCallback_ = nullptr;
+    bool regAcStateChgTsfn_ = false;
+    bool regAcInterruptTsfn_ = false;
+    napi_threadsafe_function acStateChgTsfn_ = nullptr;
+    napi_threadsafe_function acInterruptTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

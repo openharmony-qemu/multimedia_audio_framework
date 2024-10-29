@@ -35,6 +35,9 @@ NapiCapturerPeriodPositionCallback::NapiCapturerPeriodPositionCallback(napi_env 
 
 NapiCapturerPeriodPositionCallback::~NapiCapturerPeriodPositionCallback()
 {
+    if (regAcPeriodPosTsfn_) {
+        napi_release_threadsafe_function(acPeriodPosTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiCapturerPeriodPositionCallback: instance destroy");
 }
 
@@ -54,6 +57,17 @@ void NapiCapturerPeriodPositionCallback::SaveCallbackReference(const std::string
     } else {
         AUDIO_ERR_LOG("NapiCapturerPeriodPositionCallback: Unknown callback type: %{public}s", callbackName.c_str());
     }
+}
+
+void NapiCapturerPeriodPositionCallback::CreatePeriodPositionTsfn(napi_env env)
+{
+    regAcPeriodPosTsfn_ = true;
+    std::string callbackName = "PeriodPosition";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        CapturerPeriodPositionTsfnFinalize, nullptr, SafeJsCallbackCapturerPeriodPositionWork,
+        &acPeriodPosTsfn_);
 }
 
 void NapiCapturerPeriodPositionCallback::OnPeriodReached(const int64_t &frameNumber)
@@ -78,8 +92,7 @@ void NapiCapturerPeriodPositionCallback::SafeJsCallbackCapturerPeriodPositionWor
         "OnJsCapturerPeriodPositionCallback: no memory");
     std::shared_ptr<CapturerPeriodPositionJsCallback> safeContext(
         static_cast<CapturerPeriodPositionJsCallback*>(data),
-        [event](CapturerPeriodPositionJsCallback *ptr) {
-            napi_release_threadsafe_function(event->acPeriodPosTsfn, napi_tsfn_abort);
+        [](CapturerPeriodPositionJsCallback *ptr) {
             delete ptr;
     });
     CHECK_AND_RETURN_LOG(event->callback != nullptr, "callback is nullptr");
@@ -126,14 +139,8 @@ void NapiCapturerPeriodPositionCallback::OnJsCapturerPeriodPositionCallback(
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCapturerPeriodPositionCallback: event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        CapturerPeriodPositionTsfnFinalize, nullptr, SafeJsCallbackCapturerPeriodPositionWork,
-        &event->acPeriodPosTsfn);
-    
-    napi_acquire_threadsafe_function(event->acPeriodPosTsfn);
-    napi_call_threadsafe_function(event->acPeriodPosTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(acPeriodPosTsfn_);
+    napi_call_threadsafe_function(acPeriodPosTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

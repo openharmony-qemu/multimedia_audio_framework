@@ -37,6 +37,9 @@ NapiRendererDataRequestCallback::NapiRendererDataRequestCallback(napi_env env, N
 
 NapiRendererDataRequestCallback::~NapiRendererDataRequestCallback()
 {
+    if (regArDataReqTsfn_) {
+        napi_release_threadsafe_function(arDataReqTsfn_, napi_tsfn_abort);
+    }
     AUDIO_INFO_LOG("instance destroy");
 }
 
@@ -54,6 +57,16 @@ void NapiRendererDataRequestCallback::SaveCallbackReference(const std::string &c
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
+}
+
+void NapiRendererDataRequestCallback::CreateWriteDataTsfn(napi_env env)
+{
+    regArDataReqTsfn_ = true;
+    std::string callbackName = "writeData";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        DataRequestTsfnFinalize, nullptr, SafeJsCallbackDataRequestWork, &arDataReqTsfn_);
 }
 
 void NapiRendererDataRequestCallback::OnWriteData(size_t length)
@@ -93,8 +106,7 @@ void NapiRendererDataRequestCallback::SafeJsCallbackDataRequestWork(
         "OnJsRendererDataRequestCallback: no memory");
     std::shared_ptr<RendererDataRequestJsCallback> safeContext(
         static_cast<RendererDataRequestJsCallback*>(data),
-        [event](RendererDataRequestJsCallback *ptr) {
-            napi_release_threadsafe_function(event->arDataReqTsfn, napi_tsfn_abort);
+        [](RendererDataRequestJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -135,17 +147,12 @@ void NapiRendererDataRequestCallback::OnJsRendererDataRequestCallback(
         AUDIO_ERR_LOG("OnJsRendererDataRequestCallback: jsCb.get() is null");
         return;
     }
-    
+
     RendererDataRequestJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        DataRequestTsfnFinalize, nullptr, SafeJsCallbackDataRequestWork, &event->arDataReqTsfn);
-
-    napi_acquire_threadsafe_function(event->arDataReqTsfn);
-    napi_call_threadsafe_function(event->arDataReqTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(arDataReqTsfn_);
+    napi_call_threadsafe_function(arDataReqTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

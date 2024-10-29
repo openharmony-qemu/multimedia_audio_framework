@@ -669,6 +669,7 @@ void NapiAudioSpatializationManager::RegisterSpatializationEnabledChangeCallback
         std::static_pointer_cast<NapiAudioSpatializationEnabledChangeCallback>
         (napiAudioSpatializationManager->spatializationEnabledChangeCallbackNapi_);
     cb->SaveSpatializationEnabledChangeCallbackReference(args[PARAM1], cbName);
+    cb->CreateSpatEnableTsfn(env);
 
     AUDIO_INFO_LOG("Register spatialization enabled callback is successful");
 }
@@ -693,6 +694,7 @@ void NapiAudioSpatializationManager::RegisterHeadTrackingEnabledChangeCallback(n
         std::static_pointer_cast<NapiAudioHeadTrackingEnabledChangeCallback>
         (napiAudioSpatializationManager->headTrackingEnabledChangeCallbackNapi_);
     cb->SaveHeadTrackingEnabledChangeCallbackReference(args[PARAM1], cbName);
+    cb->CreateHeadTrackingTsfn(env);
 
     AUDIO_INFO_LOG("Register head tracking enabled callback is successful");
 }

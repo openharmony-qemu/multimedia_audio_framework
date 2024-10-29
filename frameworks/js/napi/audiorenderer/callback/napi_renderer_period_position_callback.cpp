@@ -33,6 +33,9 @@ NapiRendererPeriodPositionCallback::NapiRendererPeriodPositionCallback(napi_env 
 
 NapiRendererPeriodPositionCallback::~NapiRendererPeriodPositionCallback()
 {
+    if (regArPerPosTsfn_) {
+        napi_release_threadsafe_function(arPerPosTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("instance destroy");
 }
 
@@ -51,6 +54,16 @@ void NapiRendererPeriodPositionCallback::SaveCallbackReference(const std::string
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
+}
+
+void NapiRendererPeriodPositionCallback::CreatePeriodReachTsfn(napi_env env)
+{
+    regArPerPosTsfn_ = true;
+    std::string callbackName = "periodReach";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        PeriodPositionTsfnFinalize, nullptr, SafeJsCallbackPeriodPositionWork, &arPerPosTsfn_);
 }
 
 void NapiRendererPeriodPositionCallback::OnPeriodReached(const int64_t &frameNumber)
@@ -75,8 +88,7 @@ void NapiRendererPeriodPositionCallback::SafeJsCallbackPeriodPositionWork(
         "OnJsRendererPeriodPositionCallback: no memory");
     std::shared_ptr<RendererPeriodPositionJsCallback> safeContext(
         static_cast<RendererPeriodPositionJsCallback*>(data),
-        [event](RendererPeriodPositionJsCallback *ptr) {
-            napi_release_threadsafe_function(event->arPerPosTsfn, napi_tsfn_abort);
+        [](RendererPeriodPositionJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -122,13 +134,8 @@ void NapiRendererPeriodPositionCallback::OnJsRendererPeriodPositionCallback(
     RendererPeriodPositionJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        PeriodPositionTsfnFinalize, nullptr, SafeJsCallbackPeriodPositionWork, &event->arPerPosTsfn);
-
-    napi_acquire_threadsafe_function(event->arPerPosTsfn);
-    napi_call_threadsafe_function(event->arPerPosTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(arPerPosTsfn_);
+    napi_call_threadsafe_function(arPerPosTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

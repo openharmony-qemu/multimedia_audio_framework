@@ -1176,6 +1176,7 @@ napi_value NapiAudioVolumeGroupManager::RegisterCallback(napi_env env, napi_valu
         std::shared_ptr<NapiAudioRingerModeCallback> cb =
             std::static_pointer_cast<NapiAudioRingerModeCallback>(napiAudioVolumeGroupManager->ringerModecallbackNapi_);
         cb->SaveCallbackReference(cbName, args[PARAM1]);
+        cb->CreateRingModeTsfn(env);
     } else if (!cbName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
         if (!napiAudioVolumeGroupManager->micStateChangeCallbackNapi_) {
             napiAudioVolumeGroupManager->micStateChangeCallbackNapi_ =
@@ -1194,6 +1195,7 @@ napi_value NapiAudioVolumeGroupManager::RegisterCallback(napi_env env, napi_valu
             std::static_pointer_cast<NapiAudioManagerMicStateChangeCallback>(napiAudioVolumeGroupManager->
                 micStateChangeCallbackNapi_);
         cb->SaveCallbackReference(cbName, args[PARAM1]);
+        cb->CreateManagerMicStateChangeTsfn(env);
         AUDIO_DEBUG_LOG("On SetMicStateChangeCallback is successful");
     } else {
         AUDIO_ERR_LOG("No such callback supported");

@@ -29,13 +29,13 @@ public:
     virtual ~NapiCapturerPositionCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnMarkReached(const int64_t &framePosition) override;
+    void CreateCapturePositionTsfn(napi_env env);
 
 private:
     struct CapturerPositionJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         int64_t position = 0;
-        napi_threadsafe_function acPosTsfn = nullptr;
     };
 
     void OnJsCapturerPositionCallback(std::unique_ptr<CapturerPositionJsCallback> &jsCb);
@@ -45,6 +45,8 @@ private:
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> capturerPositionCallback_ = nullptr;
+    bool regAcPosTsfn_ = false;
+    napi_threadsafe_function acPosTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
