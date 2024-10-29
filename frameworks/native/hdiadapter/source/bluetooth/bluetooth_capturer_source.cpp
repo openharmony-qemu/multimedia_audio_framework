@@ -523,6 +523,9 @@ int32_t BluetoothCapturerSourceInner::SetVolume(float left, float right)
 
 int32_t BluetoothCapturerSourceInner::GetVolume(float &left, float &right)
 {
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE,
+        "GetVolume failed audioCapture_ null");
+
     float val = 0.0;
     audioCapture_->volume.GetVolume(reinterpret_cast<AudioHandle>(audioCapture_), &val);
     left = val;
@@ -583,7 +586,7 @@ uint64_t BluetoothCapturerSourceInner::GetTransactionId()
 
 int32_t BluetoothCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
-    AUDIO_ERR_LOG("GetPresentationPosition not supported.");
+    AUDIO_WARNING_LOG("GetPresentationPosition not supported.");
     return ERR_NOT_SUPPORTED;
 }
 
@@ -689,7 +692,7 @@ int32_t BluetoothCapturerSourceInner::Flush(void)
 
 void BluetoothCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)
 {
-    AUDIO_ERR_LOG("RegisterWakeupCloseCallback not supported");
+    AUDIO_WARNING_LOG("RegisterWakeupCloseCallback not supported");
 }
 
 void BluetoothCapturerSourceInner::RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback)
