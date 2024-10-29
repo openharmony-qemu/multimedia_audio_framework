@@ -113,7 +113,7 @@ int32_t AudioProcessInServer::Start()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    std::lock_guard lock(statusLock_);
+    std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING || streamStatus_->load() == STREAM_STAND_BY,
         ERR_ILLEGAL_STATE, "Start failed, invalid status.");
 
@@ -129,27 +129,19 @@ int32_t AudioProcessInServer::Start()
             ERR_PERMISSION_DENIED, "NotifyPrivacy failed!");
     }
 
-    HandleNotifyStartListeners();
-
-    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
-
-    AUDIO_INFO_LOG("Start in server success!");
-    return SUCCESS;
-}
-
-void AudioProcessInServer::HandleNotifyStartListeners()
-{
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
-
     if (streamStatus_->load() == STREAM_STAND_BY) {
         AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
     }
-}
 
+    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
+    AUDIO_INFO_LOG("Start in server success!");
+    return SUCCESS;
+}
 
 int32_t AudioProcessInServer::Pause(bool isFlush)
 {

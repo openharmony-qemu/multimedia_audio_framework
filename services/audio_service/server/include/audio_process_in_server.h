@@ -67,8 +67,6 @@ public:
     int32_t Release(bool destoryAtOnce = false) override;
 
     int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
-
-    void HandleNotifyStartListeners();
     
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBuffer> GetStreamBuffer() override;
