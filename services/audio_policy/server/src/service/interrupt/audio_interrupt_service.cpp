@@ -306,7 +306,7 @@ bool AudioInterruptService::IsIncomingInterruptCanMixActiveInterrupt(const Audio
             return false;
         }
     return true;
-}    
+}
 
 bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
@@ -1050,7 +1050,7 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
     std::vector<SourceType> existConcurrentSources = (iterActive->first).currencySources.sourcesTypes;
 
     // if the callerPid has an active audio session, the hint type need to be updated.
-    if (!IsIncomingInterruptCanMixActiveInterrupt(incomingInterrupt, iterActive->first)) {
+    if (IsIncomingInterruptCanMixActiveInterrupt(incomingInterrupt, iterActive->first)) {
         UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
     }
     switch (focusEntry.hintType) {
