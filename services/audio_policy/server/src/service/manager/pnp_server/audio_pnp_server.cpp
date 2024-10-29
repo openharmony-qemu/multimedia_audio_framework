@@ -180,8 +180,12 @@ void AudioPnpServer::OpenAndReadWithSocket()
             }
             eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
             CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid socket info");
-            OnPnpDeviceStatusChanged(eventInfo_);
-            MicrophoneBlocked::GetInstance().OnMicrophoneBlocked(eventInfo_, GetAudioPnpServer());
+            if (AudioSocketThread::audioSocketEvent_.eventType == PNP_EVENT_MIC_BLOCKED ||
+                AudioSocketThread::audioSocketEvent_.eventType == PNP_EVENT_MIC_UNBLOCKED) {
+                MicrophoneBlocked::GetInstance().OnMicrophoneBlocked(eventInfo_, GetAudioPnpServer());
+            } else {
+                OnPnpDeviceStatusChanged(eventInfo_);
+            }
         }
     }
     close(socketFd);

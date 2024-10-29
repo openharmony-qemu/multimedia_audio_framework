@@ -228,7 +228,7 @@ int32_t AudioPolicyClientStubImpl::RemoveMicrophoneBlockedCallback(const int32_t
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
     auto iter = microphoneBlockedCallbackList_.begin();
     while (iter != microphoneBlockedCallbackList_.end()) {
-        if ((iter->first & clientId) && (iter->second == cb || cb == nullptr)) {
+        if ((iter->first == clientId) && (iter->second == cb || cb == nullptr)) {
             AUDIO_INFO_LOG("remove mic blocked cb flag:%{public}d", clientId);
             iter = microphoneBlockedCallbackList_.erase(iter);
         } else {
