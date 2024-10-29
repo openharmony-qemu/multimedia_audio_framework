@@ -32,6 +32,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum AudioEffectChainSetParamIndex {
+    COMMAND_CODE_INDEX = 0,
+    SCENE_TYPE_INDEX = 1,
+    EFFECT_MODE_INDEX = 2,
+    ROTATION_INDEX = 3,
+    VOLUME_INDEX = 4,
+    EXTRA_SCENE_TYPE_INDEX = 5,
+    SPATIAL_DEVICE_TYPE_INDEX = 6,
+    SPATIALIZATION_SCENE_TYPE_INDEX = 7,
+    SPATIALIZATION_ENABLED_INDEX = 8,
+};
+
 struct AudioEffectProcInfo {
     bool headTrackingEnabled;
     bool btOffloadEnabled;
@@ -48,6 +60,8 @@ public:
     void SetEffectMode(const std::string &mode);
     void SetExtraSceneType(const std::string &extraSceneType);
     void SetEffectCurrSceneType(AudioEffectScene currSceneType);
+    void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
+    void SetSpatializationEnabled(bool enabled);
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     bool IsEmptyEffectHandles();
@@ -84,6 +98,8 @@ private:
     FILE *dumpFileOutput_ = nullptr;
     float finalVolume_ = 1.0f;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
+    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    bool spatializationEnabled_ = false;
     std::string dumpNameIn_ = "";
     std::string dumpNameOut_ = "";
 

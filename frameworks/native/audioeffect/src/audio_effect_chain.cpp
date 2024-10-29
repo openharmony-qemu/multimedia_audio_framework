@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 7;
+const uint32_t NUM_SET_EFFECT_PARAM = 9;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t MAX_UINT_VOLUME = 65535;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
@@ -124,6 +124,16 @@ void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
     currSceneType_ = currSceneType;
 }
 
+void AudioEffectChain::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
+{
+    spatializationSceneType_ = spatializationSceneType;
+}
+
+void AudioEffectChain::SetSpatializationEnabled(bool enabled)
+{
+    spatializationEnabled_ = enabled;
+}
+
 void AudioEffectChain::ReleaseEffectChain()
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
@@ -154,27 +164,31 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     effectParam->paramSize = sizeof(int32_t);
     effectParam->valueSize = 0;
     int32_t *data = &(effectParam->data[0]);
-    data[0] = EFFECT_SET_PARAM;
-    data[1] = static_cast<int32_t>(currSceneType_);
-    AUDIO_DEBUG_LOG("set ap integration scene type: %{public}d", data[1]);
-    data[2] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode_); // 2:effect mode index
+    data[COMMAND_CODE_INDEX] = EFFECT_SET_PARAM;
+    data[SCENE_TYPE_INDEX] = static_cast<int32_t>(currSceneType_);
+    data[EFFECT_MODE_INDEX] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode_);
+
 #ifdef WINDOW_MANAGER_ENABLE
     std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
     if (audioEffectRotation == nullptr) {
-        data[3] = 0; // 3:rotation index
+        data[ROTATION_INDEX] = 0;
     } else {
-        data[3] = static_cast<int32_t>(audioEffectRotation->GetRotation()); // 3:rotation index
+        data[ROTATION_INDEX] = static_cast<int32_t>(audioEffectRotation->GetRotation());
     }
 #else
-    data[3] = 0; // 3:rotation index
+    data[ROTATION_INDEX] = 0;
 #endif
-    AUDIO_DEBUG_LOG("set ap integration rotation: %{public}d", data[3]); // 3:rotation index
-    data[4] = static_cast<int32_t>(finalVolume_ * MAX_UINT_VOLUME); // 4:volume index
-    AUDIO_DEBUG_LOG("set ap integration volume: %{public}d", data[4]); // 4:volume index
-    data[5] = static_cast<int32_t>(extraEffectChainType_); // 5:extra effect chain type index
-    AUDIO_DEBUG_LOG("set extra effect chain type: %{public}d", extraEffectChainType_);
-    data[6] = spatialDeviceType_; // 6:spatial device type index
-    AUDIO_DEBUG_LOG("set ap integration spatial device type: %{public}d", data[6]); // 6:spatial device type index
+    data[VOLUME_INDEX] = static_cast<int32_t>(finalVolume_ * MAX_UINT_VOLUME);
+    data[EXTRA_SCENE_TYPE_INDEX] = static_cast<int32_t>(extraEffectChainType_);
+    data[SPATIAL_DEVICE_TYPE_INDEX] = spatialDeviceType_;
+    data[SPATIALIZATION_SCENE_TYPE_INDEX] = spatializationSceneType_;
+    data[SPATIALIZATION_ENABLED_INDEX] = spatializationEnabled_;
+    AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
+        "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
+        "spatializationSceneType: %{public}d, SpatializationEnabled: %{public}d",
+        data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
+        data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
+        data[SPATIALIZATION_ENABLED_INDEX]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
