@@ -119,6 +119,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioserviceserversrcenhance_fuzzer:fuzztest",
     "fuzztest/audiostream_fuzzer:fuzztest",
     "fuzztest/audioutils_fuzzer:fuzztest",
+    "fuzztest/audiopolicyserviceenhance_fuzzer:fuzztest",
   ]
 }
 
