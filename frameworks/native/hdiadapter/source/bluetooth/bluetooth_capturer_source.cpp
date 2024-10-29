@@ -157,7 +157,6 @@ public:
 private:
     static constexpr int32_t HALF_FACTOR = 2;
     static constexpr int32_t MAX_AUDIO_ADAPTER_NUM = 8;
-    static constexpr float MAX_VOLUME_LEVEL = 15.0F;
     static constexpr uint32_t STEREO_CHANNEL_COUNT = 2;
 
     int32_t CreateCapture(struct AudioPort &capturePort);
@@ -176,8 +175,8 @@ private:
     bool captureInited_;
     bool started_;
     bool paused_;
-    float leftVolume_;
-    float rightVolume_;
+    float leftVolume_ = 0.0;
+    float rightVolume_ = 0.0;
 
     int32_t logMode_ = 0;
     mutable int64_t volumeDataCount_ = 0;
@@ -216,7 +215,6 @@ private:
 
 BluetoothCapturerSourceInner::BluetoothCapturerSourceInner()
     : captureInited_(false), started_(false), paused_(false),
-      leftVolume_(MAX_VOLUME_LEVEL), rightVolume_(MAX_VOLUME_LEVEL),
       audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr), halName_ ("bt_hdap")
 {
     attr_ = {};
