@@ -1229,13 +1229,16 @@ void AudioAdapterManager::UpdateSafeVolume()
     if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
         return;
     }
-    AUDIO_INFO_LOG("update current volume to safevolume, device:%{public}d", currentActiveDevice_);
+    auto currentActiveOutputDeviceDescriptor = 
+        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     switch (currentActiveDevice_) {
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             if (isWiredBoot_) {
+                AUDIO_INFO_LOG("1st connect wired device:%{public}d after boot, update current volume to safevolume",
+                    currentActiveDevice_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
                 volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
                 isWiredBoot_ = false;
@@ -1243,7 +1246,15 @@ void AudioAdapterManager::UpdateSafeVolume()
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
+            if (currentActiveOutputDeviceDescriptor != nullptr) {
+                AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveOutputDeviceDescriptor->deviceCategory_);
+                if (currentActiveOutputDeviceDescriptor->deviceCategory_ != BT_HEADPHONE) {
+                    AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_);
+                }
+            }
             if (isBtBoot_) {
+                AUDIO_INFO_LOG("1st connect bt device:%{public}d after boot, update current volume to safevolume",
+                    currentActiveDevice_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
                 volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
                 isBtBoot_ = false;
