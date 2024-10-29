@@ -102,7 +102,7 @@ static int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32
             continue;
         }
         for (uint32_t port = 0; port < desc->portNum; port++) {
-            //only find out the port_in in the sound card
+            // only find out the port_in in the sound card
             if (desc->ports[port].dir == portFlag) {
                 capturePort = desc->ports[port];
                 return index;
