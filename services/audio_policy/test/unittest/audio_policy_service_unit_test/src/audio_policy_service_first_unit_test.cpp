@@ -302,20 +302,21 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest AudioPolicyServiceTest_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
     // DeviceTest
+    AudioDeviceDescriptor audioDeviceDescriptor;
+    audioDeviceDescriptor.deviceName_ = "dummyName";
+    audioDeviceDescriptor.macAddress_ = "11:22:33:44:55:66";
     for (const auto& deviceType : deviceTypes) {
         AUDIO_INFO_LOG("AudioPolicyServiceTest_001 deviceType:%{public}d, TEST_SESSIONID:%{public}d",
             static_cast<uint32_t>(deviceType), TEST_SESSIONID);
+        audioDeviceDescriptor.deviceType_ = deviceType;
         for (const auto& isConnected : isConnecteds) {
             AUDIO_INFO_LOG("AudioPolicyServiceTest_001 isConnected:%{public}d", static_cast<uint32_t>(isConnected));
-            std::string name = "dummyName";
-            std::string macAddress = "11:22:33:44:55:66";
             GetServerPtr()->audioPolicyService_.hasModulesLoaded = false;
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected);
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected, name, macAddress);
+            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
             GetServerPtr()->audioPolicyService_.hasModulesLoaded = true;
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected);
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected, name, macAddress);
-            GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected, macAddress);
+            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
+            GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected,
+                audioDeviceDescriptor.macAddress_);
         }
         bool ret = GetServerPtr()->audioPolicyService_.IsA2dpOffloadConnected();
         EXPECT_EQ(false, ret);
@@ -460,9 +461,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_004, TestSize.Level1
         GetServerPtr()->audioPolicyService_.FilterSourceOutputs(TEST_SESSIONID);
         GetServerPtr()->audioPolicyService_.RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptorSptr);
         for (const auto& isConnected :isConnecteds) {
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected);
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(
-                deviceType, isConnected, "audioDevice", "audioAddress");
+            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
         }
     }
 }

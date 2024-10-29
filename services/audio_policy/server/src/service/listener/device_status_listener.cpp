@@ -231,8 +231,7 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
     PnpDeviceType pnpDeviceType = PNP_DEVICE_UNKNOWN;
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
 
-    std::string name = "";
-    std::string address = "";
+    AudioDeviceDescriptor desc = {};
  
     if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d;", &pnpEventType, &pnpDeviceType) < EVENT_NUM_TYPE) {
         AUDIO_ERR_LOG("Failed to scan info string %{public}s", info.c_str());
@@ -241,7 +240,7 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
  
     auto nameBegin = info.find("EVENT_NAME=");
     auto nameEnd = info.find_first_of(";", nameBegin);
-    name = info.substr(nameBegin + std::strlen("EVENT_NAME="),
+    desc.deviceName_ = info.substr(nameBegin + std::strlen("EVENT_NAME="),
         nameEnd - nameBegin - std::strlen("EVENT_NAME="));
 
     auto addressBegin = info.find("DEVICE_ADDRESS=");
@@ -249,16 +248,16 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
     string portId = info.substr(addressBegin + std::strlen("DEVICE_ADDRESS="),
         addressEnd - addressBegin - std::strlen("DEVICE_ADDRESS="));
 
-    DeviceType internalDevice = GetInternalDeviceType(pnpDeviceType);
-    CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
+    desc.deviceType_ = GetInternalDeviceType(pnpDeviceType);
+    CHECK_AND_RETURN_LOG(desc.deviceType_ != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
     bool isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
 
-    if (internalDevice == DEVICE_TYPE_DP) {
-        address = DP_ADDRESS + portId;
+    if (desc.deviceType_ == DEVICE_TYPE_DP) {
+        desc.macAddress_ = DP_ADDRESS + portId;
     }
-    AUDIO_INFO_LOG("[device type :%{public}d], [connection state: %{public}d] "
-        "[name: %{public}s]", internalDevice, isConnected, name.c_str());
-    deviceObserver_.OnPnpDeviceStatusUpdated(internalDevice, isConnected, name, address);
+    AUDIO_INFO_LOG("[device type: %{public}d], [connection state: %{public}d], [name: %{public}s]",
+        desc.deviceType_, isConnected, desc.deviceName_.c_str());
+    deviceObserver_.OnPnpDeviceStatusUpdated(desc, isConnected);
 }
 
 int32_t DeviceStatusListener::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
