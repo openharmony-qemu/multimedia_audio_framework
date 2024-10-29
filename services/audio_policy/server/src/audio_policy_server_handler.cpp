@@ -22,6 +22,17 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static std::string GeneratePidsStrForPrinting(
+    const std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &unorderedMap)
+{
+    std::string retString = "[";
+    for (const auto &[pid, iAudioPolicyClient] : unorderedMap) {
+        retString += (std::to_string(pid) + ',');
+    }
+    retString += ']';
+    return retString;
+}
+
 AudioPolicyServerHandler::AudioPolicyServerHandler() : AppExecFwk::EventHandler(
     AppExecFwk::EventRunner::Create("OS_APAsyncRunner"))
 {
@@ -49,8 +60,9 @@ void AudioPolicyServerHandler::AddAudioPolicyClientProxyMap(int32_t clientPid, c
             AUDIO_ERR_LOG("client registers multiple callbacks, the callback may be lost.");
         }
     }
-    AUDIO_INFO_LOG("group data num [%{public}zu] pid [%{public}d]",
-        audioPolicyClientProxyAPSCbsMap_.size(), clientPid);
+    PidsStrForPrinting_ = GeneratePidsStrForPrinting(audioPolicyClientProxyAPSCbsMap_);
+    AUDIO_INFO_LOG("group data num [%{public}zu] pid [%{public}d] map %{public}s",
+        audioPolicyClientProxyAPSCbsMap_.size(), clientPid, PidsStrForPrinting_.c_str());
 }
 
 void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
@@ -58,8 +70,9 @@ void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
     std::lock_guard<std::mutex> lock(runnerMutex_);
     audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
     clientCallbacksMap_.erase(clientPid);
-    AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu]",
-        audioPolicyClientProxyAPSCbsMap_.size());
+    PidsStrForPrinting_ = GeneratePidsStrForPrinting(audioPolicyClientProxyAPSCbsMap_);
+    AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu] map %{public}s",
+        audioPolicyClientProxyAPSCbsMap_.size(), PidsStrForPrinting_.c_str());
 }
 
 void AudioPolicyServerHandler::AddExternInterruptCbsMap(int32_t clientId,
@@ -874,6 +887,8 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
             ResetRingerModeMute(eventContextObj->audioRendererChangeInfos);
         }
     }
+    AUDIO_INFO_LOG("pids: %{public}s size: %{public}zu", PidsStrForPrinting_.c_str(),
+        audioPolicyClientProxyAPSCbsMap_.size());
 }
 
 void AudioPolicyServerHandler::ResetRingerModeMute(const std::vector<std::shared_ptr<AudioRendererChangeInfo>>

@@ -233,6 +233,8 @@ private:
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
 
     std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
+    std::string PidsStrForPrinting_ = "[]";
+
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,
         sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
