@@ -20,7 +20,7 @@
 #include <cinttypes>
 #include "securec.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_renderer_log.h"
 #include "audio_utils.h"
 #include "audio_service.h"
 #include "futex_tool.h"

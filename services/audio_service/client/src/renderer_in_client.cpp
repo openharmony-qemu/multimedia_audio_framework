@@ -38,7 +38,7 @@
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_manager_base.h"
-#include "audio_service_log.h"
+#include "audio_renderer_log.h"
 #include "audio_ring_cache.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
@@ -666,7 +666,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         lastFramePosition_ = framePosition;
         lastFrameTimestamp_ = timestampVal;
     } else {
-        AUDIO_WARNING_LOG("The frame position should be continuously increasing");
+        AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
         framePosition = lastFramePosition_;
         timestampVal = lastFrameTimestamp_;
     }

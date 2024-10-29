@@ -39,7 +39,7 @@
 #include "audio_capturer_source.h"
 #include "fast_audio_capturer_source.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_asr.h"
 #include "audio_manager_listener_proxy.h"
 #include "audio_service.h"

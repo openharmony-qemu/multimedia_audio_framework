@@ -19,7 +19,7 @@
 
 #include "audio_volume.h"
 #include "audio_volume_c.h"
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
