@@ -47,16 +47,10 @@ private:
         std::string callbackName = "unknown";
         InterruptEvent interruptEvent;
         CapturerState state;
-        napi_threadsafe_function acStateChgTsfn = nullptr;
-        napi_threadsafe_function acInterruptTsfn = nullptr;
     };
 
     void OnJsCallbackInterrupt(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
     void OnJsCallbackStateChange(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
-    static void SafeJsCallbackInterruptWork(napi_env env, napi_value js_cb, void *context, void *data);
-    static void InterruptTsfnFinalize(napi_env env, void *data, void *hint);
-    static void SafeJsCallbackStateChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
-    static void StateChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

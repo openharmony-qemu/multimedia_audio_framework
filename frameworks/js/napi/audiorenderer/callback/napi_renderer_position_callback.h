@@ -37,12 +37,9 @@ private:
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         int64_t position = 0;
-        napi_threadsafe_function arPosTsfn = nullptr;
     };
 
     void OnJsRendererPositionCallback(std::unique_ptr<RendererPositionJsCallback> &jsCb);
-    static void SafeJsCallbackPositionWork(napi_env env, napi_value js_cb, void *context, void *data);
-    static void PositionTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

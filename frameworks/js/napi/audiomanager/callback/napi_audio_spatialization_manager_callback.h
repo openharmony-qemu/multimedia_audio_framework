@@ -47,14 +47,10 @@ private:
     struct AudioSpatializationEnabledJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         sptr<AudioDeviceDescriptor> deviceDescriptor;
-        std::string callbackName = "unknown";
         bool enabled;
-        napi_threadsafe_function amSpatEnableTsfn = nullptr;
     };
 
     void OnJsCallbackSpatializationEnabled(std::unique_ptr<AudioSpatializationEnabledJsCallback> &jsCb);
-    static void SafeJsCallbackSpatializationEnabledWork(napi_env env, napi_value js_cb, void *context, void *data);
-    static void SpatializationEnabledTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
@@ -79,14 +75,10 @@ private:
     struct AudioHeadTrackingEnabledJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         sptr<AudioDeviceDescriptor> deviceDescriptor;
-        std::string callbackName = "unknown";
         bool enabled;
-        napi_threadsafe_function amHeadTrkTsfn = nullptr;
     };
 
     void OnJsCallbackHeadTrackingEnabled(std::unique_ptr<AudioHeadTrackingEnabledJsCallback> &jsCb);
-    static void SafeJsCallbackHeadTrackingEnabledWork(napi_env env, napi_value js_cb, void *context, void *data);
-    static void HeadTrackingEnabledTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

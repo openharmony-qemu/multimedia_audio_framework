@@ -40,12 +40,10 @@ private:
         BufferDesc bufDesc {};
         NapiAudioCapturer *capturerNapiObj;
         NapiCapturerReadDataCallback *readDataCallbackPtr;
-        napi_threadsafe_function acReadDataTsfn = nullptr;
     };
 
-    static void CaptureReadDataTsfnFinalize(napi_env env, void *data, void *hint);
-    static void SafeJsCallbackCapturerReadDataWork(napi_env env, napi_value js_cb, void *context, void *data);
-    static void SafeJsCallbackCapturerReadDataWorkInner(CapturerReadDataJsCallback *event);
+    static void WorkCallbackCapturerReadData(CapturerReadDataJsCallback *event);
+    static void WorkCallbackCapturerReadDataInner(CapturerReadDataJsCallback *event);
     void OnJsCapturerReadDataCallback(std::unique_ptr<CapturerReadDataJsCallback> &jsCb);
 
     std::mutex mutex_;
