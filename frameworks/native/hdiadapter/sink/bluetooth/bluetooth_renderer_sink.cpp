@@ -516,13 +516,6 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     if (audioBalanceState_) { AdjustAudioBalance(&data, len); }
 
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void *>(&data), len);
-    }
     CheckUpdateState(&data, len);
     if (suspend_) { return ret; }
 
@@ -534,8 +527,16 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
             AUDIO_WARNING_LOG("call memset_s failed");
         }
     }
+
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
+    DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            static_cast<void *>(&data), len);
+    }
+
     while (true) {
-        Trace::CountVolume("BluetoothRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
         Trace trace("audioRender_->RenderFrame");
         int64_t stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);

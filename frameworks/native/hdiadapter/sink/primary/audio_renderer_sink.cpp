@@ -754,13 +754,6 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 
     if (audioBalanceState_) {AdjustAudioBalance(&data, len);}
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void *>(&data), len);
-    }
     CheckUpdateState(&data, len);
 
     if (switchDeviceMute_) {
@@ -771,8 +764,15 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         }
     }
 
-    Trace::CountVolume("AudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
+
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
+    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            static_cast<void *>(&data), len);
+    }
 
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
