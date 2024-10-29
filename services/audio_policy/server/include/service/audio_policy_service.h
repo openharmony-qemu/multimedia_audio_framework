@@ -1044,6 +1044,8 @@ private:
 
     bool CheckSpatializationAndEffectState();
 
+    void JudgeIfLoadMchModule();
+
     void FetchStreamForSpkMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
 

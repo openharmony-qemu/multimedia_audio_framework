@@ -2932,9 +2932,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRender
     vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
-        if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
-            LoadMchModule();
-        }
+        JudgeIfLoadMchModule();
         UpdateActiveDeviceRoute(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG);
         std::string portName = GetSinkPortName(descs.front()->deviceType_, PIPE_TYPE_MULTICHANNEL);
         int32_t ret  = MoveToOutputDevice(rendererChangeInfo->sessionId, portName);
@@ -10082,16 +10080,25 @@ bool AudioPolicyService::CheckSpatializationAndEffectState()
     return spatialState.spatializationEnabled && !effectOffloadFlag;
 }
 
+void AudioPolicyService::JudgeIfLoadMchModule()
+{
+    bool isNeedLoadMchModule = false;
+    {
+        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+        if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
+            isNeedLoadMchModule = true;
+        }
+    }
+    if (isNeedLoadMchModule) {
+        LoadMchModule();
+    }
+}
+
 void AudioPolicyService::FetchStreamForSpkMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
-        {
-            std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-            if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
-                LoadMchModule();
-            }
-        }
+        JudgeIfLoadMchModule();
         std::string oldSinkName = GetSinkName(rendererChangeInfo->outputDeviceInfo, rendererChangeInfo->sessionId);
         std::string newSinkName = GetSinkPortName(descs.front()->deviceType_, PIPE_TYPE_MULTICHANNEL);
         AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());

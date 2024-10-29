@@ -168,6 +168,10 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u);
 static void StartMultiChannelHdiIfRunning(struct Userdata *u);
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
 static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t state);
+static void *AllocateBuffer(size_t size);
+static bool AllocateEffectBuffer(struct Userdata *u);
+static void FreeEffectBuffer(struct Userdata *u);
+static void ResetBufferAttr(struct Userdata *u);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -1877,36 +1881,75 @@ static void PrimaryEffectProcess(struct Userdata *u, pa_memchunk *chunkIn, char 
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
 }
 
-static void GetHashMap(pa_hashmap *map, const char *sceneType)
+static void GetHashMap(struct Userdata *u, const char *sceneType)
 {
-    uint32_t *num = NULL;
-    (void)num;
-    uint32_t curNum;
-    if ((curNum = EffectChainManagerGetSceneCount(sceneType))) {
-        if ((num = (uint32_t *)pa_hashmap_get(map, sceneType)) != NULL) {
+    uint32_t curNum = EffectChainManagerGetSceneCount(sceneType);
+    uint32_t *num = (uint32_t *)pa_hashmap_get(u->sceneToCountMap, sceneType);
+    if (curNum) {
+        if (num) {
             (*num) = curNum;
         } else {
             char *scene = strdup(sceneType);
-            if (scene != NULL) {
+            if (scene) {
                 num = pa_xnew0(uint32_t, 1);
                 *num = curNum;
-                pa_hashmap_put(map, scene, num);
+                pa_hashmap_put(u->sceneToCountMap, scene, num);
             }
         }
-    } else {
-        if ((num = (uint32_t *)pa_hashmap_get(map, sceneType)) != NULL) {
-            pa_hashmap_remove_and_free(map, sceneType);
-        }
+    } else if (num) {
+        pa_hashmap_remove_and_free(u->sceneToCountMap, sceneType);
     }
 }
 
-static void UpdateSceneToCountMap(pa_hashmap *sceneMap)
+static void UpdateSceneToCountMap(struct Userdata *u)
 {
-    if (sceneMap == NULL) {
+    if (u->sceneToCountMap == NULL) {
         return;
     }
     for (int32_t i = 0; i < SCENE_TYPE_NUM - 1; i++) {
-        GetHashMap(sceneMap, SCENE_TYPE_SET[i]);
+        GetHashMap(u, SCENE_TYPE_SET[i]);
+    }
+}
+
+static void *AllocateBuffer(size_t size)
+{
+    if (size > 0 && size <= sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX) {
+        return malloc(size);
+    } else {
+        return NULL;
+    }
+}
+
+static bool AllocateEffectBuffer(struct Userdata *u)
+{
+    if (u->bufferAttr == NULL) {
+        return false;
+    }
+    float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
+        &u->bufferAttr->tempBufIn, &u->bufferAttr->tempBufOut };
+    size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
+    for (size_t i = 0; i < numBuffers; i++) {
+        *buffers[i] = (float *)AllocateBuffer(u->processSize);
+        if (*buffers[i] == NULL) {
+            AUDIO_ERR_LOG("failed to allocate effect buffer");
+            FreeEffectBuffer(u);
+            return false;
+        }
+    }
+    return true;
+}
+
+static void FreeEffectBuffer(struct Userdata *u)
+{
+    if (u->bufferAttr == NULL) {
+        return;
+    }
+    float **buffers[] = { &u->bufferAttr->bufIn, &u->bufferAttr->bufOut,
+        &u->bufferAttr->tempBufIn, &u->bufferAttr->tempBufOut };
+    size_t numBuffers = sizeof(buffers) / sizeof(buffers[0]);
+    for (size_t i = 0; i < numBuffers; i++) {
+        free(*buffers[i]);
+        *buffers[i] = NULL;
     }
 }
 
@@ -1942,7 +1985,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         &u->actualSpatializationEnabled);
     g_effectProcessFrameCount++;
     const void *sceneType;
-    UpdateSceneToCountMap(u->sceneToCountMap);
+    UpdateSceneToCountMap(u);
     // to do update resampler when output device change
     void *state = NULL;
     while ((pa_hashmap_iterate(u->sceneToCountMap, &state, &sceneType))) {
@@ -2060,7 +2103,10 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
         pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
         UnsetSinkVolume(u->sink); // reset volume 1.0f
     } else {
-        SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
+        if (u->isEffectBufferAllocated || (!u->isEffectBufferAllocated && (AllocateEffectBuffer(u)))) {
+            u->isEffectBufferAllocated = true;
+            SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
+        }
     }
     pa_assert(chunk.length > 0);
 
@@ -3075,6 +3121,10 @@ static void ProcessNormalData(struct Userdata *u)
     int64_t sleepForUsec = -1;
     pa_usec_t now = 0;
 
+    if (u->sink->thread_info.state == PA_SINK_SUSPENDED && u->isEffectBufferAllocated == true) {
+        FreeEffectBuffer(u);
+        u->isEffectBufferAllocated = false;
+    }
     bool flag = (((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
                 (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
                 !(u->sink->thread_info.state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED) &&
@@ -3861,10 +3911,6 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->processLen = IN_CHANNEL_NUM_MAX * DEFAULT_FRAMELEN;
     u->processSize = (uint32_t)u->processLen * sizeof(float);
     u->bufferAttr = pa_xnew0(BufferAttr, 1);
-    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
-    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
-    pa_assert_se(u->bufferAttr->tempBufIn = (float *)malloc(u->processSize));
-    pa_assert_se(u->bufferAttr->tempBufOut = (float *)malloc(u->processSize));
     u->bufferAttr->samplingRate = (int32_t)u->ss.rate;
     u->bufferAttr->frameLen = DEFAULT_FRAMELEN;
     u->bufferAttr->numChanIn = u->ss.channels;
@@ -3872,7 +3918,6 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->bufferAttr->bufOutUsed = true;
     u->sinkSceneMode = -1;
     u->sinkSceneType = -1;
-    u->hdiEffectEnabled = false;
 }
 
 static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
@@ -4280,14 +4325,7 @@ static bool FreeBufferAttr(struct Userdata *u)
         AUDIO_DEBUG_LOG("buffer attr is null, free done");
         return false;
     }
-    free(u->bufferAttr->bufIn);
-    free(u->bufferAttr->bufOut);
-    free(u->bufferAttr->tempBufIn);
-    free(u->bufferAttr->tempBufOut);
-    u->bufferAttr->bufIn = NULL;
-    u->bufferAttr->bufOut = NULL;
-    u->bufferAttr->tempBufIn = NULL;
-    u->bufferAttr->tempBufOut = NULL;
+    FreeEffectBuffer(u);
 
     pa_xfree(u->bufferAttr);
     u->bufferAttr = NULL;
