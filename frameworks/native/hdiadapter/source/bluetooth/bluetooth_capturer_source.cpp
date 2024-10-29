@@ -251,6 +251,7 @@ void BluetoothCapturerSourceInner::DeInit(void)
     }
     captureInited_ = false;
     audioCapture_ = nullptr;
+    audioAdapter_ = nullptr;
 
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -406,6 +407,7 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void*>(frame), replyBytes);
     }
+    CheckUpdateState(frame, requestBytes);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     if (logMode_) {
@@ -418,7 +420,7 @@ int32_t BluetoothCapturerSourceInner::CaptureFrameWithEc(
     FrameDesc *fdesc, uint64_t &replyBytes,
     FrameDesc *fdescEc, uint64_t &replyBytesEc)
 {
-    AUDIO_ERR_LOG("Bluetooth captureFrameWithEc is not supported!");
+    AUDIO_ERR_LOG("Bluetooth captureFrameWithEc is not support!");
     return ERR_NOT_SUPPORTED;
 }
 
