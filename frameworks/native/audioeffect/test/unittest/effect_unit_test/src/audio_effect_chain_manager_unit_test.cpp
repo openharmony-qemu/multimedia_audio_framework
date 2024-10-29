@@ -1017,7 +1017,6 @@ HWTEST(AudioEffectChainManagerUnitTest, GetLatency_002, TestSize.Level1)
 * @tc.name   : Test SetSpatializationSceneType API
 * @tc.number : SetSpatializationSceneType_001
 * @tc.desc   : Test SetSpatializationSceneType interface.
-*              Test GetSceneTypeFromSpatializationSceneType and UpdateEffectChainParams interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_001, TestSize.Level1)
 {
