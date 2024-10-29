@@ -602,6 +602,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_EC = 6,
     HDI_CAPTURE_OFFSET_MIC_REF = 7,
     HDI_CAPTURE_OFFSET_WAKEUP = 8,
+    HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
 };
 
 enum HdiRenderOffset : uint32_t {
