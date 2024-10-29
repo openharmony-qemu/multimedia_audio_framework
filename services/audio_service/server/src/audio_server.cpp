@@ -38,6 +38,7 @@
 
 #include "audio_capturer_source.h"
 #include "fast_audio_capturer_source.h"
+#include "bluetooth_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_asr.h"
@@ -1039,19 +1040,6 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
 
     AUDIO_DEBUG_LOG("Transaction Id: %{public}" PRIu64, transactionId);
     return transactionId;
-}
-
-bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
-    std::vector<Effect>& successEffectList)
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false, "LoadAudioEffectLibraries refused for %{public}d",
-        callingUid);
-    bool loadSuccess = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
-    if (!loadSuccess) {
-        AUDIO_WARNING_LOG("Load audio effect failed, please check log");
-    }
-    return loadSuccess;
 }
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
@@ -2073,12 +2061,14 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
     IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
     IAudioCapturerSource *fastAudioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
     IAudioCapturerSource *voipFastAudioCapturerSourceInstance = FastAudioCapturerSource::GetVoipInstance();
+    IAudioCapturerSource *bluetoothAudioCapturerSourceInstance = BluetoothCapturerSource::GetInstance();
 
     for (auto audioCapturerSourceInstance : {
         primaryAudioCapturerSourceInstance,
         usbAudioCapturerSinkInstance,
         fastAudioCapturerSourceInstance,
-        voipFastAudioCapturerSourceInstance
+        voipFastAudioCapturerSourceInstance,
+        bluetoothAudioCapturerSourceInstance
     }) {
         if (audioCapturerSourceInstance != nullptr) {
             audioCapturerSourceInstance->RegisterAudioCapturerSourceCallback(make_unique<CapturerStateOb>(

@@ -49,7 +49,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
-const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
+const int32_t MAX_AUDIO_ADAPTER_NUM = 8;
 const int32_t MAX_GET_POSITOIN_TRY_COUNT = 50;
 const int32_t MAX_GET_POSITION_HANDLE_TIME = 10000000; // 1000000us
 const int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us

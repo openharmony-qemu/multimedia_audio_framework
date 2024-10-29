@@ -72,6 +72,7 @@
 #define MILLISECOND_PER_SECOND 1000
 
 const char *DEVICE_CLASS_REMOTE = "remote";
+const char *DEVICE_CLASS_A2DP = "a2dp";
 const int32_t SUCCESS = 0;
 const int32_t ERROR = -1;
 
@@ -827,16 +828,17 @@ static int PaHdiCapturerInit(struct Userdata *u)
         return ret;
     }
 
-    // No start test for remote device.
-    if (strcmp(GetDeviceClass(u->sourceAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
+    // No start test for remote device and a2dp in device.
+    if (strcmp(GetDeviceClass(u->sourceAdapter->deviceClass), DEVICE_CLASS_REMOTE) &&
+        strcmp(GetDeviceClass(u->sourceAdapter->deviceClass), DEVICE_CLASS_A2DP)) {
         ret = u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
         if (ret != 0) {
             AUDIO_ERR_LOG("Audio capturer start failed!");
             goto fail;
         }
+        u->isCapturerStarted = true;
     }
 
-    u->isCapturerStarted = true;
     return ret;
 
 fail:
