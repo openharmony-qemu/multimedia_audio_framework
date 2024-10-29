@@ -78,6 +78,7 @@ public:
     float GetFinalVolume();
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     void SetStreamUsage(const int32_t streamUsage);
+
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
