@@ -1229,7 +1229,7 @@ void AudioAdapterManager::UpdateSafeVolume()
     if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
         return;
     }
-    auto currentActiveOutputDeviceDescriptor = 
+    auto currentActiveOutputDeviceDescriptor =
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     switch (currentActiveDevice_) {
         case DEVICE_TYPE_WIRED_HEADSET:
