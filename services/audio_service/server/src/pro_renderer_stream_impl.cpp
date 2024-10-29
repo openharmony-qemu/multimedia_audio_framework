@@ -441,7 +441,7 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         firstFrameSync_.notify_all();
     }
     AUDIO_DEBUG_LOG("buffer length:%{public}zu ,sink buffer length:%{public}zu", bufferDesc.bufLength,
-                    sinkBuffer_[0].size());
+        sinkBuffer_[0].size());
     totalBytesWritten_ += bufferDesc.bufLength;
     sinkBytesWritten_ += bufferDesc.bufLength;
     return SUCCESS;

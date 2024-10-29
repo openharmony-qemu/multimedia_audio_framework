@@ -83,8 +83,7 @@ inline void CopyFrom24ToS32(const uint8_t *buffer, int32_t *dst, float volStep, 
         for (int32_t i = 0; i < bufferInfo.ChannelCount; i++) {
             buffer -= AUDIO_24BIT_LENGTH;
             *--dst = ((buffer[0] << BYTES_ALIGNMENT_SIZE) | (buffer[1] << AUDIO_SAMPLE_16BIT_LENGTH) |
-                      (buffer[AUDIO_NUMBER_2] << AUDIO_SAMPLE_24BIT_LENGTH)) *
-                     vol;
+                (buffer[AUDIO_NUMBER_2] << AUDIO_SAMPLE_24BIT_LENGTH)) * vol;
         }
     }
 }
@@ -118,29 +117,29 @@ void AudioCommonConverter::ConvertBufferTo32Bit(const uint8_t *buffer, int32_t *
 {
     float volumeStep = GetVolumeStep(bufferInfo);
     switch (bufferInfo.Format) {
-    case AUDIO_SAMPLE_FORMAT_8BIT:
-        CopyFromU8ToS32(buffer, dst, volumeStep, bufferInfo);
-        break;
-    case AUDIO_SAMPLE_FORMAT_16BIT: {
-        const int16_t *src = reinterpret_cast<const int16_t *>(buffer);
-        CopyFromS16ToS32(src, dst, volumeStep, bufferInfo);
-        break;
-    }
-    case AUDIO_SAMPLE_FORMAT_24BIT:
-        CopyFrom24ToS32(buffer, dst, volumeStep, bufferInfo);
-        break;
-    case AUDIO_SAMPLE_FORMAT_32BIT: {
-        const int32_t *src = reinterpret_cast<const int32_t *>(buffer);
-        CopyFromS32ToS32(src, dst, volumeStep, bufferInfo);
-        break;
-    }
-    case AUDIO_SAMPLE_FORMAT_32F_BIT: {
-        const float *src = reinterpret_cast<const float *>(buffer);
-        CopyFromF32ToS32(src, dst, volumeStep, bufferInfo);
-        break;
-    }
-    default:
-        break;
+        case AUDIO_SAMPLE_FORMAT_8BIT:
+            CopyFromU8ToS32(buffer, dst, volumeStep, bufferInfo);
+            break;
+        case AUDIO_SAMPLE_FORMAT_16BIT: {
+            const int16_t *src = reinterpret_cast<const int16_t *>(buffer);
+            CopyFromS16ToS32(src, dst, volumeStep, bufferInfo);
+            break;
+        }
+        case AUDIO_SAMPLE_FORMAT_24BIT:
+            CopyFrom24ToS32(buffer, dst, volumeStep, bufferInfo);
+            break;
+        case AUDIO_SAMPLE_FORMAT_32BIT: {
+            const int32_t *src = reinterpret_cast<const int32_t *>(buffer);
+            CopyFromS32ToS32(src, dst, volumeStep, bufferInfo);
+            break;
+        }
+        case AUDIO_SAMPLE_FORMAT_32F_BIT: {
+            const float *src = reinterpret_cast<const float *>(buffer);
+            CopyFromF32ToS32(src, dst, volumeStep, bufferInfo);
+            break;
+        }
+        default:
+            break;
     }
 }
 
@@ -217,29 +216,29 @@ void AudioCommonConverter::ConvertBufferTo16Bit(const uint8_t *buffer, int16_t *
 {
     float volumeStep = GetVolumeStep(bufferInfo);
     switch (bufferInfo.Format) {
-    case AUDIO_SAMPLE_FORMAT_8BIT:
-        CopyFromU8ToS16(buffer, dst, volumeStep, bufferInfo);
-        break;
-    case AUDIO_SAMPLE_FORMAT_16BIT: {
-        const int16_t *src = reinterpret_cast<const int16_t *>(buffer);
-        CopyFromS16ToS16(src, dst, volumeStep, bufferInfo);
-        break;
-    }
-    case AUDIO_SAMPLE_FORMAT_24BIT:
-        CopyFrom24ToS16(buffer, dst, volumeStep, bufferInfo);
-        break;
-    case AUDIO_SAMPLE_FORMAT_32BIT: {
-        const int32_t *src = reinterpret_cast<const int32_t *>(buffer);
-        CopyFromS32ToS16(src, dst, volumeStep, bufferInfo);
-        break;
-    }
-    case AUDIO_SAMPLE_FORMAT_32F_BIT: {
-        const float *src = reinterpret_cast<const float *>(buffer);
-        CopyFromF32ToS16(src, dst, volumeStep, bufferInfo);
-        break;
-    }
-    default:
-        break;
+        case AUDIO_SAMPLE_FORMAT_8BIT:
+            CopyFromU8ToS16(buffer, dst, volumeStep, bufferInfo);
+            break;
+        case AUDIO_SAMPLE_FORMAT_16BIT: {
+            const int16_t *src = reinterpret_cast<const int16_t *>(buffer);
+            CopyFromS16ToS16(src, dst, volumeStep, bufferInfo);
+            break;
+        }
+        case AUDIO_SAMPLE_FORMAT_24BIT:
+            CopyFrom24ToS16(buffer, dst, volumeStep, bufferInfo);
+            break;
+        case AUDIO_SAMPLE_FORMAT_32BIT: {
+            const int32_t *src = reinterpret_cast<const int32_t *>(buffer);
+            CopyFromS32ToS16(src, dst, volumeStep, bufferInfo);
+            break;
+        }
+        case AUDIO_SAMPLE_FORMAT_32F_BIT: {
+            const float *src = reinterpret_cast<const float *>(buffer);
+            CopyFromF32ToS16(src, dst, volumeStep, bufferInfo);
+            break;
+        }
+        default:
+            break;
     }
 }
 
@@ -247,13 +246,13 @@ inline int32_t ConvertS24ToFloat(const uint8_t *buffer, int32_t index, int32_t f
 {
     int32_t sampleValue = 0;
     sampleValue = ((buffer[index * format + AUDIO_NUMBER_2] & 0xff) << AUDIO_SAMPLE_24BIT_LENGTH) |
-                  ((buffer[index * format + 1] & 0xff) << AUDIO_SAMPLE_16BIT_LENGTH) |
-                  ((buffer[index * format] & 0xff) << BYTES_ALIGNMENT_SIZE);
+        ((buffer[index * format + 1] & 0xff) << AUDIO_SAMPLE_16BIT_LENGTH) |
+        ((buffer[index * format] & 0xff) << BYTES_ALIGNMENT_SIZE);
     return sampleValue;
 }
 
 void AudioCommonConverter::ConvertFloatToFloatWithVolume(const float *buffer, std::vector<float> &floatBuffer,
-                                                         const BufferBaseInfo &base)
+    const BufferBaseInfo &base)
 
 {
     float volumeStep = GetVolumeStep(base);
@@ -269,7 +268,7 @@ void AudioCommonConverter::ConvertFloatToFloatWithVolume(const float *buffer, st
 }
 
 void AudioCommonConverter::ConvertBufferToFloat(const uint8_t *buffer, std::vector<float> &floatBuffer,
-                                                const BufferBaseInfo &base)
+    const BufferBaseInfo &base)
 {
     float volumeStep = GetVolumeStep(base);
     uint32_t convertValue = base.Format * BYTES_ALIGNMENT_SIZE - 1;
@@ -293,7 +292,7 @@ void AudioCommonConverter::ConvertBufferToFloat(const uint8_t *buffer, std::vect
 }
 
 void AudioCommonConverter::ConvertFloatToAudioBuffer(const std::vector<float> &floatBuffer, uint8_t *buffer,
-                                                     uint32_t samplePerFrame)
+    uint32_t samplePerFrame)
 {
     uint32_t convertValue = samplePerFrame * BYTES_ALIGNMENT_SIZE - 1;
     for (uint32_t i = 0; i < floatBuffer.size(); i++) {
