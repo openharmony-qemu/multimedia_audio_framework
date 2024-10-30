@@ -588,6 +588,7 @@ struct AudioCapturerOptions {
     AudioStreamInfo streamInfo;
     AudioCapturerInfo capturerInfo;
     AudioPlaybackCaptureConfig playbackCaptureConfig;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct AppInfo {

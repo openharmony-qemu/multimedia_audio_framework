@@ -140,6 +140,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.originalFlag = capturerOptions.capturerInfo.capturerFlags;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
+    capturer->strategy_ = capturerOptions.strategy;
     if (capturer->SetParams(params) != SUCCESS) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         capturer = nullptr;
@@ -400,6 +401,7 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
     audioInterrupt_.sessionId = sessionID_;
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
+    audioInterrupt_.sessionStrategy = strategy_;
     if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
         isVoiceCallCapturer_ = true;
         audioInterrupt_.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
