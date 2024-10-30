@@ -1382,6 +1382,7 @@ void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcD
     temp.bufLength = dupBufferSize_;
     temp.dataLength = dupBufferSize_;
 
+    CHECK_AND_RETURN_LOG(dupStream_ != nullptr, "dupStream_ is nullptr");
     int32_t ret = dupStream_->EnqueueBuffer(temp);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "EnqueueBuffer failed:%{public}d", ret);
 
