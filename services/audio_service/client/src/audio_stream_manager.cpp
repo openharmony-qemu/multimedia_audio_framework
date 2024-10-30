@@ -19,7 +19,7 @@
 #include "audio_stream_manager.h"
 
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"

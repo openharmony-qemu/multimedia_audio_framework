@@ -23,7 +23,7 @@
 #include "system_ability_definition.h"
 #include "bundle_mgr_interface.h"
 
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_errors.h"
 #include "audio_manager_base.h"
 #include "audio_manager_proxy.h"
