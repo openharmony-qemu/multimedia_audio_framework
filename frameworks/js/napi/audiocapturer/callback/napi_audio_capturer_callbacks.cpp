@@ -80,6 +80,16 @@ void NapiAudioCapturerCallback::CreateInterruptTsfn(napi_env env)
         InterruptTsfnFinalize, nullptr, SafeJsCallbackInterruptWork, &acInterruptTsfn_);
 }
 
+bool NapiAudioCapturerCallback::GetStateChangeTsfnFlag()
+{
+    return regAcStateChgTsfn_;
+}
+
+bool NapiAudioCapturerCallback::GetInterruptTsfnFlag()
+{
+    return regAcInterruptTsfn_;
+}
+
 void NapiAudioCapturerCallback::RemoveCallbackReference(const std::string &callbackName)
 {
     std::lock_guard<std::mutex> lock(mutex_);

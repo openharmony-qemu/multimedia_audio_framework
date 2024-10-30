@@ -33,6 +33,7 @@ public:
     void OnCapturerStateChange(
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void CreateCaptureStateTsfn(napi_env env);
+    bool GetCaptureStateTsfnFlag();
 
 private:
     struct AudioCapturerStateJsCallback {

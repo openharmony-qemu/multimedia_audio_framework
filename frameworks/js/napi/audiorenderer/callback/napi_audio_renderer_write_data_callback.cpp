@@ -82,6 +82,11 @@ void NapiRendererWriteDataCallback::CreateWriteDTsfn(napi_env env)
         WriteDataTsfnFinalize, nullptr, SafeJsCallbackWriteDataWork, &arWriteDataTsfn_);
 }
 
+bool NapiRendererWriteDataCallback::GetWriteDTsfnFlag()
+{
+    return regArWriteDataTsfn_;
+}
+
 void NapiRendererWriteDataCallback::RemoveCallbackReference(napi_env env, napi_value callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);

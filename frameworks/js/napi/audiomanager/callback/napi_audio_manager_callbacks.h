@@ -51,7 +51,9 @@ public:
     void RemoveAllRoutingManagerDeviceChangeCb();
     int32_t GetRoutingManagerDeviceChangeCbListSize();
     void CreateMicBlockedTsfn(napi_env env);
+    bool GetMicBlockedTsfnFlag();
     void CreateDevChgTsfn(napi_env env);
+    bool GetDevChgTsfnFlag();
 
 private:
     struct AudioManagerJsCallback {

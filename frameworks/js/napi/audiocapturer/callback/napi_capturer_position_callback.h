@@ -30,6 +30,7 @@ public:
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnMarkReached(const int64_t &framePosition) override;
     void CreateCapturePositionTsfn(napi_env env);
+    bool GetCapturePositionFlag();
 
 private:
     struct CapturerPositionJsCallback {

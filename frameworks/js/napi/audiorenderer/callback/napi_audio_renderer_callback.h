@@ -44,6 +44,8 @@ public:
     void RemoveCallbackReference(const std::string &callbackName);
     void CreateArInterrupt(napi_env env);
     void CreateArStateChange(napi_env env);
+    bool GetArInterruptTsfnFlag();
+    bool GetArStateChangeTsfnFlag();
 
 private:
     struct AudioRendererJsCallback {

@@ -35,6 +35,7 @@ public:
     void RemoveCallbackReference(const napi_value args);
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
     void CreateRingModeTsfn(napi_env env);
+    bool GetRingModeTsfnFlag();
 
 private:
     struct AudioRingerModeJsCallback {

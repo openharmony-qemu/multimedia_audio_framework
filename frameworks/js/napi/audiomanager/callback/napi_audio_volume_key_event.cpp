@@ -51,6 +51,11 @@ void NapiAudioVolumeKeyEvent::CreateVolumeTsfn(napi_env env)
         VolumeEventTsfnFinalize, nullptr, SafeJsCallbackVolumeEventWork, &amVolEntTsfn_);
 }
 
+bool NapiAudioVolumeKeyEvent::GetVolumeTsfnFlag()
+{
+    return regVolumeTsfn_;
+}
+
 void NapiAudioVolumeKeyEvent::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);

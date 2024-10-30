@@ -1256,7 +1256,9 @@ template<typename T> void NapiAudioManager::RegisterInterruptCallback(napi_env e
     std::shared_ptr<NapiAudioManagerInterruptCallback> cb =
         std::static_pointer_cast<NapiAudioManagerInterruptCallback>(napiAudioManager->interruptCallbackNapi_);
     cb->SaveCallbackReference(INTERRUPT_CALLBACK_NAME, argv[PARAM2]);
-    cb->CreateManagerInterruptTsfn(env);
+    if (!cb->GetManagerInterruptTsfnFlag()) {
+        cb->CreateManagerInterruptTsfn(env);
+    }
     AudioInterrupt audioInterrupt;
     NapiParamUtils::GetAudioInterrupt(env, audioInterrupt, argv[PARAM1]);
     int32_t ret = napiAudioManager->audioMngr_->RequestAudioFocus(audioInterrupt);
@@ -1278,7 +1280,9 @@ template<typename T> void NapiAudioManager::RegisterRingerModeCallback(napi_env 
     std::shared_ptr<NapiAudioRingerModeCallback> cb =
         std::static_pointer_cast<NapiAudioRingerModeCallback>(napiAudioManager->ringerModecallbackNapi_);
     cb->SaveCallbackReference(RINGERMODE_CALLBACK_NAME, argv[PARAM1]);
-    cb->CreateRingModeTsfn(env);
+    if (!cb->GetRingModeTsfnFlag()) {
+        cb->CreateRingModeTsfn(env);
+    }
 }
 
 template<typename T> void NapiAudioManager::RegisterVolumeChangeCallback(napi_env env, const T &argv,
@@ -1294,7 +1298,9 @@ template<typename T> void NapiAudioManager::RegisterVolumeChangeCallback(napi_en
     std::shared_ptr<NapiAudioVolumeKeyEvent> cb =
         std::static_pointer_cast<NapiAudioVolumeKeyEvent>(napiAudioManager->volumeKeyEventCallbackNapi_);
     cb->SaveCallbackReference(VOLUME_CHANGE_CALLBACK_NAME, argv[PARAM1]);
-    cb->CreateVolumeTsfn(env);
+    if (!cb->GetVolumeTsfnFlag()) {
+        cb->CreateVolumeTsfn(env);
+    }
 }
 
 template<typename T> void NapiAudioManager::RegisterDeviceChangeCallback(napi_env env, const T &argv,
@@ -1310,7 +1316,9 @@ template<typename T> void NapiAudioManager::RegisterDeviceChangeCallback(napi_en
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiAudioManager->deviceChangeCallbackNapi_);
     cb->SaveAudioManagerDeviceChangeCbRef(DeviceFlag::ALL_DEVICES_FLAG, argv[PARAM1]);
-    cb->CreateDevChgTsfn(env);
+    if (!cb->GetDevChgTsfnFlag()) {
+        cb->CreateDevChgTsfn(env);
+    }
 }
 
 napi_value NapiAudioManager::On(napi_env env, napi_callback_info info)

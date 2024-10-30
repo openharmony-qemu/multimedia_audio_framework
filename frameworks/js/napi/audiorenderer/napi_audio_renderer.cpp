@@ -1703,9 +1703,13 @@ napi_value NapiAudioRenderer::RegisterRendererCallback(napi_env env, napi_value 
         std::static_pointer_cast<NapiAudioRendererCallback>(napiRenderer->callbackNapi_);
     cb->SaveCallbackReference(cbName, argv[PARAM1]);
     if (cbName == INTERRUPT_CALLBACK_NAME || cbName == AUDIO_INTERRUPT_CALLBACK_NAME) {
-        cb->CreateArInterrupt(env);
+        if (!cb->GetArInterruptTsfnFlag()) {
+            cb->CreateArInterrupt(env);
+        }
     } else if (cbName == STATE_CHANGE_CALLBACK_NAME) {
-        cb->CreateArStateChange(env);
+        if (!cb->GetArStateChangeTsfnFlag()) {
+            cb->CreateArStateChange(env);
+        }
     }
 
     napi_value result = nullptr;
@@ -1732,7 +1736,9 @@ napi_value NapiAudioRenderer::RegisterPositionCallback(napi_env env, napi_value 
     std::shared_ptr<NapiRendererPositionCallback> cb =
         std::static_pointer_cast<NapiRendererPositionCallback>(napiRenderer->positionCbNapi_);
     cb->SaveCallbackReference(cbName, argv[PARAM2]);
-    cb->CreateMarkReachedTsfn(env);
+    if (!cb->GetMarkReachedTsfnFlag()) {
+        cb->CreateMarkReachedTsfn(env);
+    }
 
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -1825,7 +1831,9 @@ void NapiAudioRenderer::RegisterRendererDeviceChangeCallback(napi_env env, napi_
         std::static_pointer_cast<NapiAudioRendererDeviceChangeCallback>(
         napiRenderer->rendererDeviceChangeCallbackNapi_);
     cb->AddCallbackReference(argv[PARAM1]);
-    cb->CreateRendererDeviceChangeTsfn(env);
+    if (!cb->GetRendererDeviceChangeTsfnFlag()) {
+        cb->CreateRendererDeviceChangeTsfn(env);
+    }
     AUDIO_INFO_LOG("RegisterRendererStateChangeCallback is successful");
 }
 
@@ -1899,7 +1907,9 @@ void NapiAudioRenderer::RegisterRendererOutputDeviceChangeWithInfoCallback(napi_
     std::shared_ptr<NapiAudioRendererOutputDeviceChangeWithInfoCallback> cb =
         napiRenderer->rendererOutputDeviceChangeWithInfoCallbackNapi_;
     cb->AddCallbackReference(argv[PARAM1]);
-    cb->CreateOutputDeviceChangeTsfn(env);
+    if (!cb->GetOutputDeviceChangeTsfnFlag()) {
+        cb->CreateOutputDeviceChangeTsfn(env);
+    }
     AUDIO_INFO_LOG("Register Callback is successful");
 }
 
@@ -1948,7 +1958,9 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
     std::shared_ptr<NapiRendererWriteDataCallback> cb =
         std::static_pointer_cast<NapiRendererWriteDataCallback>(napiRenderer->rendererWriteDataCallbackNapi_);
     cb->AddCallbackReference(cbName, argv[PARAM1]);
-    cb->CreateWriteDTsfn(env);
+    if (!cb->GetWriteDTsfnFlag()) {
+        cb->CreateWriteDTsfn(env);
+    }
 
     AUDIO_INFO_LOG("Register Callback is successful");
 }

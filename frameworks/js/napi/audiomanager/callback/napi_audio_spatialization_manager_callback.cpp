@@ -46,13 +46,18 @@ NapiAudioSpatializationEnabledChangeCallback::~NapiAudioSpatializationEnabledCha
 
 void NapiAudioSpatializationEnabledChangeCallback::CreateSpatEnableTsfn(napi_env env)
 {
-    regAmSpatEnable_ = true;
     napi_value cbName;
+    regAmSpatEnable_ = true;
     std::string callbackName = "volumeChange";
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
     napi_create_threadsafe_function(env_, nullptr, nullptr, cbName, 0, 1, nullptr,
         SpatializationEnabledTsfnFinalize, nullptr, SafeJsCallbackSpatializationEnabledWork,
         &amSpatEnableTsfn_);
+}
+
+bool NapiAudioSpatializationEnabledChangeCallback::GetSpatEnableTsfnFlag()
+{
+    return regAmSpatEnable_;
 }
 
 void NapiAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledChangeCallbackReference(napi_value args,
@@ -314,6 +319,11 @@ void NapiAudioHeadTrackingEnabledChangeCallback::CreateHeadTrackingTsfn(napi_env
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
         HeadTrackingEnabledTsfnFinalize, nullptr, SafeJsCallbackHeadTrackingEnabledWork,
         &amHeadTrkTsfn_);
+}
+
+bool NapiAudioHeadTrackingEnabledChangeCallback::GetHeadTrackingTsfnFlag()
+{
+    return regAmHeadTrkTsfn_;
 }
 
 void NapiAudioHeadTrackingEnabledChangeCallback::RemoveHeadTrackingEnabledChangeCallbackReference(napi_env env,

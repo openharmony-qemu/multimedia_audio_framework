@@ -34,6 +34,7 @@ public:
     void RemoveCallbackReference(const napi_value args);
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void CreateManagerMicStateChangeTsfn(napi_env env);
+    bool GetManagerMicStateChangeTsfnFlag();
 
 private:
     struct AudioManagerMicStateChangeJsCallback {

@@ -101,6 +101,10 @@ private:
         const std::string &cbName);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
+    static napi_value RegisterMicStateChangeCallback(napi_env env, napi_value *args, const std::string &cbName,
+        NapiAudioVolumeGroupManager *NapiAudioVolumeGroupManager);
+    static napi_value RegisterRingModeCallback(napi_env env, napi_value *args, const std::string &cbName,
+        NapiAudioVolumeGroupManager *NapiAudioVolumeGroupManager);
     static napi_status InitNapiAudioVolumeGroupManager(napi_env env, napi_value &constructor);
     static bool CheckContextStatus(std::shared_ptr<AudioVolumeGroupManagerAsyncContext> context);
     static bool CheckAudioVolumeGroupManagerStatus(NapiAudioVolumeGroupManager *napi,
