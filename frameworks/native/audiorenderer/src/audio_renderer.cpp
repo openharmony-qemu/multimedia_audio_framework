@@ -1409,16 +1409,17 @@ int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback(
     return SUCCESS;
 }
 
-void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
+int32_t AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
 {
-    CHECK_AND_RETURN_LOG(audioStream, "stream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioStream, ERROR, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetPrivacyType(info.privacyType);
     audioStream->SetRendererInfo(info.rendererInfo);
     audioStream->SetCapturerInfo(info.capturerInfo);
-    audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
+    int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     audioStream->SetRenderMode(info.renderMode);
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
@@ -1455,6 +1456,7 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
 
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
+    return SUCCESS;
 }
 
 void AudioRendererPrivate::UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &audioStream)
@@ -1515,7 +1517,16 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         AUDIO_INFO_LOG("Get new stream success!");
 
         // set new stream info
-        SetSwitchInfo(info, newAudioStream);
+        int32_t initResult = SetSwitchInfo(info, newAudioStream);
+        if (initResult != SUCCESS && info.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
+            AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
+            isFastRenderer_ = false;
+            newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, info.params,
+                info.eStreamType, appInfo_.appPid);
+            CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
+            initResult = SetSwitchInfo(info, newAudioStream);
+            CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
+        }
 
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 

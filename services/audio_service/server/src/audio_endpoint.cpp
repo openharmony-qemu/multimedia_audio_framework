@@ -979,6 +979,10 @@ bool AudioEndpointInner::StartDevice()
     if ((deviceInfo_.deviceRole == INPUT_DEVICE && (fastSource_ == nullptr || fastSource_->Start() != SUCCESS)) ||
         (deviceInfo_.deviceRole == OUTPUT_DEVICE && (fastSink_ == nullptr || fastSink_->Start() != SUCCESS))) {
         HandleStartDeviceFailed();
+        if (fastSource_ != nullptr) {
+            fastSource_->DeInit();
+            fastSource_ = nullptr;
+        }
         return false;
     }
     isStarted_ = true;
@@ -1271,7 +1275,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         endpointStatus_ = UNLINKED;
     }
 
-    AUDIO_DEBUG_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
+    AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
     return SUCCESS;
 }
 

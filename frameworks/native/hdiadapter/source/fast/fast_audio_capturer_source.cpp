@@ -100,6 +100,7 @@ private:
     bool capturerInited_ = false;
     bool started_ = false;
     bool paused_ = false;
+    std::atomic<bool> isCheckPositionSuccess_ = true;
 
     uint32_t captureId_ = 0;
     uint32_t openMic_ = 0;
@@ -139,7 +140,7 @@ FastAudioCapturerSourceInner::FastAudioCapturerSourceInner() : attr_({}), captur
 
 FastAudioCapturerSourceInner::~FastAudioCapturerSourceInner()
 {
-    AUDIO_DEBUG_LOG("~FastAudioCapturerSourceInner");
+    AUDIO_INFO_LOG("~FastAudioCapturerSourceInner");
 }
 
 FastAudioCapturerSource *FastAudioCapturerSource::GetInstance()
@@ -161,8 +162,9 @@ bool FastAudioCapturerSourceInner::IsInited(void)
 
 void FastAudioCapturerSourceInner::DeInit()
 {
-    AUDIO_INFO_LOG("Deinit, flag %{public}d", attr_.audioStreamFlag);
-    if (started_) {
+    AUDIO_INFO_LOG("Deinit, flag %{public}d, is check position success %{public}d", attr_.audioStreamFlag,
+        isCheckPositionSuccess_.load());
+    if (started_ || !isCheckPositionSuccess_) {
         Stop();
         started_ = false;
     }
@@ -549,11 +551,12 @@ int32_t FastAudioCapturerSourceInner::Start(void)
                 audioCapturerSourceCallback_->OnCapturerState(false);
             }
             AUDIO_ERR_LOG("CheckPositionTime failed!");
+            isCheckPositionSuccess_ = false;
             return ERR_NOT_STARTED;
         }
         started_ = true;
     }
-
+    isCheckPositionSuccess_ = true;
     return SUCCESS;
 }
 
@@ -705,7 +708,7 @@ void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallbac
 
 int32_t FastAudioCapturerSourceInner::Stop(void)
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_INFO_LOG("Enter, is check position success %{public}d", isCheckPositionSuccess_.load());
 #ifdef FEATURE_POWER_MANAGER
     if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
@@ -715,7 +718,7 @@ int32_t FastAudioCapturerSourceInner::Stop(void)
     }
 #endif
 
-    if (started_ && audioCapture_ != nullptr) {
+    if ((started_ || !isCheckPositionSuccess_) && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Stop(audioCapture_);
         if (audioCapturerSourceCallback_ != nullptr) {
             audioCapturerSourceCallback_->OnCapturerState(false);
