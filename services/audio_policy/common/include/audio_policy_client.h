@@ -65,8 +65,10 @@ public:
     virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
-    virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
-    virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
+    virtual void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+        const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
+    virtual void OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+        const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
     virtual void OnRendererStateChange(
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
     virtual void OnCapturerStateChange(

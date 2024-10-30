@@ -57,72 +57,28 @@ bool NapiAudioPreferredOutputDeviceChangeCallback::GetPreferredOutTsfnFlag()
     return regAmOutputDevChgTsfn_;
 }
 
-void NapiAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(AudioStreamType streamType,
-    napi_value callback)
+void NapiAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(napi_value callback)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
 
-    bool isSameCallback = true;
-    for (auto it = preferredOutputDeviceCbList_.begin(); it != preferredOutputDeviceCbList_.end(); ++it) {
-        isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it).first->cb_);
-        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: has same callback, nothing to do");
-    }
-
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
+    CHECK_AND_RETURN_LOG(status == napi_ok && callbackRef != nullptr,
         "SaveCallbackReference: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
-    preferredOutputDeviceCbList_.push_back({cb, streamType});
-    AUDIO_INFO_LOG("Save callback reference success, prefer ouput device callback list size [%{public}zu]",
-        preferredOutputDeviceCbList_.size());
-}
-
-void NapiAudioPreferredOutputDeviceChangeCallback::RemoveCallbackReference(napi_env env, napi_value callback)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    if (callback == nullptr) {
-        AUDIO_INFO_LOG("RemoveCallbackReference: js callback is nullptr, remove all callback reference");
-        RemoveAllCallbacks();
-        return;
-    }
-    for (auto it = preferredOutputDeviceCbList_.begin(); it != preferredOutputDeviceCbList_.end(); ++it) {
-        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it).first->cb_);
-        if (isSameCallback) {
-            preferredOutputDeviceCbList_.erase(it);
-            return;
-        }
-    }
-    AUDIO_INFO_LOG("RemoveCallbackReference: js callback no find");
-}
-
-void NapiAudioPreferredOutputDeviceChangeCallback::RemoveAllCallbacks()
-{
-    preferredOutputDeviceCbList_.clear();
-    AUDIO_INFO_LOG("RemoveAllCallbacks: remove all js callbacks success");
+    callback_ = std::make_shared<AutoRef>(env_, callbackRef);
 }
 
 void NapiAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(
     const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_LOG(preferredOutputDeviceCbList_.size() > 0,
-        "Cannot find the reference of prefer device callback");
-    AUDIO_DEBUG_LOG("OnPreferredOutputDeviceUpdated: Cb list size [%{public}zu]",
-        preferredOutputDeviceCbList_.size());
+    std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> cb =
+        std::make_unique<AudioActiveOutputDeviceChangeJsCallback>();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
 
-    for (auto it = preferredOutputDeviceCbList_.begin(); it != preferredOutputDeviceCbList_.end(); it++) {
-        std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> cb =
-            std::make_unique<AudioActiveOutputDeviceChangeJsCallback>();
-        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
-
-        cb->callback = (*it).first;
-        cb->callbackName = PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME;
-        cb->desc = desc;
-        OnJsCallbackActiveOutputDeviceChange(cb);
-    }
+    cb->callback = callback_;
+    cb->callbackName = PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME;
+    cb->desc = desc;
+    OnJsCallbackActiveOutputDeviceChange(cb);
     return;
 }
 
@@ -185,6 +141,20 @@ void NapiAudioPreferredOutputDeviceChangeCallback::OnJsCallbackActiveOutputDevic
     napi_call_threadsafe_function(amOutputDevChgTsfn_, event, napi_tsfn_blocking);
 }
 
+bool NapiAudioPreferredOutputDeviceChangeCallback::ContainSameJsCallback(napi_value args)
+{
+    bool isEquals = false;
+    napi_value copyValue = nullptr;
+
+    napi_get_reference_value(env_, callback_->cb_, &copyValue);
+    CHECK_AND_RETURN_RET_LOG(args != nullptr, false, "args is nullptr");
+
+    CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, copyValue, args, &isEquals) == napi_ok, false,
+        "Get napi_strict_equals failed");
+
+    return isEquals;
+}
+
 NapiAudioPreferredInputDeviceChangeCallback::NapiAudioPreferredInputDeviceChangeCallback(napi_env env)
     : env_(env)
 {
@@ -199,28 +169,19 @@ NapiAudioPreferredInputDeviceChangeCallback::~NapiAudioPreferredInputDeviceChang
     AUDIO_DEBUG_LOG("NapiAudioPreferredInputDeviceChangeCallback: instance destroy");
 }
 
-void NapiAudioPreferredInputDeviceChangeCallback::SaveCallbackReference(SourceType sourceType, napi_value callback)
+void NapiAudioPreferredInputDeviceChangeCallback::SaveCallbackReference(napi_value callback)
 {
-    std::lock_guard<std::mutex> lock(preferredInputListMutex_);
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
 
-    bool isSameCallback = true;
-    for (auto it = preferredInputDeviceCbList_.begin(); it != preferredInputDeviceCbList_.end(); ++it) {
-        isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it).first->cb_);
-        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: has same callback, nothing to do");
-    }
-
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
+    CHECK_AND_RETURN_LOG(status == napi_ok && callbackRef != nullptr,
         "SaveCallbackReference: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
-    preferredInputDeviceCbList_.push_back({cb, sourceType});
-    AUDIO_INFO_LOG("Save callback reference success, prefer input device callback list size [%{public}zu]",
-        preferredInputDeviceCbList_.size());
+
+    callback_ = std::make_shared<AutoRef>(env_, callbackRef);
 }
 
-void NapiAudioPreferredInputDeviceChangeCallback::CreatePerferredInTsfn(napi_env env)
+void NapiAudioPreferredInputDeviceChangeCallback::CreatePreferredInTsfn(napi_env env)
 {
     regAmInputDevChgTsfn_ = true;
     napi_value cbName;
@@ -231,53 +192,22 @@ void NapiAudioPreferredInputDeviceChangeCallback::CreatePerferredInTsfn(napi_env
         &amInputDevChgTsfn_);
 }
 
-bool NapiAudioPreferredInputDeviceChangeCallback::GetPerferredInTsfnFlag()
+bool NapiAudioPreferredInputDeviceChangeCallback::GetPreferredInTsfnFlag()
 {
     return regAmInputDevChgTsfn_;
-}
-
-void NapiAudioPreferredInputDeviceChangeCallback::RemoveCallbackReference(napi_env env, napi_value callback)
-{
-    std::lock_guard<std::mutex> lock(preferredInputListMutex_);
-
-    if (callback == nullptr) {
-        AUDIO_INFO_LOG("RemoveCallbackReference: js callback is nullptr, remove all callback reference");
-        RemoveAllCallbacks();
-        return;
-    }
-    for (auto it = preferredInputDeviceCbList_.begin(); it != preferredInputDeviceCbList_.end(); ++it) {
-        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it).first->cb_);
-        if (isSameCallback) {
-            AUDIO_INFO_LOG("RemoveCallbackReference: find js callback, erase it");
-            preferredInputDeviceCbList_.erase(it);
-            return;
-        }
-    }
-    AUDIO_INFO_LOG("RemoveCallbackReference: js callback no find");
-}
-
-void NapiAudioPreferredInputDeviceChangeCallback::RemoveAllCallbacks()
-{
-    preferredInputDeviceCbList_.clear();
 }
 
 void NapiAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
     const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
-    std::lock_guard<std::mutex> lock(preferredInputListMutex_);
-    CHECK_AND_RETURN_LOG(preferredInputDeviceCbList_.size() > 0, "Cannot find the reference of prefer device callback");
-    AUDIO_DEBUG_LOG("OnPreferredInputDeviceUpdated: Cb list size [%{public}zu]", preferredInputDeviceCbList_.size());
+    std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> cb =
+        std::make_unique<AudioActiveInputDeviceChangeJsCallback>();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
 
-    for (auto it = preferredInputDeviceCbList_.begin(); it != preferredInputDeviceCbList_.end(); it++) {
-        std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> cb =
-            std::make_unique<AudioActiveInputDeviceChangeJsCallback>();
-        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
-
-        cb->callback = (*it).first;
-        cb->callbackName = PREFERRED_INPUT_DEVICE_CALLBACK_NAME;
-        cb->desc = desc;
-        OnJsCallbackActiveInputDeviceChange(cb);
-    }
+    cb->callback = callback_;
+    cb->callbackName = PREFERRED_INPUT_DEVICE_CALLBACK_NAME;
+    cb->desc = desc;
+    OnJsCallbackActiveInputDeviceChange(cb);
     return;
 }
 
@@ -336,6 +266,20 @@ void NapiAudioPreferredInputDeviceChangeCallback::OnJsCallbackActiveInputDeviceC
 
     napi_acquire_threadsafe_function(amInputDevChgTsfn_);
     napi_call_threadsafe_function(amInputDevChgTsfn_, event, napi_tsfn_blocking);
+}
+
+bool NapiAudioPreferredInputDeviceChangeCallback::ContainSameJsCallback(napi_value args)
+{
+    bool isEquals = false;
+    napi_value copyValue = nullptr;
+
+    napi_get_reference_value(env_, callback_->cb_, &copyValue);
+    CHECK_AND_RETURN_RET_LOG(args != nullptr, false, "args is nullptr");
+
+    CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, copyValue, args, &isEquals) == napi_ok, false,
+        "Get napi_strict_equals failed");
+
+    return isEquals;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

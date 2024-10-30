@@ -37,8 +37,10 @@ public:
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
     void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
-    void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+        const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+        const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void OnRendererStateChange(
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void OnCapturerStateChange(

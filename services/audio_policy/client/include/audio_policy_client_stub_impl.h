@@ -47,13 +47,15 @@ public:
     int32_t RemoveMicStateChangeCallback();
     size_t GetMicStateChangeCallbackSize() const;
     bool HasMicStateChangeCallback();
-    int32_t AddPreferredOutputDeviceChangeCallback(
+    int32_t AddPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb);
-    int32_t RemovePreferredOutputDeviceChangeCallback();
+    int32_t RemovePreferredOutputDeviceChangeCallback(
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb = nullptr);
     size_t GetPreferredOutputDeviceChangeCallbackSize() const;
-    int32_t AddPreferredInputDeviceChangeCallback(
+    int32_t AddPreferredInputDeviceChangeCallback(const AudioCapturerInfo &capturerInfo,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb);
-    int32_t RemovePreferredInputDeviceChangeCallback();
+    int32_t RemovePreferredInputDeviceChangeCallback(
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb = nullptr);
     size_t GetPreferredInputDeviceChangeCallbackSize() const;
     int32_t AddRendererStateChangeCallback(const std::shared_ptr<AudioRendererStateChangeCallback> &cb);
     int32_t RemoveRendererStateChangeCallback(
@@ -104,8 +106,10 @@ public:
     void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
-    void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+        const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+        const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void OnRendererStateChange(
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void OnCapturerStateChange(
@@ -131,8 +135,6 @@ private:
     std::vector<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
     std::vector<std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCallbackList_;
-    std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>> preferredOutputDeviceCallbackList_;
-    std::vector<std::shared_ptr<AudioPreferredInputDeviceChangeCallback>> preferredInputDeviceCallbackList_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
@@ -141,6 +143,11 @@ private:
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
         microphoneBlockedCallbackList_;
+
+    std::unordered_map<StreamUsage,
+        std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>>> preferredOutputDeviceCallbackMap_;
+    std::unordered_map<SourceType,
+        std::vector<std::shared_ptr<AudioPreferredInputDeviceChangeCallback>>> preferredInputDeviceCallbackMap_;
 
     std::unordered_map<uint32_t,
         std::weak_ptr<DeviceChangeWithInfoCallback>> deviceChangeWithInfoCallbackMap_;

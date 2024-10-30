@@ -370,61 +370,87 @@ void AudioPolicyClientStubImpl::OnMicStateUpdated(const MicStateChangeEvent &mic
     }
 }
 
-int32_t AudioPolicyClientStubImpl::AddPreferredOutputDeviceChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
-    preferredOutputDeviceCallbackList_.push_back(cb);
+    preferredOutputDeviceCallbackMap_[rendererInfo.streamUsage].push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemovePreferredOutputDeviceChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemovePreferredOutputDeviceChangeCallback(
+    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
-    preferredOutputDeviceCallbackList_.clear();
+    if (cb == nullptr) {
+        preferredOutputDeviceCallbackMap_.clear();
+        return SUCCESS;
+    }
+    for (auto &it : preferredOutputDeviceCallbackMap_) {
+        auto iter = find(it.second.begin(), it.second.end(), cb);
+        if (iter != it.second.end()) {
+            it.second.erase(iter);
+        }
+    }
     return SUCCESS;
 }
 
 size_t AudioPolicyClientStubImpl::GetPreferredOutputDeviceChangeCallbackSize() const
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
-    return preferredOutputDeviceCallbackList_.size();
+    return preferredOutputDeviceCallbackMap_.size();
 }
 
-void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
-    for (auto it = preferredOutputDeviceCallbackList_.begin(); it != preferredOutputDeviceCallbackList_.end(); ++it) {
-        (*it)->OnPreferredOutputDeviceUpdated(desc);
+    auto it = preferredOutputDeviceCallbackMap_.find(rendererInfo.streamUsage);
+    for (auto iter = it->second.begin(); iter != it->second.end(); ++iter) {
+        CHECK_AND_CONTINUE_LOG(iter != it->second.end() && (*iter) != nullptr, "iter is null");
+        (*iter)->OnPreferredOutputDeviceUpdated(desc);
     }
 }
 
-int32_t AudioPolicyClientStubImpl::AddPreferredInputDeviceChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddPreferredInputDeviceChangeCallback(const AudioCapturerInfo &capturerInfo,
     const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
-    preferredInputDeviceCallbackList_.push_back(cb);
+    preferredInputDeviceCallbackMap_[capturerInfo.sourceType].push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemovePreferredInputDeviceChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemovePreferredInputDeviceChangeCallback(
+    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
-    preferredInputDeviceCallbackList_.clear();
+    if (cb == nullptr) {
+        preferredInputDeviceCallbackMap_.clear();
+        return SUCCESS;
+    }
+    for (auto &it : preferredInputDeviceCallbackMap_) {
+        auto iter = find(it.second.begin(), it.second.end(), cb);
+        if (iter != it.second.end()) {
+            it.second.erase(iter);
+        }
+    }
     return SUCCESS;
 }
 
 size_t AudioPolicyClientStubImpl::GetPreferredInputDeviceChangeCallbackSize() const
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
-    return preferredInputDeviceCallbackList_.size();
+    return preferredInputDeviceCallbackMap_.size();
 }
 
-void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
-    for (auto it = preferredInputDeviceCallbackList_.begin(); it != preferredInputDeviceCallbackList_.end(); ++it) {
-        (*it)->OnPreferredInputDeviceUpdated(desc);
+    auto it = preferredInputDeviceCallbackMap_.find(capturerInfo.sourceType);
+    for (auto iter = it->second.begin(); iter != it->second.end(); ++iter) {
+        CHECK_AND_CONTINUE_LOG(iter != it->second.end() && (*iter) != nullptr, "iter is null");
+        (*iter)->OnPreferredInputDeviceUpdated(desc);
     }
 }
 

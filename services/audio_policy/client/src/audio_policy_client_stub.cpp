@@ -227,6 +227,8 @@ void AudioPolicyClientStub::HandleMicStateChange(MessageParcel &data, MessagePar
 
 void AudioPolicyClientStub::HandlePreferredOutputDeviceUpdated(MessageParcel &data, MessageParcel &reply)
 {
+    AudioRendererInfo rendererInfo;
+    rendererInfo.Unmarshalling(data);
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
@@ -234,11 +236,13 @@ void AudioPolicyClientStub::HandlePreferredOutputDeviceUpdated(MessageParcel &da
     for (int32_t i = 0; i < size; i++) {
         deviceDescriptor.push_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
     }
-    OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    OnPreferredOutputDeviceUpdated(rendererInfo, deviceDescriptor);
 }
 
 void AudioPolicyClientStub::HandlePreferredInputDeviceUpdated(MessageParcel &data, MessageParcel &reply)
 {
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.Unmarshalling(data);
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
@@ -246,7 +250,7 @@ void AudioPolicyClientStub::HandlePreferredInputDeviceUpdated(MessageParcel &dat
     for (int32_t i = 0; i < size; i++) {
         deviceDescriptor.push_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
     }
-    OnPreferredInputDeviceUpdated(deviceDescriptor);
+    OnPreferredInputDeviceUpdated(capturerInfo, deviceDescriptor);
 }
 
 void AudioPolicyClientStub::HandleRendererStateChange(MessageParcel &data, MessageParcel &reply)
