@@ -524,6 +524,10 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
     size_t infosSize = audioRendererChangeInfos.size();
     AUDIO_DEBUG_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
 
+    if (getuid() == RSS_UID) {
+        AUDIO_INFO_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
+    }
+
     Trace trace("AudioPolicyClientStubImpl::OnRendererStateChange");
     for (auto &cb : callbacks) {
         Trace traceCallback("OnRendererStateChange");
