@@ -28,6 +28,7 @@ constexpr int32_t AUDIO_SAMPLE_FORMAT_32F_BIT = 4;
 constexpr int32_t AUDIO_SAMPLE_24BIT_LENGTH = 24;
 constexpr int32_t AUDIO_SAMPLE_16BIT_LENGTH = 16;
 constexpr int32_t AUDIO_NUMBER_2 = 2;
+constexpr float SCALE = 1 << (AUDIO_SAMPLE_16BIT_LENGTH - 1);
 
 inline float GetVolumeStep(const BufferBaseInfo &bufferInfo)
 {
@@ -49,7 +50,6 @@ inline void CopyFromU8ToS32(const uint8_t *buffer, int32_t *dst, float volStep, 
     int32_t frameCount = bufferInfo.FrameSize / bufferInfo.ChannelCount;
     dst += bufferInfo.FrameSize;
     buffer += bufferInfo.FrameSize;
-
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.VolumeBg);
         for (int32_t i = 0; i < bufferInfo.ChannelCount; i++) {
@@ -63,7 +63,6 @@ inline void CopyFromS16ToS32(const int16_t *buffer, int32_t *dst, float volStep,
     int32_t frameCount = bufferInfo.FrameSize / bufferInfo.ChannelCount;
     dst += bufferInfo.FrameSize;
     buffer += bufferInfo.FrameSize;
-
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.VolumeBg);
         for (int32_t i = 0; i < bufferInfo.ChannelCount; i++) {
@@ -72,12 +71,11 @@ inline void CopyFromS16ToS32(const int16_t *buffer, int32_t *dst, float volStep,
     }
 }
 
-inline void CopyFrom24ToS32(const uint8_t *buffer, int32_t *dst, float volStep, const BufferBaseInfo &bufferInfo)
+static void CopyFrom24ToS32(const uint8_t *buffer, int32_t *dst, float volStep, const BufferBaseInfo &bufferInfo)
 {
     int32_t frameCount = bufferInfo.FrameSize / bufferInfo.ChannelCount;
     dst += bufferInfo.FrameSize;
     buffer += bufferInfo.FrameSize * AUDIO_24BIT_LENGTH;
-
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.VolumeBg);
         for (int32_t i = 0; i < bufferInfo.ChannelCount; i++) {
@@ -93,7 +91,6 @@ inline void CopyFromS32ToS32(const int32_t *buffer, int32_t *dst, float volStep,
     int32_t frameCount = bufferInfo.FrameSize / bufferInfo.ChannelCount;
     dst += bufferInfo.FrameSize;
     buffer += bufferInfo.FrameSize;
-
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.VolumeBg);
         for (int32_t i = 0; i < bufferInfo.ChannelCount; i++) {
@@ -148,7 +145,6 @@ inline void CopyFromU8ToS16(const uint8_t *buffer, int16_t *dst, float volStep, 
     int32_t frameCount = bufferInfo.FrameSize / bufferInfo.ChannelCount;
     dst += bufferInfo.FrameSize;
     buffer += bufferInfo.FrameSize;
-
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.VolumeBg);
         for (int32_t i = 0; i < bufferInfo.ChannelCount; i++) {
@@ -162,7 +158,6 @@ inline void CopyFromS16ToS16(const int16_t *buffer, int16_t *dst, float volStep,
     int32_t frameCount = bufferInfo.FrameSize / bufferInfo.ChannelCount;
     dst += bufferInfo.FrameSize;
     buffer += bufferInfo.FrameSize;
-
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.VolumeBg);
         for (int32_t i = 0; i < bufferInfo.ChannelCount; i++) {
@@ -176,7 +171,6 @@ inline void CopyFrom24ToS16(const uint8_t *buffer, int16_t *dst, float volStep, 
     int32_t frameCount = bufferInfo.FrameSize / bufferInfo.ChannelCount;
     dst += bufferInfo.FrameSize;
     buffer += bufferInfo.FrameSize * AUDIO_24BIT_LENGTH;
-
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.VolumeBg);
         for (int32_t i = 0; i < bufferInfo.ChannelCount; i++) {
@@ -191,7 +185,6 @@ inline void CopyFromS32ToS16(const int32_t *buffer, int16_t *dst, float volStep,
     int32_t frameCount = bufferInfo.FrameSize / bufferInfo.ChannelCount;
     dst += bufferInfo.FrameSize;
     buffer += bufferInfo.FrameSize;
-
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.VolumeBg);
         for (int32_t i = 0; i < bufferInfo.ChannelCount; i++) {
@@ -202,7 +195,6 @@ inline void CopyFromS32ToS16(const int32_t *buffer, int16_t *dst, float volStep,
 
 inline void CopyFromF32ToS16(const float *buffer, int16_t *dst, float volStep, const BufferBaseInfo &bufferInfo)
 {
-    static const float SCALE = 1 << (AUDIO_SAMPLE_16BIT_LENGTH - 1);
     int32_t frameCount = bufferInfo.FrameSize / bufferInfo.ChannelCount;
     for (int32_t j = 0; j < frameCount; j++) {
         float vol = GetVolume(volStep, j + 1, bufferInfo.VolumeBg);
