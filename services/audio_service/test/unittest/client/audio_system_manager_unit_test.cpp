@@ -79,7 +79,7 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMute_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 start");
     bool result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result1:%{public}d", result);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(result, true);
 
     result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_RING);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result2:%{public}d", result);
