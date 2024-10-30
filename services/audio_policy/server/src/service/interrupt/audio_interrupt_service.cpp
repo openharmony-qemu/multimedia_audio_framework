@@ -283,12 +283,12 @@ bool AudioInterruptService::IsIncomingInterruptCanMixActiveInterrupt(const Audio
     const AudioInterrupt &activeInterrupt)
 {
     if (incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        (activeInterrupt.audioFocusType.streamType == STREAM_SOURCE_VOICE_CALL ||
+        (activeInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||
         activeInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION)) {
             AUDIO_INFO_LOG("The capturer can not mix with voice call");
             return false;
         }
-    if ((incomingInterrupt.audioFocusType.streamType == STREAM_SOURCE_VOICE_CALL ||
+    if ((incomingInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||
         incomingInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) &&
         activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
             AUDIO_INFO_LOG("The voice call can not mix with capturer");
