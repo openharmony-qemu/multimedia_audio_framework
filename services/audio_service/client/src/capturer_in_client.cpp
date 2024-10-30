@@ -441,7 +441,6 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
-    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
     capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
     capturerInfo_.encodingType = streamParams_.encoding;
     capturerInfo_.channelLayout = streamParams_.channelLayout;
