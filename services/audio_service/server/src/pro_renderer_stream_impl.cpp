@@ -692,6 +692,7 @@ void ProRendererStreamImpl::GetStreamVolume()
     bufferInfo_.VolumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME);
     if (bufferInfo_.VolumeBg != bufferInfo_.VolumeEd) {
         AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, bufferInfo_.VolumeEd);
+        AudioVolume::GetInstance()->Monitor(streamIndex_, true);
         AUDIO_INFO_LOG("audio volume begin:%{public}f,end:%{public}f", bufferInfo_.VolumeBg, bufferInfo_.VolumeEd);
     }
 }
