@@ -51,6 +51,7 @@ group("audio_unit_test") {
     "../frameworks/native/ohaudio/test/unittest/oh_audio_capture_test:audio_oh_capture_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_device_change_test:audio_oh_device_change_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",
+    "../frameworks/native/ohaudio/test/unittest/oh_audio_routing_manager_test:audio_oh_routing_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
     "../frameworks/native/playbackcapturer/test/unittest:playback_capturer_manager_unit_test",
     "../frameworks/native/toneplayer/test/unittest:audio_toneplayer_unit_test",
