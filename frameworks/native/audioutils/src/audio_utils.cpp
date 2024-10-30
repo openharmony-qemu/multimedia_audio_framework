@@ -341,18 +341,18 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
-std::mutex recordMapMutex_;
+std::mutex recordMapMutex;
 std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap_ = {};
 
 bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStart", TIME_OUT_SECONDS);
-    std::lock_guard<std::mutex> lock(recordMapMutex_);
+    std::lock_guard<std::mutex> lock(recordMapMutex);
     if (g_tokenIdRecordMap_.count(targetTokenId)) {
         if (!g_tokenIdRecordMap_[targetTokenId].count(sessionId)) {
             g_tokenIdRecordMap_[targetTokenId].emplace(sessionId);
         } else {
-            AUDIO_WARNING_LOG("this stream %{public}u is already running ,no need call start", sessionId);
+            AUDIO_WARNING_LOG("this stream %{public}u is already running, no need call start", sessionId);
         }
     } else {
         Trace trace("PrivacyKit::StartUsingPermission");
@@ -378,7 +378,7 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
 bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStop", TIME_OUT_SECONDS);
-    std::unique_lock<std::mutex> lock(recordMapMutex_);
+    std::unique_lock<std::mutex> lock(recordMapMutex);
     if (!g_tokenIdRecordMap_.count(targetTokenId)) {
         AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
         return true;
