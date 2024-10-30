@@ -226,7 +226,7 @@ private:
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
     void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         std::vector<SourceType> incomingConcurrentSources);
-    bool IsIncomingInterruptCanMixActiveInterrupt(const AudioInterrupt &incomingInterrupt,
+    bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt);
 
     // interrupt members

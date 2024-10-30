@@ -279,25 +279,25 @@ bool AudioInterruptService::IsAudioSessionActivated(const int32_t callerPid)
     return sessionService_->IsAudioSessionActivated(callerPid);
 }
 
-bool AudioInterruptService::IsIncomingInterruptCanMixActiveInterrupt(const AudioInterrupt &incomingInterrupt,
+bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt)
 {
     if (incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         (activeInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||
         activeInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION)) {
-            AUDIO_INFO_LOG("The capturer can not mix with voice call");
-            return false;
+        AUDIO_INFO_LOG("The capturer can not mix with voice call");
+        return false;
         }
     if ((incomingInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||
         incomingInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) &&
         activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
-            AUDIO_INFO_LOG("The voice call can not mix with capturer");
-            return false;
+        AUDIO_INFO_LOG("The voice call can not mix with capturer");
+        return false;
         }
     if (incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
-            AUDIO_INFO_LOG("The capturer can not mix with another capturer");
-            return false;
+        AUDIO_INFO_LOG("The capturer can not mix with another capturer");
+        return false;
         }
     return true;
 }
@@ -310,7 +310,7 @@ bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInter
         AUDIO_INFO_LOG("The incoming audio capturer should be denied!");
         return false;
     }
-    if (!IsIncomingInterruptCanMixActiveInterrupt(incomingInterrupt, activeInterrupt)) {
+    if (!IsCanMixInterrupt(incomingInterrupt, activeInterrupt)) {
         AUDIO_INFO_LOG("Two Stream Cannot Mix! incoming=%{public}d, active=%{public}d",
             incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
         return false;
@@ -1044,7 +1044,7 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
     std::vector<SourceType> existConcurrentSources = (iterActive->first).currencySources.sourcesTypes;
 
     // if the callerPid has an active audio session, the hint type need to be updated.
-    if (IsIncomingInterruptCanMixActiveInterrupt(incomingInterrupt, iterActive->first)) {
+    if (IsCanMixInterrupt(incomingInterrupt, iterActive->first)) {
         UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
     }
     switch (focusEntry.hintType) {
