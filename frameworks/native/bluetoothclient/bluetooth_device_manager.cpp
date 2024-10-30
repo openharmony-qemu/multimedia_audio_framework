@@ -57,6 +57,10 @@ std::vector<BluetoothRemoteDevice> MediaBluetoothDeviceManager::commonDevices_;
 std::vector<BluetoothRemoteDevice> MediaBluetoothDeviceManager::negativeDevices_;
 std::vector<BluetoothRemoteDevice> MediaBluetoothDeviceManager::connectingDevices_;
 std::vector<BluetoothRemoteDevice> MediaBluetoothDeviceManager::virtualDevices_;
+std::mutex g_a2dpInDeviceMapLock;
+std::mutex g_a2dpInStreamInfoMapLock;
+std::map<std::string, BluetoothRemoteDevice> A2dpInBluetoothDeviceManager::a2dpInBluetoothDeviceMap_;
+std::map<std::string, AudioStreamInfo> A2dpInBluetoothDeviceManager::a2dpInStreamInfoMap_;
 std::mutex g_hfpDeviceLock;
 std::mutex g_hfpDeviceMapLock;
 std::mutex g_hfpWearStateMapLock;
@@ -553,6 +557,139 @@ std::vector<BluetoothRemoteDevice> MediaBluetoothDeviceManager::GetA2dpVirtualDe
 {
     std::lock_guard<std::mutex> a2dpDeviceLock(g_hfpDeviceLock);
     return virtualDevices_;
+}
+
+void A2dpInBluetoothDeviceManager::SetA2dpInStack(const BluetoothRemoteDevice &device,
+    const AudioStreamInfo &streamInfo, int32_t action)
+{
+    switch (action) {
+        case BluetoothDeviceAction::CONNECT_ACTION:
+            HandleConnectDevice(device, streamInfo);
+            break;
+        case BluetoothDeviceAction::DISCONNECT_ACTION:
+            HandleDisconnectDevice(device, streamInfo);
+            break;
+        default:
+            AUDIO_ERR_LOG("SetA2dpInStack failed due to the unknow action: %{public}d", action);
+            break;
+    }
+}
+
+void A2dpInBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevice &device,
+    const AudioStreamInfo &streamInfo)
+{
+    if (IsA2dpInBluetoothDeviceExist(device.GetDeviceAddr())) {
+        return;
+    }
+    DeviceCategory bluetoothCategory = GetDeviceCategory(device);
+    AudioDeviceDescriptor desc;
+    desc.deviceCategory_ = bluetoothCategory;
+    switch (bluetoothCategory) {
+        case BT_HEADPHONE:
+        case BT_GLASSES:
+        case BT_SOUNDBOX:
+        case BT_CAR:
+        case BT_WATCH:
+            break;
+        default:
+            AUDIO_INFO_LOG("Unknow BT category, regard as bluetooth headset.");
+            desc.deviceCategory_ = BT_HEADPHONE;
+            break;
+    }
+    NotifyToUpdateAudioDevice(device, streamInfo, desc, DeviceStatus::ADD);
+}
+
+void A2dpInBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteDevice &device,
+    const AudioStreamInfo &streamInfo)
+{
+    if (!IsA2dpInBluetoothDeviceExist(device.GetDeviceAddr())) {
+        AUDIO_INFO_LOG("The device is already disconnected, ignore disconnect action.");
+        return;
+    }
+    AudioDeviceDescriptor desc;
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    NotifyToUpdateAudioDevice(device, streamInfo, desc, DeviceStatus::REMOVE);
+}
+
+void A2dpInBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemoteDevice &device,
+    const AudioStreamInfo &streamInfo, AudioDeviceDescriptor &desc, DeviceStatus deviceStatus)
+{
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    desc.deviceRole_ = DeviceRole::INPUT_DEVICE;
+    desc.macAddress_ = device.GetDeviceAddr();
+    desc.deviceName_ = device.GetDeviceName();
+    desc.connectState_ = ConnectState::CONNECTED;
+    AUDIO_INFO_LOG("a2dpInBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
+        category is %{public}d, device name is %{public}s", deviceStatus,
+        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
+    {
+        std::lock_guard<std::mutex> a2dpInDeviceMapLock(g_a2dpInDeviceMapLock);
+        if (deviceStatus == DeviceStatus::ADD) {
+            a2dpInBluetoothDeviceMap_[device.GetDeviceAddr()] = device;
+        } else if (deviceStatus == DeviceStatus::REMOVE) {
+            if (a2dpInBluetoothDeviceMap_.find(device.GetDeviceAddr()) != a2dpInBluetoothDeviceMap_.end()) {
+                a2dpInBluetoothDeviceMap_.erase(device.GetDeviceAddr());
+            }
+        }
+    }
+    {
+        std::lock_guard<std::mutex> a2dpInStreamInfoMapLock(g_a2dpInStreamInfoMapLock);
+        if (deviceStatus == DeviceStatus::ADD) {
+            a2dpInStreamInfoMap_[device.GetDeviceAddr()] = streamInfo;
+        } else if (deviceStatus == DeviceStatus::REMOVE) {
+            if (a2dpInStreamInfoMap_.find(device.GetDeviceAddr()) != a2dpInStreamInfoMap_.end()) {
+                a2dpInStreamInfoMap_.erase(device.GetDeviceAddr());
+            }
+        }
+    }
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    CHECK_AND_RETURN_LOG(g_deviceObserver != nullptr, "NotifyToUpdateAudioDevice, device observer is null");
+    bool isConnected = deviceStatus == DeviceStatus::ADD;
+    g_deviceObserver->OnDeviceStatusUpdated(desc, isConnected);
+}
+
+bool A2dpInBluetoothDeviceManager::GetA2dpInDeviceStreamInfo(const std::string& macAddress, AudioStreamInfo &streamInfo)
+{
+    std::lock_guard<std::mutex> a2dpInStreamInfoMapLock(g_a2dpInStreamInfoMapLock);
+    auto it = a2dpInStreamInfoMap_.find(macAddress);
+    if (it != a2dpInStreamInfoMap_.end()) {
+        streamInfo = it->second;
+        return true;
+    }
+    return false;
+}
+
+bool A2dpInBluetoothDeviceManager::IsA2dpInBluetoothDeviceExist(const std::string& macAddress)
+{
+    std::lock_guard<std::mutex> a2dpInDeviceMapLock(g_a2dpInDeviceMapLock);
+    if (a2dpInBluetoothDeviceMap_.find(macAddress) != a2dpInBluetoothDeviceMap_.end()) {
+        return true;
+    }
+    return false;
+}
+
+std::vector<BluetoothRemoteDevice> A2dpInBluetoothDeviceManager::GetAllA2dpInBluetoothDevice()
+{
+    std::lock_guard<std::mutex> a2dpInDeviceMapLock(g_a2dpInDeviceMapLock);
+    std::vector<BluetoothRemoteDevice> a2dpInList = {};
+    a2dpInList.reserve(a2dpInBluetoothDeviceMap_.size());
+    for (const auto &[macaddr, device] : a2dpInBluetoothDeviceMap_) {
+        a2dpInList.emplace_back(device);
+    }
+    return a2dpInList;
+}
+
+void A2dpInBluetoothDeviceManager::ClearAllA2dpInBluetoothDevice()
+{
+    AUDIO_INFO_LOG("Bluetooth service crashed and enter the ClearAllA2dpInBluetoothDevice.");
+    std::lock_guard<std::mutex> a2dpInDeviceMapLock(g_a2dpInDeviceMapLock);
+    a2dpInBluetoothDeviceMap_.clear();
+}
+
+void A2dpInBluetoothDeviceManager::ClearAllA2dpInStreamInfo()
+{
+    std::lock_guard<std::mutex> a2dpInStreamMapLock(g_a2dpInStreamInfoMapLock);
+    a2dpInStreamInfoMap_.clear();
 }
 
 void HfpBluetoothDeviceManager::SetHfpStack(const BluetoothRemoteDevice &device, int action)

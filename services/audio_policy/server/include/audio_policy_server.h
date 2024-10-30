@@ -149,6 +149,8 @@ public:
 
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) override;
 
+    void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc) override;
+
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
 

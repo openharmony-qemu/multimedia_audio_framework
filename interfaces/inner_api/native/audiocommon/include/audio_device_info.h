@@ -130,6 +130,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_BLUETOOTH_A2DP = 8,
     /**
+     * Indicates a Bluetooth device supporting the Advanced Audio Distribution Profile (A2DP) recording.
+     */
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN = 9,
+    /**
      * Indicates a microphone built in a device.
      */
     DEVICE_TYPE_MIC = 15,
@@ -178,6 +182,7 @@ enum DeviceType {
 inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_WIRED_HEADSET,
     DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
+    DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN,
     DeviceType::DEVICE_TYPE_MIC,
     DeviceType::DEVICE_TYPE_WAKEUP,
     DeviceType::DEVICE_TYPE_USB_HEADSET,

@@ -74,6 +74,7 @@ public:
 
     bool isSameDevice(const DeviceInfo &deviceInfo);
     bool isSameDeviceDesc(const std::unique_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    static DeviceType MapInternalToExternalDeviceType(DeviceType deviceType);
 };
 
 struct AudioSpatialEnabledStateForDevice {
