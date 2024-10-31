@@ -56,6 +56,8 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
+const int64_t GENERAL_MAX_HANDLE_COST_IN_NANOSEC = 10000000; // 10ms = 10ns * 1000 * 1000
+const int64_t VOIP_MAX_HANDLE_COST_IN_NANOSEC = 20000000; // 20ms = 20ns * 1000 * 1000
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int INVALID_FD = -1;
 const unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
@@ -605,18 +607,19 @@ int32_t FastAudioRendererSinkInner::CheckPositionTime()
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
-    int64_t maxHandleCost = 10000000; // ns
+    int64_t maxHandleCost = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? VOIP_MAX_HANDLE_COST_IN_NANOSEC :
+        GENERAL_MAX_HANDLE_COST_IN_NANOSEC;
     int64_t waitTime = 2000000; // 2ms
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(waitTime); // us
+        int64_t timeBeforeGetPos = ClockTime::GetCurNano();
         int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
-        int64_t curTime = ClockTime::GetCurNano();
-        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
-        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        int64_t curSec = timeBeforeGetPos / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = timeBeforeGetPos - curSec * AUDIO_NS_PER_SECOND;
+        AUDIO_WARNING_LOG("DspSec: %{public}" PRId64 ", dspNanoSec: %{public}" PRId64 ", Time before get pos: "
+            "%{public}" PRId64 ", time cost: %{public}" PRId64 "", timeSec, timeNanoSec, timeBeforeGetPos,
+            ClockTime::GetCurNano() - timeBeforeGetPos);
         if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
-            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d, curSec[%{public}" PRId64"], "
-                "curNanoSec[%{public}" PRId64"], dspSec[%{public}" PRId64"], dspNanoSec[%{public}" PRId64"]",
-                tryCount, ret, curSec, curNanoSec, timeSec, timeNanoSec);
             continue;
         } else {
             AUDIO_INFO_LOG("CheckPositionTime end, position and time is ok.");
