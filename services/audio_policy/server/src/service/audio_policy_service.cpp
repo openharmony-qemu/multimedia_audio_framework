@@ -3980,15 +3980,14 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         return; // No need to update preferred device for virtual device
     }
     DeviceUsage usage = GetDeviceUsage(updatedDesc);
-    if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE &&
-        audioDescriptor->deviceType_ == audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
+    if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->deviceType_ ==
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
         ROUTER_TYPE_USER_SELECT).front()->deviceType_ && (usage == MEDIA || usage == ALL_USAGE)) {
         SetPreferredDevice(AUDIO_MEDIA_RENDER, new(std::nothrow) AudioDeviceDescriptor());
     }
-    if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE &&
-        audioDescriptor->deviceCategory_ != BT_WATCH && audioDescriptor->deviceCategory_ != BT_SOUNDBOX) &&
-        audioDescriptor->deviceType_ == audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
-        ROUTER_TYPE_USER_SELECT).front()->deviceType_ && (usage == MEDIA || usage == ALL_USAGE)) {
+    if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->deviceType_ ==
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
+        ROUTER_TYPE_USER_SELECT).front()->deviceType_ && (usage == VOICE || usage == ALL_USAGE)) {
         SetPreferredDevice(AUDIO_CALL_RENDER, new(std::nothrow) AudioDeviceDescriptor());
     }
 }
