@@ -126,8 +126,10 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
     pa_hashmap *ecResamplerMap = (pa_hashmap *)u->sceneToEcResamplerMap;
     pa_hashmap *micRefResamplerMap = (pa_hashmap *)u->sceneToMicRefResamplerMap;
     if (!pa_sample_spec_equal(&so->source->sample_spec, &algoSpecs->micSpec)) {
-        AUDIO_INFO_LOG("SOURCE rate = %{public}d ALGO rate = %{public}d ",
-            so->source->sample_spec.rate, algoSpecs->micSpec.rate);
+        AUDIO_INFO_LOG("SOURCE spec:%{public}u_%{public}u_%{public}u ALGO spec:%{public}u_%{public}u_%{public}u",
+            so->source->sample_spec.rate, (uint32_t)so->source->sample_spec.channels,
+            (uint32_t)so->source->sample_spec.format,
+            algoSpecs->micSpec.rate,  (uint32_t)algoSpecs->micSpec.channels, (uint32_t)algoSpecs->micSpec.format);
         pa_resampler *preResampler = pa_resampler_new(so->source->core->mempool,
             &so->source->sample_spec, &so->source->channel_map,
             &algoSpecs->micSpec, &so->source->channel_map,
@@ -139,8 +141,9 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
     }
     if ((u->ecType != EC_NONE) && (algoSpecs->ecSpec.rate != 0) &&
         (!pa_sample_spec_equal(&u->ecSpec, &algoSpecs->ecSpec))) {
-        AUDIO_INFO_LOG("EC: SOURCE rate = %{public}d ALGO rate = %{public}d ",
-            u->ecSpec.rate, algoSpecs->ecSpec.rate);
+        AUDIO_INFO_LOG("EC SOURCE spec:%{public}u_%{public}u_%{public}u ALGO spec:%{public}u_%{public}u_%{public}u",
+            u->ecSpec.rate, (uint32_t)u->ecSpec.channels, (uint32_t)u->ecSpec.format,
+            algoSpecs->ecSpec.rate,  (uint32_t)algoSpecs->ecSpec.channels, (uint32_t)algoSpecs->ecSpec.format);
         pa_resampler *ecResampler = pa_resampler_new(so->source->core->mempool,
             &u->ecSpec, &so->source->channel_map,
             &algoSpecs->ecSpec, &so->source->channel_map,
@@ -151,8 +154,10 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
     }
     if ((u->micRef == REF_ON) && (algoSpecs->micRefSpec.rate != 0) &&
         (!pa_sample_spec_equal(&u->micRefSpec, &algoSpecs->micRefSpec))) {
-        AUDIO_INFO_LOG("MIC REF: SOURCE rate = %{public}d ALGO rate = %{public}d ",
-            u->micRefSpec.rate, algoSpecs->ecSpec.rate);
+        AUDIO_INFO_LOG("MIC REF SOURCE spec:%{public}u_%{public}u_%{public}u ALGO:%{public}u_%{public}u_%{public}u",
+            u->micRefSpec.rate, (uint32_t)u->micRefSpec.channels, (uint32_t)u->micRefSpec.format,
+            algoSpecs->micRefSpec.rate,  (uint32_t)algoSpecs->micRefSpec.channels,
+            (uint32_t)algoSpecs->micRefSpec.format);
         pa_resampler *micRefResampler = pa_resampler_new(so->source->core->mempool,
             &u->micRefSpec, &so->source->channel_map,
             &algoSpecs->micRefSpec, &so->source->channel_map,
