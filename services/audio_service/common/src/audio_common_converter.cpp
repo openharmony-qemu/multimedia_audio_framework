@@ -142,7 +142,7 @@ void AudioCommonConverter::ConvertBufferTo32Bit(const BufferBaseInfo &srcBuffer,
         }
         default:
             break;
-        }
+    }
 }
 
 inline void CopyFromU8ToS16(const uint8_t *buffer, int16_t *dst, float volStep, const BufferBaseInfo &bufferInfo)
@@ -241,7 +241,7 @@ void AudioCommonConverter::ConvertBufferTo16Bit(const BufferBaseInfo &srcBuffer,
         }
         default:
             break;
-        }
+    }
 }
 
 inline int32_t ConvertS24ToFloat(const uint8_t *buffer, int32_t index, int32_t format)
