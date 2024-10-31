@@ -65,7 +65,6 @@ struct Userdata {
     size_t processSize;
     int32_t sinkSceneType;
     int32_t sinkSceneMode;
-    bool hdiEffectEnabled;
     pthread_mutex_t mutexPa;
     pthread_mutex_t mutexPa2;
     pthread_rwlock_t rwlockSleep;
@@ -75,6 +74,7 @@ struct Userdata {
     int8_t spatializationFadingCount; // for indicating the fading rate
     bool actualSpatializationEnabled; // the spatialization state that actually applies effect
     bool isFirstStarted;
+    bool isEffectBufferAllocated;
     pa_hashmap *sceneToCountMap;
     pa_hashmap *sceneToResamplerMap;
     uint64_t lastRecodedLatency;
