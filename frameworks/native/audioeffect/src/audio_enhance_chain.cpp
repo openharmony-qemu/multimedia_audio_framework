@@ -32,7 +32,6 @@ const uint32_t BITLENGTH = 8;
 const uint32_t MILLISECOND = 1000;
 const uint32_t DEFAULT_FRAMELENGTH = 20;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
-const uint32_t DEFAULT_FORMAT = 2;
 const uint32_t DEFAULT_ECNUM = 0;
 const uint32_t DEFAULT_MICREFNUM = 0;
 
@@ -56,11 +55,11 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
     enhanceLibHandles_.clear();
     standByEnhanceHandles_.clear();
 
-    algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, DEFAULT_FORMAT * BITLENGTH,
+    algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, deviceAttr_.micFormat * BITLENGTH,
         deviceAttr_.micChannels, DEFAULT_ECNUM, DEFAULT_MICREFNUM, deviceAttr_.micChannels};
     
-    uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * DEFAULT_FORMAT;
-    algoAttr_ = {DEFAULT_FORMAT, deviceAttr_.micChannels, byteLenPerFrame};
+    uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * deviceAttr_.micFormat;
+    algoAttr_ = {deviceAttr_.micFormat, deviceAttr_.micChannels, byteLenPerFrame};
 
     if (count(NEED_EC_SCENE.begin(), NEED_EC_SCENE.end(), sceneType_)) {
         needEcFlag_ = true;

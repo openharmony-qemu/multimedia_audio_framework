@@ -259,7 +259,7 @@ static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userd
     uint32_t renderId = u->renderId;
     uint32_t sceneTypeCode = 0;
     if (GetSceneTypeCode(sceneType, &sceneTypeCode) != 0) {
-        AUDIO_ERR_LOG("GetSceneTypeCode failed");
+        AUDIO_ERR_LOG("scenetype:%{public}s GetSceneTypeCode failed", sceneType);
         pa_proplist_sets(so->proplist, "scene.bypass", DEFAULT_SCENE_BYPASS);
         return PA_HOOK_OK;
     }
@@ -299,7 +299,7 @@ static pa_hook_result_t HandleSourceOutputUnlink(pa_source_output *so, struct Us
     uint32_t renderId = u->renderId;
     uint32_t sceneTypeCode = 0;
     if (GetSceneTypeCode(sceneType, &sceneTypeCode) != 0) {
-        AUDIO_ERR_LOG("GetSceneTypeCode failed");
+        AUDIO_ERR_LOG("scenetype:%{public}s GetSceneTypeCode failed", sceneType);
         return PA_HOOK_OK;
     }
     uint32_t sceneKeyCode = 0;
@@ -335,10 +335,12 @@ static pa_hook_result_t CheckIfAvailSource(pa_source_output *so, struct Userdata
 
 static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, struct Userdata *u)
 {
-    AUDIO_INFO_LOG("Trigger SourceOutputPutCb");
-
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+    CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
+
+    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
+    AUDIO_INFO_LOG("Trigger SourceOutputPutCb sessionID:%{public}s", sessionID);
 
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
@@ -348,11 +350,28 @@ static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, stru
 
 static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so, struct Userdata *u)
 {
-    AUDIO_INFO_LOG("Trigger SourceOutputUnlinkCb");
-
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
-    
+    CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
+
+    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
+    AUDIO_INFO_LOG("Trigger SourceOutputUnlinkCb sessionID:%{public}s", sessionID);
+
+    if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
+        return PA_HOOK_OK;
+    }
+    return HandleSourceOutputUnlink(so, u);
+}
+
+static pa_hook_result_t SourceOutputMoveStartCb(pa_core *c, pa_source_output *so, struct Userdata *u)
+{
+    CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
+    CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+    CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
+
+    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
+    AUDIO_INFO_LOG("Trigger SourceOutputMoveStartCb sessionID:%{public}s", sessionID);
+
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
     }
@@ -360,11 +379,13 @@ static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so, s
 }
 
 static pa_hook_result_t SourceOutputMoveFinishCb(pa_core *c, pa_source_output *so, struct Userdata *u)
-{
-    AUDIO_INFO_LOG("Trigger SourceOutputMoveFinishCb");
-    
+{    
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+    CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
+
+    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
+    AUDIO_INFO_LOG("Trigger SourceOutputMoveFinishCb sessionID:%{public}s", sessionID);
 
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
@@ -394,6 +415,8 @@ int pa__init(pa_module *m)
         (pa_hook_cb_t)SourceOutputUnlinkCb, source->userdata);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_MOVE_FINISH], PA_HOOK_LATE,
         (pa_hook_cb_t)SourceOutputMoveFinishCb, source->userdata);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_MOVE_START], PA_HOOK_LATE,
+        (pa_hook_cb_t)SourceOutputMoveStartCb, source->userdata);
 
     pa_source_put(source);
     pa_modargs_free(ma);

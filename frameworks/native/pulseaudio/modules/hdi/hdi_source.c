@@ -428,7 +428,6 @@ static void EnhanceProcessAndPost(struct Userdata *u, const uint32_t sceneKeyCod
         }
         uint32_t sceneTypeCode = 0;
         if (GetSceneTypeCode(sourceOutputSceneType, &sceneTypeCode) != 0) {
-            AUDIO_ERR_LOG("GetSceneTypeCode failed");
             continue;
         }
         uint32_t sceneKeyCodeTemp = 0;
