@@ -42,6 +42,7 @@ private:
         bool isActive;
         bool isTrue;
         bool bArgTransFlag = true;
+        bool supported = false;
         AudioRendererInfo rendererInfo;
         AudioCapturerInfo captureInfo;
         sptr<AudioRendererFilter> audioRendererFilter;
@@ -52,7 +53,7 @@ private:
     };
 
 #if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
-    bool IsMicBlockDetectionSupported();
+    static napi_value IsMicBlockDetectionSupported(napi_env env, napi_callback_info info);
 #endif
     static napi_value GetDevices(napi_env env, napi_callback_info info);
     static napi_value GetDevicesSync(napi_env env, napi_callback_info info);

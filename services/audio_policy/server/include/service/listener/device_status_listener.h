@@ -45,6 +45,7 @@ public:
 
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceAnahsCallback();
+    void UpdateAnahsPlatformType(std::string anahsShowType);
 
 private:
     AudioPnpServer *audioPnpServer_;
@@ -52,6 +53,7 @@ private:
     struct HDIServiceManager *hdiServiceManager_;
     struct ServiceStatusListener *listener_;
     sptr<IStandardAudioAnahsManagerListener> audioDeviceAnahsCb_;
+    std::string anahsShowType_ = "Dialog";
 };
 
 class AudioPnpStatusCallback : public AudioPnpDeviceChangeCallback {

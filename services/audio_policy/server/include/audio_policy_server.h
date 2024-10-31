@@ -149,6 +149,8 @@ public:
 
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) override;
 
+    void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc) override;
+
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
 
@@ -213,7 +215,8 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneId = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0,
+        const bool isUpdatedAudioStrategy = false) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
@@ -263,10 +266,10 @@ public:
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
 
     int32_t GetCurrentRendererChangeInfos(
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
 
     int32_t GetCurrentCapturerChangeInfos(
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
     void RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id);
 
@@ -325,7 +328,7 @@ public:
         uint32_t appTokenId) override;
 
     int32_t SetCaptureSilentState(bool state) override;
-    
+
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
@@ -439,6 +442,8 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) override;
+
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
 
@@ -519,7 +524,7 @@ private:
     class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
     public:
         AudioPolicyServerPowerStateCallback(AudioPolicyServer *policyServer);
-        void OnPowerStateChanged(PowerMgr::PowerState state) override;
+        void OnAsyncPowerStateChanged(PowerMgr::PowerState state) override;
 
     private:
         AudioPolicyServer *policyServer_;

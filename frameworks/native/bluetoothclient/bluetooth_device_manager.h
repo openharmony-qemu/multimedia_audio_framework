@@ -78,6 +78,32 @@ private:
     static std::vector<BluetoothRemoteDevice> virtualDevices_;
 };
 
+class A2dpInBluetoothDeviceManager {
+public:
+    A2dpInBluetoothDeviceManager() = default;
+    virtual ~A2dpInBluetoothDeviceManager() = default;
+    static void SetA2dpInStack(const BluetoothRemoteDevice &device,
+        const AudioStandard::AudioStreamInfo &streamInfo, int32_t action);
+    static void HandleConnectDevice(const BluetoothRemoteDevice &device,
+        const AudioStandard::AudioStreamInfo &streamInfo);
+    static void HandleDisconnectDevice(const BluetoothRemoteDevice &device,
+        const AudioStandard::AudioStreamInfo &streamInfo);
+    static void NotifyToUpdateAudioDevice(const BluetoothRemoteDevice &device,
+        const AudioStandard::AudioStreamInfo &streamInfo,
+        AudioStandard::AudioDeviceDescriptor &desc,
+        DeviceStatus deviceStatus);
+    static bool GetA2dpInDeviceStreamInfo(const std::string& macAddress,
+        AudioStandard::AudioStreamInfo &streamInfo);
+    static bool IsA2dpInBluetoothDeviceExist(const std::string& macAddress);
+    static std::vector<BluetoothRemoteDevice> GetAllA2dpInBluetoothDevice();
+    static void ClearAllA2dpInBluetoothDevice();
+    static void ClearAllA2dpInStreamInfo();
+
+private:
+    static std::map<std::string, BluetoothRemoteDevice> a2dpInBluetoothDeviceMap_;
+    static std::map<std::string, AudioStandard::AudioStreamInfo> a2dpInStreamInfoMap_;
+};
+
 struct BluetoothStopVirtualCallHandle {
     BluetoothRemoteDevice device;
     bool isWaitingForStoppingVirtualCall;

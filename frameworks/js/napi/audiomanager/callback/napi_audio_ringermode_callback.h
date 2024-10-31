@@ -34,6 +34,7 @@ public:
     bool IsSameCallback(const napi_value args);
     void RemoveCallbackReference(const napi_value args);
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+    void CreateRingModeTsfn(napi_env env);
 
 private:
     struct AudioRingerModeJsCallback {
@@ -43,10 +44,14 @@ private:
     };
 
     void OnJsCallbackRingerMode(std::unique_ptr<AudioRingerModeJsCallback> &jsCb);
+    static void RingModeTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackRingModeWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> ringerModeCallback_ = nullptr;
+    bool regAmRmChgTsfn_ = false;
+    napi_threadsafe_function amRmChgTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

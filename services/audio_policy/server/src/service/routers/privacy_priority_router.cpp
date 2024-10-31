@@ -101,7 +101,9 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     if (latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADSET ||
         latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADPHONES ||
         latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_SCO ||
-        latestConnDesc->getType() == DEVICE_TYPE_USB_HEADSET) {
+        latestConnDesc->getType() == DEVICE_TYPE_USB_HEADSET ||
+        latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        latestConnDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         // Add the latest connected device.
         descs.push_back(move(latestConnDesc));
         switch (streamUsage) {
@@ -135,8 +137,15 @@ unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
         vector<unique_ptr<AudioDeviceDescriptor>> descs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
         unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
-        AUDIO_DEBUG_LOG(" RecongnitionsourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
-            clientUID, desc->deviceType_);
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            unique_ptr<AudioDeviceDescriptor> a2dpInDesc = AudioDeviceManager::GetAudioDeviceManager()
+                .GetDeviceByMacAddressAndDeviceType(descs, desc->macAddress_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+            if (a2dpInDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+                desc = move(a2dpInDesc);
+            }
+        }
+        AUDIO_DEBUG_LOG(" RecongnitionsourceType %{public}d clientUID %{public}d fetch device %{public}d",
+            sourceType, clientUID, desc->deviceType_);
         return desc;
     }
     vector<unique_ptr<AudioDeviceDescriptor>> descs =

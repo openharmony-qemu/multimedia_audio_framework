@@ -42,6 +42,7 @@ enum AudioEffectChainSetParamIndex {
     SPATIAL_DEVICE_TYPE_INDEX = 6,
     SPATIALIZATION_SCENE_TYPE_INDEX = 7,
     SPATIALIZATION_ENABLED_INDEX = 8,
+    STREAM_USAGE_INDEX = 9,
 };
 
 struct AudioEffectProcInfo {
@@ -78,6 +79,7 @@ public:
     float GetFinalVolume();
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     int32_t SetEffectProperty(const std::string &effect, const std::string &property);
+    void SetStreamUsage(const int32_t streamUsage);
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
@@ -90,6 +92,7 @@ private:
     std::string effectMode_ = "";
     uint32_t latency_ = 0;
     uint32_t extraEffectChainType_ = 0;
+    StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
     AudioEffectScene currSceneType_ = SCENE_MUSIC;
     std::vector<AudioEffectHandle> standByEffectHandles_;
     std::vector<std::string> effectNames_;

@@ -32,11 +32,11 @@ constexpr int16_t STEREO_CHANNEL_COUNT = 2;
 constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
 constexpr int16_t HDI_MONO_CHANNEL_LAYOUT = 4;
 constexpr int32_t DIRECT_STOP_TIMEOUT_IN_SEC = 8; // 8S
+constexpr int32_t DIRECT_SINK_STANDBY_TIMES = 8; // 8
 const std::string THREAD_NAME = "noneMixThread";
 const std::string VOIP_SINK_NAME = "voip";
 const std::string DIRECT_SINK_NAME = "direct";
 const char *SINK_ADAPTER_NAME = "primary";
-static const int32_t XCOLLIE_FLAG_DEFAULT = (1 | 2); // dump stack and kill self
 
 NoneMixEngine::NoneMixEngine()
     : isVoip_(false),
@@ -125,10 +125,10 @@ int32_t NoneMixEngine::Stop()
         AUDIO_INFO_LOG("already stopped");
         return ret;
     }
-    int32_t xCollieFlagDefault = (1 | 2);
     AudioXCollie audioXCollie(
         "NoneMixEngine::Stop", DIRECT_STOP_TIMEOUT_IN_SEC,
-        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr, xCollieFlagDefault);
+        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
     failedCount_ = 0;
@@ -142,6 +142,7 @@ int32_t NoneMixEngine::Stop()
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
+    ClockTime::RelativeSleep(PERIOD_NS * DIRECT_SINK_STANDBY_TIMES);
     ret = StopAudioSink();
     isStart_ = false;
     return ret;
@@ -174,10 +175,14 @@ int32_t NoneMixEngine::StopAudioSink()
 int32_t NoneMixEngine::Pause()
 {
     AUDIO_INFO_LOG("Enter");
-
+    if (!isStart_) {
+        AUDIO_INFO_LOG("already stopped");
+        return SUCCESS;
+    }
     AudioXCollie audioXCollie(
         "NoneMixEngine::Pause", DIRECT_STOP_TIMEOUT_IN_SEC,
-        [this](void *) { AUDIO_ERR_LOG("%{public}d pause timeout", isVoip_); }, nullptr, XCOLLIE_FLAG_DEFAULT);
+        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
     failedCount_ = 0;
@@ -190,6 +195,7 @@ int32_t NoneMixEngine::Pause()
             fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Pause();
     }
+    ClockTime::RelativeSleep(PERIOD_NS * DIRECT_SINK_STANDBY_TIMES);
     int32_t ret = StopAudioSink();
     isStart_ = false;
     return ret;
@@ -271,6 +277,9 @@ void NoneMixEngine::MixStreams()
     uint64_t written = 0;
     // fade in or fade out
     if (startFadeout_ || startFadein_) {
+        if (startFadeout_) {
+            stream_->BlockStream();
+        }
         DoFadeinOut(startFadeout_, audioBuffer.data(), audioBuffer.size());
         cvFading_.notify_all();
     }

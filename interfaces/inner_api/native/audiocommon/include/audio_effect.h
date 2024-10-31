@@ -57,6 +57,7 @@ enum HdiSetParamCommandCode {
     HDI_ROTATION = 8,
     HDI_EXTRA_SCENE_TYPE = 9,
     HDI_SPATIALIZATION_SCENE_TYPE = 10,
+    HDI_STREAM_USAGE = 11,
 };
 
 enum AudioSpatialDeviceType {
@@ -196,6 +197,7 @@ enum AudioEnhanceScene {
     SCENE_RECORD = 1,
     SCENE_PRE_ENHANCE = 2,
     SCENE_ASR = 4,
+    SCENE_VOICE_MESSAGE = 5,
 };
 
 /**
@@ -233,6 +235,7 @@ const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_ENHANCE_SUPPORTED
     {SCENE_RECORD, "SCENE_RECORD"},
     {SCENE_ASR, "SCENE_ASR"},
     {SCENE_PRE_ENHANCE, "SCENE_PRE_ENHANCE"},
+    {SCENE_VOICE_MESSAGE, "SCENE_VOICE_MESSAGE"},
 };
 
 const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
@@ -254,6 +257,7 @@ const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
     {DEVICE_TYPE_WIRED_HEADPHONES, "DEVICE_TYPE_WIRED_HEADPHONES"},
     {DEVICE_TYPE_BLUETOOTH_SCO, "DEVICE_TYPE_BLUETOOTH_SCO"},
     {DEVICE_TYPE_BLUETOOTH_A2DP, "DEVICE_TYPE_BLUETOOTH_A2DP"},
+    {DEVICE_TYPE_BLUETOOTH_A2DP_IN, "DEVICE_TYPE_BLUETOOTH_A2DP_IN"},
     {DEVICE_TYPE_MIC, "DEVICE_TYPE_MIC"},
     {DEVICE_TYPE_WAKEUP, "DEVICE_TYPE_WAKEUP"},
     {DEVICE_TYPE_USB_HEADSET, "DEVICE_TYPE_USB_HEADSET"},
@@ -448,6 +452,7 @@ struct AudioEnhanceParam {
     const char *preDevice;
     const char *postDevice;
     const char *sceneType;
+    const char *preDeviceName;
 };
 
 struct AlgoConfig {

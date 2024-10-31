@@ -23,7 +23,7 @@
 #include "system_ability_definition.h"
 #include "bundle_mgr_interface.h"
 
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_errors.h"
 #include "audio_manager_base.h"
 #include "audio_manager_proxy.h"
@@ -1091,6 +1091,7 @@ int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<s
 
 std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
 {
+    std::lock_guard<std::mutex> lock(groupManagerMapMutex_);
     std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
     while (iter != groupManagerMap_.end()) {
         if ((*iter)->GetGroupId() == groupId) {

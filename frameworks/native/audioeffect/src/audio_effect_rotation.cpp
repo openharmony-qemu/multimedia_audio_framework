@@ -16,7 +16,6 @@
 #define LOG_TAG "AudioEffectRotation"
 #endif
 
-#include "audio_effect_chain_adapter.h"
 #include "audio_effect_rotation.h"
 #include "audio_effect_log.h"
 

@@ -29,7 +29,7 @@ public:
     ~AudioRendererStateChangeCallbackTest() = default;
 
     void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
 private:
     std::string testCaseName_;
 };
@@ -40,7 +40,7 @@ public:
     ~AudioCapturerStateChangeCallbackTest() = default;
 
     void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 private:
     std::string testCaseName_;
 };

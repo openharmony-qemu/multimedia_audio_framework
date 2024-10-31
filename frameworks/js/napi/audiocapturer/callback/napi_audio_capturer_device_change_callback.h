@@ -31,6 +31,7 @@ public:
     void SaveCallbackReference(napi_value args);
     void OnStateChange(const DeviceInfo &deviceInfo) override;
     bool ContainSameJsCallback(napi_value args);
+    void CreateCaptureDeviceChangeTsfn(napi_env env);
 
 private:
     struct AudioCapturerDeviceChangeJsCallback {
@@ -39,12 +40,15 @@ private:
         DeviceInfo deviceInfo_;
     };
 
-    static void WorkCallbackCompleted(uv_work_t* work, int status);
     void OnJsCallbackCapturerDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo);
+    static void CaptureDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackCapturerDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     napi_ref callback_ = nullptr;
+    bool regAcDevChgTsfn_ = false;
+    napi_threadsafe_function acDevChgTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -32,6 +32,7 @@ using namespace AudioStandard;
 A2dpSource *AudioA2dpManager::a2dpInstance_ = nullptr;
 std::shared_ptr<AudioA2dpListener> AudioA2dpManager::a2dpListener_ = std::make_shared<AudioA2dpListener>();
 int AudioA2dpManager::connectionState_ = static_cast<int>(BTConnectState::DISCONNECTED);
+int32_t AudioA2dpManager::captureConnectionState_ = static_cast<int32_t>(BTHdapConnectState::DISCONNECTED);
 BluetoothRemoteDevice AudioA2dpManager::activeA2dpDevice_;
 std::mutex g_a2dpInstanceLock;
 HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
@@ -137,6 +138,18 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSink()
     MediaBluetoothDeviceManager::ClearAllA2dpBluetoothDevice();
 }
 
+void AudioA2dpManager::DisconnectBluetoothA2dpSource()
+{
+    int captureConnectionState = static_cast<int>(BTHdapConnectState::DISCONNECTED);
+    auto a2dpInList = A2dpInBluetoothDeviceManager::GetAllA2dpInBluetoothDevice();
+    A2dpCodecInfo defaultCodecInfo = {};
+    for (const auto &device : a2dpInList) {
+        a2dpListener_->OnCaptureConnectionStateChanged(device, captureConnectionState, defaultCodecInfo);
+    }
+    A2dpInBluetoothDeviceManager::ClearAllA2dpInBluetoothDevice();
+    A2dpInBluetoothDeviceManager::ClearAllA2dpInStreamInfo();
+}
+
 int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
 {
     std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
@@ -187,6 +200,14 @@ int32_t AudioA2dpManager::GetA2dpDeviceStreamInfo(const std::string& macAddress,
     A2dpCodecStatus codecStatus = a2dpInstance_->GetCodecStatus(device);
     bool result = GetAudioStreamInfo(codecStatus.codecInfo, streamInfo);
     CHECK_AND_RETURN_RET_LOG(result, ERROR, "GetA2dpDeviceStreamInfo: Unsupported a2dp codec info");
+    return SUCCESS;
+}
+
+int32_t AudioA2dpManager::GetA2dpInDeviceStreamInfo(const std::string &macAddress,
+    AudioStreamInfo &streamInfo)
+{
+    bool ret = A2dpInBluetoothDeviceManager::GetA2dpInDeviceStreamInfo(macAddress, streamInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == true, ERROR, "the StreamInfo of the a2dp input device doesn't exist.");
     return SUCCESS;
 }
 
@@ -360,6 +381,23 @@ void AudioA2dpListener::OnVirtualDeviceChanged(int32_t action, std::string macAd
     }
 }
 
+void AudioA2dpListener::OnCaptureConnectionStateChanged(const BluetoothRemoteDevice &device, int state,
+    const A2dpCodecInfo &codecInfo)
+{
+    AUDIO_INFO_LOG("capture connection state: %{public}d", state);
+    AudioA2dpManager::SetCaptureConnectionState(static_cast<int32_t>(state));
+    AudioStreamInfo streamInfo = {};
+    if (state == static_cast<int>(BTHdapConnectState::CONNECTED)) {
+        AUDIO_INFO_LOG("A2dpInCodecInfo: sampleRate: %{public}d, channels: %{public}d, format: %{public}d",
+            codecInfo.sampleRate, codecInfo.channelMode, codecInfo.bitsPerSample);
+        bool result = GetAudioStreamInfo(codecInfo, streamInfo);
+        CHECK_AND_RETURN_LOG(result == true, "Unsupported a2dpIn codec info");
+        A2dpInBluetoothDeviceManager::SetA2dpInStack(device, streamInfo, BluetoothDeviceAction::CONNECT_ACTION);
+    } else if (state == static_cast<int>(BTHdapConnectState::DISCONNECTED)) {
+        A2dpInBluetoothDeviceManager::SetA2dpInStack(device, streamInfo, BluetoothDeviceAction::DISCONNECT_ACTION);
+    }
+}
+
 void AudioHfpManager::RegisterBluetoothScoListener()
 {
     AUDIO_INFO_LOG("AudioHfpManager::RegisterBluetoothScoListener");
@@ -462,9 +500,8 @@ RecognitionStatus AudioHfpManager::GetRecognitionStatus()
 
 int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
 {
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("AudioHfpManager::SetActiveHfpDevice", BT_SET_ACTIVE_DEVICE_TIMEOUT,
-        nullptr, nullptr, XcollieFlag);
+        nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     BluetoothRemoteDevice device;
     if (HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
         AUDIO_ERR_LOG("SetActiveHfpDevice failed for the HFP device %{public}s does not exist.",

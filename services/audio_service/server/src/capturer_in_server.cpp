@@ -21,7 +21,7 @@
 #include "securec.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 #include "audio_service.h"
 #include "audio_process_config.h"
 #include "i_stream_manager.h"
@@ -309,7 +309,7 @@ int32_t CapturerInServer::Start()
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_START), ERR_PERMISSION_DENIED,
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(tokenId, streamIndex_), ERR_PERMISSION_DENIED,
             "NotifyPrivacy failed!");
     }
 
@@ -331,7 +331,7 @@ int32_t CapturerInServer::Pause()
     }
     if (needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+        PermissionUtil::NotifyStop(tokenId, streamIndex_);
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
@@ -391,7 +391,7 @@ int32_t CapturerInServer::Stop()
 
     if (needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+        PermissionUtil::NotifyStop(tokenId, streamIndex_);
     }
 
     int ret = stream_->Stop();
@@ -427,7 +427,7 @@ int32_t CapturerInServer::Release()
     }
     if (needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+        PermissionUtil::NotifyStop(tokenId, streamIndex_);
     }
     return SUCCESS;
 }

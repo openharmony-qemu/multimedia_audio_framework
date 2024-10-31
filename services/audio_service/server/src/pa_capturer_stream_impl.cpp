@@ -20,7 +20,7 @@
 #include "pa_capturer_stream_impl.h"
 #include "pa_adapter_tools.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
 
@@ -56,13 +56,15 @@ PaCapturerStreamImpl::~PaCapturerStreamImpl()
 
     PaLockGuard lock(mainloop_);
     if (paStream_) {
-        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_read_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
-        pa_stream_disconnect(paStream_);
+        if (!releasedFlag_) {
+            pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_read_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+            pa_stream_disconnect(paStream_);
+        }
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
     }
@@ -305,6 +307,18 @@ int32_t PaCapturerStreamImpl::Release()
     state_ = RELEASED;
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) {
         PolicyHandler::GetInstance().NotifyWakeUpCapturerRemoved();
+    }
+
+    PaLockGuard lock(mainloop_);
+    if (paStream_) {
+        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_read_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+        pa_stream_disconnect(paStream_);
+        releasedFlag_ = true;
     }
     return SUCCESS;
 }

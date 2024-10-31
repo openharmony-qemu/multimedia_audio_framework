@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 #include "audio_utils.h"
 
 #include "fast_audio_stream.h"
@@ -708,12 +708,6 @@ int32_t FastAudioStream::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     return ERR_NOT_SUPPORTED;
 }
 
-void FastAudioStream::SetApplicationCachePath(const std::string cachePath)
-{
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath.c_str());
-
-    cachePath_ = cachePath;
-}
 void FastAudioStream::SetInnerCapturerState(bool isInnerCapturer)
 {
     AUDIO_ERR_LOG("SetInnerCapturerState is not supported");
@@ -752,7 +746,6 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.eStreamType = eStreamType_;
     info.state = state_;
     info.sessionId = sessionId_;
-    info.cachePath = cachePath_;
 
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
@@ -849,7 +842,7 @@ void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &regist
     registerTrackerInfo.capturerInfo = capturerInfo_;
 }
 
-bool FastAudioStream::RestoreAudioStream()
+bool FastAudioStream::RestoreAudioStream(bool needStoreState)
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,

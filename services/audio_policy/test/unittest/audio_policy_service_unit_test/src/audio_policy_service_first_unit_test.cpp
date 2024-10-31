@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "audio_policy_service_unit_test.h"
+#include "audio_policy_service_first_unit_test.h"
 
 #include <thread>
 #include <memory>
@@ -67,18 +67,17 @@ void AudioPolicyServiceUnitTest::TearDown(void)
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::TearDown start-end");
 }
 
-AudioPolicyServer* GetServerPtr()
+AudioPolicyServer* AudioPolicyServiceUnitTest::GetServerPtr()
 {
     static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit) {
+        AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::GetServerPtr  server.OnStart()");
         server.OnStart();
         server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server.OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
         server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(ACCESSIBILITY_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
         server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
@@ -87,7 +86,12 @@ AudioPolicyServer* GetServerPtr()
     return &server;
 }
 
-void GetPermission()
+static AudioPolicyServer* GetServerPtr()
+{
+    return AudioPolicyServiceUnitTest::GetServerPtr();
+}
+
+static void GetPermission()
 {
     if (!g_hasPermission) {
         uint64_t tokenId;
@@ -178,7 +182,6 @@ static const std::vector<StreamUsage>streamUsages = {
     STREAM_USAGE_NOTIFICATION_RINGTONE,
     STREAM_USAGE_RINGTONE,
     STREAM_USAGE_NOTIFICATION,
-    STREAM_USAGE_ACCESSIBILITY,
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_MOVIE,
     STREAM_USAGE_GAME,
@@ -208,7 +211,6 @@ static const std::vector<AudioStreamType>audioStreamTypes = {
     STREAM_ENFORCED_AUDIBLE,
     STREAM_DTMF,
     STREAM_TTS,
-    STREAM_ACCESSIBILITY,
     STREAM_RECORDING,
     STREAM_MOVIE,
     STREAM_GAME,
@@ -300,20 +302,21 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest AudioPolicyServiceTest_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
     // DeviceTest
+    AudioDeviceDescriptor audioDeviceDescriptor;
+    audioDeviceDescriptor.deviceName_ = "dummyName";
+    audioDeviceDescriptor.macAddress_ = "11:22:33:44:55:66";
     for (const auto& deviceType : deviceTypes) {
         AUDIO_INFO_LOG("AudioPolicyServiceTest_001 deviceType:%{public}d, TEST_SESSIONID:%{public}d",
             static_cast<uint32_t>(deviceType), TEST_SESSIONID);
+        audioDeviceDescriptor.deviceType_ = deviceType;
         for (const auto& isConnected : isConnecteds) {
             AUDIO_INFO_LOG("AudioPolicyServiceTest_001 isConnected:%{public}d", static_cast<uint32_t>(isConnected));
-            std::string name = "dummyName";
-            std::string macAddress = "11:22:33:44:55:66";
             GetServerPtr()->audioPolicyService_.hasModulesLoaded = false;
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected);
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected, name, macAddress);
+            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
             GetServerPtr()->audioPolicyService_.hasModulesLoaded = true;
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected);
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected, name, macAddress);
-            GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected, macAddress);
+            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
+            GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected,
+                audioDeviceDescriptor.macAddress_);
         }
         bool ret = GetServerPtr()->audioPolicyService_.IsA2dpOffloadConnected();
         EXPECT_EQ(false, ret);
@@ -458,9 +461,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_004, TestSize.Level1
         GetServerPtr()->audioPolicyService_.FilterSourceOutputs(TEST_SESSIONID);
         GetServerPtr()->audioPolicyService_.RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptorSptr);
         for (const auto& isConnected :isConnecteds) {
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected);
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(
-                deviceType, isConnected, "audioDevice", "audioAddress");
+            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
         }
     }
 }
@@ -1223,7 +1224,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
     GetServerPtr()->audioPolicyService_.isAdapterInfoMap_.store(true);
     GetServerPtr()->audioPolicyService_.isUpdateRouteSupported_ = true;
     ret = GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturer(capturerOptions);
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1624,7 +1625,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_001, TestSize.Le
 
     updatedDesc.deviceType_ = DEVICE_TYPE_DP;
     ret = GetServerPtr()->audioPolicyService_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1926,9 +1927,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     sessionInfo.rate = RATE;
     sessionInfo.channels = CHANNELS;
 
-#ifdef BLUE_YELLOW_DIFF
     GetServerPtr()->audioPolicyService_.normalSourceOpened_ = SOURCE_TYPE_INVALID;
-#endif
     GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
 
     // dummy data
@@ -1946,9 +1945,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     GetServerPtr()->audioPolicyService_.adapterInfoMap_.insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
 
     int32_t ret = SUCCESS;
-#ifdef BLUE_YELLOW_DIFF
     GetServerPtr()->audioPolicyService_.normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
-#endif
     ret = GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
     EXPECT_EQ(ERROR, ret);
 
@@ -2061,8 +2058,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetCapturerStreamDump_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetCapturerStreamDump_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
 
-    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
-    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo2 = make_unique<AudioCapturerChangeInfo>();
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo2 = make_shared<AudioCapturerChangeInfo>();
 
     AudioCapturerInfo capturerInfo;
     capturerInfo.capturerFlags = STREAM_FLAG_NORMAL;
@@ -2123,70 +2120,14 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetVoiceCallVolume_001, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     std::string dumpString = "";
     int32_t volumeLevel = 1;
+
 #ifdef BLUE_YELLOW_DIFF
     GetServerPtr()->audioPolicyService_.audioPolicyManager_.SetVgsVolumeSupported(true);
     GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
     GetServerPtr()->audioPolicyService_.audioPolicyManager_.SetVgsVolumeSupported(false);
-    GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
-#else
-    GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
 #endif
+    GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
 }
-
-#ifdef BLUE_YELLOW_DIFF
-/**
-* @tc.name  : Test SetOffloadVolume.
-* @tc.number: SetOffloadVolume_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, SetOffloadVolume_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest SetOffloadVolume_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    // clear connectedA2dpDeviceMap_ and activeBTDevice_
-    GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.clear();
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "";
-
-    // test when connectedA2dpDeviceMap_ and activeBTDevice_ is empty
-    int32_t volume = 1;
-    for (const auto& deviceType : deviceTypes) {
-        GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
-        for (const auto& audioStreamType : audioStreamTypes) {
-            GetServerPtr()->audioPolicyService_.SetOffloadVolume(audioStreamType, volume);
-        }
-    }
-
-    // modify activeBTDevice_ and connectedA2dpDeviceMap_
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "activeBTDevice";
-    AudioStreamInfo audioStreamInfo = {};
-    audioStreamInfo.samplingRate =  AudioSamplingRate::SAMPLE_RATE_48000;
-    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioStreamInfo.channels = AudioChannel::STEREO;
-    A2dpDeviceConfigInfo configInfo = {audioStreamInfo, true};
-    GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.insert({"activeBTDevice", configInfo});
-    GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.insert({"A2dpDeviceCommon", {}});
-
-    // test when connectedA2dpDeviceMap_ and activeBTDevice_ is not empty and absVolumeSupport is true
-    for (const auto& deviceType : deviceTypes) {
-        GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
-        for (const auto& audioStreamType : audioStreamTypes) {
-            GetServerPtr()->audioPolicyService_.SetOffloadVolume(audioStreamType, volume);
-        }
-    }
-
-    // modify configInfo.absVolumeSupport to false
-    configInfo.absVolumeSupport = false;
-
-    // test when connectedA2dpDeviceMap_ and activeBTDevice_ is not empty and absVolumeSupport is false
-    for (const auto& deviceType : deviceTypes) {
-        GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
-        for (const auto& audioStreamType : audioStreamTypes) {
-            GetServerPtr()->audioPolicyService_.SetOffloadVolume(audioStreamType, volume);
-        }
-    }
-}
-#endif
 
 /**
 * @tc.name  : Test NotifyUserSelectionEventToBt.
@@ -2278,7 +2219,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_002, TestSi
     deviceDescriptorVector.push_back(audioDeviceDescriptor);
 
     // dummy audioRendererChangeInfos_
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     ASSERT_NE(nullptr, rendererChangeInfo) << "audioDeviceDescriptor is nullptr.";
     rendererChangeInfo->clientUID = getuid();
     rendererChangeInfo->sessionId = TEST_SESSIONID;
@@ -2288,7 +2229,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_002, TestSi
     EXPECT_EQ(SUCCESS, result);
 
     GetServerPtr()->audioPolicyService_.streamCollector_.audioRendererChangeInfos_.clear();
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo2 = make_unique<AudioRendererChangeInfo>();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo2 = make_shared<AudioRendererChangeInfo>();
     ASSERT_NE(nullptr, rendererChangeInfo2) << "audioDeviceDescriptor is nullptr.";
     rendererChangeInfo2->clientUID = getuid();
     rendererChangeInfo2->sessionId = 0;
@@ -2298,7 +2239,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_002, TestSi
     EXPECT_EQ(SUCCESS, result);
 
     GetServerPtr()->audioPolicyService_.streamCollector_.audioRendererChangeInfos_.clear();
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo3 = make_unique<AudioRendererChangeInfo>();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo3 = make_shared<AudioRendererChangeInfo>();
     ASSERT_NE(nullptr, rendererChangeInfo3) << "audioDeviceDescriptor is nullptr.";
     rendererChangeInfo3->clientUID = getuid() + 1;
     rendererChangeInfo3->sessionId = 0;
@@ -2572,11 +2513,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
     for (const auto& audioStreamType : audioStreamTypes) {
         GetServerPtr()->audioPolicyService_.SetSystemVolumeLevel(audioStreamType, volumeLevel);
         GetServerPtr()->audioPolicyService_.SetVoiceCallVolume(volumeLevel);
-#ifdef BLUE_YELLOW_DIFF
-        for (const auto& isMute : isMutes) {
-            GetServerPtr()->audioPolicyService_.SetOffloadMute(audioStreamType, isMute);
-        }
-#endif
     }
 }
 

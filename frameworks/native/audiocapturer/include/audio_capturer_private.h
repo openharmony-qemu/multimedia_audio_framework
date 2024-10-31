@@ -65,7 +65,6 @@ public:
     int32_t Enqueue(const BufferDesc &bufDesc)const override;
     int32_t Clear()const override;
     int32_t GetBufQueueState(BufferQueueState &bufState)const override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     void SetValid(bool valid) override;
     int64_t GetFramesRead() const override;
     int32_t GetCurrentInputDevices(DeviceInfo &deviceInfo) const override;
@@ -101,8 +100,8 @@ public:
     AudioCapturerInfo capturerInfo_ = {};
     AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
     AudioStreamType audioStreamType_;
-    std::string cachePath_;
     bool abortRestore_ = false;
+    AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
 
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
@@ -198,7 +197,7 @@ public:
     virtual ~AudioCapturerStateChangeCallbackImpl();
 
     void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void SaveDeviceChangeCallback(const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback);
     void RemoveDeviceChangeCallback(const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback);
     int32_t DeviceChangeCallbackArraySize();
@@ -207,9 +206,9 @@ public:
     int32_t GetCapturerInfoChangeCallbackArraySize();
     void setAudioCapturerObj(AudioCapturerPrivate *capturerObj);
     void NotifyAudioCapturerDeviceChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     void NotifyAudioCapturerInfoChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     void HandleCapturerDestructor();
 private:
     std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> deviceChangeCallbacklist_;

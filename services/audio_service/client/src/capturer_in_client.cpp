@@ -34,7 +34,7 @@
 #include "securec.h"
 
 #include "ipc_stream.h"
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "audio_log_utils.h"
 #include "audio_manager_base.h"
@@ -178,7 +178,6 @@ public:
     uint32_t GetRendererSamplingRate() override;
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
@@ -207,7 +206,7 @@ public:
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 
-    bool RestoreAudioStream() override;
+    bool RestoreAudioStream(bool needStoreState = true) override;
 
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
@@ -259,7 +258,6 @@ private:
     AudioCapturerInfo capturerInfo_ = {};
 
     int32_t bufferSizeInMsec_ = 20; // 20ms
-    std::string cachePath_ = "";
 
     // callback mode
     AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;
@@ -399,7 +397,9 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == RESTORE_SESSION) {
-        RestoreAudioStream();
+        if (audioStreamTracker_ && audioStreamTracker_.get()) {
+            audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
+        }
         return SUCCESS;
     }
 
@@ -1832,12 +1832,6 @@ int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     return SUCCESS;
 }
 
-void CapturerInClientInner::SetApplicationCachePath(const std::string cachePath)
-{
-    cachePath_ = cachePath;
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath_.c_str());
-}
-
 int32_t CapturerInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     AUDIO_WARNING_LOG("not supported in capturer");
@@ -1870,7 +1864,6 @@ void CapturerInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
 void CapturerInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    info.cachePath = cachePath_;
     info.overFlowCount = overflowCount_;
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
@@ -1919,7 +1912,7 @@ bool CapturerInClientInner::GetSilentModeAndMixWithOthers()
     return false;
 }
 
-bool CapturerInClientInner::RestoreAudioStream()
+bool CapturerInClientInner::RestoreAudioStream(bool needStoreState)
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
@@ -1932,6 +1925,14 @@ bool CapturerInClientInner::RestoreAudioStream()
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {
         goto error;
+    }
+
+    // for inner-capturer
+    if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        ret = UpdatePlaybackCaptureConfig(filterConfig_);
+        if (ret != SUCCESS) {
+            goto error;
+        }
     }
 
     switch (oldState) {

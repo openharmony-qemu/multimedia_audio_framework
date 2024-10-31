@@ -31,6 +31,7 @@ public:
 
     void AddCallbackReference(const std::string &callbackName, napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value callback);
+    void CreateWriteDTsfn(napi_env env);
 
 private:
     struct RendererWriteDataJsCallback {
@@ -41,6 +42,8 @@ private:
     };
 
     static void WorkCallbackRendererWriteDataInner(RendererWriteDataJsCallback *event);
+    static void SafeJsCallbackWriteDataWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void WriteDataTsfnFinalize(napi_env env, void *data, void *hint);
     void OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb);
     static void CheckWriteDataCallbackResult(napi_env env, BufferDesc &bufDesc, napi_value result);
 
@@ -49,6 +52,8 @@ private:
     std::shared_ptr<AutoRef> rendererWriteDataCallback_ = nullptr;
     NapiAudioRenderer *napiRenderer_;
     napi_ref callback_ = nullptr;
+    bool regArWriteDataTsfn_ = false;
+    napi_threadsafe_function arWriteDataTsfn_ = nullptr;
 
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
     static vector<NapiAudioRenderer*> activeRenderers_;

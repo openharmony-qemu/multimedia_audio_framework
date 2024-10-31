@@ -20,7 +20,7 @@
 #include <cinttypes>
 #include "securec.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_renderer_log.h"
 #include "audio_utils.h"
 #include "audio_service.h"
 #include "futex_tool.h"
@@ -51,7 +51,6 @@ namespace {
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
-    const int32_t XCOLLIE_FLAG_DEFAULT = (1 | 2); // dump stack and kill self
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -801,6 +800,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
 
 int32_t RendererInServer::Stop()
 {
+    AUDIO_INFO_LOG("Stop.");
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
@@ -845,11 +845,8 @@ int32_t RendererInServer::Release()
 {
     AUDIO_INFO_LOG("Start release");
     AudioXCollie audioXCollie(
-        "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr, XCOLLIE_FLAG_DEFAULT);
-    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        AudioService::GetInstance()->CleanUpStream(processConfig_.appInfo.appUid);
-    }
-
+        "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
@@ -858,6 +855,12 @@ int32_t RendererInServer::Release()
             return SUCCESS;
         }
     }
+
+    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        AudioService::GetInstance()->SetDecMaxRendererStreamCnt();
+        AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
+    }
+
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
     if (ret < 0) {
@@ -1028,7 +1031,7 @@ int32_t RendererInServer::DisableDualTone()
     AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d", dualToneStreamIndex_, status_);
     IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(dualToneStreamIndex_);
-    dupStream_ = nullptr;
+    dualToneStream_ = nullptr;
 
     return ERROR;
 }
@@ -1134,6 +1137,9 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
     float systemVol = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
     AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d systemVol:"
         "%{public}f]", streamIndex_, volume, volumeType, systemVol);
+    if (IsVolumeSame(MIN_FLOAT_VOLUME, volume, AUDIO_VOLOMUE_EPSILON)) {
+        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.0f);
+    }
 
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");

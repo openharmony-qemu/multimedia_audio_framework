@@ -31,19 +31,25 @@ public:
     void SaveCallbackReference(napi_value args);
     void OnStateChange(const AudioCapturerChangeInfo &capturerChangeInfo) override;
     bool ContainSameJsCallback(napi_value args);
+    void CreateCaptureInfoChangeTsfn(napi_env env);
 
 private:
     struct AudioCapturerChangeInfoJsCallback {
         napi_ref callback_;
         napi_env env_;
         AudioCapturerChangeInfo capturerChangeInfo_;
+        std::string callbackName = "unknown";
     };
 
     void OnJsCallbackCapturerChangeInfo(napi_ref method, const AudioCapturerChangeInfo &capturerChangeInfo);
+    static void SafeJsCallbackCapturerChangeInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void CapturerChangeInfoTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     napi_ref callback_ = nullptr;
+    bool regAcInfoChgTsfn_ = false;
+    napi_threadsafe_function acInfoChgTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

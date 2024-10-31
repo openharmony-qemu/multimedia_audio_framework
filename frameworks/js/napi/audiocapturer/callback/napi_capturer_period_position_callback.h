@@ -29,6 +29,7 @@ public:
     virtual ~NapiCapturerPeriodPositionCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnPeriodReached(const int64_t &frameNumber) override;
+    void CreatePeriodPositionTsfn(napi_env env);
 
 private:
     struct CapturerPeriodPositionJsCallback {
@@ -38,10 +39,14 @@ private:
     };
 
     void OnJsCapturerPeriodPositionCallback(std::unique_ptr<CapturerPeriodPositionJsCallback> &jsCb);
+    static void CapturerPeriodPositionTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackCapturerPeriodPositionWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> capturerPeriodPositionCallback_ = nullptr;
+    bool regAcPeriodPosTsfn_ = false;
+    napi_threadsafe_function acPeriodPosTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

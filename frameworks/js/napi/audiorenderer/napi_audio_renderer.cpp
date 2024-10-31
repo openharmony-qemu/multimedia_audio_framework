@@ -48,11 +48,13 @@ NapiAudioRenderer::NapiAudioRenderer()
 
 void NapiAudioRenderer::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioRenderer *>(nativeObject);
-        ObjectRefMap<NapiAudioRenderer>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    auto obj = static_cast<NapiAudioRenderer *>(nativeObject);
+    ObjectRefMap<NapiAudioRenderer>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &constructor)
@@ -1700,6 +1702,11 @@ napi_value NapiAudioRenderer::RegisterRendererCallback(napi_env env, napi_value 
     std::shared_ptr<NapiAudioRendererCallback> cb =
         std::static_pointer_cast<NapiAudioRendererCallback>(napiRenderer->callbackNapi_);
     cb->SaveCallbackReference(cbName, argv[PARAM1]);
+    if (cbName == INTERRUPT_CALLBACK_NAME || cbName == AUDIO_INTERRUPT_CALLBACK_NAME) {
+        cb->CreateArInterrupt(env);
+    } else if (cbName == STATE_CHANGE_CALLBACK_NAME) {
+        cb->CreateArStateChange(env);
+    }
 
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -1725,6 +1732,7 @@ napi_value NapiAudioRenderer::RegisterPositionCallback(napi_env env, napi_value 
     std::shared_ptr<NapiRendererPositionCallback> cb =
         std::static_pointer_cast<NapiRendererPositionCallback>(napiRenderer->positionCbNapi_);
     cb->SaveCallbackReference(cbName, argv[PARAM2]);
+    cb->CreateMarkReachedTsfn(env);
 
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -1752,6 +1760,7 @@ napi_value NapiAudioRenderer::RegisterPeriodPositionCallback(napi_env env, napi_
             std::shared_ptr<NapiRendererPeriodPositionCallback> cb =
                 std::static_pointer_cast<NapiRendererPeriodPositionCallback>(napiRenderer->periodPositionCbNapi_);
             cb->SaveCallbackReference(cbName, argv[PARAM2]);
+            cb->CreatePeriodReachTsfn(env);
         } else {
             AUDIO_DEBUG_LOG("periodReach already subscribed.");
         }
@@ -1780,6 +1789,7 @@ napi_value NapiAudioRenderer::RegisterDataRequestCallback(napi_env env, napi_val
     std::shared_ptr<NapiRendererDataRequestCallback> cb =
         std::static_pointer_cast<NapiRendererDataRequestCallback>(napiRenderer->dataRequestCbNapi_);
     cb->SaveCallbackReference(cbName, argv[PARAM1]);
+    cb->CreateWriteDataTsfn(env);
 
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -1815,6 +1825,7 @@ void NapiAudioRenderer::RegisterRendererDeviceChangeCallback(napi_env env, napi_
         std::static_pointer_cast<NapiAudioRendererDeviceChangeCallback>(
         napiRenderer->rendererDeviceChangeCallbackNapi_);
     cb->AddCallbackReference(argv[PARAM1]);
+    cb->CreateRendererDeviceChangeTsfn(env);
     AUDIO_INFO_LOG("RegisterRendererStateChangeCallback is successful");
 }
 
@@ -1888,6 +1899,7 @@ void NapiAudioRenderer::RegisterRendererOutputDeviceChangeWithInfoCallback(napi_
     std::shared_ptr<NapiAudioRendererOutputDeviceChangeWithInfoCallback> cb =
         napiRenderer->rendererOutputDeviceChangeWithInfoCallbackNapi_;
     cb->AddCallbackReference(argv[PARAM1]);
+    cb->CreateOutputDeviceChangeTsfn(env);
     AUDIO_INFO_LOG("Register Callback is successful");
 }
 
@@ -1936,6 +1948,7 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
     std::shared_ptr<NapiRendererWriteDataCallback> cb =
         std::static_pointer_cast<NapiRendererWriteDataCallback>(napiRenderer->rendererWriteDataCallbackNapi_);
     cb->AddCallbackReference(cbName, argv[PARAM1]);
+    cb->CreateWriteDTsfn(env);
 
     AUDIO_INFO_LOG("Register Callback is successful");
 }

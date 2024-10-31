@@ -38,7 +38,6 @@ constexpr auto SLEEP_TIMES_RETYT_FAILED = 1min;
 std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
-sptr<AudioPolicyClientStubImpl> AudioPolicyManager::audioStaticPolicyClientStubCB_;
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
 
 inline bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
@@ -108,7 +107,6 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
     std::unique_lock<std::mutex> lock(registerCallbackMutex_);
     if (audioPolicyClientStubCB_ == nullptr) {
         audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
-        audioStaticPolicyClientStubCB_ = audioPolicyClientStubCB_;
     }
     sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
     if (object == nullptr) {
@@ -127,10 +125,12 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
 
 void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 {
-    if (audioStaticPolicyClientStubCB_ == nullptr) {
+    std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+    if (audioPolicyClientStubCB_ == nullptr) {
         AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null.");
         return;
     }
+    lock.unlock();
 
     int32_t retry = RETRY_TIMES;
     sptr<IAudioPolicy> gsp = nullptr;
@@ -151,14 +151,14 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Reconnect audio policy service fail!");
 
-    sptr<IRemoteObject> object = audioStaticPolicyClientStubCB_->AsObject();
+    sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("RegisterPolicyCallbackClientFunc: audioPolicyClientStubCB_->AsObject is nullptr");
         return;
     }
 
     gsp->RegisterPolicyCallbackClient(object);
-    if (audioStaticPolicyClientStubCB_->HasMicStateChangeCallback()) {
+    if (audioPolicyClientStubCB_->HasMicStateChangeCallback()) {
         AUDIO_INFO_LOG("RecoverAudioPolicyCallbackClient has micStateChangeCallback");
         gsp->SetClientCallbacksEnable(CALLBACK_MICMUTE_STATE_CHANGE, true);
     }
@@ -603,15 +603,28 @@ int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
             return ret;
         }
     }
-    audioPolicyClientStubCB_->AddRingerModeCallback(callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_RINGER_MODE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddRingerModeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetRingerModeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_RINGER_MODE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_RINGER_MODE, true);
+        }
+    }
     return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
 {
     AUDIO_DEBUG_LOG("Remove all ringer mode callbacks");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_RINGER_MODE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveRingerModeCallback();
+        if (audioPolicyClientStubCB_->GetRingerModeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_RINGER_MODE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_RINGER_MODE, false);
+        }
     }
     return SUCCESS;
 }
@@ -620,8 +633,13 @@ int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId,
     const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("Remove one ringer mode callback");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_RINGER_MODE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveRingerModeCallback(callback);
+        if (audioPolicyClientStubCB_->GetRingerModeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_RINGER_MODE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_RINGER_MODE, false);
+        }
     }
     return SUCCESS;
 }
@@ -657,7 +675,15 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
         }
     }
 
-    audioPolicyClientStubCB_->AddDeviceChangeCallback(flag, callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_DEVICE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddDeviceChangeCallback(flag, callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetDeviceChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_DEVICE_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_DEVICE_CHANGE, true);
+        }
+    }
     return SUCCESS;
 }
 
@@ -674,8 +700,14 @@ int32_t AudioPolicyManager::SetMicrophoneBlockedCallback(const int32_t clientId,
             return ret;
         }
     }
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_MICROPHONE_BLOCKED].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->AddMicrophoneBlockedCallback(clientId, callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetMicrophoneBlockedCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_MICROPHONE_BLOCKED].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_MICROPHONE_BLOCKED, true);
+        }
     }
     return SUCCESS;
 }
@@ -684,8 +716,13 @@ int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, De
     std::shared_ptr<AudioManagerDeviceChangeCallback> &cb)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetDeviceChangeCallback");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_DEVICE_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveDeviceChangeCallback(flag, cb);
+        if (audioPolicyClientStubCB_->GetDeviceChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_DEVICE_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_DEVICE_CHANGE, false);
+        }
     }
     return SUCCESS;
 }
@@ -705,7 +742,15 @@ int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const int32_t
         }
     }
 
-    audioPolicyClientStubCB_->AddPreferredOutputDeviceChangeCallback(callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddPreferredOutputDeviceChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, true);
+        }
+    }
     return SUCCESS;
 }
 
@@ -724,15 +769,28 @@ int32_t AudioPolicyManager::SetPreferredInputDeviceChangeCallback(
         }
     }
 
-    audioPolicyClientStubCB_->AddPreferredInputDeviceChangeCallback(callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddPreferredInputDeviceChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE, true);
+        }
+    }
     return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemovePreferredOutputDeviceChangeCallback();
+        if (audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, false);
+        }
     }
     return SUCCESS;
 }
@@ -740,8 +798,13 @@ int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(const int32
 int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback()
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemovePreferredInputDeviceChangeCallback();
+        if (audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE, false);
+        }
     }
     return SUCCESS;
 }
@@ -749,8 +812,13 @@ int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback()
 int32_t AudioPolicyManager::UnsetMicrophoneBlockedCallback(const int32_t clientId,
     const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
 {
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_MICROPHONE_BLOCKED].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveMicrophoneBlockedCallback(clientId, callback);
+        if (audioPolicyClientStubCB_->GetMicrophoneBlockedCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_MICROPHONE_BLOCKED].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_MICROPHONE_BLOCKED, false);
+        }
     }
     return SUCCESS;
 }
@@ -770,7 +838,15 @@ int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
         }
     }
 
-    audioPolicyClientStubCB_->AddMicStateChangeCallback(callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_MIC_STATE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddMicStateChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetMicStateChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_MIC_STATE_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_MIC_STATE_CHANGE, true);
+        }
+    }
     return SUCCESS;
 }
 
@@ -782,8 +858,14 @@ int32_t AudioPolicyManager::UnsetMicStateChangeCallback(
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, ERR_INVALID_OPERATION,
         "audioPolicyClientStubCB is nullptr");
-
-    audioPolicyClientStubCB_->RemoveMicStateChangeCallback();
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_MIC_STATE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveMicStateChangeCallback();
+        if (audioPolicyClientStubCB_->GetMicStateChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_MIC_STATE_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_MIC_STATE_CHANGE, false);
+        }
+    }
     return SUCCESS;
 }
 
@@ -828,11 +910,12 @@ int32_t AudioPolicyManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
     return gsp->SetQueryClientTypeCallback(object);
 }
 
-int32_t AudioPolicyManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyManager::ActivateAudioInterrupt(
+    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID);
+    return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
 }
 
 int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
@@ -915,7 +998,15 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
         }
     }
 
-    audioPolicyClientStubCB_->AddVolumeKeyEventCallback(callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_VOLUME_KEY_EVENT].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddVolumeKeyEventCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetVolumeKeyEventCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_VOLUME_KEY_EVENT].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_VOLUME_KEY_EVENT, true);
+        }
+    }
     return SUCCESS;
 }
 
@@ -923,8 +1014,13 @@ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(
     const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
     AUDIO_DEBUG_LOG("UnsetVolumeKeyEventCallback");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_VOLUME_KEY_EVENT].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveVolumeKeyEventCallback(callback);
+        if (audioPolicyClientStubCB_->GetVolumeKeyEventCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_VOLUME_KEY_EVENT].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_VOLUME_KEY_EVENT, false);
+        }
     }
     return SUCCESS;
 }
@@ -1048,15 +1144,28 @@ int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
         }
     }
 
-    audioPolicyClientStubCB_->AddDeviceChangeWithInfoCallback(sessionID, callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_DEVICE_CHANGE_WITH_INFO].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddDeviceChangeWithInfoCallback(sessionID, callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetDeviceChangeWithInfoCallbackkSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_DEVICE_CHANGE_WITH_INFO].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_DEVICE_CHANGE_WITH_INFO, true);
+        }
+    }
     return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnregisterDeviceChangeWithInfoCallback(const uint32_t sessionID)
 {
     AUDIO_DEBUG_LOG("In");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_DEVICE_CHANGE_WITH_INFO].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveDeviceChangeWithInfoCallback(sessionID);
+        if (audioPolicyClientStubCB_->GetDeviceChangeWithInfoCallbackkSize() == 0) {
+            callbackChangeInfos_[CALLBACK_DEVICE_CHANGE_WITH_INFO].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_DEVICE_CHANGE_WITH_INFO, false);
+        }
     }
     return SUCCESS;
 }
@@ -1160,7 +1269,7 @@ int32_t AudioPolicyManager::GetPreferredInputStreamType(AudioCapturerInfo &captu
 }
 
 int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
-    vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1169,7 +1278,7 @@ int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
 }
 
 int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
-    vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1554,7 +1663,15 @@ int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(
         }
     }
 
-    audioPolicyClientStubCB_->AddSpatializationEnabledChangeCallback(callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SPATIALIZATION_ENABLED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddSpatializationEnabledChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetSpatializationEnabledChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SPATIALIZATION_ENABLED_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SPATIALIZATION_ENABLED_CHANGE, true);
+        }
+    }
     return SUCCESS;
 }
 
@@ -1573,15 +1690,28 @@ int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(
         }
     }
 
-    audioPolicyClientStubCB_->AddHeadTrackingEnabledChangeCallback(callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddHeadTrackingEnabledChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetHeadTrackingEnabledChangeCallbacSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
+        }
+    }
     return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnregisterSpatializationEnabledEventListener()
 {
     AUDIO_DEBUG_LOG("Start to unregister");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SPATIALIZATION_ENABLED_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveSpatializationEnabledChangeCallback();
+        if (audioPolicyClientStubCB_->GetSpatializationEnabledChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SPATIALIZATION_ENABLED_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SPATIALIZATION_ENABLED_CHANGE, false);
+        }
     }
     return SUCCESS;
 }
@@ -1589,8 +1719,13 @@ int32_t AudioPolicyManager::UnregisterSpatializationEnabledEventListener()
 int32_t AudioPolicyManager::UnregisterHeadTrackingEnabledEventListener()
 {
     AUDIO_DEBUG_LOG("Start to unregister");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveHeadTrackingEnabledChangeCallback();
+        if (audioPolicyClientStubCB_->GetHeadTrackingEnabledChangeCallbacSize() == 0) {
+            callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, false);
+        }
     }
     return SUCCESS;
 }
@@ -1919,15 +2054,28 @@ int32_t AudioPolicyManager::RegisterHeadTrackingDataRequestedEventListener(const
         }
     }
 
-    audioPolicyClientStubCB_->AddHeadTrackingDataRequestedChangeCallback(macAddress, callback);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddHeadTrackingDataRequestedChangeCallback(macAddress, callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetHeadTrackingDataRequestedChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE, true);
+        }
+    }
     return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnregisterHeadTrackingDataRequestedEventListener(const std::string &macAddress)
 {
     AUDIO_DEBUG_LOG("Start to unregister");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveHeadTrackingDataRequestedChangeCallback(macAddress);
+        if (audioPolicyClientStubCB_->GetHeadTrackingDataRequestedChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE, false);
+        }
     }
     return SUCCESS;
 }
@@ -2092,6 +2240,13 @@ int32_t AudioPolicyManager::LoadSplitModule(const std::string &splitArgs, const 
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->LoadSplitModule(splitArgs, networkId);
+}
+
+bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->IsAllowedPlayback(uid, pid);
 }
 
 int32_t AudioPolicyManager::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,

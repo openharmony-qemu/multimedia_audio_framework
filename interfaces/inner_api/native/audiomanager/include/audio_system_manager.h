@@ -74,6 +74,7 @@ public:
 
     bool isSameDevice(const DeviceInfo &deviceInfo);
     bool isSameDeviceDesc(const std::unique_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    static DeviceType MapInternalToExternalDeviceType(DeviceType deviceType);
 };
 
 struct AudioSpatialEnabledStateForDevice {
@@ -168,8 +169,8 @@ struct DeviceChangeAction {
  * @since 13
  */
 struct MicrophoneBlockedInfo {
-    DeviceBlockStatus status;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    DeviceBlockStatus blockStatus;
+    std::vector<sptr<AudioDeviceDescriptor>> devices;
 };
 
 /**
@@ -435,7 +436,7 @@ class AudioDeviceAnahs {
 public:
     virtual ~AudioDeviceAnahs() = default;
 
-    virtual int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus) = 0;
+    virtual int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) = 0;
 };
 
 /**
@@ -1380,6 +1381,7 @@ private:
     std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_ = nullptr;
     std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
     std::mutex ringerModeCallbackMutex_;
+    std::mutex groupManagerMapMutex_;
 
     std::shared_ptr<AudioCapturerSourceCallback> audioCapturerSourceCallback_ = nullptr;
     std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;

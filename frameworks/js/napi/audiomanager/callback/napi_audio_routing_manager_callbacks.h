@@ -36,6 +36,7 @@ public:
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void RemoveCallbackReference(napi_env env, napi_value callback);
     void RemoveAllCallbacks();
+    void CreatePreferredOutTsfn(napi_env env);
 
 private:
     struct AudioActiveOutputDeviceChangeJsCallback {
@@ -45,11 +46,15 @@ private:
     };
 
     void OnJsCallbackActiveOutputDeviceChange(std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> &jsCb);
+    static void SafeJsCallbackActiveOutputDeviceChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void ActiveOutputDeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> preferredOutputDeviceCallback_ = nullptr;
     std::list<std::pair<std::shared_ptr<AutoRef>, AudioStreamType>> preferredOutputDeviceCbList_;
+    bool regAmOutputDevChgTsfn_ = false;
+    napi_threadsafe_function amOutputDevChgTsfn_ = nullptr;
 };
 
 class NapiAudioPreferredInputDeviceChangeCallback : public AudioPreferredInputDeviceChangeCallback {
@@ -60,6 +65,7 @@ public:
     void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void RemoveCallbackReference(napi_env env, napi_value callback);
     void RemoveAllCallbacks();
+    void CreatePerferredInTsfn(napi_env env);
 
 private:
     struct AudioActiveInputDeviceChangeJsCallback {
@@ -69,11 +75,15 @@ private:
     };
 
     void OnJsCallbackActiveInputDeviceChange(std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> &jsCb);
+    static void SafeJsCallbackActiveInputDeviceChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void ActiveInputDeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex preferredInputListMutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> preferredInputDeviceCallback_ = nullptr;
     std::list<std::pair<std::shared_ptr<AutoRef>, SourceType>> preferredInputDeviceCbList_;
+    bool regAmInputDevChgTsfn_ = false;
+    napi_threadsafe_function amInputDevChgTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

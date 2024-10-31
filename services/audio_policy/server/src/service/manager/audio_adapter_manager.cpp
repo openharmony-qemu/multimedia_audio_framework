@@ -439,7 +439,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
         {DEVICE_TYPE_USB_HEADSET, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS}},
         {DEVICE_TYPE_BLUETOOTH_A2DP, {A2DP_CLASS, PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS}},
         {DEVICE_TYPE_BLUETOOTH_SCO, {PRIMARY_CLASS, MCH_CLASS}},
-        {DEVICE_TYPE_EARPIECE, {PRIMARY_CLASS, MCH_CLASS}},
+        {DEVICE_TYPE_EARPIECE, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS}},
         {DEVICE_TYPE_WIRED_HEADSET, {PRIMARY_CLASS, MCH_CLASS}},
         {DEVICE_TYPE_WIRED_HEADPHONES, {PRIMARY_CLASS, MCH_CLASS}},
         {DEVICE_TYPE_USB_ARM_HEADSET, {USB_CLASS}},
@@ -453,6 +453,8 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     bool isMuted = GetStreamMute(volumeType);
     int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
     if (GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && volumeType == STREAM_MUSIC) {
+        isMuted = IsAbsVolumeMute();
+        volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
         volumeDb = isMuted ? 0.0f : 0.63957f; // 0.63957 = -4dB
     }
     auto audioVolume = AudioVolume::GetInstance();
@@ -1120,13 +1122,13 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
             return EARPIECE_VOLUME_TYPE;
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_FILE_SOURCE:
+        case DEVICE_TYPE_DP:
             return SPEAKER_VOLUME_TYPE;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_DP:
             return HEADSET_VOLUME_TYPE;
         default:
             return SPEAKER_VOLUME_TYPE;
@@ -1227,13 +1229,16 @@ void AudioAdapterManager::UpdateSafeVolume()
     if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
         return;
     }
-    AUDIO_INFO_LOG("update current volume to safevolume, device:%{public}d", currentActiveDevice_);
+    auto currentActiveOutputDeviceDescriptor =
+        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     switch (currentActiveDevice_) {
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             if (isWiredBoot_) {
+                AUDIO_INFO_LOG("1st connect wired device:%{public}d after boot, update current volume to safevolume",
+                    currentActiveDevice_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
                 volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
                 isWiredBoot_ = false;
@@ -1241,7 +1246,15 @@ void AudioAdapterManager::UpdateSafeVolume()
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
+            if (currentActiveOutputDeviceDescriptor != nullptr) {
+                AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveOutputDeviceDescriptor->deviceCategory_);
+                if (currentActiveOutputDeviceDescriptor->deviceCategory_ != BT_HEADPHONE) {
+                    AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_);
+                }
+            }
             if (isBtBoot_) {
+                AUDIO_INFO_LOG("1st connect bt device:%{public}d after boot, update current volume to safevolume",
+                    currentActiveDevice_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
                 volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
                 isBtBoot_ = false;
@@ -1472,6 +1485,9 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
         }
         if (streamType == STREAM_RING) {
             bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+            if (currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
+                continue;
+            }
             AUDIO_INFO_LOG("ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
                 muteStateForStreamRing);
             if (muteStateForStreamRing == GetStreamMute(streamType)) {
@@ -1616,6 +1632,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_DP:
             type = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -1625,7 +1642,6 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
             type = "wired";
             break;
         default:
@@ -1807,6 +1823,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
     uint32_t pointSize = volumePoints.size();
 
+    CHECK_AND_RETURN_RET_LOG(pointSize != 0, 1.0f, "pointSize is 0");
     int32_t volSteps = static_cast<int32_t>(1 + volumePoints[pointSize - 1].index - volumePoints[0].index);
     int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
     int32_t position = static_cast<int32_t>(GetPositionInVolumePoints(volumePoints, idxRatio));
@@ -1910,7 +1927,7 @@ bool AudioAdapterManager::IsAbsVolumeScene() const
 void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     isAbsVolumeMute_ = mute;
-    float volumeDb = mute ? 0.0f : 1.0f;
+    float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
     SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
 }
 

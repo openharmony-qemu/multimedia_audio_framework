@@ -19,7 +19,7 @@
 #include "pa_adapter_manager.h"
 #include <sstream>
 #include <atomic>
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_errors.h"
 #include "audio_schedule.h"
 #include "pa_adapter_tools.h"
@@ -609,13 +609,13 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     }
 
     PaLockGuard lock(mainLoop_);
-    int32_t XcollieFlag = 1; // flag 1 generate log file
+    int32_t XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG;
     if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
     if (managerType_ == RECORDER) {
-        XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
+        XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY;
         int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, source, deviceName);
         CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
     }
@@ -865,6 +865,9 @@ const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
             break;
         case SOURCE_TYPE_VOICE_TRANSCRIPTION:
             name = "SCENE_PRE_ENHANCE";
+            break;
+        case SOURCE_TYPE_VOICE_MESSAGE:
+            name = "SCENE_VOICE_MESSAGE";
             break;
         default:
             name = "SCENE_OTHERS";

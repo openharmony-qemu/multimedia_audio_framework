@@ -36,7 +36,7 @@ public:
     virtual ~NapiAudioManagerCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
-    void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedinfo) override;
+    void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
     void SaveMicrophoneBlockedCallbackReference(napi_value callback);
     void RemoveMicrophoneBlockedCallbackReference(napi_env env, napi_value callback);
     void RemoveAllMicrophoneBlockedCallback();
@@ -50,6 +50,8 @@ public:
     void RemoveRoutingManagerDeviceChangeCbRef(napi_env env, napi_value callback);
     void RemoveAllRoutingManagerDeviceChangeCb();
     int32_t GetRoutingManagerDeviceChangeCbListSize();
+    void CreateMicBlockedTsfn(napi_env env);
+    void CreateDevChgTsfn(napi_env env);
 
 private:
     struct AudioManagerJsCallback {
@@ -61,6 +63,10 @@ private:
 
     void OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb);
     void OnJsCallbackMicrophoneBlocked(std::unique_ptr<AudioManagerJsCallback> &jsCb);
+    static void MicrophoneBlockedTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackMicrophoneBlockedWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void SafeJsCallbackDeviceChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void DeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
@@ -69,6 +75,10 @@ private:
     std::list<std::pair<std::shared_ptr<AutoRef>, DeviceFlag>> audioManagerDeviceChangeCbList_;
     std::list<std::pair<std::shared_ptr<AutoRef>, DeviceFlag>> routingManagerDeviceChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> microphoneBlockedCbList_;
+    bool regAmMicBlockedTsfn_ = false;
+    bool regAmDevChgTsfn_ = false;
+    napi_threadsafe_function amMicBlockedTsfn_ = nullptr;
+    napi_threadsafe_function amDevChgTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

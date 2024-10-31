@@ -34,7 +34,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-std::string AudioSafeVolumeNotificationImpl::GetStringByName(const char* name)
+std::string AudioSafeVolumeNotificationImpl::GetStringByName(const char *name)
 {
     std::string resourceContext;
     if (resourceManager_ == nullptr) {

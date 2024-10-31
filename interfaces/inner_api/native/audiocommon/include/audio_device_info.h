@@ -26,6 +26,9 @@ namespace AudioStandard {
 constexpr size_t AUDIO_DEVICE_INFO_SIZE_LIMIT = 30;
 constexpr int32_t INVALID_GROUP_ID = -1;
 
+const std::string LOCAL_NETWORK_ID = "LocalDevice";
+const std::string REMOTE_NETWORK_ID = "RemoteDevice";
+
 enum API_VERSION {
     API_7 = 7,
     API_8,
@@ -127,6 +130,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_BLUETOOTH_A2DP = 8,
     /**
+     * Indicates a Bluetooth device supporting the Advanced Audio Distribution Profile (A2DP) recording.
+     */
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN = 9,
+    /**
      * Indicates a microphone built in a device.
      */
     DEVICE_TYPE_MIC = 15,
@@ -175,6 +182,7 @@ enum DeviceType {
 inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_WIRED_HEADSET,
     DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
+    DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN,
     DeviceType::DEVICE_TYPE_MIC,
     DeviceType::DEVICE_TYPE_WAKEUP,
     DeviceType::DEVICE_TYPE_USB_HEADSET,
@@ -315,6 +323,12 @@ enum PreferredType {
     AUDIO_TONE_RENDER = 5,
 };
 
+enum BluetoothOffloadState {
+    NO_A2DP_DEVICE = 0,
+    A2DP_NOT_OFFLOAD = 1,
+    A2DP_OFFLOAD = 2,
+};
+
 struct DevicePrivacyInfo {
     std::string deviceName;
     DeviceType deviceType;
@@ -408,20 +422,20 @@ struct DeviceStreamInfo {
 
 class DeviceInfo {
 public:
-    DeviceType deviceType;
-    DeviceRole deviceRole;
-    int32_t deviceId;
-    int32_t channelMasks;
-    int32_t channelIndexMasks;
-    std::string deviceName;
-    std::string macAddress;
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    DeviceRole deviceRole = DEVICE_ROLE_NONE;
+    int32_t deviceId = -1;
+    int32_t channelMasks = 0;
+    int32_t channelIndexMasks = 0;
+    std::string deviceName = "";
+    std::string macAddress = "";
     DeviceStreamInfo audioStreamInfo;
-    std::string networkId;
-    std::string displayName;
-    int32_t interruptGroupId;
-    int32_t volumeGroupId;
-    bool isLowLatencyDevice;
-    int32_t a2dpOffloadFlag;
+    std::string networkId = LOCAL_NETWORK_ID;
+    std::string displayName = "";
+    int32_t interruptGroupId = 0;
+    int32_t volumeGroupId = 0;
+    bool isLowLatencyDevice = false;
+    int32_t a2dpOffloadFlag = NO_A2DP_DEVICE;
     ConnectState connectState = CONNECTED;
     DeviceCategory deviceCategory = CATEGORY_DEFAULT;
 
@@ -508,6 +522,14 @@ public:
         a2dpOffloadFlag = parcel.ReadInt32();
         deviceCategory = static_cast<DeviceCategory>(parcel.ReadInt32());
     }
+
+    bool IsSameDeviceInfo(const DeviceInfo &deviceInfo) const
+    {
+        return deviceType == deviceInfo.deviceType &&
+            deviceRole == deviceInfo.deviceRole &&
+            macAddress == deviceInfo.macAddress &&
+            networkId == deviceInfo.networkId;
+    }
 };
 
 enum class AudioStreamDeviceChangeReason {
@@ -526,6 +548,7 @@ public:
         OVERRODE = 3,
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
+        SET_AUDIO_SCENE = 1001,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -557,6 +580,10 @@ public:
         return reason_ == ExtEnum::OVERRODE;
     }
 
+    bool isSetAudioScene() const
+    {
+        return reason_ == ExtEnum::SET_AUDIO_SCENE;
+    }
 private:
     ExtEnum reason_;
 };

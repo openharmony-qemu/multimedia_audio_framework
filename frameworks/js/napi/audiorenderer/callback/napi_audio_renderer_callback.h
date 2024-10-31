@@ -42,6 +42,8 @@ public:
     void OnStateChange(const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType) override;
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void RemoveCallbackReference(const std::string &callbackName);
+    void CreateArInterrupt(napi_env env);
+    void CreateArStateChange(napi_env env);
 
 private:
     struct AudioRendererJsCallback {
@@ -53,11 +55,19 @@ private:
 
     void OnJsCallbackInterrupt(std::unique_ptr<AudioRendererJsCallback> &jsCb);
     void OnJsCallbackStateChange(std::unique_ptr<AudioRendererJsCallback> &jsCb);
+    static void SafeJsCallbackStateChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void StateChangeTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackInterruptWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void InterruptTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> stateChangeCallback_ = nullptr;
+    bool regArStateChgTsfn_ = false;
+    bool regArInterruptTsfn_ = false;
+    napi_threadsafe_function arStateChgTsfn_ = nullptr;
+    napi_threadsafe_function arInterruptTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

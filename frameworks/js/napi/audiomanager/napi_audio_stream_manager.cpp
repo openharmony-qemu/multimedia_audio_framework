@@ -38,11 +38,13 @@ NapiAudioStreamMgr::~NapiAudioStreamMgr() = default;
 
 void NapiAudioStreamMgr::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioStreamMgr *>(nativeObject);
-        ObjectRefMap<NapiAudioStreamMgr>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    auto obj = static_cast<NapiAudioStreamMgr *>(nativeObject);
+    ObjectRefMap<NapiAudioStreamMgr>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioStreamMgr::Construct(napi_env env, napi_callback_info info)
@@ -218,7 +220,7 @@ napi_value NapiAudioStreamMgr::GetCurrentAudioRendererInfosSync(napi_env env, na
     }
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr!= nullptr, result, "napiStreamMgr is nullptr");
 
-    vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     int32_t ret = napiStreamMgr->audioStreamMngr_->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, result, "GetCurrentRendererChangeInfos failure!");
 
@@ -266,7 +268,7 @@ napi_value NapiAudioStreamMgr::GetCurrentAudioCapturerInfosSync(napi_env env, na
     }
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr!= nullptr, result, "napiStreamMgr is nullptr");
 
-    vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t ret = napiStreamMgr->audioStreamMngr_->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     if (ret != AUDIO_OK) {
         AUDIO_ERR_LOG("GetCurrentCapturerChangeInfos failure!");
@@ -526,6 +528,7 @@ void NapiAudioStreamMgr::RegisterRendererStateChangeCallback(napi_env env, napi_
     std::shared_ptr<NapiAudioRendererStateCallback> cb =
     std::static_pointer_cast<NapiAudioRendererStateCallback>(napiStreamMgr->rendererStateChangeCallbackNapi_);
     cb->SaveCallbackReference(args[PARAM1]);
+    cb->CreateRendererStateTsfn(env);
 
     AUDIO_INFO_LOG("OnRendererStateChangeCallback is successful");
 }
@@ -549,6 +552,7 @@ void NapiAudioStreamMgr::RegisterCapturerStateChangeCallback(napi_env env, napi_
     std::shared_ptr<NapiAudioCapturerStateCallback> cb =
         std::static_pointer_cast<NapiAudioCapturerStateCallback>(napiStreamMgr->capturerStateChangeCallbackNapi_);
     cb->SaveCallbackReference(args[PARAM1]);
+    cb->CreateCaptureStateTsfn(env);
 
     AUDIO_INFO_LOG("OnCapturerStateChangeCallback is successful");
 }

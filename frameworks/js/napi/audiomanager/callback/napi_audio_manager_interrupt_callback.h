@@ -34,6 +34,7 @@ public:
     void RemoveAllCallbackReferences(const std::string &callbackName);
     int32_t GetInterruptCallbackListSize();
     void OnInterrupt(const InterruptAction &interruptAction) override;
+    void CreateManagerInterruptTsfn(napi_env env);
 
 private:
     struct AudioManagerInterruptJsCallback {
@@ -43,10 +44,14 @@ private:
     };
 
     void OnJsCallbackAudioManagerInterrupt(std::unique_ptr<AudioManagerInterruptJsCallback> &jsCb);
+    static void AudioManagerInterruptTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackAudioManagerInterruptWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> audioManagerInterruptCallbackList_;
+    bool regAmInterruptTsfn_ = false;
+    napi_threadsafe_function amInterruptTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

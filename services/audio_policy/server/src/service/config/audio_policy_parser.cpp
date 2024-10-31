@@ -709,6 +709,9 @@ void AudioPolicyParser::ParseCommonConfigs(xmlNode &node)
             if (configInfo.name_ == "updateRouteSupport") {
                 AUDIO_INFO_LOG("update route support: %{public}s", configInfo.value_.c_str());
                 HandleUpdateRouteSupportParsed(configInfo.value_);
+            } else if (configInfo.name_ == "anahsShowType") {
+                AUDIO_INFO_LOG("anahs pc support: %{public}s", configInfo.value_.c_str());
+                HandleUpdateAnahsSupportParsed(configInfo.value_);
             }
         }
         currNode = currNode->next;
@@ -725,6 +728,14 @@ void AudioPolicyParser::HandleUpdateRouteSupportParsed(std::string &value)
         portObserver_.OnUpdateRouteSupport(false);
         shouldOpenMicSpeaker_ = false;
     }
+}
+
+void AudioPolicyParser::HandleUpdateAnahsSupportParsed(std::string &value)
+{
+    std::string anahsShowType = "Dialog";
+    anahsShowType = value;
+    AUDIO_INFO_LOG("HandleUpdateAnahsSupportParsed show type: %{public}s", anahsShowType.c_str());
+    portObserver_.OnUpdateAnahsSupport(anahsShowType);
 }
 
 XmlNodeType AudioPolicyParser::GetXmlNodeTypeAsInt(xmlNode &node)

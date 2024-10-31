@@ -38,7 +38,7 @@
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_manager_base.h"
-#include "audio_service_log.h"
+#include "audio_renderer_log.h"
 #include "audio_ring_cache.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
@@ -133,20 +133,21 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
-    }
-
-    if (operation == DATA_LINK_CONNECTING || operation == DATA_LINK_CONNECTED) {
-        if (operation == DATA_LINK_CONNECTING) {
-            isDataLinkConnected_ = false;
-        } else {
-            isDataLinkConnected_ = true;
-            dataConnectionCV_.notify_all();
-        }
+    } else if (operation == DATA_LINK_CONNECTING) {
+        isDataLinkConnected_ = false;
+        return SUCCESS;
+    } else if (operation == DATA_LINK_CONNECTED) {
+        isDataLinkConnected_ = true;
+        dataConnectionCV_.notify_all();
         return SUCCESS;
     }
 
     if (operation == RESTORE_SESSION) {
-        RestoreAudioStream();
+        // fix it when restoreAudioStream work right
+        if (audioStreamTracker_ && audioStreamTracker_.get()) {
+            audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
+                state_, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+        }
         return SUCCESS;
     }
 
@@ -665,7 +666,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         lastFramePosition_ = framePosition;
         lastFrameTimestamp_ = timestampVal;
     } else {
-        AUDIO_WARNING_LOG("The frame position should be continuously increasing");
+        AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
         framePosition = lastFramePosition_;
         timestampVal = lastFrameTimestamp_;
     }
@@ -772,26 +773,18 @@ float RendererInClientInner::GetVolume()
 int32_t RendererInClientInner::SetMute(bool mute)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
-    AUDIO_INFO_LOG("sessionId:%{public}d SetMute:%{public}d", sessionId_, mute);
-    if (mute == isMute_) {
-        AUDIO_INFO_LOG("isMute_ = mute : %{public}d", mute);
-        return SUCCESS;
-    }
+    AUDIO_INFO_LOG("sessionId:%{public}d SetDuck:%{public}d", sessionId_, mute);
+    muteVolume_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
-    if (state_ == RUNNING && mute == false && isLoadInterrupt_ == false) {
-        isLoadInterrupt_ = true;
-        muteVolume_ = 1.0f;
-    } else {
-        isLoadInterrupt_ = false;
-        muteVolume_ = 0.0f;
-    }
-    isMute_ = mute;
     clientBuffer_->SetMuteFactor(muteVolume_);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetMute(mute);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Set Mute failed:%{public}u", ret);
         return ERROR;
+    }
+    if (offloadEnable_) {
+        ipcStream_->OffloadSetVolume(mute ? 0.0f : clientVolume_ * duckVolume_);
     }
     return SUCCESS;
 }
@@ -882,17 +875,24 @@ int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
 {
     AUDIO_INFO_LOG("SetRendererFirstFrameWritingCallback in.");
     CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
+    std::lock_guard lock(firstFrameWritingMutex_);
     firstFrameWritingCb_ = callback;
     return SUCCESS;
 }
 
 void RendererInClientInner::OnFirstFrameWriting()
 {
-    hasFirstFrameWrited_ = true;
-    CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+    AUDIO_DEBUG_LOG("In");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
+
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
+    {
+        std::lock_guard lock(firstFrameWritingMutex_);
+        CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+        cb = firstFrameWritingCb_;
+    }
     AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
-    firstFrameWritingCb_->OnFirstFrameWriting(latency);
+    cb->OnFirstFrameWriting(latency);
 }
 
 void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
@@ -994,7 +994,7 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
-void RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
+int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
@@ -1006,6 +1006,7 @@ void RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
     }
+    return result;
 }
 
 void RendererInClientInner::WriteCallbackFunc()
@@ -1028,10 +1029,22 @@ void RendererInClientInner::WriteCallbackFunc()
         BufferDesc temp;
         while (cbBufferQueue_.PopNotWait(temp)) {
             Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
-            if (state_ != RUNNING) { break; }
+            if (state_ != RUNNING) {
+                cbBufferQueue_.Push(temp);
+                AUDIO_INFO_LOG("Repush left buffer in queue");
+                break;
+            }
             traceQueuePop.End();
             // call write here.
-            ProcessWriteInner(temp);
+            int32_t result = ProcessWriteInner(temp);
+            // only run in pause scene
+            if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
+                BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
+                    temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
+                cbBufferQueue_.Push(tmp);
+                AUDIO_INFO_LOG("Repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
+                break;
+            }
         }
         if (state_ != RUNNING) { continue; }
         // call client write
@@ -1533,7 +1546,7 @@ bool RendererInClientInner::DrainAudioStream(bool stopFlag)
         return false;
     }
     std::lock_guard<std::mutex> lock(writeMutex_);
-    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true) == SUCCESS, false, "Drain cache failed");
+    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true, stopFlag) == SUCCESS, false, "Drain cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
@@ -1644,13 +1657,12 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
 void RendererInClientInner::FirstFrameProcess()
 {
     // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_) {
+    if (needSetThreadPriority_.exchange(false)) {
         ipcStream_->RegisterThreadPriority(gettid(),
             AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
-        needSetThreadPriority_ = false;
     }
 
-    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
+    if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
 }
 
 int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached,
@@ -1718,6 +1730,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         int32_t ret = ipcStream_->Start();
         AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     }
+
+    FirstFrameProcess();
+
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     size_t oriBufferSize = bufferSize;
@@ -1727,8 +1742,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     }
 
     WriteMuteDataSysEvent(buffer, bufferSize);
-
-    FirstFrameProcess();
 
     CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
@@ -1778,7 +1791,22 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     }
 }
 
-int32_t RendererInClientInner::WriteCacheData(bool isDrain)
+int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,
+    size_t targetSize, BufferDesc *desc)
+{
+    if (result.size < clientSpanSizeInByte_ && stopFlag) {
+        result = ringCache_->Dequeue({desc->buffer, targetSize});
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
+            "ringCache Dequeue failed %{public}d", result.ret);
+        int32_t ret = memset_s(desc->buffer, targetSize, 0, targetSize);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "DrainIncompleteFrame memset output failed");
+        AUDIO_WARNING_LOG("incomplete frame is set to 0");
+    }
+    return SUCCESS;
+}
+
+
+int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
 {
     Trace traceCache(isDrain ? "RendererInClientInner::DrainCacheData" : "RendererInClientInner::WriteCacheData");
 
@@ -1814,6 +1842,7 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
     int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
+    DrainIncompleteFrame(result, stopFlag, targetSize, &desc);
     result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
 
@@ -2081,12 +2110,6 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     return SUCCESS;
 }
 
-void RendererInClientInner::SetApplicationCachePath(const std::string cachePath)
-{
-    cachePath_ = cachePath;
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath_.c_str());
-}
-
 int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     if ((state_ != PREPARED) && (state_ != NEW)) {
@@ -2138,7 +2161,6 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    info.cachePath = cachePath_;
     info.underFlowCount = GetUnderflowCount();
     info.effectMode = effectMode_;
     info.renderRate = rendererRate_;
@@ -2226,13 +2248,15 @@ void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
     ipcStream_->SetSilentModeAndMixWithOthers(on);
+    if (offloadEnable_) {
+        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_ * duckVolume_);
+    }
     return;
 }
 
 bool RendererInClientInner::GetSilentModeAndMixWithOthers()
 {
-    AUDIO_INFO_LOG("Background Mute Activate: %{public}d", isLoadInterrupt_);
-    return silentModeAndMixWithOthers_ || !isLoadInterrupt_;
+    return silentModeAndMixWithOthers_;
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
@@ -2260,7 +2284,7 @@ void SpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
     }
 }
 
-bool RendererInClientInner::RestoreAudioStream()
+bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
@@ -2273,6 +2297,10 @@ bool RendererInClientInner::RestoreAudioStream()
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {
         goto error;
+    }
+    if (!needStoreState) {
+        AUDIO_INFO_LOG("telephony scene, return directly");
+        return ret;
     }
     if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
         rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;

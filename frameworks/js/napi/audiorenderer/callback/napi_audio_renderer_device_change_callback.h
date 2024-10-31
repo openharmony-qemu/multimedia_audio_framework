@@ -32,6 +32,7 @@ public:
     void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
+    void CreateRendererDeviceChangeTsfn(napi_env env);
 
 private:
     struct AudioRendererDeviceChangeJsCallback {
@@ -41,10 +42,14 @@ private:
     };
 
     void OnJsCallbackRendererDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo);
+    static void RendererDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackRendererDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
+    bool regArDevInfoTsfn_ = false;
+    napi_threadsafe_function arDevInfoTsfn_ = nullptr;
 };
 
 class NapiAudioRendererOutputDeviceChangeWithInfoCallback : public AudioRendererOutputDeviceChangeCallback {
@@ -56,6 +61,7 @@ public:
     void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
+    void CreateOutputDeviceChangeTsfn(napi_env env);
 
 private:
     struct AudioRendererOutputDeviceChangeWithInfoJsCallback {
@@ -67,10 +73,14 @@ private:
 
     void OnJsCallbackOutputDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo,
         const AudioStreamDeviceChangeReason reason);
+    static void SafeJsCallbackOutputDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void OutputDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
+    bool regArOutputDevChg_ = false;
+    napi_threadsafe_function arOutputDevChgTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -15,7 +15,9 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioRountingAvailableDeviceChangeCallback"
 #endif
+#include <thread>
 
+#include "js_native_api.h"
 #include "napi_audio_rounting_available_devicechange_callback.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
@@ -34,7 +36,20 @@ NapiAudioRountingAvailableDeviceChangeCallback::NapiAudioRountingAvailableDevice
 
 NapiAudioRountingAvailableDeviceChangeCallback::~NapiAudioRountingAvailableDeviceChangeCallback()
 {
+    if (regAmRouDevChgTsfn_) {
+        napi_release_threadsafe_function(amRouDevChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioRountingAvailableDeviceChangeCallback: instance destroy");
+}
+
+void NapiAudioRountingAvailableDeviceChangeCallback::CreateRouDevChgTsfn(napi_env env)
+{
+    regAmRouDevChgTsfn_ = true;
+    std::string callbackName = "RountingAvailableDeviceChange";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        AvailbleDeviceChangeTsfnFinalize, nullptr, SafeJsCallbackAvailbleDeviceChangeWork, &amRouDevChgTsfn_);
 }
 
 void NapiAudioRountingAvailableDeviceChangeCallback::SaveRoutingAvailbleDeviceChangeCbRef(AudioDeviceUsage usage,
@@ -104,54 +119,61 @@ void NapiAudioRountingAvailableDeviceChangeCallback::OnAvailableDeviceChange(
     }
 }
 
+void NapiAudioRountingAvailableDeviceChangeCallback::SafeJsCallbackAvailbleDeviceChangeWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioRountingJsCallback *event = reinterpret_cast<AudioRountingJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackAvailbleDeviceChange: no memory");
+    std::shared_ptr<AudioRountingJsCallback> safeContext(
+        static_cast<AudioRountingJsCallback*>(data),
+        [](AudioRountingJsCallback *ptr) {
+            delete ptr;
+    });
+    std::string request = event->callbackName;
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackAvailbleDeviceChangeWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+        // Call back function
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetValueDeviceChangeAction(env, event->deviceChangeAction, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+            "%{public}s fail to create DeviceChange callback", request.c_str());
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call DeviceChange callback", request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAudioRountingAvailableDeviceChangeCallback::AvailbleDeviceChangeTsfnFinalize(
+    napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("AvailbleDeviceChangeTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioRountingAvailableDeviceChangeCallback::OnJsCallbackAvailbleDeviceChange(
     std::unique_ptr<AudioRountingJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("AudioManagerCallbackNapi: OnJsCallbackDeviceChange: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallbackAvailbleDeviceChange: OnJsCallbackDeviceChange: jsCb.get() is null");
         return;
     }
 
-    AudioRountingJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<AudioRountingJsCallback> context(
-            static_cast<AudioRountingJsCallback*>(event),
-            [](AudioRountingJsCallback* ptr) {
-                delete ptr;
-        });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        std::string request = event->callbackName;
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
+    AudioRountingJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-
-            // Call back function
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetValueDeviceChangeAction(env, event->deviceChangeAction, args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-                "%{public}s fail to create DeviceChange callback", request.c_str());
-
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call DeviceChange callback", request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCallbackAvailbleDeviceChange: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    napi_acquire_threadsafe_function(amRouDevChgTsfn_);
+    napi_call_threadsafe_function(amRouDevChgTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

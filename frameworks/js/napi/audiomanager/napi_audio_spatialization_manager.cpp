@@ -62,11 +62,13 @@ bool NapiAudioSpatializationManager::CheckAudioSpatializationManagerStatus(NapiA
 
 void NapiAudioSpatializationManager::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioSpatializationManager *>(nativeObject);
-        ObjectRefMap<NapiAudioSpatializationManager>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    auto obj = static_cast<NapiAudioSpatializationManager *>(nativeObject);
+    ObjectRefMap<NapiAudioSpatializationManager>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioSpatializationManager::Construct(napi_env env, napi_callback_info info)
@@ -667,6 +669,7 @@ void NapiAudioSpatializationManager::RegisterSpatializationEnabledChangeCallback
         std::static_pointer_cast<NapiAudioSpatializationEnabledChangeCallback>
         (napiAudioSpatializationManager->spatializationEnabledChangeCallbackNapi_);
     cb->SaveSpatializationEnabledChangeCallbackReference(args[PARAM1], cbName);
+    cb->CreateSpatEnableTsfn(env);
 
     AUDIO_INFO_LOG("Register spatialization enabled callback is successful");
 }
@@ -691,6 +694,7 @@ void NapiAudioSpatializationManager::RegisterHeadTrackingEnabledChangeCallback(n
         std::static_pointer_cast<NapiAudioHeadTrackingEnabledChangeCallback>
         (napiAudioSpatializationManager->headTrackingEnabledChangeCallbackNapi_);
     cb->SaveHeadTrackingEnabledChangeCallbackReference(args[PARAM1], cbName);
+    cb->CreateHeadTrackingTsfn(env);
 
     AUDIO_INFO_LOG("Register head tracking enabled callback is successful");
 }

@@ -169,11 +169,13 @@ napi_value NapiAudioManager::Init(napi_env env, napi_value exports)
 
 void NapiAudioManager::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioManager*>(nativeObject);
-        ObjectRefMap<NapiAudioManager>::DecreaseRef(obj);
-        AUDIO_DEBUG_LOG("NapiAudioManager::Destructor delete NapiAudioManager obj done");
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
+    auto obj = static_cast<NapiAudioManager*>(nativeObject);
+    ObjectRefMap<NapiAudioManager>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioManager::Construct(napi_env env, napi_callback_info info)
@@ -1254,6 +1256,7 @@ template<typename T> void NapiAudioManager::RegisterInterruptCallback(napi_env e
     std::shared_ptr<NapiAudioManagerInterruptCallback> cb =
         std::static_pointer_cast<NapiAudioManagerInterruptCallback>(napiAudioManager->interruptCallbackNapi_);
     cb->SaveCallbackReference(INTERRUPT_CALLBACK_NAME, argv[PARAM2]);
+    cb->CreateManagerInterruptTsfn(env);
     AudioInterrupt audioInterrupt;
     NapiParamUtils::GetAudioInterrupt(env, audioInterrupt, argv[PARAM1]);
     int32_t ret = napiAudioManager->audioMngr_->RequestAudioFocus(audioInterrupt);
@@ -1275,6 +1278,7 @@ template<typename T> void NapiAudioManager::RegisterRingerModeCallback(napi_env 
     std::shared_ptr<NapiAudioRingerModeCallback> cb =
         std::static_pointer_cast<NapiAudioRingerModeCallback>(napiAudioManager->ringerModecallbackNapi_);
     cb->SaveCallbackReference(RINGERMODE_CALLBACK_NAME, argv[PARAM1]);
+    cb->CreateRingModeTsfn(env);
 }
 
 template<typename T> void NapiAudioManager::RegisterVolumeChangeCallback(napi_env env, const T &argv,
@@ -1290,6 +1294,7 @@ template<typename T> void NapiAudioManager::RegisterVolumeChangeCallback(napi_en
     std::shared_ptr<NapiAudioVolumeKeyEvent> cb =
         std::static_pointer_cast<NapiAudioVolumeKeyEvent>(napiAudioManager->volumeKeyEventCallbackNapi_);
     cb->SaveCallbackReference(VOLUME_CHANGE_CALLBACK_NAME, argv[PARAM1]);
+    cb->CreateVolumeTsfn(env);
 }
 
 template<typename T> void NapiAudioManager::RegisterDeviceChangeCallback(napi_env env, const T &argv,
@@ -1305,6 +1310,7 @@ template<typename T> void NapiAudioManager::RegisterDeviceChangeCallback(napi_en
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiAudioManager->deviceChangeCallbackNapi_);
     cb->SaveAudioManagerDeviceChangeCbRef(DeviceFlag::ALL_DEVICES_FLAG, argv[PARAM1]);
+    cb->CreateDevChgTsfn(env);
 }
 
 napi_value NapiAudioManager::On(napi_env env, napi_callback_info info)

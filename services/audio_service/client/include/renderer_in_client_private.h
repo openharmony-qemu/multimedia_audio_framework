@@ -151,7 +151,6 @@ public:
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     uint32_t GetRendererSamplingRate() override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
-    void SetApplicationCachePath(const std::string cachePath) override;
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
@@ -181,7 +180,7 @@ public:
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
-    bool RestoreAudioStream() override;
+    bool RestoreAudioStream(bool needStoreState = true) override;
 
     void GetStreamSwitchInfo(SwitchInfo &info);
 
@@ -208,7 +207,8 @@ private:
     int32_t FlushRingCache();
     int32_t DrainRingCache();
 
-    int32_t WriteCacheData(bool isDrain = false);
+    int32_t DrainIncompleteFrame(OptResult result, bool stopFlag, size_t targetSize, BufferDesc *desc);
+    int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WriteCallbackFunc();
@@ -234,7 +234,7 @@ private:
 
     bool IsHighResolution() const noexcept;
 
-    void ProcessWriteInner(BufferDesc &bufferDesc);
+    int32_t ProcessWriteInner(BufferDesc &bufferDesc);
 
     void InitDirectPipeType();
 private:
@@ -254,7 +254,7 @@ private:
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     bool streamTrackerRegistered_ = false;
 
-    bool needSetThreadPriority_ = true;
+    std::atomic<bool> needSetThreadPriority_ = true;
 
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
@@ -274,14 +274,14 @@ private:
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
     uint32_t bufferSizeInMsec_ = 20; // 20ms
-    std::string cachePath_ = "";
     std::string dumpOutFile_ = "";
     FILE *dumpOutFd_ = nullptr;
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
-    bool hasFirstFrameWrited_ = false;
+    std::mutex firstFrameWritingMutex_;
+    std::atomic<bool> hasFirstFrameWrited_ = false;
 
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
@@ -312,8 +312,6 @@ private:
     float duckVolume_ = 1.0;
     float muteVolume_ = 1.0;
     float clientVolume_ = 1.0;
-    bool isMute_ = false;
-    bool isLoadInterrupt_ = true;
     bool silentModeAndMixWithOthers_ = false;
 
     uint64_t clientWrittenBytes_ = 0;

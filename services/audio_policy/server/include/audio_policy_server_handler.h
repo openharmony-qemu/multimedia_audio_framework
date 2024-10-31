@@ -93,8 +93,8 @@ public:
         CastType type;
         bool spatializationEnabled;
         bool headTrackingEnabled;
-        std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
         int32_t streamFlag;
         std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
@@ -159,8 +159,8 @@ public:
     bool SendPreferredInputDeviceUpdated();
     bool SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
         const CastType &type);
-    bool SendRendererInfoEvent(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
-    bool SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+    bool SendRendererInfoEvent(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+    bool SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
         const DeviceInfo &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason);
     bool SendCapturerCreateEvent(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
@@ -226,13 +226,15 @@ private:
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
-    void ResetRingerModeMute(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+    void ResetRingerModeMute(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
 
     std::mutex runnerMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
 
     std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
+    std::string pidsStrForPrinting_ = "[]";
+
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,
         sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;

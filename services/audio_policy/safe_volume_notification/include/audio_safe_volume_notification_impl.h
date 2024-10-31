@@ -37,7 +37,7 @@ public:
     void PublishSafeVolumeNotification(int32_t notificationId) override;
     void CancelSafeVolumeNotification(int32_t notificationId) override;
 private:
-    std::string GetStringByName(const char* name);
+    std::string GetStringByName(const char *name);
     bool SetTitleAndText(int32_t notificationId, std::shared_ptr<Notification::NotificationNormalContent> content);
     std::string GetButtonName(uint32_t notificationId);
     bool GetPixelMap();
@@ -46,11 +46,11 @@ private:
 
     std::mutex mutex_ {};
     std::shared_ptr<Media::PixelMap> iconPixelMap_ {};
-    Global::Resource::ResourceManager* resourceManager_ = nullptr;
-    Global::Resource::ResConfig* resConfig_ = nullptr;
+    Global::Resource::ResourceManager *resourceManager_ = nullptr;
+    Global::Resource::ResConfig *resConfig_ = nullptr;
 };
 
-extern "C" AudioSafeVolumeNotification* CreateSafeVolumeNotificationImpl()
+extern "C" AudioSafeVolumeNotification *CreateSafeVolumeNotificationImpl()
 {
     return new AudioSafeVolumeNotificationImpl;
 }

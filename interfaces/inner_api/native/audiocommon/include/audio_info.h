@@ -44,6 +44,7 @@ constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
+constexpr int32_t RSS_UID = 1096;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
@@ -84,9 +85,6 @@ const std::string MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_A
 const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
 const std::string DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 const std::string CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
-
-const std::string LOCAL_NETWORK_ID = "LocalDevice";
-const std::string REMOTE_NETWORK_ID = "RemoteDevice";
 
 constexpr std::string_view PRIMARY_WAKEUP = "Built_in_wakeup";
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
@@ -297,6 +295,17 @@ enum CallbackChange : int32_t {
     CALLBACK_CAPTURER_STATE_CHANGE,
     CALLBACK_MICMUTE_STATE_CHANGE,
     CALLBACK_AUDIO_SESSION,
+    CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE,
+    CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE,
+    CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_SET_DEVICE_CHANGE,
+    CALLBACK_SET_RINGER_MODE,
+    CALLBACK_SET_MIC_STATE_CHANGE,
+    CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
+    CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
+    CALLBACK_SET_MICROPHONE_BLOCKED,
+    CALLBACK_DEVICE_CHANGE_WITH_INFO,
+    CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -307,6 +316,17 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_CAPTURER_STATE_CHANGE,
     CALLBACK_MICMUTE_STATE_CHANGE,
     CALLBACK_AUDIO_SESSION,
+    CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE,
+    CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE,
+    CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_SET_DEVICE_CHANGE,
+    CALLBACK_SET_RINGER_MODE,
+    CALLBACK_SET_MIC_STATE_CHANGE,
+    CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
+    CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
+    CALLBACK_SET_MICROPHONE_BLOCKED,
+    CALLBACK_DEVICE_CHANGE_WITH_INFO,
+    CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -440,6 +460,7 @@ struct AudioRendererOptions {
     AudioStreamInfo streamInfo;
     AudioRendererInfo rendererInfo;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct MicStateChangeEvent {
@@ -567,6 +588,7 @@ struct AudioCapturerOptions {
     AudioStreamInfo streamInfo;
     AudioCapturerInfo capturerInfo;
     AudioPlaybackCaptureConfig playbackCaptureConfig;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct AppInfo {
@@ -1032,12 +1054,6 @@ struct SessionInfo {
     uint32_t channels;
 };
 
-enum BluetoothOffloadState {
-    NO_A2DP_DEVICE = 0,
-    A2DP_NOT_OFFLOAD = 1,
-    A2DP_OFFLOAD = 2,
-};
-
 enum CastType {
     CAST_TYPE_NULL = 0,
     CAST_TYPE_ALL,
@@ -1077,10 +1093,10 @@ enum DeviceGroup {
 static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
     {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_BUILT_IN},
     {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
+    {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN},
     {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
-    {DEVICE_TYPE_DP, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
     {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
     {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},

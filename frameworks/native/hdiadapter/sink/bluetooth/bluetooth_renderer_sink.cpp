@@ -49,7 +49,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
-const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
+const int32_t MAX_AUDIO_ADAPTER_NUM = 8;
 const int32_t MAX_GET_POSITOIN_TRY_COUNT = 50;
 const int32_t MAX_GET_POSITION_HANDLE_TIME = 10000000; // 1000000us
 const int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us
@@ -161,6 +161,7 @@ private:
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     int32_t CheckPositionTime();
+    int32_t CheckBluetoothScenario();
 
     bool isBluetoothLowLatency_ = false;
     uint32_t bufferTotalFrameSize_ = 0;
@@ -515,13 +516,6 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     if (audioBalanceState_) { AdjustAudioBalance(&data, len); }
 
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void *>(&data), len);
-    }
     CheckUpdateState(&data, len);
     if (suspend_) { return ret; }
 
@@ -533,8 +527,16 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
             AUDIO_WARNING_LOG("call memset_s failed");
         }
     }
+
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
+    DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            static_cast<void *>(&data), len);
+    }
+
     while (true) {
-        Trace::CountVolume("BluetoothRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
         Trace trace("audioRender_->RenderFrame");
         int64_t stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
@@ -634,6 +636,19 @@ float BluetoothRendererSinkInner::GetMaxAmplitude()
     return maxAmplitude_;
 }
 
+int32_t BluetoothRendererSinkInner::CheckBluetoothScenario()
+{
+    started_ = true;
+    if (isBluetoothLowLatency_ && CheckPositionTime() != SUCCESS) {
+        AUDIO_ERR_LOG("CheckPositionTime failed!");
+#ifdef FEATURE_POWER_MANAGER
+        UnlockRunningLock();
+#endif
+        return ERR_NOT_STARTED;
+    }
+    return SUCCESS;
+}
+
 int32_t BluetoothRendererSinkInner::Start(void)
 {
     Trace trace("BluetoothRendererSinkInner::Start");
@@ -655,7 +670,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
         AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
-    dumpFileName_ = "bluetooth_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+    dumpFileName_ = "bluetooth_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
@@ -668,9 +683,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
             CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERROR, "Bluetooth renderer is nullptr");
             int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (!ret) {
-                started_ = true;
-                CHECK_AND_RETURN_RET_LOG(CheckPositionTime() == SUCCESS, ERR_NOT_STARTED, "CheckPositionTime failed!");
-                return SUCCESS;
+                return CheckBluetoothScenario();
             } else {
                 AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
                 usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);

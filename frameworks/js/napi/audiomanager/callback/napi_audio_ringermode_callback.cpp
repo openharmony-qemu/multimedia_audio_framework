@@ -15,13 +15,16 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioRingerModeCallback"
 #endif
+#include <thread>
 
+#include "js_native_api.h"
 #include "napi_audio_ringermode_callback.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
+#include "napi/native_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,6 +36,9 @@ NapiAudioRingerModeCallback::NapiAudioRingerModeCallback(napi_env env)
 
 NapiAudioRingerModeCallback::~NapiAudioRingerModeCallback()
 {
+    if (regAmRmChgTsfn_) {
+        napi_release_threadsafe_function(amRmChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("instance destroy");
 }
 
@@ -50,6 +56,16 @@ void NapiAudioRingerModeCallback::SaveCallbackReference(const std::string &callb
     } else {
         AUDIO_ERR_LOG("NapiAudioRingerModeCallback: Unknown callback type: %{public}s", callbackName.c_str());
     }
+}
+
+void NapiAudioRingerModeCallback::CreateRingModeTsfn(napi_env env)
+{
+    regAmRmChgTsfn_ = true;
+    std::string callbackName = "RingerMode";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr, RingModeTsfnFinalize,
+        nullptr, SafeJsCallbackRingModeWork, &amRmChgTsfn_);
 }
 
 void NapiAudioRingerModeCallback::RemoveCallbackReference(const napi_value args)
@@ -117,51 +133,58 @@ static NapiAudioEnum::AudioRingMode GetJsAudioRingMode(int32_t ringerMode)
     return result;
 }
 
+void NapiAudioRingerModeCallback::SafeJsCallbackRingModeWork(napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioRingerModeJsCallback *event = reinterpret_cast<AudioRingerModeJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackRingerMode: no memory");
+    std::shared_ptr<AudioRingerModeJsCallback> safeContext(
+        static_cast<AudioRingerModeJsCallback*>(data),
+        [](AudioRingerModeJsCallback *ptr) {
+            delete ptr;
+    });
+    std::string request = event->callbackName;
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr.");
+    AUDIO_INFO_LOG("SafeJsCallbackRingModeWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetValueInt32(env, GetJsAudioRingMode(event->ringerMode), args[PARAM0]);
+        CHECK_AND_BREAK_LOG(args[PARAM0] != nullptr,
+            "%{public}s fail to create ringer mode callback", request.c_str());
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call ringer mode callback",
+            request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAudioRingerModeCallback::RingModeTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("RingModeTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioRingerModeCallback::OnJsCallbackRingerMode(std::unique_ptr<AudioRingerModeJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackRendererState: jsCb.get() is null");
+        AUDIO_ERR_LOG("NapiAudioRingerModeCallback: OnJsCallbackRingerMode: jsCb.get() is null");
         return;
     }
 
-    AudioRingerModeJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<AudioRingerModeJsCallback> context(
-            static_cast<AudioRingerModeJsCallback*>(event),
-            [](AudioRingerModeJsCallback* ptr) {
-                delete ptr;
-        });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        std::string request = event->callbackName;
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetValueInt32(env, GetJsAudioRingMode(event->ringerMode), args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-                "%{public}s fail to create ringer mode callback", request.c_str());
+    AudioRingerModeJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call ringer mode callback",
-                request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCallbackRingerMode: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    napi_acquire_threadsafe_function(amRmChgTsfn_);
+    napi_call_threadsafe_function(amRmChgTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

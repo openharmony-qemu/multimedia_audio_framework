@@ -21,7 +21,7 @@
 #include <thread>
 
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
@@ -32,10 +32,9 @@ namespace OHOS {
 namespace AudioStandard {
 
 static uint64_t g_id = 1;
-static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10s
+static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
-static const int32_t INVALID_APP_UID = -1;
-static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
+static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
 AudioService *AudioService::GetInstance()
@@ -58,15 +57,22 @@ AudioService::~AudioService()
 int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destoryAtOnce)
 {
     std::lock_guard<std::mutex> processListLock(processListMutex_);
+    CHECK_AND_RETURN_RET_LOG(process != nullptr, ERROR, "process is nullptr");
+
     bool isFind = false;
     int32_t ret = ERROR;
     auto paired = linkedPairedList_.begin();
     std::string endpointName;
     bool needRelease = false;
-    int32_t delayTime = NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
+    int32_t delayTime = NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS;
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             AUDIO_INFO_LOG("SessionId %{public}u", (*paired).first->GetSessionId());
+            auto processConfig = process->GetAudioProcessConfig();
+            if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+                SetDecMaxRendererStreamCnt();
+                CleanAppUseNumMap(processConfig.appInfo.appUid);
+            }
             RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
             ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
@@ -104,12 +110,14 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
 int32_t AudioService::GetReleaseDelayTime(DeviceType deviceType, bool destoryAtOnce)
 {
     if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) {
-        return NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
+        return NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS;
     }
     if (!destoryAtOnce) {
         return A2DP_ENDPOINT_RELEASE_DELAY_TIME;
     }
-    return 0;
+    // The delay for destruction and reconstruction cannot be set to 0, otherwise there may be a problem:
+    // An endpoint exists at check process, but it may be destroyed immediately - during the re-create process
+    return A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME;
 }
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
@@ -316,7 +324,7 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
         "Wrong usage ,should not be dualtone");
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (!ret) {
         AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
         return false;
@@ -701,7 +709,7 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 {
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (ret) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
             "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
@@ -791,13 +799,13 @@ void AudioService::Dump(std::string &dumpString)
         }
     }
 
-    // dump appUseNumMap and currentRendererStreamCnt_
+    // dump appUseNumMap_ and currentRendererStreamCnt_
     {
         std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
         AppendFormat(dumpString, " - currentRendererStreamCnt is %d\n", currentRendererStreamCnt_);
-        for (auto it : appUseNumMap) {
-            AppendFormat(dumpString, "  - appUseNumMap appUid: %d\n", it.first);
-            AppendFormat(dumpString, "  - appUseNumMap appUid created stream: %d\n", it.second);
+        for (auto it : appUseNumMap_) {
+            AppendFormat(dumpString, "  - appUseNumMap_ appUid: %d\n", it.first);
+            AppendFormat(dumpString, "  - appUseNumMap_ appUid created stream: %d\n", it.second);
         }
     }
     PolicyHandler::GetInstance().Dump(dumpString);
@@ -952,13 +960,18 @@ void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
     }
 }
 
-void AudioService::CleanUpStream(int32_t appUid)
+void AudioService::SetDecMaxRendererStreamCnt()
 {
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     currentRendererStreamCnt_--;
-    auto appUseNum = appUseNumMap.find(appUid);
-    if (appUseNum != appUseNumMap.end()) {
-        appUseNumMap[appUid] = --appUseNum->second;
+}
+
+void AudioService::CleanAppUseNumMap(int32_t appUid)
+{
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    auto appUseNum = appUseNumMap_.find(appUid);
+    if (appUseNum != appUseNumMap_.end()) {
+        appUseNumMap_[appUid] = --appUseNum->second;
     }
 }
 
@@ -975,30 +988,30 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
         appUid = callingUid;
     }
 
-    auto appUseNum = appUseNumMap.find(appUid);
-    if (appUseNum != appUseNumMap.end()) {
+    auto appUseNum = appUseNumMap_.find(appUid);
+    if (appUseNum != appUseNumMap_.end()) {
         ++appUseNum->second;
     } else {
         int32_t initValue = 1;
-        appUseNumMap.emplace(appUid, initValue);
+        appUseNumMap_.emplace(appUid, initValue);
     }
 
-    if (appUseNumMap[appUid] > maxStreamCntPerUid) {
-        --appUseNumMap[appUid]; // actual created stream num is stream num decrease one
+    if (appUseNumMap_[appUid] > maxStreamCntPerUid) {
+        --appUseNumMap_[appUid]; // actual created stream num is stream num decrease one
         return true;
     }
     return false;
 }
 
-int32_t AudioService::GetCreatedAudioStreamMostUid()
+void AudioService::GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum)
 {
-    int32_t mostAppUid = INVALID_APP_UID;
-    int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
-    for (auto it = appUseNumMap.begin(); it != appUseNumMap.end(); it++) {
-        mostAppNum = it->second > mostAppNum ? it->second : mostAppNum;
-        mostAppUid = it->first;
+    for (auto it = appUseNumMap_.begin(); it != appUseNumMap_.end(); it++) {
+        if (it->second > mostAppNum) {
+            mostAppNum = it->second;
+            mostAppUid = it->first;
+        }
     }
-    return mostAppUid;
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

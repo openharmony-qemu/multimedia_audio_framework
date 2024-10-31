@@ -75,11 +75,13 @@ NapiAudioVolumeManager* NapiAudioVolumeManager::GetParamWithSync(const napi_env 
 
 void NapiAudioVolumeManager::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioVolumeManager *>(nativeObject);
-        ObjectRefMap<NapiAudioVolumeManager>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    auto obj = static_cast<NapiAudioVolumeManager *>(nativeObject);
+    ObjectRefMap<NapiAudioVolumeManager>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioVolumeManager::Construct(napi_env env, napi_callback_info info)
@@ -314,6 +316,7 @@ napi_value NapiAudioVolumeManager::RegisterCallback(napi_env env, napi_value jsT
         std::shared_ptr<NapiAudioVolumeKeyEvent> cb =
             std::static_pointer_cast<NapiAudioVolumeKeyEvent>(napiVolumeManager->volumeKeyEventCallbackNapi_);
         cb->SaveCallbackReference(cbName, args[PARAM1]);
+        cb->CreateVolumeTsfn(env);
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,

@@ -42,11 +42,13 @@ NapiAudioRoutingManager::~NapiAudioRoutingManager() = default;
 
 void NapiAudioRoutingManager::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject != nullptr) {
-        auto obj = static_cast<NapiAudioRoutingManager *>(nativeObject);
-        ObjectRefMap<NapiAudioRoutingManager>::DecreaseRef(obj);
+    if (nativeObject == nullptr) {
+        AUDIO_WARNING_LOG("Native object is null");
+        return;
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    auto obj = static_cast<NapiAudioRoutingManager *>(nativeObject);
+    ObjectRefMap<NapiAudioRoutingManager>::DecreaseRef(obj);
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioRoutingManager::Construct(napi_env env, napi_callback_info info)
@@ -109,6 +111,9 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAvailableDevices", GetAvailableDevices),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
+#if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+        DECLARE_NAPI_FUNCTION("isMicBlockDetectionSupported", IsMicBlockDetectionSupported),
+#endif
     };
 
     status = napi_define_class(env, NAPI_AUDIO_ROUTING_MANAGER_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
@@ -912,6 +917,7 @@ void NapiAudioRoutingManager::RegisterDeviceChangeCallback(napi_env env, size_t 
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiRoutingMgr->deviceChangeCallbackNapi_);
     cb->SaveRoutingManagerDeviceChangeCbRef(deviceFlag, args[PARAM2]);
+    cb->CreateDevChgTsfn(env);
 }
 
 void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -948,6 +954,7 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_e
         std::static_pointer_cast<NapiAudioPreferredOutputDeviceChangeCallback>(
         napiRoutingMgr->preferredOutputDeviceCallbackNapi_);
     cb->SaveCallbackReference(streamType, args[PARAM2]);
+    cb->CreatePreferredOutTsfn(env);
 }
 
 void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -983,6 +990,7 @@ void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_en
         std::static_pointer_cast<NapiAudioPreferredInputDeviceChangeCallback>(
         napiRoutingMgr->preferredInputDeviceCallbackNapi_);
     cb->SaveCallbackReference(captureInfo.sourceType, args[PARAM2]);
+    cb->CreatePerferredInTsfn(env);
 }
 
 void NapiAudioRoutingManager::RegisterAvaiableDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -1024,6 +1032,7 @@ void NapiAudioRoutingManager::RegisterAvaiableDeviceChangeCallback(napi_env env,
         std::static_pointer_cast<NapiAudioRountingAvailableDeviceChangeCallback>(
         napiRoutingMgr->availableDeviceChangeCallbackNapi_);
     cb->SaveRoutingAvailbleDeviceChangeCbRef(usage, args[PARAM2]);
+    cb->CreateRouDevChgTsfn(env);
 }
 
 void NapiAudioRoutingManager::RegisterMicrophoneBlockedCallback(napi_env env, size_t argc, napi_value *args,
@@ -1045,6 +1054,7 @@ void NapiAudioRoutingManager::RegisterMicrophoneBlockedCallback(napi_env env, si
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiRoutingMgr->microphoneBlockedCallbackNapi_);
     cb->SaveMicrophoneBlockedCallbackReference(args[PARAM1]);
+    cb->CreateMicBlockedTsfn(env);
 }
 
 napi_value NapiAudioRoutingManager::On(napi_env env, napi_callback_info info)
@@ -1271,16 +1281,23 @@ int32_t NapiAudioManagerCallback::GetMicrophoneBlockedCbListSize()
 }
 
 #if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
-bool NapiAudioRoutingManager::IsMicBlockDetectionSupported()
+napi_value NapiAudioRoutingManager::IsMicBlockDetectionSupported(napi_env env, napi_callback_info info)
 {
-    bool supported = false;
-    supported = OHOS::system::GetBoolParameter("const.multimedia.audio.mic_block_detection", false);
-    if (supported == true) {
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    context->GetCbInfo(env, info);
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        context->supported = OHOS::system::GetBoolParameter("const.multimedia.audio.mic_block_detection", false);
+        if (context->supported == true) {
         AUDIO_INFO_LOG("mic block detection supported");
-    } else {
+        } else {
         AUDIO_ERR_LOG("mic block detection is not supported");
-    }
-    return supported;
+        }
+    };
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueBoolean(env, context->supported, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "IsMicBlockDetectionSupported", executor, complete);
 }
 #endif
 }  // namespace AudioStandard

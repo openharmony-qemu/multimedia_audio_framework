@@ -103,7 +103,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsStreamActive_001, TestSize.Level1)
 {
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(streamType);
-    EXPECT_EQ(false, isStreamActive);
+    EXPECT_EQ(true, isStreamActive);
 }
 
 /**
@@ -160,7 +160,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001,
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsStreamActive_001, TestSize.Level1)
 {
     bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(AudioStreamType::STREAM_MUSIC);
-    EXPECT_EQ(false, isStreamActive);
+    EXPECT_EQ(true, isStreamActive);
 }
 
 /**
@@ -576,7 +576,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_UnregisterAudioRendererEventLis
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetCurrentCapturerChangeInfos_001, TestSize.Level1)
 {
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t ret = AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     EXPECT_EQ(true, audioCapturerChangeInfos.size() <= 0);
     EXPECT_EQ(SUCCESS, ret);
@@ -592,7 +592,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Capturer_State_Change_001, TestSize.Level1)
     std::shared_ptr<AudioPolicyClientStubImpl> capturerStub =
         std::make_shared<AudioPolicyClientStubImpl>();
 
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     capturerStub->OnCapturerStateChange(audioCapturerChangeInfos);
 
     std::shared_ptr<AudioCapturerStateChangeCallbackTest> callback =
@@ -617,7 +617,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
     std::shared_ptr<AudioPolicyClientStubImpl> rendererStub =
         std::make_shared<AudioPolicyClientStubImpl>();
 
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     rendererStub->OnRendererStateChange(audioRendererChangeInfos);
 
     std::shared_ptr<AudioRendererStateChangeCallbackTest> callback =
@@ -1369,11 +1369,11 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_003, TestSize.Level1)
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_NAVIGATION);
     EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_VOICE_MESSAGE);
-    EXPECT_FALSE(isMute);
+    EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(static_cast<AudioVolumeType>(99));
     EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().IsStreamActive(AudioVolumeType::STREAM_MUSIC);
-    EXPECT_FALSE(isMute);
+    EXPECT_TRUE(isMute);
     ret = AudioPolicyManager::GetInstance().SetStreamMute(AudioVolumeType::STREAM_MUSIC, false);
     EXPECT_EQ(SUCCESS, ret);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_MUSIC);

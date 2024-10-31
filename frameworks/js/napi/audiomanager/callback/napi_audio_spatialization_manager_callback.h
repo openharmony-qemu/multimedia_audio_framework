@@ -42,21 +42,27 @@ public:
     void OnSpatializationEnabledChange(const bool &enabled) override;
     void OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void CreateSpatEnableTsfn(napi_env env);
 
 private:
     struct AudioSpatializationEnabledJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         sptr<AudioDeviceDescriptor> deviceDescriptor;
+        std::string callbackName = "unknown";
         bool enabled;
     };
 
     void OnJsCallbackSpatializationEnabled(std::unique_ptr<AudioSpatializationEnabledJsCallback> &jsCb);
+    static void SafeJsCallbackSpatializationEnabledWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void SpatializationEnabledTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForAnyDeviceList_;
     static bool onSpatializationEnabledChangeFlag_;
+    bool regAmSpatEnable_ = false;
+    napi_threadsafe_function amSpatEnableTsfn_ = nullptr;
 };
 
 class NapiAudioHeadTrackingEnabledChangeCallback : public AudioHeadTrackingEnabledChangeCallback {
@@ -70,21 +76,27 @@ public:
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void CreateHeadTrackingTsfn(napi_env env);
 
 private:
     struct AudioHeadTrackingEnabledJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         sptr<AudioDeviceDescriptor> deviceDescriptor;
+        std::string callbackName = "unknown";
         bool enabled;
     };
 
     void OnJsCallbackHeadTrackingEnabled(std::unique_ptr<AudioHeadTrackingEnabledJsCallback> &jsCb);
+    static void SafeJsCallbackHeadTrackingEnabledWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void HeadTrackingEnabledTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbForAnyDeviceList_;
     static bool onHeadTrackingEnabledChangeFlag_;
+    bool regAmHeadTrkTsfn_ = false;
+    napi_threadsafe_function amHeadTrkTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

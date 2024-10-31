@@ -47,6 +47,12 @@ int32_t AudioPolicyClientStubImpl::RemoveVolumeKeyEventCallback(const std::share
     return SUCCESS;
 }
 
+size_t AudioPolicyClientStubImpl::GetVolumeKeyEventCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeKeyEventMutex_);
+    return volumeKeyEventCallbackList_.size();
+}
+
 void AudioPolicyClientStubImpl::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lockCbMap(volumeKeyEventMutex_);
@@ -174,6 +180,12 @@ int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeCallback(DeviceFlag flag,
     return SUCCESS;
 }
 
+size_t AudioPolicyClientStubImpl::GetDeviceChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceChangeMutex_);
+    return deviceChangeCallbackList_.size();
+}
+
 void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
 {
     std::lock_guard<std::mutex> lockCbMap(deviceChangeMutex_);
@@ -192,10 +204,10 @@ void AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedInfo 
 {
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
     MicrophoneBlockedInfo microphoneBlockedInfo;
-    microphoneBlockedInfo.status = blockedInfo.status;
+    microphoneBlockedInfo.blockStatus = blockedInfo.blockStatus;
     for (auto it = microphoneBlockedCallbackList_.begin(); it != microphoneBlockedCallbackList_.end(); ++it) {
-        microphoneBlockedInfo.deviceDescriptors = blockedInfo.deviceDescriptors;
-        if (it->second && microphoneBlockedInfo.deviceDescriptors.size() > 0) {
+        microphoneBlockedInfo.devices= blockedInfo.devices;
+        if (it->second && microphoneBlockedInfo.devices.size() > 0) {
             it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
         }
     }
@@ -216,7 +228,7 @@ int32_t AudioPolicyClientStubImpl::RemoveMicrophoneBlockedCallback(const int32_t
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
     auto iter = microphoneBlockedCallbackList_.begin();
     while (iter != microphoneBlockedCallbackList_.end()) {
-        if ((iter->first & clientId) && (iter->second == cb || cb == nullptr)) {
+        if ((iter->first == clientId) && (iter->second == cb || cb == nullptr)) {
             AUDIO_INFO_LOG("remove mic blocked cb flag:%{public}d", clientId);
             iter = microphoneBlockedCallbackList_.erase(iter);
         } else {
@@ -224,6 +236,12 @@ int32_t AudioPolicyClientStubImpl::RemoveMicrophoneBlockedCallback(const int32_t
         }
     }
     return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetMicrophoneBlockedCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
+    return microphoneBlockedCallbackList_.size();
 }
 
 int32_t AudioPolicyClientStubImpl::AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb)
@@ -252,6 +270,12 @@ int32_t AudioPolicyClientStubImpl::RemoveRingerModeCallback(const std::shared_pt
         }
     }
     return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetRingerModeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);
+    return ringerModeCallbackList_.size();
 }
 
 void AudioPolicyClientStubImpl::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
@@ -322,6 +346,12 @@ int32_t AudioPolicyClientStubImpl::RemoveMicStateChangeCallback()
     return SUCCESS;
 }
 
+size_t AudioPolicyClientStubImpl::GetMicStateChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(micStateChangeMutex_);
+    return micStateChangeCallbackList_.size();
+}
+
 bool AudioPolicyClientStubImpl::HasMicStateChangeCallback()
 {
     std::lock_guard<std::mutex> lockCbMap(micStateChangeMutex_);
@@ -355,6 +385,12 @@ int32_t AudioPolicyClientStubImpl::RemovePreferredOutputDeviceChangeCallback()
     return SUCCESS;
 }
 
+size_t AudioPolicyClientStubImpl::GetPreferredOutputDeviceChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
+    return preferredOutputDeviceCallbackList_.size();
+}
+
 void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
@@ -376,6 +412,12 @@ int32_t AudioPolicyClientStubImpl::RemovePreferredInputDeviceChangeCallback()
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
     preferredInputDeviceCallbackList_.clear();
     return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetPreferredInputDeviceChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
+    return preferredInputDeviceCallbackList_.size();
 }
 
 void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
@@ -441,6 +483,12 @@ int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeWithInfoCallback(const uint
     return SUCCESS;
 }
 
+size_t AudioPolicyClientStubImpl::GetDeviceChangeWithInfoCallbackkSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
+    return deviceChangeWithInfoCallbackMap_.size();
+}
+
 void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
     const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -465,7 +513,7 @@ void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
 }
 
 void AudioPolicyClientStubImpl::OnRendererStateChange(
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> callbacks;
     {
@@ -475,6 +523,10 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
     size_t cBSize = callbacks.size();
     size_t infosSize = audioRendererChangeInfos.size();
     AUDIO_DEBUG_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
+
+    if (getuid() == RSS_UID) {
+        AUDIO_INFO_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
+    }
 
     Trace trace("AudioPolicyClientStubImpl::OnRendererStateChange");
     for (auto &cb : callbacks) {
@@ -541,7 +593,7 @@ size_t AudioPolicyClientStubImpl::GetCapturerStateChangeCallbackSize() const
 }
 
 void AudioPolicyClientStubImpl::OnCapturerStateChange(
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     std::vector<std::shared_ptr<AudioCapturerStateChangeCallback>> tmpCallbackList;
     {
@@ -579,6 +631,12 @@ int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingDataRequestedChangeCallback
     return SUCCESS;
 }
 
+size_t AudioPolicyClientStubImpl::GetHeadTrackingDataRequestedChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(headTrackingDataRequestedChangeMutex_);
+    return headTrackingDataRequestedChangeCallbackMap_.size();
+}
+
 void AudioPolicyClientStubImpl::OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingDataRequestedChangeMutex_);
@@ -614,6 +672,12 @@ int32_t AudioPolicyClientStubImpl::RemoveSpatializationEnabledChangeCallback()
     return SUCCESS;
 }
 
+size_t AudioPolicyClientStubImpl::GetSpatializationEnabledChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
+    return spatializationEnabledChangeCallbackList_.size();
+}
+
 void AudioPolicyClientStubImpl::OnSpatializationEnabledChange(const bool &enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
@@ -644,6 +708,12 @@ int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingEnabledChangeCallback()
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     headTrackingEnabledChangeCallbackList_.clear();
     return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetHeadTrackingEnabledChangeCallbacSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
+    return headTrackingEnabledChangeCallbackList_.size();
 }
 
 void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(const bool &enabled)

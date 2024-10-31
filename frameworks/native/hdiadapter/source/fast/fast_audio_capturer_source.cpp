@@ -35,6 +35,11 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const int64_t GENERAL_MAX_HANDLE_COST_IN_NANOSEC = 10000000; // 10ms = 10ns * 1000 * 1000
+const int64_t VOIP_MAX_HANDLE_COST_IN_NANOSEC = 20000000; // 20ms = 20ns * 1000 * 1000
+}
+
 class FastAudioCapturerSourceInner : public FastAudioCapturerSource {
 public:
     int32_t Init(const IAudioSourceAttr &attr) override;
@@ -56,11 +61,11 @@ public:
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string &deviceName = "") override;
 
     int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
 
-    int32_t SetInputRoute(DeviceType inputDevice) override;
+    int32_t SetInputRoute(DeviceType inputDevice, const std::string &deviceName = "") override;
 
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     uint64_t GetTransactionId() override;
@@ -490,16 +495,19 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
-    int64_t maxHandleCost = 10000000; // 10ms
+    int64_t maxHandleCost = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? VOIP_MAX_HANDLE_COST_IN_NANOSEC :
+        GENERAL_MAX_HANDLE_COST_IN_NANOSEC;
     int64_t waitTime = 2000000; // 2ms
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(waitTime); // us
+        int64_t timeBeforeGetPos = ClockTime::GetCurNano();
         int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
-        int64_t curTime = ClockTime::GetCurNano();
-        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
-        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        int64_t curSec = timeBeforeGetPos / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = timeBeforeGetPos - curSec * AUDIO_NS_PER_SECOND;
+        AUDIO_WARNING_LOG("DspSec: %{public}" PRId64 ", dspNanoSec: %{public}" PRId64 ", Time before get pos: "
+            "%{public}" PRId64 ", time cost: %{public}" PRId64 "", timeSec, timeNanoSec, timeBeforeGetPos,
+            ClockTime::GetCurNano() - timeBeforeGetPos);
         if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
-            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d", tryCount, ret);
             continue;
         } else {
             AUDIO_INFO_LOG("CheckPositionTime end, position and time is ok.");
@@ -608,7 +616,7 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
     return ret;
 }
 
-int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
+int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, const std::string &deviceName)
 {
     AudioPortPin inputPortPin = PIN_IN_MIC;
     return SetInputRoute(inputDevice, inputPortPin);
@@ -653,7 +661,8 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
     return (ret == SUCCESS) ? SUCCESS : ERR_OPERATION_FAILED;
 }
 
-int32_t FastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t FastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string &deviceName)
 {
     return ERR_DEVICE_NOT_SUPPORTED;
 }

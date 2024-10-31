@@ -30,7 +30,7 @@
 #include "system_ability_definition.h"
 
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 #include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "securec.h"
@@ -108,8 +108,6 @@ public:
     int64_t GetFramesWritten() override;
 
     int64_t GetFramesRead() override;
-
-    void SetApplicationCachePath(const std::string &cachePath) override;
 
     void SetPreferredFrameSize(int32_t frameSize) override;
 
@@ -222,7 +220,6 @@ private:
     std::atomic<uint32_t> underflowCount_ = 0;
     std::atomic<uint32_t> overflowCount_ = 0;
 
-    std::string cachePath_;
     FILE *dumpFile_ = nullptr;
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
@@ -472,12 +469,6 @@ int64_t AudioProcessInClientInner::GetFramesRead()
     CHECK_AND_RETURN_RET_LOG(processConfig_.audioMode == AUDIO_MODE_RECORD, -1, "Record not support.");
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, -1, "buffer is null, maybe not inited.");
     return audioBuffer_->GetCurReadFrame();
-}
-
-void AudioProcessInClientInner::SetApplicationCachePath(const std::string &cachePath)
-{
-    AUDIO_INFO_LOG("Using cachePath:%{public}s", cachePath.c_str());
-    cachePath_ = cachePath;
 }
 
 void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)

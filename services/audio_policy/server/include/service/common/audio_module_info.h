@@ -36,6 +36,7 @@ static const std::string OFFLOAD_CLASS = "offload";
 static const std::string MCH_CLASS = "multichannel";
 static const std::string INVALID_CLASS = "invalid";
 static const std::string BLUETOOTH_SPEAKER = "Bt_Speaker";
+static const std::string BLUETOOTH_MIC = "Bt_Mic";
 static const std::string PRIMARY_SPEAKER = "Speaker";
 static const std::string OFFLOAD_PRIMARY_SPEAKER = "Offload_Speaker";
 static const std::string MCH_PRIMARY_SPEAKER = "MCH_Speaker";
@@ -55,6 +56,7 @@ static const std::string PORT_NONE = "none";
 
 const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_MIC),
+    std::string(BLUETOOTH_MIC),
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
     std::string(FILE_SOURCE)

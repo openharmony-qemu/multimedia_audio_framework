@@ -80,7 +80,8 @@ public:
         const sptr<IRemoteObject> &object, uint32_t uid);
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId);
     bool AudioInterruptIsActiveInFocusList(const int32_t zoneId, const uint32_t incomingSessionId);
-    int32_t ActivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    int32_t ActivateAudioInterrupt(
+        const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
     void ResetNonInterruptControl(uint32_t sessionId);
 
@@ -174,6 +175,8 @@ private:
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     void ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout = false);
+    bool EvaluateWhetherContinue(const AudioInterrupt &incoming, const AudioInterrupt
+        &inprocessing, AudioFocusEntry &focusEntry, bool bConcurrency);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry(const int32_t zoneId);
     void SendActiveInterruptEvent(const uint32_t activeSessionId, const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &incomingInterrupt);
@@ -218,6 +221,13 @@ private:
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     bool ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptHint hintType);
+
+    bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
+    bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
+    void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
+        std::vector<SourceType> incomingConcurrentSources);
+    bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
+        const AudioInterrupt &activeInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

@@ -15,7 +15,9 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioManagerMicStateChangeCallback"
 #endif
+#include <thread>
 
+#include "js_native_api.h"
 #include "napi_audio_micstatechange_callback.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
@@ -30,6 +32,9 @@ NapiAudioManagerMicStateChangeCallback::NapiAudioManagerMicStateChangeCallback(n
 
 NapiAudioManagerMicStateChangeCallback::~NapiAudioManagerMicStateChangeCallback()
 {
+    if (regAmMicStateChgTsfn_) {
+        napi_release_threadsafe_function(amMicStateChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioManagerMicStateChangeCallback: instance destroy");
 }
 
@@ -45,6 +50,16 @@ void NapiAudioManagerMicStateChangeCallback::SaveCallbackReference(const std::st
     CHECK_AND_RETURN_LOG(callbackName == MIC_STATE_CHANGE_CALLBACK_NAME,
         "NapiAudioManagerMicStateChangeCallback: Unknown callback type: %{public}s", callbackName.c_str());
     micStateChangeCallback_ = cb;
+}
+
+void NapiAudioManagerMicStateChangeCallback::CreateManagerMicStateChangeTsfn(napi_env env)
+{
+    regAmMicStateChgTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "ManagerMicStateChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        MicStateChangeTsfnFinalize, nullptr, SafeJsCallbackMicStateChangeWork, &amMicStateChgTsfn_);
 }
 
 void NapiAudioManagerMicStateChangeCallback::RemoveCallbackReference(const napi_value args)
@@ -90,51 +105,59 @@ void NapiAudioManagerMicStateChangeCallback::OnMicStateUpdated(const MicStateCha
     return OnJsCallbackMicStateChange(cb);
 }
 
+void NapiAudioManagerMicStateChangeCallback::SafeJsCallbackMicStateChangeWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioManagerMicStateChangeJsCallback *event = reinterpret_cast<AudioManagerMicStateChangeJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackMicStateChange: no memory");
+    std::shared_ptr<AudioManagerMicStateChangeJsCallback> safeContext(
+        static_cast<AudioManagerMicStateChangeJsCallback*>(data),
+        [](AudioManagerMicStateChangeJsCallback *ptr) {
+            delete ptr;
+    });
+    std::string request = event->callbackName;
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackMicStateChangeWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetValueMicStateChange(env, event->micStateChangeEvent, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
+            "%{public}s fail to create DeviceChange callback", request.c_str());
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call DeviceChange callback",
+            request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAudioManagerMicStateChangeCallback::MicStateChangeTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("MicStateChangeTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioManagerMicStateChangeCallback::OnJsCallbackMicStateChange
     (std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackRendererState: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallbackMicStateChange: jsCb.get() is null");
         return;
     }
+    AudioManagerMicStateChangeJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    AudioManagerMicStateChangeJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<AudioManagerMicStateChangeJsCallback> context(
-            static_cast<AudioManagerMicStateChangeJsCallback*>(event),
-            [](AudioManagerMicStateChangeJsCallback* ptr) {
-                delete ptr;
-        });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        std::string request = event->callbackName;
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetValueMicStateChange(env, event->micStateChangeEvent, args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
-                "%{public}s fail to create DeviceChange callback", request.c_str());
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call DeviceChange callback",
-                request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCallbackMicStateChange: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    napi_acquire_threadsafe_function(amMicStateChgTsfn_);
+    napi_call_threadsafe_function(amMicStateChgTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

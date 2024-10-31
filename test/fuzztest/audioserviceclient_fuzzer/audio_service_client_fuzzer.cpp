@@ -209,17 +209,6 @@ void AudioClientGetFramesReadTest(const uint8_t *rawData, size_t size)
     }
 }
 
-void AudioClientSetApplicationCachePathTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    const std::string cachePath = "cachePath";
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->SetApplicationCachePath(cachePath);
-    }
-}
-
 void AudioClientSetPreferredFrameSizeTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -294,7 +283,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioClientSetOverflowCountTest(data, size);
     OHOS::AudioStandard::AudioClientGetFramesWrittenTest(data, size);
     OHOS::AudioStandard::AudioClientGetFramesReadTest(data, size);
-    OHOS::AudioStandard::AudioClientSetApplicationCachePathTest(data, size);
     OHOS::AudioStandard::AudioClientSetPreferredFrameSizeTest(data, size);
     OHOS::AudioStandard::AudioClientUpdateLatencyTimestampTest(data, size);
     OHOS::AudioStandard::AudioClientPauseTest(data, size);

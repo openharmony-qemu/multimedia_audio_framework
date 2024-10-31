@@ -15,7 +15,9 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioManagerInterruptCallback"
 #endif
+#include <thread>
 
+#include "js_native_api.h"
 #include "napi_audio_manager_interrupt_callback.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
@@ -34,6 +36,9 @@ NapiAudioManagerInterruptCallback::NapiAudioManagerInterruptCallback(napi_env en
 
 NapiAudioManagerInterruptCallback::~NapiAudioManagerInterruptCallback()
 {
+    if (regAmInterruptTsfn_) {
+        napi_release_threadsafe_function(amInterruptTsfn_, napi_tsfn_abort);
+    }
     AUDIO_INFO_LOG("instance destroy");
 }
 
@@ -56,6 +61,17 @@ void NapiAudioManagerInterruptCallback::SaveCallbackReference(const std::string 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     audioManagerInterruptCallbackList_.push_back(cb);
     AUDIO_INFO_LOG("SaveCallbackReference success, list size [%{public}zu]", audioManagerInterruptCallbackList_.size());
+}
+
+void NapiAudioManagerInterruptCallback::CreateManagerInterruptTsfn(napi_env env)
+{
+    regAmInterruptTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "ManagerInterrupt";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        AudioManagerInterruptTsfnFinalize, nullptr, SafeJsCallbackAudioManagerInterruptWork,
+        &amInterruptTsfn_);
 }
 
 void NapiAudioManagerInterruptCallback::RemoveCallbackReference(const std::string &callbackName, napi_value args)
@@ -110,6 +126,48 @@ void NapiAudioManagerInterruptCallback::OnInterrupt(const InterruptAction &inter
     }
 }
 
+void NapiAudioManagerInterruptCallback::SafeJsCallbackAudioManagerInterruptWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioManagerInterruptJsCallback *event = reinterpret_cast<AudioManagerInterruptJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackAudioManagerInterrupt: no memory");
+    std::shared_ptr<AudioManagerInterruptJsCallback> safeContext(
+        static_cast<AudioManagerInterruptJsCallback*>(data),
+        [](AudioManagerInterruptJsCallback *ptr) {
+            delete ptr;
+    });
+    std::string request = event->callbackName;
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackAudioManagerInterruptWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetValueInterruptAction(env, event->interruptAction, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+            "%{public}s fail to create Interrupt callback", request.c_str());
+
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback",
+            request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAudioManagerInterruptCallback::AudioManagerInterruptTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("AudioManagerInterruptTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioManagerInterruptCallback::OnJsCallbackAudioManagerInterrupt(
     std::unique_ptr<AudioManagerInterruptJsCallback> &jsCb)
 {
@@ -118,44 +176,11 @@ void NapiAudioManagerInterruptCallback::OnJsCallbackAudioManagerInterrupt(
         return;
     }
 
-    AudioManagerInterruptJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<AudioManagerInterruptJsCallback> context(
-            static_cast<AudioManagerInterruptJsCallback*>(event),
-            [](AudioManagerInterruptJsCallback* ptr) {
-                delete ptr;
-            });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        std::string request = event->callbackName;
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetValueInterruptAction(env, event->interruptAction, args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-                "%{public}s fail to create Interrupt callback", request.c_str());
+    AudioManagerInterruptJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback",
-                request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCallbackAudioManagerInterrupt: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    napi_acquire_threadsafe_function(amInterruptTsfn_);
+    napi_call_threadsafe_function(amInterruptTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

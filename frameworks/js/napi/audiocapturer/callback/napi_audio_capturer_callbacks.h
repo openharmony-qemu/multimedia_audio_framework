@@ -40,6 +40,8 @@ public:
     void RemoveCallbackReference(const std::string &callbackName);
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const CapturerState state) override;
+    void CreateStateChangeTsfn(napi_env env);
+    void CreateInterruptTsfn(napi_env env);
 
 private:
     struct AudioCapturerJsCallback {
@@ -51,11 +53,19 @@ private:
 
     void OnJsCallbackInterrupt(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
     void OnJsCallbackStateChange(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
+    static void SafeJsCallbackInterruptWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void InterruptTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackStateChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void StateChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> stateChangeCallback_ = nullptr;
+    bool regAcStateChgTsfn_ = false;
+    bool regAcInterruptTsfn_ = false;
+    napi_threadsafe_function acStateChgTsfn_ = nullptr;
+    napi_threadsafe_function acInterruptTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

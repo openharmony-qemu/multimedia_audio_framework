@@ -15,7 +15,9 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioCapturerDeviceChangeCallback"
 #endif
+#include <thread>
 
+#include "js_native_api.h"
 #include "napi_audio_capturer_device_change_callback.h"
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
@@ -33,6 +35,9 @@ NapiAudioCapturerDeviceChangeCallback::NapiAudioCapturerDeviceChangeCallback(nap
 
 NapiAudioCapturerDeviceChangeCallback::~NapiAudioCapturerDeviceChangeCallback()
 {
+    if (regAcDevChgTsfn_) {
+        napi_release_threadsafe_function(acDevChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("Instance destroy");
 }
 
@@ -47,6 +52,16 @@ void NapiAudioCapturerDeviceChangeCallback::SaveCallbackReference(napi_value arg
         "Creating reference for callback fail");
 
     callback_ = callback;
+}
+
+void NapiAudioCapturerDeviceChangeCallback::CreateCaptureDeviceChangeTsfn(napi_env env)
+{
+    regAcDevChgTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "AudioCapturerDeviceChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr, CaptureDeviceInfoTsfnFinalize,
+        nullptr, SafeJsCallbackCapturerDeviceInfoWork, &acDevChgTsfn_);
 }
 
 bool NapiAudioCapturerDeviceChangeCallback::ContainSameJsCallback(napi_value args)
@@ -68,26 +83,22 @@ void NapiAudioCapturerDeviceChangeCallback::OnStateChange(const DeviceInfo &devi
     OnJsCallbackCapturerDeviceInfo(callback_, deviceInfo);
 }
 
-void NapiAudioCapturerDeviceChangeCallback::WorkCallbackCompleted(uv_work_t *work, int status)
+void NapiAudioCapturerDeviceChangeCallback::SafeJsCallbackCapturerDeviceInfoWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
 {
-    // Js Thread
-    std::shared_ptr<AudioCapturerDeviceChangeJsCallback> context(
-        static_cast<AudioCapturerDeviceChangeJsCallback*>(work->data),
-        [work](AudioCapturerDeviceChangeJsCallback* ptr) {
-            delete ptr;
-            delete work;
-    });
-
-    AudioCapturerDeviceChangeJsCallback *event = reinterpret_cast<AudioCapturerDeviceChangeJsCallback*>(work->data);
+    AudioCapturerDeviceChangeJsCallback *event = reinterpret_cast<AudioCapturerDeviceChangeJsCallback *>(data);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback_) != nullptr,
         "OnJsCallbackCapturerDeviceInfo: no memory");
-
-    napi_env env = event->env_;
+    std::shared_ptr<AudioCapturerDeviceChangeJsCallback> safeContext(
+        static_cast<AudioCapturerDeviceChangeJsCallback*>(data),
+        [](AudioCapturerDeviceChangeJsCallback *ptr) {
+            delete ptr;
+    });
     napi_ref callback = event->callback_;
-
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackCapturerDeviceInfoWork: safe js callback working.");
     do {
         napi_value jsCallback = nullptr;
         napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
@@ -105,34 +116,24 @@ void NapiAudioCapturerDeviceChangeCallback::WorkCallbackCompleted(uv_work_t *wor
     napi_close_handle_scope(env, scope);
 }
 
+void NapiAudioCapturerDeviceChangeCallback::CaptureDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("RingModeTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioCapturerDeviceChangeCallback::OnJsCallbackCapturerDeviceInfo(napi_ref method,
     const DeviceInfo &deviceInfo)
 {
-    uv_loop_s *loop = nullptr;
-    napi_get_uv_event_loop(env_, &loop);
-    CHECK_AND_RETURN_LOG(loop != nullptr, "Loop is nullptr");
     CHECK_AND_RETURN_LOG(method != nullptr, "method is nullptr");
-
-    uv_work_t *work = new(std::nothrow) uv_work_t;
-    CHECK_AND_RETURN_LOG(work != nullptr, "OnJsCallbackCapturerDeviceInfo: no memory");
-
-    work->data = new AudioCapturerDeviceChangeJsCallback {method, env_, deviceInfo};
-    if (work->data == nullptr) {
-        AUDIO_ERR_LOG("work data malloc failed: No memory");
-        delete work;
+    AudioCapturerDeviceChangeJsCallback *event = new AudioCapturerDeviceChangeJsCallback {method, env_, deviceInfo};
+    
+    if (event == nullptr) {
+        AUDIO_ERR_LOG("event data malloc failed: No memory");
         return;
     }
 
-    int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, WorkCallbackCompleted);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("Failed to execute libuv work queue");
-        if (work != nullptr) {
-            if (work->data != nullptr) {
-                delete reinterpret_cast<AudioCapturerDeviceChangeJsCallback*>(work->data);
-            }
-            delete work;
-        }
-    }
+    napi_acquire_threadsafe_function(acDevChgTsfn_);
+    napi_call_threadsafe_function(acDevChgTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

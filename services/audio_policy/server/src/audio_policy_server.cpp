@@ -228,7 +228,9 @@ void AudioPolicyServer::NotifyProcessStatus(bool isStart)
     void *notifyProcessStatusFunc = dlsym(libMemMgrClientHandle, "notify_process_status");
     if (!notifyProcessStatusFunc) {
         AUDIO_ERR_LOG("dlsm notify_process_status failed");
+#ifndef TEST_COVERAGE
         dlclose(libMemMgrClientHandle);
+#endif
         return;
     }
     auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
@@ -241,7 +243,9 @@ void AudioPolicyServer::NotifyProcessStatus(bool isStart)
         // 0 indicates the service is stopped
         notifyProcessStatus(pid, SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_STOP, AUDIO_POLICY_SERVICE_ID);
     }
+#ifndef TEST_COVERAGE
     dlclose(libMemMgrClientHandle);
+#endif
 }
 
 void AudioPolicyServer::HandleKvDataShareEvent()
@@ -480,7 +484,8 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
         return;
     }
 
-    bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_);
+    bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_,
+        false);
     if (!RegisterSuccess) {
         AUDIO_ERR_LOG("register power state callback failed");
     } else {
@@ -587,7 +592,7 @@ void AudioPolicyServer::CheckStreamMode(const int64_t activateSessionId)
     audioPolicyService_.CheckStreamMode(activateSessionId);
 }
 
-void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
+void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateChanged(PowerMgr::PowerState state)
 {
     policyServer_->audioPolicyService_.HandlePowerStateChanged(state);
 }
@@ -662,6 +667,10 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeType(const int32_t clien
 
 AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32_t clientUid)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return AudioStreamType::STREAM_MUSIC;
+    }
     AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
     if (clientUid != 0) {
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus(clientUid));
@@ -958,6 +967,15 @@ bool AudioPolicyServer::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
     if (desc.deviceType_ != DEVICE_TYPE_USB_HEADSET) return false;
 
     return audioPolicyService_.IsArmUsbDevice(desc);
+}
+
+void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc)
+{
+    if (IsArmUsbDevice(desc)) {
+        desc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && desc.deviceRole_ == INPUT_DEVICE) {
+        desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    }
 }
 
 int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
@@ -1402,10 +1420,11 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyServer::ActivateAudioInterrupt(
+    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     if (interruptService_ != nullptr) {
-        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt);
+        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;
 }
@@ -1788,7 +1807,7 @@ void AudioPolicyServer::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamCh
 }
 
 int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
-    std::vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    std::vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     bool hasBTPermission = VerifyBluetoothPermission();
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: BT use permission: %{public}d", hasBTPermission);
@@ -1800,7 +1819,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
 }
 
 int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
-    std::vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    std::vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     bool hasBTPermission = VerifyBluetoothPermission();
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: BT use permission: %{public}d", hasBTPermission);
@@ -2066,7 +2085,7 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
 void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCapturerState(
     bool targetMuteState, uint32_t targetTokenId, int32_t appUid)
 {
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
     server_->audioPolicyService_.GetCurrentCapturerChangeInfos(capturerChangeInfos, true, true);
     for (auto &info : capturerChangeInfos) {
         if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
@@ -3033,6 +3052,11 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
         return ERR_PERMISSION_DENIED;
     }
     return audioPolicyService_.LoadSplitModule(splitArgs, networkId);
+}
+
+bool AudioPolicyServer::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
+{
+    return audioPolicyService_.IsAllowedPlayback(uid, pid);
 }
 
 int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,

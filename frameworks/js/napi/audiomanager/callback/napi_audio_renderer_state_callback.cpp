@@ -15,7 +15,9 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioRendererStateCallback"
 #endif
+#include <thread>
 
+#include "js_native_api.h"
 #include "napi_audio_renderer_state_callback.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
@@ -34,6 +36,9 @@ NapiAudioRendererStateCallback::NapiAudioRendererStateCallback(napi_env env)
 
 NapiAudioRendererStateCallback::~NapiAudioRendererStateCallback()
 {
+    if (regAmRendererSatTsfn_) {
+        napi_release_threadsafe_function(amRendererSatTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioRendererStateCallback: instance destroy");
 }
 
@@ -58,8 +63,18 @@ void NapiAudioRendererStateCallback::SaveCallbackReference(napi_value args)
     rendererStateCallback_ = cb;
 }
 
+void NapiAudioRendererStateCallback::CreateRendererStateTsfn(napi_env env)
+{
+    regAmRendererSatTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "RendererState";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        RendererStateTsfnFinalize, nullptr, SafeJsCallbackRendererStateWork, &amRendererSatTsfn_);
+}
+
 void NapiAudioRendererStateCallback::OnRendererStateChange(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     AUDIO_PRERELEASE_LOGI("OnRendererStateChange entered");
 
@@ -70,15 +85,54 @@ void NapiAudioRendererStateCallback::OnRendererStateChange(
     std::unique_ptr<AudioRendererStateJsCallback> cb = std::make_unique<AudioRendererStateJsCallback>();
     CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
 
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     for (const auto &changeInfo : audioRendererChangeInfos) {
-        rendererChangeInfos.push_back(std::make_unique<AudioRendererChangeInfo>(*changeInfo));
+        rendererChangeInfos.push_back(std::make_shared<AudioRendererChangeInfo>(*changeInfo));
     }
 
     cb->callback = rendererStateCallback_;
     cb->changeInfos = move(rendererChangeInfos);
 
     return OnJsCallbackRendererState(cb);
+}
+
+void NapiAudioRendererStateCallback::SafeJsCallbackRendererStateWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioRendererStateJsCallback *event = reinterpret_cast<AudioRendererStateJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackRendererState: no memory");
+    std::shared_ptr<AudioRendererStateJsCallback> safeContext(
+        static_cast<AudioRendererStateJsCallback*>(data),
+        [](AudioRendererStateJsCallback *ptr) {
+            delete ptr;
+    });
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackRingModeWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetRendererChangeInfos(env, event->changeInfos, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+            "fail to convert to jsobj");
+
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "fail to call Interrupt callback");
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAudioRendererStateCallback::RendererStateTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("RingModeTsfnFinalize: safe thread resource release.");
 }
 
 void NapiAudioRendererStateCallback::OnJsCallbackRendererState(std::unique_ptr<AudioRendererStateJsCallback> &jsCb)
@@ -88,41 +142,11 @@ void NapiAudioRendererStateCallback::OnJsCallbackRendererState(std::unique_ptr<A
         return;
     }
 
-    AudioRendererStateJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<AudioRendererStateJsCallback> context(
-            static_cast<AudioRendererStateJsCallback*>(event),
-            [](AudioRendererStateJsCallback* ptr) {
-                delete ptr;
-        });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetRendererChangeInfos(env, event->changeInfos, args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-                "fail to convert to jsobj");
-
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "fail to call Interrupt callback");
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCallbackRendererState: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    AudioRendererStateJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+    
+    napi_acquire_threadsafe_function(amRendererSatTsfn_);
+    napi_call_threadsafe_function(amRendererSatTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

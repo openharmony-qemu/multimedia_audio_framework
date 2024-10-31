@@ -33,6 +33,7 @@ public:
     bool IsSameCallback(const napi_value args);
     void RemoveCallbackReference(const napi_value args);
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
+    void CreateManagerMicStateChangeTsfn(napi_env env);
 
 private:
     struct AudioManagerMicStateChangeJsCallback {
@@ -42,10 +43,14 @@ private:
     };
 
     void OnJsCallbackMicStateChange(std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb);
+    static void MicStateChangeTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackMicStateChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> micStateChangeCallback_ = nullptr;
+    bool regAmMicStateChgTsfn_ = false;
+    napi_threadsafe_function amMicStateChgTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

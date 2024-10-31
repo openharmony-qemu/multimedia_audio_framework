@@ -104,9 +104,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_001, TestSize.Level1)
     EXPECT_EQ(interruptCallback->audioStream_, audioStream);
 
     capturer->audioStream_ = audioStream;
-    capturer->SetApplicationCachePath("/a");
-    EXPECT_EQ(capturer->cachePath_, "/a");
-    EXPECT_EQ(static_cast<FastAudioStream*>(audioStream.get())->cachePath_, "/a");
 
     InterruptEvent interruptEventResume {InterruptType::INTERRUPT_TYPE_BEGIN,
         InterruptForceType::INTERRUPT_SHARE, InterruptHint::INTERRUPT_HINT_RESUME};
@@ -225,6 +222,71 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_003, TestSize.Level1)
     capturer->audioInterruptCallback_ = std::make_unique<AudioCapturerInterruptCallbackImpl>(nullptr);
     auto switchResult = capturer->SwitchToTargetStream(IAudioStream::StreamClass::VOIP_STREAM, newSessionId);
     EXPECT_EQ(switchResult, false);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_004
+ * @tc.desc  : Test AudioCapturerPrivate::SetSwitchInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+
+    IAudioStream::SwitchInfo info;
+    auto audioStream = std::make_shared<TestAudioStremStub>();
+
+    info.renderPositionCb = std::make_shared<RendererPositionCallbackTestStub>();
+    info.framePeriodNumber = 1;
+    info.capturePositionCb  = std::make_shared<CapturerPositionCallbackTestStub>();
+    info.renderPeriodPositionCb = std::make_shared<RendererPeriodPositionCallbackTestStub>();
+    info.framePeriodNumber = 1;
+    info.capturePeriodPositionCb = std::make_shared<CapturerPeriodPositionCallbackTestStub>();
+
+    capturer->SetSwitchInfo(info, audioStream);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_005
+ * @tc.desc  : Test AudioCapturerPrivate::SetSwitchInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_005, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+
+    IAudioStream::SwitchInfo info;
+    auto audioStream = std::make_shared<TestAudioStremStub>();
+
+    info.renderPositionCb = std::make_shared<RendererPositionCallbackTestStub>();
+    info.framePeriodNumber = 0;
+    info.capturePositionCb  = std::make_shared<CapturerPositionCallbackTestStub>();
+    info.renderPeriodPositionCb = std::make_shared<RendererPeriodPositionCallbackTestStub>();
+    info.framePeriodNumber = 0;
+    info.capturePeriodPositionCb = std::make_shared<CapturerPeriodPositionCallbackTestStub>();
+
+    capturer->SetSwitchInfo(info, audioStream);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_006
+ * @tc.desc  : Test AudioCapturerPrivate::SetSwitchInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_006, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+
+    IAudioStream::SwitchInfo info;
+    auto audioStream = std::make_shared<TestAudioStremStub>();
+
+    capturer->SetSwitchInfo(info, audioStream);
 }
 } // namespace AudioStandard
 } // namespace OHOS

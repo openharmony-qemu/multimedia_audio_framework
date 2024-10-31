@@ -31,6 +31,7 @@ public:
     virtual ~NapiRendererPositionCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnMarkReached(const int64_t &framePosition) override;
+    void CreateMarkReachedTsfn(napi_env env);
 
 private:
     struct RendererPositionJsCallback {
@@ -40,10 +41,14 @@ private:
     };
 
     void OnJsRendererPositionCallback(std::unique_ptr<RendererPositionJsCallback> &jsCb);
+    static void SafeJsCallbackPositionWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void PositionTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> renderPositionCallback_ = nullptr;
+    bool regArPosTsfn_ = false;
+    napi_threadsafe_function arPosTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
