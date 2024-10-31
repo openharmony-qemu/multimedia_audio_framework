@@ -95,7 +95,7 @@ public:
     float GetSingleStreamVolume() const override;
     float GetMinStreamVolume() const override;
     float GetMaxStreamVolume() const override;
-    int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const override;
+    int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
     void SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
@@ -262,8 +262,8 @@ public:
     OutputDeviceChangeWithInfoCallbackImpl() = default;
     virtual ~OutputDeviceChangeWithInfoCallbackImpl() = default;
 
-    void OnDeviceChangeWithInfo(
-        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
+    void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReasonExt reason) override;
 
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
