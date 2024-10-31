@@ -341,16 +341,16 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
-std::mutex recordMapMutex;
-std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap_ = {};
+std::mutex g_recordMapMutex;
+std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
 
 bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStart", TIME_OUT_SECONDS);
-    std::lock_guard<std::mutex> lock(recordMapMutex);
-    if (g_tokenIdRecordMap_.count(targetTokenId)) {
-        if (!g_tokenIdRecordMap_[targetTokenId].count(sessionId)) {
-            g_tokenIdRecordMap_[targetTokenId].emplace(sessionId);
+    std::lock_guard<std::mutex> lock(g_recordMapMutex);
+    if (g_tokenIdRecordMap.count(targetTokenId)) {
+        if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
+            g_tokenIdRecordMap[targetTokenId].emplace(sessionId);
         } else {
             AUDIO_WARNING_LOG("this stream %{public}u is already running, no need call start", sessionId);
         }
@@ -370,7 +370,7 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
                 targetTokenId, res);
             return false;
         }
-        g_tokenIdRecordMap_[targetTokenId] = {sessionId};
+        g_tokenIdRecordMap[targetTokenId] = {sessionId};
     }
     return true;
 }
@@ -378,18 +378,18 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
 bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStop", TIME_OUT_SECONDS);
-    std::unique_lock<std::mutex> lock(recordMapMutex);
-    if (!g_tokenIdRecordMap_.count(targetTokenId)) {
+    std::unique_lock<std::mutex> lock(g_recordMapMutex);
+    if (!g_tokenIdRecordMap.count(targetTokenId)) {
         AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
         return true;
     }
 
-    if (g_tokenIdRecordMap_[targetTokenId].count(sessionId)) {
-        g_tokenIdRecordMap_[targetTokenId].erase(sessionId);
+    if (g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
+        g_tokenIdRecordMap[targetTokenId].erase(sessionId);
     }
     AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
-        g_tokenIdRecordMap_[targetTokenId].size());
-    if (g_tokenIdRecordMap_[targetTokenId].empty()) {
+        g_tokenIdRecordMap[targetTokenId].size());
+    if (g_tokenIdRecordMap[targetTokenId].empty()) {
         Trace trace("PrivacyKit::StopUsingPermission");
         AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d sessionId:%{public}d",
             targetTokenId, sessionId);
@@ -399,7 +399,7 @@ bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
                 targetTokenId, res);
             return false;
         }
-        g_tokenIdRecordMap_.erase(targetTokenId);
+        g_tokenIdRecordMap.erase(targetTokenId);
     }
     return true;
 }
