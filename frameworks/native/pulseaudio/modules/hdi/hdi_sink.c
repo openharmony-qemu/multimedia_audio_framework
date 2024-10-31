@@ -1804,37 +1804,47 @@ static void UpdateStreamAvailableMap(struct Userdata *u, const char *sceneType)
         }
     }
 }
-
-static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata *u)
+/* For ResampleAffterEffectChain, update input channellayout and sample spec */
+static pa_resampler* UpdateResamplerIchannelMap(const char* sinkSceneType, struct Userdata *u)
 {
-    CHECK_AND_RETURN_LOG(sinkSceneType != NULL, "ResampleAfterEffectChain: sceneType is NULL!");
-    CHECK_AND_RETURN_LOG(u != NULL, "ResampleAfterEffectChain: u is null!");
-    if (pa_safe_streq(sinkSceneType, "EFFECT_NONE")) {
-        AUDIO_INFO_LOG("ResampleAfterEffectChain: sceneType [EFFECT_NONE] after effectchain");
-        return;
-    }
-    pa_resampler* resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sinkSceneType);
+    pa_resampler *resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sinkSceneType);
     if (resampler == NULL) {
-        return;
+        return NULL;
     }
-    // for now, use sample_spec from sink
-    // update input channellayout and sample spec
     pa_channel_map ichannelmap;
+    ichannelmap.channels = u->bufferAttr->numChanOut;
     ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &ichannelmap);
-    if((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &ichannelmap))) {
-        AUDIO_INFO_LOG("new sceneType: [%{public}s], input channels to the resampler: %{public}d",
+    if ((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &ichannelmap))) {
+        AUDIO_INFO_LOG("ResampleAfterEffectChain: new sceneType [%{public}s], input channels: %{public}d",
             (char *)sinkSceneType, u->bufferAttr->numChanOut);
-        pa_sample_spec ispec = u->sink->sample_spec;
+        // for now, use sample_spec from sink
+        pa_sample_spec ispec = *(pa_resampler_input_sample_spec(resampler));
         ispec.channels = (uint8_t)u->bufferAttr->numChanOut;
         pa_sample_spec sink_spec = *(pa_resampler_output_sample_spec(resampler));
-        pa_channel_map sink_channelmap = (*pa_resampler_output_channel_map(resampler));
-        pa_resampler_free(resampler);
+        pa_channel_map sink_channelmap = *(pa_resampler_output_channel_map(resampler));
         resampler = pa_resampler_new(
             u->sink->core->mempool,
             &ispec, &ichannelmap,
             &sink_spec, &sink_channelmap,
             u->sink->core->lfe_crossover_freq,
             PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+        const char *dupSceneType = strdup(sinkSceneType);
+        pa_hashmap_remove_and_free(u->sceneToResamplerMap, (void *)sinkSceneType);
+        pa_hashmap_put(u->sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
+    }
+    return resampler;
+}
+
+static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata *u)
+{
+    CHECK_AND_RETURN_LOG(sinkSceneType != NULL, "ResampleAfterEffectChain: sceneType is NULL!");
+    CHECK_AND_RETURN_LOG(u != NULL, "ResampleAfterEffectChain: u is null!");
+    if (pa_safe_streq(sinkSceneType, "EFFECT_NONE")) {
+        return;
+    }
+    pa_resampler *resampler = UpdateResamplerIchannelMap(sinkSceneType, u);
+    if(resampler == NULL) {
+        return;
     }
     const pa_sample_spec *ispec = pa_resampler_input_sample_spec(resampler);
     const pa_sample_spec *ospec = pa_resampler_output_sample_spec(resampler);
@@ -1849,7 +1859,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     int ret = memcpy_s(dst, inBufferLen, u->bufferAttr->bufOut, inBufferLen);
     if (ret != 0) {
         float *dstFloat = (float *)dst;
-        for (int i=0; i<ispec->channels * u->bufferAttr->frameLen; i++) {
+        for (int i = 0; i<ispec->channels * u->bufferAttr->frameLen; i++) {
             dstFloat[i] = u->bufferAttr->bufOut[i];
         }
     }
@@ -1860,7 +1870,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     ret = memcpy_s(u->bufferAttr->bufOut, outBufferLen, src, outBufferLen);
     if (ret != 0) {
         float *srcFloat = (float *)src;
-        for (int i=0; i<u->bufferAttr->frameLen * ospec->channels; i++) {
+        for (int i = 0; i<u->bufferAttr->frameLen * ospec->channels; i++) {
             u->bufferAttr->bufOut[i] = srcFloat[i];
         }
     }
@@ -1944,38 +1954,36 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
             // for now, use sample_spec from sink
             AUDIO_INFO_LOG("UpdateSceneToResamplerMap:new sceneType [%{public}s], output channels %{public}d",
                 (char *)sceneType, sink_spec.channels);
-            pa_sample_spec ispec = sink_spec;
-            pa_channel_map ichannelmap = sink_channelmap;
             resampler = pa_resampler_new(
                 si->core->mempool,
-                &ispec, &ichannelmap,
+                &sink_spec, &sink_channelmap,
                 &sink_spec, &sink_channelmap,
                 si->core->lfe_crossover_freq,
                 PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
             char* newSceneType = strdup(sceneType);
-            pa_hashmap_put(sceneToResamplerMap, newSceneType, resampler);
+            pa_hashmap_put(sceneToResamplerMap, (void *)newSceneType, (void *)resampler);
         } else {
             if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
                 !pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
                 AUDIO_INFO_LOG("UpdateSceneToResamplerMap: sceneType [%{public}s], new output channels %{public}d",
                     (char *)sceneType, sink_spec.channels);
-                pa_sample_spec ispec = *(pa_resampler_input_sample_spec(resampler));
-                pa_channel_map ichannelmap = *(pa_resampler_input_channel_map(resampler));
-                pa_resampler_free(resampler);
+                char *dupSceneType = strdup(sceneType);
+                pa_hashmap_remove_and_free(sceneToResamplerMap, (void *)sceneType);
                 resampler = pa_resampler_new(
                     si->core->mempool,
-                    &ispec, &ichannelmap,
+                    &sink_spec, &sink_channelmap,
                     &sink_spec, &sink_channelmap,
                     si->core->lfe_crossover_freq,
                     PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+                pa_hashmap_put(sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
             }
         }
     }
     // delete entries that are not in scenemap
     void* resampler = NULL;
     while ((pa_hashmap_iterate(sceneToResamplerMap, &resampler, &sceneType))) {
-        AUDIO_INFO_LOG("UpdateSceneToResamplerMap: sceneType [%{public}s] is removed", (char *)sceneType);
         if (pa_hashmap_get(sceneToCountMap, sceneType) == NULL) {
+            AUDIO_INFO_LOG("UpdateSceneToResamplerMap: sceneType [%{public}s] is removed", (char *)sceneType);
             pa_hashmap_remove_and_free(sceneToResamplerMap, sceneType);
         }
     }
