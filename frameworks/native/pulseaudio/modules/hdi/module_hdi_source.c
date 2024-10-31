@@ -394,7 +394,7 @@ static pa_hook_result_t SourceOutputMoveStartCb(pa_core *c, pa_source_output *so
 }
 
 static pa_hook_result_t SourceOutputMoveFinishCb(pa_core *c, pa_source_output *so, struct Userdata *u)
-{    
+{
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
     CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
