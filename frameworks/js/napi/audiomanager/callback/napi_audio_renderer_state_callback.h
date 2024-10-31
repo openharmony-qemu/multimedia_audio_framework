@@ -34,6 +34,7 @@ public:
     void OnRendererStateChange(
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void CreateRendererStateTsfn(napi_env env);
+    bool GetRendererStateTsfnFlag();
 
 private:
     struct AudioRendererStateJsCallback {

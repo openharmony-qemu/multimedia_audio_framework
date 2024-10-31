@@ -38,6 +38,7 @@ public:
     void RemoveAllRoutinAvailbleDeviceChangeCb();
     int32_t GetRoutingAvailbleDeviceChangeCbListSize();
     void CreateRouDevChgTsfn(napi_env env);
+    bool GetRouDevChgTsfnFlag();
 
 private:
     struct AudioRountingJsCallback {

@@ -32,6 +32,7 @@ public:
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnMarkReached(const int64_t &framePosition) override;
     void CreateMarkReachedTsfn(napi_env env);
+    bool GetMarkReachedTsfnFlag();
 
 private:
     struct RendererPositionJsCallback {

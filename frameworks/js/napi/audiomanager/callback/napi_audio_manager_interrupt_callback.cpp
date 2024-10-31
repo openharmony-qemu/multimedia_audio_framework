@@ -74,6 +74,11 @@ void NapiAudioManagerInterruptCallback::CreateManagerInterruptTsfn(napi_env env)
         &amInterruptTsfn_);
 }
 
+bool NapiAudioManagerInterruptCallback::GetManagerInterruptTsfnFlag()
+{
+    return regAmInterruptTsfn_;
+}
+
 void NapiAudioManagerInterruptCallback::RemoveCallbackReference(const std::string &callbackName, napi_value args)
 {
     CHECK_AND_RETURN_LOG(!callbackName.compare(INTERRUPT_CALLBACK_NAME),

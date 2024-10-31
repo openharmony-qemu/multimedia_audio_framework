@@ -62,6 +62,11 @@ void NapiAudioManagerMicStateChangeCallback::CreateManagerMicStateChangeTsfn(nap
         MicStateChangeTsfnFinalize, nullptr, SafeJsCallbackMicStateChangeWork, &amMicStateChgTsfn_);
 }
 
+bool NapiAudioManagerMicStateChangeCallback::GetManagerMicStateChangeTsfnFlag()
+{
+    return regAmMicStateChgTsfn_;
+}
+
 void NapiAudioManagerMicStateChangeCallback::RemoveCallbackReference(const napi_value args)
 {
     if (!IsSameCallback(args)) {

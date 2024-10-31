@@ -37,6 +37,7 @@ public:
     void RemoveCallbackReference(napi_env env, napi_value callback);
     void RemoveAllCallbacks();
     void CreatePreferredOutTsfn(napi_env env);
+    bool GetPreferredOutTsfnFlag();
 
 private:
     struct AudioActiveOutputDeviceChangeJsCallback {
@@ -66,6 +67,7 @@ public:
     void RemoveCallbackReference(napi_env env, napi_value callback);
     void RemoveAllCallbacks();
     void CreatePerferredInTsfn(napi_env env);
+    bool GetPerferredInTsfnFlag();
 
 private:
     struct AudioActiveInputDeviceChangeJsCallback {

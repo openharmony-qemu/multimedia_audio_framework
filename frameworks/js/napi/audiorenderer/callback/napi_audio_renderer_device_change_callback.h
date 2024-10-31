@@ -33,6 +33,7 @@ public:
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
     void CreateRendererDeviceChangeTsfn(napi_env env);
+    bool GetRendererDeviceChangeTsfnFlag();
 
 private:
     struct AudioRendererDeviceChangeJsCallback {
@@ -62,6 +63,7 @@ public:
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
     void CreateOutputDeviceChangeTsfn(napi_env env);
+    bool GetOutputDeviceChangeTsfnFlag();
 
 private:
     struct AudioRendererOutputDeviceChangeWithInfoJsCallback {

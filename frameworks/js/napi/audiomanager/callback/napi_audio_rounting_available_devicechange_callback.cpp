@@ -52,6 +52,11 @@ void NapiAudioRountingAvailableDeviceChangeCallback::CreateRouDevChgTsfn(napi_en
         AvailbleDeviceChangeTsfnFinalize, nullptr, SafeJsCallbackAvailbleDeviceChangeWork, &amRouDevChgTsfn_);
 }
 
+bool NapiAudioRountingAvailableDeviceChangeCallback::GetRouDevChgTsfnFlag()
+{
+    return regAmRouDevChgTsfn_;
+}
+
 void NapiAudioRountingAvailableDeviceChangeCallback::SaveRoutingAvailbleDeviceChangeCbRef(AudioDeviceUsage usage,
     napi_value callback)
 {

@@ -67,6 +67,11 @@ void NapiAudioCapturerStateCallback::CreateCaptureStateTsfn(napi_env env)
         CapturerStateTsfnFinalize, nullptr, SafeJsCallbackCapturerStateWork, &amacStateTsfn_);
 }
 
+bool NapiAudioCapturerStateCallback::GetCaptureStateTsfnFlag()
+{
+    return regAmacStateTsfn_;
+}
+
 void NapiAudioCapturerStateCallback::OnCapturerStateChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {

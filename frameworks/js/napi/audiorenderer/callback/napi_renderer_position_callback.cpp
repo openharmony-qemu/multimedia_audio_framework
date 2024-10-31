@@ -67,6 +67,11 @@ void NapiRendererPositionCallback::CreateMarkReachedTsfn(napi_env env)
         nullptr, SafeJsCallbackPositionWork, &arPosTsfn_);
 }
 
+bool NapiRendererPositionCallback::GetMarkReachedTsfnFlag()
+{
+    return regArPosTsfn_;
+}
+
 void NapiRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
 {
     std::lock_guard<std::mutex> lock(mutex_);

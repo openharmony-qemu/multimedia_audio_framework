@@ -70,6 +70,11 @@ void NapiAudioRendererDeviceChangeCallback::CreateRendererDeviceChangeTsfn(napi_
         nullptr, SafeJsCallbackRendererDeviceInfoWork, &arDevInfoTsfn_);
 }
 
+bool NapiAudioRendererDeviceChangeCallback::GetRendererDeviceChangeTsfnFlag()
+{
+    return regArDevInfoTsfn_;
+}
+
 void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -216,6 +221,11 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::CreateOutputDeviceChan
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr, OutputDeviceInfoTsfnFinalize,
         nullptr, SafeJsCallbackOutputDeviceInfoWork, &arOutputDevChgTsfn_);
+}
+
+bool NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetOutputDeviceChangeTsfnFlag()
+{
+    return regArOutputDevChg_;
 }
 
 void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReference(napi_env env, napi_value args)

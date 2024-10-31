@@ -43,6 +43,7 @@ public:
     void OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
     void CreateSpatEnableTsfn(napi_env env);
+    bool GetSpatEnableTsfnFlag();
 
 private:
     struct AudioSpatializationEnabledJsCallback {
@@ -77,6 +78,7 @@ public:
     void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
     void CreateHeadTrackingTsfn(napi_env env);
+    bool GetHeadTrackingTsfnFlag();
 
 private:
     struct AudioHeadTrackingEnabledJsCallback {

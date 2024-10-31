@@ -65,6 +65,11 @@ void NapiCapturerPositionCallback::CreateCapturePositionTsfn(napi_env env)
         CapturePostionTsfnFinalize, nullptr, SafeJsCallbackCapturerPositionWork, &acPosTsfn_);
 }
 
+bool NapiCapturerPositionCallback::GetCapturePositionFlag()
+{
+    return regAcPosTsfn_;
+}
+
 void NapiCapturerPositionCallback::OnMarkReached(const int64_t &framePosition)
 {
     std::lock_guard<std::mutex> lock(mutex_);

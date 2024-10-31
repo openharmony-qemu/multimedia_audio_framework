@@ -42,6 +42,8 @@ public:
     void OnStateChange(const CapturerState state) override;
     void CreateStateChangeTsfn(napi_env env);
     void CreateInterruptTsfn(napi_env env);
+    bool GetStateChangeTsfnFlag();
+    bool GetInterruptTsfnFlag();
 
 private:
     struct AudioCapturerJsCallback {

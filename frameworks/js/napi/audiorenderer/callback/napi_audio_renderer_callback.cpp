@@ -109,6 +109,16 @@ void NapiAudioRendererCallback::CreateArStateChange(napi_env env)
         StateChangeTsfnFinalize, nullptr, SafeJsCallbackStateChangeWork, &arStateChgTsfn_);
 }
 
+bool NapiAudioRendererCallback::GetArInterruptTsfnFlag()
+{
+    return regArInterruptTsfn_;
+}
+
+bool NapiAudioRendererCallback::GetArStateChangeTsfnFlag()
+{
+    return regArStateChgTsfn_;
+}
+
 void NapiAudioRendererCallback::RemoveCallbackReference(const std::string &callbackName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
