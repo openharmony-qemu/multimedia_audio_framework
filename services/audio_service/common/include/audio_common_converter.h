@@ -20,21 +20,22 @@
 namespace OHOS {
 namespace AudioStandard {
 struct BufferBaseInfo {
-    uint32_t FrameSize;
-    int32_t Format;
-    int32_t ChannelCount;
-    float VolumeBg;
-    float VolumeEd;
+    uint8_t *buffer;
+    size_t bufLength;
+    uint32_t frameSize;
+    uint32_t samplePerFrame;
+    int32_t format;
+    int32_t channelCount;
+    float volumeBg;
+    float volumeEd;
 };
 
 class AudioCommonConverter {
 public:
-    static void ConvertBufferToFloat(const uint8_t *buffer, std::vector<float> &floatBuffer,
-                                     const BufferBaseInfo &base);
-    static void ConvertFloatToFloatWithVolume(const float *buffer, std::vector<float> &floatBuffer,
-                                              const BufferBaseInfo &base);
-    static void ConvertBufferTo32Bit(const uint8_t *buffer, int32_t *dst, const BufferBaseInfo &bufferInfo);
-    static void ConvertBufferTo16Bit(const uint8_t *buffer, int16_t *dst, const BufferBaseInfo &bufferInfo);
+    static void ConvertBufferToFloat(const BufferBaseInfo &srcBuffer, std::vector<float> &floatBuffer);
+    static void ConvertFloatToFloatWithVolume(const BufferBaseInfo &srcBuffer, std::vector<float> &floatBuffer);
+    static void ConvertBufferTo32Bit(const BufferBaseInfo &srcBuffer, std::vector<char> &dstBuffer);
+    static void ConvertBufferTo16Bit(const BufferBaseInfo &srcBuffer, std::vector<char> &dstBuffer);
 
     static void ConvertFloatToAudioBuffer(const std::vector<float> &floatBuffer, uint8_t *buffer,
                                           uint32_t samplePerFrame);

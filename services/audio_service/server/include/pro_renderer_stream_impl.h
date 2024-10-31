@@ -82,7 +82,7 @@ private:
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept;
     AudioSampleFormat GetDirectFormat(AudioSampleFormat format) const noexcept;
     uint32_t GetSamplePerFrame(AudioSampleFormat format) const noexcept;
-    void ConvertSrcToFloat(uint8_t *buffer, size_t bufLength);
+    void ConvertSrcToFloat(const BufferDesc &bufferDesc);
     void ConvertFloatToDes(int32_t writeIndex);
     void GetStreamVolume();
     void PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index);
