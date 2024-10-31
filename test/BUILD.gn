@@ -108,6 +108,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicymore_fuzzer:fuzztest",
     "fuzztest/audiopolicyservenhance_fuzzer:fuzztest",
     "fuzztest/audiopolicyservice_fuzzer:fuzztest",
+    "fuzztest/audiopolicyserviceenhance_fuzzer:fuzztest",
     "fuzztest/audiopolicyservicemore_fuzzer:fuzztest",
     "fuzztest/audiopowerstatelistener_fuzzer:fuzztest",
     "fuzztest/audioserver_fuzzer:fuzztest",
@@ -119,7 +120,6 @@ group("audio_fuzz_test") {
     "fuzztest/audioserviceserversrcenhance_fuzzer:fuzztest",
     "fuzztest/audiostream_fuzzer:fuzztest",
     "fuzztest/audioutils_fuzzer:fuzztest",
-    "fuzztest/audiopolicyserviceenhance_fuzzer:fuzztest",
   ]
 }
 

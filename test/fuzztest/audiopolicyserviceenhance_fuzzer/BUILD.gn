@@ -45,10 +45,10 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
   sources = [ "audio_policy_service_enhance_fuzzer.cpp" ]
 
   deps = [
-    "../../../services/audio_policy:audio_policy_service",
-    "../../../services/audio_service:audio_client",
     "../../../frameworks/native/audioinnercall:audio_inner_call",
     "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_service:audio_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
@@ -69,6 +69,7 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "hilog:libhilog",
+    "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
@@ -77,7 +78,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "init:libbegetutil",
   ]
   if (accessibility_enable == true) {
     external_deps += [
