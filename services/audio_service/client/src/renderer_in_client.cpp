@@ -1844,7 +1844,8 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
     bool dropIncompleteFrame = false;
-    DrainIncompleteFrame(result, stopFlag, targetSize, &desc, dropIncompleteFrame);
+    CHECK_AND_RETURN_RET_LOG(DrainIncompleteFrame(result, stopFlag, targetSize, &desc, dropIncompleteFrame) == SUCCESS,
+        ERROR, "DrainIncompleteFrame failed");
     if (dropIncompleteFrame) {
         return SUCCESS;
     }
