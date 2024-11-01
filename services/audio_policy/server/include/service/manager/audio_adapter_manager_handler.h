@@ -14,8 +14,8 @@
  */
 #ifndef AUDIO_ADAPTER_MANAGER_HANDLER_H
 #define AUDIO_ADAPTER_MANAGER_HANDLER_H
-#include <mutex>
 
+#include <mutex>
 #include "singleton.h"
 #include "event_handler.h"
 #include "event_runner.h"

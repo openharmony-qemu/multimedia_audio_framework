@@ -21,7 +21,7 @@
 namespace OHOS {
 namespace AudioStandard {
 ClientTypeManagerHandler::ClientTypeManagerHandler() : AppExecFwk::EventHandler(
-    AppExecFwk::EventRunner::Create("OS_ClientTypeAsyncRunner"))
+    AppExecFwk::EventRunner::Create("OS_ClientTypeAsyncRunner", AppExecFwk::ThreadMode::FFRT))
 {
     AUDIO_INFO_LOG("ctor");
 }
@@ -45,7 +45,7 @@ bool ClientTypeManagerHandler::SendGetClientType(const std::string &bundleName, 
     eventContextObj->bundleName = bundleName;
     eventContextObj->uid = uid;
 
-    std::lock_guard<mutex> runnerlock(runnerMutex_);
+    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
     bool ret = true;
     ret = SendEvent(AppExecFwk::InnerEvent::Get(EventClientTypeManagerCmd::GET_CLIENT_TYPE, eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send event failed");
@@ -58,7 +58,7 @@ bool ClientTypeManagerHandler::SendGetClientType(const std::string &bundleName, 
 void ClientTypeManagerHandler::SetQueryClientTypeCallback(const sptr<IStandardAudioPolicyManagerListener> &callback)
 {
     AUDIO_INFO_LOG("In");
-    std::lock_guard<std::mutex> lock(callbackMutex_);
+    std::lock_guard<ffrt::mutex> lock(callbackMutex_);
     if (queryClientTypeCallback_ != nullptr) {
         AUDIO_INFO_LOG("Already register");
         return;
@@ -80,7 +80,7 @@ void ClientTypeManagerHandler::HandleGetClientType(const AppExecFwk::InnerEvent:
         return;
     }
 
-    std::unique_lock<std::mutex> callbackLock(callbackMutex_);
+    std::unique_lock<ffrt::mutex> callbackLock(callbackMutex_);
     if (queryClientTypeCallback_ == nullptr) {
         AUDIO_WARNING_LOG("Query callback is not inited");
         return;
