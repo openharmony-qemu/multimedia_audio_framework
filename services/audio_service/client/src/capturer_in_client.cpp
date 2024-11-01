@@ -1896,6 +1896,14 @@ bool CapturerInClientInner::RestoreAudioStream()
         goto error;
     }
 
+    // for inner-capturer
+    if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        ret = UpdatePlaybackCaptureConfig(filterConfig_);
+        if (ret != SUCCESS) {
+            goto error;
+        }
+    }
+
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();
