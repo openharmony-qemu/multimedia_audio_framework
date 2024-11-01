@@ -90,6 +90,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
             sessionId, streamVolume_.size());
     }
 
+    std::shared_lock<std::shared_mutex> lockSystem(systemMutex_);
     int32_t volumeLevel = 0;
     float volumeSystem = 1.0f;
     std::string key = std::to_string(volumeType) + deviceClass;
@@ -140,9 +141,9 @@ void AudioVolume::AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it == streamVolume_.end()) {
-        streamVolume_.insert(std::make_pair(sessionId, StreamVolume(sessionId, streamType, streamUsage, uid, pid)));
-        historyVolume_.insert(std::make_pair(sessionId, 0.0f));
-        monitorVolume_.insert(std::make_pair(sessionId, std::make_pair(0.0f, 0)));
+        streamVolume_.emplace(sessionId, StreamVolume(sessionId, streamType, streamUsage, uid, pid));
+        historyVolume_.emplace(sessionId, 0.0f);
+        monitorVolume_.emplace(sessionId, std::make_pair(0.0f, 0));
     } else {
         AUDIO_ERR_LOG("stream volume already exist, sessionId:%{public}u", sessionId);
     }
@@ -245,13 +246,21 @@ void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
     auto volumeType = systemVolume.GetVolumeType();
     auto deviceClass = systemVolume.GetDeviceClass();
     std::string key = std::to_string(volumeType) + deviceClass;
-    auto it = systemVolume_.find(key);
-    if (it != systemVolume_.end()) {
-        it->second.volume_ = systemVolume.volume_;
-        it->second.volumeLevel_ = systemVolume.volumeLevel_;
-        it->second.isMuted_ = systemVolume.isMuted_;
-    } else {
-        systemVolume_.insert(std::make_pair(key, systemVolume));
+    bool haveSystemVolume = true;
+    {
+        std::shared_lock<std::shared_mutex> lock(systemMutex_);
+        auto it = systemVolume_.find(key);
+        if (it != systemVolume_.end()) {
+            it->second.volume_ = systemVolume.volume_;
+            it->second.volumeLevel_ = systemVolume.volumeLevel_;
+            it->second.isMuted_ = systemVolume.isMuted_;
+        } else {
+            haveSystemVolume = false;
+        }
+    }
+    if (!haveSystemVolume) {
+        std::unique_lock<std::shared_mutex> lock(systemMutex_);
+        systemVolume_.emplace(key, systemVolume);
     }
     AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
         " volume:%{public}f, volumeLevel:%{public}d, isMuted:%{public}d, systemVolumeSize:%{public}zu",
@@ -262,15 +271,21 @@ void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
 void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceClass, float volume, int32_t volumeLevel)
 {
     std::string key = std::to_string(volumeType) + deviceClass;
-    auto it = systemVolume_.find(key);
-    if (it != systemVolume_.end()) {
-        it->second.volume_ = volume;
-        it->second.volumeLevel_ = volumeLevel;
-    } else {
-        SystemVolume systemVolume(volumeType, deviceClass);
-        systemVolume.volume_ = volume;
-        systemVolume.volumeLevel_ = volumeLevel;
-        systemVolume_.insert(std::make_pair(key, systemVolume));
+    bool haveSystemVolume = true;
+    {
+        std::shared_lock<std::shared_mutex> lock(systemMutex_);
+        auto it = systemVolume_.find(key);
+        if (it != systemVolume_.end()) {
+            it->second.volume_ = volume;
+            it->second.volumeLevel_ = volumeLevel;
+        } else {
+            haveSystemVolume = false;
+        }
+    }
+    if (!haveSystemVolume) {
+        std::unique_lock<std::shared_mutex> lock(systemMutex_);
+        SystemVolume systemVolume(volumeType, deviceClass, volume, volumeLevel, false);
+        systemVolume_.emplace(key, systemVolume);
     }
     AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
         " volume:%{public}f, volumeLevel:%{public}d, systemVolumeSize:%{public}zu",
@@ -282,13 +297,20 @@ void AudioVolume::SetSystemVolumeMute(int32_t volumeType, const std::string &dev
     AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s, isMuted:%{public}d",
         volumeType, deviceClass.c_str(), isMuted);
     std::string key = std::to_string(volumeType) + deviceClass;
-    auto it = systemVolume_.find(key);
-    if (it != systemVolume_.end()) {
-        it->second.isMuted_ = isMuted;
-    } else {
-        SystemVolume systemVolume(volumeType, deviceClass);
-        systemVolume.isMuted_ = isMuted;
-        systemVolume_.insert(std::make_pair(key, systemVolume));
+    bool haveSystemVolume = true;
+    {
+        std::shared_lock<std::shared_mutex> lock(systemMutex_);
+        auto it = systemVolume_.find(key);
+        if (it != systemVolume_.end()) {
+            it->second.isMuted_ = isMuted;
+        } else {
+            haveSystemVolume = false;
+        }
+    }
+    if (!haveSystemVolume) {
+        std::unique_lock<std::shared_mutex> lock(systemMutex_);
+        SystemVolume systemVolume(volumeType, deviceClass, 0.0f, 0, isMuted);
+        systemVolume_.emplace(key, systemVolume);
     }
 }
 
