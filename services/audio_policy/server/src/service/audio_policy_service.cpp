@@ -7725,16 +7725,15 @@ void AudioPolicyService::HandleRemainingSource()
         }
     }
 
-    //Convert highestSource to highestSourceInHdi
+    // Convert highestSource to highestSourceInHdi
     SourceType highestSourceInHdi = SOURCE_TYPE_INVALID;
     bool useMatchingPropInfo = false;
     GetTargetSourceTypeAndMatchingFlag(highestSource, highestSourceInHdi, useMatchingPropInfo);
 
     // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
-    if (highestSourceInHdi != SOURCE_TYPE_INVALID && IsHigherPrioritySource(normalSourceOpened_, highestSourceInHdi)) {
-        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed , normalSourceOpened_：%{pblic}d ,highestSourceInHdi：%{pblic}d ",
+    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(normalSourceOpened_, highestSourceInHdi)) {
+        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened_：%{public}d, highestSourceInHdi：%{public}d ",
             highestSource, normalSourceOpened_, highestSourceInHdi);
-        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed", highestSource);
         ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
         sessionIdUsedToOpenSource_ = highestSession;
     }
