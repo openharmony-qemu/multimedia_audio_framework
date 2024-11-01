@@ -113,6 +113,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicyservenhance_fuzzer:fuzztest",
     "fuzztest/audiopolicyservice_fuzzer:fuzztest",
     "fuzztest/audiopolicyservicemore_fuzzer:fuzztest",
+    "fuzztest/audiopolicyservicespatialization_fuzzer:fuzztest",
     "fuzztest/audiopowerstatelistener_fuzzer:fuzztest",
     "fuzztest/audioserver_fuzzer:fuzztest",
     "fuzztest/audioserverbalance_fuzzer:fuzztest",
