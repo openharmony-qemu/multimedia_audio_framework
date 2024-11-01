@@ -1907,7 +1907,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
         return;
     }
     pa_resampler *resampler = UpdateResamplerIchannelMap(sinkSceneType, u);
-    if(resampler == NULL) {
+    if (resampler == NULL) {
         return;
     }
     const pa_sample_spec *ispec = pa_resampler_input_sample_spec(resampler);
@@ -4043,6 +4043,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->bufferAttr->numChanIn = u->ss.channels;
     u->bufferAttr->numChanOut = u->ss.channels;
     u->bufferAttr->bufOutUsed = true;
+    u->bufferAttr->outChanLayout = DEFAULT_CHANNELLAYOUT;
     u->sinkSceneMode = -1;
     u->sinkSceneType = -1;
 }
