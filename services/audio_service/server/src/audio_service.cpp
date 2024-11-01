@@ -54,7 +54,7 @@ AudioService::~AudioService()
     AUDIO_INFO_LOG("~AudioService()");
 }
 
-int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destoryAtOnce)
+int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream)
 {
     std::lock_guard<std::mutex> processListLock(processListMutex_);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, ERROR, "process is nullptr");
@@ -73,12 +73,15 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
                 SetDecMaxRendererStreamCnt();
                 CleanAppUseNumMap(processConfig.appInfo.appUid);
             }
-            RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
+            if (!isSwitchStream) {
+                AUDIO_INFO_LOG("is not switch stream, remove from mutedSessions_");
+                RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
+            }
             ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
                 needRelease = true;
                 endpointName = (*paired).second->GetEndpointName();
-                delayTime = GetReleaseDelayTime((*paired).second->GetDeviceInfo().deviceType_, destoryAtOnce);
+                delayTime = GetReleaseDelayTime((*paired).second->GetDeviceInfo().deviceType_, isSwitchStream);
             }
             linkedPairedList_.erase(paired);
             isFind = true;
@@ -92,27 +95,31 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool destor
     } else {
         AUDIO_INFO_LOG("can not find target process, maybe already released.");
     }
-
     if (needRelease) {
-        AUDIO_INFO_LOG("find endpoint unlink, call delay release.");
-        std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
-        releasingEndpointSet_.insert(endpointName);
-        auto releaseMidpointThread = [this, endpointName, delayTime] () {
-            this->DelayCallReleaseEndpoint(endpointName, delayTime);
-        };
-        std::thread releaseEndpointThread(releaseMidpointThread);
-        releaseEndpointThread.detach();
+        ReleaseProcess(endpointName, delayTime);
     }
 
     return SUCCESS;
 }
 
-int32_t AudioService::GetReleaseDelayTime(DeviceType deviceType, bool destoryAtOnce)
+void AudioService::ReleaseProcess(const std::string endpointName, const int32_t delayTime)
+{
+    AUDIO_INFO_LOG("find endpoint unlink, call delay release.");
+    std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
+    releasingEndpointSet_.insert(endpointName);
+    auto releaseMidpointThread = [this, endpointName, delayTime] () {
+        this->DelayCallReleaseEndpoint(endpointName, delayTime);
+    };
+    std::thread releaseEndpointThread(releaseMidpointThread);
+    releaseEndpointThread.detach();
+}
+
+int32_t AudioService::GetReleaseDelayTime(DeviceType deviceType, bool isSwitchStream)
 {
     if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) {
         return NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS;
     }
-    if (!destoryAtOnce) {
+    if (!isSwitchStream) {
         return A2DP_ENDPOINT_RELEASE_DELAY_TIME;
     }
     // The delay for destruction and reconstruction cannot be set to 0, otherwise there may be a problem:

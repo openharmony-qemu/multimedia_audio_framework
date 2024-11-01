@@ -45,7 +45,7 @@ public:
 
     virtual int32_t RequestHandleInfo(bool isAync = true) = 0;
 
-    virtual int32_t Release(bool destoryAtOnce = false) = 0;
+    virtual int32_t Release(bool isSwitchStream = false) = 0;
 
     virtual ~AudioProcess() = default;
 };

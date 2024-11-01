@@ -78,7 +78,7 @@ public:
     bool StopAudioStream() override { return true; }
     bool StartAudioStream(StateChangeCmdType cmdType,
         AudioStreamDeviceChangeReasonExt reason) override { return true; }
-    bool ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce) override { return true; }
+    bool ReleaseAudioStream(bool releaseRunner, bool isSwitchStream) override { return true; }
 
     State state_ = State::RUNNING;
 };
