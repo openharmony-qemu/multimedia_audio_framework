@@ -79,11 +79,18 @@ void Convert2CArrDeviceDescriptorByDeviceInfo(CArrDeviceDescriptor &devices, con
         *errorCode = CJ_ERR_NO_MEMORY;
         return;
     }
+    devices.head = device;
+    if (memset_s(device, sizeof(*device), 0, deviceSize) != EOK) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    devices.size = static_cast<int64_t>(deviceSize);
     for (int32_t i = 0; i < static_cast<int32_t>(deviceSize); i++) {
         Convert2CDeviceDescriptor(&(device[i]), deviceInfo, errorCode);
+        if (*errorCode != SUCCESS_CODE) {
+            return;
+        }
     }
-    devices.head = device;
-    devices.size = static_cast<int64_t>(deviceSize);
 }
 
 void InitializeDeviceRatesAndChannels(CDeviceDescriptor *device, const AudioDeviceDescriptor &deviceInfo,
@@ -100,6 +107,10 @@ void InitializeDeviceRatesAndChannels(CDeviceDescriptor *device, const AudioDevi
         return;
     }
     int32_t iter = 0;
+    if (memset_s(rates, sizeof(int32_t) * rateSize, 0, rateSize) != EOK) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
     for (auto rate : deviceInfo.audioStreamInfo_.samplingRate) {
         rates[iter] = static_cast<int32_t>(rate);
         iter++;
@@ -116,6 +127,10 @@ void InitializeDeviceRatesAndChannels(CDeviceDescriptor *device, const AudioDevi
     auto channels = static_cast<int32_t *>(malloc(sizeof(int32_t) * channelSize));
     if (channels == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
+        return;
+    }
+    if (memset_s(channels, sizeof(int32_t) * channelSize, 0, channelSize) != EOK) {
+        *errorCode = CJ_ERR_SYSTEM;
         return;
     }
     for (auto channel : deviceInfo.audioStreamInfo_.channels) {
@@ -144,6 +159,10 @@ void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const AudioDeviceDescr
         return;
     }
     int32_t iter = 0;
+    if (memset_s(masks, sizeof(int32_t) * deviceSize, 0, deviceSize) != EOK) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
     masks[iter] = static_cast<int32_t>(deviceInfo.channelMasks_);
     device->channelMasks.size = deviceSize;
     device->channelMasks.head = masks;
@@ -151,6 +170,10 @@ void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const AudioDeviceDescr
     auto encodings = static_cast<int32_t *>(malloc(sizeof(int32_t) * deviceSize));
     if (encodings == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
+        return;
+    }
+    if (memset_s(encodings, sizeof(int32_t) * deviceSize, 0, deviceSize) != EOK) {
+        *errorCode = CJ_ERR_SYSTEM;
         return;
     }
     encodings[iter] = static_cast<int32_t>(deviceInfo.audioStreamInfo_.encoding);
@@ -172,12 +195,19 @@ void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor &devices,
             *errorCode = CJ_ERR_NO_MEMORY;
             return;
         }
+        devices.head = device;
+        if (memset_s(device, devices.size, 0, devices.size) != EOK) {
+            *errorCode = CJ_ERR_SYSTEM;
+            return;
+        }
         for (int32_t i = 0; i < static_cast<int32_t>(deviceDescriptors.size()); i++) {
             AudioDeviceDescriptor dInfo(AudioDeviceDescriptor::DEVICE_INFO);
             ConvertAudioDeviceDescriptor2DeviceInfo(dInfo, deviceDescriptors[i]);
             Convert2CDeviceDescriptor(&(device[i]), dInfo, errorCode);
+            if (*errorCode != SUCCESS_CODE) {
+                return;
+            }
         }
-        devices.head = device;
     }
 }
 
@@ -241,6 +271,21 @@ void FreeCArrAudioCapturerChangeInfo(CArrAudioCapturerChangeInfo &infos)
     }
     free(infos.head);
     infos.head = nullptr;
+}
+
+void Convert2AudioRendererOptions(AudioRendererOptions &opions, const CAudioRendererOptions &cOptions)
+{
+    opions.rendererInfo.streamUsage = static_cast<StreamUsage>(cOptions.audioRendererInfo.usage);
+    opions.streamInfo.channels = static_cast<AudioChannel>(cOptions.audioStreamInfo.channels);
+    opions.streamInfo.channelLayout = static_cast<AudioChannelLayout>(cOptions.audioStreamInfo.channelLayout);
+    opions.streamInfo.encoding = static_cast<AudioEncodingType>(cOptions.audioStreamInfo.encodingType);
+    opions.streamInfo.format = static_cast<AudioSampleFormat>(cOptions.audioStreamInfo.sampleFormat);
+    opions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(cOptions.audioStreamInfo.samplingRate);
+    opions.privacyType = static_cast<AudioPrivacyType>(cOptions.privacyType);
+
+    /* only support flag 0 */
+    opions.rendererInfo.rendererFlags =
+        (cOptions.audioRendererInfo.rendererFlags != 0) ? 0 : cOptions.audioRendererInfo.rendererFlags;
 }
 } // namespace AudioStandard
 } // namespace OHOS

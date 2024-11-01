@@ -61,6 +61,10 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetDevices(int32_t flags, int32
     }
     CArrDeviceDescriptor arr;
     Convert2CArrDeviceDescriptor(arr, deviceDescriptors, errorCode);
+    if (*errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
+        return CArrDeviceDescriptor();
+    }
     return arr;
 }
 
@@ -76,6 +80,10 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredInputDeviceForCaptu
     }
     CArrDeviceDescriptor arr;
     Convert2CArrDeviceDescriptor(arr, outDeviceDescriptors, errorCode);
+    if (*errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
+        return CArrDeviceDescriptor();
+    }
     return arr;
 }
 
@@ -86,6 +94,7 @@ void MMAAudioRoutingManagerImpl::RegisterCallback(int32_t callbackType, void (*c
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register microphoneBlocked event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         microphoneBlockedCallback_->RegisterFunc(func);
         audioMgr_->SetMicrophoneBlockedCallback(microphoneBlockedCallback_);
@@ -100,6 +109,7 @@ void MMAAudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(int3
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register preferredInputDeviceChangeForCapturerInfo event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         AudioCapturerInfo capturerInfo(static_cast<SourceType>(info.source), info.capturerFlags);
         preferredInputDeviceChangeCallBack_->RegisterFunc(func);
@@ -115,6 +125,7 @@ void MMAAudioRoutingManagerImpl::RegisterDeviceChangeCallback(int32_t callbackTy
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register DeviceChangeAction event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         DeviceFlag deviceFlag = static_cast<DeviceFlag>(flags);
         deviceChangeCallBack_->RegisterFunc(func);

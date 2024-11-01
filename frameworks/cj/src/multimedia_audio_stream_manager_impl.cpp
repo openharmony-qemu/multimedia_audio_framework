@@ -50,11 +50,18 @@ CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_
     }
     CArrI32 arr;
     arr.size = static_cast<int64_t>(audioSceneEffectInfo.mode.size());
-    auto head = static_cast<int32_t *>(malloc(sizeof(int32_t) * audioSceneEffectInfo.mode.size()));
+    auto head = static_cast<int32_t *>(malloc(sizeof(int32_t) * (arr.size)));
     if (head == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
+        return CArrI32();
     }
-    for (int32_t i = 0; i < static_cast<int32_t>(audioSceneEffectInfo.mode.size()); i++) {
+    if (memset_s(head, arr.size, 0, arr.size) != EOK) {
+        free(head);
+        head = nullptr;
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrI32();
+    }
+    for (int32_t i = 0; i < static_cast<int32_t>(arr.size); i++) {
         head[i] = static_cast<int32_t>(audioSceneEffectInfo.mode[i]);
     }
     arr.head = head;
@@ -76,9 +83,20 @@ CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray
         malloc(sizeof(CAudioCapturerChangeInfo) * audioCapturerChangeInfos.size()));
     if (head == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
+        return CArrAudioCapturerChangeInfo();
+    }
+    arrInfo.head = head;
+    if (memset_s(head, arrInfo.size, 0, arrInfo.size) != EOK) {
+        FreeCArrAudioCapturerChangeInfo(arrInfo);
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrAudioCapturerChangeInfo();
     }
     for (int32_t i = 0; i < static_cast<int32_t>(audioCapturerChangeInfos.size()); i++) {
         Convert2CAudioCapturerChangeInfo(head[i], *(audioCapturerChangeInfos[i]), errorCode);
+    }
+    if (*errorCode != SUCCESS_CODE) {
+        FreeCArrAudioCapturerChangeInfo(arrInfo);
+        return CArrAudioCapturerChangeInfo();
     }
     return arrInfo;
 }
@@ -90,6 +108,7 @@ void MMAAudioStreamManagerImpl::RegisterCallback(int32_t callbackType, void (*ca
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register AudioCapturerChangeInfo event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         callback_->RegisterFunc(func);
         streamMgr_->RegisterAudioCapturerEventListener(cachedClientId_, callback_);

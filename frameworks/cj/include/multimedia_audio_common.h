@@ -16,6 +16,7 @@
 #ifndef MULTIMEDIA_AUDIO_COMMON_H
 #define MULTIMEDIA_AUDIO_COMMON_H
 #include "cj_common_ffi.h"
+#include "securec.h"
 #include "audio_info.h"
 #include "audio_system_manager.h"
 #include "multimedia_audio_ffi.h"
@@ -38,6 +39,7 @@ void ConvertAudioDeviceDescriptor2DeviceInfo(AudioDeviceDescriptor &deviceInfo,
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
 void FreeCArrDeviceDescriptor(CArrDeviceDescriptor &devices);
 void FreeCArrAudioCapturerChangeInfo(CArrAudioCapturerChangeInfo &infos);
+void Convert2AudioRendererOptions(AudioRendererOptions &opions, const CAudioRendererOptions &cOptions);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // MULTIMEDIA_AUDIO_COMMON_H
