@@ -142,15 +142,15 @@ OHAudioDeviceDescriptor::~OHAudioDeviceDescriptor()
         audioDeviceDescriptor_ = nullptr;
     }
     if (audioSamplingRate_ != nullptr) {
-        delete audioSamplingRate_;
+        delete[] audioSamplingRate_;
         audioSamplingRate_ = nullptr;
     }
     if (audioChannel_ != nullptr) {
-        delete audioChannel_;
+        delete[] audioChannel_;
         audioChannel_ = nullptr;
     }
     if (encodingType_ != nullptr) {
-        delete encodingType_;
+        delete[] encodingType_;
         encodingType_ = nullptr;
     }
 }
