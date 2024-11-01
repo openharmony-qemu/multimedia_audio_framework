@@ -146,7 +146,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     } else if (renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS) {
         DealRingRenderRouters(descs, streamUsage, clientUID, routerType);
     } else if (renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS) {
-        descs.push_back(FetchCallRenderDevice(streamUsage, clientUID, routerType));
+        descs.push_back(FetchCallRenderDevice(streamUsage, clientUID, routerType, bypassType));
     } else {
         AUDIO_INFO_LOG("streamUsage %{public}d didn't config router strategy, skipped", streamUsage);
         descs.push_back(make_unique<AudioDeviceDescriptor>());
