@@ -1291,5 +1291,30 @@ std::vector<uint32_t> AudioStreamCollector::GetAllRendererSessionIDForUID(int32_
     }
     return sessionIDSet;
 }
+
+bool AudioStreamCollector::HasVoipCapturerStream()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioCapturerChangeInfos_) {
+        if (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool AudioStreamCollector::HasVoipRendererStream()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+            return true;
+        }
+    }
+
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
