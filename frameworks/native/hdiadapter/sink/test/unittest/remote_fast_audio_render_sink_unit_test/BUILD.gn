@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-module_output_path = "audio_framework/remote_fast_audio_render_sink"
+module_output_path = "multimedia_audio_framework/remote_fast_audio_render_sink"
 
 ohos_unittest("remote_fast_audio_render_sink_unit_test") {
   testonly = true
