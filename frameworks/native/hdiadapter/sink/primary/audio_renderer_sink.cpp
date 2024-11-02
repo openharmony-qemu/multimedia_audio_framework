@@ -305,6 +305,14 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
 {
     AUDIO_WARNING_LOG("~AudioRendererSinkInner");
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
+#ifdef FEATURE_POWER_MANAGER
+    if (runningLockManager_ != nullptr) {
+        AUDIO_INFO_LOG("~AudioRendererSinkInner unLock");
+        runningLockManager_->UnLock();
+    } else {
+        AUDIO_WARNING_LOG("runningLockManager is null, playback can not work well!");
+    }
+#endif
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
