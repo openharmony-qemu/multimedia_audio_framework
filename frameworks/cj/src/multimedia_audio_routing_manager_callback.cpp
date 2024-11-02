@@ -26,14 +26,17 @@ void CjAudioManagerMicrophoneBlockedCallback::OnMicrophoneBlocked(const Micropho
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     CArrDeviceDescriptor arr;
-    int32_t *errorCode = nullptr;
+    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
     Convert2CArrDeviceDescriptor(arr, microphoneBlockedInfo.devices, errorCode);
     if (*errorCode != SUCCESS_CODE) {
+        free(errorCode);
+        errorCode = nullptr;
         return;
     }
     func_(arr);
-    free(arr.head);
-    arr.head = nullptr;
+    FreeCArrDeviceDescriptor(arr);
+    free(errorCode);
+    errorCode = nullptr;
 }
 
 void CjAudioPreferredInputDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
@@ -46,14 +49,17 @@ void CjAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     CArrDeviceDescriptor arr;
-    int32_t *errorCode = nullptr;
+    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
     Convert2CArrDeviceDescriptor(arr, desc, errorCode);
     if (*errorCode != SUCCESS_CODE) {
+        free(errorCode);
+        errorCode = nullptr;
         return;
     }
     func_(arr);
-    free(arr.head);
-    arr.head = nullptr;
+    FreeCArrDeviceDescriptor(arr);
+    free(errorCode);
+    errorCode = nullptr;
 }
 
 void CjAudioManagerDeviceChangeCallback::RegisterFunc(std::function<void(CDeviceChangeAction)> cjCallback)
@@ -65,17 +71,20 @@ void CjAudioManagerDeviceChangeCallback::OnDeviceChange(const DeviceChangeAction
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     CArrDeviceDescriptor arr;
-    int32_t *errorCode = nullptr;
+    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
     Convert2CArrDeviceDescriptor(arr, deviceChangeAction.deviceDescriptors, errorCode);
     if (*errorCode != SUCCESS_CODE) {
+        free(errorCode);
+        errorCode = nullptr;
         return;
     }
     CDeviceChangeAction action;
     action.deviceDescriptors = arr;
     action.changeType = deviceChangeAction.type;
     func_(action);
-    free(arr.head);
-    arr.head = nullptr;
+    FreeCArrDeviceDescriptor(arr);
+    free(errorCode);
+    errorCode = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -33,16 +33,20 @@ void CjAudioCapturerStateChangeCallback::OnCapturerStateChange(
     if (head == nullptr) {
         return;
     }
-    int32_t *errorCode = nullptr;
+    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
     for (int32_t i = 0; i < static_cast<int32_t>(audioCapturerChangeInfos.size()); i++) {
         Convert2CAudioCapturerChangeInfo(head[i], *(audioCapturerChangeInfos[i]), errorCode);
     }
     if (*errorCode != SUCCESS_CODE) {
+        free(errorCode);
+        errorCode = nullptr;
         return;
     }
+    arrInfo.head = head;
     func_(arrInfo);
-    free(arrInfo.head);
-    arrInfo.head = nullptr;
+    FreeCArrAudioCapturerChangeInfo(arrInfo);
+    free(errorCode);
+    errorCode = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

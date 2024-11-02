@@ -113,14 +113,17 @@ void CjAudioCapturerInfoChangeCallback::OnStateChange(const AudioCapturerChangeI
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     CAudioCapturerChangeInfo cInfo;
-    int32_t *errorCode = nullptr;
+    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
     Convert2CAudioCapturerChangeInfo(cInfo, capturerChangeInfo, errorCode);
     if (*errorCode != SUCCESS_CODE) {
+        free(errorCode);
+        errorCode = nullptr;
         return;
     }
     func_(cInfo);
-    free(cInfo.deviceDescriptors.head);
-    cInfo.deviceDescriptors.head = nullptr;
+    free(errorCode);
+    FreeCArrDeviceDescriptor(cInfo.deviceDescriptors);
+    errorCode = nullptr;
 }
 
 void CjAudioCapturerDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
@@ -132,14 +135,17 @@ void CjAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescrip
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     CArrDeviceDescriptor arr;
-    int32_t *errorCode = nullptr;
+    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, errorCode);
     if (*errorCode != SUCCESS_CODE) {
+        free(errorCode);
+        errorCode = nullptr;
         return;
     }
     func_(arr);
-    free(arr.head);
-    arr.head = nullptr;
+    FreeCArrDeviceDescriptor(arr);
+    free(errorCode);
+    errorCode = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS
