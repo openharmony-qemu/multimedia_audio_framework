@@ -587,7 +587,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
  */
 HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
 {
-    bool destoryAtOnce = false;
+    bool isSwitchStream = false;
     int32_t floatRet = 0;
     bool muteFlag = true;
     uint32_t sessionId = 0;
@@ -615,7 +615,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
     AudioService::GetInstance()->OnUpdateInnerCapList();
 
     int32_t ret = 0;
-    ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, destoryAtOnce);
+    ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
     EXPECT_EQ(ret, 0);
 }
 

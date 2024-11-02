@@ -1405,9 +1405,9 @@ bool RendererInClientInner::StopAudioStream()
     return true;
 }
 
-bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce)
+bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
-    (void)destoryAtOnce;
+    (void)isSwitchStream;
     AUDIO_PRERELEASE_LOGI("Enter");
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {

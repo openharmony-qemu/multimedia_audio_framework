@@ -29,7 +29,7 @@ class ProcessReleaseCallback {
 public:
     virtual ~ProcessReleaseCallback() = default;
 
-    virtual int32_t OnProcessRelease(IAudioProcessStream *process, bool destoryAtOnce = false) = 0;
+    virtual int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) = 0;
 };
 class AudioProcessInServer;
 class ProcessDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -64,7 +64,7 @@ public:
 
     int32_t RequestHandleInfo(bool isAsync) override;
 
-    int32_t Release(bool destoryAtOnce = false) override;
+    int32_t Release(bool isSwitchStream = false) override;
 
     int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 
