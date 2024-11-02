@@ -463,7 +463,12 @@ public:
 
     bool IsOldDeviceUnavaliable() const
     {
-        return ((reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE) || (reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT));
+        return reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE;
+    }
+
+    bool IsOldDeviceUnavaliableExt() const
+    {
+        return reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT;
     }
 
     bool isOverride() const
