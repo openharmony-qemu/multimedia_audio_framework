@@ -200,5 +200,47 @@ void ConvertAudioDeviceDescriptor2DeviceInfo(AudioDeviceDescriptor &deviceInfo,
     deviceInfo.audioStreamInfo_.format = audioDeviceDescriptor->audioStreamInfo_.format;
     deviceInfo.audioStreamInfo_.channels = audioDeviceDescriptor->audioStreamInfo_.channels;
 }
+
+void FreeCArrDeviceDescriptor(CArrDeviceDescriptor &devices)
+{
+    if (devices.head == nullptr) {
+        return;
+    }
+    for (int64_t i = 0; i < devices.size; i++) {
+        free((devices.head)[i].address);
+        free((devices.head)[i].displayName);
+        free((devices.head)[i].name);
+        if ((devices.head)[i].channelCounts.size != 0) {
+            free((devices.head)[i].channelCounts.head);
+        }
+        (devices.head)[i].channelCounts.head = nullptr;
+        if ((devices.head)[i].channelMasks.size != 0) {
+            free((devices.head)[i].channelMasks.head);
+        }
+        (devices.head)[i].channelMasks.head = nullptr;
+        if ((devices.head)[i].sampleRates.size != 0) {
+            free((devices.head)[i].sampleRates.head);
+        }
+        (devices.head)[i].sampleRates.head = nullptr;
+        if ((devices.head)[i].encodingTypes.hasValue && (devices.head)[i].encodingTypes.arr.size != 0) {
+            free((devices.head)[i].encodingTypes.arr.head);
+        }
+        (devices.head)[i].encodingTypes.arr.head = nullptr;
+    }
+    free(devices.head);
+    devices.head = nullptr;
+}
+
+void FreeCArrAudioCapturerChangeInfo(CArrAudioCapturerChangeInfo &infos)
+{
+    if (infos.head == nullptr) {
+        return;
+    }
+    for (int64_t i = 0; i < infos.size; i++) {
+        FreeCArrDeviceDescriptor((infos.head)[i].deviceDescriptors);
+    }
+    free(infos.head);
+    infos.head = nullptr;
+}
 } // namespace AudioStandard
 } // namespace OHOS
