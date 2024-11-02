@@ -1792,7 +1792,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
 }
 
 int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,
-    size_t targetSize, BufferDesc *desc)
+    size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame)
 {
     if (result.size < clientSpanSizeInByte_ && stopFlag) {
         result = ringCache_->Dequeue({desc->buffer, targetSize});
@@ -1801,6 +1801,7 @@ int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopF
         int32_t ret = memset_s(desc->buffer, targetSize, 0, targetSize);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "DrainIncompleteFrame memset output failed");
         AUDIO_WARNING_LOG("incomplete frame is set to 0");
+        dropIncompleteFrame = true;
     }
     return SUCCESS;
 }
@@ -1842,7 +1843,12 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
     int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
-    DrainIncompleteFrame(result, stopFlag, targetSize, &desc);
+    bool dropIncompleteFrame = false;
+    CHECK_AND_RETURN_RET_LOG(DrainIncompleteFrame(result, stopFlag, targetSize, &desc, dropIncompleteFrame) == SUCCESS,
+        ERROR, "DrainIncompleteFrame failed");
+    if (dropIncompleteFrame) {
+        return SUCCESS;
+    }
     result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
 

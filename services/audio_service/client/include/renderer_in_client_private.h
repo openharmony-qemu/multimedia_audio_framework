@@ -207,7 +207,8 @@ private:
     int32_t FlushRingCache();
     int32_t DrainRingCache();
 
-    int32_t DrainIncompleteFrame(OptResult result, bool stopFlag, size_t targetSize, BufferDesc *desc);
+    int32_t DrainIncompleteFrame(OptResult result, bool stopFlag,
+        size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame);
     int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
