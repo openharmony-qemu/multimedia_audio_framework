@@ -64,6 +64,7 @@ std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 10; // 10s
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
+static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
@@ -2699,6 +2700,11 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
         ringermode != RINGER_MODE_NORMAL))) {
         MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
+    } else if (reason.IsOldDeviceUnavaliableExt() && ((audioScene_ == AUDIO_SCENE_DEFAULT) ||
+        ((audioScene_ == AUDIO_SCENE_RINGING || audioScene_ == AUDIO_SCENE_VOICE_RINGING) &&
+        ringermode != RINGER_MODE_NORMAL))) {
+        MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true);
+        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
@@ -2708,8 +2714,10 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
 
 void AudioPolicyService::MuteDefaultSinkPort()
 {
-    DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
-    if (GetSinkPortName(curOutputDeviceType) != PRIMARY_CLASS) {
+    AudioDeviceDescriptor currentDeviceDescriptor = GetCurrentOutputDevice();
+    if (currentDeviceDescriptor.networkId_ != LOCAL_NETWORK_ID ||
+        (currentDeviceDescriptor.networkId_ == LOCAL_NETWORK_ID &&
+        GetSinkPortName(currentDeviceDescriptor.deviceType_) != PRIMARY_SPEAKER)) {
         // PA may move the sink to default when unloading module.
         MuteSinkPort(PRIMARY_SPEAKER, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
     }
@@ -5014,7 +5022,6 @@ int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInf
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(devType));
-        MuteDefaultSinkPort();
         ClosePortAndEraseIOHandle(moduleName);
         RemoveDeviceInRouterMap(moduleName);
         RemoveDeviceInFastRouterMap(networkId);
@@ -8915,11 +8922,16 @@ void AudioPolicyService::HandleRemoteCastDevice(bool isConnected, AudioStreamInf
         FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
         UnloadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     }
-    TriggerFetchDevice();
+    FetchDevice(true);
+    FetchDevice(false);
+
+    // update a2dp offload
+    UpdateA2dpOffloadFlagForAllStream();
 }
 
 int32_t AudioPolicyService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     FetchDevice(true, reason);
     FetchDevice(false, reason);
 
