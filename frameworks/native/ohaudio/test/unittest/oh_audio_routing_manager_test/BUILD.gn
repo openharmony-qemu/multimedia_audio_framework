@@ -14,7 +14,7 @@
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_ndk"
+module_output_path = "multimedia_audio_framework/audio_ndk"
 
 config("audio_routing_manager_config") {
   include_dirs = [
