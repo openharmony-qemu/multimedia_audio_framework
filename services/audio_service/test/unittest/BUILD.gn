@@ -183,6 +183,7 @@ ohos_unittest("none_mix_engine_unit_test") {
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "../../../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service",
   ]
