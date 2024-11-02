@@ -78,6 +78,8 @@ public:
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     int32_t ResumeStreamState();
+    bool HasVoipRendererStream();
+    bool HasVoipCapturerStream();
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
