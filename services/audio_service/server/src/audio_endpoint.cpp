@@ -1271,7 +1271,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         endpointStatus_ = UNLINKED;
     }
 
-    AUDIO_DEBUG_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
+    AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
     return SUCCESS;
 }
 

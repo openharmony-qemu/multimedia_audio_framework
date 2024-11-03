@@ -1083,14 +1083,15 @@ uint32_t AudioCapturerPrivate::GetOverflowCount() const
     return audioStream_->GetOverflowCount();
 }
 
-void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
+int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
 {
-    CHECK_AND_RETURN_LOG(audioStream, "stream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioStream, ERROR, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetCapturerInfo(info.capturerInfo);
-    audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
+    int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     audioStream->SetCaptureMode(info.captureMode);
 
     // set callback
@@ -1113,6 +1114,7 @@ void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetCapturerReadCallback(info.capturerReadCallback);
 
     audioStream->SetStreamCallback(info.audioStreamCallback);
+    return SUCCESS;
 }
 
 bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId)
@@ -1148,7 +1150,15 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         AUDIO_INFO_LOG("Get new stream success!");
 
         // set new stream info
-        SetSwitchInfo(info, newAudioStream);
+        int32_t initResult = SetSwitchInfo(info, newAudioStream);
+        if (initResult != SUCCESS && info.capturerInfo.originalFlag != AUDIO_FLAG_NORMAL) {
+            AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
+            newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, info.params,
+                info.eStreamType, appInfo_.appPid);
+            CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
+            initResult = SetSwitchInfo(info, newAudioStream);
+            CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
+        }
 
         if (previousState == CAPTURER_RUNNING) {
             // restart audio stream
