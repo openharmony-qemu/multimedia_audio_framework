@@ -486,7 +486,7 @@ private:
     class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
     public:
         AudioPolicyServerPowerStateCallback(AudioPolicyServer *policyServer);
-        void OnPowerStateChanged(PowerMgr::PowerState state) override;
+        void OnAsyncPowerStateChanged(PowerMgr::PowerState state) override;
 
     private:
         AudioPolicyServer *policyServer_;
