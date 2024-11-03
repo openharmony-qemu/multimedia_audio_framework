@@ -1610,7 +1610,8 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     return true;
 }
 
-void AudioEndpointInner::ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData)
+void AudioEndpointInner::ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList,
+    AudioStreamData &dstStreamData)
 {
     Trace trace("AudioEndpointInner::ProcessToDupStream");
     if (endpointType_ == TYPE_VOIP_MMAP) {
