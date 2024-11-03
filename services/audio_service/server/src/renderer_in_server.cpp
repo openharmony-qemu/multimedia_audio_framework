@@ -51,6 +51,8 @@ namespace {
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    constexpr int32_t DEFAULT_SPAN_SIZE = 4;
+    constexpr int32_t DIRECT_SPAN_SIZE = 1;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -79,7 +81,11 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    totalSizeInFrame_ = spanSizeInFrame_ * 4; // 4 frames
+    int32_t frame_cout = DEFAULT_SPAN_SIZE;
+    if (managerType_ == VOIP_PLAYBACK || managerType_ == DIRECT_PLAYBACK) {
+        frame_cout = DIRECT_SPAN_SIZE;
+    }
+    totalSizeInFrame_ = spanSizeInFrame_ * frame_cout; // 4 frames
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
