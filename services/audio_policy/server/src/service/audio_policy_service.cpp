@@ -6134,6 +6134,12 @@ int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage stream
         deviceType, streamUsage, flags);
     std::string sinkPortName = GetSinkPortName(deviceType);
     if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+        // Avoid two voip stream existing
+        if (streamCollector_.HasVoipRendererStream()) {
+            AUDIO_WARNING_LOG("Voip Change To Normal");
+            return AUDIO_FLAG_NORMAL;
+        }
+
         // VoIP stream. Need to judge whether it is fast or direct mode.
         int32_t flag = GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
         if (flag == AUDIO_FLAG_VOIP_FAST || flag == AUDIO_FLAG_VOIP_DIRECT) {
@@ -6189,6 +6195,12 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
 {
     AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
         deviceType, sourceType, flags);
+
+    // Avoid two voip stream existing
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && streamCollector_.HasVoipCapturerStream()) {
+        AUDIO_WARNING_LOG("Voip Change To Normal");
+        return AUDIO_FLAG_NORMAL;
+    }
     std::string sourcePortName = GetSourcePortName(deviceType);
     AUDIO_INFO_LOG("sourcePortName: %{public}s", sourcePortName.c_str());
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
