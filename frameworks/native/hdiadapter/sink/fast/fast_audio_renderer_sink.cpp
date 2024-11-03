@@ -175,6 +175,7 @@ FastAudioRendererSinkInner::FastAudioRendererSinkInner()
 
 FastAudioRendererSinkInner::~FastAudioRendererSinkInner()
 {
+    AUDIO_INFO_LOG("In");
     FastAudioRendererSinkInner::DeInit();
 }
 
@@ -206,6 +207,7 @@ bool FastAudioRendererSinkInner::IsInited()
 
 void FastAudioRendererSinkInner::DeInit()
 {
+    AUDIO_INFO_LOG("In");
 #ifdef FEATURE_POWER_MANAGER
     KeepRunningUnlock();
 
@@ -214,11 +216,13 @@ void FastAudioRendererSinkInner::DeInit()
     started_ = false;
     rendererInited_ = false;
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
+        AUDIO_INFO_LOG("Destroy render");
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
 
     if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
+        AUDIO_INFO_LOG("Unload adapter");
         if (routeHandle_ != -1) {
             audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
         }
