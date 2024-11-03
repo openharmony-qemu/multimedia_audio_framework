@@ -20,6 +20,7 @@
 #include "native_audiostreambuilder.h"
 #include "OHAudioStreamBuilder.h"
 #include "OHAudioCapturer.h"
+#include "audio_utils.h"
 
 using OHOS::AudioStandard::OHAudioStreamBuilder;
 using OHOS::AudioStandard::AudioSampleFormat;
@@ -369,6 +370,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
 
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
     if (audioRenderer->Initialize(options)) {
+        OHOS::AudioStandard::ObjectRefMap<OHOS::AudioStandard::OHAudioRenderer>::Insert(audioRenderer);
         audioRenderer->SetRendererCallbackType(writeDataCallbackType_);
         audioRenderer->SetRendererCallback(rendererCallbacks_, userData_, metadataUserData_);
         audioRenderer->SetRendererOutputDeviceChangeCallback(outputDeviceChangecallback_, outputDeviceChangeuserData_);
