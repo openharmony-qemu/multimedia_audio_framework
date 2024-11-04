@@ -42,11 +42,11 @@ namespace {
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t VALUE_ERROR = -62980098;
-    const int32_t VALUE_NUM = 29189;
     const int32_t RENDERER_FLAG = 0;
     // Writing only 500 buffers of data for test
     const int32_t WRITE_BUFFERS_COUNT = 500;
     const int32_t MAX_BUFFER_SIZE = 20000;
+    const int32_t VALUE_NUM = 29189;
     constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
 
@@ -4136,7 +4136,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_005, TestSize.Level1)
 
     uint64_t latency;
     ret = audioRenderer->GetLatency(latency);
-    EXPECT_TRUE(VALUE_ZERO == ret || VALUE_NUM == ret);
+    EXPECT_EQ(VALUE_NUM, ret);
 }
 
 /**
