@@ -1977,5 +1977,113 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_003, TestSize.Level
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
 }
+
+/**
+* @tc.name : Test SwitchToTargetStream API in non-running state
+* @tc.number: Audio_Capturer_SwitchToTargetStream_001
+* @tc.desc : Test stream switch when capturer is in PREPARED state
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    EXPECT_EQ(CAPTURER_PREPARED, audioCapturer->GetStatus());
+    uint32_t originalSessionId = INVALID_SESSION_ID;
+    audioCapturer->GetAudioStreamId(originalSessionId);
+
+    uint32_t newSessionId = 0;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
+
+    EXPECT_EQ(true, switchResult);
+    EXPECT_NE(newSessionId, originalSessionId);
+    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchToTargetStream API in running state
+* @tc.number: Audio_Capturer_SwitchToTargetStream_002
+* @tc.desc : Test stream switch when capturer is in RUNNING state
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    bool startResult = audioCapturer->Start();
+    EXPECT_EQ(true, startResult);
+    EXPECT_EQ(CAPTURER_RUNNING, audioCapturer->GetStatus());
+
+    uint32_t originalSessionId = INVALID_SESSION_ID;
+    audioCapturer->GetAudioStreamId(originalSessionId);
+
+    uint32_t newSessionId = 0;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
+
+    EXPECT_EQ(true, switchResult);
+    EXPECT_NE(newSessionId, originalSessionId);
+    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
+    EXPECT_EQ(CAPTURER_RUNNING, audioCapturer->GetStatus());
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchToTargetStream API switching to VOIP stream
+* @tc.number: Audio_Capturer_SwitchToTargetStream_003
+* @tc.desc : Test stream switch to VOIP stream type
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    uint32_t originalSessionId = INVALID_SESSION_ID;
+    audioCapturer->GetAudioStreamId(originalSessionId);
+
+    uint32_t newSessionId = 0;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::VOIP_STREAM, newSessionId);
+
+    EXPECT_EQ(true, switchResult);
+    EXPECT_NE(newSessionId, originalSessionId);
+    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchToTargetStream API with null audio stream
+* @tc.number: Audio_Capturer_SwitchToTargetStream_004
+* @tc.desc : Test stream switch when audio stream is null
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    audioCapturer->audioStream_ = nullptr;
+
+    uint32_t newSessionId = 0;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
+
+    EXPECT_EQ(false, switchResult);
+    EXPECT_EQ(newSessionId, INVALID_SESSION_ID);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
 } // namespace AudioStandard
 } // namespace OHOS
