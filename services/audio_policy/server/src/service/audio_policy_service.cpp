@@ -2854,7 +2854,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchInputDevice(unique_ptr<Aud
         (IsSameDevice(desc, capturerChangeInfo->inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED)) {
         AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", capturerChangeInfo->sessionId);
         AudioDeviceDescriptor tempDesc = GetCurrentInputDevice();
-        if (!IsSameDevice(desc, tempDesc)) {
+        if (!IsSameDevice(desc, tempDesc) && IsSameDevice(desc, capturerChangeInfo->inputDeviceInfo)) {
             SetCurrenInputDevice(*desc);
             OnPreferredInputDeviceUpdated(GetCurrentInputDeviceType(), ""); // networkId is not used
             UpdateActiveDeviceRoute(GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG);
