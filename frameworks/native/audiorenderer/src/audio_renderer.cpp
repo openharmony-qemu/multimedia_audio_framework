@@ -633,12 +633,12 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
-    if (state_ == RENDERER_RUNNING) {
+    RendererState state = GetStatus();
+    if (state == RENDERER_RUNNING) {
         AUDIO_INFO_LOG("Already Start.");
         return true;
     }
     CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
-    RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
         false, "Start failed. Illegal state:%{public}u", state);
 
@@ -745,7 +745,8 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
-    if (state_ == RENDERER_PAUSED) {
+    RendererState state = GetStatus();
+    if (state == RENDERER_PAUSED) {
         AUDIO_INFO_LOG("Already PauseTransitent.");
         return true;
     }
@@ -755,7 +756,6 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
         return true;
     }
 
-    RendererState state = GetStatus();
     if (state != RENDERER_RUNNING) {
         // If the stream is not running, there is no need to pause and deactive audio interrupt
         AUDIO_ERR_LOG("State of stream is not running. Illegal state:%{public}u", state);
@@ -796,7 +796,8 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
-    if (state_ == RENDERER_PAUSED) {
+    RendererState state = GetStatus();
+    if (state == RENDERER_PAUSED) {
         AUDIO_INFO_LOG("Already Pause.");
         return true;
     }
@@ -809,7 +810,6 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
         return true;
     }
 
-    RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, false,
         "State of stream is not running. Illegal state:%{public}u", state);
     bool result = audioStream_->PauseAudioStream(cmdType);
@@ -832,7 +832,8 @@ bool AudioRendererPrivate::Stop()
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
-    if (state_ == RENDERER_STOPPED) {
+    RendererState state = GetStatus();
+    if (state == RENDERER_STOPPED) {
         AUDIO_INFO_LOG("Already Stop.");
         return true;
     }
