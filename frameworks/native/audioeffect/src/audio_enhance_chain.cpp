@@ -33,6 +33,7 @@ const uint32_t MILLISECOND = 1000;
 const uint32_t DEFAULT_FRAMELENGTH = 20;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_FORMAT = 2;
+const uint32_t DEFAULT_MICNUM = 2;
 const uint32_t DEFAULT_ECNUM = 0;
 const uint32_t DEFAULT_MICREFNUM = 0;
 
@@ -44,7 +45,7 @@ AudioEnhanceChain::AudioEnhanceChain(const std::string &scene, const AudioEnhanc
     defaultFlag_ = defaultFlag;
     deviceAttr_ = deviceAttr;
     if (deviceAttr_.micChannels == 1) {
-        deviceAttr_.micChannels = 2;
+        deviceAttr_.micChannels = DEFAULT_MICNUM;
     }
     
     InitAudioEnhanceChain();
