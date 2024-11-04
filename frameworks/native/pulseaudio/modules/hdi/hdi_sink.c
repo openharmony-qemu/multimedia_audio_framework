@@ -2192,6 +2192,9 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink *s, pa
         if (flag) {
             info->userdata = pa_sink_input_ref(i);
         } else {
+            const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+            AUDIO_PRERELEASE_LOGE("sink: %{public}s, sink_input: %{public}s, the type is not %{public}d",
+                s->name, sessionIDStr, type);
             continue;
         }
 
