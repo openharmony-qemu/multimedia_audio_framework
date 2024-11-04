@@ -1200,6 +1200,7 @@ void AudioCapturerPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
 
 void AudioCapturerPrivate::ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass)
 {
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
     if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
     } else if (streamClass == IAudioStream::FAST_STREAM) {
