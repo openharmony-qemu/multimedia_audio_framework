@@ -1248,8 +1248,11 @@ void AudioAdapterManager::UpdateSafeVolume()
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             if (currentActiveOutputDeviceDescriptor != nullptr) {
                 AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveOutputDeviceDescriptor->deviceCategory_);
-                if (currentActiveOutputDeviceDescriptor->deviceCategory_ != BT_HEADPHONE) {
+                if (currentActiveOutputDeviceDescriptor->deviceCategory_ != BT_HEADPHONE &&
+                    currentActiveOutputDeviceDescriptor->deviceCategory_ != BT_CAR &&
+                    currentActiveOutputDeviceDescriptor->deviceCategory_ != BT_SOUNDBOX) {
                     AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_);
+                    return;
                 }
             }
             if (isBtBoot_) {
