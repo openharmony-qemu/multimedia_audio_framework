@@ -769,7 +769,7 @@ static void ThreadFuncCapturerTimer(void *userdata)
 
     //set audio thread priority
     ScheduleThreadInServer(getpid(), gettid());
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     pa_thread_mq_install(&u->threadMq);
     u->timestamp = pa_rtclock_now();
@@ -847,6 +847,7 @@ fail:
 
 static void PaHdiCapturerExit(struct Userdata *u)
 {
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
     u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
     u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
     StopAuxCapture(u);
@@ -1152,8 +1153,8 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
     int ret;
 
-    pa_assert(m);
-    pa_assert(ma);
+    CHECK_AND_RETURN_RET_LOG(m != NULL, NULL, "m is null");
+    CHECK_AND_RETURN_RET_LOG(ma != NULL, NULL, "ma is null");
 
     pa_sample_spec ss = m->core->default_sample_spec;
     pa_channel_map map = m->core->default_channel_map;

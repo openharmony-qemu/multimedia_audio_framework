@@ -306,6 +306,11 @@ static pa_hook_result_t HandleSourceOutputUnlink(pa_source_output *so, struct Us
     if (sceneType == NULL) {
         sceneType = "";
     }
+    const char *sceneBypass = pa_proplist_gets(so->proplist, "scene.bypass");
+    if (pa_safe_streq(sceneBypass, DEFAULT_SCENE_BYPASS)) {
+        AUDIO_INFO_LOG("scene:%{public}s has been set to bypass, do not need release", sceneType);
+        return PA_HOOK_OK;
+    }
     uint32_t captureId = u->captureId;
     uint32_t renderId = u->renderId;
     uint32_t sceneTypeCode = 0;
@@ -344,7 +349,7 @@ static pa_hook_result_t CheckIfAvailSource(pa_source_output *so, struct Userdata
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, struct Userdata *u)
+static pa_hook_result_t SourceOutputPutCb(const pa_core *c, pa_source_output *so, struct Userdata *u)
 {
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
@@ -362,7 +367,7 @@ static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, stru
     return HandleSourceOutputPut(so, u);
 }
 
-static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so, struct Userdata *u)
+static pa_hook_result_t SourceOutputUnlinkCb(const pa_core *c, pa_source_output *so, struct Userdata *u)
 {
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
@@ -380,7 +385,7 @@ static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so, s
     return HandleSourceOutputUnlink(so, u);
 }
 
-static pa_hook_result_t SourceOutputMoveStartCb(pa_core *c, pa_source_output *so, struct Userdata *u)
+static pa_hook_result_t SourceOutputMoveStartCb(const pa_core *c, pa_source_output *so, struct Userdata *u)
 {
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
@@ -398,7 +403,7 @@ static pa_hook_result_t SourceOutputMoveStartCb(pa_core *c, pa_source_output *so
     return HandleSourceOutputUnlink(so, u);
 }
 
-static pa_hook_result_t SourceOutputMoveFinishCb(pa_core *c, pa_source_output *so, struct Userdata *u)
+static pa_hook_result_t SourceOutputMoveFinishCb(const pa_core *c, pa_source_output *so, struct Userdata *u)
 {
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
