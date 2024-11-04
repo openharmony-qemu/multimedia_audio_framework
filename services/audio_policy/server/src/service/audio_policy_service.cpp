@@ -782,6 +782,14 @@ int32_t AudioPolicyService::SelectDealSafeVolume(AudioStreamType streamType, int
     return sVolumeLevel;
 }
 
+int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
+{
+    AUDIO_INFO_LOG("Set Voice Ringtone is %{public}d", isMute);
+    isVoiceRingtoneMute_ = isMute ? true : false;
+    SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    return SUCCESS;
+}
+
 void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
 {
     Trace trace("AudioPolicyService::SetVoiceCallVolume" + std::to_string(volumeLevel));
@@ -791,6 +799,7 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
     CHECK_AND_RETURN_LOG(gsp != nullptr, "SetVoiceVolume: gsp null");
     float volumeDb = static_cast<float>(volumeLevel) /
         static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL));
+    volumeDb = isVoiceRingtoneMute_ ? 0 : volumeDb;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->SetVoiceVolume(volumeDb);
     IPCSkeleton::SetCallingIdentity(identity);
@@ -3861,6 +3870,8 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    } else {
+        SetVoiceRingtoneMute(false);
     }
 
     return SUCCESS;

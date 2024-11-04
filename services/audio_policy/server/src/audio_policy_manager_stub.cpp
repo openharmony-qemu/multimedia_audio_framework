@@ -177,6 +177,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "UNSET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "IS_ALLOWED_PLAYBACK",
+    "SET_VOICE_RINGTONE_MUTE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1315,6 +1316,9 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_DEVICE_ANAHS_CALLBACK):
             UnsetAudioDeviceAnahsCallbackInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOICE_RINGTONE_MUTE):
+            SetVoiceRingtoneMuteInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -2156,6 +2160,13 @@ void AudioPolicyManagerStub::IsAllowedPlaybackInternal(MessageParcel &data, Mess
     int32_t pid = data.ReadInt32();
     bool result = IsAllowedPlayback(uid, pid);
     reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    int32_t result = SetVoiceRingtoneMute(isMute);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::GetOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)

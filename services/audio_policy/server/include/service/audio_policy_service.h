@@ -506,6 +506,8 @@ public:
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
 
+    int32_t SetVoiceRingtoneMute(bool isMute);
+
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
@@ -1149,6 +1151,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = false;
+    bool isVoiceRingtoneMute_ = false;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 

@@ -444,6 +444,21 @@ bool AudioPolicyProxy::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
     return reply.ReadBool();
 }
 
+int32_t AudioPolicyProxy::SetVoiceRingtoneMute(bool isMute)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteBool(isMute);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOICE_RINGTONE_MUTE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SetVoiceRingtoneMute failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
 bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
 {
     MessageParcel data;

@@ -640,6 +640,12 @@ int32_t AudioSystemManager::SetMicrophoneMute(bool isMute)
     return AudioPolicyManager::GetInstance().SetMicrophoneMute(isMute);
 }
 
+int32_t AudioSystemManager::SetVoiceRingtoneMute(bool isMute)
+{
+    AUDIO_INFO_LOG("Set Voice Ringtone is %{public}d", isMute);
+    return AudioPolicyManager::GetInstance().SetVoiceRingtoneMute(isMute);
+}
+
 bool AudioSystemManager::IsMicrophoneMute()
 {
     std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
