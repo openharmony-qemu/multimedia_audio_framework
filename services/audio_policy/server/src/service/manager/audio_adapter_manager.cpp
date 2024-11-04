@@ -393,6 +393,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     } else {
         volumeDb = CalculateVolumeDb(volumeLevel);
     }
+    // 语音通话做特殊处理，音量设置为满音量
     if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
         volumeDb = 1.0f;
     }

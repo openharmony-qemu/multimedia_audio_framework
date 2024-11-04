@@ -146,6 +146,7 @@ bool VolumeDataMaintainer::GetVolume(DeviceType deviceType, AudioStreamType stre
 
 bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType)
 {
+    // 语音通话做特殊处理，直接返回
     if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
         return true;
     }
