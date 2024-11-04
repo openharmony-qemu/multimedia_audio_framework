@@ -780,7 +780,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     if ((itVerse == VC_MODE_MAP_VERSE.end() && itCallAssistant == VOICE_CALL_ASSISTANT_SUPPRESSION.end()) ||
         res == RES_MAP_VERSE.end()) {
         AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;        
+        return ERR_INVALID_PARAM;
     }
 
     AudioParamKey parmKey = AudioParamKey::NONE;
@@ -797,7 +797,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
         std::set<std::string> needSuppression = VOICE_CALL_ASSISTANT_NEED_SUPPRESSION.at(asrVoiceControlMode);
         for (size_t i = 0; i < modes.size(); i++) {
             if (needSuppression.contains(modes[i]) && on) {
-                audioRendererSinkInstance->SetAudioParameter(parmKey, "", 
+                audioRendererSinkInstance->SetAudioParameter(parmKey, "",
                     modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
                 continue;
             }
