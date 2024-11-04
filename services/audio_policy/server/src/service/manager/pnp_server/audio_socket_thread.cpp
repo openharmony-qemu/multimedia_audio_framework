@@ -788,8 +788,8 @@ int32_t AudioSocketThread::ReadAndScanDpState(const std::string &path, uint32_t 
         AUDIO_ERR_LOG("audio read dp state node fail, %{public}d", errno);
         return ERROR;
     }
-    ret = fclose(fp);
-    if (ret != 0) {
+    int32_t closeRet = fclose(fp);
+    if (closeRet != 0) {
         AUDIO_ERR_LOG("something wrong when fclose! err:%{public}d", errno);
     }
 
@@ -818,11 +818,12 @@ int32_t AudioSocketThread::ReadAndScanDpName(const std::string &path, std::strin
     }
     size_t ret = fread(&deviceName, STATE_PATH_ITEM_SIZE, AUDIO_PNP_INFO_LEN_MAX, fp);
     if (ret == 0) {
+        fclose(fp);
         AUDIO_ERR_LOG("audio read dp name node fail, %{public}d", errno);
         return ERROR;
     }
-    ret = fclose(fp);
-    if (ret != 0) {
+    int32_t closeRet = fclose(fp);
+    if (closeRet != 0) {
         AUDIO_ERR_LOG("something wrong when fclose! err:%{public}d", errno);
     }
     AUDIO_DEBUG_LOG("audio read dp name path: %{public}s, name:%{public}s",
