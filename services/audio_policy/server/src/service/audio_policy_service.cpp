@@ -3099,9 +3099,9 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchInputDevice(unique_ptr<Aud
         AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", capturerChangeInfo->sessionId);
         unique_ptr<AudioDeviceDescriptor> preferredDesc =
             audioAffinityManager_.GetCapturerDevice(capturerChangeInfo->clientUID);
-        if (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) && !IsSameDevice(desc, GetCurrentInputDevice())
-            && desc->deviceType_ != preferredDesc->deviceType_)
-            || ((preferredDesc->deviceType_ == DEVICE_TYPE_NONE) && !IsSameDevice(desc, GetCurrentInputDevice()))) {
+        if (!IsSameDevice(desc, GetCurrentInputDevice()) &&
+            (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) && desc->deviceType_ != preferredDesc->deviceType_) ||
+            IsSameDevice(desc, capturerChangeInfo->inputDeviceInfo))) {
             SetCurrentInputDevice(*desc);
             OnPreferredInputDeviceUpdated(GetCurrentInputDeviceType(), ""); // networkId is not used.
             UpdateActiveDeviceRoute(GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG,
