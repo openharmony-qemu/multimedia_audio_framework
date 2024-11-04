@@ -252,6 +252,10 @@ double VolumeTools::GetVolDb(AudioSampleFormat format, int32_t vol)
 
 static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, int32_t split)
 {
+    if (split == 0) {
+        AUDIO_ERR_LOG("invalid split");
+        return;
+    }
     size_t byteSizePerData = 1; // 1 for unsigned 8bit
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
@@ -279,10 +283,6 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
     }
     // Calculate the average value
     int32_t size = static_cast<int32_t>(frameSize);
-    if (split == 0) {
-        AUDIO_ERR_LOG("invalid split");
-        return;
-    }
     size /= split;
     if (size == 0) {
         AUDIO_ERR_LOG("invalid size");
@@ -296,6 +296,10 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
 
 static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, int32_t split)
 {
+    if (split == 0) {
+        AUDIO_ERR_LOG("invalid split");
+        return;
+    }
     size_t byteSizePerData = 2; // 2 for signed 16bit
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
@@ -323,10 +327,6 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     int32_t size = static_cast<int32_t>(frameSize);
-    if (split == 0) {
-        AUDIO_ERR_LOG("invalid split");
-        return;
-    }
     size /= split;
     if (size == 0) {
         AUDIO_ERR_LOG("invalid size");
@@ -340,6 +340,10 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
 
 static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, int32_t split)
 {
+    if (split == 0) {
+        AUDIO_ERR_LOG("invalid split");
+        return;
+    }
     const size_t byteSizePerData = 3; // 3 for 24bit
     size_t offset = 8; // convert a 24-bit number to a 16-bit number
     size_t byteSizePerFrame = byteSizePerData * channel;
@@ -369,10 +373,6 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     int32_t size = static_cast<int32_t>(frameSize);
-    if (split == 0) {
-        AUDIO_ERR_LOG("invalid split");
-        return;
-    }
     size /= split;
     if (size == 0) {
         AUDIO_ERR_LOG("invalid size");
@@ -386,6 +386,10 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
 
 static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, int32_t split)
 {
+    if (split == 0) {
+        AUDIO_ERR_LOG("invalid split");
+        return;
+    }
     const size_t byteSizePerData = 4; // 4 for signed 32bit
     size_t offset = 16; // convert a 32-bit number to a 16-bit number
     size_t byteSizePerFrame = byteSizePerData * channel;
@@ -415,10 +419,6 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
 
     // Calculate the average value
     int32_t size = static_cast<int32_t>(frameSize);
-    if (split == 0) {
-        AUDIO_ERR_LOG("invalid split");
-        return;
-    }
     size /= split;
     if (size == 0) {
         AUDIO_ERR_LOG("invalid size");
@@ -433,6 +433,10 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
 
 static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, int32_t split)
 {
+    if (split == 0) {
+        AUDIO_ERR_LOG("invalid split");
+        return;
+    }
     size_t byteSizePerData = 4; // 4 for 32bit
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
@@ -460,10 +464,6 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     int32_t size = static_cast<int32_t>(frameSize);
-    if (split == 0) {
-        AUDIO_ERR_LOG("invalid split");
-        return;
-    }
     size /= split;
     if (size == 0) {
         AUDIO_ERR_LOG("invalid size");
