@@ -175,6 +175,21 @@ static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE = {
     {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "audiomix2voicetxex"},
 };
 
+static const std::map<AsrVoiceControlMode, std::vector<std::string>> VOICE_CALL_ASSISTANT_SUPPRESSION = {
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {"TTS_2_DEVICE", "TTS_2_MODEM"}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {"TTS_2_DEVICE", "TTS_2_MODEM"}},
+    {AsrVoiceControlMode::VOICE_TXRX_DECREASE, {"MIC_2_MODEM", "MODEM_2_DEVICE"}},
+};
+
+static const std::map<AsrVoiceControlMode, std::set<std::string>> VOICE_CALL_ASSISTANT_NEED_SUPPRESSION = {
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {"TTS_2_MODEM"}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {"TTS_2_DEVICE"}},
+    {AsrVoiceControlMode::VOICE_TXRX_DECREASE, {"MIC_2_MODEM", "MODEM_2_DEVICE"}},
+};
+
+static const std::string VOICE_CALL_SUPPRESSION_VOLUME = "3";
+static const std::string VOICE_CALL_FULL_VOLUME = "32";
+
 static const std::map<std::string, AsrVoiceMuteMode> VM_MODE_MAP = {
     {"output_mute", AsrVoiceMuteMode::OUTPUT_MUTE},
     {"input_mute", AsrVoiceMuteMode::INPUT_MUTE},
@@ -759,19 +774,38 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     std::string key = "avcm";
     std::string value = key + "=";
 
-    auto it = VC_MODE_MAP_VERSE.find(asrVoiceControlMode);
+    auto itVerse = VC_MODE_MAP_VERSE.find(asrVoiceControlMode);
+    auto itCallAssistant = VOICE_CALL_ASSISTANT_SUPPRESSION.find(asrVoiceControlMode);
     auto res = RES_MAP_VERSE.find(on);
-    if ((it != VC_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
-        value = it->second + "=" + res->second;
-    } else {
+    if ((itVerse == VC_MODE_MAP_VERSE.end() && itCallAssistant == VOICE_CALL_ASSISTANT_SUPPRESSION.end()) ||
+        res == RES_MAP_VERSE.end()) {
         AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
+        return ERR_INVALID_PARAM;        
     }
-    AudioServer::audioParameters[key] = value;
+
     AudioParamKey parmKey = AudioParamKey::NONE;
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    if ((itVerse != VC_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
+        value = itVerse->second + "=" + res->second;
+        AudioServer::audioParameters[key] = value;
+        audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+        return 0;
+    }
+    if ((itCallAssistant != VOICE_CALL_ASSISTANT_SUPPRESSION.end()) && (res != RES_MAP_VERSE.end())) {
+        std::vector<std::string> modes = VOICE_CALL_ASSISTANT_SUPPRESSION.at(asrVoiceControlMode);
+        std::set<std::string> needSuppression = VOICE_CALL_ASSISTANT_NEED_SUPPRESSION.at(asrVoiceControlMode);
+        for (size_t i = 0; i < modes.size(); i++) {
+            if (needSuppression.contains(modes[i]) && on) {
+                audioRendererSinkInstance->SetAudioParameter(parmKey, "", 
+                    modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
+                continue;
+            }
+            audioRendererSinkInstance->SetAudioParameter(parmKey, "",
+                modes[i] + "=" + VOICE_CALL_FULL_VOLUME);
+        }
+    }
+    
     return 0;
 }
 

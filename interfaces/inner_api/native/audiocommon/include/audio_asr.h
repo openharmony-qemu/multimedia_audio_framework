@@ -136,6 +136,27 @@ enum class AsrVoiceControlMode {
      * @since 12
      */
     AUDIO_MIX_2_VOICE_TX_EX = 3,
+    /**
+     * AUDIO SUPPRESSION OPPOSITE.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    AUDIO_SUPPRESSION_OPPOSITE = 4,
+    /**
+     * AUDIO SUPPRESSION LOCAL.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    AUDIO_SUPPRESSION_LOCAL = 5,
+    /**
+     * VOICE TXRX DECREASE.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    VOICE_TXRX_DECREASE = 6,
 };
 
 /**

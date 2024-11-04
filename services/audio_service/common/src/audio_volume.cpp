@@ -390,6 +390,10 @@ using namespace OHOS::AudioStandard;
 
 float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass)
 {
+    std::string tmpStreamType = streamType;
+    if (tmpStreamType == "voice_call_assistant") {
+        return 1.0f;
+    }
     CHECK_AND_RETURN_RET_LOG(streamType != nullptr, 1.0f, "streamType is nullptr");
     CHECK_AND_RETURN_RET_LOG(deviceClass != nullptr, 1.0f, "deviceClass is nullptr");
     int32_t stream = AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);

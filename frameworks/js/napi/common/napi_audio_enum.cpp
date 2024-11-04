@@ -489,7 +489,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrVoiceControlModeMap = {
     {"AUDIO_2_VOICETX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_2_VOICETX)},
     {"AUDIO_MIX_2_VOICETX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_MIX_2_VOICETX)},
     {"AUDIO_2_VOICE_TX_EX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX)},
-    {"AUDIO_MIX_2_VOICE_TX_EX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX)}
+    {"AUDIO_MIX_2_VOICE_TX_EX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX)},
+    {"AUDIO_SUPPRESSION_OPPOSITE", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE)},
+    {"AUDIO_SUPPRESSION_LOCAL", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL)},
+    {"VOICE_TXRX_DECREASE", static_cast<int32_t>(AsrVoiceControlMode::VOICE_TXRX_DECREASE)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrVoiceMuteModeMap = {

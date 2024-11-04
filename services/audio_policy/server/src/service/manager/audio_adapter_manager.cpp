@@ -40,7 +40,8 @@ static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_ASSISTANT,
     STREAM_ALARM,
     STREAM_ACCESSIBILITY,
-    STREAM_ULTRASONIC
+    STREAM_ULTRASONIC,
+    STREAM_VOICE_CALL_ASSISTANT
 };
 
 static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
@@ -391,6 +392,9 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         }
     } else {
         volumeDb = CalculateVolumeDb(volumeLevel);
+    }
+    if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
+        volumeDb = 1.0f;
     }
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
@@ -1866,6 +1870,7 @@ void AudioAdapterManager::InitVolumeMapIndex()
             maxVolumeIndexMap_[streamType], volumeDataMaintainer_.GetStreamVolume(streamType));
     }
 
+    volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_CALL_ASSISTANT, MAX_VOLUME_LEVEL);
     volumeDataMaintainer_.SetStreamVolume(STREAM_ULTRASONIC, MAX_VOLUME_LEVEL);
 }
 
