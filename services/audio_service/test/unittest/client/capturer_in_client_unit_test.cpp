@@ -1176,7 +1176,7 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerPositionChanges_002, TestSize.Lev
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    size_t byteRead =1;
+    size_t byteRead = 1;
     capturerInClientInner_->capturerMarkPosition_ = false;
     capturerInClientInner_->totalBytesRead_ = VALUE_EIGHT;
     capturerInClientInner_->sizePerFrameInByte_ = VALUE_FOUR;
