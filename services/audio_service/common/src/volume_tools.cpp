@@ -278,6 +278,7 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
         raw8 += (split - 1) * channel;
     }
     // Calculate the average value
+    int32_t size = static_cast<int32_t>(frameSize);
     if (split == 0) {
         AUDIO_ERR_LOG("invalid split");
         return;
@@ -321,6 +322,7 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         raw16 += (split - 1) * channel;
     }
     // Calculate the average value
+    int32_t size = static_cast<int32_t>(frameSize);
     if (split == 0) {
         AUDIO_ERR_LOG("invalid split");
         return;
@@ -366,6 +368,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         raw8 += (split - 1) * channel * byteSizePerData;
     }
     // Calculate the average value
+    int32_t size = static_cast<int32_t>(frameSize);
     if (split == 0) {
         AUDIO_ERR_LOG("invalid split");
         return;
@@ -456,6 +459,7 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         raw32 += (split - 1) * channel;
     }
     // Calculate the average value
+    int32_t size = static_cast<int32_t>(frameSize);
     if (split == 0) {
         AUDIO_ERR_LOG("invalid split");
         return;
