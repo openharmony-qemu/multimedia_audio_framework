@@ -259,8 +259,8 @@ static void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
 
 static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst)
 {
-    pa_assert(src);
-    pa_assert(dst);
+    CHECK_AND_RETURN_LOG(src != NULL, "src is null");
+    CHECK_AND_RETURN_LOG(dst != NULL, "dst is null");
     int32_t ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
@@ -286,8 +286,8 @@ static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, flo
 
 static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst)
 {
-    pa_assert(src);
-    pa_assert(dst);
+    CHECK_AND_RETURN_LOG(src != NULL, "src is null");
+    CHECK_AND_RETURN_LOG(dst != NULL, "dst is null");
     int32_t ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
@@ -2055,7 +2055,7 @@ static void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 
 static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
 {
-    pa_assert(s);
+    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     void *state = NULL;
     pa_sink_input *input;
     while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
@@ -2074,7 +2074,7 @@ static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
 
 static void UnsetSinkVolume(pa_sink *s)
 {
-    pa_assert(s);
+    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     void *state = NULL;
     pa_sink_input *input;
     while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
@@ -2089,7 +2089,7 @@ static void UnsetSinkVolume(pa_sink *s)
 
 static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 {
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     // Fill the buffer up the latency size
     pa_memchunk chunk;
@@ -2564,9 +2564,10 @@ static int32_t UpdatePresentationPosition(struct Userdata *u)
 
 static void OffloadRewindAndFlush(struct Userdata *u, pa_sink_input *i, bool afterRender)
 {
+    CHECK_AND_RETURN_LOG(i != NULL, "i is null");
     pa_sink_input_assert_ref(i);
     playback_stream *ps = i->userdata;
-    pa_assert(ps);
+    CHECK_AND_RETURN_LOG(ps != NULL, "ps is null");
 
     int ret = UpdatePresentationPosition(u);
     u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
@@ -2731,7 +2732,7 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
 
 static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t state)
 {
-    pa_assert(i);
+    CHECK_AND_RETURN_LOG(i != NULL, "i is null");
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     if (corking) {
         const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
@@ -2914,9 +2915,9 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 {
     struct Userdata *u = NULL;
 
-    pa_assert(i);
+    CHECK_AND_RETURN_LOG(i != NULL, "i is null");
     pa_sink_input_assert_ref(i);
-    pa_assert(i->sink);
+    CHECK_AND_RETURN_LOG(i->sink != NULL, "i->sink is null");
 
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
@@ -3040,16 +3041,16 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
 
 static void SinkRenderMultiChannel(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
-    pa_sink_ref(si);
-
     size_t blockSizeMax;
 
+    CHECK_AND_RETURN_LOG(si != NULL, "si is null");
+    pa_sink_ref(si);
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
-    pa_assert(length > 0);
-    pa_assert(pa_frame_aligned(length, &si->sample_spec));
-    pa_assert(chunkIn);
+    CHECK_AND_RETURN_LOG(chunkIn != NULL, "chunkIn is null");
+    CHECK_AND_RETURN_LOG(chunkIn->length > 0, "chunkIn->length < 0");
+    pa_assert(pa_frame_aligned(chunkIn->length, &si->sample_spec));
 
     pa_assert(!si->thread_info.rewind_requested);
     pa_assert(si->thread_info.rewind_nbytes == 0);
@@ -3077,7 +3078,7 @@ static void SinkRenderMultiChannel(pa_sink *si, size_t length, pa_memchunk *chun
 
 static void ProcessRenderUseTimingMultiChannel(struct Userdata *u, pa_usec_t now)
 {
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     // Fill the buffer up the latency size
     pa_memchunk chunk;
@@ -3100,7 +3101,7 @@ static void ProcessRenderUseTimingMultiChannel(struct Userdata *u, pa_usec_t now
 
 static bool POSSIBLY_UNUSED ThreadFuncRendererTimerMultiChannelFlagJudge(struct Userdata *u)
 {
-    pa_assert(u);
+    CHECK_AND_RETURN_RET_LOG(u != NULL, false, "u is null");
     bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
         (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
         (u->sink->thread_info.state == PA_SINK_IDLE && u->sink->monitor_source &&
@@ -3280,7 +3281,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
     struct Userdata *u = userdata;
 
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
     AUDIO_INFO_LOG("Thread %s(use timing bus) starting up, pid %d, tid %d", deviceClass, getpid(), gettid());
@@ -3343,7 +3344,7 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
     ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     int32_t quit = 0;
 
@@ -3403,7 +3404,7 @@ static void ThreadFuncWriteHDI(void *userdata)
     ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     int32_t quit = 0;
 
@@ -3451,7 +3452,7 @@ static void TestModeThreadFuncWriteHDI(void *userdata)
     ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     int32_t quit = 0;
 
@@ -3517,7 +3518,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
     AUDIO_DEBUG_LOG("SinkProcessMsg: code: %{public}d", code);
     AUTO_CTRACE("hdi_sink::SinkProcessMsg code: %d", code);
     struct Userdata *u = PA_SINK(o)->userdata;
-    pa_assert(u);
+    CHECK_AND_RETURN_RET_LOG(u != NULL, 0, "u is null");
 
     switch (code) {
         case PA_SINK_MESSAGE_GET_LATENCY: {
@@ -3691,6 +3692,7 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
     struct Userdata *u = (struct Userdata *)(sink->userdata);
     const bool starting = PA_SINK_IS_OPENED(newState);
     const bool stopping = newState == PA_SINK_SUSPENDED;
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
     AUDIO_INFO_LOG("starting: %{public}d, stopping: %{public}d, offload_enable: %{public}d",
         starting, stopping, u->offload_enable);
     if (starting && u->offload_enable && !u->offload.inited && PrepareDeviceOffload(u) == 0) {
@@ -3717,7 +3719,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 {
     struct Userdata *u = NULL;
 
-    pa_assert(s);
+    CHECK_AND_RETURN_RET_LOG(s != NULL, 0, "s is null");
     pa_assert_se(u = s->userdata);
 
     AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
@@ -4056,6 +4058,7 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
 
 static int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
+    CHECK_AND_RETURN_RET_LOG(m != NULL, -1, "m is null");
     u->core = m->core;
     u->module = m;
 

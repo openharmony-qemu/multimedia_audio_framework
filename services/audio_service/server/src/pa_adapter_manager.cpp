@@ -734,7 +734,7 @@ void PaAdapterManager::PAContextStateCb(pa_context *context, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = reinterpret_cast<pa_threaded_mainloop *>(userdata);
     AUDIO_INFO_LOG("Current Context State: %{public}d", pa_context_get_state(context));
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleThreadInServer(getpid(), gettid());
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:

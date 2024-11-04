@@ -32,6 +32,8 @@ const uint32_t BITLENGTH = 8;
 const uint32_t MILLISECOND = 1000;
 const uint32_t DEFAULT_FRAMELENGTH = 20;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
+const uint32_t DEFAULT_FORMAT = 2;
+const uint32_t DEFAULT_MICNUM = 2;
 const uint32_t DEFAULT_ECNUM = 0;
 const uint32_t DEFAULT_MICREFNUM = 0;
 
@@ -42,6 +44,9 @@ AudioEnhanceChain::AudioEnhanceChain(const std::string &scene, const AudioEnhanc
     algoParam_ = algoParam;
     defaultFlag_ = defaultFlag;
     deviceAttr_ = deviceAttr;
+    if (deviceAttr_.micChannels == 1) {
+        deviceAttr_.micChannels = DEFAULT_MICNUM;
+    }
     
     InitAudioEnhanceChain();
     InitDump();
@@ -55,11 +60,11 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
     enhanceLibHandles_.clear();
     standByEnhanceHandles_.clear();
 
-    algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, deviceAttr_.micFormat * BITLENGTH,
+    algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, DEFAULT_FORMAT * BITLENGTH,
         deviceAttr_.micChannels, DEFAULT_ECNUM, DEFAULT_MICREFNUM, deviceAttr_.micChannels};
     
-    uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * deviceAttr_.micFormat;
-    algoAttr_ = {deviceAttr_.micFormat, deviceAttr_.micChannels, byteLenPerFrame};
+    uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * DEFAULT_FORMAT;
+    algoAttr_ = {DEFAULT_FORMAT, deviceAttr_.micChannels, byteLenPerFrame};
 
     if (count(NEED_EC_SCENE.begin(), NEED_EC_SCENE.end(), sceneType_)) {
         needEcFlag_ = true;
@@ -199,7 +204,8 @@ void AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLi
     }
     if (algoSupportedConfig_.sampleRate != maxSampleRate) {
         algoSupportedConfig_.sampleRate = maxSampleRate;
-        uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (maxSampleRate / MILLISECOND) * deviceAttr_.micFormat;
+        uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (maxSampleRate / MILLISECOND) *
+            algoSupportedConfig_.dataFormat;
         algoAttr_.byteLenPerFrame = byteLenPerFrame;
 
         algoCache_.input.resize(algoAttr_.byteLenPerFrame * algoAttr_.batchLen);
@@ -262,21 +268,21 @@ void AudioEnhanceChain::GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferC
 uint32_t AudioEnhanceChain::GetAlgoBufferSize()
 {
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
-        deviceAttr_.micFormat;
+        algoSupportedConfig_.dataFormat;
     return byteLenPerFrame * deviceAttr_.micChannels;
 }
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSizeEc()
 {
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
-        deviceAttr_.ecFormat;
+        algoSupportedConfig_.dataFormat;
     return byteLenPerFrame * deviceAttr_.ecChannels;
 }
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSizeMicRef()
 {
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
-        deviceAttr_.micRefFormat;
+        algoSupportedConfig_.dataFormat;
     return byteLenPerFrame * deviceAttr_.micRefChannels;
 }
 
