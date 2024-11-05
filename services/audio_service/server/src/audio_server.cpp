@@ -161,6 +161,35 @@ static const std::map<AsrWhisperDetectionMode, std::string> WHISPER_DETECTION_MO
     {AsrWhisperDetectionMode::STANDARD, "STANDARD"},
 };
 
+static const std::map<std::string, AsrVoiceControlMode> VC_MODE_MAP = {
+    {"audio2voicetx", AsrVoiceControlMode::AUDIO_2_VOICETX},
+    {"audiomix2voicetx", AsrVoiceControlMode::AUDIO_MIX_2_VOICETX},
+    {"audio2voicetxex", AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX},
+    {"audiomix2voicetxex", AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX},
+};
+
+static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE = {
+    {AsrVoiceControlMode::AUDIO_2_VOICETX, "audio2voicetx"},
+    {AsrVoiceControlMode::AUDIO_MIX_2_VOICETX, "audiomix2voicetx"},
+    {AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX, "audio2voicetxex"},
+    {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "audiomix2voicetxex"},
+};
+
+static const std::map<AsrVoiceControlMode, std::vector<std::string>> VOICE_CALL_ASSISTANT_SUPPRESSION = {
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {"TTS_2_DEVICE", "TTS_2_MODEM"}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {"TTS_2_DEVICE", "TTS_2_MODEM"}},
+    {AsrVoiceControlMode::VOICE_TXRX_DECREASE, {"MIC_2_MODEM", "MODEM_2_DEVICE"}},
+};
+
+static const std::map<AsrVoiceControlMode, std::set<std::string>> VOICE_CALL_ASSISTANT_NEED_SUPPRESSION = {
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {"TTS_2_MODEM"}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {"TTS_2_DEVICE"}},
+    {AsrVoiceControlMode::VOICE_TXRX_DECREASE, {"MIC_2_MODEM", "MODEM_2_DEVICE"}},
+};
+
+static const std::string VOICE_CALL_SUPPRESSION_VOLUME = "3";
+static const std::string VOICE_CALL_FULL_VOLUME = "32";
+
 static const std::map<std::string, AsrVoiceMuteMode> VM_MODE_MAP = {
     {"output_mute", AsrVoiceMuteMode::OUTPUT_MUTE},
     {"input_mute", AsrVoiceMuteMode::INPUT_MUTE},
