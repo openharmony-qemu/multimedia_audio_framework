@@ -1309,14 +1309,15 @@ bool AudioStreamCollector::HasVoipCapturerStream()
 bool AudioStreamCollector::HasVoipRendererStream()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    int count = 0;
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        // judge stream original flage is AUDIO_FLAG_VOIP_FAST
-        if (changeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST) {
-            AUDIO_INFO_LOG("Has Fast Voip stream");
-            return true;
+        if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+            ++count;
         }
     }
-    return false;
+    // becasue self has been added
+    return count > 1;
 }
 } // namespace AudioStandard
 } // namespace OHOS

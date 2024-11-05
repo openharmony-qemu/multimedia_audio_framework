@@ -202,6 +202,7 @@ private:
     bool isFastRenderer_ = false;
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
+    bool isSwitching_ = false;
     mutable std::shared_mutex rendererMutex_;
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
