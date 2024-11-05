@@ -34,6 +34,7 @@ typedef struct BufferAttr {
     float *tempBufIn;
     float *tempBufOut;
     bool bufOutUsed;
+    uint64_t outChanLayout;
 } BufferAttr;
 
 typedef struct SessionInfoPack {
