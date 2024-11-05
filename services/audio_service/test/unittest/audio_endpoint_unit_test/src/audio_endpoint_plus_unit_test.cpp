@@ -36,22 +36,22 @@ namespace AudioStandard {
 
 void AudioEndpointPlusUnitTest::SetUpTestCase(void)
 {
-    // input testsuit setup step£¬setup invoked before all testcases
+    // input testsuit setup stepï¼Œsetup invoked before all testcases
 }
 
 void AudioEndpointPlusUnitTest::TearDownTestCase(void)
 {
-    // input testsuit teardown step£¬teardown invoked after all testcases
+    // input testsuit teardown stepï¼Œteardown invoked after all testcases
 }
 
 void AudioEndpointPlusUnitTest::SetUp(void)
 {
-    // input testcase setup step£¬setup invoked before each testcases
+    // input testcase setup stepï¼Œsetup invoked before each testcases
 }
 
 void AudioEndpointPlusUnitTest::TearDown(void)
 {
-    // input testcase teardown step£¬teardown invoked after each testcases
+    // input testcase teardown stepï¼Œteardown invoked after each testcases
 }
 
 const size_t BIGNUMBER = 2808348670;
