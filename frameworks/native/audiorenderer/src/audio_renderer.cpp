@@ -465,8 +465,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     // When the fast stream creation fails, a normal stream is created
     if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
         AUDIO_INFO_LOG("Create fast Stream fail, play by normal stream.");
+        streamClass = IAudioStream::PA_STREAM;
         isFastRenderer_ = false;
-        audioStream_ = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, audioStreamParams, audioStreamType,
+        audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
             appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr,
             ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed when create normal stream.");
@@ -631,17 +632,15 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Start");
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
-    RendererState state = GetStatus();
-    if (state == RENDERER_RUNNING) {
-        AUDIO_INFO_LOG("Already Start.");
-        return true;
-    }
     CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
+    RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
         false, "Start failed. Illegal state:%{public}u", state);
+
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
+        "Start failed. Switching state: %{public}d", isSwitching_);
 
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
         audioInterrupt_.sessionId == INVALID_SESSION_ID) {
@@ -744,19 +743,19 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::PauseTransitent");
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-
     AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
-    RendererState state = GetStatus();
-    if (state == RENDERER_PAUSED) {
-        AUDIO_INFO_LOG("Already PauseTransitent.");
-        return true;
+    if (isSwitching_) {
+        AUDIO_ERR_LOG("failed. Switching state: %{public}d", isSwitching_);
+        return false;
     }
+
     if (IsNoStreamRenderer()) {
         // no stream renderer don't need to change audio stream state
         state_ = RENDERER_PAUSED;
         return true;
     }
 
+    RendererState state = GetStatus();
     if (state != RENDERER_RUNNING) {
         // If the stream is not running, there is no need to pause and deactive audio interrupt
         AUDIO_ERR_LOG("State of stream is not running. Illegal state:%{public}u", state);
@@ -797,11 +796,9 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
-    RendererState state = GetStatus();
-    if (state == RENDERER_PAUSED) {
-        AUDIO_INFO_LOG("Already Pause.");
-        return true;
-    }
+
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
+
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
@@ -811,6 +808,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
         return true;
     }
 
+    RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, false,
         "State of stream is not running. Illegal state:%{public}u", state);
     bool result = audioStream_->PauseAudioStream(cmdType);
@@ -830,14 +828,10 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 
 bool AudioRendererPrivate::Stop()
 {
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
-    RendererState state = GetStatus();
-    if (state == RENDERER_STOPPED) {
-        AUDIO_INFO_LOG("Already Stop.");
-        return true;
-    }
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
+        "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is stopping, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
@@ -1501,6 +1495,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
         std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+        isSwitching_ = true;
         RendererState previousState = GetStatus();
         AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
         if (previousState == RENDERER_RUNNING) {
@@ -1543,6 +1538,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         }
         audioStream_ = newAudioStream;
         UpdateRendererAudioStream(audioStream_);
+        isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
         SetDefaultOutputDevice(selectedDefaultOutputDevice_);
