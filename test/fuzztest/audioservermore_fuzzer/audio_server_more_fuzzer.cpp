@@ -443,9 +443,9 @@ void AudioRendererInServerTestFirst(const uint8_t* rawData, size_t size, std::sh
     renderer->GetSessionId(sessionId);
     uint64_t framePos = COMMON_UINT64_NUM;
     uint64_t timeStamp = COMMON_UINT64_NUM;
-    renderer->GetAudioTime(framePos, timeStamp);
-    renderer->GetAudioPosition(framePos, timeStamp);
     uint64_t latency = COMMON_UINT64_NUM;
+    renderer->GetAudioTime(framePos, timeStamp);
+    renderer->GetAudioPosition(framePos, timeStamp, latency);
     renderer->GetLatency(latency);
     int32_t rate = *reinterpret_cast<const int32_t*>(rawData);
     renderer->SetRate(rate);

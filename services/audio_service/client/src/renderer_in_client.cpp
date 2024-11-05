@@ -648,10 +648,14 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
-    uint64_t framePosition = 0;
+    uint64_t readIndex = 0;
     uint64_t timestampVal = 0;
+    uint64_t latency = 0;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(framePosition, timestampVal);
+    int32_t ret = ipcStream_->GetAudioPosition(readIndex, timestampVal, latency);
+
+    uint64_t framePosition = readIndex > lastFlushReadIndex_ ? readIndex - lastFlushReadIndex_ : 0;
+    framePosition = framePosition > latency ? framePosition - latency : 0;
 
     // add MCR latency
     uint32_t mcrLatency = 0;
@@ -659,8 +663,6 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         mcrLatency = converter_->GetLatency();
         framePosition = framePosition - (mcrLatency * rendererRate_ / AUDIO_MS_PER_S);
     }
-
-    framePosition = framePosition > lastFlushPosition_ ? framePosition - lastFlushPosition_ : 0;
 
     if (lastFramePosition_ < framePosition) {
         lastFramePosition_ = framePosition;
@@ -670,9 +672,9 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosition_;
         timestampVal = lastFrameTimestamp_;
     }
-    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", lastFlushPosition %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u", framePosition, lastFlushPosition_,
-        timestampVal, mcrLatency);
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
+        ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u, Sinklatency %{public}" PRIu64, framePosition,
+        lastFlushReadIndex_, timestampVal, mcrLatency, latency);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -1758,8 +1760,9 @@ void RendererInClientInner::ResetFramePosition()
 {
     Trace trace("RendererInClientInner::ResetFramePosition");
     uint64_t timestampVal = 0;
+    uint64_t latency = 0;
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(lastFlushPosition_, timestampVal);
+    int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampVal, latency);
     if (ret != SUCCESS) {
         AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
         return;

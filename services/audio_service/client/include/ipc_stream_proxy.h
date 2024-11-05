@@ -51,7 +51,7 @@ public:
 
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override;
 
-    int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp) override;
+    int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency) override;
 
     int32_t GetLatency(uint64_t &latency) override;
 

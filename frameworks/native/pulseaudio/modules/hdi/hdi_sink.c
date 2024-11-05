@@ -2120,6 +2120,9 @@ static bool InputIsOffload(pa_sink_input *i)
     if (monitorLinked(i->sink, true)) {
         return false;
     }
+    if (strncmp(i->sink->driver, "module_hdi_sink", 15)) { // 15 cmp length
+        return false;
+    }
     struct Userdata *u = i->sink->userdata;
     if (!u->offload_enable || !u->offload.inited) {
         return false;

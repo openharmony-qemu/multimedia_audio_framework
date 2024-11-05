@@ -371,7 +371,7 @@ private:
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
-    uint64_t lastFlushPosition_ = 0;
+    uint64_t lastFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
 
     enum {
