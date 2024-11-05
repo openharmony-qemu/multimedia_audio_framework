@@ -156,6 +156,23 @@ static const std::map<bool, std::string> RES_MAP_VERSE = {
     {false, "false"},
 };
 
+std::vector<std::string> splitString(const std::string& str, const std::string& pattern)
+{
+    std::vector<std::string> res;
+    if (str == "")
+        return res;
+    std::string strs = str + pattern;
+    size_t pos = strs.find(pattern);
+
+    while (pos != strs.npos) {
+        std::string temp = strs.substr(0, pos);
+        res.push_back(temp);
+        strs = strs.substr(pos + 1, strs.size());
+        pos = strs.find(pattern);
+    }
+    return res;
+}
+
 int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,

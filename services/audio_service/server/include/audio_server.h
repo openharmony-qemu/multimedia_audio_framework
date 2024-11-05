@@ -39,7 +39,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
 class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback,
     public IAudioServerInnerCall {
     DECLARE_SYSTEM_ABILITY(AudioServer);

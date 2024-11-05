@@ -162,23 +162,6 @@ private:
     std::function<void(bool, int32_t)> callback_;
 };
 
-std::vector<std::string> splitString(const std::string& str, const std::string& pattern)
-{
-    std::vector<std::string> res;
-    if (str == "")
-        return res;
-    std::string strs = str + pattern;
-    size_t pos = strs.find(pattern);
-
-    while (pos != strs.npos) {
-        std::string temp = strs.substr(0, pos);
-        res.push_back(temp);
-        strs = strs.substr(pos + 1, strs.size());
-        pos = strs.find(pattern);
-    }
-    return res;
-}
-
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
 #ifdef PA
