@@ -380,6 +380,7 @@ public:
             STREAM_ALARM,
             STREAM_ACCESSIBILITY,
             STREAM_ULTRASONIC,
+            STREAM_VOICE_CALL_ASSISTANT,
             STREAM_ALL
         };
         for (auto &volumeType : VOLUME_TYPE_LIST) {
