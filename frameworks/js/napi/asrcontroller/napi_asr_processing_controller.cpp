@@ -387,7 +387,7 @@ napi_value NapiAsrProcessingController::SetAsrVoiceControlMode(napi_env env, nap
 
     int32_t asrVoiceControlMode = 0;
     bool on = false;
-    int32_t asrVoiceControlModeMax = static_cast<int32_t>(AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX);
+    int32_t asrVoiceControlModeMax = static_cast<int32_t>(AsrVoiceControlMode::VOICE_TXRX_DECREASE);
     int32_t retMode = NapiParamUtils::GetValueInt32(env, asrVoiceControlMode, argv[PARAM0]);
     int32_t retBool = NapiParamUtils::GetValueBoolean(env, on, argv[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,

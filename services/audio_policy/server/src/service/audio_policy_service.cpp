@@ -87,6 +87,7 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALARM,
     STREAM_ACCESSIBILITY,
     STREAM_ULTRASONIC,
+    STREAM_VOICE_CALL_ASSISTANT,
     STREAM_ALL
 };
 
