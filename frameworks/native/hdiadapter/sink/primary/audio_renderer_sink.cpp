@@ -865,7 +865,7 @@ int32_t AudioRendererSinkInner::Start(void)
     dumpFileName_ = halName_ + "_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
-    logUtilsTag_ = "AudioSink";
+    logUtilsTag_ = "AudioSink" + halName_;
 
     InitLatencyMeasurement();
     if (!started_) {
