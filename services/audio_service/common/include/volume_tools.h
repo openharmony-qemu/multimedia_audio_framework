@@ -50,7 +50,8 @@ public:
     static int32_t Process(const BufferDesc &buffer, AudioSampleFormat format, ChannelVolumes vols);
 
     // will count volume for each channel, vol sum will be kept in volStart
-    static ChannelVolumes CountVolumeLevel(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel);
+    static ChannelVolumes CountVolumeLevel(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel,
+        int32_t split = 1);
 };
 } // namespace AudioStandard
 } // namespace OHOS
