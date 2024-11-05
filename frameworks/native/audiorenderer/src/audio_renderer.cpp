@@ -1775,27 +1775,33 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
             AUDIO_INFO_LOG("abort restore");
             break;
         }
+        renderer_->RestoreAudioInLoop(restoreResult, tryCounter);
+    }
+}
 
-        if (renderer_->IsNoStreamRenderer()) {
-            // no stream renderer don't need to restore stream
-            restoreResult = renderer_->audioStream_->RestoreAudioStream(false);
-        } else {
-            restoreResult = renderer_->audioStream_->RestoreAudioStream();
-            if (!restoreResult) {
-                AUDIO_ERR_LOG("restore audio stream failed, %{public}d attempts remaining", tryCounter);
-                continue;
-            }
-            renderer_->abortRestore_ = false;
+void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter)
+{
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    if (IsNoStreamRenderer()) {
+        // no stream renderer don't need to restore stream
+        restoreResult = audioStream_->RestoreAudioStream(false);
+    } else {
+        restoreResult = audioStream_->RestoreAudioStream();
+        if (!restoreResult) {
+            AUDIO_ERR_LOG("restore audio stream failed, %{public}d attempts remaining", tryCounter);
+            return;
         }
+        abortRestore_ = false;
+    }
 
-        if (renderer_->GetStatus() == RENDERER_RUNNING) {
-            renderer_->GetAudioInterrupt(audioInterrupt_);
-            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-            if (ret != SUCCESS) {
-                AUDIO_ERR_LOG("active audio interrupt failed");
-            }
+    if (GetStatus() == RENDERER_RUNNING) {
+        GetAudioInterrupt(audioInterrupt_);
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("active audio interrupt failed");
         }
     }
+    return;
 }
 
 int32_t AudioRendererPrivate::SetSpeed(float speed)
