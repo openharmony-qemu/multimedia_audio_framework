@@ -177,3 +177,7 @@ SET_FORCE_USE_AUDIO_DEVICE:
   DEVICE_TYPE: {type: UINT8, desc: audio device type which is set force used}
   IS_PLAYBACK: {type: BOOL, desc: this stream is used for playback or capture}
   STREAM_TYPE: {type: UINT8, desc: stream type which can be either StreamUsage in playback or SourceType in capture}
+
+AI_VOICE_NOISE_SUPPRESSION:
+  __BASE: {type: BEHAVIOR, level: MINOR, desc: AI voice noise suppression change}
+  CURRENT_VALUE: {type: INT32, desc: current value after operation triggered}
