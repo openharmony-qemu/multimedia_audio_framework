@@ -81,11 +81,11 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    int32_t frame_cout = DEFAULT_SPAN_SIZE;
+    int32_t frameCount = DEFAULT_SPAN_SIZE;
     if (managerType_ == VOIP_PLAYBACK || managerType_ == DIRECT_PLAYBACK) {
-        frame_cout = DIRECT_SPAN_SIZE;
+        frameCount = DIRECT_SPAN_SIZE;
     }
-    totalSizeInFrame_ = spanSizeInFrame_ * frame_cout; // 4 frames
+    totalSizeInFrame_ = spanSizeInFrame_ * frameCount; // 4 frames
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
