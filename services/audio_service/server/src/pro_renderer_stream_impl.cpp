@@ -291,7 +291,7 @@ int32_t ProRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     timestamp = static_cast<uint64_t>(timeSec * AUDIO_NS_PER_S + timeNsec);
     return SUCCESS;
 }
-int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
+int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
 {
     int64_t timeSec = 0;
     int64_t timeNsec = 0;
@@ -300,6 +300,7 @@ int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint6
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
     timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    latency = 0;
     return SUCCESS;
 }
 

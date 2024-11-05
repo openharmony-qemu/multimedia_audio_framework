@@ -216,7 +216,7 @@ int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     return ret;
 }
 
-int32_t IpcStreamProxy::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
+int32_t IpcStreamProxy::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -230,6 +230,7 @@ int32_t IpcStreamProxy::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp
     CHECK_AND_RETURN_RET_PRELOG(ret == SUCCESS, ret, "error: %{public}d", ret);
     framePos = reply.ReadUint64();
     timestamp = reply.ReadUint64();
+    latency = reply.ReadUint64();
     return ret;
 }
 
