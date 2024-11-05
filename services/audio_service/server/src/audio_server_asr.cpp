@@ -55,13 +55,6 @@
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
 
-#define PA
-#ifdef PA
-extern "C" {
-    extern int ohos_pa_main(int argc, char *argv[]);
-}
-#endif
-
 using namespace std;
 
 namespace OHOS {
