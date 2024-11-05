@@ -40,6 +40,7 @@ static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_ASSISTANT,
     STREAM_ALARM,
     STREAM_ACCESSIBILITY,
+    STREAM_SYSTEM,
     STREAM_ULTRASONIC,
     STREAM_VOICE_CALL_ASSISTANT
 };
@@ -269,14 +270,24 @@ int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
-    return maxVolumeIndexMap_[volumeType];
+    if (maxVolumeIndexMap_.end() == maxVolumeIndexMap_.find(volumeType)) {
+        AUDIO_WARNING_LOG("can't find volumeType:%{public}d and use default STREAM_MUSIC", volumeType);
+        return maxVolumeIndexMap_[STREAM_MUSIC];
+    } else {
+        return maxVolumeIndexMap_[volumeType];
+    }
 }
 
 int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
-    return minVolumeIndexMap_[volumeType];
+    if (minVolumeIndexMap_.end() == minVolumeIndexMap_.find(volumeType)) {
+        AUDIO_WARNING_LOG("can't find volumeType:%{public}d and use default STREAM_MUSIC", volumeType);
+        return minVolumeIndexMap_[STREAM_MUSIC];
+    } else {
+        return minVolumeIndexMap_[volumeType];
+    }
 }
 
 void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel)
@@ -404,9 +415,9 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d", streamType, volumeDb, volumeLevel);
     if (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION) {
         return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamType == STREAM_MUSIC) {
+    } else if (streamType == STREAM_MUSIC || (VolumeUtils::IsPCVolumeEnable() && streamForVolumeMap == STREAM_MUSIC)) {
         return SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING) {
+    } else if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_SYSTEM) {
         const std::vector<AudioStreamType> &streamTypeArray =
             (VolumeUtils::IsPCVolumeEnable())? GET_PC_STREAM_RING_VOLUME_TYPES : RINGTONE_VOLUME_TYPE_LIST;
         return SetVolumeDbForVolumeTypeGroup(streamTypeArray, volumeDb);
@@ -1899,9 +1910,12 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
     std::vector<VolumePoint> &volumePoints)
 {
     auto streamVolInfo = streamVolumeInfos_.find(streamType);
-    if (streamVolInfo == streamVolumeInfos_.end()) {
+    if (streamVolInfo == streamVolumeInfos_.end() && !VolumeUtils::IsPCVolumeEnable()) {
         AUDIO_ERR_LOG("Cannot find stream type %{public}d", streamType);
         return;
+    } else if (streamVolInfo->second == nullptr) {
+        AUDIO_WARNING_LOG("Cannot find stream type %{public}d and use default STREAM_MUSIC", streamType);
+        streamVolInfo = streamVolumeInfos_.find(STREAM_MUSIC);
     }
     auto deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(deviceType);
     if (deviceVolInfo == streamVolInfo->second->deviceVolumeInfos.end()) {

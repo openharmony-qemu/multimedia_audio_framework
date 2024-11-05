@@ -357,12 +357,14 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
             std::lock_guard<std::mutex> lock(keyEventMutex_);
             AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
             if (volumeApplyToAll_) {
-                streamInFocus = AudioStreamType::STREAM_ALL;
+                bool isStreamMuted = GetStreamMuteInternal(STREAM_ALL);
+                SetStreamMuteInternal(STREAM_ALL, !isStreamMuted, true);
+                SetStreamMuteInternal(STREAM_SYSTEM, !isStreamMuted, true);
             } else {
                 streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+                bool isMuted = GetStreamMuteInternal(streamInFocus);
+                SetStreamMuteInternal(streamInFocus, !isMuted, true);
             }
-            bool isMuted = GetStreamMuteInternal(streamInFocus);
-            SetStreamMuteInternal(streamInFocus, !isMuted, true);
         });
     if (muteKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
@@ -409,6 +411,7 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
@@ -844,7 +847,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     int32_t result = audioPolicyService_.SetStreamMute(streamType, mute);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Fail to set stream mute!");
 
-    if (!mute && GetSystemVolumeLevelInternal(streamType) == 0) {
+    if (!mute && GetSystemVolumeLevelInternal(streamType) == 0 && !VolumeUtils::IsPCVolumeEnable()) {
         // If mute state is set to false but volume is 0, set volume to 1
         audioPolicyService_.SetSystemVolumeLevel(streamType, 1);
     }
