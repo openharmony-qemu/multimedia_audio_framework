@@ -437,6 +437,8 @@ public:
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
 
+    int32_t SetVoiceRingtoneMute(bool isMute);
+
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
