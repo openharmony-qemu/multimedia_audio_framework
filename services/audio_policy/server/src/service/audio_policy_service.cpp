@@ -341,9 +341,10 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
     }
 
     if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
-        int32_t bufferSize = stoi(moduleInfo.rate) * stoi(moduleInfo.channels) *
+        uint32_t bufferSize = static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
+            static_cast<uint32_t>(std::stoi(moduleInfo.channels)) *
             PcmFormatToBits(static_cast<AudioSampleFormat>(formatFromParserStrToEnum[moduleInfo.format])) *
-            BUFFER_CALC_20MS / MS_PER_S;
+            BUFFER_CALC_20MS / static_cast<uint32_t>(MS_PER_S);
         moduleInfo.bufferSize = std::to_string(bufferSize);
     }
 }
