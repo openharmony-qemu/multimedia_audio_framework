@@ -399,6 +399,7 @@ ohos_shared_library("audio_service") {
     "server/src/audio_manager_listener_proxy.cpp",
     "server/src/audio_manager_stub.cpp",
     "server/src/audio_server.cpp",
+    "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
     "server/src/audio_server_effect.cpp",
     "server/src/config/audio_param_parser.cpp",
