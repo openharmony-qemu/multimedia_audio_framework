@@ -2058,10 +2058,9 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
         resampler = (pa_resampler*)pa_hashmap_get(sceneToResamplerMap, sceneType);
         if (resampler == NULL) {
             // for now, use sample_spec from sink
-            AUDIO_INFO_LOG("ResamplerMap new sceneType: [%{public}s], output channels [%{public}d]",
-                (char *)sceneType, sink_spec.channels);
-            AUDIO_INFO_LOG("ResamplerMap new [%{public}s], output sample rate [%{public}d], format: [%{public}d]",
-                (char *)sceneType, sink_spec.rate, sink_spec.format);
+            AUDIO_INFO_LOG("ResamplerMap new [%{public}s], output channels [%{public}d], sample rate [%{public}d]",
+                (char *)sceneType, sink_spec.channels, sink_spec.rate);
+            AUDIO_INFO_LOG("ResamplerMap new [%{public}s], format: [%{public}d]", (char *)sceneType, sink_spec.format);
             resampler = pa_resampler_new(
                 si->core->mempool,
                 &sink_spec, &sink_channelmap,
@@ -2073,10 +2072,9 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
         } else {
             if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
                 !pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
-                AUDIO_INFO_LOG("ResamplerMap: sceneType [%{public}s], new output channels [%{public}d]",
+                AUDIO_INFO_LOG("ResamplerMap: [%{public}s], new output channels [%{public}d], sample rate [%{public}d]",
                     (char *)sceneType, sink_spec.channels);
-                AUDIO_INFO_LOG("ResamplerMap: [%{public}s], new output sample rate %{public}d, format: [%{public}d]",
-                    (char *)sceneType, sink_spec.rate, sink_spec.format);
+                AUDIO_INFO_LOG("ResamplerMap: [%{public}s], format: [%{public}d]", (char *)sceneType, sink_spec.format);
                 char *dupSceneType = strdup(sceneType);
                 pa_hashmap_remove_and_free(sceneToResamplerMap, (void *)sceneType);
                 resampler = pa_resampler_new(
