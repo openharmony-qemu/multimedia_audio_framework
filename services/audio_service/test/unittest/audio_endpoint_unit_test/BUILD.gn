@@ -79,3 +79,75 @@ ohos_unittest("audio_endpoint_unit_test") {
     "samgr:samgr_proxy",
   ]
 }
+
+ohos_unittest("audio_endpoint_plus_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  cflags = [ "-fno-access-control" ]
+
+  sources = [ "./src/audio_endpoint_plus_unit_test.cpp" ]
+
+  include_dirs = [
+    "../../../server/include",
+    "../../../../audio_service/common/include",
+    "../../../../audio_service/common",
+    "./include",
+    "../../../../../frameworks/native/audioqosmanager/include",
+    "../../../../../frameworks/native/hdiadapter/common/",
+    "../../../../../frameworks/native/hdiadapter/common/include",
+    "../../../../../frameworks/native/hdiadapter/sink/common",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../frameworks/native/audioinnercall/include",
+    "../../../../../frameworks/native/hdiadapter/sink/common",
+    "../../../../../services/audio_service/server/include",
+    "../../../../../services/audio_service/server/src",
+    "../../../../../services/audio_policy/client/include",
+    "../../../../../services/audio_service/client/include",
+    "../../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../../frameworks/native/audiopolicy/include",
+    "../../../../../frameworks/native/hdiadapter/source/common",
+    "../../../../../frameworks/native/playbackcapturer/include",
+    "../../../../../frameworks/native/audioschedule/include",
+    "../../../../../frameworks/native/hdiadapter/sink/bluetooth",
+    "../../../../../frameworks/native/hdiadapter/sink/fast",
+    "../../../../../frameworks/native/hdiadapter/source/fast",
+  ]
+
+  deps = [
+    "../../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../../frameworks/native/audioqosmanager:audio_qosmanager",
+    "../../../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
+    "../../../../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
+    "../../../../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "../../../../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+    "../../../../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
+    "../../../../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
+    "../../../../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
+    "../../../../../frameworks/native/playbackcapturer:playback_capturer",
+    "../../../../../services/audio_service:audio_client",
+    "../../../../../services/audio_service:audio_common",
+    "../../../../../services/audio_service:audio_service",
+    "../../../../audio_service:audio_process_service",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtokensetproc_shared",
+    "c_utils:utils",
+    "drivers_interface_audio:libeffect_proxy_1.0",
+    "googletest:gtest",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}

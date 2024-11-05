@@ -66,6 +66,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
     "../services/audio_service/test/unittest:volume_tools_unit_test",
+    "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_plus_unit_test",
     "../services/audio_service/test/unittest/audio_manager_stub_unit_test:audio_manager_stub_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
     "../services/audio_service/test/unittest/audio_server_unit_test:audio_server_unit_test",
