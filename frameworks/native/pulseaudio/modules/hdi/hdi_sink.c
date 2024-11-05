@@ -2073,7 +2073,7 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
             if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
                 !pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
                 AUDIO_INFO_LOG("ResamplerMap: [%{public}s], new output channels [%{public}d], sample rate [%{public}d]",
-                    (char *)sceneType, sink_spec.channels);
+                    (char *)sceneType, sink_spec.channels, sink_spec.rate);
                 AUDIO_INFO_LOG("ResamplerMap: [%{public}s], format: [%{public}d]", (char *)sceneType, sink_spec.format);
                 char *dupSceneType = strdup(sceneType);
                 pa_hashmap_remove_and_free(sceneToResamplerMap, (void *)sceneType);
