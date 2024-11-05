@@ -515,3 +515,52 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "samgr:samgr_proxy",
   ]
 }
+
+ohos_unittest("audio_process_in_client_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../../../frameworks/native/audiocapturer/include",
+    "../../../../services/audio_service/server/include",
+    "../../../../services/audio_service/client/include",
+    "../../../../services/audio_service/client/src",
+    "../../../../services/audio_service/server/include",
+    "../../../../frameworks/native/hdiadapter/sink/common",
+    "../../../../frameworks/native/hdiadapter/common/include",
+    "../../../../frameworks/native/playbackcapturer/include",
+    "../../../../../../window/window_manager/previewer/mock",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../frameworks/native/audiopolicy/include",
+    "../../../../frameworks/native/audioinnercall/include",
+    "../../../../frameworks/native/hdiadapter/source/common",
+    "../../../../frameworks/native/audioinnercall/include",
+    "../../../../services/audio_service/client/include",
+    "../../../../services/audio_service/common/include",
+  ]
+
+  sources = [ "./client/audio_process_in_client_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  cflags = [ "-fno-access-control" ]
+
+  deps = [
+    "../../../../frameworks/native/audiocapturer:audio_capturer",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_client",
+    "../../../audio_service:audio_common",
+    "../../../audio_service:audio_process_service",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}

@@ -60,6 +60,7 @@ group("audio_unit_test") {
     "../services/audio_policy/test:audio_policy_manager_unit_test",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
     "../services/audio_service/test/unittest:audio_endpoint_separate_unit_test",
+    "../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
     "../services/audio_service/test/unittest:audio_service_unit_test",
     "../services/audio_service/test/unittest:capturer_in_client_unit_test",
