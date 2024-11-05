@@ -6899,6 +6899,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     AudioDeviceDescriptor &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
+    AudioSamplingRate samplingRate = config.streamInfo.samplingRate;
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
@@ -6908,7 +6909,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
                           : GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID));
             int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
                 preferredDeviceList[0]->deviceType_, rendererInfo.originalFlag, preferredDeviceList[0]->networkId_,
-                rendererInfo.samplingRate);
+                samplingRate);
             deviceInfo.deviceRole_ = OUTPUT_DEVICE;
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
@@ -6925,7 +6926,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
                           : GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID));
             int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
                 preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_,
-                capturerInfo.samplingRate);
+                samplingRate);
             deviceInfo.deviceRole_ = INPUT_DEVICE;
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
