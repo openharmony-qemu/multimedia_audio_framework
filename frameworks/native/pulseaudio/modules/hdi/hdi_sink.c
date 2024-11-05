@@ -1868,8 +1868,9 @@ static void UpdateStreamAvailableMap(struct Userdata *u, const char *sceneType)
         }
     }
 }
+
 /* For ResampleAffterEffectChain, update input channellayout and sample spec */
-static pa_resampler* UpdateResamplerIchannelMap(const char* sinkSceneType, struct Userdata *u)
+static pa_resampler *UpdateResamplerIchannelMap(const char *sinkSceneType, struct Userdata *u)
 {
     pa_resampler *resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sinkSceneType);
     if (resampler == NULL) {
