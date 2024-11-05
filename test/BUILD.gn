@@ -113,6 +113,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiomanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer:fuzztest",
     "fuzztest/audiopolicyanother_fuzzer:fuzztest",
+    "fuzztest/audiopolicyconcurrency_fuzzer:fuzztest",
     "fuzztest/audiopolicymore_fuzzer:fuzztest",
     "fuzztest/audiopolicyproxy_fuzzer:fuzztest",
     "fuzztest/audiopolicyservenhance_fuzzer:fuzztest",
