@@ -135,6 +135,7 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
             &algoSpecs->micSpec, &so->source->channel_map,
             so->source->core->lfe_crossover_freq,
             PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+        pa_hashmap_put(preResamplerMap, pa_xstrdup(sceneKey), preResampler);
         pa_resampler *postResampler = pa_resampler_new(so->source->core->mempool,
             &algoSpecs->micSpec, &so->source->channel_map,
             &so->sample_spec, &so->source->channel_map,
