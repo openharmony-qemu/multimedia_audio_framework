@@ -638,6 +638,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (runningLockManager_ == nullptr) {
+        WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:Start");
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioBluetoothBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
         if (keepRunningLock) {

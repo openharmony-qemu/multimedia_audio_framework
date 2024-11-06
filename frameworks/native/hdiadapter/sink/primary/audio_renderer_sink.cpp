@@ -848,6 +848,7 @@ int32_t AudioRendererSinkInner::Start(void)
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (runningLockManager_ == nullptr) {
         std::string lockName = PRIMARY_LOCK_NAME_BASE + halName_;
+        WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:Start");
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock(
             lockName, PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
         if (keepRunningLock) {

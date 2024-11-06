@@ -701,6 +701,7 @@ int32_t AudioCapturerSourceInner::Start(void)
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (runningLockManager_ == nullptr) {
+        WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:Start");
         switch (attr_.sourceType) {
             case SOURCE_TYPE_WAKEUP:
                 keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",

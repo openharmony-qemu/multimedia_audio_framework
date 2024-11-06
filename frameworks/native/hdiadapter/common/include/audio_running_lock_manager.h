@@ -39,7 +39,9 @@ public:
         lastAppsUid_ = {};
 
         Trace traceRunningLock("AudioRunningLockManager:runningLock_->Lock");
+        WatchTimeout guard("PowerMgr Lock timeout");
         auto ret = runningLock_->Lock(TimeoutMs);
+        guard.Check();
         isLocked_ = true;
         AUDIO_INFO_LOG("Lock runninglock, ret: %{public}d", ret);
         return ret;
