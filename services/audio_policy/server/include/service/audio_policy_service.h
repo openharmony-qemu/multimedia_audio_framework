@@ -1057,6 +1057,14 @@ private:
 
     bool CheckSpatializationAndEffectState();
 
+    void FetchStreamForSpkMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
+
+    void ResetOffloadAndMchMode(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
+
+    void JudgeIfLoadMchModule();
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
