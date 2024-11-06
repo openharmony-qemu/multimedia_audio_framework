@@ -88,6 +88,7 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALARM,
     STREAM_ACCESSIBILITY,
     STREAM_ULTRASONIC,
+    STREAM_SYSTEM,
     STREAM_VOICE_CALL_ASSISTANT,
     STREAM_ALL
 };
@@ -5934,7 +5935,7 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
     }
     std::string sourcePortName = GetSourcePortName(deviceType);
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
-        (sourcePortName == PRIMARY_MIC || networkId != LOCAL_NETWORK_ID)) {
+        (sourcePortName == PRIMARY_MIC && networkId == LOCAL_NETWORK_ID)) {
         if (audioConfigManager_.GetVoipConfig() && (samplingRate == SAMPLE_RATE_48000 || samplingRate == SAMPLE_RATE_16000)) {
             return AUDIO_FLAG_VOIP_FAST;
         }

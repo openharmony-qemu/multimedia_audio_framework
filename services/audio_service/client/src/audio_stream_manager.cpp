@@ -174,6 +174,7 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
         case STREAM_CAMCORDER:

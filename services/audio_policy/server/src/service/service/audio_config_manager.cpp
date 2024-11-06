@@ -201,7 +201,7 @@ int32_t AudioConfigManager::GetVoipRendererFlag(const std::string &sinkPortName,
     const AudioSamplingRate &samplingRate)
 {
     // VoIP stream has three mode for different products.
-    if (enableFastVoip_ && (sinkPortName == PRIMARY_SPEAKER || networkId != LOCAL_NETWORK_ID)) {
+    if (enableFastVoip_ && (sinkPortName == PRIMARY_SPEAKER && networkId == LOCAL_NETWORK_ID)) {
         if (samplingRate != SAMPLE_RATE_48000 && samplingRate != SAMPLE_RATE_16000) {
             return AUDIO_FLAG_NORMAL;
         }
