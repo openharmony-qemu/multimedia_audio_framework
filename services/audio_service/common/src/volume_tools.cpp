@@ -288,7 +288,7 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
         return;
     }
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= size;
+        volMaps.volStart[index] /= static_cast<int32_t>(size);
     }
     return;
 }
@@ -382,7 +382,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     return;
 }
 
-static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, int32_t split)
+static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split)
 {
     if (split <= 0) {
         AUDIO_ERR_LOG("invalid split");
