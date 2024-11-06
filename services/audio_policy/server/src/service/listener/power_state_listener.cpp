@@ -97,6 +97,11 @@ void PowerStateListener::OnSyncWakeup(bool OnForceSleep)
 
 void PowerStateListener::ControlAudioFocus(bool applyFocus)
 {
+    if (audioPolicyServer_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyServer_ is nullptr");
+        return;
+    }
+
     AudioInterrupt audioInterrupt;
     PowerListerMethods::InitAudioInterruptInfo(audioInterrupt);
 
@@ -173,6 +178,11 @@ void SyncHibernateListener::OnSyncWakeup(bool hibernateResult)
  
 void SyncHibernateListener::ControlAudioFocus(bool isHibernate)
 {
+    if (audioPolicyServer_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyServer_ is nullptr");
+        return;
+    }
+    
     AudioInterrupt audioInterrupt;
     PowerListerMethods::InitAudioInterruptInfo(audioInterrupt);
  

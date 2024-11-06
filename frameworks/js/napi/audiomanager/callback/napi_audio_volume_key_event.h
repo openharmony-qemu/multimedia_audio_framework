@@ -34,6 +34,7 @@ public:
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     bool ContainSameJsCallback(napi_value args);
     void CreateVolumeTsfn(napi_env env);
+    bool GetVolumeTsfnFlag();
     
 private:
     struct AudioVolumeKeyEventJsCallback {
@@ -51,7 +52,7 @@ private:
     napi_env env_;
     napi_ref callback_ = nullptr;
     static napi_ref sConstructor_;
-    bool regVolumeTsfn_;
+    bool regVolumeTsfn_ = false;
     napi_threadsafe_function amVolEntTsfn_ = nullptr;
 };
 } // namespace AudioStandard

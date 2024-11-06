@@ -119,7 +119,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) override;
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true, bool destoryAtOnce = false) override;
+    bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false) override;
     bool FlushAudioStream() override;
 
     // Playback related APIs
@@ -207,7 +207,8 @@ private:
     int32_t FlushRingCache();
     int32_t DrainRingCache();
 
-    int32_t DrainIncompleteFrame(OptResult result, bool stopFlag, size_t targetSize, BufferDesc *desc);
+    int32_t DrainIncompleteFrame(OptResult result, bool stopFlag,
+        size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame);
     int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
@@ -370,7 +371,7 @@ private:
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
-    uint64_t lastFlushPosition_ = 0;
+    uint64_t lastFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
 
     enum {

@@ -719,7 +719,7 @@ napi_value NapiAudioCapturer::GetCurrentInputDevices(napi_env env, napi_callback
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr, result, "audioCapturer_ is nullptr");
 
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     int32_t ret = napiAudioCapturer->audioCapturer_->GetCurrentInputDevices(deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetCurrentInputDevices failure!");
 
@@ -922,9 +922,13 @@ napi_value NapiAudioCapturer::RegisterCapturerCallback(napi_env env, napi_value 
         std::static_pointer_cast<NapiAudioCapturerCallback>(napiCapturer->callbackNapi_);
     cb->SaveCallbackReference(cbName, argv[PARAM1]);
     if (cbName == INTERRUPT_CALLBACK_NAME || cbName == AUDIO_INTERRUPT_CALLBACK_NAME) {
-        cb->CreateInterruptTsfn(env);
+        if (!cb->GetInterruptTsfnFlag()) {
+            cb->CreateInterruptTsfn(env);
+        }
     } else if (cbName == STATE_CHANGE_CALLBACK_NAME) {
-        cb->CreateStateChangeTsfn(env);
+        if (!cb->GetStateChangeTsfnFlag()) {
+            cb->CreateStateChangeTsfn(env);
+        }
     }
 
     if (!cbName.compare(STATE_CHANGE_CALLBACK_NAME)) {
@@ -957,7 +961,9 @@ napi_value NapiAudioCapturer::RegisterPositionCallback(napi_env env, napi_value 
         std::shared_ptr<NapiCapturerPositionCallback> cb =
             std::static_pointer_cast<NapiCapturerPositionCallback>(napiCapturer->positionCbNapi_);
         cb->SaveCallbackReference(cbName, argv[PARAM2]);
-        cb->CreateCapturePositionTsfn(env);
+        if (!cb->GetCapturePositionFlag()) {
+            cb->CreateCapturePositionTsfn(env);
+        }
     } else {
         AUDIO_ERR_LOG("NapiAudioCapturer: Mark Position value not supported!!");
         CHECK_AND_RETURN_RET_LOG(false, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,

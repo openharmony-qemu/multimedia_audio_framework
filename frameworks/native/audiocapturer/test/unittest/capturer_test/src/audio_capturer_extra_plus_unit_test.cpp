@@ -78,7 +78,7 @@ public:
     bool StopAudioStream() override { return true; }
     bool StartAudioStream(StateChangeCmdType cmdType,
         AudioStreamDeviceChangeReasonExt reason) override { return true; }
-    bool ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce) override { return true; }
+    bool ReleaseAudioStream(bool releaseRunner, bool isSwitchStream) override { return true; }
 
     State state_ = State::RUNNING;
 };
@@ -201,7 +201,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_003, TestSize.Level1)
 
     capturer->audioPolicyServiceDiedCallback_ = std::make_shared<CapturerPolicyServiceDiedCallbackTestStub>();
     auto status = capturer->RemoveCapturerPolicyServiceDiedCallback();
-    EXPECT_EQ(status, ERROR);
+    EXPECT_EQ(status, 0);
 
     IAudioStream::SwitchInfo info;
     info.eStreamType = STREAM_MUSIC;

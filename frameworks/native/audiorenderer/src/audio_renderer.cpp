@@ -218,6 +218,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
@@ -850,7 +851,7 @@ bool AudioRendererPrivate::Stop()
         AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
     }
     (void)audioStream_->SetDuckVolume(1.0f);
-    
+
     return result;
 }
 
@@ -1329,7 +1330,7 @@ float AudioRendererPrivate::GetMaxStreamVolume() const
     return AudioPolicyManager::GetInstance().GetMaxStreamVolume();
 }
 
-int32_t AudioRendererPrivate::GetCurrentOutputDevices(DeviceInfo &deviceInfo) const
+int32_t AudioRendererPrivate::GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const
 {
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
@@ -1409,16 +1410,17 @@ int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback(
     return SUCCESS;
 }
 
-void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
+int32_t AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
 {
-    CHECK_AND_RETURN_LOG(audioStream, "stream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioStream, ERROR, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetPrivacyType(info.privacyType);
     audioStream->SetRendererInfo(info.rendererInfo);
     audioStream->SetCapturerInfo(info.capturerInfo);
-    audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
+    int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     audioStream->SetRenderMode(info.renderMode);
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
@@ -1455,6 +1457,7 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
 
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
+    return SUCCESS;
 }
 
 void AudioRendererPrivate::UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &audioStream)
@@ -1515,7 +1518,16 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         AUDIO_INFO_LOG("Get new stream success!");
 
         // set new stream info
-        SetSwitchInfo(info, newAudioStream);
+        int32_t initResult = SetSwitchInfo(info, newAudioStream);
+        if (initResult != SUCCESS && info.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
+            AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
+            isFastRenderer_ = false;
+            newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, info.params,
+                info.eStreamType, appInfo_.appPid);
+            CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
+            initResult = SetSwitchInfo(info, newAudioStream);
+            CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
+        }
 
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
@@ -1591,7 +1603,7 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
 }
 
 void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("OnRendererStateChange");
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks;
@@ -1608,7 +1620,7 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
     }
 
     AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d size: %{public}zu",
-        sessionId, static_cast<int>(deviceInfo.deviceType), static_cast<int>(reason), callbacks.size());
+        sessionId, static_cast<int>(deviceInfo.deviceType_), static_cast<int>(reason), callbacks.size());
 }
 
 void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,

@@ -141,6 +141,8 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
         return;
     }
 
+    auto obj = static_cast<NapiAudioCapturer *>(napiCapturer_);
+    ObjectRefMap<NapiAudioCapturer>::IncreaseRef(obj);
     CapturerReadDataJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCapturerReadDataCallback: event is nullptr.");

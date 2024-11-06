@@ -141,7 +141,7 @@ public:
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
     bool FlushAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true, bool destoryAtOnce = false) override;
+    bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false) override;
 
     // Playback related APIs
     bool DrainAudioStream(bool stopFlag = false) override;
@@ -441,7 +441,6 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
-    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
     capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
     capturerInfo_.encodingType = streamParams_.encoding;
     capturerInfo_.channelLayout = streamParams_.channelLayout;
@@ -1445,9 +1444,9 @@ bool CapturerInClientInner::StopAudioStream()
     return true;
 }
 
-bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce)
+bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
-    (void)destoryAtOnce;
+    (void)isSwitchStream;
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already release, do nothing");

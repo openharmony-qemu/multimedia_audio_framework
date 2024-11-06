@@ -29,7 +29,7 @@ class ProcessReleaseCallback {
 public:
     virtual ~ProcessReleaseCallback() = default;
 
-    virtual int32_t OnProcessRelease(IAudioProcessStream *process, bool destoryAtOnce = false) = 0;
+    virtual int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) = 0;
 };
 class AudioProcessInServer;
 class ProcessDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -64,7 +64,7 @@ public:
 
     int32_t RequestHandleInfo(bool isAsync) override;
 
-    int32_t Release(bool destoryAtOnce = false) override;
+    int32_t Release(bool isSwitchStream = false) override;
 
     int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 
@@ -95,6 +95,9 @@ public:
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
+
+    void WriteDumpFile(void *buffer, size_t bufferSize) override final;
+
 public:
     const AudioProcessConfig processConfig_;
 
@@ -127,6 +130,8 @@ private:
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
     BufferDesc convertedBuffer_ = {};
+    std::string dumpFileName_;
+    FILE *dumpFile_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

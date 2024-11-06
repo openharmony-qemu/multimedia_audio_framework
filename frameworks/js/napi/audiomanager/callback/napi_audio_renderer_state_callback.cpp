@@ -73,6 +73,11 @@ void NapiAudioRendererStateCallback::CreateRendererStateTsfn(napi_env env)
         RendererStateTsfnFinalize, nullptr, SafeJsCallbackRendererStateWork, &amRendererSatTsfn_);
 }
 
+bool NapiAudioRendererStateCallback::GetRendererStateTsfnFlag()
+{
+    return regAmRendererSatTsfn_;
+}
+
 void NapiAudioRendererStateCallback::OnRendererStateChange(
     const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {

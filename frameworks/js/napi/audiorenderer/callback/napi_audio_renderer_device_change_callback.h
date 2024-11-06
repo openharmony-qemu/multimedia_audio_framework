@@ -29,19 +29,21 @@ public:
     virtual ~NapiAudioRendererDeviceChangeCallback();
     void AddCallbackReference(napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value args);
-    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
     void CreateRendererDeviceChangeTsfn(napi_env env);
+    bool GetRendererDeviceChangeTsfnFlag();
 
 private:
     struct AudioRendererDeviceChangeJsCallback {
         napi_ref callback_;
         napi_env env_;
-        DeviceInfo deviceInfo_;
+        AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     };
 
-    void OnJsCallbackRendererDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo);
+    void OnJsCallbackRendererDeviceInfo(napi_ref method, const AudioDeviceDescriptor &deviceInfo);
     static void RendererDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
     static void SafeJsCallbackRendererDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
 
@@ -58,20 +60,22 @@ public:
     virtual ~NapiAudioRendererOutputDeviceChangeWithInfoCallback();
     void AddCallbackReference(napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value args);
-    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
     void CreateOutputDeviceChangeTsfn(napi_env env);
+    bool GetOutputDeviceChangeTsfnFlag();
 
 private:
     struct AudioRendererOutputDeviceChangeWithInfoJsCallback {
         napi_ref callback_;
         napi_env env_;
-        DeviceInfo deviceInfo_;
+        AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
         AudioStreamDeviceChangeReason reason_;
     };
 
-    void OnJsCallbackOutputDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo,
+    void OnJsCallbackOutputDeviceInfo(napi_ref method, const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReason reason);
     static void SafeJsCallbackOutputDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void OutputDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);

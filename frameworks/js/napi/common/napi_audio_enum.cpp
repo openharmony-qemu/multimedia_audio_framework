@@ -23,6 +23,7 @@
 #include "audio_interrupt_info.h"
 #include "audio_device_info.h"
 #include "napi_param_utils.h"
+#include "audio_utils.h"
 #include "audio_asr.h"
 
 using namespace std;
@@ -291,8 +292,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeTypeMap = {
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::activeDeviceTypeMap = {
-    {"SPEAKER", SPEAKER},
-    {"BLUETOOTH_SCO", BLUETOOTH_SCO}
+    {"SPEAKER", DeviceType::DEVICE_TYPE_SPEAKER},
+    {"BLUETOOTH_SCO", DeviceType::DEVICE_TYPE_BLUETOOTH_SCO}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::interruptModeMap = {
@@ -315,7 +316,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioErrorsMap = {
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::communicationDeviceTypeMap = {
-    {"SPEAKER", COMMUNICATION_SPEAKER},
+    {"SPEAKER", DeviceType::DEVICE_TYPE_SPEAKER},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::interruptRequestTypeMap = {
@@ -489,7 +490,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrVoiceControlModeMap = {
     {"AUDIO_2_VOICETX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_2_VOICETX)},
     {"AUDIO_MIX_2_VOICETX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_MIX_2_VOICETX)},
     {"AUDIO_2_VOICE_TX_EX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX)},
-    {"AUDIO_MIX_2_VOICE_TX_EX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX)}
+    {"AUDIO_MIX_2_VOICE_TX_EX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX)},
+    {"AUDIO_SUPPRESSION_OPPOSITE", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE)},
+    {"AUDIO_SUPPRESSION_LOCAL", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL)},
+    {"VOICE_TXRX_DECREASE", static_cast<int32_t>(AsrVoiceControlMode::VOICE_TXRX_DECREASE)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrVoiceMuteModeMap = {
@@ -1113,6 +1117,7 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_MESSAGE:
         case TYPE_REMOTE_CAST:
         case TYPE_VOICE_TRANSCRIPTION:
+        case TYPE_CAMCORDER:
             result = true;
             break;
         default:
@@ -1131,6 +1136,7 @@ bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)
         case AudioJsVolumeType::VOICE_CALL:
         case AudioJsVolumeType::VOICE_ASSISTANT:
         case AudioJsVolumeType::ALARM:
+        case AudioJsVolumeType::SYSTEM:
         case AudioJsVolumeType::ACCESSIBILITY:
         case AudioJsVolumeType::ULTRASONIC:
         case AudioJsVolumeType::ALL:
@@ -1223,9 +1229,6 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             result = NapiAudioEnum::VOICE_CALL;
             break;
         case AudioStreamType::STREAM_RING:
-        case AudioStreamType::STREAM_SYSTEM:
-        case AudioStreamType::STREAM_NOTIFICATION:
-        case AudioStreamType::STREAM_SYSTEM_ENFORCED:
         case AudioStreamType::STREAM_DTMF:
             result = NapiAudioEnum::RINGTONE;
             break;
@@ -1251,6 +1254,12 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
         case AudioStreamType::STREAM_ULTRASONIC:
             result = NapiAudioEnum::ULTRASONIC;
             break;
+        case AudioStreamType::STREAM_SYSTEM:
+        case AudioStreamType::STREAM_NOTIFICATION:
+        case AudioStreamType::STREAM_SYSTEM_ENFORCED:
+            result = (VolumeUtils::IsPCVolumeEnable())?
+                NapiAudioEnum::SYSTEM : NapiAudioEnum::RINGTONE;
+            break;
         default:
             result = NapiAudioEnum::MEDIA;
             break;
@@ -1262,7 +1271,7 @@ bool NapiAudioEnum::IsLegalInputArgumentCommunicationDeviceType(int32_t communic
 {
     bool result = false;
     switch (communicationDeviceType) {
-        case CommunicationDeviceType::COMMUNICATION_SPEAKER:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
             result = true;
             break;
         default:
@@ -1297,8 +1306,8 @@ bool NapiAudioEnum::IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFla
 {
     bool result = false;
     switch (activeDeviceFlag) {
-        case ActiveDeviceType::SPEAKER:
-        case ActiveDeviceType::BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
             result = true;
             break;
         default:
@@ -1429,6 +1438,9 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
             break;
         case NapiAudioEnum::ULTRASONIC:
             result = STREAM_ULTRASONIC;
+            break;
+        case NapiAudioEnum::SYSTEM:
+            result = STREAM_SYSTEM;
             break;
         case NapiAudioEnum::ALL:
             result = STREAM_ALL;

@@ -68,6 +68,11 @@ void NapiAudioRingerModeCallback::CreateRingModeTsfn(napi_env env)
         nullptr, SafeJsCallbackRingModeWork, &amRmChgTsfn_);
 }
 
+bool NapiAudioRingerModeCallback::GetRingModeTsfnFlag()
+{
+    return regAmRmChgTsfn_;
+}
+
 void NapiAudioRingerModeCallback::RemoveCallbackReference(const napi_value args)
 {
     if (!IsSameCallback(args)) {

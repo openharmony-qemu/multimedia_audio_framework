@@ -126,8 +126,10 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
     pa_hashmap *ecResamplerMap = (pa_hashmap *)u->sceneToEcResamplerMap;
     pa_hashmap *micRefResamplerMap = (pa_hashmap *)u->sceneToMicRefResamplerMap;
     if (!pa_sample_spec_equal(&so->source->sample_spec, &algoSpecs->micSpec)) {
-        AUDIO_INFO_LOG("SOURCE rate = %{public}d ALGO rate = %{public}d ",
-            so->source->sample_spec.rate, algoSpecs->micSpec.rate);
+        AUDIO_INFO_LOG("SOURCE spec:%{public}u_%{public}u_%{public}u ALGO spec:%{public}u_%{public}u_%{public}u",
+            so->source->sample_spec.rate, (uint32_t)so->source->sample_spec.channels,
+            (uint32_t)so->source->sample_spec.format,
+            algoSpecs->micSpec.rate,  (uint32_t)algoSpecs->micSpec.channels, (uint32_t)algoSpecs->micSpec.format);
         pa_resampler *preResampler = pa_resampler_new(so->source->core->mempool,
             &so->source->sample_spec, &so->source->channel_map,
             &algoSpecs->micSpec, &so->source->channel_map,
@@ -139,8 +141,9 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
     }
     if ((u->ecType != EC_NONE) && (algoSpecs->ecSpec.rate != 0) &&
         (!pa_sample_spec_equal(&u->ecSpec, &algoSpecs->ecSpec))) {
-        AUDIO_INFO_LOG("EC: SOURCE rate = %{public}d ALGO rate = %{public}d ",
-            u->ecSpec.rate, algoSpecs->ecSpec.rate);
+        AUDIO_INFO_LOG("EC SOURCE spec:%{public}u_%{public}u_%{public}u ALGO spec:%{public}u_%{public}u_%{public}u",
+            u->ecSpec.rate, (uint32_t)u->ecSpec.channels, (uint32_t)u->ecSpec.format,
+            algoSpecs->ecSpec.rate,  (uint32_t)algoSpecs->ecSpec.channels, (uint32_t)algoSpecs->ecSpec.format);
         pa_resampler *ecResampler = pa_resampler_new(so->source->core->mempool,
             &u->ecSpec, &so->source->channel_map,
             &algoSpecs->ecSpec, &so->source->channel_map,
@@ -151,8 +154,10 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
     }
     if ((u->micRef == REF_ON) && (algoSpecs->micRefSpec.rate != 0) &&
         (!pa_sample_spec_equal(&u->micRefSpec, &algoSpecs->micRefSpec))) {
-        AUDIO_INFO_LOG("MIC REF: SOURCE rate = %{public}d ALGO rate = %{public}d ",
-            u->micRefSpec.rate, algoSpecs->ecSpec.rate);
+        AUDIO_INFO_LOG("MIC REF SOURCE spec:%{public}u_%{public}u_%{public}u ALGO:%{public}u_%{public}u_%{public}u",
+            u->micRefSpec.rate, (uint32_t)u->micRefSpec.channels, (uint32_t)u->micRefSpec.format,
+            algoSpecs->micRefSpec.rate,  (uint32_t)algoSpecs->micRefSpec.channels,
+            (uint32_t)algoSpecs->micRefSpec.format);
         pa_resampler *micRefResampler = pa_resampler_new(so->source->core->mempool,
             &u->micRefSpec, &so->source->channel_map,
             &algoSpecs->micRefSpec, &so->source->channel_map,
@@ -250,6 +255,9 @@ static pa_hook_result_t GetAlgoSpecs(uint32_t sceneKeyCode, struct AlgoSpecs *al
 static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userdata *u)
 {
     const char *sceneType = pa_proplist_gets(so->proplist, "scene.type");
+    if (sceneType == NULL) {
+        sceneType = "";
+    }
     const char *sceneBypass = pa_proplist_gets(so->proplist, "scene.bypass");
     if (pa_safe_streq(sceneBypass, DEFAULT_SCENE_BYPASS)) {
         AUDIO_INFO_LOG("scene:%{public}s has been set to bypass", sceneType);
@@ -259,7 +267,7 @@ static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userd
     uint32_t renderId = u->renderId;
     uint32_t sceneTypeCode = 0;
     if (GetSceneTypeCode(sceneType, &sceneTypeCode) != 0) {
-        AUDIO_ERR_LOG("GetSceneTypeCode failed");
+        AUDIO_ERR_LOG("scenetype:%{public}s GetSceneTypeCode failed", sceneType);
         pa_proplist_sets(so->proplist, "scene.bypass", DEFAULT_SCENE_BYPASS);
         return PA_HOOK_OK;
     }
@@ -295,11 +303,19 @@ static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userd
 static pa_hook_result_t HandleSourceOutputUnlink(pa_source_output *so, struct Userdata *u)
 {
     const char *sceneType = pa_proplist_gets(so->proplist, "scene.type");
+    if (sceneType == NULL) {
+        sceneType = "";
+    }
+    const char *sceneBypass = pa_proplist_gets(so->proplist, "scene.bypass");
+    if (pa_safe_streq(sceneBypass, DEFAULT_SCENE_BYPASS)) {
+        AUDIO_INFO_LOG("scene:%{public}s has been set to bypass, do not need release", sceneType);
+        return PA_HOOK_OK;
+    }
     uint32_t captureId = u->captureId;
     uint32_t renderId = u->renderId;
     uint32_t sceneTypeCode = 0;
     if (GetSceneTypeCode(sceneType, &sceneTypeCode) != 0) {
-        AUDIO_ERR_LOG("GetSceneTypeCode failed");
+        AUDIO_ERR_LOG("scenetype:%{public}s GetSceneTypeCode failed", sceneType);
         return PA_HOOK_OK;
     }
     uint32_t sceneKeyCode = 0;
@@ -333,12 +349,17 @@ static pa_hook_result_t CheckIfAvailSource(pa_source_output *so, struct Userdata
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, struct Userdata *u)
+static pa_hook_result_t SourceOutputPutCb(const pa_core *c, pa_source_output *so, struct Userdata *u)
 {
-    AUDIO_INFO_LOG("Trigger SourceOutputPutCb");
-
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+    CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
+
+    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
+    if (sessionID == NULL) {
+        sessionID = "";
+    }
+    AUDIO_INFO_LOG("Trigger SourceOutputPutCb sessionID:%{public}s", sessionID);
 
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
@@ -346,25 +367,53 @@ static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, stru
     return HandleSourceOutputPut(so, u);
 }
 
-static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so, struct Userdata *u)
+static pa_hook_result_t SourceOutputUnlinkCb(const pa_core *c, pa_source_output *so, struct Userdata *u)
 {
-    AUDIO_INFO_LOG("Trigger SourceOutputUnlinkCb");
-
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
-    
+    CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
+
+    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
+    if (sessionID == NULL) {
+        sessionID = "";
+    }
+    AUDIO_INFO_LOG("Trigger SourceOutputUnlinkCb sessionID:%{public}s", sessionID);
+
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
     }
     return HandleSourceOutputUnlink(so, u);
 }
 
-static pa_hook_result_t SourceOutputMoveFinishCb(pa_core *c, pa_source_output *so, struct Userdata *u)
+static pa_hook_result_t SourceOutputMoveStartCb(const pa_core *c, pa_source_output *so, struct Userdata *u)
 {
-    AUDIO_INFO_LOG("Trigger SourceOutputMoveFinishCb");
-    
     CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+    CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
+
+    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
+    if (sessionID == NULL) {
+        sessionID = "";
+    }
+    AUDIO_INFO_LOG("Trigger SourceOutputMoveStartCb sessionID:%{public}s", sessionID);
+
+    if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
+        return PA_HOOK_OK;
+    }
+    return HandleSourceOutputUnlink(so, u);
+}
+
+static pa_hook_result_t SourceOutputMoveFinishCb(const pa_core *c, pa_source_output *so, struct Userdata *u)
+{
+    CHECK_AND_RETURN_RET_LOG(u != NULL, PA_HOOK_OK, "Get Userdata failed! userdata is NULL");
+    CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
+    CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
+
+    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
+    if (sessionID == NULL) {
+        sessionID = "";
+    }
+    AUDIO_INFO_LOG("Trigger SourceOutputMoveFinishCb sessionID:%{public}s", sessionID);
 
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
@@ -394,6 +443,8 @@ int pa__init(pa_module *m)
         (pa_hook_cb_t)SourceOutputUnlinkCb, source->userdata);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_MOVE_FINISH], PA_HOOK_LATE,
         (pa_hook_cb_t)SourceOutputMoveFinishCb, source->userdata);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_MOVE_START], PA_HOOK_LATE,
+        (pa_hook_cb_t)SourceOutputMoveStartCb, source->userdata);
 
     pa_source_put(source);
     pa_modargs_free(ma);

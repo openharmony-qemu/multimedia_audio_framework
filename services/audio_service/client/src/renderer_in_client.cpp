@@ -317,7 +317,7 @@ void RendererInClientInner::InitDirectPipeType()
         int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
             rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
-                PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
+                PIPE_TYPE_CALL_OUT : PIPE_TYPE_DIRECT_MUSIC;
         } else if (originType == PIPE_TYPE_DIRECT_MUSIC) {
             rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
         }
@@ -648,10 +648,14 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
-    uint64_t framePosition = 0;
+    uint64_t readIndex = 0;
     uint64_t timestampVal = 0;
+    uint64_t latency = 0;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(framePosition, timestampVal);
+    int32_t ret = ipcStream_->GetAudioPosition(readIndex, timestampVal, latency);
+
+    uint64_t framePosition = readIndex > lastFlushReadIndex_ ? readIndex - lastFlushReadIndex_ : 0;
+    framePosition = framePosition > latency ? framePosition - latency : 0;
 
     // add MCR latency
     uint32_t mcrLatency = 0;
@@ -659,8 +663,6 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         mcrLatency = converter_->GetLatency();
         framePosition = framePosition - (mcrLatency * rendererRate_ / AUDIO_MS_PER_S);
     }
-
-    framePosition = framePosition > lastFlushPosition_ ? framePosition - lastFlushPosition_ : 0;
 
     if (lastFramePosition_ < framePosition) {
         lastFramePosition_ = framePosition;
@@ -670,9 +672,9 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosition_;
         timestampVal = lastFrameTimestamp_;
     }
-    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", lastFlushPosition %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u", framePosition, lastFlushPosition_,
-        timestampVal, mcrLatency);
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
+        ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u, Sinklatency %{public}" PRIu64, framePosition,
+        lastFlushReadIndex_, timestampVal, mcrLatency, latency);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -1405,9 +1407,9 @@ bool RendererInClientInner::StopAudioStream()
     return true;
 }
 
-bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce)
+bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
-    (void)destoryAtOnce;
+    (void)isSwitchStream;
     AUDIO_PRERELEASE_LOGI("Enter");
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
@@ -1758,8 +1760,9 @@ void RendererInClientInner::ResetFramePosition()
 {
     Trace trace("RendererInClientInner::ResetFramePosition");
     uint64_t timestampVal = 0;
+    uint64_t latency = 0;
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(lastFlushPosition_, timestampVal);
+    int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampVal, latency);
     if (ret != SUCCESS) {
         AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
         return;
@@ -1792,7 +1795,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
 }
 
 int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,
-    size_t targetSize, BufferDesc *desc)
+    size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame)
 {
     if (result.size < clientSpanSizeInByte_ && stopFlag) {
         result = ringCache_->Dequeue({desc->buffer, targetSize});
@@ -1801,6 +1804,7 @@ int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopF
         int32_t ret = memset_s(desc->buffer, targetSize, 0, targetSize);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "DrainIncompleteFrame memset output failed");
         AUDIO_WARNING_LOG("incomplete frame is set to 0");
+        dropIncompleteFrame = true;
     }
     return SUCCESS;
 }
@@ -1842,7 +1846,12 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
     int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
-    DrainIncompleteFrame(result, stopFlag, targetSize, &desc);
+    bool dropIncompleteFrame = false;
+    CHECK_AND_RETURN_RET_LOG(DrainIncompleteFrame(result, stopFlag, targetSize, &desc, dropIncompleteFrame) == SUCCESS,
+        ERROR, "DrainIncompleteFrame failed");
+    if (dropIncompleteFrame) {
+        return SUCCESS;
+    }
     result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
 

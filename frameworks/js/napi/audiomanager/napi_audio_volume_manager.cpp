@@ -316,7 +316,9 @@ napi_value NapiAudioVolumeManager::RegisterCallback(napi_env env, napi_value jsT
         std::shared_ptr<NapiAudioVolumeKeyEvent> cb =
             std::static_pointer_cast<NapiAudioVolumeKeyEvent>(napiVolumeManager->volumeKeyEventCallbackNapi_);
         cb->SaveCallbackReference(cbName, args[PARAM1]);
-        cb->CreateVolumeTsfn(env);
+        if (!cb->GetVolumeTsfnFlag()) {
+            cb->CreateVolumeTsfn(env);
+        }
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,

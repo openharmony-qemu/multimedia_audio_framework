@@ -197,7 +197,8 @@ public:
 
     void SetNormalVoipFlag(const bool &normalVoipFlag);
 
-    int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId);
+    int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
+        const AudioSamplingRate &samplingRate);
 
     bool GetVoipConfig();
 
@@ -324,7 +325,7 @@ public:
     void RegiestPolicy();
 
     // override for IPolicyProvider
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo);
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo);
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
 
@@ -502,8 +503,10 @@ public:
     bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
-    
+
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
+
+    int32_t SetVoiceRingtoneMute(bool isMute);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
@@ -532,8 +535,8 @@ private:
 
     ~AudioPolicyService();
 
-    void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
-        bool hasSystemPermission);
+    void UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo, const sptr<AudioDeviceDescriptor> &desc,
+        bool hasBTPermission, bool hasSystemPermission);
 
     std::string GetSinkPortName(InternalDeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
 
@@ -591,7 +594,7 @@ private:
 
     int32_t HandleActiveDevice(DeviceType deviceType);
 
-    int32_t LoadA2dpModule();
+    int32_t LoadA2dpModule(DeviceType deviceType);
 
     int32_t LoadUsbModule(string deviceInfo, DeviceRole deviceRole);
 
@@ -606,6 +609,8 @@ private:
     int32_t HandleDpDevice(DeviceType deviceType, const std::string &address);
 
     int32_t GetModuleInfo(ClassType classType, std::string &moduleInfoStr);
+
+    void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo);
 
     void MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices,
@@ -640,17 +645,22 @@ private:
 
     void RestoreSession(const int32_t &sessionID, bool isOutput);
 
-    int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-        vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
-
     void FetchInputDevice(vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     int32_t HandleDeviceChangeForFetchInputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
 
+    void HandleBluetoothInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
+
     void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
+
+    int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+
+    void HandleA2dpInputDeviceFetched();
 
     void BluetoothScoDisconectForRecongnition();
 
@@ -659,6 +669,8 @@ private:
 
     void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>>& descForCb);
+
+    void RemoveOfflineDevice(const AudioDeviceDescriptor& updatedDesc);
 
     void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
@@ -710,7 +722,8 @@ private:
 
     std::string GetVolumeGroupType(DeviceType deviceType);
 
-    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo);
+    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
+        const AudioStreamInfo& audioStreamInfo);
 
     void RemoveDeviceInRouterMap(std::string networkId);
 
@@ -791,7 +804,7 @@ private:
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-    
+
     int32_t ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -804,7 +817,7 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
 
-    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
+    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo);
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc);
 
@@ -825,8 +838,6 @@ private:
 
     void MuteSinkPortForSwtichDevice(shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
-
-    std::string GetSinkName(const DeviceInfo& desc, int32_t sessionId);
 
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
 
@@ -868,14 +879,14 @@ private:
 
     int32_t CheckActiveMusicTime();
 
-    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo, int32_t type,
+    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
         std::vector<sptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
-        std::string &networkId);
+        std::string &networkId, AudioSamplingRate &samplingRate);
 
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
-        const std::string &networkId);
+        const std::string &networkId, const AudioSamplingRate &samplingRate);
 
     bool NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -938,7 +949,7 @@ private:
 
     void UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
-    
+
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
@@ -987,13 +998,15 @@ private:
 
     bool IsA2dpOffloadConnected();
 
-    void SetCurrenInputDevice(const AudioDeviceDescriptor &desc);
+    void SetCurrentInputDevice(const AudioDeviceDescriptor &desc);
 
     AudioDeviceDescriptor GetCurrentInputDevice();
 
     DeviceType GetCurrentInputDeviceType();
 
     void SetCurrentInputDeviceType(DeviceType deviceType);
+
+    std::string GetCurrentInputDeviceMacAddr();
 
     void SetCurrentOutputDevice(const AudioDeviceDescriptor &desc);
 
@@ -1138,6 +1151,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = false;
+    bool isVoiceRingtoneMute_ = false;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
@@ -1155,6 +1169,7 @@ private:
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     mutable std::mutex a2dpDeviceMapMutex_;
+    mutable std::mutex a2dpInDeviceMapMutex_;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
     IAudioPolicyInterface& audioPolicyManager_;
@@ -1169,6 +1184,7 @@ private:
     std::vector<sptr<MicrophoneDescriptor>> connectedMicrophones_;
     std::unordered_map<int32_t, sptr<MicrophoneDescriptor>> audioCaptureMicrophoneDescriptor_;
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
+    std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpInDeviceMap_;
     std::string activeBTDevice_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
@@ -1241,7 +1257,7 @@ private:
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
     SourceType normalSourceOpened_ = SOURCE_TYPE_INVALID;
     uint64_t sessionIdUsedToOpenSource_ = 0;
-    
+
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL

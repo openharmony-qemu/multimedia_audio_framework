@@ -490,7 +490,7 @@ size_t AudioPolicyClientStubImpl::GetDeviceChangeWithInfoCallbackkSize() const
 }
 
 void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
-    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
@@ -523,6 +523,10 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
     size_t cBSize = callbacks.size();
     size_t infosSize = audioRendererChangeInfos.size();
     AUDIO_DEBUG_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
+
+    if (getuid() == RSS_UID) {
+        AUDIO_INFO_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
+    }
 
     Trace trace("AudioPolicyClientStubImpl::OnRendererStateChange");
     for (auto &cb : callbacks) {

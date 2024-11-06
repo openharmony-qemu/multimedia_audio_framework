@@ -217,14 +217,17 @@ OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
 OH_AudioCommon_Result OH_AudioRoutingManager_IsMicBlockDetectionSupported(
     OH_AudioRoutingManager *audioRoutingManager, bool *supported)
 {
+    if (audioRoutingManager == nullptr || supported == nullptr) {
+        AUDIO_ERR_LOG("params is nullptr");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
     *supported = OHOS::system::GetBoolParameter("const.multimedia.audio.mic_block_detection", false);
     if (*supported == true) {
         AUDIO_INFO_LOG("mic block detection supported");
-        return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
-        AUDIO_ERR_LOG("mic block detection is not supported");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+        AUDIO_INFO_LOG("mic block detection is not supported");
     }
+    return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
 OH_AudioCommon_Result OH_AudioRoutingManager_SetMicBlockStatusCallback(

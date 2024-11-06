@@ -76,7 +76,7 @@ public:
 
     int32_t Stop() override;
 
-    int32_t Release(bool destoryAtOnce = false) override;
+    int32_t Release(bool isSwitchStream = false) override;
 
     // methods for support IAudioStream
     int32_t GetSessionID(uint32_t &sessionID) override;
@@ -935,7 +935,12 @@ int32_t AudioProcessInClientInner::Start()
     Trace traceStart("AudioProcessInClient::Start");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_PROCESS_IN_CLIENT_FILENAME, &dumpFile_);
+    const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig_.streamInfo;
+    // eg: 100005_48000_2_1_dump_process_client_audio.pcm
+    std::string dumpFileName = std::to_string(sessionId_) + '_' +
+        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
+        "_dump_process_client_audio.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
     if (streamStatus_->load() == StreamStatus::STREAM_RUNNING) {
@@ -1076,7 +1081,7 @@ int32_t AudioProcessInClientInner::Stop()
     return SUCCESS;
 }
 
-int32_t AudioProcessInClientInner::Release(bool destoryAtOnce)
+int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
 {
     Trace traceRelease("AudioProcessInClient::Release");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
@@ -1095,7 +1100,7 @@ int32_t AudioProcessInClientInner::Release(bool destoryAtOnce)
         AUDIO_WARNING_LOG("Release in currentStatus:%{public}s", GetStatusInfo(currentStatus).c_str());
     }
 
-    if (processProxy_->Release(destoryAtOnce) != SUCCESS) {
+    if (processProxy_->Release(isSwitchStream) != SUCCESS) {
         AUDIO_ERR_LOG("Release may failed in server");
         threadStatusCV_.notify_all(); // avoid thread blocking with status RUNNING
         return ERR_OPERATION_FAILED;

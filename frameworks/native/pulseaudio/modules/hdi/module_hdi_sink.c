@@ -80,7 +80,7 @@ static const char * const VALID_MODARGS[] = {
     NULL
 };
 
-static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
+static pa_hook_result_t SinkInputNewCb(const pa_core *c, pa_sink_input *si)
 {
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
 
@@ -121,7 +121,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u)
+static pa_hook_result_t SinkInputUnlinkCb(const pa_core *c, pa_sink_input *si, void *u)
 {
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
 
@@ -151,7 +151,7 @@ static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, void *u)
+static pa_hook_result_t SinkInputStateChangedCb(const pa_core *c, pa_sink_input *si, void *u)
 {
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
     CHECK_AND_RETURN_RET_LOG(si != NULL, PA_HOOK_OK, "sink input is null");
@@ -241,7 +241,7 @@ void pa__done(pa_module *m)
 {
     CHECK_AND_RETURN_LOG(m != NULL, "pa module is null");
 
-    pa_sink *sink = m->userdata;
+    pa_sink *sink = NULL;
 
     if ((sink = m->userdata)) {
         PaHdiSinkFree(sink);

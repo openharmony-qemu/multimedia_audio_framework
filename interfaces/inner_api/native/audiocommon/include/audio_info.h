@@ -44,6 +44,7 @@ constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
+constexpr int32_t RSS_UID = 1096;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
@@ -587,6 +588,7 @@ struct AudioCapturerOptions {
     AudioStreamInfo streamInfo;
     AudioCapturerInfo capturerInfo;
     AudioPlaybackCaptureConfig playbackCaptureConfig;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct AppInfo {
@@ -789,155 +791,6 @@ enum StreamSetState {
 struct StreamSetStateEventInternal {
     StreamSetState streamSetState;
     StreamUsage streamUsage;
-};
-
-class AudioRendererChangeInfo {
-public:
-    int32_t createrUID;
-    int32_t clientUID;
-    int32_t sessionId;
-    int32_t callerPid;
-    int32_t clientPid;
-    int32_t tokenId;
-    int32_t channelCount;
-    AudioRendererInfo rendererInfo;
-    RendererState rendererState;
-    DeviceInfo outputDeviceInfo;
-    bool prerunningState = false;
-
-    AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
-    {
-        *this = audioRendererChangeInfo;
-    }
-    AudioRendererChangeInfo() = default;
-    ~AudioRendererChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(clientUID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && parcel.WriteInt32(tokenId)
-            && parcel.WriteInt32(channelCount)
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
-            && parcel.WriteInt32(rendererInfo.rendererFlags)
-            && parcel.WriteInt32(rendererInfo.originalFlag)
-            && parcel.WriteInt32(rendererInfo.samplingRate)
-            && parcel.WriteInt32(rendererInfo.format)
-            && rendererInfo.Marshalling(parcel)
-            && parcel.WriteInt32(static_cast<int32_t>(rendererState))
-            && outputDeviceInfo.Marshalling(parcel);
-    }
-    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && parcel.WriteInt32(tokenId)
-            && parcel.WriteInt32(channelCount)
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
-            && parcel.WriteInt32(rendererInfo.rendererFlags)
-            && parcel.WriteInt32(rendererInfo.originalFlag)
-            && parcel.WriteInt32(rendererInfo.samplingRate)
-            && parcel.WriteInt32(rendererInfo.format)
-            && rendererInfo.Marshalling(parcel)
-            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
-                RENDERER_INVALID)
-            && outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion);
-    }
-    void Unmarshalling(Parcel &parcel)
-    {
-        createrUID = parcel.ReadInt32();
-        clientUID = parcel.ReadInt32();
-        sessionId = parcel.ReadInt32();
-        callerPid = parcel.ReadInt32();
-        clientPid = parcel.ReadInt32();
-        tokenId = parcel.ReadInt32();
-        channelCount = parcel.ReadInt32();
-
-        rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
-        rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        rendererInfo.rendererFlags = parcel.ReadInt32();
-        rendererInfo.originalFlag = parcel.ReadInt32();
-        rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        rendererInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
-        rendererInfo.Unmarshalling(parcel);
-
-        rendererState = static_cast<RendererState>(parcel.ReadInt32());
-        outputDeviceInfo.Unmarshalling(parcel);
-    }
-};
-
-class AudioCapturerChangeInfo {
-public:
-    int32_t createrUID;
-    int32_t clientUID;
-    int32_t sessionId;
-    int32_t callerPid;
-    int32_t clientPid;
-    AudioCapturerInfo capturerInfo;
-    CapturerState capturerState;
-    DeviceInfo inputDeviceInfo;
-    bool muted;
-    uint32_t appTokenId;
-
-    AudioCapturerChangeInfo(const AudioCapturerChangeInfo &audioCapturerChangeInfo)
-    {
-        *this = audioCapturerChangeInfo;
-    }
-    AudioCapturerChangeInfo() = default;
-    ~AudioCapturerChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(clientUID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && capturerInfo.Marshalling(parcel)
-            && parcel.WriteInt32(static_cast<int32_t>(capturerState))
-            && inputDeviceInfo.Marshalling(parcel)
-            && parcel.WriteBool(muted)
-            && parcel.WriteUint32(appTokenId);
-    }
-
-    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && capturerInfo.Marshalling(parcel)
-            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(capturerState) : CAPTURER_INVALID)
-            && inputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
-            && parcel.WriteBool(muted)
-            && parcel.WriteUint32(appTokenId);
-    }
-
-    void Unmarshalling(Parcel &parcel)
-    {
-        createrUID = parcel.ReadInt32();
-        clientUID = parcel.ReadInt32();
-        sessionId = parcel.ReadInt32();
-        callerPid = parcel.ReadInt32();
-        clientPid = parcel.ReadInt32();
-        capturerInfo.Unmarshalling(parcel);
-        capturerState = static_cast<CapturerState>(parcel.ReadInt32());
-        inputDeviceInfo.Unmarshalling(parcel);
-        muted = parcel.ReadBool();
-        appTokenId = parcel.ReadUint32();
-    }
-};
-
-struct AudioStreamChangeInfo {
-    AudioRendererChangeInfo audioRendererChangeInfo;
-    AudioCapturerChangeInfo audioCapturerChangeInfo;
 };
 
 enum AudioPin {

@@ -327,7 +327,7 @@ static void SetDeviceActive(int argc, char *argv[])
     }
     cout << "Active : " << active << endl << endl;
 
-    int32_t result = audioSystemMgr->SetDeviceActive(ActiveDeviceType(device),
+    int32_t result = audioSystemMgr->SetDeviceActive(DeviceType(device),
         (active) ? true : false);
     cout << "Set DeviceActive Result: " << result << endl;
 }
@@ -336,7 +336,7 @@ static void IsDeviceActive()
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     int device = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
-    bool devActiveStatus = audioSystemMgr->IsDeviceActive(ActiveDeviceType(device));
+    bool devActiveStatus = audioSystemMgr->IsDeviceActive(DeviceType(device));
     cout << "GetDevice Active : " << devActiveStatus << endl;
 }
 
@@ -420,7 +420,7 @@ static void HandleUpdateStreamState(int type, char *seg1)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     cout << "HandleUpdateStreamState : Runing " <<  seg1 << endl;
-    
+
     const int32_t uid = atoi(seg1);
     cout << "HandleUpdateStreamState : uid : " << uid << endl;
     if (uid == 0) {

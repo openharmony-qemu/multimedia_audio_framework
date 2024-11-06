@@ -65,6 +65,7 @@ private:
     std::unordered_map<uint32_t, float> historyVolume_ {};
     std::unordered_map<uint32_t, std::pair<float, int32_t>> monitorVolume_ {};
     std::shared_mutex volumeMutex_ {};
+    std::shared_mutex systemMutex_ {};
 };
 
 class StreamVolume {
@@ -96,7 +97,6 @@ private:
 
 class SystemVolume {
 public:
-    SystemVolume(int32_t volumeType, std::string deviceClass) : volumeType_(volumeType), deviceClass_(deviceClass) {};
     SystemVolume(int32_t volumeType, std::string deviceClass, float volume, int32_t volumeLevel, bool isMuted)
         : volumeType_(volumeType), deviceClass_(deviceClass), volume_(volume),
         volumeLevel_(volumeLevel), isMuted_(isMuted) {};

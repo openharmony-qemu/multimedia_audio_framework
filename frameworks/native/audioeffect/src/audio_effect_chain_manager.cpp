@@ -155,7 +155,7 @@ void AudioEffectChainManager::SetSpkOffloadState()
             spkOffloadEnabled_ = false;
         }
 
-        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && (!spatializationEnabled_ || btOffloadEnabled_)) {
+        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && (btOffloadEnabled_)) {
             return;
         }
 
@@ -377,7 +377,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType
 }
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneType,
-    const std::unique_ptr<EffectBufferAttr> &bufferAttr)
+    std::unique_ptr<EffectBufferAttr> &bufferAttr)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
@@ -393,6 +393,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     auto audioEffectChain = it->second;
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
+    audioEffectChain->UpdateBufferConfig(bufferAttr->outChannels, bufferAttr->outChannelLayout);
     return SUCCESS;
 }
 
@@ -883,11 +884,7 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
         if (audioEffectChain == nullptr) {
             continue;
         }
-        audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
-        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
-            AUDIO_WARNING_LOG("Update param to effect chain failed");
-            continue;
-        }
+        audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
     }
 }
 
@@ -1138,7 +1135,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!btOffloadSupported_)) {
             AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
             btOffloadEnabled_ = false;
-            RecoverAllChains();
             SetSpatializationEnabledToChains();
             return;
         }
@@ -1147,7 +1143,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("set hdi init failed, enter route of escape in ARM");
             btOffloadEnabled_ = false;
-            RecoverAllChains();
         } else {
             AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
             btOffloadEnabled_ = true;
@@ -1161,7 +1156,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         }
         if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             AUDIO_INFO_LOG("delete all chains if device type is bt.");
-            DeleteAllChains();
         }
         btOffloadEnabled_ = false;
     }
@@ -1414,7 +1408,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
         return false;
     }
 
-    if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_ || (spatializationEnabled == "0"))) {
+    if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_)) {
         return false;
     }
 

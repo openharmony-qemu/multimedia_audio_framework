@@ -39,12 +39,12 @@ MMAAudioRoutingManagerImpl::~MMAAudioRoutingManagerImpl()
 
 bool MMAAudioRoutingManagerImpl::IsCommunicationDeviceActive(int32_t deviceType)
 {
-    return audioMgr_->IsDeviceActive(static_cast<ActiveDeviceType>(deviceType));
+    return audioMgr_->IsDeviceActive(static_cast<DeviceType>(deviceType));
 }
 
 int32_t MMAAudioRoutingManagerImpl::SetCommunicationDevice(int32_t deviceType, bool active)
 {
-    auto ret = audioMgr_->SetDeviceActive(static_cast<ActiveDeviceType>(deviceType), active);
+    auto ret = audioMgr_->SetDeviceActive(static_cast<DeviceType>(deviceType), active);
     if (ret != SUCCESS_CODE) {
         AUDIO_ERR_LOG("set communication device failure!");
         return CJ_ERR_SYSTEM;

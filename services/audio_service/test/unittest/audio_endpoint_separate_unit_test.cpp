@@ -250,17 +250,18 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_009, TestSize.Level1
     uint64_t id = 0;
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
-    std::shared_ptr<DeviceInfo> ptr2 = std::make_shared<DeviceInfo>();
-    ptr2->deviceRole = INPUT_DEVICE;
-    ptr2->networkId = REMOTE_NETWORK_ID;
+    std::shared_ptr<AudioDeviceDescriptor> ptr2 =
+        std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
+    ptr2->deviceRole_ = INPUT_DEVICE;
+    ptr2->networkId_ = REMOTE_NETWORK_ID;
     auto ret = ptr->Config(*ptr2);
     EXPECT_EQ(ret, false);
-    ptr2->deviceRole = INPUT_DEVICE;
-    ptr2->networkId = LOCAL_NETWORK_ID;
+    ptr2->deviceRole_ = INPUT_DEVICE;
+    ptr2->networkId_ = LOCAL_NETWORK_ID;
     ret = ptr->Config(*ptr2);
     EXPECT_EQ(ret, false);
-    ptr2->deviceRole = OUTPUT_DEVICE;
-    ptr2->networkId = REMOTE_NETWORK_ID;
+    ptr2->deviceRole_ = OUTPUT_DEVICE;
+    ptr2->networkId_ = REMOTE_NETWORK_ID;
     ret = ptr->Config(*ptr2);
     EXPECT_EQ(ret, false);
 }
@@ -277,7 +278,8 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_010, TestSize.Level1
     uint64_t id = 0;
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
-    std::shared_ptr<DeviceInfo> ptr2 = std::make_shared<DeviceInfo>();
+    std::shared_ptr<AudioDeviceDescriptor> ptr2 =
+        std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
     auto ret = ptr->GetAdapterBufferInfo(*ptr2);
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     ptr->dstBufferFd_ = 0;
@@ -301,7 +303,8 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_011, TestSize.Level1
     uint64_t id = 0;
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
-    std::shared_ptr<DeviceInfo> ptr2 = std::make_shared<DeviceInfo>();
+    std::shared_ptr<AudioDeviceDescriptor> ptr2 =
+        std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
     ptr->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
     ptr->dstBufferFd_ = -1;
     ptr->dstTotalSizeInframe_ = 1;
@@ -341,7 +344,8 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_012, TestSize.Level1
     uint64_t id = 0;
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
-    std::shared_ptr<DeviceInfo> ptr2 = std::make_shared<DeviceInfo>();
+    std::shared_ptr<AudioDeviceDescriptor> ptr2 =
+        std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t spanSizeInFrame = 0;
@@ -364,7 +368,8 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_013, TestSize.Level1
     uint64_t id = 0;
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
-    std::shared_ptr<DeviceInfo> ptr2 = std::make_shared<DeviceInfo>();
+    std::shared_ptr<AudioDeviceDescriptor> ptr2 =
+        std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
     ptr->dstAudioBuffer_ = nullptr;
     ptr->PrepareDeviceBuffer(*ptr2);
 }
@@ -385,9 +390,9 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_014, TestSize.Level1
     ptr->InitAudiobuffer(resetReadWritePos);
     resetReadWritePos = false;
     ptr->InitAudiobuffer(resetReadWritePos);
-    ptr->deviceInfo_.deviceRole = INPUT_DEVICE;
+    ptr->deviceInfo_.deviceRole_ = INPUT_DEVICE;
     ptr->InitAudiobuffer(resetReadWritePos);
-    ptr->deviceInfo_.deviceRole = OUTPUT_DEVICE;
+    ptr->deviceInfo_.deviceRole_ = OUTPUT_DEVICE;
     ptr->InitAudiobuffer(resetReadWritePos);
 }
 
@@ -694,9 +699,10 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_028, TestSize.Level1
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
 
-    std::shared_ptr<DeviceInfo> ptr2 = std::make_shared<DeviceInfo>();
-    ptr2->deviceRole = OUTPUT_DEVICE;
-    ptr2->networkId = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioDeviceDescriptor> ptr2 =
+        std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
+    ptr2->deviceRole_ = OUTPUT_DEVICE;
+    ptr2->networkId_ = LOCAL_NETWORK_ID;
     ptr->Config(*ptr2);
 }
 
@@ -724,9 +730,9 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_029, TestSize.Level1
     ptr->InitAudiobuffer(resetReadWritePos);
     resetReadWritePos = false;
     ptr->InitAudiobuffer(resetReadWritePos);
-    ptr->deviceInfo_.deviceRole = INPUT_DEVICE;
+    ptr->deviceInfo_.deviceRole_ = INPUT_DEVICE;
     ptr->InitAudiobuffer(resetReadWritePos);
-    ptr->deviceInfo_.deviceRole = OUTPUT_DEVICE;
+    ptr->deviceInfo_.deviceRole_ = OUTPUT_DEVICE;
     ptr->InitAudiobuffer(resetReadWritePos);
 }
 

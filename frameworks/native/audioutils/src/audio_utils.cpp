@@ -341,31 +341,65 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
-bool PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
+std::mutex g_recordMapMutex;
+std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
+
+bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacy", TIME_OUT_SECONDS);
-    if (state == AUDIO_PERMISSION_START) {
+    AudioXCollie audioXCollie("PermissionUtil::NotifyStart", TIME_OUT_SECONDS);
+    std::lock_guard<std::mutex> lock(g_recordMapMutex);
+    if (g_tokenIdRecordMap.count(targetTokenId)) {
+        if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
+            g_tokenIdRecordMap[targetTokenId].emplace(sessionId);
+        } else {
+            AUDIO_WARNING_LOG("this stream %{public}u is already running, no need call start", sessionId);
+        }
+    } else {
         Trace trace("PrivacyKit::StartUsingPermission");
+        AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId: %{public}d sessionId:%{public}d",
+            targetTokenId, sessionId);
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        if (res != 0 && res != Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
+        if (res != 0) {
             AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
                 targetTokenId, res);
             return false;
         }
         res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
-        if (res != 0 && res != Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
-            AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is "
-                "%{public}d", targetTokenId, res);
+        if (res != 0) {
+            AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is %{public}d",
+                targetTokenId, res);
             return false;
         }
-    } else if (state == AUDIO_PERMISSION_STOP) {
+        g_tokenIdRecordMap[targetTokenId] = {sessionId};
+    }
+    return true;
+}
+
+bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
+{
+    AudioXCollie audioXCollie("PermissionUtil::NotifyStop", TIME_OUT_SECONDS);
+    std::unique_lock<std::mutex> lock(g_recordMapMutex);
+    if (!g_tokenIdRecordMap.count(targetTokenId)) {
+        AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
+        return true;
+    }
+
+    if (g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
+        g_tokenIdRecordMap[targetTokenId].erase(sessionId);
+    }
+    AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
+        g_tokenIdRecordMap[targetTokenId].size());
+    if (g_tokenIdRecordMap[targetTokenId].empty()) {
         Trace trace("PrivacyKit::StopUsingPermission");
+        AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d sessionId:%{public}d",
+            targetTokenId, sessionId);
         int res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         if (res != 0) {
             AUDIO_ERR_LOG("StopUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
                 targetTokenId, res);
             return false;
         }
+        g_tokenIdRecordMap.erase(targetTokenId);
     }
     return true;
 }
@@ -1205,7 +1239,7 @@ bool VolumeUtils::isPCVolumeEnable_ = false;
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
     {STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL},
-    {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
 
     {STREAM_RING, STREAM_RING},
     {STREAM_SYSTEM, STREAM_RING},
@@ -1247,12 +1281,13 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_ACCESSIBILITY, STREAM_MUSIC},
     {STREAM_ALL, STREAM_ALL},
 
-    {STREAM_RING, STREAM_RING},
-    {STREAM_VOICE_RING, STREAM_RING},
-    {STREAM_SYSTEM, STREAM_RING},
-    {STREAM_NOTIFICATION, STREAM_RING},
-    {STREAM_SYSTEM_ENFORCED, STREAM_RING},
-    {STREAM_ALARM, STREAM_RING},
+    {STREAM_RING, STREAM_MUSIC},
+    {STREAM_VOICE_RING, STREAM_MUSIC},
+    {STREAM_ALARM, STREAM_MUSIC},
+
+    {STREAM_SYSTEM, STREAM_SYSTEM},
+    {STREAM_NOTIFICATION, STREAM_SYSTEM},
+    {STREAM_SYSTEM_ENFORCED, STREAM_SYSTEM},
 
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
 };

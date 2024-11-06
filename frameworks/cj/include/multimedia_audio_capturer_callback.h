@@ -100,7 +100,7 @@ public:
 
     void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
 
-    void OnStateChange(const DeviceInfo &deviceInfo) override;
+    void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override;
 
 private:
     std::function<void(CArrDeviceDescriptor)> func_{};

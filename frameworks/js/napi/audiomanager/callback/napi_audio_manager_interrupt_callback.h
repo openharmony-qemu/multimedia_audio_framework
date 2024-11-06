@@ -35,6 +35,7 @@ public:
     int32_t GetInterruptCallbackListSize();
     void OnInterrupt(const InterruptAction &interruptAction) override;
     void CreateManagerInterruptTsfn(napi_env env);
+    bool GetManagerInterruptTsfnFlag();
 
 private:
     struct AudioManagerInterruptJsCallback {

@@ -31,10 +31,13 @@ void Convert2CAudioCapturerChangeInfo(CAudioCapturerChangeInfo &cInfo, const Aud
 void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor &devices,
                                   const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors,
                                   int32_t *errorCode);
-void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const DeviceInfo &deviceInfo, int32_t *errorCode);
-void Convert2CArrDeviceDescriptorByDeviceInfo(CArrDeviceDescriptor &devices, const DeviceInfo &deviceInfo,
+void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const AudioDeviceDescriptor &deviceInfo, int32_t *errorCode);
+void Convert2CArrDeviceDescriptorByDeviceInfo(CArrDeviceDescriptor &devices, const AudioDeviceDescriptor &deviceInfo,
                                               int32_t *errorCode);
-void ConvertAudioDeviceDescriptor2DeviceInfo(DeviceInfo &deviceInfo, sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+void ConvertAudioDeviceDescriptor2DeviceInfo(AudioDeviceDescriptor &deviceInfo,
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+void FreeCArrDeviceDescriptor(CArrDeviceDescriptor &devices);
+void FreeCArrAudioCapturerChangeInfo(CArrAudioCapturerChangeInfo &infos);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // MULTIMEDIA_AUDIO_COMMON_H

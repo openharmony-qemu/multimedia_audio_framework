@@ -86,6 +86,11 @@ void NapiAudioManagerCallback::CreateMicBlockedTsfn(napi_env env)
         MicrophoneBlockedTsfnFinalize, nullptr, SafeJsCallbackMicrophoneBlockedWork, &amMicBlockedTsfn_);
 }
 
+bool NapiAudioManagerCallback::GetMicBlockedTsfnFlag()
+{
+    return regAmMicBlockedTsfn_;
+}
+
 void NapiAudioManagerCallback::CreateDevChgTsfn(napi_env env)
 {
     regAmDevChgTsfn_ = true;
@@ -94,6 +99,11 @@ void NapiAudioManagerCallback::CreateDevChgTsfn(napi_env env)
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
         DeviceChangeTsfnFinalize, nullptr, SafeJsCallbackDeviceChangeWork, &amDevChgTsfn_);
+}
+
+bool NapiAudioManagerCallback::GetDevChgTsfnFlag()
+{
+    return regAmDevChgTsfn_;
 }
 
 int32_t NapiAudioManagerCallback::GetAudioManagerDeviceChangeCbListSize()

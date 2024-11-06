@@ -27,7 +27,7 @@ class AudioEngineManager {
 public:
     static AudioEngineManager GetInstance();
     ~AudioEngineManager() = default;
-    void AddRenderer(std::shared_ptr<IRendererStream> stream, DeviceInfo device);
+    void AddRenderer(std::shared_ptr<IRendererStream> stream, AudioDeviceDescriptor device);
     void RemoveRenderer(std::shared_ptr<IRendererStream> stream);
 
 private:

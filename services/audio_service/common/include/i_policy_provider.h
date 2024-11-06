@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "audio_info.h"
+#include "audio_device_descriptor.h"
 #include "audio_shared_memory.h"
 
 namespace OHOS {
@@ -61,6 +62,11 @@ namespace {
         {STREAM_ULTRASONIC, DEVICE_GROUP_WIRELESS},
         {STREAM_ULTRASONIC, DEVICE_GROUP_WIRED},
         {STREAM_ULTRASONIC, DEVICE_GROUP_REMOTE_CAST},
+        {STREAM_SYSTEM, DEVICE_GROUP_EARPIECE},
+        {STREAM_SYSTEM, DEVICE_GROUP_BUILT_IN},
+        {STREAM_SYSTEM, DEVICE_GROUP_WIRELESS},
+        {STREAM_SYSTEM, DEVICE_GROUP_WIRED},
+        {STREAM_SYSTEM, DEVICE_GROUP_REMOTE_CAST},
         {STREAM_ALL, DEVICE_GROUP_EARPIECE},
         {STREAM_ALL, DEVICE_GROUP_BUILT_IN},
         {STREAM_ALL, DEVICE_GROUP_WIRELESS},
@@ -70,7 +76,8 @@ namespace {
 }
 class IPolicyProvider {
 public:
-    virtual int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) = 0;
+    virtual int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo) = 0;
 
     virtual int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) = 0;
 

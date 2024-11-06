@@ -1157,7 +1157,6 @@ napi_value NapiAudioVolumeGroupManager::RegisterCallback(napi_env env, napi_valu
 {
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
-
     NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioVolumeGroupManager));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
@@ -1167,42 +1166,63 @@ napi_value NapiAudioVolumeGroupManager::RegisterCallback(napi_env env, napi_valu
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     if (!cbName.compare(RINGERMODE_CALLBACK_NAME)) {
-        if (napiAudioVolumeGroupManager->ringerModecallbackNapi_ == nullptr) {
-            napiAudioVolumeGroupManager->ringerModecallbackNapi_ = std::make_shared<NapiAudioRingerModeCallback>(env);
-            int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->SetRingerModeCallback(
-                napiAudioVolumeGroupManager->cachedClientId_, napiAudioVolumeGroupManager->ringerModecallbackNapi_);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "SetRingerModeCallback Failed");
-        }
-        std::shared_ptr<NapiAudioRingerModeCallback> cb =
-            std::static_pointer_cast<NapiAudioRingerModeCallback>(napiAudioVolumeGroupManager->ringerModecallbackNapi_);
-        cb->SaveCallbackReference(cbName, args[PARAM1]);
-        cb->CreateRingModeTsfn(env);
+        undefinedResult = RegisterRingModeCallback(env, args, cbName, napiAudioVolumeGroupManager);
     } else if (!cbName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
-        if (!napiAudioVolumeGroupManager->micStateChangeCallbackNapi_) {
-            napiAudioVolumeGroupManager->micStateChangeCallbackNapi_ =
-                std::make_shared<NapiAudioManagerMicStateChangeCallback>(env);
-            if (!napiAudioVolumeGroupManager->micStateChangeCallbackNapi_) {
-                AUDIO_ERR_LOG("Memory Allocation Failed !!");
-            }
-
-            int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->SetMicStateChangeCallback(
-                napiAudioVolumeGroupManager->micStateChangeCallbackNapi_);
-            if (ret) {
-                AUDIO_ERR_LOG("Registering Microphone Change Callback Failed");
-            }
-        }
-        std::shared_ptr<NapiAudioManagerMicStateChangeCallback> cb =
-            std::static_pointer_cast<NapiAudioManagerMicStateChangeCallback>(napiAudioVolumeGroupManager->
-                micStateChangeCallbackNapi_);
-        cb->SaveCallbackReference(cbName, args[PARAM1]);
-        cb->CreateManagerMicStateChangeTsfn(env);
-        AUDIO_DEBUG_LOG("On SetMicStateChangeCallback is successful");
+        undefinedResult = RegisterMicStateChangeCallback(env, args, cbName, napiAudioVolumeGroupManager);
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported");
     }
     return undefinedResult;
+}
+
+napi_value NapiAudioVolumeGroupManager::RegisterRingModeCallback(napi_env env, napi_value *args,
+    const std::string &cbName, NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager)
+{
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    if (napiAudioVolumeGroupManager->ringerModecallbackNapi_ == nullptr) {
+        napiAudioVolumeGroupManager->ringerModecallbackNapi_ = std::make_shared<NapiAudioRingerModeCallback>(env);
+        int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->SetRingerModeCallback(
+            napiAudioVolumeGroupManager->cachedClientId_, napiAudioVolumeGroupManager->ringerModecallbackNapi_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "SetRingerModeCallback Failed");
+    }
+    std::shared_ptr<NapiAudioRingerModeCallback> cb =
+        std::static_pointer_cast<NapiAudioRingerModeCallback>(napiAudioVolumeGroupManager->ringerModecallbackNapi_);
+    cb->SaveCallbackReference(cbName, args[PARAM1]);
+    if (!cb->GetRingModeTsfnFlag()) {
+        cb->CreateRingModeTsfn(env);
+    }
+    return result;
+}
+
+napi_value NapiAudioVolumeGroupManager::RegisterMicStateChangeCallback(napi_env env, napi_value *args,
+    const std::string &cbName, NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager)
+{
+    if (!napiAudioVolumeGroupManager->micStateChangeCallbackNapi_) {
+        napiAudioVolumeGroupManager->micStateChangeCallbackNapi_ =
+            std::make_shared<NapiAudioManagerMicStateChangeCallback>(env);
+        if (!napiAudioVolumeGroupManager->micStateChangeCallbackNapi_) {
+            AUDIO_ERR_LOG("Memory Allocation Failed !!");
+        }
+        int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->SetMicStateChangeCallback(
+            napiAudioVolumeGroupManager->micStateChangeCallbackNapi_);
+        if (ret) {
+            AUDIO_ERR_LOG("Registering Microphone Change Callback Failed");
+        }
+    }
+    std::shared_ptr<NapiAudioManagerMicStateChangeCallback> cb =
+        std::static_pointer_cast<NapiAudioManagerMicStateChangeCallback>(napiAudioVolumeGroupManager->
+            micStateChangeCallbackNapi_);
+    cb->SaveCallbackReference(cbName, args[PARAM1]);
+    if (!cb->GetManagerMicStateChangeTsfnFlag()) {
+        cb->CreateManagerMicStateChangeTsfn(env);
+    }
+    AUDIO_DEBUG_LOG("On SetMicStateChangeCallback is successful");
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    return result;
 }
 
 napi_value NapiAudioVolumeGroupManager::UnregisterCallback(napi_env env, napi_value jsThis,

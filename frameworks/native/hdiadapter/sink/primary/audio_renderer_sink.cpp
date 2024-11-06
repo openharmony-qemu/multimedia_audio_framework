@@ -305,6 +305,14 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
 {
     AUDIO_WARNING_LOG("~AudioRendererSinkInner");
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
+#ifdef FEATURE_POWER_MANAGER
+    if (runningLockManager_ != nullptr) {
+        AUDIO_INFO_LOG("~AudioRendererSinkInner unLock");
+        runningLockManager_->UnLock();
+    } else {
+        AUDIO_WARNING_LOG("runningLockManager is null, playback can not work well!");
+    }
+#endif
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
@@ -857,7 +865,7 @@ int32_t AudioRendererSinkInner::Start(void)
     dumpFileName_ = halName_ + "_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
-    logUtilsTag_ = "AudioSink";
+    logUtilsTag_ = "AudioSink" + halName_;
 
     InitLatencyMeasurement();
     if (!started_) {

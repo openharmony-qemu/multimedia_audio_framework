@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "audio_info.h"
+#include "audio_stream_change_info.h"
 #include "microphone_descriptor.h"
 #include "timestamp.h"
 
@@ -117,7 +118,7 @@ public:
      * @param state Indicates updated device of the capturer.
      * since 11
      */
-    virtual void OnStateChange(const DeviceInfo &deviceInfo) = 0;
+    virtual void OnStateChange(const AudioDeviceDescriptor &deviceInfo) = 0;
 };
 
 class AudioCapturerInfoChangeCallback {
@@ -633,7 +634,7 @@ public:
      * @return Returns current input device info.
      * @since 11
      */
-    virtual int32_t GetCurrentInputDevices(DeviceInfo &deviceInfo) const = 0;
+    virtual int32_t GetCurrentInputDevices(AudioDeviceDescriptor &deviceInfo) const = 0;
 
     /**
      * @brief Gets the current audio capturer change info.

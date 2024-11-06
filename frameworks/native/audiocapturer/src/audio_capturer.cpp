@@ -139,7 +139,9 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.originalFlag = capturerOptions.capturerInfo.capturerFlags;
+    capturer->capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
+    capturer->strategy_ = capturerOptions.strategy;
     if (capturer->SetParams(params) != SUCCESS) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         capturer = nullptr;
@@ -304,7 +306,7 @@ int32_t AudioCapturerPrivate::InitInputDeviceChangeCallback()
 {
     CHECK_AND_RETURN_RET_LOG(GetCurrentInputDevices(currentDeviceInfo_) == SUCCESS, ERROR,
         "Get current device info failed");
-    
+
     if (!inputDeviceChangeCallback_) {
         inputDeviceChangeCallback_ = std::make_shared<InputDeviceChangeWithInfoCallbackImpl>();
         CHECK_AND_RETURN_RET_LOG(inputDeviceChangeCallback_ != nullptr, ERROR, "Memory allocation failed");
@@ -400,6 +402,7 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
     audioInterrupt_.sessionId = sessionID_;
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
+    audioInterrupt_.sessionStrategy = strategy_;
     if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
         isVoiceCallCapturer_ = true;
         audioInterrupt_.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
@@ -884,7 +887,7 @@ int64_t AudioCapturerPrivate::GetFramesRead() const
     return audioStream_->GetFramesRead();
 }
 
-int32_t AudioCapturerPrivate::GetCurrentInputDevices(DeviceInfo &deviceInfo) const
+int32_t AudioCapturerPrivate::GetCurrentInputDevices(AudioDeviceDescriptor &deviceInfo) const
 {
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
@@ -953,15 +956,15 @@ int32_t AudioCapturerPrivate::RemoveAudioCapturerDeviceChangeCallback(
     return SUCCESS;
 }
 
-bool AudioCapturerPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
+bool AudioCapturerPrivate::IsDeviceChanged(AudioDeviceDescriptor &newDeviceInfo)
 {
     bool deviceUpdated = false;
-    DeviceInfo deviceInfo = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
 
     CHECK_AND_RETURN_RET_LOG(GetCurrentInputDevices(deviceInfo) == SUCCESS, deviceUpdated,
         "GetCurrentInputDevices failed");
 
-    if (currentDeviceInfo_.deviceType != deviceInfo.deviceType) {
+    if (currentDeviceInfo_.deviceType_ != deviceInfo.deviceType_) {
         currentDeviceInfo_ = deviceInfo;
         newDeviceInfo = currentDeviceInfo_;
         deviceUpdated = true;
@@ -1081,14 +1084,15 @@ uint32_t AudioCapturerPrivate::GetOverflowCount() const
     return audioStream_->GetOverflowCount();
 }
 
-void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
+int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
 {
-    CHECK_AND_RETURN_LOG(audioStream, "stream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioStream, ERROR, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetCapturerInfo(info.capturerInfo);
-    audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
+    int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     audioStream->SetCaptureMode(info.captureMode);
 
     // set callback
@@ -1111,6 +1115,7 @@ void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetCapturerReadCallback(info.capturerReadCallback);
 
     audioStream->SetStreamCallback(info.audioStreamCallback);
+    return SUCCESS;
 }
 
 bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId)
@@ -1146,7 +1151,15 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         AUDIO_INFO_LOG("Get new stream success!");
 
         // set new stream info
-        SetSwitchInfo(info, newAudioStream);
+        int32_t initResult = SetSwitchInfo(info, newAudioStream);
+        if (initResult != SUCCESS && info.capturerInfo.originalFlag != AUDIO_FLAG_NORMAL) {
+            AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
+            newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, info.params,
+                info.eStreamType, appInfo_.appPid);
+            CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
+            initResult = SetSwitchInfo(info, newAudioStream);
+            CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
+        }
 
         if (previousState == CAPTURER_RUNNING) {
             // restart audio stream
@@ -1198,6 +1211,7 @@ void AudioCapturerPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
 
 void AudioCapturerPrivate::ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass)
 {
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
     if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
     } else if (streamClass == IAudioStream::FAST_STREAM) {
@@ -1363,7 +1377,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    DeviceInfo deviceInfo = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     {
         std::lock_guard<std::mutex> lock(capturerMutex_);
         CHECK_AND_RETURN_LOG(capturer_ != nullptr, "Bare pointer capturer_ is nullptr");
@@ -1396,7 +1410,7 @@ void AudioCapturerStateChangeCallbackImpl::HandleCapturerDestructor()
 }
 
 void InputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("For capturer, OnDeviceChangeWithInfo callback is not support");
 }

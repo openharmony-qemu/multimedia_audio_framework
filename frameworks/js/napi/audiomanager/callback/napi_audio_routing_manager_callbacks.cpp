@@ -53,6 +53,11 @@ void NapiAudioPreferredOutputDeviceChangeCallback::CreatePreferredOutTsfn(napi_e
         &amOutputDevChgTsfn_);
 }
 
+bool NapiAudioPreferredOutputDeviceChangeCallback::GetPreferredOutTsfnFlag()
+{
+    return regAmOutputDevChgTsfn_;
+}
+
 void NapiAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(AudioStreamType streamType,
     napi_value callback)
 {
@@ -225,6 +230,11 @@ void NapiAudioPreferredInputDeviceChangeCallback::CreatePerferredInTsfn(napi_env
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
         ActiveInputDeviceChangeTsfnFinalize, nullptr, SafeJsCallbackActiveInputDeviceChangeWork,
         &amInputDevChgTsfn_);
+}
+
+bool NapiAudioPreferredInputDeviceChangeCallback::GetPerferredInTsfnFlag()
+{
+    return regAmInputDevChgTsfn_;
 }
 
 void NapiAudioPreferredInputDeviceChangeCallback::RemoveCallbackReference(napi_env env, napi_value callback)
