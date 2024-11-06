@@ -83,9 +83,17 @@ struct EffectBufferAttr {
     float *bufOut;
     int numChans;
     int frameLen;
+    uint32_t outChannels;
+    uint64_t outChannelLayout;
 
-    EffectBufferAttr(float *bufIn, float *bufOut, int numChans, int frameLen)
-        : bufIn(bufIn), bufOut(bufOut), numChans(numChans), frameLen(frameLen)
+    EffectBufferAttr(float *bufIn, float *bufOut, int numChans, int frameLen, uint32_t outChannels,
+        uint64_t outChannelLayout)
+        : bufIn(bufIn),
+          bufOut(bufOut),
+          numChans(numChans),
+          frameLen(frameLen),
+          outChannels(outChannels),
+          outChannelLayout(outChannelLayout)
     {
     }
 };
@@ -109,9 +117,8 @@ public:
     int32_t ReleaseAudioEffectChainDynamic(const std::string &sceneType);
     bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode,
         const std::string &spatializationEnabled);
-    int32_t ApplyAudioEffectChain(const std::string &sceneType, const std::unique_ptr<EffectBufferAttr> &bufferAttr);
+    int32_t ApplyAudioEffectChain(const std::string &sceneType, std::unique_ptr<EffectBufferAttr> &bufferAttr);
     void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
-    std::string GetDeviceTypeName();
     bool GetOffloadEnabled();
     void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
@@ -162,6 +169,7 @@ private:
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
     void UpdateCurrSceneTypeAndStreamUsageForDsp();
+    std::string GetDeviceTypeName();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);

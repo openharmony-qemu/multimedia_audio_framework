@@ -63,9 +63,11 @@ public:
     void SetEffectCurrSceneType(AudioEffectScene currSceneType);
     void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     void SetSpatializationEnabled(bool enabled);
+    void SetSpatializationEnabledForFading(bool enabled);
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType,
         const std::string &effectName, const std::string &property);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
+    void UpdateBufferConfig(uint32_t &channels, uint64_t &channelLayout);
     bool IsEmptyEffectHandles();
     void Dump();
     int32_t UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout);
@@ -86,6 +88,8 @@ private:
     int32_t SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData);
     void DumpEffectProcessData(std::string fileName, void *buffer, size_t len);
     int32_t UpdateMultichannelIoBufferConfigInner();
+    int32_t UpdateEffectParamInner();
+    void CrossFadeProcess(float *bufOut, uint32_t frameLen);
 
     std::mutex reloadMutex_;
     std::string sceneType_ = "";
@@ -108,6 +112,8 @@ private:
     bool spatializationEnabled_ = false;
     std::string dumpNameIn_ = "";
     std::string dumpNameOut_ = "";
+    bool spatializationEnabledFading_ = false;
+    int32_t fadingCounts = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
