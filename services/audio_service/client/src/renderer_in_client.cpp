@@ -87,6 +87,7 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
+static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -1311,6 +1312,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
+    preWriteEndTime_ = 0;
     return true;
 }
 
@@ -1637,6 +1639,14 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
     return true;
 }
 
+void RendererInClientInner::DfxWriteInterval()
+{
+    if (preWriteEndTime_ != 0 &&
+        ((ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_) > MAX_WRITE_INTERVAL_MS) {
+        AUDIO_WARNING_LOG("[%{public}s] write interval too long cost %{public}" PRId64,
+            logUtilsTag_.c_str(), (ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_);
+    }
+}
 int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
@@ -1710,12 +1720,14 @@ int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize
             "Status changed while write");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
     }
+    preWriteEndTime_ = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
     return speedCached ? oriBufferSize : bufferSize - targetSize;
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
     // eg: RendererInClient::sessionId:100001 WriteSize:3840
+    DfxWriteInterval();
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
