@@ -2097,10 +2097,14 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCap
         if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
                 targetMuteState, appUid);
+            int32_t res = SUCCESS;
             if (targetMuteState) {
-                PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+                res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             } else {
-                PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+                res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+            }
+            if (res != SUCCESS) {
+                AUDIO_ERR_LOG("update using permission failed, error code %{public}d", res);
             }
         }
     }
