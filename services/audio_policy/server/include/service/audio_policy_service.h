@@ -205,7 +205,8 @@ public:
 
     void SetNormalVoipFlag(const bool &normalVoipFlag);
 
-    int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId);
+    int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
+        const AudioSamplingRate &samplingRate);
 
     bool GetVoipConfig();
 
@@ -927,10 +928,10 @@ private:
         std::vector<sptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
-        std::string &networkId);
+        std::string &networkId, AudioSamplingRate &samplingRate);
 
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
-        std::string &networkId);
+        const std::string &networkId, const AudioSamplingRate &samplingRate);
 
     bool NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
