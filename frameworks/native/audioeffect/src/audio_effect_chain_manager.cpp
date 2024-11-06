@@ -474,7 +474,6 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
     return SendEffectApVolume(audioEffectVolume);
 }
 
-
 int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
     AUDIO_INFO_LOG("SendEffectApVolume");
