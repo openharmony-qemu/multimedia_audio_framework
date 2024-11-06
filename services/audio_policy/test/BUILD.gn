@@ -1220,3 +1220,69 @@ ohos_unittest("audio_affinity_manager_unit_test") {
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 }
+
+ohos_unittest("audio_policy_manager_stub_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/audio_policy_manager_stub_unit_test/include",
+    "../../audio_policy/server/include",
+    "../../audio_policy/client/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+  ]
+
+  sources = [ "./unittest/audio_policy_manager_stub_unit_test/src/audio_policy_manager_stub_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service" ]
+
+  if (accessibility_enable == true) {
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
+  }
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
+
+  if (audio_framework_feature_input) {
+    external_deps += [ "input:libmmi-client" ]
+  }
+
+  if (audio_framework_feature_device_manager) {
+    external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+}
