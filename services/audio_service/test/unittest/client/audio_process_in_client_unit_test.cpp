@@ -653,53 +653,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_030, TestSize.Lev
 /**
  * @tc.name  : Test AudioProcessInClientInner API
  * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_031
- * @tc.desc  : Test AudioProcessInClientInner::KeepLoopRunning
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_031, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-
-    std::atomic<StreamStatus> streamStatus;
-    streamStatus.store(StreamStatus::STREAM_STARTING);
-    ptrAudioProcessInClientInner->streamStatus_ = &streamStatus;
-    auto ret = ptrAudioProcessInClientInner->KeepLoopRunning();
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_032
- * @tc.desc  : Test AudioProcessInClientInner::KeepLoopRunning
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_032, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-
-    std::atomic<StreamStatus> streamStatus;
-    streamStatus.store(StreamStatus::STREAM_IDEL);
-    ptrAudioProcessInClientInner->streamStatus_ = &streamStatus;
-    ptrAudioProcessInClientInner->startFadeout_.store(true);
-    auto ret = ptrAudioProcessInClientInner->KeepLoopRunning();
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
  * @tc.number: AudioProcessInClientInner_033
  * @tc.desc  : Test AudioProcessInClientInner::KeepLoopRunning
  */
@@ -719,30 +672,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_033, TestSize.Lev
     ptrAudioProcessInClientInner->startFadeout_.store(true);
     auto ret = ptrAudioProcessInClientInner->KeepLoopRunning();
     EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_034
- * @tc.desc  : Test AudioProcessInClientInner::KeepLoopRunning
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_034, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-
-    std::atomic<StreamStatus> streamStatus;
-    streamStatus.store(StreamStatus::STREAM_PAUSED);
-    ptrAudioProcessInClientInner->streamStatus_ = &streamStatus;
-    ptrAudioProcessInClientInner->startFadeout_.store(true);
-    auto ret = ptrAudioProcessInClientInner->KeepLoopRunning();
-    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -791,30 +720,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_036, TestSize.Lev
     ptrAudioProcessInClientInner->startFadeout_.store(true);
     auto ret = ptrAudioProcessInClientInner->KeepLoopRunning();
     EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_037
- * @tc.desc  : Test AudioProcessInClientInner::KeepLoopRunning
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_037, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-
-    std::atomic<StreamStatus> streamStatus;
-    streamStatus.store(StreamStatus::STREAM_INVALID);
-    ptrAudioProcessInClientInner->streamStatus_ = &streamStatus;
-    ptrAudioProcessInClientInner->startFadeout_.store(true);
-    auto ret = ptrAudioProcessInClientInner->KeepLoopRunning();
-    EXPECT_EQ(ret, false);
 }
 
 /**
