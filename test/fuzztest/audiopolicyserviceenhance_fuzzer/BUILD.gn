@@ -14,6 +14,8 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
+import("../../../appgallery.gni")
+import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
@@ -23,6 +25,7 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/server/include",
     "../../../services/audio_policy/server/include/service",
+    "../../../services/audio_policy/server/include/service/manager",
     "../../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
   cflags = [
@@ -45,13 +48,8 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
   sources = [ "audio_policy_service_enhance_fuzzer.cpp" ]
 
   deps = [
-    "../../../frameworks/native/audioinnercall:audio_inner_call",
-    "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service",
     "../../../services/audio_service:audio_client",
-    "../../../services/audio_service:audio_common",
-    "../../../services/audio_service:audio_process_service",
-    "../../../services/audio_service:audio_service",
   ]
 
   external_deps = [
@@ -69,7 +67,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "hilog:libhilog",
-    "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
@@ -86,12 +83,55 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     ]
   }
 
-  if (defined(global_parts_info) &&
-      defined(global_parts_info.barrierfree_accessibility)) {
+  defines = []
+  if (audio_framework_feature_double_pnp_detect) {
+    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
+  }
+
+  if (build_variant == "user") {
+    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
+  } else if (build_variant == "root") {
+    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
+  }
+
+  if (audio_framework_feature_support_os_account) {
+    defines += [ "SUPPORT_USER_ACCOUNT" ]
+  }
+
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
+
+  if (audio_framework_config_policy_enable) {
+    defines += [ "USE_CONFIG_POLICY" ]
+    external_deps += [ "config_policy:configpolicy_util" ]
+  }
+
+  if (accessibility_enable == true) {
     external_deps += [
       "accessibility:accessibility_common",
       "accessibility:accessibilityconfig",
     ]
+  }
+
+  if (appgallery_part_enable == true) {
+    defines += [ "FEATURE_APPGALLERY" ]
+  }
+
+  if (bluetooth_part_enable == true) {
+    deps +=
+        [ "../../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+    external_deps += [ "bluetooth:btframework" ]
+  }
+
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+    external_deps += [ "input:libmmi-client" ]
+  }
+
+  if (audio_framework_feature_device_manager) {
+    defines += [ "FEATURE_DEVICE_MANAGER" ]
+    external_deps += [ "device_manager:devicemanagersdk" ]
   }
 }
 
