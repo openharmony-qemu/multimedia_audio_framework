@@ -107,7 +107,7 @@ private:
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
     float finalVolume_ = 1.0f;
-    float currrVolume = 0.0f;
+    float currrVolume_ = 0.0f;
     bool sendFinalVolumeState_ = false;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
