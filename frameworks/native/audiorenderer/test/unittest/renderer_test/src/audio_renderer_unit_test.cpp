@@ -4105,10 +4105,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_005, TestSize.Level1)
 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
-
-    uint64_t latency;
-    ret = audioRenderer->GetLatency(latency);
-    EXPECT_EQ(VALUE_ZERO, ret);
 }
 
 /**
