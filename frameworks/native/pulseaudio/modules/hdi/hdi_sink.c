@@ -1280,7 +1280,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = GetExistFlag(sinkIn, sSceneType, sSceneMode, u->actualSpatializationEnabled ? "1" : "0");
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sSceneType, sceneType);
-        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
+        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently())) {
             continue;
         } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             RecordEffectChainStatus(existFlag, sSceneType, sSceneMode, u->actualSpatializationEnabled);
