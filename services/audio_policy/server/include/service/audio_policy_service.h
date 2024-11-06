@@ -1065,7 +1065,7 @@ private:
         const std::unordered_map<AdaptersType, AudioAdapterInfo>& adapterInfoMap,
         const std::unordered_map<std::string, std::string>& volumeGroupData,
         std::unordered_map<std::string, std::string>& interruptGroupData,
-        GlobalConfigs globalConfigs)
+        GlobalConfigs globalConfigs);
 private:
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
