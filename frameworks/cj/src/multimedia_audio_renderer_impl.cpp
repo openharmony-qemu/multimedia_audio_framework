@@ -26,6 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 extern "C" {
+
 MMAAudioRendererImpl::MMAAudioRendererImpl() {}
 
 MMAAudioRendererImpl::~MMAAudioRendererImpl()
@@ -47,11 +48,11 @@ int32_t MMAAudioRendererImpl::CreateAudioRenderer(CAudioRendererOptions options)
     }
     if (callback_ == nullptr) {
         callback_ = std::make_shared<CjAudioRendererCallback>();
-        int ret = audioRenderer_->SetRendererCallback(callback_);
-        if (ret != SUCCESS_CODE) {
-            AUDIO_ERR_LOG("SetRendererCallback failed.");
-            return CJ_ERR_SYSTEM;
-        }
+    }
+    int ret = audioRenderer_->SetRendererCallback(callback_);
+    if (ret != SUCCESS_CODE) {
+        AUDIO_ERR_LOG("SetRendererCallback failed.");
+        return CJ_ERR_SYSTEM;
     }
     return SUCCESS_CODE;
 }
@@ -202,6 +203,10 @@ void MMAAudioRendererImpl::SetVolumeWithRamp(double volume, int32_t duration, in
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
+    if (volume < MIN_VOLUME_IN_DOUBLE || volume > MAX_VOLUME_IN_DOUBLE) {
+        *errorCode = CJ_ERR_UNSUPPORTED;
+        return;
+    }
     int32_t ret = audioRenderer_->SetVolumeWithRamp(static_cast<float>(volume), duration);
     if (ret == ERR_ILLEGAL_STATE) {
         *errorCode = CJ_ERR_ILLEGAL_STATE;
@@ -214,6 +219,10 @@ void MMAAudioRendererImpl::SetSpeed(double speed, int32_t *errorCode)
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
+    if (speed < MIN_STREAM_SPEED_LEVEL || speed > MAX_STREAM_SPEED_LEVEL) {
+        *errorCode = CJ_ERR_UNSUPPORTED;
+        return;
+    }
     int32_t ret = audioRenderer_->SetSpeed(static_cast<float>(speed));
     if (ret == ERR_ILLEGAL_STATE) {
         *errorCode = CJ_ERR_ILLEGAL_STATE;
@@ -224,6 +233,10 @@ void MMAAudioRendererImpl::SetVolume(double volume, int32_t *errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    if (volume < MIN_VOLUME_IN_DOUBLE || volume > MAX_VOLUME_IN_DOUBLE) {
+        *errorCode = CJ_ERR_UNSUPPORTED;
         return;
     }
     int32_t ret = audioRenderer_->SetVolume(static_cast<float>(volume));
@@ -322,7 +335,7 @@ void MMAAudioRendererImpl::RegisterCallback(int32_t callbackType, void (*callbac
         callback_->RegisterInterruptFunc(func);
     }
     if (callbackType == AudioRendererCallbackType::AR_WRITE_DATA) {
-        auto func = CJLambda::Create(reinterpret_cast<void (*)(CArrUI8)>(callback));
+        auto func = CJLambda::Create(reinterpret_cast<int32_t (*)(CArrUI8)>(callback));
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register WRITE_DATA event failure!");
             *errorCode = CJ_ERR_SYSTEM;
@@ -400,6 +413,133 @@ void MMAAudioRendererImpl::RegisterCallbackWithFrame(int32_t callbackType, void 
             *errorCode = CJ_ERR_SYSTEM;
         }
     }
+}
+
+int32_t MMAAudioRendererImpl::GetAudioEffectMode(int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_VALUE;
+    }
+    return audioRenderer_->GetAudioEffectMode();
+}
+
+void MMAAudioRendererImpl::SetAudioEffectMode(int32_t mode, int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    auto ret = audioRenderer_->SetAudioEffectMode(static_cast<AudioEffectMode>(mode));
+    if (ret != SUCCESS_CODE) {
+        AUDIO_ERR_LOG("Get SetAudioEffectMode failed.");
+        *errorCode = CJ_ERR_INVALID_VALUE;
+    }
+}
+
+double MMAAudioRendererImpl::GetMinStreamVolume(int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_DOUBLE_VALUE;
+    }
+    return audioRenderer_->GetMinStreamVolume();
+}
+
+double MMAAudioRendererImpl::GetMaxStreamVolume(int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_DOUBLE_VALUE;
+    }
+    return audioRenderer_->GetMaxStreamVolume();
+}
+
+void MMAAudioRendererImpl::Release(int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    bool isSuccess = audioRenderer_->Release();
+    if (!isSuccess) {
+        AUDIO_ERR_LOG("AudioRenderer Release failed!");
+    }
+}
+
+uint32_t MMAAudioRendererImpl::GetStreamId(int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    uint32_t sessionId = 0;
+    auto ret = audioRenderer_->GetAudioStreamId(sessionId);
+    if (ret != SUCCESS_CODE) {
+        AUDIO_ERR_LOG("Get StreamId failed.");
+        *errorCode = CJ_ERR_INVALID_VALUE;
+    }
+    return sessionId;
+}
+
+void MMAAudioRendererImpl::Stop(int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    bool isSuccess = audioRenderer_->Stop();
+    if (!isSuccess) {
+        AUDIO_ERR_LOG("AudioRenderer Stop failed.");
+    }
+}
+
+void MMAAudioRendererImpl::Start(int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    bool isSuccess = audioRenderer_->Start();
+    if (!isSuccess) {
+        AUDIO_ERR_LOG("AudioRenderer Start failed.");
+    }
+}
+
+CAudioStreamInfo MMAAudioRendererImpl::GetStreamInfo(int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return CAudioStreamInfo();
+    }
+    AudioStreamInfo streamInfo;
+    auto ret = audioRenderer_->GetStreamInfo(streamInfo);
+    if (ret != SUCCESS_CODE) {
+        AUDIO_ERR_LOG("Get StreamInfo failed.");
+        *errorCode = CJ_ERR_INVALID_VALUE;
+        return CAudioStreamInfo();
+    }
+    CAudioStreamInfo cInfo;
+    Convert2CAudioStreamInfo(cInfo, streamInfo);
+    return cInfo;
+}
+
+CAudioRendererInfo MMAAudioRendererImpl::GetRendererInfo(int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return CAudioRendererInfo();
+    }
+    AudioRendererInfo rendererInfo;
+    auto ret = audioRenderer_->GetRendererInfo(rendererInfo);
+    if (ret != SUCCESS_CODE) {
+        AUDIO_ERR_LOG("Get RendererInfo failed.");
+        *errorCode = CJ_ERR_INVALID_VALUE;
+        return CAudioRendererInfo();
+    }
+    CAudioRendererInfo cInfo;
+    Convert2AudioRendererInfo(cInfo, rendererInfo);
+    return cInfo;
 }
 }
 } // namespace AudioStandard

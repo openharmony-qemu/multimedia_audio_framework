@@ -92,7 +92,7 @@ void CjAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(con
     FreeCArrDeviceDescriptor(arr);
 }
 
-void CjAudioRendererWriteCallback::RegisterFunc(std::function<void(CArrUI8)> cjCallback,
+void CjAudioRendererWriteCallback::RegisterFunc(std::function<int32_t(CArrUI8)> cjCallback,
     std::shared_ptr<AudioRenderer> audioRenderer)
 {
     func_ = cjCallback;
@@ -126,13 +126,7 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
     }
     func_(arr);
     free(arr.head);
-    free(buf.buffer);
-    if (buf.metaBuffer != nullptr) {
-        free(buf.metaBuffer);
-    }
     arr.head = nullptr;
-    buf.buffer = nullptr;
-    buf.metaBuffer = nullptr;
 }
 
 void CjAudioRendererCallback::RegisterFunc(std::function<void(int32_t)> cjCallback)

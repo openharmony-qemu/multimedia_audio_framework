@@ -37,9 +37,14 @@ void Convert2CArrDeviceDescriptorByDeviceInfo(CArrDeviceDescriptor &devices, con
                                               int32_t *errorCode);
 void ConvertAudioDeviceDescriptor2DeviceInfo(AudioDeviceDescriptor &deviceInfo,
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+void FreeCDeviceDescriptor(CDeviceDescriptor &device);
 void FreeCArrDeviceDescriptor(CArrDeviceDescriptor &devices);
 void FreeCArrAudioCapturerChangeInfo(CArrAudioCapturerChangeInfo &infos);
+void FreeCArrAudioRendererChangeInfo(CArrAudioRendererChangeInfo &infos);
 void Convert2AudioRendererOptions(AudioRendererOptions &opions, const CAudioRendererOptions &cOptions);
+void Convert2AudioRendererInfo(CAudioRendererInfo &cInfo, const AudioRendererInfo &rendererInfo);
+void Convert2CAudioRendererChangeInfo(CAudioRendererChangeInfo &cInfo, const AudioRendererChangeInfo &changeInfo,
+                                      int32_t *errorCode);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // MULTIMEDIA_AUDIO_COMMON_H

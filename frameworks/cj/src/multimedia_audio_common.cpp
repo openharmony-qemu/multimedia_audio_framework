@@ -231,31 +231,43 @@ void ConvertAudioDeviceDescriptor2DeviceInfo(AudioDeviceDescriptor &deviceInfo,
     deviceInfo.audioStreamInfo_.channels = audioDeviceDescriptor->audioStreamInfo_.channels;
 }
 
+void FreeCDeviceDescriptor(CDeviceDescriptor &device)
+{
+    free(device.address);
+    device.address = NULL;
+    free(device.displayName);
+    device.displayName = NULL;
+    free(device.name);
+    device.name = NULL;
+    if (device.channelCounts.size != 0) {
+        free(device.channelCounts.head);
+        device.channelCounts.head = nullptr;
+    }
+    device.channelCounts.head = nullptr;
+    if (device.channelMasks.size != 0) {
+        free(device.channelMasks.head);
+        device.channelMasks.head = nullptr;
+    }
+    device.channelMasks.head = nullptr;
+    if (device.sampleRates.size != 0) {
+        free(device.sampleRates.head);
+        device.sampleRates.head = nullptr;
+    }
+    device.sampleRates.head = nullptr;
+    if (device.encodingTypes.hasValue && device.encodingTypes.arr.size != 0) {
+        free(device.encodingTypes.arr.head);
+        device.encodingTypes.arr.head = nullptr;
+    }
+    device.encodingTypes.arr.head = nullptr;
+}
+
 void FreeCArrDeviceDescriptor(CArrDeviceDescriptor &devices)
 {
     if (devices.head == nullptr) {
         return;
     }
     for (int64_t i = 0; i < devices.size; i++) {
-        free((devices.head)[i].address);
-        free((devices.head)[i].displayName);
-        free((devices.head)[i].name);
-        if ((devices.head)[i].channelCounts.size != 0) {
-            free((devices.head)[i].channelCounts.head);
-        }
-        (devices.head)[i].channelCounts.head = nullptr;
-        if ((devices.head)[i].channelMasks.size != 0) {
-            free((devices.head)[i].channelMasks.head);
-        }
-        (devices.head)[i].channelMasks.head = nullptr;
-        if ((devices.head)[i].sampleRates.size != 0) {
-            free((devices.head)[i].sampleRates.head);
-        }
-        (devices.head)[i].sampleRates.head = nullptr;
-        if ((devices.head)[i].encodingTypes.hasValue && (devices.head)[i].encodingTypes.arr.size != 0) {
-            free((devices.head)[i].encodingTypes.arr.head);
-        }
-        (devices.head)[i].encodingTypes.arr.head = nullptr;
+        FreeCDeviceDescriptor((devices.head)[i]);
     }
     free(devices.head);
     devices.head = nullptr;
@@ -268,6 +280,18 @@ void FreeCArrAudioCapturerChangeInfo(CArrAudioCapturerChangeInfo &infos)
     }
     for (int64_t i = 0; i < infos.size; i++) {
         FreeCArrDeviceDescriptor((infos.head)[i].deviceDescriptors);
+    }
+    free(infos.head);
+    infos.head = nullptr;
+}
+
+void FreeCArrAudioRendererChangeInfo(CArrAudioRendererChangeInfo &infos)
+{
+    if (infos.head == nullptr) {
+        return;
+    }
+    for (int64_t i = 0; i < infos.size; i++) {
+        FreeCDeviceDescriptor((infos.head)[i].deviceDescriptor);
     }
     free(infos.head);
     infos.head = nullptr;
@@ -286,6 +310,20 @@ void Convert2AudioRendererOptions(AudioRendererOptions &opions, const CAudioRend
     /* only support flag 0 */
     opions.rendererInfo.rendererFlags =
         (cOptions.audioRendererInfo.rendererFlags != 0) ? 0 : cOptions.audioRendererInfo.rendererFlags;
+}
+
+void Convert2AudioRendererInfo(CAudioRendererInfo &cInfo, const AudioRendererInfo &rendererInfo)
+{
+    cInfo.usage = static_cast<int32_t>(rendererInfo.streamUsage);
+    cInfo.rendererFlags = rendererInfo.rendererFlags;
+}
+
+void Convert2CAudioRendererChangeInfo(CAudioRendererChangeInfo &cInfo, const AudioRendererChangeInfo &changeInfo,
+                                      int32_t *errorCode)
+{
+    cInfo.streamId = changeInfo.sessionId;
+    Convert2CDeviceDescriptor(&cInfo.deviceDescriptor, changeInfo.outputDeviceInfo, errorCode);
+    Convert2AudioRendererInfo(cInfo.rendererInfo, changeInfo.rendererInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -21,17 +21,17 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class CjAudioManagerMicrophoneBlockedCallback : public AudioManagerMicrophoneBlockedCallback {
+class CjAudioManagerAvailableDeviceChangeCallback : public AudioManagerAvailableDeviceChangeCallback {
 public:
-    CjAudioManagerMicrophoneBlockedCallback() = default;
-    virtual ~CjAudioManagerMicrophoneBlockedCallback() = default;
+    CjAudioManagerAvailableDeviceChangeCallback() = default;
+    virtual ~CjAudioManagerAvailableDeviceChangeCallback() = default;
 
-    void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
+    void RegisterFunc(const uint32_t usage, std::function<void(CDeviceChangeAction)> cjCallback);
 
-    void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
+    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
 
 private:
-    std::function<void(CArrDeviceDescriptor)> func_{};
+    std::vector<std::pair<uint32_t, std::function<void(CDeviceChangeAction)>>> callbackList_;
     std::mutex cbMutex_;
 };
 
@@ -43,6 +43,20 @@ public:
     void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
 
     void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+
+private:
+    std::function<void(CArrDeviceDescriptor)> func_{};
+    std::mutex cbMutex_;
+};
+
+class CjAudioPreferredOutputDeviceChangeCallback : public AudioPreferredOutputDeviceChangeCallback {
+public:
+    CjAudioPreferredOutputDeviceChangeCallback() = default;
+    virtual ~CjAudioPreferredOutputDeviceChangeCallback() = default;
+
+    void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
+
+    void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
 
 private:
     std::function<void(CArrDeviceDescriptor)> func_{};
