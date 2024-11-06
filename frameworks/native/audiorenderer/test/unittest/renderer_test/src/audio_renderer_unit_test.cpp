@@ -4093,7 +4093,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_004, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_005, TestSize.Level1)
 {
-    int32_t ret = -1;
     AudioRendererOptions rendererOptions;
 
     AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
