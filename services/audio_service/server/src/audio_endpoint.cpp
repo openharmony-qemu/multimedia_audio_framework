@@ -65,7 +65,7 @@ namespace {
     static const int32_t HALF_FACTOR = 2;
 }
 
-static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
+enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
 {
     enum HdiAdapterFormat adapterFormat;
     switch (format) {

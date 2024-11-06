@@ -322,11 +322,6 @@ private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;
 };
-
-static const std::map<std::string, AudioEffectMode> effectModeMap = {
-    {"EFFECT_NONE", EFFECT_NONE},
-    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
-};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_STREAM_MANAGER_H

@@ -13,10 +13,17 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
-import("../../../appgallery.gni")
-import("../../../bluetooth_part.gni")
-import("../../../config.gni")
+import("../../../audio_framework_test_sources.gni")
+
+audio_policy_service_sources = []
+cur_path = "../../../"
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
+audio_policy_client_sources = []
+foreach(source, audio_policy_client_sources_template) {
+  audio_policy_client_sources += [ "$cur_path$source" ]
+}
 
 ohos_fuzztest("AudioPolicyMoreFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -44,8 +51,14 @@ ohos_fuzztest("AudioPolicyMoreFuzzTest") {
   cflags_cc += [ "-fno-access-control" ]
 
   sources = [ "audio_policy_more_fuzzer.cpp" ]
+  sources += audio_policy_client_sources
+  sources += audio_policy_service_sources
+
+  defines = audio_policy_service_defines
+  defines += audio_policy_client_defines
 
   deps = [
+    "../../../frameworks/native/audioutils:audio_utils",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service",
   ]
@@ -113,7 +126,6 @@ ohos_fuzztest("AudioPolicyMoreFuzzTest") {
     ]
   }
 
-  defines = []
   if (audio_framework_feature_double_pnp_detect) {
     defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
   }
@@ -126,10 +138,6 @@ ohos_fuzztest("AudioPolicyMoreFuzzTest") {
 
   if (audio_framework_feature_support_os_account) {
     defines += [ "SUPPORT_USER_ACCOUNT" ]
-  }
-
-  if (audio_framework_feature_dtmf_tone) {
-    defines += [ "FEATURE_DTMF_TONE" ]
   }
 
   if (audio_framework_config_policy_enable) {

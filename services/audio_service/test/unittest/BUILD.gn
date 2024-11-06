@@ -13,9 +13,18 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
-import("../../../../config.gni")
+import("../../../../audio_framework_test_sources.gni")
 
 module_output_path = "multimedia_audio_framework/audio_balance"
+audio_process_service_sources = []
+cur_path = "../../../../"
+foreach(source, audio_process_service_sources_template) {
+  audio_process_service_sources += [ "$cur_path$source" ]
+}
+audio_service_sources = []
+foreach(source, audio_service_sources_template) {
+  audio_service_sources += [ "$cur_path$source" ]
+}
 
 config("module_private_config") {
   visibility = [ ":*" ]
@@ -33,6 +42,8 @@ ohos_unittest("audio_endpoint_separate_unit_test") {
   testonly = true
   module_out_path = module_output_path
   sources = [ "audio_endpoint_separate_unit_test.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   cflags = [ "-fno-access-control" ]
 
@@ -97,6 +108,8 @@ ohos_unittest("audio_balance_unit_test") {
     "audio_service_common_unit_test.cpp",
     "audio_service_unit_test.cpp",
   ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
 
@@ -177,6 +190,8 @@ ohos_unittest("none_mix_engine_unit_test") {
   ]
 
   sources = [ "none_mix_engine_unit_test.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
 
@@ -221,6 +236,8 @@ ohos_unittest("audio_service_unit_test") {
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
   ]
+  sources += audio_service_sources
+  defines = audio_service_defines
 
   deps = [
     "../../../../frameworks/native/audioeffect:audio_effect",
@@ -232,6 +249,7 @@ ohos_unittest("audio_service_unit_test") {
   ]
 
   cflags = [ "-fno-access-control" ]
+  cflags_cc = [ "-std=c++20" ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -251,6 +269,8 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "../../../../services/audio_service/server/include",
   ]
   sources = [ "pa_renderer_stream_impl_unit_test.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -282,6 +302,8 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "../../../../services/audio_service/server/include",
   ]
   sources = [ "pa_renderer_stream_impl_unit_test_p2.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -323,6 +345,8 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
   ]
 
   sources = [ "ipc_stream_in_server_unit_test.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
 
@@ -383,7 +407,6 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "../../../../frameworks/native/hdiadapter/sink/common",
     "../../../../frameworks/native/hdiadapter/common/include",
     "../../../../frameworks/native/playbackcapturer/include",
-    "../../../../../../window/window_manager/previewer/mock",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../frameworks/native/audiopolicy/include",
     "../../../../frameworks/native/audioinnercall/include",
@@ -394,6 +417,8 @@ ohos_unittest("audio_process_in_server_unit_test") {
   ]
 
   sources = [ "audio_process_in_server_unit_test.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
 
@@ -493,6 +518,8 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "../../../../services/audio_service/server/include",
   ]
   sources = [ "pa_capturer_stream_impl_unit_test.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -540,6 +567,8 @@ ohos_unittest("audio_process_in_client_unit_test") {
   ]
 
   sources = [ "./client/audio_process_in_client_unit_test.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
 

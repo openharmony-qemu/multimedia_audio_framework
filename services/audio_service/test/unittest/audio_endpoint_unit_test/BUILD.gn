@@ -13,6 +13,31 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
+import("../../../../../audio_framework_test_sources.gni")
+
+audio_service_sources_dir = "../../../../../services/audio_service"
+audio_process_service_sources = [
+  "$audio_service_sources_dir/server/src/audio_endpoint_separate.cpp",
+  "$audio_service_sources_dir/server/src/audio_engine_manager.cpp",
+  "$audio_service_sources_dir/server/src/audio_playback_engine.cpp",
+  "$audio_service_sources_dir/server/src/audio_process_in_server.cpp",
+  "$audio_service_sources_dir/server/src/audio_process_stub.cpp",
+  "$audio_service_sources_dir/server/src/audio_service.cpp",
+  "$audio_service_sources_dir/server/src/capturer_in_server.cpp",
+  "$audio_service_sources_dir/server/src/i_stream_manager.cpp",
+  "$audio_service_sources_dir/server/src/ipc_stream_in_server.cpp",
+  "$audio_service_sources_dir/server/src/ipc_stream_listener_proxy.cpp",
+  "$audio_service_sources_dir/server/src/ipc_stream_stub.cpp",
+  "$audio_service_sources_dir/server/src/none_mix_engine.cpp",
+  "$audio_service_sources_dir/server/src/pa_adapter_manager.cpp",
+  "$audio_service_sources_dir/server/src/pa_capturer_stream_impl.cpp",
+  "$audio_service_sources_dir/server/src/pa_renderer_stream_impl.cpp",
+  "$audio_service_sources_dir/server/src/policy_handler.cpp",
+  "$audio_service_sources_dir/server/src/policy_provider_proxy.cpp",
+  "$audio_service_sources_dir/server/src/pro_audio_stream_manager.cpp",
+  "$audio_service_sources_dir/server/src/pro_renderer_stream_impl.cpp",
+  "$audio_service_sources_dir/server/src/renderer_in_server.cpp",
+]
 
 module_output_path = "multimedia_audio_framework/audio_endpoint"
 
@@ -23,6 +48,8 @@ ohos_unittest("audio_endpoint_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   sources = [ "./src/audio_endpoint_unit_test.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   include_dirs = [
     "../../../server/include",
@@ -87,6 +114,8 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   sources = [ "./src/audio_endpoint_plus_unit_test.cpp" ]
+  sources += audio_process_service_sources
+  defines = audio_process_service_defines
 
   include_dirs = [
     "../../../server/include",

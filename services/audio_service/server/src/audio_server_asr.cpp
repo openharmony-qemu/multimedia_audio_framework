@@ -397,7 +397,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
         std::vector<std::string> modes = VOICE_CALL_ASSISTANT_SUPPRESSION.at(asrVoiceControlMode);
         std::set<std::string> needSuppression = VOICE_CALL_ASSISTANT_NEED_SUPPRESSION.at(asrVoiceControlMode);
         for (size_t i = 0; i < modes.size(); i++) {
-            if (needSuppression.contains(modes[i]) && on) {
+            if (needSuppression.count(modes[i]) != 0 && on) {
                 audioRendererSinkInstance->SetAudioParameter(parmKey, "",
                     modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
                 continue;

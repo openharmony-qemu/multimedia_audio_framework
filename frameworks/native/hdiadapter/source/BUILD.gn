@@ -25,6 +25,7 @@ ohos_shared_library("audio_capturer_source") {
   sources = [ "primary/audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -62,6 +63,7 @@ ohos_shared_library("audio_capturer_source") {
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
+  version_script = "libaudio_capturer_source.versionscript"
 }
 
 ohos_shared_library("fast_audio_capturer_source") {
@@ -75,6 +77,7 @@ ohos_shared_library("fast_audio_capturer_source") {
   sources = [ "fast/fast_audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -173,6 +176,7 @@ ohos_shared_library("remote_audio_capturer_source") {
   sources = [ "remote/remote_audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -215,6 +219,7 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   sources = [ "remote_fast/remote_fast_audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -292,6 +297,7 @@ ohos_shared_library("capturer_source_adapter") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
 
   include_dirs = [
     "common",

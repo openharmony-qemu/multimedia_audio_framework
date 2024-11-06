@@ -37,6 +37,14 @@ static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
+namespace {
+static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_REMOTE_CAST
+};
+}
 
 AudioService *AudioService::GetInstance()
 {
@@ -956,7 +964,7 @@ int32_t AudioService::UnsetOffloadMode(uint32_t sessionId)
 int32_t AudioService::UpdateSourceType(SourceType sourceType)
 {
     // specialSourceType need not updateaudioroute
-    if (specialSourceTypeSet_.contains(sourceType)) {
+    if (specialSourceTypeSet_.count(sourceType) != 0) {
         return SUCCESS;
     }
 

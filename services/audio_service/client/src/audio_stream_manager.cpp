@@ -27,6 +27,10 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+static const std::map<std::string, AudioEffectMode> effectModeMap = {
+    {"EFFECT_NONE", EFFECT_NONE},
+    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
+};
 AudioStreamManager *AudioStreamManager::GetInstance()
 {
     static AudioStreamManager audioStreamManager;

@@ -24,6 +24,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const std::unordered_map<DeviceType, std::vector<std::string>> HDI_EFFECT_LIB_MAP {
+    {DEVICE_TYPE_SPEAKER, {"libspeaker_processing_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966oo"}},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, {"libspatialization_processing_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966gg"}},
+};
+}
 AudioEffectHdiParam::AudioEffectHdiParam()
 {
     AUDIO_DEBUG_LOG("constructor.");

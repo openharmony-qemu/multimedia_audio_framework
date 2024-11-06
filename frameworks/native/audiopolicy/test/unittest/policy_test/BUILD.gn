@@ -12,9 +12,18 @@
 # limitations under the License.
 
 import("//build/test.gni")
-import("../../../../../../config.gni")
+import("../../../../../../audio_framework_test_sources.gni")
 
 module_output_path = "multimedia_audio_framework/audio_policy"
+audio_policy_service_sources = []
+audio_policy_client_sources = []
+cur_path = "../../../../../../"
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
+foreach(source, audio_policy_client_sources_template) {
+  audio_policy_client_sources += [ "$cur_path$source" ]
+}
 
 ohos_unittest("audio_policy_unit_test") {
   module_out_path = module_output_path
@@ -55,13 +64,14 @@ ohos_unittest("audio_policy_unit_test") {
     "src/audio_policy_ext_unit_test.cpp",
     "src/audio_policy_unit_test.cpp",
   ]
+  sources += audio_policy_client_sources
+  sources += audio_policy_service_sources
 
-  defines = []
-  if (audio_framework_feature_dtmf_tone) {
-    defines += [ "FEATURE_DTMF_TONE" ]
-  }
+  defines = audio_policy_service_defines
+  defines += audio_policy_client_defines
 
   deps = [
+    "../../../../../../frameworks/native/audioutils:audio_utils",
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_policy:audio_policy_service",
     "../../../../../../services/audio_service:audio_client",
