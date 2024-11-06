@@ -741,21 +741,24 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
 
     // The same device does not set the volume
     // Except for A2dp, because the currentActiveDevice_ has already been set in Activea2dpdevice.
-    if (GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType) &&
+    bool isSameVolumeGroup = GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType);
+    if (currentActiveDevice_ == deviceType &&
         deviceType != DEVICE_TYPE_BLUETOOTH_A2DP && deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
         AUDIO_INFO_LOG("Old device: %{public}d. New device: %{public}d. No need to update volume",
             currentActiveDevice_, deviceType);
-        currentActiveDevice_ = deviceType;
         return;
     }
 
-    AUDIO_INFO_LOG("SetVolumeForSwitchDevice: Load volume and mute status for new device %{public}d", deviceType);
+    AUDIO_INFO_LOG("SetVolumeForSwitchDevice: Load volume and mute status for new device %{public}d,"
+        "same volume group %{public}d", deviceType, isSameVolumeGroup);
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceType;
 
-    LoadVolumeMap();
-    LoadMuteStatusMap();
-    UpdateSafeVolume();
+    if (!isSameVolumeGroup) {
+        LoadVolumeMap();
+        LoadMuteStatusMap();
+        UpdateSafeVolume();
+    }
 
     auto iter = VOLUME_TYPE_LIST.begin();
     while (iter != VOLUME_TYPE_LIST.end()) {
