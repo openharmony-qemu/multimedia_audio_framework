@@ -409,7 +409,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
 {
     AUDIO_INFO_LOG("send volume to dsp.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
-    float volumeMax = 0;
+    float volumeMax = 0.0f;
     for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); ++it) {
         std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
@@ -425,7 +425,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
             }
             float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
             float systemVolumeTemp = audioEffectVolume->GetSystemVolume(it->first);
-            volumeMax = max((streamVolumeTemp * systemVolumeTemp), volumeMax);
+            volumeMax = fmax((streamVolumeTemp * systemVolumeTemp), volumeMax);
         }
     }
     if (static_cast<int32_t>(audioEffectVolume->GetDspVolume() * MAX_UINT_VOLUME_NUM) !=
@@ -448,24 +448,24 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
 {
     AUDIO_INFO_LOG("send volume to ap.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
-    for (auto sessionIds = sessionIDSet_.begin(); sessionIds != sessionIDSet_.end(); ++sessionIds) {
-        if (sessionIDToEffectInfoMap_.find(*sessionIds) == sessionIDToEffectInfoMap_.end()) {
-            AUDIO_INFO_LOG("sessionID:%{public}s, no find in sessionIDToEffectInfoMap_", (*sessionIds).c_str());
+    for (auto sessionId = sessionIDSet_.begin(); sessionId != sessionIDSet_.end(); ++sessionId) {
+        if (sessionIDToEffectInfoMap_.find(*sessionId) == sessionIDToEffectInfoMap_.end()) {
+            AUDIO_INFO_LOG("sessionID:%{public}s, no find in sessionIDToEffectInfoMap_", (*sessionId).c_str());
             continue;
         }
-        if (sessionIDToEffectInfoMap_[*sessionIds].sceneMode == "EFFECT_NONE") {
-            AUDIO_INFO_LOG("sessionID:%{public}s, sceneMode is EFFECT_NONE, no send volume", (*sessionIds).c_str());
+        if (sessionIDToEffectInfoMap_[*sessionId].sceneMode == "EFFECT_NONE") {
+            AUDIO_INFO_LOG("sessionID:%{public}s, sceneMode is EFFECT_NONE, no send volume", (*sessionId).c_str());
             continue;
         }
-        std::string sceneTypeTemp = sessionIDToEffectInfoMap_[*sessionIds].sceneType;
+        std::string sceneTypeTemp = sessionIDToEffectInfoMap_[*sessionId].sceneType;
         std::string sceneTypeAndDeviceKey = sceneTypeTemp + "_&_" + GetDeviceTypeName();
         CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
         auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-        float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*sessionIds);
+        float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*sessionId);
         float systemVolumeTemp = audioEffectVolume->GetSystemVolume(sceneTypeTemp);
         float currVolumeTemp = audioEffectChain->GetCurrVolume();
-        float volumeMax = max((streamVolumeTemp * systemVolumeTemp), currVolumeTemp);
+        float volumeMax = fmax((streamVolumeTemp * systemVolumeTemp), currVolumeTemp);
         if (volumeMax > currVolumeTemp) {
             audioEffectChain->SetCurrVolume(volumeMax);
         }
@@ -496,8 +496,8 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
         CHECK_AND_RETURN_RET_LOG(it->second != nullptr, ERROR, "null audioEffectChain");
         auto audioEffectChain = it->second;
-        float volumes = 0.0f;
-        audioEffectChain->SetCurrVolume(volumes);
+        float volume = 0.0f;
+        audioEffectChain->SetCurrVolume(volume);
     }
     return SUCCESS;
 }
