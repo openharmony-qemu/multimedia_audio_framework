@@ -1218,7 +1218,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     }
 }
 
-static void HandleFading(pa_sink *si, pa_sink_input *sinkIn, pa_mix_info *infoIn)
+static void HandleFading(pa_sink *si, size_t length, pa_sink_input *sinkIn, pa_mix_info *infoIn)
 {
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
@@ -1230,7 +1230,7 @@ static void HandleFading(pa_sink *si, pa_sink_input *sinkIn, pa_mix_info *infoIn
     CheckPrimaryFadeinIsDone(si, sinkIn);
 
     const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
-    if (pa_safe_streq(sinkFadeoutPause, "0")) {
+    if (pa_safe_streq(sinkFadeoutPause, "0") && (length <= infoIn->chunk.length)) {
         u->streamAvailable++;
     }
 }
@@ -1281,7 +1281,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
             }
             
-            HandleFading(si, sinkIn, infoIn);
+            HandleFading(si, *length, sinkIn, infoIn);
 
             infoIn++;
             n++;
