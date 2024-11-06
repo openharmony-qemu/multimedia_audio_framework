@@ -224,6 +224,7 @@ private:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     bool ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptHint hintType);
 
+    bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt);
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;

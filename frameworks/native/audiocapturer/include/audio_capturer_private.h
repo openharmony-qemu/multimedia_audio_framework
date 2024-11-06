@@ -104,6 +104,7 @@ public:
     AudioStreamType audioStreamType_;
     std::string cachePath_;
     bool abortRestore_ = false;
+    AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
 
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
