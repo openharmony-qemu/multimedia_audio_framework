@@ -1249,7 +1249,7 @@ static void HandleFading(pa_sink *si, size_t length, pa_sink_input *sinkIn, pa_m
     CheckPrimaryFadeinIsDone(si, sinkIn);
 
     const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
-    if (pa_safe_streq(sinkFadeoutPause, "0") && (length == infoIn->chunk.length)) {
+    if (pa_safe_streq(sinkFadeoutPause, "0") && (length <= infoIn->chunk.length)) {
         u->streamAvailable++;
     }
 }
@@ -2247,6 +2247,9 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 static bool InputIsOffload(pa_sink_input *i)
 {
     if (monitorLinked(i->sink, true)) {
+        return false;
+    }
+    if (strncmp(i->sink->driver, "module_hdi_sink", 15)) { // 15 cmp length
         return false;
     }
     struct Userdata *u = i->sink->userdata;

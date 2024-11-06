@@ -420,7 +420,7 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
+int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
 {
     Trace trace("PaRendererStreamImpl::GetCurrentPosition");
     PaLockGuard lock(mainloop_);
@@ -449,25 +449,22 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
     uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
     uint64_t writeIndex = pa_bytes_to_usec(info->write_index, sampleSpec);
-    if (writeIndex > paLatency && sampleSpec != nullptr) {
-        framePosition = (writeIndex - paLatency) * sampleSpec->rate / AUDIO_US_PER_S;
-    } else {
+    if (writeIndex <= paLatency || sampleSpec == nullptr) {
         AUDIO_ERR_LOG("error data!");
         return ERR_OPERATION_FAILED;
     }
-    framePosition = (readIndex > info->sink_usec ? readIndex - info->sink_usec : 0) * sampleSpec->rate / AUDIO_US_PER_S;
+    framePosition = readIndex * sampleSpec->rate / AUDIO_US_PER_S;
+    latency = info->sink_usec * sampleSpec->rate / AUDIO_US_PER_S;
     lock.Unlock();
 
     // Processing data for algorithmic time delays
     uint32_t algorithmLatency = GetEffectChainLatency();
     if (!offloadEnable_) {
-        uint64_t algorithmLatencyToFrames = algorithmLatency * sampleSpec->rate / AUDIO_MS_PER_S;
-        framePosition = framePosition > algorithmLatencyToFrames ? framePosition - algorithmLatencyToFrames : 0;
+        latency += algorithmLatency * sampleSpec->rate / AUDIO_MS_PER_S;
     }
     // Processing data for a2dpoffload time delays
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
-    uint64_t a2dpOffloadLatencyToFrames = a2dpOffloadLatency * sampleSpec->rate / AUDIO_MS_PER_S;
-    framePosition = framePosition > a2dpOffloadLatencyToFrames ? framePosition - a2dpOffloadLatencyToFrames : 0;
+    latency += a2dpOffloadLatency * sampleSpec->rate / AUDIO_MS_PER_S;
 
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
