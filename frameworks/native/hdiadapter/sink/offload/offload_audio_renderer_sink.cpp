@@ -66,7 +66,7 @@ const uint32_t BIT_IN_BYTE = 8;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 const unsigned int TIME_OUT_SECONDS = 10;
 const std::string LOG_UTILS_TAG = "Offload";
-constexpr int32_t OFFLOAD_DFX_SPLIT = 2;
+constexpr size_t OFFLOAD_DFX_SPLIT = 2;
 }
 
 struct AudioCallbackService {
