@@ -24,6 +24,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "access_token.h"
+#include "audio_policy_utils.h"
 using namespace std;
 
 namespace OHOS {
