@@ -439,6 +439,26 @@ float AudioEffectChain::GetFinalVolume()
     return finalVolume_;
 }
 
+void AudioEffectChain::SetCurrVolume(const float volume)
+{
+    currVolume_ = volume;
+}
+
+float AudioEffectChain::GetCurrVolume()
+{
+    return currVolume_;
+}
+
+void AudioEffectChain::SetFinalVolumeState(const bool state)
+{
+    sendFinalVolumeState_ = state;
+}
+
+bool AudioEffectChain::GetFinalVolumeState()
+{
+    return sendFinalVolumeState_;
+}
+
 void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
 {
     spatialDeviceType_ = spatialDeviceType;

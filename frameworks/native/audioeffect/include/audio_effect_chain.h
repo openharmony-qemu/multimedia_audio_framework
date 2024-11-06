@@ -75,8 +75,12 @@ public:
     uint32_t GetLatency();
     int32_t UpdateEffectParam();
     void ResetIoBufferConfig();
-    void SetFinalVolume(float volume);
+    void SetFinalVolume(const float volume);
     float GetFinalVolume();
+    void SetCurrVolume(const float volume);
+    float GetCurrVolume();
+    void SetFinalVolumeState(const bool state);
+    bool GetFinalVolumeState();
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     int32_t SetEffectProperty(const std::string &effect, const std::string &property);
     void SetStreamUsage(const int32_t streamUsage);
@@ -103,6 +107,8 @@ private:
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
     float finalVolume_ = 1.0f;
+    float currrVolume = 0.0f;
+    bool sendFinalVolumeState_ = false;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     bool spatializationEnabled_ = false;

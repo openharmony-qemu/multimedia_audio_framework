@@ -410,9 +410,19 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
     AUDIO_INFO_LOG("send volume to dsp.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     float volumeMax = 0;
-    for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
+    for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); ++it) {
         std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
+            if (sessionIDToEffectInfoMap_.find(*s) == sessionIDToEffectInfoMap_.end()) {
+                AUDIO_INFO_LOG("sessionID:%{public}s sceneType:%{public}s, no find in sessionIDToEffectInfoMap_",
+                    (*s).c_str(), it->first.c_str);
+                continue;
+            }
+            if (sessionIDToEffectInfoMap_[*s].sceneMode == "EFFECT_NONE") {
+                AUDIO_INFO_LOG("sessionID:%{public}s sceneType:%{public}s, sceneMode is EFFECT_NONE, no send volume",
+                    (*s).c_str(), it->first.c_str());
+                continue;
+            }
             float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
             float systemVolumeTemp = audioEffectVolume->GetSystemVolume(it->first);
             volumeMax = (streamVolumeTemp * systemVolumeTemp) > volumeMax ?
@@ -439,31 +449,66 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
 {
     AUDIO_INFO_LOG("send volume to ap.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
-    for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
-        float volumeMax = 0;
-        std::set<std::string> sessions = it->second;
-        for (auto s = sessions.begin(); s != sessions.end(); s++) {
-            float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
-            float systemVolumeTemp = audioEffectVolume->GetSystemVolume(it->first);
-            volumeMax = (streamVolumeTemp * systemVolumeTemp) > volumeMax ?
-                (streamVolumeTemp * systemVolumeTemp) : volumeMax;
+    for (auto sessionIds = sessionIDSet_.begin(); sessionIds != sessionIDSet_.end(); ++sessionIds) {
+        float volumeMax = 0.0f;
+        if (sessionIDToEffectInfoMap_.find(*sessionIds) == sessionIDToEffectInfoMap_.end()) {
+            AUDIO_INFO_LOG("sessionID:%{public}s, no find in sessionIDToEffectInfoMap_",
+                (*sessionIds).c_str());
+            continue;
         }
-        std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
+        if (sessionIDToEffectInfoMap_[*sessionIds].sceneMode == "EFFECT_NONE") {
+            AUDIO_INFO_LOG("sessionID:%{public}s sceneType:%{public}s, sceneMode is EFFECT_NONE, no send volume",
+                (*sessionIds).c_str());
+            continue;
+        }
+        std::string sceneTypeTemp = sessionIDToEffectInfoMap_[*sessionIds].sceneType;
+        std::string sceneTypeAndDeviceKey = sceneTypeTemp + "_&_" + GetDeviceTypeName();
         CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
         auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-        if (static_cast<int32_t>(audioEffectChain->GetFinalVolume() * MAX_UINT_VOLUME_NUM) !=
-            static_cast<int32_t>(volumeMax * MAX_UINT_VOLUME_NUM)) {
+        bool volumeStateTemp = true;
+        float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*sessionIds);
+        float systemVolumeTemp = audioEffectVolume->GetSystemVolume(sceneTypeTemp);
+        float currVolumeTemp = audioEffectChain->GetCurrVolume();
+        volumeMax = (streamVolumeTemp * systemVolumeTemp) > currVolumeTemp ?
+            (streamVolumeTemp * systemVolumeTemp) : currVolumeTemp;
+        if (volumeMax > currVolumeTemp) {
+            audioEffectChain->SetCurrVolume(volumeMax);
+        }
+        audioEffectChain->SetFinalVolumeState(volumeStateTemp);
+    }
+    return SendEffectApVolume(audioEffectVolume);
+}
+
+
+int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
+{
+    AUDIO_INFO_LOG("SendEffectApVolume");
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
+    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
+        CHECK_AND_RETURN_RET_LOG(it->second != nullptr, ERROR, "null audioEffectChain");
+        auto audioEffectChain = it->second;
+        float volumeMax = audioEffectChain->GetCurrVolume();
+        if ((static_cast<int32_t>(audioEffectChain->GetFinalVolume() * MAX_UINT_VOLUME_NUM) !=
+            static_cast<int32_t>(volumeMax * MAX_UINT_VOLUME_NUM)) &&
+            audioEffectChain->GetFinalVolumeState() == true) {
             audioEffectChain->SetFinalVolume(volumeMax);
             int32_t ret = audioEffectChain->UpdateEffectParam();
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
             AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}f",
                 it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
+            bool volumeStateTemp = false;
+            audioEffectChain->SetFinalVolumeState(volumeStateTemp);
         }
+    }
+    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
+        CHECK_AND_RETURN_RET_LOG(it->second != nullptr, ERROR, "null audioEffectChain");
+        auto audioEffectChain = it->second;
+        float volumes = 0.0f;
+        audioEffectChain->SetCurrVolume(volumes);
     }
     return SUCCESS;
 }
-
 int32_t AudioEffectChainManager::EffectVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
