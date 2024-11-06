@@ -452,13 +452,11 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
     for (auto sessionIds = sessionIDSet_.begin(); sessionIds != sessionIDSet_.end(); ++sessionIds) {
         float volumeMax = 0.0f;
         if (sessionIDToEffectInfoMap_.find(*sessionIds) == sessionIDToEffectInfoMap_.end()) {
-            AUDIO_INFO_LOG("sessionID:%{public}s, no find in sessionIDToEffectInfoMap_",
-                (*sessionIds).c_str());
+            AUDIO_INFO_LOG("sessionID:%{public}s, no find in sessionIDToEffectInfoMap_", (*sessionIds).c_str());
             continue;
         }
         if (sessionIDToEffectInfoMap_[*sessionIds].sceneMode == "EFFECT_NONE") {
-            AUDIO_INFO_LOG("sessionID:%{public}s sceneType:%{public}s, sceneMode is EFFECT_NONE, no send volume",
-                (*sessionIds).c_str());
+            AUDIO_INFO_LOG("sessionID:%{public}s, sceneMode is EFFECT_NONE, no send volume", (*sessionIds).c_str());
             continue;
         }
         std::string sceneTypeTemp = sessionIDToEffectInfoMap_[*sessionIds].sceneType;
