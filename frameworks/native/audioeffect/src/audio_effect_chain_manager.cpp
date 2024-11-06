@@ -155,7 +155,7 @@ void AudioEffectChainManager::SetSpkOffloadState()
             spkOffloadEnabled_ = false;
         }
 
-        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && btOffloadEnabled_) {
+        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && (btOffloadEnabled_)) {
             return;
         }
 

@@ -119,7 +119,6 @@ public:
         const std::string &spatializationEnabled);
     int32_t ApplyAudioEffectChain(const std::string &sceneType, std::unique_ptr<EffectBufferAttr> &bufferAttr);
     void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
-    std::string GetDeviceTypeName();
     bool GetOffloadEnabled();
     void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
@@ -170,6 +169,7 @@ private:
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
     void UpdateCurrSceneTypeAndStreamUsageForDsp();
+    std::string GetDeviceTypeName();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
