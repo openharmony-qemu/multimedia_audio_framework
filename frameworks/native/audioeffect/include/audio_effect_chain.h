@@ -68,7 +68,6 @@ public:
         const std::string &effectName, const std::string &property);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     void UpdateBufferConfig(uint32_t &channels, uint64_t &channelLayout);
-    void UpdateOutputChannelInfo(AudioBufferConfig &bufferAttr);
     bool IsEmptyEffectHandles();
     void Dump();
     int32_t UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout);
@@ -115,8 +114,6 @@ private:
     std::string dumpNameOut_ = "";
     bool spatializationEnabledFading_ = false;
     int32_t fadingCounts = 0;
-    uint32_t outChannels_ = STEREO;
-    uint64_t outChannelLayout_ = CH_LAYOUT_STEREO;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

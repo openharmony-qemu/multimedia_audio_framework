@@ -1408,7 +1408,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
         return false;
     }
 
-    if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_ || (spatializationEnabled == "0"))) {
+    if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_)) {
         return false;
     }
 
