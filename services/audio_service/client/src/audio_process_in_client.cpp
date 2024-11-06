@@ -939,7 +939,7 @@ int32_t AudioProcessInClientInner::Start()
     // eg: 100005_48000_2_1_dump_process_client_audio.pcm
     std::string dumpFileName = std::to_string(sessionId_) + '_' +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
-        "_dump_process_client_audio_" + ".pcm";
+        "_dump_process_client_audio.pcm";
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);

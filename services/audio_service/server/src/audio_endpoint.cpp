@@ -326,7 +326,6 @@ private:
 
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
-    FILE *dumpDcp_ = nullptr;
     FILE *dumpHdi_ = nullptr;
     std::string dumpDcpName_ = "";
     std::string dumpHdiName_ = "";
@@ -581,7 +580,6 @@ void AudioEndpointInner::Release()
         DisableFastInnerCap();
     }
 
-    DumpFileUtil::CloseDumpFile(&dumpDcp_);
     DumpFileUtil::CloseDumpFile(&dumpHdi_);
 }
 
@@ -713,7 +711,6 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
         + std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_DCP_FILENAME, &dumpDcp_);
 }
 
 bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
@@ -1549,12 +1546,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             CheckPlaySignal(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength);
             audioDataList.push_back(streamData);
             curReadSpan->readStartTime = ClockTime::GetCurNano();
-            DumpFileUtil::WriteDumpFile(dumpDcp_, static_cast<void *>(streamData.bufferDesc.buffer),
+            processList_[i]->WriteDumpFile(static_cast<void *>(streamData.bufferDesc.buffer),
                 streamData.bufferDesc.bufLength);
-            if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-                Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpDcpName_,
-                    static_cast<void *>(streamData.bufferDesc.buffer), streamData.bufferDesc.bufLength);
-            }
         }
     }
 }
