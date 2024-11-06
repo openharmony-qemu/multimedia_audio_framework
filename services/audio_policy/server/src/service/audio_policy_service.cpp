@@ -3751,7 +3751,8 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     // Remember the disconnected device descriptor and remove it
     bool flag = true;
     while (flag) {
-        auto it = audioConnectedDevice_.GetConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_, updatedDesc.macAddress_);
+        auto it = audioConnectedDevice_.GetConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
+            updatedDesc.macAddress_);
         if (it == nullptr) {
             flag = false;
             continue;
@@ -4012,7 +4013,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     if (isConnected) {
         // If device already in list, remove it else do not modify the list
         audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
-           updatedDesc.macAddress_);
+            updatedDesc.macAddress_);
         // If the pnp device fails to load, it will not connect
         result = HandleLocalDeviceConnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
@@ -5840,7 +5841,7 @@ int32_t AudioPolicyService::GetAudioLatencyFromXml() const
 
 uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
 {
-    return audioConfigManager_.GetSinkLatencyFromXml();;
+    return audioConfigManager_.GetSinkLatencyFromXml();
 }
 
 bool AudioPolicyService::getFastControlParam()
@@ -8272,18 +8273,12 @@ void AudioPolicyService::GetMicrophoneDescriptorsDump(std::string &dumpString)
     }
 }
 
-void AudioPolicyService::AudioPolicyParserDump(std::string &dumpString)
+void AudioPolicyService::AudioPolicyParserDumpInner(std::string &dumpString,
+    const std::unordered_map<AdaptersType, AudioAdapterInfo>& adapterInfoMap,
+    const std::unordered_map<std::string, std::string>& volumeGroupData,
+    std::unordered_map<std::string, std::string>& interruptGroupData,
+    GlobalConfigs globalConfigs)
 {
-    dumpString += "\nAudioPolicyParser:\n";
-    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap {};
-    std::unordered_map<std::string, std::string> volumeGroupData;
-    std::unordered_map<std::string, std::string> interruptGroupData;
-    GlobalConfigs globalConfigs;
-
-    audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
-    audioConfigManager_.GetVolumeGroupData(volumeGroupData);
-    audioConfigManager_.GetInterruptGroupData(interruptGroupData);
-    audioConfigManager_.GetGlobalConfigs(globalConfigs);
     for (auto &[adapterType, adapterInfo] : adapterInfoMap) {
         AppendFormat(dumpString, " - adapter : %s -- adapterType:%u\n", adapterInfo.adapterName_.c_str(), adapterType);
         for (auto &deviceInfo : adapterInfo.deviceInfos_) {
@@ -8325,6 +8320,22 @@ void AudioPolicyService::AudioPolicyParserDump(std::string &dumpString)
             inputConfig.type_.c_str(), inputConfig.value_.c_str());
     }
     AppendFormat(dumpString, " - module curActiveCount:%d\n\n", GetCurActivateCount());
+}
+
+void AudioPolicyService::AudioPolicyParserDump(std::string &dumpString)
+{
+    dumpString += "\nAudioPolicyParser:\n";
+    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
+    std::unordered_map<std::string, std::string> volumeGroupData;
+    std::unordered_map<std::string, std::string> interruptGroupData;
+    GlobalConfigs globalConfigs;
+
+    audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
+    audioConfigManager_.GetVolumeGroupData(volumeGroupData);
+    audioConfigManager_.GetInterruptGroupData(interruptGroupData);
+    audioConfigManager_.GetGlobalConfigs(globalConfigs);
+
+    AudioPolicyParserDumpInner(dumpString, adapterInfoMap, volumeGroupData, interruptGroupData, globalConfigs);
 }
 
 void AudioPolicyService::XmlParsedDataMapDump(std::string &dumpString)
@@ -8438,10 +8449,10 @@ void AudioPolicyService::MicrophoneMuteInfoDump(string &dumpString)
     dumpString += "==== Microphone Mute INFO ====\n";
     // non-persistent microphone mute info
     AppendFormat(dumpString, "  - non-persistent microphone isMuted: %d \n",
-	    audioMicrophoneDescriptor_.GetMicrophoneMuteTemporary());
+        audioMicrophoneDescriptor_.GetMicrophoneMuteTemporary());
     // persistent microphone mute info
     AppendFormat(dumpString, "  - persistent microphone isMuted: %d \n",
-	    audioMicrophoneDescriptor_.GetMicrophoneMutePersistent());
+        audioMicrophoneDescriptor_.GetMicrophoneMutePersistent());
     dumpString += "\n";
 }
 

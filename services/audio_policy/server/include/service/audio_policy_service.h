@@ -1060,6 +1060,12 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
+
+    void AudioPolicyParserDumpInner(std::string &dumpString,
+        const std::unordered_map<AdaptersType, AudioAdapterInfo>& adapterInfoMap,
+        const std::unordered_map<std::string, std::string>& volumeGroupData,
+        std::unordered_map<std::string, std::string>& interruptGroupData,
+        GlobalConfigs globalConfigs)
 private:
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;

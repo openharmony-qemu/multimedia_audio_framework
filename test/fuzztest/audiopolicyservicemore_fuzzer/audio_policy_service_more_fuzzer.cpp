@@ -149,7 +149,8 @@ void InitGetServerService(const uint8_t *rawData, size_t size, DeviceRole device
 
     AudioModuleInfo audioModuleInfo = GetServerPtr()->
         audioPolicyService_.ConstructRemoteAudioModuleInfo(LOCAL_NETWORK_ID, deviceRole, DEVICE_TYPE_BLUETOOTH_A2DP);
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.deviceClassInfo_.insert({ClassType::TYPE_A2DP, {audioModuleInfo}});
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.deviceClassInfo_.insert({ClassType::TYPE_A2DP,
+        {audioModuleInfo}});
 
     AudioIOHandle ioHandle = GetServerPtr()->audioPolicyService_.audioPolicyManager_.OpenAudioPort(audioModuleInfo);
 

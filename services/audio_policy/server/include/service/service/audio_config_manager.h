@@ -102,9 +102,8 @@ public:
 
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 private:
-    AudioConfigManager()
-    :audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
-    audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
+    AudioConfigManager() : audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
+        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
     {
     }
     ~AudioConfigManager()

@@ -55,7 +55,8 @@ int32_t AudioMicrophoneDescriptor::SetMicrophoneMutePersistent(const bool isMute
 {
     AUDIO_DEBUG_LOG("state[%{public}d]", isMute);
     isMicrophoneMutePersistent_ = isMute;
-    int32_t ret = AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_);
+    bool flag = isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_;
+    int32_t ret = AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(flag);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("UpdateCapturerInfoMuteStatus when set mic mute state persistent.");
         AudioStreamCollector::GetAudioStreamCollector().UpdateCapturerInfoMuteStatus(0,

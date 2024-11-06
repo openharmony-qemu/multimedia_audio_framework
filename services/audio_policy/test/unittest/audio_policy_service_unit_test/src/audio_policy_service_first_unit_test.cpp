@@ -1207,10 +1207,12 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDevices_001, TestSize.Level1)
         for (const auto& deviceRole : deviceRolesTmp) {
             audioDeviceDescriptor->deviceRole_ = deviceRole;
             audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
-            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
+            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(
+                audioDeviceDescriptor);
             GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
             audioDeviceDescriptor->networkId_ = REMOTE_NETWORK_ID;
-            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
+            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(
+                audioDeviceDescriptor);
             GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
         }
     }
@@ -1222,10 +1224,12 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDevices_001, TestSize.Level1)
         for (const auto& deviceRole : deviceRolesTmp) {
             audioDeviceDescriptor->deviceRole_ = deviceRole;
             audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
-            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
+            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(
+                audioDeviceDescriptor);
             GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
             audioDeviceDescriptor->networkId_ = REMOTE_NETWORK_ID;
-            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
+            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(
+                audioDeviceDescriptor);
             GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
         }
     }

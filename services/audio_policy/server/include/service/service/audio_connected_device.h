@@ -48,7 +48,8 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
     sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(int32_t deviceType);
     sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType);
-    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType, std::string macAddress);
+    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
+        std::string macAddress);
     void DelConnectedDevice(std::string networkId, int32_t deviceType);
     void DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress);
     void AddConnectedDevice(sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);

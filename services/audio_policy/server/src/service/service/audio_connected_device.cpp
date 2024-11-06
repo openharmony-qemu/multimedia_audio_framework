@@ -55,7 +55,8 @@ bool AudioConnectedDevice::IsConnectedOutputDevice(const sptr<AudioDeviceDescrip
     return true;
 }
 
-sptr<AudioDeviceDescriptor> AudioConnectedDevice::CheckExistOutputDevice(DeviceType activeDevice, std::string macAddress)
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::CheckExistOutputDevice(DeviceType activeDevice,
+    std::string macAddress)
 {
     auto isOutputDevicePresent = [&activeDevice, &macAddress] (const sptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
@@ -120,7 +121,8 @@ sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::
     return nullptr;
 }
 
-sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType, std::string macAddress)
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
+    std::string macAddress)
 {
     auto isPresent = [&networkId, &deviceType, &macAddress] (const sptr<AudioDeviceDescriptor> &desc) {
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_ && macAddress == desc->macAddress_) {
@@ -138,7 +140,8 @@ sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::
 void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress)
 {
     auto isPresent = [&deviceType, &networkId, &macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
-        return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId && descriptor->macAddress_ == macAddress;
+        return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId
+            && descriptor->macAddress_ == macAddress;
     };
 
     connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
@@ -166,7 +169,8 @@ void AudioConnectedDevice::AddConnectedDevice(sptr<AudioDeviceDescriptor> remote
 bool AudioConnectedDevice::CheckDeviceConnected(std::string selectedDevice)
 {
     for (auto device : connectedDevices_) {
-        if (AudioPolicyUtils::GetInstance().GetRemoteModuleName(device->networkId_, device->deviceRole_) == selectedDevice) {
+        if (AudioPolicyUtils::GetInstance().GetRemoteModuleName(device->networkId_, device->deviceRole_)
+            == selectedDevice) {
             return true;
         }
     }
