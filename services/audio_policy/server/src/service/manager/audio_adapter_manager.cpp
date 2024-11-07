@@ -744,7 +744,8 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceType;
 
-    if (!isSameVolumeGroup) {
+    if (!isSameVolumeGroup || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        (deviceType == DEVICE_TYPE_BLUETOOTH_SCO && isRingerModeMute)) {
         LoadVolumeMap();
         LoadMuteStatusMap();
         UpdateSafeVolume();
