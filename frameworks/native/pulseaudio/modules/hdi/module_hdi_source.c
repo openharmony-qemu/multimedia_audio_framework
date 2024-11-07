@@ -134,10 +134,14 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
             &so->source->sample_spec, &so->source->channel_map,
             &algoSpecs->micSpec, &so->source->channel_map,
             so->source->core->lfe_crossover_freq,
-            PA_RESAMPLER_AUTO,
-            PA_RESAMPLER_VARIABLE_RATE);
+            PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
         pa_hashmap_put(preResamplerMap, pa_xstrdup(sceneKey), preResampler);
-        pa_resampler_set_input_rate(so->thread_info.resampler, algoSpecs->micSpec.rate);
+        pa_resampler *postResampler = pa_resampler_new(so->source->core->mempool,
+            &algoSpecs->micSpec, &so->source->channel_map,
+            &so->sample_spec, &so->source->channel_map,
+            so->source->core->lfe_crossover_freq,
+            PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+        so->thread_info.resampler = postResampler;
     }
     if ((u->ecType != EC_NONE) && (algoSpecs->ecSpec.rate != 0) &&
         (!pa_sample_spec_equal(&u->ecSpec, &algoSpecs->ecSpec))) {
@@ -148,8 +152,7 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
             &u->ecSpec, &so->source->channel_map,
             &algoSpecs->ecSpec, &so->source->channel_map,
             so->source->core->lfe_crossover_freq,
-            PA_RESAMPLER_AUTO,
-            PA_RESAMPLER_VARIABLE_RATE);
+            PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
         pa_hashmap_put(ecResamplerMap, pa_xstrdup(sceneKey), ecResampler);
     }
     if ((u->micRef == REF_ON) && (algoSpecs->micRefSpec.rate != 0) &&
@@ -162,8 +165,7 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
             &u->micRefSpec, &so->source->channel_map,
             &algoSpecs->micRefSpec, &so->source->channel_map,
             so->source->core->lfe_crossover_freq,
-            PA_RESAMPLER_AUTO,
-            PA_RESAMPLER_VARIABLE_RATE);
+            PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
         pa_hashmap_put(micRefResamplerMap, pa_xstrdup(sceneKey), micRefResampler);
     }
 }
