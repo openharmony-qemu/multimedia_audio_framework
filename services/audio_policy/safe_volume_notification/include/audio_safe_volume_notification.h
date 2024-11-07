@@ -36,6 +36,9 @@ constexpr const char *SAFE_VOLUME_INCREASE_VOLUME_TEXT_ID = "ohos_id_notificatio
 constexpr const char *SAFE_VOLUME_RESTORE_VOL_BUTTON_ID = "ohos_id_notification_restore_volume_button";
 constexpr const char *SAFE_VOLUME_INCREASE_VOL_BUTTON_ID = "ohos_id_notification_increase_volume_button";
 
+const int32_t ICON_WIDTH = 220;
+const int32_t ICON_HEIGHT = 220;
+
 class AudioSafeVolumeNotification {
 public:
     AudioSafeVolumeNotification() = default;
