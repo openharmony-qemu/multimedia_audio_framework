@@ -80,7 +80,8 @@
             "cJSON",
             "opensles",
             "qos_manager",
-            "media_foundation"
+            "media_foundation",
+            "usb_manager"
             ],
           "third_party": [
             "glib",

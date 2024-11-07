@@ -564,9 +564,9 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
             parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
         }
-        if (key == "need_change_usb_device") {
+        if (key.starts_with("need_change_usb_device#C")) {
             parmKey = AudioParamKey::USB_DEVICE;
-            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "need_change_usb_device");
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), key);
         }
         if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel") {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
@@ -604,32 +604,53 @@ const std::string AudioServer::GetDPParameter(const std::string &condition)
     return dpAudioRendererSinkInstance->GetAudioParameter(AudioParamKey::GET_DP_DEVICE_INFO, condition);
 }
 
-const std::string AudioServer::GetUsbParameter()
+static std::string GetField(const std::string &src, const char* field, const char sep)
 {
-    IAudioRendererSink *usbAudioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
-    IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
-    if (usbAudioRendererSinkInstance != nullptr && usbAudioCapturerSinkInstance != nullptr) {
-        std::string usbInfoStr =
-            usbAudioRendererSinkInstance->GetAudioParameter(AudioParamKey::USB_DEVICE, "get_usb_info");
-        // Preload usb sink and source, make pa load module faster to avoid blocking client write
-        usbAudioRendererSinkInstance->Preload(usbInfoStr);
-        usbAudioCapturerSinkInstance->Preload(usbInfoStr);
-        return usbInfoStr;
+    auto str = std::string(field) + '=';
+    auto pos = src.find(str) + str.length();
+    auto end = src.find(sep, pos);
+    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
+}
+
+const std::string AudioServer::GetUsbParameter(const std::string &condition)
+{
+    AUDIO_INFO_LOG("AudioServer::GetUsbParameter Entry. condition=%{public}s", condition.c_str());
+    string address = GetField(condition, "address", ' ');
+    DeviceRole role = static_cast<DeviceRole>(stoi(GetField(condition, "role", ' ')));
+    IAudioRendererSink *rendererSink = IAudioRendererSink::GetInstance("usb", "");
+    std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
+    std::string usbInfoStr;
+    if (role == OUTPUT_DEVICE) {
+        rendererSink->SetAddress(address);
+        usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
+        AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
+        rendererSink->Preload(usbInfoStr);
+    } else if (role == INPUT_DEVICE) {
+        IAudioCapturerSource *capturerSource = IAudioCapturerSource::GetInstance("usb", "");
+        capturerSource->SetAddress(address);
+        if (usbInfoMap_.contains(address)) {
+            usbInfoStr = usbInfoMap_[address];
+        } else {
+            usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
+        }
+        AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
+    } else {
+        usbInfoMap_.erase(address);
     }
-    return "";
+    return usbInfoStr;
 }
 
 const std::string AudioServer::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
     const std::string& condition)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    bool ret = VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio() || ret, "", "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio() ||
+        VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION), "", "refused for %{public}d", callingUid);
 
     if (networkId == LOCAL_NETWORK_ID) {
         AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
         if (key == AudioParamKey::USB_DEVICE) {
-            return GetUsbParameter();
+            return GetUsbParameter(condition);
         }
         if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
             return GetDPParameter(condition);
@@ -744,6 +765,8 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     IAudioRendererSink *audioRendererSinkInstance;
     if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+        auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+        primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
     } else {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     }
@@ -799,6 +822,8 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+        auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+        primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
     } else {
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");

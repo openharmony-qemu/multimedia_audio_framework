@@ -112,6 +112,11 @@ public:
     {
         return 0;
     }
+
+    virtual void SetAddress(const std::string &address)
+    {
+        return;
+    }
 };
 
 class IMmapAudioCapturerSource : public IAudioCapturerSource {
