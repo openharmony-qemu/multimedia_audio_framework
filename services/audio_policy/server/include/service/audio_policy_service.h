@@ -897,6 +897,7 @@ private:
     std::string GetEcFormat(const std::string &halName, StreamPropInfo &streamPropInfo);
     std::string GetEcChannels(const std::string &halName, StreamPropInfo &streamPropInfo);
     AudioEcInfo GetAudioEcInfo();
+    void ResetAudioEcInfo();
     std::string ShouldOpenMicRef(SourceType source);
     void UpdateEnhanceEffectState(SourceType source);
     void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType sourceType);
@@ -905,7 +906,11 @@ private:
     void UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
-    void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
+    bool IsVoipDeviceChanged(const DeviceType inputDevcie, const DeviceType outputDevice);
+    void SetInputDeviceTypeForReload(DeviceType deviceType);
+    DeviceType GetInputDeviceTypeForReload();
+    void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
+        const std::string &caller);
     void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
         const AudioEnhancePropertyArray &newPropertyArray);
     void ReloadSourceForSession(SessionInfo sessionInfo);
@@ -1204,6 +1209,8 @@ private:
     bool isMicRefRecordOn_ = false;
     std::mutex audioEcInfoMutex_;
     AudioEcInfo audioEcInfo_;
+    std::mutex inputDeviceReloadMutex_;
+    DeviceType inputDeviceForReload_ = DEVICE_TYPE_DEFAULT;
     AudioModuleInfo usbSinkModuleInfo_ = {};
     AudioModuleInfo usbSourceModuleInfo_ = {};
     AudioModuleInfo dpSinkModuleInfo_ = {};

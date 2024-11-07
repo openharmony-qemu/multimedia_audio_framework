@@ -750,16 +750,6 @@ HWTEST(AudioEffectChainManagerUnitTest, GetOffloadEnabled_002, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test Dump API
-* @tc.number : Dump_001
-* @tc.desc   : Test Dump interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, Dump_001, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->Dump();
-}
-
-/**
 * @tc.name   : Test UpdateMultichannelConfig API
 * @tc.number : UpdateMultichannelConfig_001
 * @tc.desc   : Test UpdateMultichannelConfig interface(using correct use case).

@@ -397,15 +397,6 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     return SUCCESS;
 }
 
-void AudioEffectChainManager::Dump()
-{
-    AUDIO_INFO_LOG("Dump START");
-    for (auto item : sceneTypeToEffectChainMap_) {
-        std::shared_ptr<AudioEffectChain> audioEffectChain = item.second;
-        audioEffectChain->Dump();
-    }
-}
-
 int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
     AUDIO_INFO_LOG("send volume to dsp.");
