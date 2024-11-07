@@ -124,6 +124,7 @@ ohos_shared_library("bluetooth_capturer_source") {
     "common",
     "../common/include",
     "../../audioutils/include",
+    "../../audioeffect/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include/",
   ]
