@@ -123,6 +123,7 @@ ohos_shared_library("bluetooth_capturer_source") {
   include_dirs = [
     "common",
     "../common/include",
+    "../manager/include",
     "../../audioutils/include",
     "../../audioeffect/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
@@ -131,7 +132,9 @@ ohos_shared_library("bluetooth_capturer_source") {
 
   deps = [
     "../../../../services/audio_service:audio_common",
+    "../../audioeffect:audio_effect",
     "../../audioutils:audio_utils",
+    "../manager:hdiadapter_utils",
   ]
 
   external_deps = [

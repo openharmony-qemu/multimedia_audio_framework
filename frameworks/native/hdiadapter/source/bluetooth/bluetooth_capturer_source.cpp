@@ -143,8 +143,6 @@ public:
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
-    int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice, const std::string &deviceName = "");
-
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
@@ -163,6 +161,7 @@ private:
     static constexpr uint32_t STEREO_CHANNEL_COUNT = 2;
 
     int32_t CreateCapture(struct AudioPort &capturePort);
+    int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice, const std::string &deviceName = "");
     int32_t InitAudioManager();
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
 
@@ -580,7 +579,7 @@ int32_t BluetoothCapturerSourceInner::SetInputRoute(DeviceType inputDevice, cons
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice,
+int32_t BluetoothCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice,
     const std::string &deviceName)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
