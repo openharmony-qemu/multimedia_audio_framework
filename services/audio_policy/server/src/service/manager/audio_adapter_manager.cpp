@@ -46,7 +46,7 @@ static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
 };
 
 static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
-    // The four devices represent the four volume groups(earpiece, build-in, wireless, wired).
+    // The five devices represent the five volume groups(earpiece, build-in, wireless, wired, remote_cast).
     DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_BLUETOOTH_A2DP,
