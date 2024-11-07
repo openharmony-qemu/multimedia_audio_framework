@@ -59,8 +59,16 @@ const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
 const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
 const uint32_t STRING_BUFFER_SIZE = 4096;
+
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
+
+/* Define AudioXcollie timeout flag, consistent with xcollie_define.h in hiviewdfx  */
+static constexpr unsigned int AUDIO_XCOLLIE_FLAG_DEFAULT = (~0); // do all callback function
+static constexpr unsigned int AUDIO_XCOLLIE_FLAG_NOOP = (0); // do nothing but the caller defined function
+static constexpr unsigned int AUDIO_XCOLLIE_FLAG_LOG = (1 << 0); // generate log file
+static constexpr unsigned int AUDIO_XCOLLIE_FLAG_RECOVERY = (1 << 1); // die when timeout
+
 class Util {
 public:
     static bool IsDualToneStreamType(const AudioStreamType streamType)
