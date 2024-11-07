@@ -32,6 +32,7 @@ public:
     void AddCallbackReference(const std::string &callbackName, napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value callback);
     void RemoveNapiCapturer();
+    void CreateReadDataTsfn(napi_env env);
 
 private:
     struct CapturerReadDataJsCallback {
@@ -40,7 +41,6 @@ private:
         BufferDesc bufDesc {};
         NapiAudioCapturer *capturerNapiObj;
         NapiCapturerReadDataCallback *readDataCallbackPtr;
-        napi_threadsafe_function acReadDataTsfn = nullptr;
     };
 
     static void CaptureReadDataTsfnFinalize(napi_env env, void *data, void *hint);
@@ -54,6 +54,8 @@ private:
     NapiAudioCapturer *napiCapturer_;
     napi_ref callback_ = nullptr;
     bool isCallbackInited_ = false;
+    bool regAcReadDataTsfn_ = false;
+    napi_threadsafe_function acReadDataTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

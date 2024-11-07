@@ -26,6 +26,7 @@
 #include "i_audio_capturer_source_intf.h"
 #include "audio_capturer_source.h"
 #include "audio_capturer_file_source.h"
+#include "bluetooth_capturer_source.h"
 #ifdef DAUDIO_ENABLE
 #include "remote_audio_capturer_source.h"
 #endif
@@ -54,8 +55,7 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
         return AudioCapturerSource::GetInstance("usb", sourceType, sourceName);
     }
     if (!strcmp(deviceClass, deviceClassA2DP)) {
-        static AudioCapturerFileSource audioCapturer;
-        return &audioCapturer;
+        return BluetoothCapturerSource::GetInstance();
     }
     if (!strcmp(deviceClass, deviceClassFile)) {
         static AudioCapturerFileSource audioCapturer;

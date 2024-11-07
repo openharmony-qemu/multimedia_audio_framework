@@ -146,6 +146,10 @@ bool VolumeDataMaintainer::GetVolume(DeviceType deviceType, AudioStreamType stre
 
 bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType)
 {
+    // Voice call assistant stream is full volume by default
+    if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
+        return true;
+    }
     std::string volumeKey = GetVolumeKeyForDataShare(deviceType, streamType);
     if (!volumeKey.compare("")) {
         AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
@@ -551,6 +555,8 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
     std::string type = "";
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
+            type = "_earpiece";
+            return type;
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_DP:
             type = "_builtin";

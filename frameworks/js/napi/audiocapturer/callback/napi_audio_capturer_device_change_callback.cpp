@@ -35,6 +35,9 @@ NapiAudioCapturerDeviceChangeCallback::NapiAudioCapturerDeviceChangeCallback(nap
 
 NapiAudioCapturerDeviceChangeCallback::~NapiAudioCapturerDeviceChangeCallback()
 {
+    if (regAcDevChgTsfn_) {
+        napi_release_threadsafe_function(acDevChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("Instance destroy");
 }
 
@@ -51,6 +54,16 @@ void NapiAudioCapturerDeviceChangeCallback::SaveCallbackReference(napi_value arg
     callback_ = callback;
 }
 
+void NapiAudioCapturerDeviceChangeCallback::CreateCaptureDeviceChangeTsfn(napi_env env)
+{
+    regAcDevChgTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "AudioCapturerDeviceChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr, CaptureDeviceInfoTsfnFinalize,
+        nullptr, SafeJsCallbackCapturerDeviceInfoWork, &acDevChgTsfn_);
+}
+
 bool NapiAudioCapturerDeviceChangeCallback::ContainSameJsCallback(napi_value args)
 {
     bool isEquals = false;
@@ -65,7 +78,7 @@ bool NapiAudioCapturerDeviceChangeCallback::ContainSameJsCallback(napi_value arg
     return isEquals;
 }
 
-void NapiAudioCapturerDeviceChangeCallback::OnStateChange(const DeviceInfo &deviceInfo)
+void NapiAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
 {
     OnJsCallbackCapturerDeviceInfo(callback_, deviceInfo);
 }
@@ -78,8 +91,7 @@ void NapiAudioCapturerDeviceChangeCallback::SafeJsCallbackCapturerDeviceInfoWork
         "OnJsCallbackCapturerDeviceInfo: no memory");
     std::shared_ptr<AudioCapturerDeviceChangeJsCallback> safeContext(
         static_cast<AudioCapturerDeviceChangeJsCallback*>(data),
-        [event](AudioCapturerDeviceChangeJsCallback *ptr) {
-            napi_release_threadsafe_function(event->acDevChgTsfn, napi_tsfn_abort);
+        [](AudioCapturerDeviceChangeJsCallback *ptr) {
             delete ptr;
     });
     napi_ref callback = event->callback_;
@@ -110,24 +122,18 @@ void NapiAudioCapturerDeviceChangeCallback::CaptureDeviceInfoTsfnFinalize(napi_e
 }
 
 void NapiAudioCapturerDeviceChangeCallback::OnJsCallbackCapturerDeviceInfo(napi_ref method,
-    const DeviceInfo &deviceInfo)
+    const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_LOG(method != nullptr, "method is nullptr");
     AudioCapturerDeviceChangeJsCallback *event = new AudioCapturerDeviceChangeJsCallback {method, env_, deviceInfo};
-    
+
     if (event == nullptr) {
         AUDIO_ERR_LOG("event data malloc failed: No memory");
         return;
     }
 
-    napi_value cbName;
-    event->callbackName = "AudioCapturerDeviceChange";
-    napi_create_string_utf8(event->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->env_, nullptr, nullptr, cbName, 0, 1, event, CaptureDeviceInfoTsfnFinalize,
-        nullptr, SafeJsCallbackCapturerDeviceInfoWork, &event->acDevChgTsfn);
-    
-    napi_acquire_threadsafe_function(event->acDevChgTsfn);
-    napi_call_threadsafe_function(event->acDevChgTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(acDevChgTsfn_);
+    napi_call_threadsafe_function(acDevChgTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

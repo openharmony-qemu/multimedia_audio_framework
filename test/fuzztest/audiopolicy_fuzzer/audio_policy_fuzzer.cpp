@@ -39,7 +39,8 @@ const uint32_t LIMIT_ONE = 0;
 const uint32_t LIMIT_TWO = 30;
 const uint32_t LIMIT_THREE = 60;
 const uint32_t LIMIT_FOUR = 90;
-const uint32_t LIMIT_FIVE = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
+const uint32_t LIMIT_FIVE = 120;
+const uint32_t LIMIT_SIX = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
 bool g_hasServerInit = false;
 
 AudioPolicyServer* GetServerPtr()
@@ -194,6 +195,30 @@ void AudioPolicyFuzzFouthLimitTest(const uint8_t *rawData, size_t size)
 
     GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
+
+void AudioPolicyFuzzFifthLimitTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    uint32_t code = Convert2Uint32(rawData) % (LIMIT_SIX - LIMIT_FIVE + 1) + LIMIT_FIVE;
+
+    rawData = rawData + OFFSET;
+    size = size - OFFSET;
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+
+    MessageParcel reply;
+    MessageOption option;
+    if (code == static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOICE_RINGTONE_MUTE)) {
+        return;
+    }
+
+    GetServerPtr()->OnRemoteRequest(code, data, reply, option);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -211,5 +236,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioPolicyFuzzSecondLimitTest(data, size);
     OHOS::AudioStandard::AudioPolicyFuzzThirdLimitTest(data, size);
     OHOS::AudioStandard::AudioPolicyFuzzFouthLimitTest(data, size);
+    OHOS::AudioStandard::AudioPolicyFuzzFifthLimitTest(data, size);
     return 0;
 }

@@ -16,7 +16,7 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
-#include "audio_effect_manager.h"
+#include "audio_effect_service.h"
 using namespace std;
 
 namespace OHOS {
@@ -24,15 +24,15 @@ namespace AudioStandard {
 using namespace std;
 const int32_t LIMITSIZE = 4;
 
-void AudioEffectManagerFuzzTest(const uint8_t *rawData, size_t size)
+void AudioEffectServiceFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
 
-    std::shared_ptr<AudioEffectManager> audioEffectManager = std::make_shared<AudioEffectManager>();
-    audioEffectManager->EffectManagerInit();
-    audioEffectManager->BuildAvailableAEConfig();
+    std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
+    audioEffectService->EffectServiceInit();
+    audioEffectService->BuildAvailableAEConfig();
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -41,6 +41,6 @@ void AudioEffectManagerFuzzTest(const uint8_t *rawData, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioEffectManagerFuzzTest(rawData, size);
+    OHOS::AudioStandard::AudioEffectServiceFuzzTest(rawData, size);
     return 0;
 }

@@ -29,6 +29,7 @@ public:
     virtual ~NapiRendererDataRequestCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnWriteData(size_t length) override;
+    void CreateWriteDataTsfn(napi_env env);
 
 private:
     struct RendererDataRequestJsCallback {
@@ -37,7 +38,6 @@ private:
         BufferDesc bufDesc_ {};
         NapiAudioRenderer *rendererNapiObj;
         AudioRendererDataInfo audioRendererDataInfo;
-        napi_threadsafe_function arDataReqTsfn = nullptr;
     };
     void OnJsRendererDataRequestCallback(std::unique_ptr<RendererDataRequestJsCallback> &jsCb);
     static void DataRequestTsfnFinalize(napi_env env, void *data, void *hint);
@@ -47,6 +47,8 @@ private:
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> rendererDataRequestCallback_ = nullptr;
     NapiAudioRenderer *napiRenderer_;
+    bool regArDataReqTsfn_ = false;
+    napi_threadsafe_function arDataReqTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

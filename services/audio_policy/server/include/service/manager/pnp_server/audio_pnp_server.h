@@ -56,6 +56,7 @@ private:
     void OpenAndReadWithSocket();
     void OpenAndReadInput();
     void DetectAudioDevice();
+    void DetectAudioDpDevice();
 #ifdef AUDIO_DOUBLE_PNP_DETECT
     void UpdateUsbHeadset();
 #endif
@@ -74,7 +75,6 @@ public:
 };
 
 enum PnpEventType {
-    PNP_EVENT_UNKNOWN = 0,
     PNP_EVENT_DEVICE_ADD = 1,
     PNP_EVENT_DEVICE_REMOVE = 2,
     PNP_EVENT_LOAD_SUCCESS = 3,
@@ -83,12 +83,12 @@ enum PnpEventType {
     PNP_EVENT_SERVICE_VALID = 7,
     PNP_EVENT_SERVICE_INVALID  = 8,
     PNP_EVENT_CAPTURE_THRESHOLD = 9,
-    PNP_EVENT_MIC_BLOCKED = 10,
-    PNP_EVENT_MIC_UNBLOCKED = 11,
+    PNP_EVENT_UNKNOWN = 10,
+    PNP_EVENT_MIC_BLOCKED = 11,
+    PNP_EVENT_MIC_UNBLOCKED = 12,
 };
 
 enum PnpDeviceType {
-    PNP_DEVICE_UNKNOWN = 0,
     PNP_DEVICE_LINEOUT = 1 << 0,
     PNP_DEVICE_HEADPHONE = 1 << 1,
     PNP_DEVICE_HEADSET = 1 << 2,
@@ -103,6 +103,7 @@ enum PnpDeviceType {
     PNP_DEVICE_ADAPTER_DEVICE = 1 << 11,
     PNP_DEVICE_DP_DEVICE = 1 << 12,
     PNP_DEVICE_MIC = 1 << 13,
+    PNP_DEVICE_UNKNOWN,
 };
 
 } // namespace AudioStandard

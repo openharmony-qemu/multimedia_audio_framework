@@ -93,6 +93,7 @@ int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, f
     switch (streamType) {
         case STREAM_RING:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
             sceneType = "SCENE_RING";
             break;
         case STREAM_VOICE_ASSISTANT:
@@ -240,6 +241,19 @@ int32_t AudioServer::SetMicrophoneMuteForEnhanceChain(const bool &isMute)
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->SetMicrophoneMuteInfo(isMute);
+}
+
+bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
+    std::vector<Effect>& successEffectList)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false, "LoadAudioEffectLibraries refused for %{public}d",
+        callingUid);
+    bool loadSuccess = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
+    if (!loadSuccess) {
+        AUDIO_WARNING_LOG("Load audio effect failed, please check log");
+    }
+    return loadSuccess;
 }
 } // namespace AudioStandard
 } // namespace OHOS

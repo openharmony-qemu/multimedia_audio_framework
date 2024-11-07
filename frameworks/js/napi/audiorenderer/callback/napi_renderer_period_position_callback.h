@@ -28,13 +28,13 @@ public:
     virtual ~NapiRendererPeriodPositionCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnPeriodReached(const int64_t &frameNumber) override;
+    void CreatePeriodReachTsfn(napi_env env);
 
 private:
     struct RendererPeriodPositionJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         int64_t position = 0;
-        napi_threadsafe_function arPerPosTsfn = nullptr;
     };
     void OnJsRendererPeriodPositionCallback(std::unique_ptr<RendererPeriodPositionJsCallback> &jsCb);
     static void SafeJsCallbackPeriodPositionWork(napi_env env, napi_value js_cb, void *context, void *data);
@@ -43,6 +43,8 @@ private:
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> renderPeriodPositionCallback_ = nullptr;
+    bool regArPerPosTsfn_ = false;
+    napi_threadsafe_function arPerPosTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

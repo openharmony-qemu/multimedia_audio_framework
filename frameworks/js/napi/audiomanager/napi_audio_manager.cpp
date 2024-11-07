@@ -808,7 +808,7 @@ napi_value NapiAudioManager::SetDeviceActive(napi_env env, napi_callback_info in
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
         context->intValue = napiAudioManager->audioMngr_->SetDeviceActive(
-            static_cast<ActiveDeviceType>(context->deviceType), context->isActive);
+            static_cast<DeviceType>(context->deviceType), context->isActive);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetDeviceActive failed",
             NAPI_ERR_SYSTEM);
     };
@@ -846,7 +846,7 @@ napi_value NapiAudioManager::IsDeviceActive(napi_env env, napi_callback_info inf
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
         context->isActive = napiAudioManager->audioMngr_->IsDeviceActive(
-            static_cast<ActiveDeviceType>(context->deviceType));
+            static_cast<DeviceType>(context->deviceType));
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -1004,7 +1004,7 @@ napi_value NapiAudioManager::GetExtraParameters(napi_env env, napi_callback_info
         NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_string,
             "incorrect parameter types: The type of mainKey must be string", NAPI_ERR_INPUT_INVALID);
         context->key = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-        
+
         if (argc > ARGS_ONE) {
             napi_typeof(env, argv[PARAM1], &valueType);
             NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_object,
@@ -1256,6 +1256,9 @@ template<typename T> void NapiAudioManager::RegisterInterruptCallback(napi_env e
     std::shared_ptr<NapiAudioManagerInterruptCallback> cb =
         std::static_pointer_cast<NapiAudioManagerInterruptCallback>(napiAudioManager->interruptCallbackNapi_);
     cb->SaveCallbackReference(INTERRUPT_CALLBACK_NAME, argv[PARAM2]);
+    if (!cb->GetManagerInterruptTsfnFlag()) {
+        cb->CreateManagerInterruptTsfn(env);
+    }
     AudioInterrupt audioInterrupt;
     NapiParamUtils::GetAudioInterrupt(env, audioInterrupt, argv[PARAM1]);
     int32_t ret = napiAudioManager->audioMngr_->RequestAudioFocus(audioInterrupt);
@@ -1277,6 +1280,9 @@ template<typename T> void NapiAudioManager::RegisterRingerModeCallback(napi_env 
     std::shared_ptr<NapiAudioRingerModeCallback> cb =
         std::static_pointer_cast<NapiAudioRingerModeCallback>(napiAudioManager->ringerModecallbackNapi_);
     cb->SaveCallbackReference(RINGERMODE_CALLBACK_NAME, argv[PARAM1]);
+    if (!cb->GetRingModeTsfnFlag()) {
+        cb->CreateRingModeTsfn(env);
+    }
 }
 
 template<typename T> void NapiAudioManager::RegisterVolumeChangeCallback(napi_env env, const T &argv,
@@ -1292,6 +1298,9 @@ template<typename T> void NapiAudioManager::RegisterVolumeChangeCallback(napi_en
     std::shared_ptr<NapiAudioVolumeKeyEvent> cb =
         std::static_pointer_cast<NapiAudioVolumeKeyEvent>(napiAudioManager->volumeKeyEventCallbackNapi_);
     cb->SaveCallbackReference(VOLUME_CHANGE_CALLBACK_NAME, argv[PARAM1]);
+    if (!cb->GetVolumeTsfnFlag()) {
+        cb->CreateVolumeTsfn(env);
+    }
 }
 
 template<typename T> void NapiAudioManager::RegisterDeviceChangeCallback(napi_env env, const T &argv,
@@ -1307,6 +1316,9 @@ template<typename T> void NapiAudioManager::RegisterDeviceChangeCallback(napi_en
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiAudioManager->deviceChangeCallbackNapi_);
     cb->SaveAudioManagerDeviceChangeCbRef(DeviceFlag::ALL_DEVICES_FLAG, argv[PARAM1]);
+    if (!cb->GetDevChgTsfnFlag()) {
+        cb->CreateDevChgTsfn(env);
+    }
 }
 
 napi_value NapiAudioManager::On(napi_env env, napi_callback_info info)

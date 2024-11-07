@@ -49,6 +49,11 @@ NapiAudioManagerCallback::NapiAudioManagerCallback(napi_env env)
 
 NapiAudioManagerCallback::~NapiAudioManagerCallback()
 {
+    if (regAmMicBlockedTsfn_) {
+        napi_release_threadsafe_function(amMicBlockedTsfn_, napi_tsfn_abort);
+    } else if (regAmDevChgTsfn_) {
+        napi_release_threadsafe_function(amDevChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioManagerCallback: instance destroy");
 }
 
@@ -69,6 +74,36 @@ void NapiAudioManagerCallback::SaveCallbackReference(const std::string &callback
     } else {
         AUDIO_ERR_LOG("NapiAudioManagerCallback: Unknown callback type: %{public}s", callbackName.c_str());
     }
+}
+
+void NapiAudioManagerCallback::CreateMicBlockedTsfn(napi_env env)
+{
+    regAmMicBlockedTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "MicBlocked";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        MicrophoneBlockedTsfnFinalize, nullptr, SafeJsCallbackMicrophoneBlockedWork, &amMicBlockedTsfn_);
+}
+
+bool NapiAudioManagerCallback::GetMicBlockedTsfnFlag()
+{
+    return regAmMicBlockedTsfn_;
+}
+
+void NapiAudioManagerCallback::CreateDevChgTsfn(napi_env env)
+{
+    regAmDevChgTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "ManagerDeviceChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        DeviceChangeTsfnFinalize, nullptr, SafeJsCallbackDeviceChangeWork, &amDevChgTsfn_);
+}
+
+bool NapiAudioManagerCallback::GetDevChgTsfnFlag()
+{
+    return regAmDevChgTsfn_;
 }
 
 int32_t NapiAudioManagerCallback::GetAudioManagerDeviceChangeCbListSize()
@@ -264,8 +299,7 @@ void NapiAudioManagerCallback::SafeJsCallbackDeviceChangeWork(napi_env env, napi
         "OnJsCallbackDeviceChange: no memory");
     std::shared_ptr<AudioManagerJsCallback> safeContext(
         static_cast<AudioManagerJsCallback*>(data),
-        [event](AudioManagerJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amDevChgTsfn, napi_tsfn_abort);
+        [](AudioManagerJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -306,14 +340,9 @@ void NapiAudioManagerCallback::OnJsCallbackDeviceChange(std::unique_ptr<AudioMan
     }
     AudioManagerJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        DeviceChangeTsfnFinalize, nullptr, SafeJsCallbackDeviceChangeWork, &event->amDevChgTsfn);
     
-    napi_acquire_threadsafe_function(event->amDevChgTsfn);
-    napi_call_threadsafe_function(event->amDevChgTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amDevChgTsfn_);
+    napi_call_threadsafe_function(amDevChgTsfn_, event, napi_tsfn_blocking);
 }
 
 void NapiAudioManagerCallback::SafeJsCallbackMicrophoneBlockedWork(
@@ -324,8 +353,7 @@ void NapiAudioManagerCallback::SafeJsCallbackMicrophoneBlockedWork(
         "OnJsCallbackMicrophoneBlocked: no memory");
     std::shared_ptr<AudioManagerJsCallback> safeContext(
         static_cast<AudioManagerJsCallback*>(data),
-        [event](AudioManagerJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amMicBlockedTsfn, napi_tsfn_abort);
+        [](AudioManagerJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -367,13 +395,8 @@ void NapiAudioManagerCallback::OnJsCallbackMicrophoneBlocked(std::unique_ptr<Aud
     AudioManagerJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        MicrophoneBlockedTsfnFinalize, nullptr, SafeJsCallbackMicrophoneBlockedWork, &event->amMicBlockedTsfn);
-
-    napi_acquire_threadsafe_function(event->amMicBlockedTsfn);
-    napi_call_threadsafe_function(event->amMicBlockedTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amMicBlockedTsfn_);
+    napi_call_threadsafe_function(amMicBlockedTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

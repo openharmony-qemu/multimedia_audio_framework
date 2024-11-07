@@ -68,10 +68,12 @@ int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
         sceneTypeString = sceneType;
     }
     auto eBufferAttr = std::make_unique<EffectBufferAttr>(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->numChanIn,
-        bufferAttr->frameLen);
+        bufferAttr->frameLen, bufferAttr->numChanOut, bufferAttr->outChanLayout);
     if (audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, eBufferAttr) != SUCCESS) {
         return ERROR;
     }
+    bufferAttr->numChanOut = eBufferAttr->outChannels;
+    bufferAttr->outChanLayout = eBufferAttr->outChannelLayout;
     return SUCCESS;
 }
 
@@ -111,10 +113,7 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
         return SUCCESS;
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneTypeString, ADD_SCENE_TYPE);
-    bool curSpatializationEnabled = audioEffectChainManager->GetCurSpatializationEnabled();
-    std::string curDeviceType = audioEffectChainManager->GetDeviceTypeName();
-    if (audioEffectChainManager->GetOffloadEnabled() ||
-        ((curDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") && !curSpatializationEnabled)) {
+    if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }
     if (audioEffectChainManager->CreateAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
@@ -142,10 +141,7 @@ int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID
         return SUCCESS;
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneTypeString, REMOVE_SCENE_TYPE);
-    bool curSpatializationEnabled = audioEffectChainManager->GetCurSpatializationEnabled();
-    std::string curDeviceType = audioEffectChainManager->GetDeviceTypeName();
-    if (audioEffectChainManager->GetOffloadEnabled() ||
-        ((curDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") && !curSpatializationEnabled)) {
+    if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }
     if (audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {

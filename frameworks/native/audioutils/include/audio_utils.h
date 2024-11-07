@@ -130,7 +130,8 @@ public:
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
-    static bool NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
+    static bool NotifyStart(uint32_t targetTokenId, uint32_t sessionId);
+    static bool NotifyStop(uint32_t targetTokenId, uint32_t sessionId);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
@@ -602,6 +603,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_EC = 6,
     HDI_CAPTURE_OFFSET_MIC_REF = 7,
     HDI_CAPTURE_OFFSET_WAKEUP = 8,
+    HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
 };
 
 enum HdiRenderOffset : uint32_t {

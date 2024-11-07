@@ -177,6 +177,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "UNSET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "IS_ALLOWED_PLAYBACK",
+    "SET_VOICE_RINGTONE_MUTE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -539,11 +540,9 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
     }
     std::vector<sptr<AudioDeviceDescriptor>> targetOutputDevice;
     for (int i = 0; i < size; i++) {
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-        if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-            audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-        }
+        MapExternalToInternalDeviceType(*audioDeviceDescriptor);
         targetOutputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -571,11 +570,9 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
     CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "SelectInputDevice get invalid device size.");
     std::vector<sptr<AudioDeviceDescriptor>> targetInputDevice;
     for (int i = 0; i < size; i++) {
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-        if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-            audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-        }
+        MapExternalToInternalDeviceType(*audioDeviceDescriptor);
         targetInputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -985,12 +982,9 @@ void AudioPolicyManagerStub::SetCaptureSilentStateInternal(MessageParcel &data, 
 
 void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-
-    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    }
+    MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     int32_t result =  GetHardwareOutputSamplingRate(audioDeviceDescriptor);
     reply.WriteInt32(result);
 }
@@ -1069,10 +1063,8 @@ void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageP
 
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
-    if (IsArmUsbDevice(*descriptor)) {
-        descriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    }
+    sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    MapExternalToInternalDeviceType(*descriptor);
     CastType type = static_cast<CastType>(data.ReadInt32());
     int32_t result = ConfigDistributedRoutingRole(descriptor, type);
     reply.WriteInt32(result);
@@ -1113,11 +1105,9 @@ void AudioPolicyManagerStub::SetSpatializationEnabledInternal(MessageParcel &dat
 
 void AudioPolicyManagerStub::SetSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    }
+    MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     bool enable = data.ReadBool();
     int32_t result = SetSpatializationEnabled(audioDeviceDescriptor, enable);
     reply.WriteInt32(result);
@@ -1145,12 +1135,9 @@ void AudioPolicyManagerStub::SetHeadTrackingEnabledInternal(MessageParcel &data,
 
 void AudioPolicyManagerStub::SetHeadTrackingEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-
-    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
-        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    }
+    MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     bool enable = data.ReadBool();
     int32_t result = SetHeadTrackingEnabled(audioDeviceDescriptor, enable);
     reply.WriteInt32(result);
@@ -1328,6 +1315,9 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_DEVICE_ANAHS_CALLBACK):
             UnsetAudioDeviceAnahsCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOICE_RINGTONE_MUTE):
+            SetVoiceRingtoneMuteInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
@@ -2170,6 +2160,13 @@ void AudioPolicyManagerStub::IsAllowedPlaybackInternal(MessageParcel &data, Mess
     int32_t pid = data.ReadInt32();
     bool result = IsAllowedPlayback(uid, pid);
     reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    int32_t result = SetVoiceRingtoneMute(isMute);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::GetOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)

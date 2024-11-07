@@ -34,6 +34,9 @@ NapiRendererPositionCallback::NapiRendererPositionCallback(napi_env env)
 
 NapiRendererPositionCallback::~NapiRendererPositionCallback()
 {
+    if (regArPosTsfn_) {
+        napi_release_threadsafe_function(arPosTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("instance destroy");
 }
 
@@ -52,6 +55,21 @@ void NapiRendererPositionCallback::SaveCallbackReference(const std::string &call
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
+}
+
+void NapiRendererPositionCallback::CreateMarkReachedTsfn(napi_env env)
+{
+    regArPosTsfn_ = true;
+    std::string callbackName = "MarkReached";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr, PositionTsfnFinalize,
+        nullptr, SafeJsCallbackPositionWork, &arPosTsfn_);
+}
+
+bool NapiRendererPositionCallback::GetMarkReachedTsfnFlag()
+{
+    return regArPosTsfn_;
 }
 
 void NapiRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
@@ -75,8 +93,7 @@ void NapiRendererPositionCallback::SafeJsCallbackPositionWork(napi_env env, napi
         "OnJsRendererPositionCallback: no memory");
     std::shared_ptr<RendererPositionJsCallback> safeContext(
         static_cast<RendererPositionJsCallback*>(data),
-        [event](RendererPositionJsCallback *ptr) {
-            napi_release_threadsafe_function(event->arPosTsfn, napi_tsfn_abort);
+        [](RendererPositionJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -121,13 +138,8 @@ void NapiRendererPositionCallback::OnJsRendererPositionCallback(std::unique_ptr<
     RendererPositionJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event, PositionTsfnFinalize,
-        nullptr, SafeJsCallbackPositionWork, &event->arPosTsfn);
-
-    napi_acquire_threadsafe_function(event->arPosTsfn);
-    napi_call_threadsafe_function(event->arPosTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(arPosTsfn_);
+    napi_call_threadsafe_function(arPosTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

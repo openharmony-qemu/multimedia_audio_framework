@@ -30,6 +30,9 @@ NapiAudioRendererDeviceChangeCallback::NapiAudioRendererDeviceChangeCallback(nap
 
 NapiAudioRendererDeviceChangeCallback::~NapiAudioRendererDeviceChangeCallback()
 {
+    if (regArDevInfoTsfn_) {
+        napi_release_threadsafe_function(arDevInfoTsfn_, napi_tsfn_abort);
+    }
     AUDIO_INFO_LOG("instance destroy");
 }
 
@@ -55,6 +58,21 @@ void NapiAudioRendererDeviceChangeCallback::AddCallbackReference(napi_value args
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     callbacks_.push_back(cb);
     AUDIO_INFO_LOG("AddCallbackReference successful");
+}
+
+void NapiAudioRendererDeviceChangeCallback::CreateRendererDeviceChangeTsfn(napi_env env)
+{
+    regArDevInfoTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "AudioRendererDeviceChange";
+    napi_create_string_utf8(env_, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr, RendererDeviceInfoTsfnFinalize,
+        nullptr, SafeJsCallbackRendererDeviceInfoWork, &arDevInfoTsfn_);
+}
+
+bool NapiAudioRendererDeviceChangeCallback::GetRendererDeviceChangeTsfnFlag()
+{
+    return regArDevInfoTsfn_;
 }
 
 void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env, napi_value args)
@@ -97,7 +115,7 @@ int32_t NapiAudioRendererDeviceChangeCallback::GetCallbackListSize() const
     return callbacks_.size();
 }
 
-void NapiAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+void NapiAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -114,8 +132,7 @@ void NapiAudioRendererDeviceChangeCallback::SafeJsCallbackRendererDeviceInfoWork
         "SafeJsCallbackRendererDeviceInfoWork: No memory");
     std::shared_ptr<AudioRendererDeviceChangeJsCallback> safeContext(
         static_cast<AudioRendererDeviceChangeJsCallback*>(data),
-        [event](AudioRendererDeviceChangeJsCallback *ptr) {
-            napi_release_threadsafe_function(event->arDevInfoTsfn, napi_tsfn_abort);
+        [](AudioRendererDeviceChangeJsCallback *ptr) {
             delete ptr;
     });
     napi_ref callback = event->callback_;
@@ -147,21 +164,15 @@ void NapiAudioRendererDeviceChangeCallback::RendererDeviceInfoTsfnFinalize(napi_
 }
 
 void NapiAudioRendererDeviceChangeCallback::OnJsCallbackRendererDeviceInfo(napi_ref method,
-    const DeviceInfo &deviceInfo)
+    const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_LOG(method != nullptr, "OnJsCallbackRendererDeviceInfo method is nullptr");
     AudioRendererDeviceChangeJsCallback *event =
         new AudioRendererDeviceChangeJsCallback {method, env_, deviceInfo};
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr.");
 
-    napi_value cbName;
-    event->callbackName = "AudioRendererDeviceChange";
-    napi_create_string_utf8(event->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->env_, nullptr, nullptr, cbName, 0, 1, event, RendererDeviceInfoTsfnFinalize,
-        nullptr, SafeJsCallbackRendererDeviceInfoWork, &event->arDevInfoTsfn);
-
-    napi_acquire_threadsafe_function(event->arDevInfoTsfn);
-    napi_call_threadsafe_function(event->arDevInfoTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(arDevInfoTsfn_);
+    napi_call_threadsafe_function(arDevInfoTsfn_, event, napi_tsfn_blocking);
 }
 
 NapiAudioRendererOutputDeviceChangeWithInfoCallback::NapiAudioRendererOutputDeviceChangeWithInfoCallback(napi_env env)
@@ -172,6 +183,9 @@ NapiAudioRendererOutputDeviceChangeWithInfoCallback::NapiAudioRendererOutputDevi
 
 NapiAudioRendererOutputDeviceChangeWithInfoCallback::~NapiAudioRendererOutputDeviceChangeWithInfoCallback()
 {
+    if (regArOutputDevChg_) {
+        napi_release_threadsafe_function(arOutputDevChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_INFO_LOG("instance destroy");
 }
 
@@ -197,6 +211,21 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::AddCallbackReference(n
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     callbacks_.push_back(cb);
     AUDIO_INFO_LOG("successful");
+}
+
+void NapiAudioRendererOutputDeviceChangeWithInfoCallback::CreateOutputDeviceChangeTsfn(napi_env env)
+{
+    regArOutputDevChg_ = true;
+    napi_value cbName;
+    std::string callbackName = "AROutputDeviceChangeWithInfo";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr, OutputDeviceInfoTsfnFinalize,
+        nullptr, SafeJsCallbackOutputDeviceInfoWork, &arOutputDevChgTsfn_);
+}
+
+bool NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetOutputDeviceChangeTsfnFlag()
+{
+    return regArOutputDevChg_;
 }
 
 void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReference(napi_env env, napi_value args)
@@ -239,7 +268,7 @@ int32_t NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetCallbackListSize
     return callbacks_.size();
 }
 
-void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -257,8 +286,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::SafeJsCallbackOutputDe
         "OnJsCallbackOutputDeviceInfo: No memory");
     std::shared_ptr<AudioRendererOutputDeviceChangeWithInfoJsCallback> safeContext(
         static_cast<AudioRendererOutputDeviceChangeWithInfoJsCallback*>(data),
-        [event](AudioRendererOutputDeviceChangeWithInfoJsCallback *ptr) {
-            napi_release_threadsafe_function(event->arOutputDevChgTsfn, napi_tsfn_abort);
+        [](AudioRendererOutputDeviceChangeWithInfoJsCallback *ptr) {
             delete ptr;
     });
     napi_ref callback = event->callback_;
@@ -299,21 +327,15 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OutputDeviceInfoTsfnFi
 }
 
 void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnJsCallbackOutputDeviceInfo(napi_ref method,
-    const DeviceInfo &deviceInfo, AudioStreamDeviceChangeReason reason)
+    const AudioDeviceDescriptor &deviceInfo, AudioStreamDeviceChangeReason reason)
 {
     CHECK_AND_RETURN_LOG(method != nullptr, "OnJsCallbackOutputDeviceInfo method is nullptr");
     AudioRendererOutputDeviceChangeWithInfoJsCallback *event =
         new AudioRendererOutputDeviceChangeWithInfoJsCallback {method, env_, deviceInfo, reason};
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr.");
 
-    napi_value cbName;
-    event->callbackName = "AROutputDeviceChangeWithInfo";
-    napi_create_string_utf8(event->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->env_, nullptr, nullptr, cbName, 0, 1, event, OutputDeviceInfoTsfnFinalize,
-        nullptr, SafeJsCallbackOutputDeviceInfoWork, &event->arOutputDevChgTsfn);
-
-    napi_acquire_threadsafe_function(event->arOutputDevChgTsfn);
-    napi_call_threadsafe_function(event->arOutputDevChgTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(arOutputDevChgTsfn_);
+    napi_call_threadsafe_function(arOutputDevChgTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

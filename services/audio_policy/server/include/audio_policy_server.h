@@ -73,11 +73,8 @@ const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
 
 // for PC
 const std::vector<AudioStreamType> GET_PC_STREAM_RING_VOLUME_TYPES {
-    STREAM_RING,
-    STREAM_VOICE_RING,
     STREAM_SYSTEM,
     STREAM_SYSTEM_ENFORCED,
-    STREAM_ALARM,
     STREAM_NOTIFICATION
 };
 
@@ -86,6 +83,9 @@ const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
     STREAM_VOICE_CALL,
     STREAM_VOICE_ASSISTANT,
     STREAM_ACCESSIBILITY,
+    STREAM_RING,
+    STREAM_ALARM,
+    STREAM_VOICE_RING,
     STREAM_ULTRASONIC
 };
 
@@ -148,6 +148,8 @@ public:
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) override;
 
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) override;
+
+    void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc) override;
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
@@ -441,6 +443,8 @@ public:
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) override;
+
+    int32_t SetVoiceRingtoneMute(bool isMute) override;
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;

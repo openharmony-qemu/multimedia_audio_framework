@@ -259,8 +259,8 @@ static void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
 
 static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst)
 {
-    pa_assert(src);
-    pa_assert(dst);
+    CHECK_AND_RETURN_LOG(src != NULL, "src is null");
+    CHECK_AND_RETURN_LOG(dst != NULL, "dst is null");
     int32_t ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
@@ -286,8 +286,8 @@ static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, flo
 
 static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst)
 {
-    pa_assert(src);
-    pa_assert(dst);
+    CHECK_AND_RETURN_LOG(src != NULL, "src is null");
+    CHECK_AND_RETURN_LOG(dst != NULL, "dst is null");
     int32_t ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
@@ -1249,7 +1249,7 @@ static void HandleFading(pa_sink *si, size_t length, pa_sink_input *sinkIn, pa_m
     CheckPrimaryFadeinIsDone(si, sinkIn);
 
     const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
-    if (pa_safe_streq(sinkFadeoutPause, "0") && (length == infoIn->chunk.length)) {
+    if (pa_safe_streq(sinkFadeoutPause, "0") && (length <= infoIn->chunk.length)) {
         u->streamAvailable++;
     }
 }
@@ -1280,7 +1280,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = GetExistFlag(sinkIn, sSceneType, sSceneMode, u->actualSpatializationEnabled ? "1" : "0");
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sSceneType, sceneType);
-        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
+        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently())) {
             continue;
         } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             RecordEffectChainStatus(existFlag, sSceneType, sSceneMode, u->actualSpatializationEnabled);
@@ -1869,15 +1869,90 @@ static void UpdateStreamAvailableMap(struct Userdata *u, const char *sceneType)
     }
 }
 
-static void PrimaryEffectProcess(struct Userdata *u, pa_memchunk *chunkIn, char *sinkSceneType)
+/* For ResampleAffterEffectChain, update input channellayout and sample spec */
+static pa_resampler *UpdateResamplerIchannelMap(const char *sinkSceneType, struct Userdata *u)
+{
+    pa_resampler *resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sinkSceneType);
+    if (resampler == NULL) {
+        return NULL;
+    }
+    pa_channel_map ichannelmap;
+    ichannelmap.channels = u->bufferAttr->numChanOut;
+    ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &ichannelmap);
+    if ((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &ichannelmap))) {
+        // for now, use sample_spec from sink
+        pa_sample_spec ispec = *(pa_resampler_input_sample_spec(resampler));
+        ispec.channels = (uint8_t)u->bufferAttr->numChanOut;
+        AUDIO_INFO_LOG("UpdateResampler: sceneType [%{public}s], input channels[%{public}d], sample rate[%{public}d],"
+            "format[%{public}d]", (char *)sinkSceneType, ichannelmap.channels, ispec.rate, ispec.format);
+        pa_sample_spec sink_spec = *(pa_resampler_output_sample_spec(resampler));
+        pa_channel_map sink_channelmap = *(pa_resampler_output_channel_map(resampler));
+        resampler = pa_resampler_new(
+            u->sink->core->mempool,
+            &ispec, &ichannelmap,
+            &sink_spec, &sink_channelmap,
+            u->sink->core->lfe_crossover_freq,
+            PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+        const char *dupSceneType = strdup(sinkSceneType);
+        pa_hashmap_remove_and_free(u->sceneToResamplerMap, (void *)sinkSceneType);
+        pa_hashmap_put(u->sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
+    }
+    return resampler;
+}
+
+static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata *u)
+{
+    CHECK_AND_RETURN_LOG(sinkSceneType != NULL, "ResampleAfterEffectChain: sceneType is NULL!");
+    CHECK_AND_RETURN_LOG(u != NULL, "ResampleAfterEffectChain: u is null!");
+    if (pa_safe_streq(sinkSceneType, "EFFECT_NONE")) {
+        return;
+    }
+    pa_resampler *resampler = UpdateResamplerIchannelMap(sinkSceneType, u);
+    if (resampler == NULL) {
+        return;
+    }
+    const pa_sample_spec *ispec = pa_resampler_input_sample_spec(resampler);
+    const pa_sample_spec *ospec = pa_resampler_output_sample_spec(resampler);
+    size_t inBufferLen = u->bufferAttr->frameLen * ispec->channels * sizeof(float);
+    size_t outBufferLen = u->bufferAttr->frameLen * ospec->channels * sizeof(float);
+    pa_memchunk unsampledChunk;
+    pa_memchunk sampledChunk;
+    unsampledChunk.length = inBufferLen;
+    unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
+    void *dst = pa_memblock_acquire(unsampledChunk.memblock);
+    pa_assert(dst);
+    int ret = memcpy_s(dst, inBufferLen, u->bufferAttr->bufOut, inBufferLen);
+    if (ret != 0) {
+        float *dstFloat = (float *)dst;
+        for (int i = 0; i < ispec->channels * u->bufferAttr->frameLen; i++) {
+            dstFloat[i] = u->bufferAttr->bufOut[i];
+        }
+    }
+    pa_memblock_release(unsampledChunk.memblock);
+    pa_resampler_run(resampler, &unsampledChunk, &sampledChunk);
+    void *src = pa_memblock_acquire(sampledChunk.memblock);
+    pa_assert(src);
+    ret = memcpy_s(u->bufferAttr->bufOut, outBufferLen, src, outBufferLen);
+    if (ret != 0) {
+        float *srcFloat = (float *)src;
+        for (int i = 0; i < u->bufferAttr->frameLen * ospec->channels; i++) {
+            u->bufferAttr->bufOut[i] = srcFloat[i];
+        }
+    }
+    pa_memblock_release(sampledChunk.memblock);
+    pa_memblock_unref(unsampledChunk.memblock);
+    pa_memblock_unref(sampledChunk.memblock);
+}
+
+static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType)
 {
     AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", sinkSceneType);
     EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
     UpdateStreamAvailableMap(u, sinkSceneType);
-    for (int32_t k = 0; k < u->bufferAttr->frameLen * u->bufferAttr->numChanOut; k++) {
+    ResampleAfterEffectChain(sinkSceneType, u);
+    for (int32_t k = 0; k < u->bufferAttr->frameLen * u->sink->sample_spec.channels; k++) {
         u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
     }
-    pa_memblock_release(chunkIn->memblock);
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
 }
 
@@ -1965,6 +2040,60 @@ static void ResetBufferAttr(struct Userdata *u)
     }
 }
 
+static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashmap *sceneToCountMap, pa_sink *si)
+{
+    // sample rate and channellayout from audio effect chain -> resampler -> sample rate and channellayout for the sink
+    pa_sample_spec sink_spec = si->sample_spec;
+    pa_channel_map sink_channelmap = si->channel_map;
+    sink_spec.format = PA_SAMPLE_FLOAT32LE;
+    const void* sceneType = NULL;
+    void* count = NULL;
+    while ((pa_hashmap_iterate(sceneToCountMap, &count, &sceneType))) {
+        if (pa_safe_streq(sceneType, "EFFECT_NONE")) {
+            continue;
+        }
+        pa_resampler* resampler = NULL;
+        resampler = (pa_resampler*)pa_hashmap_get(sceneToResamplerMap, sceneType);
+        if (resampler == NULL) {
+            // for now, use sample_spec from sink
+            AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
+                ", format[%{public}d]", (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
+            resampler = pa_resampler_new(
+                si->core->mempool,
+                &sink_spec, &sink_channelmap,
+                &sink_spec, &sink_channelmap,
+                si->core->lfe_crossover_freq,
+                PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+            char* newSceneType = strdup(sceneType);
+            pa_hashmap_put(sceneToResamplerMap, (void *)newSceneType, (void *)resampler);
+        } else {
+            if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
+                !pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
+                AUDIO_INFO_LOG("SceneToResamplerMap: [%{public}s], new output channels[%{public}d], "
+                    "sample rate[%{public}d], format[%{public}d]",
+                    (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
+                char *dupSceneType = strdup(sceneType);
+                pa_hashmap_remove_and_free(sceneToResamplerMap, (void *)sceneType);
+                resampler = pa_resampler_new(
+                    si->core->mempool,
+                    &sink_spec, &sink_channelmap,
+                    &sink_spec, &sink_channelmap,
+                    si->core->lfe_crossover_freq,
+                    PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+                pa_hashmap_put(sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
+            }
+        }
+    }
+    // delete entries that are not in scenemap
+    void* resampler = NULL;
+    while ((pa_hashmap_iterate(sceneToResamplerMap, &resampler, &sceneType))) {
+        if (pa_hashmap_get(sceneToCountMap, sceneType) == NULL) {
+            AUDIO_INFO_LOG("UpdateSceneToResamplerMap: sceneType [%{public}s] is removed", (char *)sceneType);
+            pa_hashmap_remove_and_free(sceneToResamplerMap, sceneType);
+        }
+    }
+}
+
 static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     CHECK_AND_RETURN_LOG(si != NULL, "si is null");
@@ -1986,7 +2115,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     g_effectProcessFrameCount++;
     const void *sceneType;
     UpdateSceneToCountMap(u);
-    // to do update resampler when output device change
+    UpdateSceneToResamplerMap(u->sceneToResamplerMap, u->sceneToCountMap, si);
     void *state = NULL;
     while ((pa_hashmap_iterate(u->sceneToCountMap, &state, &sceneType))) {
         u->streamAvailable = 0;
@@ -2003,12 +2132,12 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         chunkIn->length = tmpLength;
         void *src = pa_memblock_acquire_chunk(chunkIn);
         int32_t frameLen = bitSize > 0 ? ((int32_t)tmpLength / bitSize) : 0;
-
         ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
         u->bufferAttr->numChanIn = (int32_t)processChannels;
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
-        PrimaryEffectProcess(u, chunkIn, sinkSceneType);
+        PrimaryEffectProcess(u, sinkSceneType);
+        pa_memblock_release(chunkIn->memblock);
     }
     if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) { g_effectProcessFrameCount = 0; }
     CheckAndDealSpeakerPaZeroVolume(u, currentTime);
@@ -2055,7 +2184,7 @@ static void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 
 static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
 {
-    pa_assert(s);
+    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     void *state = NULL;
     pa_sink_input *input;
     while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
@@ -2074,7 +2203,7 @@ static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
 
 static void UnsetSinkVolume(pa_sink *s)
 {
-    pa_assert(s);
+    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     void *state = NULL;
     pa_sink_input *input;
     while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
@@ -2089,7 +2218,7 @@ static void UnsetSinkVolume(pa_sink *s)
 
 static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 {
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     // Fill the buffer up the latency size
     pa_memchunk chunk;
@@ -2118,6 +2247,9 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 static bool InputIsOffload(pa_sink_input *i)
 {
     if (monitorLinked(i->sink, true)) {
+        return false;
+    }
+    if (strncmp(i->sink->driver, "module_hdi_sink", 15)) { // 15 cmp length
         return false;
     }
     struct Userdata *u = i->sink->userdata;
@@ -2192,6 +2324,9 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink *s, pa
         if (flag) {
             info->userdata = pa_sink_input_ref(i);
         } else {
+            const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+            AUDIO_PRERELEASE_LOGE("sink: %{public}s, sink_input: %{public}s, the type is not %{public}d",
+                s->name, sessionIDStr, type);
             continue;
         }
 
@@ -2561,9 +2696,10 @@ static int32_t UpdatePresentationPosition(struct Userdata *u)
 
 static void OffloadRewindAndFlush(struct Userdata *u, pa_sink_input *i, bool afterRender)
 {
+    CHECK_AND_RETURN_LOG(i != NULL, "i is null");
     pa_sink_input_assert_ref(i);
     playback_stream *ps = i->userdata;
-    pa_assert(ps);
+    CHECK_AND_RETURN_LOG(ps != NULL, "ps is null");
 
     int ret = UpdatePresentationPosition(u);
     u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
@@ -2728,7 +2864,7 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
 
 static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t state)
 {
-    pa_assert(i);
+    CHECK_AND_RETURN_LOG(i != NULL, "i is null");
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     if (corking) {
         const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
@@ -2911,9 +3047,9 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 {
     struct Userdata *u = NULL;
 
-    pa_assert(i);
+    CHECK_AND_RETURN_LOG(i != NULL, "i is null");
     pa_sink_input_assert_ref(i);
-    pa_assert(i->sink);
+    CHECK_AND_RETURN_LOG(i->sink != NULL, "i->sink is null");
 
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
@@ -3037,16 +3173,16 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
 
 static void SinkRenderMultiChannel(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
-    pa_sink_ref(si);
-
     size_t blockSizeMax;
 
+    CHECK_AND_RETURN_LOG(si != NULL, "si is null");
+    pa_sink_ref(si);
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
-    pa_assert(length > 0);
-    pa_assert(pa_frame_aligned(length, &si->sample_spec));
-    pa_assert(chunkIn);
+    CHECK_AND_RETURN_LOG(chunkIn != NULL, "chunkIn is null");
+    CHECK_AND_RETURN_LOG(chunkIn->length > 0, "chunkIn->length < 0");
+    pa_assert(pa_frame_aligned(chunkIn->length, &si->sample_spec));
 
     pa_assert(!si->thread_info.rewind_requested);
     pa_assert(si->thread_info.rewind_nbytes == 0);
@@ -3074,7 +3210,7 @@ static void SinkRenderMultiChannel(pa_sink *si, size_t length, pa_memchunk *chun
 
 static void ProcessRenderUseTimingMultiChannel(struct Userdata *u, pa_usec_t now)
 {
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     // Fill the buffer up the latency size
     pa_memchunk chunk;
@@ -3097,7 +3233,7 @@ static void ProcessRenderUseTimingMultiChannel(struct Userdata *u, pa_usec_t now
 
 static bool POSSIBLY_UNUSED ThreadFuncRendererTimerMultiChannelFlagJudge(struct Userdata *u)
 {
-    pa_assert(u);
+    CHECK_AND_RETURN_RET_LOG(u != NULL, false, "u is null");
     bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
         (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
         (u->sink->thread_info.state == PA_SINK_IDLE && u->sink->monitor_source &&
@@ -3277,7 +3413,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
     struct Userdata *u = userdata;
 
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
     AUDIO_INFO_LOG("Thread %s(use timing bus) starting up, pid %d, tid %d", deviceClass, getpid(), gettid());
@@ -3340,7 +3476,7 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
     ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     int32_t quit = 0;
 
@@ -3400,7 +3536,7 @@ static void ThreadFuncWriteHDI(void *userdata)
     ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     int32_t quit = 0;
 
@@ -3448,7 +3584,7 @@ static void TestModeThreadFuncWriteHDI(void *userdata)
     ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
-    pa_assert(u);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     int32_t quit = 0;
 
@@ -3514,7 +3650,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
     AUDIO_DEBUG_LOG("SinkProcessMsg: code: %{public}d", code);
     AUTO_CTRACE("hdi_sink::SinkProcessMsg code: %d", code);
     struct Userdata *u = PA_SINK(o)->userdata;
-    pa_assert(u);
+    CHECK_AND_RETURN_RET_LOG(u != NULL, 0, "u is null");
 
     switch (code) {
         case PA_SINK_MESSAGE_GET_LATENCY: {
@@ -3688,6 +3824,7 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
     struct Userdata *u = (struct Userdata *)(sink->userdata);
     const bool starting = PA_SINK_IS_OPENED(newState);
     const bool stopping = newState == PA_SINK_SUSPENDED;
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
     AUDIO_INFO_LOG("starting: %{public}d, stopping: %{public}d, offload_enable: %{public}d",
         starting, stopping, u->offload_enable);
     if (starting && u->offload_enable && !u->offload.inited && PrepareDeviceOffload(u) == 0) {
@@ -3714,7 +3851,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 {
     struct Userdata *u = NULL;
 
-    pa_assert(s);
+    CHECK_AND_RETURN_RET_LOG(s != NULL, 0, "s is null");
     pa_assert_se(u = s->userdata);
 
     AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
@@ -3916,6 +4053,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->bufferAttr->numChanIn = u->ss.channels;
     u->bufferAttr->numChanOut = u->ss.channels;
     u->bufferAttr->bufOutUsed = true;
+    u->bufferAttr->outChanLayout = DEFAULT_CHANNELLAYOUT;
     u->sinkSceneMode = -1;
     u->sinkSceneType = -1;
 }
@@ -4053,6 +4191,7 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
 
 static int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
+    CHECK_AND_RETURN_RET_LOG(m != NULL, -1, "m is null");
     u->core = m->core;
     u->module = m;
 
@@ -4119,7 +4258,6 @@ static void InitStreamAvailable(struct Userdata *u)
     
     u->sceneToCountMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
         pa_xfree, pa_xfree);
-
     char *sceneType = strdup("EFFECT_NONE");
     if (sceneType != NULL) {
         uint32_t *num = NULL;
@@ -4127,6 +4265,8 @@ static void InitStreamAvailable(struct Userdata *u)
         *num = 1;
         pa_hashmap_put(u->sceneToCountMap, sceneType, num);
     }
+    u->sceneToResamplerMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
+        pa_xfree, (pa_free_cb_t) pa_resampler_free);
 }
 
 static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, const char *driver, struct Userdata *u)
@@ -4376,6 +4516,10 @@ static void UserdataFree(struct Userdata *u)
 
     if (u->sceneToCountMap) {
         pa_hashmap_free(u->sceneToCountMap);
+    }
+
+    if (u->sceneToResamplerMap) {
+        pa_hashmap_free(u->sceneToResamplerMap);
     }
 
     if (u->streamAvailableMap) {

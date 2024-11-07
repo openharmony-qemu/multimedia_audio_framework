@@ -172,7 +172,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/data_share_observer_callback.cpp",
     "server/src/service/device_init_callback.cpp",
     "server/src/service/effect/audio_effect_config_parser.cpp",
-    "server/src/service/effect/audio_effect_manager.cpp",
+    "server/src/service/effect/audio_effect_service.cpp",
     "server/src/service/interrupt/audio_interrupt_service.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/listener/power_state_listener.cpp",
@@ -433,6 +433,7 @@ ohos_shared_library("audio_policy_client") {
 
   sources = [
     "../audio_service/client/src/audio_device_descriptor.cpp",
+    "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "client/src/audio_anahs_manager_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",

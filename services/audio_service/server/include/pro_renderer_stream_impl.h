@@ -23,6 +23,7 @@
 #include "audio_resample.h"
 #include "linear_pos_time_model.h"
 #include "audio_down_mix_stereo.h"
+#include "audio_common_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,7 +40,7 @@ public:
     int32_t Release() override;
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
     int32_t GetCurrentTimeStamp(uint64_t &timestamp) override;
-    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp) override;
+    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
     int32_t SetLowPowerVolume(float volume) override;
@@ -81,9 +82,9 @@ private:
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept;
     AudioSampleFormat GetDirectFormat(AudioSampleFormat format) const noexcept;
     uint32_t GetSamplePerFrame(AudioSampleFormat format) const noexcept;
-    void ConvertSrcToFloat(uint8_t *buffer, size_t bufLength, float volume);
+    void ConvertSrcToFloat(const BufferDesc &bufferDesc);
     void ConvertFloatToDes(int32_t writeIndex);
-    float GetStreamVolume();
+    void GetStreamVolume();
     void PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index);
     int32_t PopWriteBufferIndex();
     void SetOffloadDisable();
@@ -120,6 +121,7 @@ private:
     LinearPosTimeModel handleTimeModel_;
     AudioProcessConfig processConfig_;
     std::unique_ptr<AudioDownMixStereo> downMixer_;
+    BufferBaseInfo bufferInfo_;
 
     std::mutex firstFrameMutex;
     std::mutex enqueueMutex;

@@ -18,6 +18,7 @@
 
 #include "OHAudioRenderer.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 using OHOS::AudioStandard::Timestamp;
 
@@ -93,8 +94,7 @@ OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer *renderer)
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
     if (audioRenderer->Release()) {
-        delete audioRenderer;
-        audioRenderer = nullptr;
+        OHOS::AudioStandard::ObjectRefMap<OHOS::AudioStandard::OHAudioRenderer>::DecreaseRef(audioRenderer);
         return AUDIOSTREAM_SUCCESS;
     } else {
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
@@ -697,6 +697,7 @@ uint32_t OHAudioRenderer::GetUnderflowCount()
 void OHAudioRendererModeCallback::OnWriteData(size_t length)
 {
     OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
+    OHOS::AudioStandard::ObjectRefMap objectGuard(audioRenderer);
     CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_PCM) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
         ((encodingType_ == ENCODING_PCM) && (onWriteDataCallback_ != nullptr)) ||
@@ -726,7 +727,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     audioRenderer->Enqueue(bufDesc);
 }
 
-void OHAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+void OHAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
@@ -775,7 +776,7 @@ void OHAudioRendererErrorCallback::OnError(AudioErrors errorCode)
     callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
 }
 
-void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");

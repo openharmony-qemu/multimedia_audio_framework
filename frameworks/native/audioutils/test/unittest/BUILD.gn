@@ -42,3 +42,31 @@ ohos_unittest("audio_utils_unit_test") {
 
   deps = [ "../../../audioutils:audio_utils" ]
 }
+
+ohos_unittest("audio_utils_plus_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../../include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include/",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  external_deps = [ "init:libbegetutil" ]
+
+  if (sonic_enable == true) {
+    cflags += [ "-DSONIC_ENABLE" ]
+  }
+
+  if (sonic_enable == true) {
+    external_deps += [ "pulseaudio:sonic" ]
+  }
+
+  sources = [ "audio_utils_plus_unit_test.cpp" ]
+
+  deps = [ "../../../audioutils:audio_utils" ]
+}

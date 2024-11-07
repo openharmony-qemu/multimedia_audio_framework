@@ -576,7 +576,7 @@ bool FastAudioStream::DrainAudioStream(bool stopFlag)
     return true;
 }
 
-bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce)
+bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED && state_ != NEW,
         false, "Illegal state: state = %{public}u", state_);
@@ -586,7 +586,7 @@ bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce)
     }
 
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "Release failed, process is null.");
-    processClient_->Release(destoryAtOnce);
+    processClient_->Release(isSwitchStream);
     state_ = RELEASED;
     AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS, sessionId: %{public}d", sessionId_);
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {

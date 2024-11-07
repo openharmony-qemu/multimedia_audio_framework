@@ -22,6 +22,17 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static std::string GeneratePidsStrForPrinting(
+    const std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &unorderedMap)
+{
+    std::string retString = "[";
+    for (const auto &[pid, iAudioPolicyClient] : unorderedMap) {
+        retString += (std::to_string(pid) + ',');
+    }
+    retString += ']';
+    return retString;
+}
+
 AudioPolicyServerHandler::AudioPolicyServerHandler() : AppExecFwk::EventHandler(
     AppExecFwk::EventRunner::Create("OS_APAsyncRunner"))
 {
@@ -49,8 +60,9 @@ void AudioPolicyServerHandler::AddAudioPolicyClientProxyMap(int32_t clientPid, c
             AUDIO_ERR_LOG("client registers multiple callbacks, the callback may be lost.");
         }
     }
-    AUDIO_INFO_LOG("group data num [%{public}zu] pid [%{public}d]",
-        audioPolicyClientProxyAPSCbsMap_.size(), clientPid);
+    pidsStrForPrinting_ = GeneratePidsStrForPrinting(audioPolicyClientProxyAPSCbsMap_);
+    AUDIO_INFO_LOG("group data num [%{public}zu] pid [%{public}d] map %{public}s",
+        audioPolicyClientProxyAPSCbsMap_.size(), clientPid, pidsStrForPrinting_.c_str());
 }
 
 void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
@@ -58,8 +70,9 @@ void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
     std::lock_guard<std::mutex> lock(runnerMutex_);
     audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
     clientCallbacksMap_.erase(clientPid);
-    AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu]",
-        audioPolicyClientProxyAPSCbsMap_.size());
+    pidsStrForPrinting_ = GeneratePidsStrForPrinting(audioPolicyClientProxyAPSCbsMap_);
+    AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu] map %{public}s",
+        audioPolicyClientProxyAPSCbsMap_.size(), pidsStrForPrinting_.c_str());
 }
 
 void AudioPolicyServerHandler::AddExternInterruptCbsMap(int32_t clientId,
@@ -376,7 +389,7 @@ bool AudioPolicyServerHandler::SendCapturerInfoEvent(
 }
 
 bool AudioPolicyServerHandler::SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
-    const DeviceInfo &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = std::make_shared<RendererDeviceChangeEvent>(
         clientPid, sessionId, outputDeviceInfo, reason);
@@ -565,7 +578,11 @@ void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::Inn
                 AudioPolicyService::GetAudioPolicyService().
                     UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
             }
-            it->second->OnDeviceChange(deviceChangeAction);
+            if (clientCallbacksMap_.count(it->first) > 0 &&
+                clientCallbacksMap_[it->first].count(CALLBACK_SET_DEVICE_CHANGE) > 0 &&
+                clientCallbacksMap_[it->first][CALLBACK_SET_DEVICE_CHANGE]) {
+                it->second->OnDeviceChange(deviceChangeAction);
+            }
         }
     }
 }
@@ -579,7 +596,11 @@ void AudioPolicyServerHandler::HandleMicrophoneBlockedCallback(const AppExecFwk:
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         if (it->second && eventContextObj->microphoneBlockedInfo.devices.size() > 0) {
             MicrophoneBlockedInfo microphoneBlockedInfo = eventContextObj->microphoneBlockedInfo;
-            it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
+            if (clientCallbacksMap_.count(it->first) > 0 &&
+                clientCallbacksMap_[it->first].count(CALLBACK_SET_MICROPHONE_BLOCKED) > 0 &&
+                clientCallbacksMap_[it->first][CALLBACK_SET_MICROPHONE_BLOCKED]) {
+                it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
+            }
         }
     }
 }
@@ -619,7 +640,11 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             " volume : %{public}d, updateUi : %{public}d ", it->first,
             static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
             static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
-        volumeChangeCb->OnVolumeKeyEvent(eventContextObj->volumeEvent);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_KEY_EVENT]) {
+            volumeChangeCb->OnVolumeKeyEvent(eventContextObj->volumeEvent);
+        }
     }
 }
 
@@ -707,7 +732,11 @@ void AudioPolicyServerHandler::HandleRingerModeUpdatedEvent(const AppExecFwk::In
         }
 
         AUDIO_DEBUG_LOG("ringerModeListenerCb client %{public}d", it->first);
-        ringerModeListenerCb->OnRingerModeUpdated(eventContextObj->ringMode);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SET_RINGER_MODE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SET_RINGER_MODE]) {
+            ringerModeListenerCb->OnRingerModeUpdated(eventContextObj->ringMode);
+        }
     }
 }
 
@@ -722,7 +751,11 @@ void AudioPolicyServerHandler::HandleMicStateUpdatedEvent(const AppExecFwk::Inne
             AUDIO_ERR_LOG("callback is nullptr for client %{public}d", it->first);
             continue;
         }
-        micStateChangeListenerCb->OnMicStateUpdated(eventContextObj->micStateChangeEvent);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SET_MIC_STATE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SET_MIC_STATE_CHANGE]) {
+            micStateChangeListenerCb->OnMicStateUpdated(eventContextObj->micStateChangeEvent);
+        }
     }
 }
 
@@ -742,7 +775,11 @@ void AudioPolicyServerHandler::HandleMicStateUpdatedEventWithClientId(const AppE
             AUDIO_ERR_LOG("callback is nullptr for client %{public}d", it->first);
             continue;
         }
-        micStateChangeListenerCb->OnMicStateUpdated(eventContextObj->micStateChangeEvent);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SET_MIC_STATE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SET_MIC_STATE_CHANGE]) {
+            micStateChangeListenerCb->OnMicStateUpdated(eventContextObj->micStateChangeEvent);
+        }
     }
 }
 
@@ -794,7 +831,11 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
         if (!(it->second->hasBTPermission_)) {
             AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
         }
-        it->second->OnPreferredOutputDeviceUpdated(deviceDescs);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE]) {
+            it->second->OnPreferredOutputDeviceUpdated(deviceDescs);
+        }
     }
 }
 
@@ -807,7 +848,11 @@ void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
         if (!(it->second->hasBTPermission_)) {
             AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
         }
-        it->second->OnPreferredInputDeviceUpdated(deviceDescs);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE]) {
+            it->second->OnPreferredInputDeviceUpdated(deviceDescs);
+        }
     }
 }
 
@@ -842,6 +887,8 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
             ResetRingerModeMute(eventContextObj->audioRendererChangeInfos);
         }
     }
+    AUDIO_INFO_LOG("pids: %{public}s size: %{public}zu", pidsStrForPrinting_.c_str(),
+        audioPolicyClientProxyAPSCbsMap_.size());
 }
 
 void AudioPolicyServerHandler::ResetRingerModeMute(const std::vector<std::shared_ptr<AudioRendererChangeInfo>>
@@ -898,7 +945,11 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
         return;
     }
     Trace traceCallback("capturerStateChangeCb->OnRendererDeviceChange sessionId:" + std::to_string(sessionId));
-    capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
+    if (clientCallbacksMap_.count(pid) > 0 &&
+        clientCallbacksMap_[pid].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
+        clientCallbacksMap_[pid][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
+        capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
+    }
 }
 
 void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -941,8 +992,12 @@ void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppEx
     sptr<IAudioPolicyClient> rendererCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
     CHECK_AND_RETURN_LOG(rendererCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
 
-    rendererCb->OnRecreateRendererStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag,
-        eventContextObj->reason_);
+    if (clientCallbacksMap_.count(eventContextObj->clientId) > 0 &&
+        clientCallbacksMap_[eventContextObj->clientId].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
+        clientCallbacksMap_[eventContextObj->clientId][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
+        rendererCb->OnRecreateRendererStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag,
+            eventContextObj->reason_);
+    }
 }
 
 void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -957,8 +1012,12 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     sptr<IAudioPolicyClient> capturerCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
     CHECK_AND_RETURN_LOG(capturerCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
 
-    capturerCb->OnRecreateCapturerStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag,
-        eventContextObj->reason_);
+    if (clientCallbacksMap_.count(eventContextObj->clientId) > 0 &&
+        clientCallbacksMap_[eventContextObj->clientId].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
+        clientCallbacksMap_[eventContextObj->clientId][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
+        capturerCb->OnRecreateCapturerStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag,
+            eventContextObj->reason_);
+    }
 }
 
 void AudioPolicyServerHandler::HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -972,7 +1031,11 @@ void AudioPolicyServerHandler::HandleHeadTrackingDeviceChangeEvent(const AppExec
             AUDIO_ERR_LOG("headTrackingDeviceChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        headTrackingDeviceChangeCb->OnHeadTrackingDeviceChange(eventContextObj->headTrackingDeviceChangeInfo);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE]) {
+            headTrackingDeviceChangeCb->OnHeadTrackingDeviceChange(eventContextObj->headTrackingDeviceChangeInfo);
+        }
     }
 }
 
@@ -987,7 +1050,11 @@ void AudioPolicyServerHandler::HandleSpatializatonEnabledChangeEvent(const AppEx
             AUDIO_ERR_LOG("spatializationEnabledChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        spatializationEnabledChangeCb->OnSpatializationEnabledChange(eventContextObj->spatializationEnabled);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SPATIALIZATION_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SPATIALIZATION_ENABLED_CHANGE]) {
+            spatializationEnabledChangeCb->OnSpatializationEnabledChange(eventContextObj->spatializationEnabled);
+        }
     }
 }
 
@@ -1003,8 +1070,12 @@ void AudioPolicyServerHandler::HandleSpatializatonEnabledChangeForAnyDeviceEvent
             AUDIO_ERR_LOG("spatializationEnabledChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        spatializationEnabledChangeCb->OnSpatializationEnabledChangeForAnyDevice(eventContextObj->descriptor,
-            eventContextObj->spatializationEnabled);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SPATIALIZATION_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SPATIALIZATION_ENABLED_CHANGE]) {
+            spatializationEnabledChangeCb->OnSpatializationEnabledChangeForAnyDevice(eventContextObj->descriptor,
+                eventContextObj->spatializationEnabled);
+        }
     }
 }
 
@@ -1019,7 +1090,11 @@ void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeEvent(const AppExe
             AUDIO_ERR_LOG("headTrackingEnabledChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        headTrackingEnabledChangeCb->OnHeadTrackingEnabledChange(eventContextObj->headTrackingEnabled);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_HEAD_TRACKING_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_HEAD_TRACKING_ENABLED_CHANGE]) {
+            headTrackingEnabledChangeCb->OnHeadTrackingEnabledChange(eventContextObj->headTrackingEnabled);
+        }
     }
 }
 
@@ -1035,8 +1110,12 @@ void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeForAnyDeviceEvent(
             AUDIO_ERR_LOG("headTrackingEnabledChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        headTrackingEnabledChangeCb->OnHeadTrackingEnabledChangeForAnyDevice(eventContextObj->descriptor,
-            eventContextObj->headTrackingEnabled);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_HEAD_TRACKING_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_HEAD_TRACKING_ENABLED_CHANGE]) {
+            headTrackingEnabledChangeCb->OnHeadTrackingEnabledChangeForAnyDevice(eventContextObj->descriptor,
+                eventContextObj->headTrackingEnabled);
+        }
     }
 }
 

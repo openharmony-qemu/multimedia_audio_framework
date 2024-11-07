@@ -1,0 +1,56 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+
+module_output_path = "multimedia_audio_framework/remote_fast_audio_render_sink"
+
+ohos_unittest("remote_fast_audio_render_sink_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/common/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/remote_fast/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common/",
+    "../../../../../../../services/audio_service/common/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/devicemanager/interface/",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  cflags_cc = cflags
+
+  cflags_cc += [ "-fno-access-control" ]
+
+  sources = [ "remote_fast_audio_render_sink_unit_test.cpp" ]
+
+  deps = [
+    "../../../../../audioutils:audio_utils",
+    "../../../../devicemanager:audio_device_manager",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hdf_core:libhdf_utils",
+    "hilog:libhilog",
+  ]
+}

@@ -79,6 +79,10 @@
 #define UEVENT_POLL_WAIT_TIME 100
 #define WAIT_THREAD_END_TIME_MS 1
 
+#define DP_PORT_COUNT           5
+#define DP_PATH                 "/sys/class/switch/hdmi_audio"
+#define DEVICE_PORT             "device_port="
+
 #include <string>
 
 namespace OHOS {

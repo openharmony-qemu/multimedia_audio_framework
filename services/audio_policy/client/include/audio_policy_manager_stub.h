@@ -25,6 +25,7 @@ public:
     virtual int32_t OnRemoteRequest(uint32_t code, MessageParcel &data,
         MessageParcel &reply, MessageOption &option) override;
     virtual bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) = 0;
+    virtual void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc) = 0;
 
 private:
     void GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
@@ -178,6 +179,7 @@ private:
     void IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply);
     void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
     void IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply);
+    void SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 

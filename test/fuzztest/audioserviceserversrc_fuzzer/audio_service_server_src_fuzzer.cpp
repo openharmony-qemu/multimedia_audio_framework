@@ -44,8 +44,8 @@ void DeviceFuzzTestSetUp()
     if (playbackEngine_ != nullptr) {
         return;
     }
-    DeviceInfo deviceInfo;
-    deviceInfo.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_HEADSET;
     playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Init(deviceInfo, false);
 }
@@ -146,16 +146,16 @@ void AudioEndPointSeparateConfigFuzzTest(const uint8_t* rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    DeviceInfo deviceInfo;
-    deviceInfo.deviceType = DEVICE_TYPE_USB_HEADSET;
-    deviceInfo.networkId = LOCAL_NETWORK_ID;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     DeviceStreamInfo audioStreamInfo = {
         SAMPLE_RATE_48000,
         ENCODING_PCM,
         SAMPLE_S16LE,
         STEREO
     };
-    deviceInfo.audioStreamInfo = audioStreamInfo;
+    deviceInfo.audioStreamInfo_ = audioStreamInfo;
     std::shared_ptr<AudioEndpointSeparate> audioEndpoint = nullptr;
     uint64_t id = 2;
     audioEndpoint =

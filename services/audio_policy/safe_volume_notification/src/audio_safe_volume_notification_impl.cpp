@@ -214,6 +214,7 @@ bool AudioSafeVolumeNotificationImpl::GetPixelMap()
     std::unique_ptr<Media::ImageSource> imageSource =
         Media::ImageSource::CreateImageSource(resourceData.get(), resourceDataLength, opts, errorCode);
     Media::DecodeOptions decodeOpts;
+    decodeOpts.desiredSize = {ICON_WIDTH, ICON_HEIGHT};
     decodeOpts.desiredPixelFormat = Media::PixelFormat::BGRA_8888;
     if (imageSource) {
         AUDIO_INFO_LOG("GetPixelMap SUCCESS.");

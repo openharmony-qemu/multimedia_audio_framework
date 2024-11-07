@@ -305,6 +305,14 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
 {
     AUDIO_WARNING_LOG("~AudioRendererSinkInner");
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
+#ifdef FEATURE_POWER_MANAGER
+    if (runningLockManager_ != nullptr) {
+        AUDIO_INFO_LOG("~AudioRendererSinkInner unLock");
+        runningLockManager_->UnLock();
+    } else {
+        AUDIO_WARNING_LOG("runningLockManager is null, playback can not work well!");
+    }
+#endif
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
@@ -754,13 +762,6 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 
     if (audioBalanceState_) {AdjustAudioBalance(&data, len);}
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void *>(&data), len);
-    }
     CheckUpdateState(&data, len);
 
     if (switchDeviceMute_) {
@@ -771,8 +772,15 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         }
     }
 
-    Trace::CountVolume("AudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
+
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
+    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            static_cast<void *>(&data), len);
+    }
 
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
@@ -857,7 +865,7 @@ int32_t AudioRendererSinkInner::Start(void)
     dumpFileName_ = halName_ + "_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
-    logUtilsTag_ = "AudioSink";
+    logUtilsTag_ = "AudioSink" + halName_;
 
     InitLatencyMeasurement();
     if (!started_) {
@@ -1598,7 +1606,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
     if (flag == 0 && g_paStatus == 1) {
         ret = snprintf_s(keyValueList, sizeof(keyValueList), sizeof(keyValueList) - 1,
             "zero_volume=true;routing=0");
-        if (ret > 0 && ret < sizeof(keyValueList)) {
+        if (ret > 0 && ret < static_cast<int32_t>(sizeof(keyValueList))) {
             CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERROR);
             ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
         }

@@ -47,6 +47,7 @@ public:
         MEDIA = 3,
         ALARM = 4,
         ACCESSIBILITY = 5,
+        SYSTEM = 6,
         VOICE_ASSISTANT = 9,
         ULTRASONIC = 10,
         VOLUMETYPE_MAX,
@@ -78,7 +79,8 @@ public:
         TYPE_COMMUNICATION = 7,
         TYPE_MESSAGE = 10,
         TYPE_REMOTE_CAST = 11,
-        TYPE_VOICE_TRANSCRIPTION = 12
+        TYPE_VOICE_TRANSCRIPTION = 12,
+        TYPE_CAMCORDER = 13
     };
 
     enum AudioDataCallbackResult {

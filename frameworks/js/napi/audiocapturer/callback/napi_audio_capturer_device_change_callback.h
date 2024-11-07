@@ -29,25 +29,26 @@ public:
     explicit NapiAudioCapturerDeviceChangeCallback(napi_env env);
     virtual ~NapiAudioCapturerDeviceChangeCallback();
     void SaveCallbackReference(napi_value args);
-    void OnStateChange(const DeviceInfo &deviceInfo) override;
+    void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override;
     bool ContainSameJsCallback(napi_value args);
+    void CreateCaptureDeviceChangeTsfn(napi_env env);
 
 private:
     struct AudioCapturerDeviceChangeJsCallback {
         napi_ref callback_;
         napi_env env_;
-        DeviceInfo deviceInfo_;
-        std::string callbackName = "unknown";
-        napi_threadsafe_function acDevChgTsfn = nullptr;
+        AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     };
 
-    void OnJsCallbackCapturerDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo);
+    void OnJsCallbackCapturerDeviceInfo(napi_ref method, const AudioDeviceDescriptor &deviceInfo);
     static void CaptureDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
     static void SafeJsCallbackCapturerDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     napi_ref callback_ = nullptr;
+    bool regAcDevChgTsfn_ = false;
+    napi_threadsafe_function acDevChgTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

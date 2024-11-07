@@ -36,6 +36,9 @@ NapiAudioManagerInterruptCallback::NapiAudioManagerInterruptCallback(napi_env en
 
 NapiAudioManagerInterruptCallback::~NapiAudioManagerInterruptCallback()
 {
+    if (regAmInterruptTsfn_) {
+        napi_release_threadsafe_function(amInterruptTsfn_, napi_tsfn_abort);
+    }
     AUDIO_INFO_LOG("instance destroy");
 }
 
@@ -58,6 +61,22 @@ void NapiAudioManagerInterruptCallback::SaveCallbackReference(const std::string 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     audioManagerInterruptCallbackList_.push_back(cb);
     AUDIO_INFO_LOG("SaveCallbackReference success, list size [%{public}zu]", audioManagerInterruptCallbackList_.size());
+}
+
+void NapiAudioManagerInterruptCallback::CreateManagerInterruptTsfn(napi_env env)
+{
+    regAmInterruptTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "ManagerInterrupt";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        AudioManagerInterruptTsfnFinalize, nullptr, SafeJsCallbackAudioManagerInterruptWork,
+        &amInterruptTsfn_);
+}
+
+bool NapiAudioManagerInterruptCallback::GetManagerInterruptTsfnFlag()
+{
+    return regAmInterruptTsfn_;
 }
 
 void NapiAudioManagerInterruptCallback::RemoveCallbackReference(const std::string &callbackName, napi_value args)
@@ -120,8 +139,7 @@ void NapiAudioManagerInterruptCallback::SafeJsCallbackAudioManagerInterruptWork(
         "OnJsCallbackAudioManagerInterrupt: no memory");
     std::shared_ptr<AudioManagerInterruptJsCallback> safeContext(
         static_cast<AudioManagerInterruptJsCallback*>(data),
-        [event](AudioManagerInterruptJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amInterruptTsfn, napi_tsfn_abort);
+        [](AudioManagerInterruptJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -166,14 +184,8 @@ void NapiAudioManagerInterruptCallback::OnJsCallbackAudioManagerInterrupt(
     AudioManagerInterruptJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        AudioManagerInterruptTsfnFinalize, nullptr, SafeJsCallbackAudioManagerInterruptWork,
-        &event->amInterruptTsfn);
-
-    napi_acquire_threadsafe_function(event->amInterruptTsfn);
-    napi_call_threadsafe_function(event->amInterruptTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amInterruptTsfn_);
+    napi_call_threadsafe_function(amInterruptTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS
