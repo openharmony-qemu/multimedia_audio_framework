@@ -107,7 +107,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioeffect_fuzzer:fuzztest",
     "fuzztest/audioeffectchain_fuzzer:fuzztest",
     "fuzztest/audioeffectenhance_fuzzer:fuzztest",
-    "fuzztest/audioeffectmanager_fuzzer:fuzztest",
+    "fuzztest/audioeffectservice_fuzzer:fuzztest",
     "fuzztest/audiohdiadapterdevicemanager_fuzzer:fuzztest",
     "fuzztest/audiointerruptservice_fuzzer:fuzztest",
     "fuzztest/audiointerruptservicemore_fuzzer:fuzztest",

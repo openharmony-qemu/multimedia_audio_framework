@@ -18,9 +18,9 @@ import("../../../config.gni")
 import("../../../sensor.gni")
 import("../../../window_manager.gni")
 
-ohos_fuzztest("AudioEffectManagerFuzzTest") {
+ohos_fuzztest("AudioEffectServiceFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../audioeffectmanager_fuzzer"
+  fuzz_config_file = "../audioeffectservice_fuzzer"
 
   include_dirs = [
     "../../../frameworks/native/audioeffect/include",
@@ -36,7 +36,7 @@ ohos_fuzztest("AudioEffectManagerFuzzTest") {
   ]
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
-  sources = [ "audio_effect_manager_fuzzer.cpp" ]
+  sources = [ "audio_effect_service_fuzzer.cpp" ]
 
   deps = [
     "../../../frameworks/native/audioeffect:audio_effect",
@@ -97,5 +97,5 @@ ohos_fuzztest("AudioEffectManagerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioEffectManagerFuzzTest" ]
+  deps = [ ":AudioEffectServiceFuzzTest" ]
 }

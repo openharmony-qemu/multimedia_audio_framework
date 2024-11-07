@@ -28,7 +28,7 @@ using namespace std;
 const int32_t LIMITSIZE = 4;
 const uint64_t CAPSESSION_ID = 123456;
 
-void AudioEffectManagerFuzzTest(const uint8_t *rawData, size_t size)
+void AudioEffectServiceFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -186,7 +186,7 @@ void AudioPolicyServHandleFuzzTest(const uint8_t *rawData, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioEffectManagerFuzzTest(rawData, size);
+    OHOS::AudioStandard::AudioEffectServiceFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioSendCallbackFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioPolicyServSendFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioPolicyServHandleFuzzTest(rawData, size);
