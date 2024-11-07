@@ -396,7 +396,7 @@ bool AudioPolicyService::Init(void)
 {
     serviceFlag_.reset();
     audioPolicyManager_.Init();
-    audioEffectManager_.EffectManagerInit();
+    audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
     audioAffinityManager_.ParseAffinityXml();
     audioPnpServer_.init();
@@ -5142,7 +5142,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
             OnPnpDeviceStatusUpdated((*it).first, (*it).second);
         }
-        audioEffectManager_.SetMasterSinkAvailable();
+        audioEffectService_.SetMasterSinkAvailable();
     }
     // load inner-cap-sink
     LoadModernInnerCapSink();
@@ -5296,7 +5296,7 @@ void AudioPolicyService::LoadEffectLibrary()
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "LoadEffectLibrary, Audio Server Proxy is null");
     OriginalEffectConfig oriEffectConfig = {};
-    audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
+    audioEffectService_.GetOriginalEffectConfig(oriEffectConfig);
     vector<Effect> successLoadedEffects;
 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -5309,16 +5309,16 @@ void AudioPolicyService::LoadEffectLibrary()
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
 
-    audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
-    audioEffectManager_.BuildAvailableAEConfig();
+    audioEffectService_.UpdateAvailableEffects(successLoadedEffects);
+    audioEffectService_.BuildAvailableAEConfig();
 
     // Initialize EffectChainManager in audio service through IPC
     SupportedEffectConfig supportedEffectConfig;
-    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
+    audioEffectService_.GetSupportedEffectConfig(supportedEffectConfig);
     EffectChainManagerParam effectChainManagerParam;
     EffectChainManagerParam enhanceChainManagerParam;
-    audioEffectManager_.ConstructEffectChainManagerParam(effectChainManagerParam);
-    audioEffectManager_.ConstructEnhanceChainManagerParam(enhanceChainManagerParam);
+    audioEffectService_.ConstructEffectChainManagerParam(effectChainManagerParam);
+    audioEffectService_.ConstructEnhanceChainManagerParam(enhanceChainManagerParam);
 
     identity = IPCSkeleton::ResetCallingIdentity();
     bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains,
@@ -5327,14 +5327,14 @@ void AudioPolicyService::LoadEffectLibrary()
 
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 
-    audioEffectManager_.SetEffectChainManagerAvailable();
+    audioEffectService_.SetEffectChainManagerAvailable();
     AudioSpatializationService::GetAudioSpatializationService().Init(supportedEffectConfig.effectChains);
 }
 
 void AudioPolicyService::GetEffectManagerInfo()
 {
     converterConfig_ = GetConverterConfig();
-    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig_);
+    audioEffectService_.GetSupportedEffectConfig(supportedEffectConfig_);
 }
 
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)
@@ -7470,7 +7470,7 @@ float AudioPolicyService::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_
 
 int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& supportedEffectConfig)
 {
-    int32_t ret = audioEffectManager_.QueryEffectManagerSceneMode(supportedEffectConfig);
+    int32_t ret = audioEffectService_.QueryEffectManagerSceneMode(supportedEffectConfig);
     return ret;
 }
 
@@ -9771,10 +9771,10 @@ void AudioPolicyService::LoadHdiEffectModel()
 int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::set<std::pair<std::string, std::string>> mergedSet = {};
-    audioEffectManager_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
+    audioEffectService_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
     std::vector<sptr<AudioDeviceDescriptor>> descriptor = GetDevices(OUTPUT_DEVICES_FLAG);
     for (auto &item : descriptor) {
-        audioEffectManager_.AddSupportedAudioEffectPropertyByDevice(item->getType(), mergedSet);
+        audioEffectService_.AddSupportedAudioEffectPropertyByDevice(item->getType(), mergedSet);
     }
     propertyArray.property.reserve(mergedSet.size());
     std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
@@ -9787,10 +9787,10 @@ int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyA
 int32_t AudioPolicyService::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
 {
     std::set<std::pair<std::string, std::string>> mergedSet = {};
-    audioEffectManager_.AddSupportedAudioEnhancePropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
+    audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
     std::vector<sptr<AudioDeviceDescriptor>> descriptor = GetDevices(INPUT_DEVICES_FLAG);
     for (auto &item : descriptor) {
-        audioEffectManager_.AddSupportedAudioEnhancePropertyByDevice(item->getType(), mergedSet);
+        audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(item->getType(), mergedSet);
     }
     propertyArray.property.reserve(mergedSet.size());
     std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),

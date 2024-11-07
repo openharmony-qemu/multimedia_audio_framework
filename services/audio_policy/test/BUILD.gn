@@ -26,7 +26,7 @@ group("audio_policy_unittest_packages") {
     ":audio_affinity_parser_test",
     ":audio_client_tracker_callback_stub_unit_test",
     ":audio_effect_config_parser_test",
-    ":audio_effect_manager_test",
+    ":audio_effect_service_test",
     ":audio_interrupt_service_unit_test",
     ":audio_policy_client_stub_impl_test",
     ":audio_policy_manager_unit_test",
@@ -924,11 +924,11 @@ ohos_unittest("audio_stream_collector_unit_test") {
   ]
 }
 
-ohos_unittest("audio_effect_manager_test") {
+ohos_unittest("audio_effect_service_test") {
   module_out_path = module_output_path
   include_dirs = [
     "../server/include",
-    "./unittest/audio_effect_manager_test/include",
+    "./unittest/audio_effect_service_test/include",
   ]
 
   cflags = [
@@ -982,7 +982,7 @@ ohos_unittest("audio_effect_manager_test") {
   ]
 
   sources = [
-    "./unittest/audio_effect_manager_test/src/audio_effect_manager_test.cpp",
+    "./unittest/audio_effect_service_test/src/audio_effect_service_test.cpp",
   ]
 
   deps = [ "../../audio_policy:audio_policy_service" ]

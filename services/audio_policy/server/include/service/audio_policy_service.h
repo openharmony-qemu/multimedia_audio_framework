@@ -42,7 +42,7 @@
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "audio_policy_parser_factory.h"
-#include "audio_effect_manager.h"
+#include "audio_effect_service.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
 #include "audio_device_manager.h"
@@ -523,7 +523,7 @@ private:
         audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
-        audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
+        audioEffectService_(AudioEffectService::GetAudioEffectService()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
@@ -1221,7 +1221,7 @@ private:
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     GlobalConfigs globalConfigs_;
-    AudioEffectManager& audioEffectManager_;
+    AudioEffectService& audioEffectService_;
 
     bool isMicrophoneMuteTemporary_ = false;
 
