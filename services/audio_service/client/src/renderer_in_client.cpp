@@ -427,6 +427,7 @@ void RendererInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t da
 
 void RendererInClientInner::InitCallbackHandler()
 {
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     if (callbackHandler_ == nullptr) {
         callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
     }
@@ -2256,6 +2257,7 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
 void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     ipcStream_->SetSilentModeAndMixWithOthers(on);
     if (offloadEnable_) {
         ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_ * duckVolume_);
