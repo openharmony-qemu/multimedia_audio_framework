@@ -30,7 +30,7 @@ struct PolicyParam {
     float volume;
     AudioStreamType streamType;
     AudioRingerMode ringerMode;
-    DeviceType actDeviceType;
+    ActiveDeviceType actDeviceType;
     DeviceType deviceType;
     DeviceFlag deviceFlag;
     DeviceRole deviceRole;

@@ -138,7 +138,7 @@ public:
 
     /* NapiAudioRenderer Get&&Set object */
     static void ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor,
-        const AudioDeviceDescriptor &deviceInfo);
+        const DeviceInfo &deviceInfo);
     static napi_status GetRendererOptions(const napi_env &env, AudioRendererOptions *opts, napi_value in);
     static napi_status GetRendererInfo(const napi_env &env, AudioRendererInfo *rendererInfo, napi_value in);
     static napi_status SetRendererInfo(const napi_env &env, const AudioRendererInfo &rendererInfo, napi_value &result);
@@ -152,8 +152,7 @@ public:
         const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result);
     static napi_status SetAudioSpatialEnabledStateForDevice(const napi_env &env,
     const AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice, napi_value &result);
-    static napi_status SetValueDeviceInfo(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
-        napi_value &result);
+    static napi_status SetValueDeviceInfo(const napi_env &env, const DeviceInfo &deviceInfo, napi_value &result);
     static napi_status SetInterruptEvent(const napi_env &env, const InterruptEvent &interruptEvent,
         napi_value &result);
     static napi_status SetNativeAudioRendererDataInfo(const napi_env &env,

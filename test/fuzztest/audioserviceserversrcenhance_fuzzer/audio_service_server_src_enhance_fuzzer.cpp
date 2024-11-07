@@ -132,8 +132,8 @@ void AudioNoneMixEngineMoreFuzzTest(const uint8_t* rawData, size_t size)
 
     std::shared_ptr<NoneMixEngine> noneMixEngine = std::make_shared<NoneMixEngine>();
     noneMixEngine->isInit_ = true;
-    AudioDeviceDescriptor type(AudioDeviceDescriptor::DEVICE_INFO);
-    type.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    DeviceInfo type;
+    type.deviceType = DEVICE_TYPE_USB_HEADSET;
     noneMixEngine->Init(type, true);
     noneMixEngine->Start();
 

@@ -808,7 +808,7 @@ napi_value NapiAudioManager::SetDeviceActive(napi_env env, napi_callback_info in
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
         context->intValue = napiAudioManager->audioMngr_->SetDeviceActive(
-            static_cast<DeviceType>(context->deviceType), context->isActive);
+            static_cast<ActiveDeviceType>(context->deviceType), context->isActive);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetDeviceActive failed",
             NAPI_ERR_SYSTEM);
     };
@@ -846,7 +846,7 @@ napi_value NapiAudioManager::IsDeviceActive(napi_env env, napi_callback_info inf
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
         context->isActive = napiAudioManager->audioMngr_->IsDeviceActive(
-            static_cast<DeviceType>(context->deviceType));
+            static_cast<ActiveDeviceType>(context->deviceType));
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -1004,7 +1004,7 @@ napi_value NapiAudioManager::GetExtraParameters(napi_env env, napi_callback_info
         NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_string,
             "incorrect parameter types: The type of mainKey must be string", NAPI_ERR_INPUT_INVALID);
         context->key = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-
+        
         if (argc > ARGS_ONE) {
             napi_typeof(env, argv[PARAM1], &valueType);
             NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_object,

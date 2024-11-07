@@ -23,7 +23,7 @@ AudioEngineManager AudioEngineManager::GetInstance()
     return enginManager;
 }
 
-void AudioEngineManager::AddRenderer(std::shared_ptr<IRendererStream> stream, AudioDeviceDescriptor device)
+void AudioEngineManager::AddRenderer(std::shared_ptr<IRendererStream> stream, DeviceInfo device)
 {
     AudioProcessConfig config = stream->GetAudioProcessConfig();
     bool isDirect = true;

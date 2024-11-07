@@ -20,7 +20,6 @@
 #include <map>
 #include "audio_effect.h"
 #include "audio_system_manager.h"
-#include "audio_stream_change_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,8 +39,8 @@ class DeviceChangeWithInfoCallback {
 public:
     virtual ~DeviceChangeWithInfoCallback() = default;
 
-    virtual void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReasonExt reason) = 0;
+    virtual void OnDeviceChangeWithInfo(
+        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
 
     virtual void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) = 0;
@@ -299,7 +298,7 @@ public:
      * @since 13
      */
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-
+    
     /**
      * @brief Is stream active.
      *

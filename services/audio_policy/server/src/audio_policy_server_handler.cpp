@@ -389,7 +389,7 @@ bool AudioPolicyServerHandler::SendCapturerInfoEvent(
 }
 
 bool AudioPolicyServerHandler::SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
-    const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const DeviceInfo &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = std::make_shared<RendererDeviceChangeEvent>(
         clientPid, sessionId, outputDeviceInfo, reason);

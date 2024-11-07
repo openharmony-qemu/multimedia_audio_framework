@@ -62,7 +62,7 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
         "OnAudioOutputDeviceRefined: WriteInterfaceToken failed");
-
+    
     data.WriteInt32(descs.size());
     for (auto &desc : descs) {
         desc->Marshalling(data);
@@ -83,7 +83,7 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
     int32_t size = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(size < DEVICE_SIZE_LIMIT, ERROR, "reply size reach limit");
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply)));
+        descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply)));
     }
     return SUCCESS;
 }
@@ -98,7 +98,7 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
         "OnAudioInputDeviceRefined: WriteInterfaceToken failed");
-
+    
     data.WriteInt32(descs.size());
     for (auto &desc : descs) {
         desc->Marshalling(data);
@@ -119,7 +119,7 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
     int32_t size = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(size < DEVICE_SIZE_LIMIT, ERROR, "reply size reach limit");
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply)));
+        descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply)));
     }
     return SUCCESS;
 }

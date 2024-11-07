@@ -81,36 +81,36 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_001, TestSize.Level1
 HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_002, TestSize.Level1)
 {
     AudioStreamCollector audioStreamCollector_;
-    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    outputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    DeviceInfo outputDeviceInfo;
+    outputDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
     auto info1 = std::make_unique<AudioRendererChangeInfo>();
-    info1->outputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_EARPIECE;
+    info1->outputDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_EARPIECE;
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info1));
     auto info2 = std::make_unique<AudioRendererChangeInfo>();
-    info2->outputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    info2->outputDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info2));
     int32_t result = audioStreamCollector_.UpdateRendererDeviceInfo(outputDeviceInfo);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(audioStreamCollector_.audioRendererChangeInfos_.size(), 2);
     EXPECT_EQ(
-        audioStreamCollector_.audioRendererChangeInfos_[0]->outputDeviceInfo.deviceType_,
+        audioStreamCollector_.audioRendererChangeInfos_[0]->outputDeviceInfo.deviceType,
         DeviceType::DEVICE_TYPE_SPEAKER
     );
     EXPECT_EQ(
-        audioStreamCollector_.audioRendererChangeInfos_[1]->outputDeviceInfo.deviceType_,
+        audioStreamCollector_.audioRendererChangeInfos_[1]->outputDeviceInfo.deviceType,
         DeviceType::DEVICE_TYPE_SPEAKER
     );
-    AudioDeviceDescriptor sameDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    sameDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    DeviceInfo sameDeviceInfo;
+    sameDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
     result = audioStreamCollector_.UpdateRendererDeviceInfo(sameDeviceInfo);
 
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(
-        audioStreamCollector_.audioRendererChangeInfos_[0]->outputDeviceInfo.deviceType_,
+        audioStreamCollector_.audioRendererChangeInfos_[0]->outputDeviceInfo.deviceType,
         DeviceType::DEVICE_TYPE_SPEAKER
     );
     EXPECT_EQ(
-        audioStreamCollector_.audioRendererChangeInfos_[1]->outputDeviceInfo.deviceType_,
+        audioStreamCollector_.audioRendererChangeInfos_[1]->outputDeviceInfo.deviceType,
         DeviceType::DEVICE_TYPE_SPEAKER
     );
 }
@@ -123,34 +123,34 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_002, TestSize.Level1
 HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_003, TestSize.Level1)
 {
     AudioStreamCollector audioStreamCollector_;
-    AudioDeviceDescriptor inputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_MIC;
+    DeviceInfo inputDeviceInfo;
+    inputDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_MIC;
     auto info1 = std::make_unique<AudioCapturerChangeInfo>();
-    info1->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
+    info1->inputDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(std::move(info1));
     auto info2 = std::make_unique<AudioCapturerChangeInfo>();
-    info2->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_MIC;
+    info2->inputDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_MIC;
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(std::move(info2));
     int32_t result = audioStreamCollector_.UpdateCapturerDeviceInfo(inputDeviceInfo);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(audioStreamCollector_.audioCapturerChangeInfos_.size(), 2);
     EXPECT_EQ(
-        audioStreamCollector_.audioCapturerChangeInfos_[0]->inputDeviceInfo.deviceType_,
+        audioStreamCollector_.audioCapturerChangeInfos_[0]->inputDeviceInfo.deviceType,
         DeviceType::DEVICE_TYPE_MIC);
     EXPECT_EQ(
-        audioStreamCollector_.audioCapturerChangeInfos_[1]->inputDeviceInfo.deviceType_,
+        audioStreamCollector_.audioCapturerChangeInfos_[1]->inputDeviceInfo.deviceType,
         DeviceType::DEVICE_TYPE_MIC
     );
-    AudioDeviceDescriptor sameDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    sameDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_MIC;
+    DeviceInfo sameDeviceInfo;
+    sameDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_MIC;
     result = audioStreamCollector_.UpdateCapturerDeviceInfo(sameDeviceInfo);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(
-        audioStreamCollector_.audioCapturerChangeInfos_[0]->inputDeviceInfo.deviceType_,
+        audioStreamCollector_.audioCapturerChangeInfos_[0]->inputDeviceInfo.deviceType,
         DeviceType::DEVICE_TYPE_MIC
     );
     EXPECT_EQ(
-        audioStreamCollector_.audioCapturerChangeInfos_[1]->inputDeviceInfo.deviceType_,
+        audioStreamCollector_.audioCapturerChangeInfos_[1]->inputDeviceInfo.deviceType,
         DeviceType::DEVICE_TYPE_MIC
     );
 }
@@ -425,13 +425,13 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_009, TestSize.Level1
     changeInfo1->muted = false;
     changeInfo1->sessionId = 1;
     changeInfo1->capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    changeInfo1->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_MIC;
+    changeInfo1->inputDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_MIC;
     auto changeInfo2 = std::make_unique<AudioCapturerChangeInfo>();
     changeInfo2->clientUID = 2000;
     changeInfo2->muted = false;
     changeInfo2->sessionId = 2;
     changeInfo2->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    changeInfo2->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_MIC;
+    changeInfo2->inputDeviceInfo.deviceType = DeviceType::DEVICE_TYPE_MIC;
     collector.audioCapturerChangeInfos_.push_back(std::move(changeInfo1));
     collector.audioCapturerChangeInfos_.push_back(std::move(changeInfo2));
     // Create a mock AudioPolicyServerHandler

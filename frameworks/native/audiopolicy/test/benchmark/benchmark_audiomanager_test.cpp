@@ -65,13 +65,13 @@ namespace {
     {
         while (state.KeepRunning())
         {
-            auto ret = instance->SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, true);
+            auto ret = instance->SetDeviceActive(ActiveDeviceType::SPEAKER, true);
             if (ret != SUCCESS)
             {
                 state.SkipWithError("SetDeviceActiveAbilityTestCase audioManager SetDeviceActive true failed.");
             }
             state.PauseTiming();
-            ret = instance->SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, false);
+            ret = instance->SetDeviceActive(ActiveDeviceType::SPEAKER, false);
             if (ret != SUCCESS)
             {
                 state.SkipWithError("SetDeviceActiveAbilityTestCase audioManager SetDeviceActive false failed.");

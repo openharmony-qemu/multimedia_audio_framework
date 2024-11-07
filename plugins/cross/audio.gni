@@ -22,7 +22,6 @@ audio_include = []
 
 audio_sources = [
   "$AUDIO_SUBSYSTEM_DIR/services/audio_service/client/src/audio_device_descriptor.cpp",
-  "$AUDIO_SUBSYSTEM_DIR/services/audio_service/client/src/audio_filter.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_callbacks.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_device_change_callback.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_info_change_callback.cpp",

@@ -31,7 +31,7 @@ PolicyProviderProxy::~PolicyProviderProxy()
 }
 
 int32_t PolicyProviderProxy::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
-    AudioDeviceDescriptor &deviceInfo)
+    DeviceInfo &deviceInfo)
 {
     MessageParcel data;
     MessageParcel reply;

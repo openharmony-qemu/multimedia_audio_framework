@@ -29,7 +29,7 @@ public:
     explicit NapiAudioCapturerDeviceChangeCallback(napi_env env);
     virtual ~NapiAudioCapturerDeviceChangeCallback();
     void SaveCallbackReference(napi_value args);
-    void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override;
+    void OnStateChange(const DeviceInfo &deviceInfo) override;
     bool ContainSameJsCallback(napi_value args);
     void CreateCaptureDeviceChangeTsfn(napi_env env);
 
@@ -37,10 +37,10 @@ private:
     struct AudioCapturerDeviceChangeJsCallback {
         napi_ref callback_;
         napi_env env_;
-        AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
+        DeviceInfo deviceInfo_;
     };
 
-    void OnJsCallbackCapturerDeviceInfo(napi_ref method, const AudioDeviceDescriptor &deviceInfo);
+    void OnJsCallbackCapturerDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo);
     static void CaptureDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
     static void SafeJsCallbackCapturerDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
 

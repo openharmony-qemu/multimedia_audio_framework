@@ -23,7 +23,6 @@
 #include "i_audio_renderer_sink.h"
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
-#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,8 +62,8 @@ public:
     };
 
     static std::shared_ptr<AudioEndpoint> CreateEndpoint(EndpointType type, uint64_t id,
-        const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo);
-    static std::string GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag);
+        const AudioProcessConfig &clientConfig, const DeviceInfo &deviceInfo);
+    static std::string GenerateEndpointKey(DeviceInfo &deviceInfo, int32_t endpointFlag);
 
     virtual std::string GetEndpointName() = 0;
 
@@ -89,7 +88,7 @@ public:
     virtual void Dump(std::string &dumpString) = 0;
 
     virtual DeviceRole GetDeviceRole() = 0;
-    virtual AudioDeviceDescriptor &GetDeviceInfo() = 0;
+    virtual DeviceInfo &GetDeviceInfo() = 0;
     virtual float GetMaxAmplitude() = 0;
     virtual uint32_t GetLinkedProcessCount() = 0;
 
@@ -97,7 +96,7 @@ public:
 
     virtual ~AudioEndpoint() = default;
 private:
-    virtual bool Config(const AudioDeviceDescriptor &deviceInfo) = 0;
+    virtual bool Config(const DeviceInfo &deviceInfo) = 0;
 };
 
 class AudioEndpointSeparate : public AudioEndpoint {
@@ -105,7 +104,7 @@ public:
     explicit AudioEndpointSeparate(EndpointType type, uint64_t id, AudioStreamType streamType);
     ~AudioEndpointSeparate();
 
-    bool Config(const AudioDeviceDescriptor &deviceInfo) override;
+    bool Config(const DeviceInfo &deviceInfo) override;
     bool StartDevice();
     bool StopDevice();
 
@@ -143,14 +142,14 @@ public:
 
     void Release() override;
 
-    AudioDeviceDescriptor &GetDeviceInfo() override
+    DeviceInfo &GetDeviceInfo() override
     {
         return deviceInfo_;
     }
 
     DeviceRole GetDeviceRole() override
     {
-        return deviceInfo_.deviceRole_;
+        return deviceInfo_.deviceRole;
     }
 
     float GetMaxAmplitude() override;
@@ -159,8 +158,8 @@ public:
 
     AudioMode GetAudioMode() const final;
 private:
-    int32_t PrepareDeviceBuffer(const AudioDeviceDescriptor &deviceInfo);
-    int32_t GetAdapterBufferInfo(const AudioDeviceDescriptor &deviceInfo);
+    int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
+    int32_t GetAdapterBufferInfo(const DeviceInfo &deviceInfo);
     void ResyncPosition();
     void InitAudiobuffer(bool resetReadWritePos);
     void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
@@ -179,7 +178,7 @@ private:
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     // SamplingRate EncodingType SampleFormat Channel
-    AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceInfo_;
     AudioStreamInfo dstStreamInfo_;
     EndpointType endpointType_;
     uint64_t id_ = 0;

@@ -37,7 +37,7 @@ public:
     // would be called only once
     bool ConfigPolicyProvider(const sptr<IPolicyProviderIpc> policyProvider);
 
-    bool GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo);
+    bool GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo);
 
     bool InitVolumeMap();
 

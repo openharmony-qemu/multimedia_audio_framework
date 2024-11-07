@@ -438,9 +438,9 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.SelectFastInputDevice(audioCapturerFilter, dis);
     GetServerPtr()->audioPolicyService_.SetCaptureDeviceForUsage(AUDIO_SCENE_PHONE_CALL, SOURCE_TYPE_VOICE_CALL, dis);
     GetServerPtr()->audioPolicyService_.CloseWakeUpAudioCapturer();
-    AudioDeviceDescriptor newDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    newDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    newDeviceInfo.macAddress_ = GetServerPtr()->audioPolicyService_.activeBTDevice_;
+    DeviceInfo newDeviceInfo;
+    newDeviceInfo.networkId = LOCAL_NETWORK_ID;
+    newDeviceInfo.macAddress = GetServerPtr()->audioPolicyService_.activeBTDevice_;
     GetServerPtr()->audioPolicyService_.GetSinkName(newDeviceInfo, SESSIONID_32);
     AudioDeviceDescriptor ads;
     ads.networkId_ = LOCAL_NETWORK_ID;

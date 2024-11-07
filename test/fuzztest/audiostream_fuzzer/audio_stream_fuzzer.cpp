@@ -73,8 +73,7 @@ public:
     MockPolicyProvider() {};
     ~MockPolicyProvider() {};
 
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
-        AudioDeviceDescriptor &deviceInfo) override;
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) override;
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
 
@@ -97,20 +96,20 @@ public:
 };
 
 int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
-    AudioDeviceDescriptor &deviceInfo)
+    DeviceInfo &deviceInfo)
 {
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-        deviceInfo.deviceRole_ = OUTPUT_DEVICE;
-        deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+        deviceInfo.deviceRole = OUTPUT_DEVICE;
+        deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
     } else {
-        deviceInfo.deviceRole_ = INPUT_DEVICE;
-        deviceInfo.deviceType_ = DEVICE_TYPE_MIC;
+        deviceInfo.deviceRole = INPUT_DEVICE;
+        deviceInfo.deviceType = DEVICE_TYPE_MIC;
     }
-    deviceInfo.deviceId_ = 0;
-    deviceInfo.networkId_ = "LocalDevice";
-    deviceInfo.deviceName_ = "testname";
+    deviceInfo.deviceId = 0;
+    deviceInfo.networkId = "LocalDevice";
+    deviceInfo.deviceName = "testname";
 
-    deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    deviceInfo.audioStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     return SUCCESS;
 }
 
@@ -228,7 +227,7 @@ void InitAudioServer()
     std::shared_ptr<AudioSharedMemory> buffer;
     wrapper->InitSharedVolume(buffer);
     AudioProcessConfig config;
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceInfo;
     wrapper->GetProcessDeviceInfo(config, true, deviceInfo);
     wrapper->SetWakeUpAudioCapturerFromAudioServer(config);
     wrapper->NotifyCapturerAdded(config.capturerInfo, config.streamInfo, 0);
@@ -303,7 +302,7 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     std::shared_ptr<OHAudioBuffer> buffer = nullptr;
     ipcStream->ResolveBuffer(buffer);
     ipcStream->UpdatePosition();
-
+    
     std::string name = "fuzz_test";
     ipcStream->RegisterThreadPriority(0, name);
     uint32_t sessionId = 0;

@@ -306,7 +306,7 @@ int32_t AudioCapturerPrivate::InitInputDeviceChangeCallback()
 {
     CHECK_AND_RETURN_RET_LOG(GetCurrentInputDevices(currentDeviceInfo_) == SUCCESS, ERROR,
         "Get current device info failed");
-
+    
     if (!inputDeviceChangeCallback_) {
         inputDeviceChangeCallback_ = std::make_shared<InputDeviceChangeWithInfoCallbackImpl>();
         CHECK_AND_RETURN_RET_LOG(inputDeviceChangeCallback_ != nullptr, ERROR, "Memory allocation failed");
@@ -887,7 +887,7 @@ int64_t AudioCapturerPrivate::GetFramesRead() const
     return audioStream_->GetFramesRead();
 }
 
-int32_t AudioCapturerPrivate::GetCurrentInputDevices(AudioDeviceDescriptor &deviceInfo) const
+int32_t AudioCapturerPrivate::GetCurrentInputDevices(DeviceInfo &deviceInfo) const
 {
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
@@ -956,15 +956,15 @@ int32_t AudioCapturerPrivate::RemoveAudioCapturerDeviceChangeCallback(
     return SUCCESS;
 }
 
-bool AudioCapturerPrivate::IsDeviceChanged(AudioDeviceDescriptor &newDeviceInfo)
+bool AudioCapturerPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
 {
     bool deviceUpdated = false;
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceInfo = {};
 
     CHECK_AND_RETURN_RET_LOG(GetCurrentInputDevices(deviceInfo) == SUCCESS, deviceUpdated,
         "GetCurrentInputDevices failed");
 
-    if (currentDeviceInfo_.deviceType_ != deviceInfo.deviceType_) {
+    if (currentDeviceInfo_.deviceType != deviceInfo.deviceType) {
         currentDeviceInfo_ = deviceInfo;
         newDeviceInfo = currentDeviceInfo_;
         deviceUpdated = true;
@@ -1377,7 +1377,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceInfo = {};
     {
         std::lock_guard<std::mutex> lock(capturerMutex_);
         CHECK_AND_RETURN_LOG(capturer_ != nullptr, "Bare pointer capturer_ is nullptr");
@@ -1410,7 +1410,7 @@ void AudioCapturerStateChangeCallbackImpl::HandleCapturerDestructor()
 }
 
 void InputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("For capturer, OnDeviceChangeWithInfo callback is not support");
 }

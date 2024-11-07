@@ -304,7 +304,7 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
 }
 
 void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
-    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -486,7 +486,7 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const sptr<
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
-
+    
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE));
 
     if (hasSystemPermission_) {

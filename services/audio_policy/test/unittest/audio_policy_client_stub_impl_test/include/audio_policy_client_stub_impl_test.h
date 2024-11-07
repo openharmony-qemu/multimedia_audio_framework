@@ -85,7 +85,7 @@ class ConcreteAudioRendererStateChangeCallback : public AudioRendererStateChange
 };
 
 class ConcreteDeviceChangeWithInfoCallback : public DeviceChangeWithInfoCallback {
-    void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
+    void OnDeviceChangeWithInfo(const uint32_t sessionId, const DeviceInfo &deviceInfo,
             const AudioStreamDeviceChangeReasonExt reason) override {}
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override {}
