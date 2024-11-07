@@ -2611,7 +2611,8 @@ bool AudioPolicyService::NotifyRecreateRendererStream(std::unique_ptr<AudioDevic
     if ((strcmp(oldDevicePortName.c_str(), GetSinkPortName(desc->deviceType_).c_str())) ||
         (isOldDeviceLocal ^ isNewDeviceLocal)) {
         int32_t streamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
-            desc->deviceType_, rendererChangeInfo->rendererInfo.originalFlag, desc->networkId_);
+            desc->deviceType_, rendererChangeInfo->rendererInfo.originalFlag, desc->networkId_,
+            rendererChangeInfo->rendererInfo.samplingRate);
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, streamClass, reason);
         return true;
@@ -2906,7 +2907,7 @@ bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
             currentActiveDevice_.deviceType_, capturerChangeInfo->capturerInfo.originalFlag,
-            currentActiveDevice_.networkId_);
+            GetCurrentInputDevice().networkId_, capturerChangeInfo->capturerInfo.samplingRate);
         TriggerRecreateCapturerStreamCallback(capturerChangeInfo->callerPid,
             capturerChangeInfo->sessionId, streamClass, reason);
         return true;
@@ -6088,7 +6089,7 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
     }
 
     int32_t flag = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
+        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_, rendererInfo.samplingRate);
     if (isFastControlled_ && (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
         std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
         if (g_adProxy == nullptr) {
@@ -6109,10 +6110,14 @@ void AudioPolicyService::SetNormalVoipFlag(const bool &normalVoipFlag)
     normalVoipFlag_ = normalVoipFlag;
 }
 
-int32_t AudioPolicyService::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId)
+int32_t AudioPolicyService::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
+    const AudioSamplingRate &samplingRate)
 {
     // VoIP stream has three mode for different products.
     if (enableFastVoip_ && (sinkPortName == PRIMARY_SPEAKER || networkId != LOCAL_NETWORK_ID)) {
+        if (samplingRate != SAMPLE_RATE_48000 && samplingRate != SAMPLE_RATE_16000) {
+            return AUDIO_FLAG_NORMAL;
+        }
         return AUDIO_FLAG_VOIP_FAST;
     } else if (!normalVoipFlag_ && (sinkPortName == PRIMARY_SPEAKER) && (networkId == LOCAL_NETWORK_ID)) {
         AUDIO_INFO_LOG("Direct VoIP mode is supported for the device");
@@ -6123,14 +6128,14 @@ int32_t AudioPolicyService::GetVoipRendererFlag(const std::string &sinkPortName,
 }
 
 int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType,
-    int32_t flags, std::string &networkId)
+    int32_t flags, std::string &networkId, AudioSamplingRate &samplingRate)
 {
     AUDIO_INFO_LOG("Device type: %{public}d, stream usage: %{public}d, flag: %{public}d",
         deviceType, streamUsage, flags);
     std::string sinkPortName = GetSinkPortName(deviceType);
     if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
         // VoIP stream. Need to judge whether it is fast or direct mode.
-        int32_t flag = GetVoipRendererFlag(sinkPortName, networkId);
+        int32_t flag = GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
         if (flag == AUDIO_FLAG_VOIP_FAST || flag == AUDIO_FLAG_VOIP_DIRECT) {
             return flag;
         }
@@ -6176,11 +6181,11 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
         return AUDIO_FLAG_INVALID;
     }
     return GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
-        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
+        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
 }
 
 int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType,
-    int32_t flags, std::string &networkId)
+    int32_t flags, const std::string &networkId, const AudioSamplingRate &samplingRate)
 {
     AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
         deviceType, sourceType, flags);
@@ -6188,7 +6193,7 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
     AUDIO_INFO_LOG("sourcePortName: %{public}s", sourcePortName.c_str());
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
         (sourcePortName == PRIMARY_MIC || networkId != LOCAL_NETWORK_ID)) {
-        if (enableFastVoip_) {
+        if (enableFastVoip_ && (samplingRate == SAMPLE_RATE_16000 || samplingRate == SAMPLE_RATE_48000)) {
             return AUDIO_FLAG_VOIP_FAST;
         }
         return AUDIO_FLAG_NORMAL;
@@ -6399,9 +6404,10 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
 int32_t AudioPolicyService::GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
 {
     AudioRendererInfo rendererInfo = config.rendererInfo;
+    AudioSamplingRate samplingRate = config.streamInfo.samplingRate;
     std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredOutputDeviceDescriptors(rendererInfo);
     int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-        rendererInfo.originalFlag, preferredDeviceList[0]->networkId_);
+        rendererInfo.originalFlag, preferredDeviceList[0]->networkId_, samplingRate);
     deviceInfo.deviceRole = OUTPUT_DEVICE;
     return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }
@@ -6409,9 +6415,10 @@ int32_t AudioPolicyService::GetVoipPlaybackDeviceInfo(const AudioProcessConfig &
 int32_t AudioPolicyService::GetVoipRecordDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
 {
     AudioCapturerInfo capturerInfo = config.capturerInfo;
+    AudioSamplingRate samplingRate = config.streamInfo.samplingRate;
     std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredInputDeviceDescriptors(capturerInfo);
     int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
-        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
+        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, samplingRate);
     deviceInfo.deviceRole = INPUT_DEVICE;
     return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }
