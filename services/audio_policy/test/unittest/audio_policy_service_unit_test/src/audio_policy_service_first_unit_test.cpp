@@ -469,11 +469,11 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_004, TestSize.Level1
 void debugPrintMemoryVariable()
 {
     // currentActiveDevice_.deviceType_
-    AUDIO_INFO_LOG("debugPrintMemoryVariable() currentActiveDevice_:%{public}d, addr:%{public}p",
+    AUDIO_INFO_LOG("debugPrintMemoryVariable() currentActiveDevice_:%{public}d, addr:%{private}p",
         static_cast<std::uint32_t>(GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_),
         &GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_);
     // connectedA2dpDeviceMap_
-    AUDIO_INFO_LOG("debugPrintMemoryVariable() connectedA2dpDeviceMap_ isEmpty:%{public}d, addr:%{public}p",
+    AUDIO_INFO_LOG("debugPrintMemoryVariable() connectedA2dpDeviceMap_ isEmpty:%{public}d, addr:%{private}p",
         GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.empty(),
         &GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_);
     for (auto it = GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.begin();
@@ -481,7 +481,7 @@ void debugPrintMemoryVariable()
         AUDIO_INFO_LOG("debugPrintMemoryVariable() connectedA2dpDevice:%{public}s", it->first.c_str());
     }
     // activeBTDevice_
-    AUDIO_INFO_LOG("debugPrintMemoryVariable() activeBTDevice_:%{public}s, addr:%{public}p",
+    AUDIO_INFO_LOG("debugPrintMemoryVariable() activeBTDevice_:%{public}s, addr:%{private}p",
         GetServerPtr()->audioPolicyService_.activeBTDevice_.c_str(),
         &GetServerPtr()->audioPolicyService_.activeBTDevice_);
 }

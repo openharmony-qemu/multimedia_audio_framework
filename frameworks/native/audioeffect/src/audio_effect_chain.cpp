@@ -101,15 +101,6 @@ AudioEffectChain::~AudioEffectChain()
     DumpFileUtil::CloseDumpFile(&dumpFileOutput_);
 }
 
-void AudioEffectChain::Dump()
-{
-    std::lock_guard<std::mutex> lock(reloadMutex_);
-    for (AudioEffectHandle handle : standByEffectHandles_) {
-        AUDIO_INFO_LOG("standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType_.c_str(),
-            handle);
-    }
-}
-
 void AudioEffectChain::SetEffectMode(const std::string &mode)
 {
     effectMode_ = mode;
