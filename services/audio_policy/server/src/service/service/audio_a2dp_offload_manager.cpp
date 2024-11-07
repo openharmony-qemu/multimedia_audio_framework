@@ -32,7 +32,9 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_spatialization_manager.h"
 #include "audio_router_center.h"
+
 #include "audio_policy_service.h"
+#include "audio_server_proxy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -62,8 +64,7 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
                 "from %{public}d to %{public}d", state, CONNECTION_STATUS_CONNECTED);
 
             for (int32_t sessionId : connectionTriggerSessionIds_) {
-                AudioPolicyService::GetAudioPolicyService().UpdateSessionConnectionState(sessionId,
-                    DATA_LINK_CONNECTED);
+                AudioServerProxy::GetInstance().UpdateSessionConnectionStateProxy(sessionId, DATA_LINK_CONNECTED);
             }
             std::vector<int32_t>().swap(connectionTriggerSessionIds_);
             connectionCV_.notify_all();
@@ -92,8 +93,7 @@ void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddres
     connectionTriggerSessionIds_.assign(sessionIds.begin(), sessionIds.end());
 
     for (int32_t sessionId : connectionTriggerSessionIds_) {
-        AudioPolicyService::GetAudioPolicyService().UpdateSessionConnectionState(sessionId,
-            DATA_LINK_CONNECTING);
+        AudioServerProxy::GetInstance().UpdateSessionConnectionStateProxy(sessionId, DATA_LINK_CONNECTING);
     }
 
     if (state == CONNECTION_STATUS_CONNECTED || state == CONNECTION_STATUS_CONNECTING) {
@@ -124,7 +124,7 @@ void AudioA2dpOffloadManager::WaitForConnectionCompleted()
             audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState(), CONNECTION_STATUS_TIMEOUT);
         audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
         for (int32_t sessionId : connectionTriggerSessionIds_) {
-            AudioPolicyService::GetAudioPolicyService().UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
+            AudioServerProxy::GetInstance().UpdateSessionConnectionStateProxy(sessionId, DATA_LINK_CONNECTED);
         }
         std::vector<int32_t>().swap(connectionTriggerSessionIds_);
     }

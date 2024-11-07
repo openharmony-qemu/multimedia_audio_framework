@@ -63,9 +63,11 @@ public:
     void SetEffectCurrSceneType(AudioEffectScene currSceneType);
     void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     void SetSpatializationEnabled(bool enabled);
+    void SetSpatializationEnabledForFading(bool enabled);
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType,
         const std::string &effectName, const std::string &property);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
+    void UpdateBufferConfig(uint32_t &channels, uint64_t &channelLayout);
     bool IsEmptyEffectHandles();
     void Dump();
     int32_t UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout);
@@ -75,8 +77,12 @@ public:
     uint32_t GetLatency();
     int32_t UpdateEffectParam();
     void ResetIoBufferConfig();
-    void SetFinalVolume(float volume);
+    void SetFinalVolume(const float volume);
     float GetFinalVolume();
+    void SetCurrVolume(const float volume);
+    float GetCurrVolume();
+    void SetFinalVolumeState(const bool state);
+    bool GetFinalVolumeState();
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     int32_t SetEffectProperty(const std::string &effect, const std::string &property);
     void SetStreamUsage(const int32_t streamUsage);
@@ -86,6 +92,8 @@ private:
     int32_t SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData);
     void DumpEffectProcessData(std::string fileName, void *buffer, size_t len);
     int32_t UpdateMultichannelIoBufferConfigInner();
+    int32_t UpdateEffectParamInner();
+    void CrossFadeProcess(float *bufOut, uint32_t frameLen);
 
     std::mutex reloadMutex_;
     std::string sceneType_ = "";
@@ -103,11 +111,15 @@ private:
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
     float finalVolume_ = 1.0f;
+    float currVolume_ = 0.0f;
+    bool sendFinalVolumeState_ = false;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     bool spatializationEnabled_ = false;
     std::string dumpNameIn_ = "";
     std::string dumpNameOut_ = "";
+    bool spatializationEnabledFading_ = false;
+    int32_t fadingCounts = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

@@ -71,10 +71,10 @@ std::vector<int32_t> AudioToneManager::GetSupportedTones()
 std::shared_ptr<ToneInfo> AudioToneManager::GetToneConfig(int32_t ltonetype)
 {
     if (toneDescriptorMap_.find(ltonetype) != toneDescriptorMap_.end()) {
-        AUDIO_DEBUG_LOG("AudioPolicyService GetToneConfig %{public}d", ltonetype);
+        AUDIO_DEBUG_LOG("AudioToneManager GetToneConfig %{public}d", ltonetype);
         return toneDescriptorMap_[ltonetype];
     }
-    AUDIO_DEBUG_LOG("AudioPolicyService GetToneConfig %{public}d", ltonetype);
+    AUDIO_DEBUG_LOG("AudioToneManager GetToneConfig %{public}d", ltonetype);
     return nullptr;
 }
 #endif

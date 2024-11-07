@@ -728,6 +728,9 @@ bool AudioPolicyServer::IsVolumeUnadjustable()
 
 int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("Uid %{public}d send AdjustVolumeByStep volume key: %{public}s.", callerUid,
+        (adjustType == VolumeAdjustType::VOLUME_UP) ? "up" : "down");
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("AdjustVolumeByStep: No system permission");
         return ERR_PERMISSION_DENIED;
@@ -739,38 +742,34 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
     }
 
     int32_t volumeLevelInInt = GetSystemVolumeLevel(streamInFocus);
-    int32_t ret = ERROR;
-    if (adjustType == VolumeAdjustType::VOLUME_UP) {
-        ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt + volumeStep_, false);
-        AUDIO_INFO_LOG("AdjustVolumeByStep Up, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
-    }
-
-    if (adjustType == VolumeAdjustType::VOLUME_DOWN) {
-        ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt - volumeStep_, false);
-        AUDIO_INFO_LOG("AdjustVolumeByStep Down, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
-    }
+    volumeLevelInInt = (adjustType == VolumeAdjustType::VOLUME_UP) ? volumeLevelInInt + volumeStep_ :
+        volumeLevelInInt - volumeStep_;
+    volumeLevelInInt = volumeLevelInInt > GetMaxVolumeLevel(streamInFocus) ? GetMaxVolumeLevel(streamInFocus) :
+        volumeLevelInInt;
+    volumeLevelInInt = volumeLevelInInt < GetMinVolumeLevel(streamInFocus) ? GetMinVolumeLevel(streamInFocus) :
+        volumeLevelInInt;
+    int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, false);
     return ret;
 }
 
 int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
 {
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("Uid %{public}d send AdjustSystemVolumeByStep VolumeType: %{public}d volume key: %{public}s.",
+        callerUid, volumeType, (adjustType == VolumeAdjustType::VOLUME_UP) ? "up" : "down");
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("AdjustSystemVolumeByStep: No system permission");
         return ERR_PERMISSION_DENIED;
     }
 
     int32_t volumeLevelInInt = GetSystemVolumeLevel(volumeType);
-    int32_t ret = ERROR;
-
-    if (adjustType == VolumeAdjustType::VOLUME_UP) {
-        ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt + volumeStep_, false);
-        AUDIO_INFO_LOG("AdjustSystemVolumeByStep Up, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
-    }
-
-    if (adjustType == VolumeAdjustType::VOLUME_DOWN) {
-        ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt - volumeStep_, false);
-        AUDIO_INFO_LOG("AdjustSystemVolumeByStep Down, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
-    }
+    volumeLevelInInt = (adjustType == VolumeAdjustType::VOLUME_UP) ? volumeLevelInInt + volumeStep_ :
+        volumeLevelInInt - volumeStep_;
+    volumeLevelInInt = volumeLevelInInt > GetMaxVolumeLevel(volumeType) ? GetMaxVolumeLevel(volumeType) :
+        volumeLevelInInt;
+    volumeLevelInInt = volumeLevelInInt < GetMinVolumeLevel(volumeType) ? GetMinVolumeLevel(volumeType) :
+        volumeLevelInInt;
+    int32_t ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt, false);
     return ret;
 }
 
@@ -2098,10 +2097,14 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCap
         if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
                 targetMuteState, appUid);
+            int32_t res = SUCCESS;
             if (targetMuteState) {
-                PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+                res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             } else {
-                PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+                res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+            }
+            if (res != SUCCESS) {
+                AUDIO_ERR_LOG("update using permission failed, error code %{public}d", res);
             }
         }
     }

@@ -114,7 +114,9 @@ void ApplyAudioEffectChainFuzzTest(const uint8_t *rawData, size_t size)
     int frameLen = *reinterpret_cast<const int*>(rawData);
     float* bufIn = const_cast<float *>(reinterpret_cast<const float*>(rawData));
     float* bufOut = const_cast<float *>(reinterpret_cast<const float*>(rawData));
-    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = INFOCHANNELLAYOUT;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
     const std::string sceneType = "SCENE_MOVIE";
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
