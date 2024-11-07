@@ -59,7 +59,8 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     vector<unique_ptr<AudioDeviceDescriptor>> curDescs;
     if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
-        curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
+        // Only the Bluetooth Car can ring for public device.
+        curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderBTCarDevices();
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
     }
