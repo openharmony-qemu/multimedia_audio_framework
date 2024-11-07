@@ -48,8 +48,8 @@ void NoneMixEngineUnitTest::TearDownTestCase(void)
 
 void NoneMixEngineUnitTest::SetUp(void)
 {
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    DeviceInfo deviceInfo;
+    deviceInfo.deviceType = DEVICE_TYPE_USB_HEADSET;
     playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Init(deviceInfo, false);
 }
@@ -521,10 +521,10 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_012, TestSize
 HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_001, TestSize.Level1)
 {
     NoneMixEngine noneMixEngineRet;
-    AudioDeviceDescriptor deviceRet(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceRet;
     bool isVoipRet = true;
     noneMixEngineRet.isInit_ = true;
-    deviceRet.deviceType_ = DEVICE_TYPE_INVALID;
+    deviceRet.deviceType = DEVICE_TYPE_INVALID;
     noneMixEngineRet.device_.deviceType = DEVICE_TYPE_NONE;
     noneMixEngineRet.renderSink_ = nullptr;
 
@@ -544,17 +544,17 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_001, TestSize.Level1)
 HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_002, TestSize.Level1)
 {
     NoneMixEngine noneMixEngineRet;
-    AudioDeviceDescriptor deviceRet(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceRet;
     bool isVoipRet = true;
     noneMixEngineRet.isInit_ = true;
-    deviceRet.deviceType_ = DEVICE_TYPE_INVALID;
+    deviceRet.deviceType = DEVICE_TYPE_INVALID;
     noneMixEngineRet.device_.deviceType = DEVICE_TYPE_INVALID;
     noneMixEngineRet.renderSink_ = nullptr;
 
     auto ret = noneMixEngineRet.Init(deviceRet, isVoipRet);
     EXPECT_EQ(ret, SUCCESS);
 
-    deviceRet.deviceType_ = DEVICE_TYPE_NONE;
+    deviceRet.deviceType = DEVICE_TYPE_NONE;
     ret = noneMixEngineRet.Init(deviceRet, isVoipRet);
     EXPECT_EQ(ret, SUCCESS);
 }

@@ -5385,7 +5385,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_001, TestSize
     float maxVolume = audioRenderer->GetMaxStreamVolume();
     EXPECT_LT(minVolume, maxVolume);
 
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceInfo;
     ret = audioRenderer->GetCurrentOutputDevices(deviceInfo);
     EXPECT_EQ(SUCCESS, ret);
 
@@ -6100,7 +6100,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_001, TestSi
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
 
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceInfo;
     ret = audioRenderer->GetCurrentOutputDevices(deviceInfo);
     EXPECT_EQ(SUCCESS, ret);
 
@@ -6120,11 +6120,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_002, TestSi
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
 
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceInfo;
     audioRenderer->GetCurrentOutputDevices(deviceInfo);
 
-    EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole_);
-    EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType_);
+    EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole);
+    EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType);
 
     audioRenderer->Release();
 }
@@ -6144,7 +6144,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_0
     EXPECT_NE(nullptr, audioRenderer);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
-        AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+        DeviceInfo deviceInfo;
         ret = audioRenderer->GetCurrentOutputDevices(deviceInfo);
         EXPECT_EQ(SUCCESS, ret);
     }
@@ -6166,11 +6166,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_0
     EXPECT_NE(nullptr, audioRenderer);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
-        AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+        DeviceInfo deviceInfo;
         audioRenderer->GetCurrentOutputDevices(deviceInfo);
 
-        EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole_);
-        EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType_);
+        EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole);
+        EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType);
     }
 
     audioRenderer->Release();

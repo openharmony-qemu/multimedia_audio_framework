@@ -239,23 +239,37 @@ AudioScene AudioSystemManager::GetAudioScene() const
     return AudioPolicyManager::GetInstance().GetAudioScene();
 }
 
-int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag) const
+int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool flag) const
 {
     AUDIO_INFO_LOG("device: %{public}d", deviceType);
-    if (!IsActiveDeviceType(deviceType)) {
-        AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
-        return ERR_NOT_SUPPORTED;
+    switch (deviceType) {
+        case EARPIECE:
+        case SPEAKER:
+        case BLUETOOTH_SCO:
+        case USB_HEADSET:
+        case FILE_SINK_DEVICE:
+            break;
+        default:
+            AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
+            return ERR_NOT_SUPPORTED;
     }
 
     /* Call Audio Policy SetDeviceActive */
     return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag));
 }
 
-bool AudioSystemManager::IsDeviceActive(DeviceType deviceType) const
+bool AudioSystemManager::IsDeviceActive(ActiveDeviceType deviceType) const
 {
-    if (!IsActiveDeviceType(deviceType)) {
-        AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
-        return ERR_NOT_SUPPORTED;
+    switch (deviceType) {
+        case EARPIECE:
+        case SPEAKER:
+        case BLUETOOTH_SCO:
+        case USB_HEADSET:
+        case FILE_SINK_DEVICE:
+            break;
+        default:
+            AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
+            return false;
     }
 
     /* Call Audio Policy IsDeviceActive */
@@ -1514,7 +1528,7 @@ AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImp
     AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl destroy");
 }
 
-int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address) const
+int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const
 {
     AUDIO_INFO_LOG("device: %{public}d", deviceType);
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),

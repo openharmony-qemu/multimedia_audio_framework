@@ -61,8 +61,7 @@ public:
     {
     }
 
-    void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReason reason) override;
+    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
 private:
     OH_AudioRenderer_Callbacks callbacks_;
     OH_AudioRenderer *ohAudioRenderer_;
@@ -77,8 +76,7 @@ public:
     {
     }
 
-    void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReason reason) override;
+    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
 private:
     OH_AudioRenderer_OutputDeviceChangeCallback callback_;
     OH_AudioRenderer *ohAudioRenderer_;

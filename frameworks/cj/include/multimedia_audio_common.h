@@ -31,8 +31,8 @@ void Convert2CAudioCapturerChangeInfo(CAudioCapturerChangeInfo &cInfo, const Aud
 void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor &devices,
                                   const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors,
                                   int32_t *errorCode);
-void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const AudioDeviceDescriptor &deviceInfo, int32_t *errorCode);
-void Convert2CArrDeviceDescriptorByDeviceInfo(CArrDeviceDescriptor &devices, const AudioDeviceDescriptor &deviceInfo,
+void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const DeviceInfo &deviceInfo, int32_t *errorCode);
+void Convert2CArrDeviceDescriptorByDeviceInfo(CArrDeviceDescriptor &devices, const DeviceInfo &deviceInfo,
                                               int32_t *errorCode);
 void ConvertAudioDeviceDescriptor2DeviceInfo(AudioDeviceDescriptor &deviceInfo,
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor);

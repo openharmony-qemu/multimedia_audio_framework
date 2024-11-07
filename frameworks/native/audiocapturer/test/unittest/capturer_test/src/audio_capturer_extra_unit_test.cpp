@@ -1415,7 +1415,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
 
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceInfo;
     ret = audioCapturer->GetCurrentInputDevices(deviceInfo);
     EXPECT_EQ(SUCCESS, ret);
 
@@ -1440,7 +1440,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     bool isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);
 
-    deviceInfo.deviceType_ = DEVICE_TYPE_EARPIECE;
+    deviceInfo.deviceType = DEVICE_TYPE_EARPIECE;
     isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);
 

@@ -250,27 +250,24 @@ enum DeviceVolumeType {
     HEADSET_VOLUME_TYPE = 2,
 };
 
-inline const std::unordered_set<DeviceType> ACTIVE_DEVICE_TYPE_SET = {
-    DeviceType::DEVICE_TYPE_EARPIECE,
-    DeviceType::DEVICE_TYPE_SPEAKER,
-    DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
-    DeviceType::DEVICE_TYPE_USB_HEADSET,
-    DeviceType::DEVICE_TYPE_FILE_SINK,
+enum ActiveDeviceType {
+    ACTIVE_DEVICE_TYPE_NONE = -1,
+    EARPIECE = 1,
+    SPEAKER = 2,
+    BLUETOOTH_SCO = 7,
+    USB_HEADSET = 22,
+    FILE_SINK_DEVICE = 50,
+    ACTIVE_DEVICE_TYPE_MAX
 };
 
-inline bool IsActiveDeviceType(DeviceType deviceType)
-{
-    return ACTIVE_DEVICE_TYPE_SET.count(deviceType) > 0;
-}
-
-inline const std::unordered_set<DeviceType> COMMUNICATION_DEVICE_TYPE_SET = {
-    DeviceType::DEVICE_TYPE_SPEAKER,
+enum CommunicationDeviceType {
+    /**
+     * Speaker.
+     * @since 7
+     * @syscap SystemCapability.Multimedia.Audio.Communication
+     */
+    COMMUNICATION_SPEAKER = 2
 };
-
-inline bool IsCommunicationDeviceType(DeviceType deviceType)
-{
-    return COMMUNICATION_DEVICE_TYPE_SET.count(deviceType) > 0;
-}
 
 enum AudioDeviceManagerType {
     DEV_MGR_UNKNOW = 0,
@@ -420,6 +417,118 @@ struct DeviceStreamInfo {
             return false;
         }
         return true;
+    }
+};
+
+class DeviceInfo {
+public:
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    DeviceRole deviceRole = DEVICE_ROLE_NONE;
+    int32_t deviceId = -1;
+    int32_t channelMasks = 0;
+    int32_t channelIndexMasks = 0;
+    std::string deviceName = "";
+    std::string macAddress = "";
+    DeviceStreamInfo audioStreamInfo;
+    std::string networkId = LOCAL_NETWORK_ID;
+    std::string displayName = "";
+    int32_t interruptGroupId = 0;
+    int32_t volumeGroupId = 0;
+    bool isLowLatencyDevice = false;
+    int32_t a2dpOffloadFlag = NO_A2DP_DEVICE;
+    ConnectState connectState = CONNECTED;
+    DeviceCategory deviceCategory = CATEGORY_DEFAULT;
+
+    DeviceInfo() = default;
+    ~DeviceInfo() = default;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(deviceType))
+            && parcel.WriteInt32(static_cast<int32_t>(deviceRole))
+            && parcel.WriteInt32(deviceId)
+            && parcel.WriteInt32(channelMasks)
+            && parcel.WriteInt32(channelIndexMasks)
+            && parcel.WriteString(deviceName)
+            && parcel.WriteString(macAddress)
+            && audioStreamInfo.Marshalling(parcel)
+            && parcel.WriteString(networkId)
+            && parcel.WriteString(displayName)
+            && parcel.WriteInt32(interruptGroupId)
+            && parcel.WriteInt32(volumeGroupId)
+            && parcel.WriteBool(isLowLatencyDevice)
+            && parcel.WriteInt32(a2dpOffloadFlag)
+            && parcel.WriteInt32(static_cast<int32_t>(deviceCategory));
+    }
+    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
+    {
+        DeviceType devType = deviceType;
+        int32_t devId = deviceId;
+        DeviceStreamInfo streamInfo = audioStreamInfo;
+
+        // If api target version < 11 && does not set deviceType, fix api compatibility.
+        if (apiVersion < API_11 && (deviceType == DEVICE_TYPE_NONE || deviceType == DEVICE_TYPE_INVALID)) {
+            // DeviceType use speaker or mic instead.
+            if (deviceRole == OUTPUT_DEVICE) {
+                devType = DEVICE_TYPE_SPEAKER;
+                devId = 1; // 1 default speaker device id.
+            } else if (deviceRole == INPUT_DEVICE) {
+                devType = DEVICE_TYPE_MIC;
+                devId = 2; // 2 default mic device id.
+            }
+
+            //If does not set sampleRates use SAMPLE_RATE_44100 instead.
+            if (streamInfo.samplingRate.empty()) {
+                streamInfo.samplingRate.insert(SAMPLE_RATE_44100);
+            }
+            // If does not set channelCounts use STEREO instead.
+            if (streamInfo.channels.empty()) {
+                streamInfo.channels.insert(STEREO);
+            }
+        }
+
+        return parcel.WriteInt32(static_cast<int32_t>(devType))
+            && parcel.WriteInt32(static_cast<int32_t>(deviceRole))
+            && parcel.WriteInt32(devId)
+            && parcel.WriteInt32(channelMasks)
+            && parcel.WriteInt32(channelIndexMasks)
+            && parcel.WriteString((!hasBTPermission && (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP
+                || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : deviceName)
+            && parcel.WriteString((!hasBTPermission && (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP
+                || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : macAddress)
+            && streamInfo.Marshalling(parcel)
+            && parcel.WriteString(hasSystemPermission ? networkId : "")
+            && parcel.WriteString(displayName)
+            && parcel.WriteInt32(hasSystemPermission ? interruptGroupId : INVALID_GROUP_ID)
+            && parcel.WriteInt32(hasSystemPermission ? volumeGroupId : INVALID_GROUP_ID)
+            && parcel.WriteBool(isLowLatencyDevice)
+            && parcel.WriteInt32(a2dpOffloadFlag)
+            && parcel.WriteInt32(static_cast<int32_t>(deviceCategory));
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+        deviceRole = static_cast<DeviceRole>(parcel.ReadInt32());
+        deviceId = parcel.ReadInt32();
+        channelMasks = parcel.ReadInt32();
+        channelIndexMasks = parcel.ReadInt32();
+        deviceName = parcel.ReadString();
+        macAddress = parcel.ReadString();
+        audioStreamInfo.Unmarshalling(parcel);
+        networkId = parcel.ReadString();
+        displayName = parcel.ReadString();
+        interruptGroupId = parcel.ReadInt32();
+        volumeGroupId = parcel.ReadInt32();
+        isLowLatencyDevice = parcel.ReadBool();
+        a2dpOffloadFlag = parcel.ReadInt32();
+        deviceCategory = static_cast<DeviceCategory>(parcel.ReadInt32());
+    }
+
+    bool IsSameDeviceInfo(const DeviceInfo &deviceInfo) const
+    {
+        return deviceType == deviceInfo.deviceType &&
+            deviceRole == deviceInfo.deviceRole &&
+            macAddress == deviceInfo.macAddress &&
+            networkId == deviceInfo.networkId;
     }
 };
 

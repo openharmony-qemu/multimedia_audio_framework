@@ -1926,9 +1926,9 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_001, TestSize.Level
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(true, isStarted);
 
-    audioCapturer->currentDeviceInfo_.deviceType_ = DEVICE_TYPE_INVALID;
+    audioCapturer->currentDeviceInfo_.deviceType = DEVICE_TYPE_INVALID;
 
-    AudioDeviceDescriptor newDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo newDeviceInfo = {};
     bool isChanged = audioCapturer->IsDeviceChanged(newDeviceInfo);
     EXPECT_EQ(isChanged, true);
 
@@ -1948,7 +1948,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_002, TestSize.Level
         std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
-    AudioDeviceDescriptor newDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo newDeviceInfo = {};
     bool isChanged = audioCapturer->IsDeviceChanged(newDeviceInfo);
     EXPECT_EQ(isChanged, false);
 
@@ -1968,7 +1968,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_003, TestSize.Level
         std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
-    AudioDeviceDescriptor newDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo newDeviceInfo = {};
     for (int32_t i = 0; i < STRESS_TEST_COUNTS; i++) {
         bool isChanged = audioCapturer->IsDeviceChanged(newDeviceInfo);
         EXPECT_EQ(isChanged, false);

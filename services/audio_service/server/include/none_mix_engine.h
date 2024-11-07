@@ -25,7 +25,7 @@ public:
     NoneMixEngine();
     ~NoneMixEngine() override;
 
-    int32_t Init(const AudioDeviceDescriptor &type, bool isVoip) override;
+    int32_t Init(const DeviceInfo &type, bool isVoip) override;
     int32_t Start() override;
     int32_t Stop() override;
     int32_t Pause() override;
@@ -56,7 +56,7 @@ private:
     bool isVoip_;
     bool isStart_;
     bool isInit_;
-    AudioDeviceDescriptor device_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo device_;
     std::atomic<uint32_t> failedCount_;
     uint64_t writeCount_;
     uint64_t fwkSyncTime_;

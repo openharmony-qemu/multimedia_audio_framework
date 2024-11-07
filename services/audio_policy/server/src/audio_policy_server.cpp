@@ -2711,9 +2711,9 @@ int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bo
         return ERR_SYSTEM_PERMISSION_DENIED;
     }
     switch (deviceType) {
-        case DeviceType::DEVICE_TYPE_EARPIECE:
-        case DeviceType::DEVICE_TYPE_SPEAKER:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case EARPIECE:
+        case SPEAKER:
+        case BLUETOOTH_SCO:
             break;
         default:
             AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);

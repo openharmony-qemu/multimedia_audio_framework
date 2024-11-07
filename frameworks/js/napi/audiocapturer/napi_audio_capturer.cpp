@@ -719,7 +719,7 @@ napi_value NapiAudioCapturer::GetCurrentInputDevices(napi_env env, napi_callback
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr, result, "audioCapturer_ is nullptr");
 
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    DeviceInfo deviceInfo;
     int32_t ret = napiAudioCapturer->audioCapturer_->GetCurrentInputDevices(deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetCurrentInputDevices failure!");
 

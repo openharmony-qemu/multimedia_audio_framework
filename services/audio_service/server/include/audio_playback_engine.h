@@ -29,7 +29,7 @@ public:
     virtual int32_t AddRenderer(const std::shared_ptr<IRendererStream> &stream);
     virtual void RemoveRenderer(const std::shared_ptr<IRendererStream> &stream);
 
-    virtual int32_t Init(const AudioDeviceDescriptor &type, bool isVoip) override;
+    virtual int32_t Init(const DeviceInfo &type, bool isVoip) override;
     virtual int32_t Start() override;
     virtual int32_t Stop() override;
     virtual int32_t Pause() override;

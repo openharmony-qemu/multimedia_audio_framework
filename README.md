@@ -205,7 +205,7 @@ You can use the APIs provided in the [**audio_system_manager.h**](https://gitee.
     ```
 8. Call **SetDeviceActive()** and **IsDeviceActive()** to activate or deactivate an audio device and obtain the device activation status, respectively.
      ```
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    ActiveDeviceType deviceType = SPEAKER;
     int32_t result = audioSystemMgr->SetDeviceActive(deviceType, true);
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
@@ -300,7 +300,7 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
     bool isLatencySupport = audioStreamMgr->IsAudioRendererLowLatencySupported(audioStreamInfo);
     ```
 #### Using JavaScript APIs
-JavaScript applications can call the audio management APIs to control the volume and devices.
+JavaScript applications can call the audio management APIs to control the volume and devices.  
 For details, see [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/reference/apis-audio-kit/js-apis-audio.md#audiomanager).
 
 ### Bluetooth SCO Call
@@ -318,9 +318,9 @@ You can use the APIs provided in [**audio_bluetooth_manager.h**](https://gitee.c
 The following lists the device types supported by the audio framework.
 
 1. **USB Type-C Headset**
-
+   
     A digital headset that consists of its own digital-to-analog converter (DAC) and amplifier that functions as part of the headset.
-
+    
 2. **WIRED Headset**
 
     An analog headset that does not contain any DAC. It can have a 3.5 mm jack or a USB-C socket without DAC.

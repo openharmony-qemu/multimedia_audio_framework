@@ -43,8 +43,7 @@ public:
     ~PolicyProviderWrapper();
     PolicyProviderWrapper(IPolicyProvider *policyWorker);
 
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
-        AudioDeviceDescriptor &deviceInfo) override;
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) override;
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,

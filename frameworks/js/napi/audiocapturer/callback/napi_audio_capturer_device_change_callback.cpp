@@ -78,7 +78,7 @@ bool NapiAudioCapturerDeviceChangeCallback::ContainSameJsCallback(napi_value arg
     return isEquals;
 }
 
-void NapiAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
+void NapiAudioCapturerDeviceChangeCallback::OnStateChange(const DeviceInfo &deviceInfo)
 {
     OnJsCallbackCapturerDeviceInfo(callback_, deviceInfo);
 }
@@ -122,11 +122,11 @@ void NapiAudioCapturerDeviceChangeCallback::CaptureDeviceInfoTsfnFinalize(napi_e
 }
 
 void NapiAudioCapturerDeviceChangeCallback::OnJsCallbackCapturerDeviceInfo(napi_ref method,
-    const AudioDeviceDescriptor &deviceInfo)
+    const DeviceInfo &deviceInfo)
 {
     CHECK_AND_RETURN_LOG(method != nullptr, "method is nullptr");
     AudioCapturerDeviceChangeJsCallback *event = new AudioCapturerDeviceChangeJsCallback {method, env_, deviceInfo};
-
+    
     if (event == nullptr) {
         AUDIO_ERR_LOG("event data malloc failed: No memory");
         return;

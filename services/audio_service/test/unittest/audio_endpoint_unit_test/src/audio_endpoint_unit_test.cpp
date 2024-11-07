@@ -56,11 +56,11 @@ void AudioEndpointUnitTest::TearDown(void)
 }
 
 static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::EndpointType type, uint64_t id,
-    const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo)
+    const AudioProcessConfig &clientConfig, const DeviceInfo &deviceInfo)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpoint = nullptr;
-    if (type == AudioEndpoint::EndpointType::TYPE_INDEPENDENT && deviceInfo.deviceRole_ != INPUT_DEVICE &&
-        deviceInfo.networkId_ == LOCAL_NETWORK_ID) {
+    if (type == AudioEndpoint::EndpointType::TYPE_INDEPENDENT && deviceInfo.deviceRole != INPUT_DEVICE &&
+        deviceInfo.networkId == LOCAL_NETWORK_ID) {
         return nullptr;
     } else {
         audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
@@ -76,11 +76,11 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
 static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoint::EndpointType type)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpoint =
         std::make_shared<AudioEndpointInner>(type, AUDIO_ENDPOINT_ID, config);
     if (!audioEndpoint->Config(deviceInfo)) {
@@ -92,12 +92,12 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
 static std::shared_ptr<AudioEndpointInner> CreateOutputEndpointInner(AudioEndpoint::EndpointType type)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.audioStreamInfo_.channelLayout = CH_LAYOUT_STEREO;
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::OUTPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.audioStreamInfo.channelLayout = CH_LAYOUT_STEREO;
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(type, AUDIO_ENDPOINT_ID, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
@@ -124,15 +124,15 @@ static AudioProcessConfig InitServerProcessConfig()
 static sptr<AudioProcessInServer> CreateAudioProcessInServer()
 {
     AudioService *audioServicePtr = AudioService::GetInstance();
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
+    DeviceInfo deviceInfo = {};
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
     AudioProcessConfig serverConfig = InitServerProcessConfig();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(serverConfig, audioServicePtr);
     std::shared_ptr<OHAudioBuffer> buffer = nullptr;
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
-    processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, deviceInfo.audioStreamInfo_, buffer);
+    processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, deviceInfo.audioStreamInfo, buffer);
     return processStream;
 }
 
@@ -145,10 +145,10 @@ static sptr<AudioProcessInServer> CreateAudioProcessInServer()
 HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpoint);
@@ -163,23 +163,23 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_001, TestSize.Level1
 HWTEST_F(AudioEndpointUnitTest, CreateEndpoint_002, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.audioStreamInfo_.format = AudioSampleFormat::SAMPLE_U8;
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
-    deviceInfo.audioStreamInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
-    deviceInfo.audioStreamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
     audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
-    deviceInfo.audioStreamInfo_.format = AudioSampleFormat::INVALID_WIDTH;
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::INVALID_WIDTH;
     audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
 
-    deviceInfo.audioStreamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    deviceInfo.audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
 }
@@ -193,11 +193,11 @@ HWTEST_F(AudioEndpointUnitTest, CreateEndpoint_002, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpoint);
@@ -212,21 +212,21 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1
 HWTEST_F(AudioEndpointUnitTest, EnableCreateEndpoint_003, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::OUTPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpoint);
 
-    deviceInfo.networkId_ = REMOTE_NETWORK_ID;
+    deviceInfo.networkId = REMOTE_NETWORK_ID;
     audioEndpoint = AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT, 123, config, deviceInfo);
     EXPECT_EQ(nullptr, audioEndpoint);
 
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     config.audioMode = AUDIO_MODE_RECORD;
     audioEndpoint = AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpoint);
@@ -241,11 +241,11 @@ HWTEST_F(AudioEndpointUnitTest, EnableCreateEndpoint_003, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::OUTPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpoint);
@@ -266,20 +266,20 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_002, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
 
-    deviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     std::string ret = audioEndpointInner->GenerateEndpointKey(deviceInfo, 1);
     EXPECT_NE("", ret);
 
-    deviceInfo.deviceType_ = DEVICE_TYPE_INVALID;
+    deviceInfo.deviceType = DEVICE_TYPE_INVALID;
     audioEndpointInner->GenerateEndpointKey(deviceInfo, 1);
     EXPECT_NE("", ret);
 
@@ -290,7 +290,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_002, TestSize.Level1)
     result = audioEndpointInner->DisableFastInnerCap();
     EXPECT_EQ(SUCCESS, result);
 
-    audioEndpointInner->deviceInfo_.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioEndpointInner->deviceInfo_.deviceRole = DeviceRole::OUTPUT_DEVICE;
     result = audioEndpointInner->DisableFastInnerCap();
     EXPECT_EQ(SUCCESS, result);
 
@@ -307,12 +307,12 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_002, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, HandleZeroVolumeCheckEvent_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.audioStreamInfo_.channelLayout = CH_LAYOUT_STEREO;
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::OUTPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.audioStreamInfo.channelLayout = CH_LAYOUT_STEREO;
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
@@ -355,12 +355,12 @@ HWTEST_F(AudioEndpointUnitTest, HandleZeroVolumeCheckEvent_001, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.audioStreamInfo_.channelLayout = CH_LAYOUT_STEREO;
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::OUTPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.audioStreamInfo.channelLayout = CH_LAYOUT_STEREO;
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
@@ -407,11 +407,11 @@ HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_001, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, KeepWorkloopRunning_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
@@ -453,11 +453,11 @@ HWTEST_F(AudioEndpointUnitTest, KeepWorkloopRunning_001, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, DfxOperation_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
@@ -482,11 +482,11 @@ HWTEST_F(AudioEndpointUnitTest, DfxOperation_001, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, CheckUpdateState_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
@@ -523,11 +523,11 @@ HWTEST_F(AudioEndpointUnitTest, CheckUpdateState_001, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, CheckProcessToDupStream_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
@@ -552,28 +552,28 @@ HWTEST_F(AudioEndpointUnitTest, CheckProcessToDupStream_001, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, GetFastSink_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
 
-    deviceInfo.networkId_ = REMOTE_NETWORK_ID;
+    deviceInfo.networkId = REMOTE_NETWORK_ID;
     IMmapAudioRendererSink *ret = audioEndpointInner->GetFastSink(deviceInfo, AudioEndpoint::TYPE_MMAP);
     EXPECT_NE(nullptr, ret);
 
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    deviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    deviceInfo.a2dpOffloadFlag_ = A2DP_NOT_OFFLOAD;
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceInfo.a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
     ret = audioEndpointInner->GetFastSink(deviceInfo, AudioEndpoint::TYPE_INVALID);
     EXPECT_NE(nullptr, ret);
 
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    deviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    deviceInfo.a2dpOffloadFlag_ = A2DP_OFFLOAD;
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceInfo.a2dpOffloadFlag = A2DP_OFFLOAD;
     ret = audioEndpointInner->GetFastSink(deviceInfo, AudioEndpoint::TYPE_INVALID);
     EXPECT_EQ(nullptr, ret);
 }
@@ -604,11 +604,11 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    DeviceInfo deviceInfo = {};
+    deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
+    deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+    deviceInfo.audioStreamInfo.channels.insert(STEREO);
+    deviceInfo.networkId = LOCAL_NETWORK_ID;
     result = audioEndpointInner->Config(deviceInfo);
     EXPECT_FALSE(result);
 
@@ -619,7 +619,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     processStream->SetInnerCapState(false);
     result = audioEndpointInner->ShouldInnerCap();
     EXPECT_FALSE(result);
-
+ 
     result = audioEndpointInner->UnlinkProcessStream(newpProcessStream);
     EXPECT_EQ(SUCCESS, ret);
 
@@ -770,7 +770,7 @@ HWTEST_F(AudioEndpointUnitTest, DelayStopDevice_001, TestSize.Level1)
     audioEndpointInner->isInnerCapEnabled_ = true;
     EXPECT_FALSE(audioEndpointInner->DelayStopDevice());
 
-    audioEndpointInner->deviceInfo_.deviceRole_ = OUTPUT_DEVICE;
+    audioEndpointInner->deviceInfo_.deviceRole = OUTPUT_DEVICE;
     EXPECT_FALSE(audioEndpointInner->DelayStopDevice());
 }
 } // namespace AudioStandard

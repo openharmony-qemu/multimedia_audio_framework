@@ -71,7 +71,7 @@ public:
     virtual void OnCapturerStateChange(
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
     virtual void OnRendererDeviceChange(const uint32_t sessionId,
-        const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
+        const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
     virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) = 0;
     virtual void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
