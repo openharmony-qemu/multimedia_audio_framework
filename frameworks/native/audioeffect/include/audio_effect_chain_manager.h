@@ -14,8 +14,8 @@
  */
 
 
-#ifndef AUDIO_EFFECT_CHAIN_MANAGER_H
-#define AUDIO_EFFECT_CHAIN_MANAGER_H
+#ifndef AUDIO_EFFECT_CHAIN_SERVICE_H
+#define AUDIO_EFFECT_CHAIN_SERVICE_H
 
 #include <cstdio>
 #include <cstdint>
