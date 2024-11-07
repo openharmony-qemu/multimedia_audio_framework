@@ -160,14 +160,6 @@ void GetOffloadEnabledFuzzTest(const uint8_t *rawData, size_t size)
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void DumpFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioEffectChainManager::GetInstance()->Dump();
-}
-
 void UpdateMultichannelConfigFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -418,7 +410,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
     OHOS::AudioStandard::SetOutputDeviceSinkFuzzTest(rawData, size);
     OHOS::AudioStandard::GetDeviceSinkNameFuzzTest(rawData, size);
     OHOS::AudioStandard::GetOffloadEnabledFuzzTest(rawData, size);
-    OHOS::AudioStandard::DumpFuzzTest(rawData, size);
     OHOS::AudioStandard::UpdateMultichannelConfigFuzzTest(rawData, size);
     OHOS::AudioStandard::UpdateSpatializationStateFuzzTest(rawData, size);
     OHOS::AudioStandard::SetHdiParamFuzzTest(rawData, size);

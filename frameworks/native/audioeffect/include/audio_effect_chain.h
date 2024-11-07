@@ -69,7 +69,6 @@ public:
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     void UpdateBufferConfig(uint32_t &channels, uint64_t &channelLayout);
     bool IsEmptyEffectHandles();
-    void Dump();
     int32_t UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout);
     void StoreOldEffectChainInfo(std::string &sceneMode, AudioEffectConfig &ioBufferConfig);
     void InitEffectChain();
