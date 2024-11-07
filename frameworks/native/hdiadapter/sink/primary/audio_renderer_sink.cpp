@@ -1606,7 +1606,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
     if (flag == 0 && g_paStatus == 1) {
         ret = snprintf_s(keyValueList, sizeof(keyValueList), sizeof(keyValueList) - 1,
             "zero_volume=true;routing=0");
-        if (ret > 0 && ret < sizeof(keyValueList)) {
+        if (ret > 0 && ret < static_cast<int32_t>(sizeof(keyValueList))) {
             CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERROR);
             ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
         }

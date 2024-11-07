@@ -339,7 +339,7 @@ void AudioPolicyServiceEnhanceFiveFuzzTest(const uint8_t *rawData, size_t size)
 
     GetServerPtr()->audioPolicyService_.isEcFeatureEnable_ = true;
     GetServerPtr()->audioPolicyService_.normalSourceOpened_ = SOURCE_TYPE_VOICE_COMMUNICATION;
-    GetServerPtr()->audioPolicyService_.ReloadSourceForDeviceChange(DEVICE_TYPE_DEFAULT, DEVICE_TYPE_DEFAULT, true);
+    GetServerPtr()->audioPolicyService_.ReloadSourceForDeviceChange(DEVICE_TYPE_DEFAULT, DEVICE_TYPE_DEFAULT, "test");
     GetServerPtr()->audioPolicyService_.UpdateAudioEcInfo(DEVICE_TYPE_DEFAULT, DEVICE_TYPE_DEFAULT);
 }
 
