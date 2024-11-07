@@ -44,7 +44,7 @@ namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
 SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
 
-static const int32_t PA_SERVICE_IMPL_TIMEOUT = 5; // 5s
+static const int32_t PA_SERVICE_IMPL_TIMEOUT = 10; // 10s is better
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
     {"voice_call_assistant", STREAM_VOICE_CALL_ASSISTANT},
@@ -256,10 +256,12 @@ int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, 
 bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     AUDIO_DEBUG_LOG("MuteAudioDevice: [%{public}s] : [%{public}d]", sinkName.c_str(), isMute);
-
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::SetSinkMute", PA_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("SetSinkMute timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
 
     PaLockGuard palock(mMainLoop);
     Trace trace("PulseAudioServiceAdapterImpl::SetSinkMute");
@@ -282,10 +284,6 @@ bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool
 
     if (isSync) {
         while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-            AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::SetSinkMute", PA_SERVICE_IMPL_TIMEOUT,
-                [](void *) {
-                    AUDIO_ERR_LOG("SetSinkMute timeout");
-                }, nullptr, XcollieFlag);
             pa_threaded_mainloop_wait(mMainLoop);
         }
     }
@@ -438,13 +436,16 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex,
     std::string sinkName)
 {
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName", PA_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("MoveSinkInputByIndexOrName timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName:id:" + std::to_string(sinkInputId) +
         +":index:" + std::to_string(sinkIndex) + ":name:" + sinkName);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
 
     CHECK_AND_RETURN_RET_LOG(mContext != nullptr, ERROR, "mContext is nullptr");
     PaLockGuard palock(mMainLoop);
@@ -462,10 +463,6 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
         return ERROR;
     }
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName", PA_SERVICE_IMPL_TIMEOUT,
-            [](void *) {
-                AUDIO_ERR_LOG("MoveSinkInputByIndexOrName timeout");
-            }, nullptr, XcollieFlag);
         pa_threaded_mainloop_wait(mMainLoop);
     }
     pa_operation_unref(operation);
@@ -479,13 +476,16 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
 int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex,
     std::string sourceName)
 {
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName",
+        PA_SERVICE_IMPL_TIMEOUT, [](void *) {
+            AUDIO_ERR_LOG("MoveSourceOutputByIndexOrName timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName:id:" + std::to_string(sourceOutputId) +
         +":index:" + std::to_string(sourceIndex) + ":name:" + sourceName);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
 
     if (mContext == nullptr) {
         AUDIO_ERR_LOG("mContext is nullptr");
@@ -506,10 +506,6 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
         return ERROR;
     }
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName",
-            PA_SERVICE_IMPL_TIMEOUT, [](void *) {
-                AUDIO_ERR_LOG("MoveSourceOutputByIndexOrName timeout");
-            }, nullptr, XcollieFlag);
         pa_threaded_mainloop_wait(mMainLoop);
     }
     pa_operation_unref(operation);
@@ -558,8 +554,11 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
     userData->sinkInfos = GetAllSinks();
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
 
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSinkInputs", PA_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("GetAllSinkInputs timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sinkInputList, "mContext is nullptr");
 
@@ -574,10 +573,6 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
     }
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSinkInputs", PA_SERVICE_IMPL_TIMEOUT,
-            [](void *) {
-                AUDIO_ERR_LOG("GetAllSinkInputs timeout");
-            }, nullptr, XcollieFlag);
         pa_threaded_mainloop_wait(mMainLoop);
     }
 
@@ -589,12 +584,15 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
 
 vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
 {
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSourceOutputs", PA_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("GetAllSourceOutputs timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("PulseAudioServiceAdapterImpl::GetAllSourceOutputs");
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
 
     CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sourceOutputList, "mContext is nullptr");
 
@@ -610,10 +608,6 @@ vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
     }
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSourceOutputs", PA_SERVICE_IMPL_TIMEOUT,
-            [](void *) {
-                AUDIO_ERR_LOG("GetAllSourceOutputs timeout");
-            }, nullptr, XcollieFlag);
         pa_threaded_mainloop_wait(mMainLoop);
     }
 
