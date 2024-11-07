@@ -28,12 +28,12 @@ void AudioEffectServiceTest::TearDown(void) {}
 /**
 * @tc.name  : Test AudioEffectService.
 * @tc.number: AudioEffectService_001.
-* @tc.desc  : Test EffectManagerInit interfaces.
+* @tc.desc  : Test EffectServiceInit interfaces.
 */
 HWTEST(AudioEffectServiceTest, AudioEffectService_001, TestSize.Level1)
 {
     auto audioEffectService_ = std::make_shared<AudioEffectService>();
-    audioEffectService_->EffectManagerInit();
+    audioEffectService_->EffectServiceInit();
     EXPECT_NE(audioEffectService_, nullptr);
 }
 

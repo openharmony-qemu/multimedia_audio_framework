@@ -31,7 +31,7 @@ void AudioEffectServiceFuzzTest(const uint8_t *rawData, size_t size)
     }
 
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
-    audioEffectService->EffectManagerInit();
+    audioEffectService->EffectServiceInit();
     audioEffectService->BuildAvailableAEConfig();
 }
 } // namespace AudioStandard
