@@ -137,9 +137,11 @@ unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
         vector<unique_ptr<AudioDeviceDescriptor>> descs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
         unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
-        AUDIO_DEBUG_LOG(" RecongnitionsourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
-            clientUID, desc->deviceType_);
-        return desc;
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            AUDIO_DEBUG_LOG(" RecongnitionsourceType %{public}d clientUID %{public}d fetch device %{public}d",
+            sourceType,clientUID, desc->deviceType_);
+            return desc;
+        }
     }
     vector<unique_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
