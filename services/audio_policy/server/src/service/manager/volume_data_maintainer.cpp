@@ -555,6 +555,8 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
     std::string type = "";
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
+            type = "_earpiece";
+            return type;
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_DP:
             type = "_builtin";
