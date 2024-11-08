@@ -7247,7 +7247,7 @@ void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevic
     if (normalSourceOpened_ == SOURCE_TYPE_VOICE_COMMUNICATION) {
         if (!IsVoipDeviceChanged(inputDevice, outputDevice)) {
             return;
-        } 
+        }
     } else {
         if (inputDevice == DEVICE_TYPE_DEFAULT || inputDevice == GetInputDeviceTypeForReload()) {
             AUDIO_INFO_LOG("mic source reload ignore for device not changed");
