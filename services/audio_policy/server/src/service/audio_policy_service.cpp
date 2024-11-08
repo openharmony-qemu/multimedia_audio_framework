@@ -3460,7 +3460,7 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Dev
 void AudioPolicyService::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo)
 {
     uint32_t bufferSize = audioStreamInfo.samplingRate * PcmFormatToBytes(audioStreamInfo.format) *
-        audioStreamInfo.channels * BT_BUFFER_ADJUSTMENT_FACTOR;
+        audioStreamInfo.channels / BT_BUFFER_ADJUSTMENT_FACTOR;
     AUDIO_INFO_LOG("a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
         audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
     moduleInfo.channels = to_string(audioStreamInfo.channels);
@@ -4652,7 +4652,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
     uint32_t bufferSize = streamInfo.samplingRate * PcmFormatToBytes(streamInfo.format) *
-        streamInfo.channels * BT_BUFFER_ADJUSTMENT_FACTOR;
+        streamInfo.channels / BT_BUFFER_ADJUSTMENT_FACTOR;
     AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
 
     auto a2dpModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
