@@ -236,7 +236,6 @@ const unsigned int BLUETOOTH_TIME_OUT_SECONDS = 8;
 mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
-const int32_t AudioA2dpOffloadManager::CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
 
 static string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
 {
