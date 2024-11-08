@@ -261,7 +261,7 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
         resultSet->Close();
         return ERR_INVALID_VALUE;
     } else {
-        AUDIO_INFO_LOG("Read audio_info_database with key: %{public}s value: %{public}s", key, value);
+        AUDIO_INFO_LOG("Read audio_info_database with key: %{public}s value: %{public}s", key.c_str(), value.c_str());
     }
     resultSet->Close();
     IPCSkeleton::SetCallingIdentity(callingIdentity);
@@ -271,7 +271,7 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
 ErrCode AudioSettingProvider::PutStringValue(const std::string &key, const std::string &value,
     std::string tableType, bool needNotify)
 {
-    AUDIO_INFO_LOG("Write audio_info_database with key: %{public}s value: %{public}s", key, value);
+    AUDIO_INFO_LOG("Write audio_info_database with key: %{public}s value: %{public}s", key.c_str(), value.c_str());
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
     auto helper = CreateDataShareHelper(tableType);
     if (helper == nullptr) {
