@@ -453,7 +453,7 @@ void AudioSpatializationService::UpdateRendererInfo(
         spatializationRendererInfoList_.clear();
         for (const auto &it : rendererChangeInfo) {
             spatializationRendererInfo.rendererState = it->rendererState;
-            spatializationRendererInfo.deviceMacAddress = it->outputDeviceInfo.macAddress;
+            spatializationRendererInfo.deviceMacAddress = it->outputDeviceInfo.macAddress_;
             spatializationRendererInfo.streamUsage = it->rendererInfo.streamUsage;
             spatializationRendererInfoList_.push_back(spatializationRendererInfo);
         }

@@ -22,7 +22,7 @@ AudioPlaybackEngine::AudioPlaybackEngine()
 
 AudioPlaybackEngine::~AudioPlaybackEngine() {}
 
-int32_t AudioPlaybackEngine::Init(const DeviceInfo &type, bool isVoip)
+int32_t AudioPlaybackEngine::Init(const AudioDeviceDescriptor &type, bool isVoip)
 {
     return SUCCESS;
 }

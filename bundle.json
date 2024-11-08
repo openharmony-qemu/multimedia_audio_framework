@@ -125,7 +125,8 @@
                   "audio_system_manager.h",
                   "audio_stream_manager.h",
                   "audio_group_manager.h",
-                  "./audiocommon/include/audio_info.h"
+                  "./audiocommon/include/audio_info.h",
+                  "./audiocommon/include/audio_stream_change_info.h"
                 ],
                 "header_base": [
                     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
@@ -138,7 +139,8 @@
               "header": {
                 "header_files": [
                   "./audiocapturer/include/audio_capturer.h",
-                  "./audiocommon/include/audio_info.h"
+                  "./audiocommon/include/audio_info.h",
+                  "./audiocommon/include/audio_stream_change_info.h"
                 ],
                 "header_base": [
                     "//foundation/multimedia/audio_framework/interfaces/inner_api/native"

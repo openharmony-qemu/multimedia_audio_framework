@@ -376,7 +376,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     AudioService::GetInstance()->OnInitInnerCapList();
-    
+
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->OnUpdateInnerCapList();
@@ -385,7 +385,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
     config.audioMode = AUDIO_MODE_RECORD;
     AudioService::GetInstance()->GetAudioProcess(config);
-    
+
     AudioService::GetInstance()->OnInitInnerCapList();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -407,7 +407,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
 HWTEST(AudioServiceUnitTest, AudioServiceIsEndpointTypeVoip_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    DeviceInfo info = {};
+    AudioDeviceDescriptor info(AudioDeviceDescriptor::DEVICE_INFO);
     config.rendererInfo.streamUsage = STREAM_USAGE_INVALID;
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     config.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
@@ -490,7 +490,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceFilterAllFastProcess_001, TestSize.Leve
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     AudioService::GetInstance()->OnInitInnerCapList();
-    
+
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->OnUpdateInnerCapList();
@@ -508,12 +508,12 @@ HWTEST(AudioServiceUnitTest, AudioServiceGetDeviceInfoForProcess_001, TestSize.L
 {
     AudioProcessConfig config = {};
     config.audioMode = AUDIO_MODE_PLAYBACK;
-    DeviceInfo deviceinfo;
+    AudioDeviceDescriptor deviceinfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config);
-    EXPECT_NE(deviceinfo.deviceRole, INPUT_DEVICE);
+    EXPECT_NE(deviceinfo.deviceRole_, INPUT_DEVICE);
     config.audioMode = AUDIO_MODE_RECORD;
     deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config);
-    EXPECT_NE(deviceinfo.deviceRole, OUTPUT_DEVICE);
+    EXPECT_NE(deviceinfo.deviceRole_, OUTPUT_DEVICE);
 }
 
 /**
@@ -537,7 +537,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     AudioService::GetInstance()->OnInitInnerCapList();
-    
+
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->OnUpdateInnerCapList();
@@ -571,7 +571,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     AudioService::GetInstance()->OnInitInnerCapList();
-    
+
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->OnUpdateInnerCapList();
@@ -601,7 +601,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
 
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
-    DeviceInfo deviceInfo = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
     EXPECT_NE(audioprocess, nullptr);
     audioprocess->Start();
@@ -609,7 +609,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     AudioService::GetInstance()->OnInitInnerCapList();
-    
+
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList();
     AudioService::GetInstance()->OnUpdateInnerCapList();
@@ -643,7 +643,7 @@ HWTEST(AudioServiceUnitTest, GetAudioEndpointForDevice_001, TestSize.Level1)
 {
     AudioService *audioService = AudioService::GetInstance();
     AudioProcessConfig clientConfig;
-    DeviceInfo deviceInfo = audioService->GetDeviceInfoForProcess(clientConfig);
+    AudioDeviceDescriptor deviceInfo = audioService->GetDeviceInfoForProcess(clientConfig);
     bool isVoipStream = true;
     audioService->GetAudioEndpointForDevice(deviceInfo, clientConfig, isVoipStream);
 }

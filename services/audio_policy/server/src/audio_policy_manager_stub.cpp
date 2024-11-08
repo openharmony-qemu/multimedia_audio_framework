@@ -539,7 +539,7 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
     }
     std::vector<sptr<AudioDeviceDescriptor>> targetOutputDevice;
     for (int i = 0; i < size; i++) {
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
         MapExternalToInternalDeviceType(*audioDeviceDescriptor);
         targetOutputDevice.push_back(audioDeviceDescriptor);
@@ -569,7 +569,7 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
     CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "SelectInputDevice get invalid device size.");
     std::vector<sptr<AudioDeviceDescriptor>> targetInputDevice;
     for (int i = 0; i < size; i++) {
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
         MapExternalToInternalDeviceType(*audioDeviceDescriptor);
         targetInputDevice.push_back(audioDeviceDescriptor);
@@ -981,7 +981,7 @@ void AudioPolicyManagerStub::SetCaptureSilentStateInternal(MessageParcel &data, 
 
 void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     int32_t result =  GetHardwareOutputSamplingRate(audioDeviceDescriptor);
@@ -1062,7 +1062,7 @@ void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageP
 
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     MapExternalToInternalDeviceType(*descriptor);
     CastType type = static_cast<CastType>(data.ReadInt32());
     int32_t result = ConfigDistributedRoutingRole(descriptor, type);
@@ -1104,7 +1104,7 @@ void AudioPolicyManagerStub::SetSpatializationEnabledInternal(MessageParcel &dat
 
 void AudioPolicyManagerStub::SetSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     bool enable = data.ReadBool();
@@ -1134,7 +1134,7 @@ void AudioPolicyManagerStub::SetHeadTrackingEnabledInternal(MessageParcel &data,
 
 void AudioPolicyManagerStub::SetHeadTrackingEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     bool enable = data.ReadBool();

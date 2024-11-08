@@ -130,7 +130,7 @@ void AudioPolicyServSendFuzzTest(const uint8_t *rawData, size_t size)
     int32_t clientPid = *reinterpret_cast<const int32_t*>(rawData);
     uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
     int32_t streamFlag = *reinterpret_cast<const int32_t*>(rawData);
-    DeviceInfo outputDeviceInfo;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     audioPolicyServerHandler->SendRendererDeviceChangeEvent(clientPid, sessionId, outputDeviceInfo, reason);
     audioPolicyServerHandler->SendRecreateRendererStreamEvent(clientPid, sessionId, streamFlag, reason);
