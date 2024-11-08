@@ -17,12 +17,12 @@
 #define AUDIO_POLICY_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "audio_effect_manager.h"
+#include "audio_effect_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioEffectManagerTest : public testing::Test {
+class AudioEffectServiceTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);

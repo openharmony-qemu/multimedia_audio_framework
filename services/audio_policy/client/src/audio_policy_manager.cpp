@@ -1351,9 +1351,12 @@ float AudioPolicyManager::GetMaxStreamVolume()
 }
 
 int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
-    const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
+    const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
 {
     std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
+    if (rendererCBMap_.count(clientPid)) {
+        rendererCBMap_.erase(clientPid);
+    }
     rendererCBMap_[clientPid] = callback;
     return SUCCESS;
 }

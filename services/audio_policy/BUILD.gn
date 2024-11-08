@@ -173,7 +173,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/data_share_observer_callback.cpp",
     "server/src/service/device_init_callback.cpp",
     "server/src/service/effect/audio_effect_config_parser.cpp",
-    "server/src/service/effect/audio_effect_manager.cpp",
+    "server/src/service/effect/audio_effect_service.cpp",
     "server/src/service/interrupt/audio_interrupt_service.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/listener/power_state_listener.cpp",
@@ -293,6 +293,12 @@ ohos_shared_library("audio_policy_service") {
     "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
+
+  if (usb_manager_enable) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+    sources += [ "server/src/service/manager/audio_usb_manager.cpp" ]
+  }
 
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]

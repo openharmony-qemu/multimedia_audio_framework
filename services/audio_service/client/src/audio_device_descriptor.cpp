@@ -333,7 +333,8 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
 {
     return deviceDescriptor.deviceType_ == deviceType_ &&
         deviceDescriptor.macAddress_ == macAddress_ &&
-        deviceDescriptor.networkId_ == networkId_;
+        deviceDescriptor.networkId_ == networkId_ &&
+        deviceDescriptor.deviceRole_ == deviceRole_;
 }
 
 bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const

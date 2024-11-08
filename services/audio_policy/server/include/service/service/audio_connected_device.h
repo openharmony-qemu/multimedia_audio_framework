@@ -50,8 +50,12 @@ public:
     sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType);
     sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
         std::string macAddress);
+    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
+        std::string macAddress, std::string deviceRole);
     void DelConnectedDevice(std::string networkId, int32_t deviceType);
     void DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress);
+    void DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress,
+        std::string deviceRole);
     void AddConnectedDevice(sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     DeviceType FindConnectedHeadset();
     void SetDisplayName(const std::string macAddress, const std::string deviceName);

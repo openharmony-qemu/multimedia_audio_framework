@@ -32,6 +32,9 @@
 #include "parameters.h"
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
+#ifdef USB_ENABLE
+#include "audio_usb_manager.h"
+#endif
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -513,6 +516,9 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.dms.rotation_changed");
     SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
     SubscribeCommonEvent("usual.event.SCREEN_ON");
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().SubscribeEvent();
+#endif
     SubscribeSafeVolumeEvent();
 }
 

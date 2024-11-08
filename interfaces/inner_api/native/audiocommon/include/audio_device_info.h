@@ -190,16 +190,11 @@ inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_FILE_SOURCE,
 };
 
-inline bool IsInputDevice(DeviceType deviceType)
-{
-    return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
-}
-
-inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole)
+inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
 {
     // Arm usb device distinguishes input and output through device roles.
-    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-        return deviceRole == INPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
+    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET) {
+        return deviceRole == INPUT_DEVICE;
     } else {
         return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
     }
@@ -219,16 +214,11 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_REMOTE_CAST,
 };
 
-inline bool IsOutputDevice(DeviceType deviceType)
-{
-    return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
-}
-
-inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole)
+inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
 {
     // Arm usb device distinguishes input and output through device roles.
-    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-        return deviceRole == OUTPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
+    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET) {
+        return deviceRole == OUTPUT_DEVICE;
     } else {
         return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
     }

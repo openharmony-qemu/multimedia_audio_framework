@@ -414,11 +414,6 @@ float GetCurVolume(uint32_t sessionId, const char *streamType, const char *devic
 {
     CHECK_AND_RETURN_RET_LOG(streamType != nullptr, 1.0f, "streamType is nullptr");
     CHECK_AND_RETURN_RET_LOG(deviceClass != nullptr, 1.0f, "deviceClass is nullptr");
-    std::string tmpStreamType = streamType;
-    // Set voice call assistant stream type to full volume
-    if (tmpStreamType == "voice_call_assistant") {
-        return 1.0f;
-    }
     int32_t stream = AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(stream));
     return AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
