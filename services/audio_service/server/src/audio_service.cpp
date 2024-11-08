@@ -638,7 +638,6 @@ void AudioService::ReLinkProcessToEndpoint()
     for (auto &paired : errorLinkedPaireds) {
         linkedPairedList_.erase(paired);
     }
-
 }
 
 void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint)
