@@ -472,6 +472,13 @@ int32_t RendererInServer::WriteData()
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         FutexTool::FutexWake(audioServerBuffer_->GetFutex());
+        if (!offloadEnable_) {
+            CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+                "invalid write and read position.");
+            uint64_t dataSize = currentWriteFrame - currentReadFrame;
+            AUDIO_INFO_LOG("sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
+                streamIndex_, dataSize);
+        }
         return ERR_OPERATION_FAILED;
     }
 
