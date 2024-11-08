@@ -239,7 +239,7 @@ public:
 
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo);
+        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
     void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
@@ -596,11 +596,7 @@ private:
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
-    int32_t LoadUsbModule(string deviceInfo, DeviceRole deviceRole);
-
     int32_t LoadDpModule(string deviceInfo);
-
-    int32_t LoadDefaultUsbModule(DeviceRole deviceRole);
 
     int32_t RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address);
 
@@ -635,6 +631,8 @@ private:
 
     void FetchOutputDevice(vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+
+    void FetchEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
 
     bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -1082,7 +1080,10 @@ private:
 
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 
-    int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected, const std::string &address);
+    int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected,
+        const std::string &address, DeviceRole role);
+
+    bool NoNeedChangeUsbDevice(const string &address);
 
     void ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
@@ -1132,6 +1133,13 @@ private:
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
 
     void UnloadA2dpModule();
+
+    bool HasArm(const DeviceRole role);
+    bool HasHifi(const DeviceRole role);
+    bool IsArmDevice(const string &address, const DeviceRole role);
+    void PresetArmIdleInput(const string &address);
+    void ActivateArmDevice(const string &address, const DeviceRole role);
+    void UpdateArmModuleInfo(const string &address, const DeviceRole role, AudioModuleInfo &moduleInfo);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
@@ -1234,8 +1242,6 @@ private:
 
     mutable std::shared_mutex deviceStatusUpdateSharedMutex_;
 
-    bool hasArmUsbDevice_ = false;
-    bool hasHifiUsbDevice_ = false; // Only the first usb device is supported now, hifi or arm.
     bool hasDpDevice_ = false; // Only the first dp device is supported.
 
     AudioDeviceManager &audioDeviceManager_;

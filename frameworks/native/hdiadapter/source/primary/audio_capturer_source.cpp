@@ -173,6 +173,8 @@ public:
 
     int32_t UpdateSourceType(SourceType sourceType) final;
 
+    void SetAddress(const std::string &address) override;
+
     explicit AudioCapturerSourceInner(const std::string &halName = "primary");
     explicit AudioCapturerSourceInner(CaptureAttr *attr);
     ~AudioCapturerSourceInner();
@@ -265,6 +267,8 @@ private:
     std::unique_ptr<std::thread> captureThread_ = nullptr;
     bool threadRunning_ = false;
     std::shared_ptr<HdiRingBuffer> ringBuffer_ = nullptr;
+
+    std::string address_;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -730,11 +734,13 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     if (halName_ == "usb") {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
     }
-    deviceDesc.desc = (char *)"";
+    std::string desc = address_;
+    deviceDesc.desc = const_cast<char*>(desc.c_str());
 
     AUDIO_INFO_LOG("Create capture sourceName:%{public}s, hdisource:%{public}d, " \
-        "rate:%{public}u channel:%{public}u format:%{public}u, devicePin:%{public}u",
-        halName_.c_str(), param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
+        "rate:%{public}u channel:%{public}u format:%{public}u, devicePin:%{public}u desc:%{public}s",
+        halName_.c_str(), param.sourceType, param.sampleRate, param.channelCount,
+        param.format, deviceDesc.pins, deviceDesc.desc);
     int32_t ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
     if (ret < 0 || audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("Create capture failed");
@@ -922,7 +928,7 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
         AUDIO_ERR_LOG("ring buffer not init");
         return;
     }
-    
+
     AUDIO_INFO_LOG("non blocking capture thread start, source type: %{public}d", attr_.sourceType);
     while (threadRunning_) {
         Trace trace("CaptureRefInput");
@@ -1708,6 +1714,11 @@ int32_t AudioCapturerSourceInner::UpdateSourceType(SourceType sourceType)
     attr_.sourceType = sourceType;
     AudioPortPin inputPortPin = PIN_IN_MIC;
     return DoSetInputRoute(currentActiveDevice_, inputPortPin);
+}
+
+void AudioCapturerSourceInner::SetAddress(const std::string &address)
+{
+    address_ = address;
 }
 
 int32_t AudioCapturerSourceWakeup::Init(const IAudioSourceAttr &attr)

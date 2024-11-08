@@ -283,6 +283,12 @@ ohos_shared_library("audio_policy_service") {
     "openssl:libcrypto_shared",
   ]
 
+  if (usb_manager_enable) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+    sources += [ "server/src/service/manager/audio_usb_manager.cpp" ]
+  }
+
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
     external_deps += [ "config_policy:configpolicy_util" ]

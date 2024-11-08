@@ -195,6 +195,8 @@ public:
     int32_t SetPriPaPower() override;
     int32_t GetRenderId(uint32_t &renderId) const override;
 
+    void SetAddress(const std::string &address) override;
+
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
         const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -427,7 +429,7 @@ std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, c
 {
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s, halName: %{public}s",
         key, condition.c_str(), halName_.c_str());
-    if (condition == "get_usb_info") {
+    if (condition.starts_with("get_usb_info#C")) {
         // Init adapter to get parameter before load sink module (need fix)
         adapterNameCase_ = "usb";
         int32_t ret = InitAdapter();
@@ -701,7 +703,8 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.desc = const_cast<char *>(attr_.address.c_str());
+    std::string desc = attr_.address;
+    deviceDesc.desc = const_cast<char*>(desc.c_str());
     deviceDesc.pins = PIN_OUT_SPEAKER;
     if (halName_ == "usb") {
         deviceDesc.pins = PIN_OUT_USB_HEADSET;
@@ -712,8 +715,8 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     }
 
     AUDIO_INFO_LOG("Create render sinkName:%{public}s, rate:%{public}u channel:%{public}u format:%{public}u, " \
-        "devicePin:%{public}u",
-        halName_.c_str(), param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
+        "devicePin:%{public}u desc:%{public}s",
+        halName_.c_str(), param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "CreateRender failed, audioAdapter_ is null");
     int32_t ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
@@ -1394,7 +1397,7 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
         formatByte = static_cast<uint32_t>(stoi(bufferSize)) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
             / attr_.channel / attr_.sampleRate;
     }
-    
+
     attr_.format = static_cast<HdiAdapterFormat>(ConvertByteToAudioFormat(formatByte));
 
     AUDIO_DEBUG_LOG("UpdateDPAttrs sampleRate %{public}d,format:%{public}d,channelCount:%{public}d,address:%{public}s",
@@ -1722,6 +1725,11 @@ int32_t AudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
         renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
     }
     return SUCCESS;
+}
+
+void AudioRendererSinkInner::SetAddress(const std::string &address)
+{
+    attr_.address = address;
 }
 
 int32_t AudioRendererSinkInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &outputDevice)
