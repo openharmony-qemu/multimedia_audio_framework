@@ -114,7 +114,7 @@ void AudioA2dpOffloadManager::WaitForConnectionCompleted()
 {
     std::unique_lock<std::mutex> waitLock(connectionMutex_);
     bool connectionCompleted = connectionCV_.wait_for(waitLock,
-        std::chrono::milliseconds(AudioA2dpOffloadManager::CONNECTION_TIMEOUT_IN_MS), [this] {
+        std::chrono::milliseconds(CONNECTION_TIMEOUT_IN_MS), [this] {
             return audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState() == CONNECTION_STATUS_CONNECTED;
         });
     // a2dp connection timeout, anyway we should notify client dataLink OK in order to allow the data flow begin
