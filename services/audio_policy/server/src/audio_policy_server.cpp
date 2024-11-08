@@ -748,8 +748,15 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
     }
 
     int32_t volumeLevelInInt = GetSystemVolumeLevel(streamInFocus);
-    volumeLevelInInt = (adjustType == VolumeAdjustType::VOLUME_UP) ? volumeLevelInInt + volumeStep_ :
-        volumeLevelInInt - volumeStep_;
+    int32_t minRet = GetMinVolumeLevel(streamInFocus);
+    int32_t maxRet = GetMaxVolumeLevel(streamInFocus);
+    if (adjustType == VolumeAdjustType::VOLUME_UP) {
+        CHECK_AND_RETURN_RET_LOG(volumeLevelInInt < maxRet, ERR_OPERATION_FAILED, "volumeLevelInInt is biggest");
+        volumeLevelInInt = volumeLevelInInt + volumeStep_;
+    } else {
+        CHECK_AND_RETURN_RET_LOG(volumeLevelInInt > minRet, ERR_OPERATION_FAILED, "volumeLevelInInt is smallest");
+        volumeLevelInInt = volumeLevelInInt - volumeStep_;
+    }
     volumeLevelInInt = volumeLevelInInt > GetMaxVolumeLevel(streamInFocus) ? GetMaxVolumeLevel(streamInFocus) :
         volumeLevelInInt;
     volumeLevelInInt = volumeLevelInInt < GetMinVolumeLevel(streamInFocus) ? GetMinVolumeLevel(streamInFocus) :
@@ -769,8 +776,15 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
     }
 
     int32_t volumeLevelInInt = GetSystemVolumeLevel(volumeType);
-    volumeLevelInInt = (adjustType == VolumeAdjustType::VOLUME_UP) ? volumeLevelInInt + volumeStep_ :
-        volumeLevelInInt - volumeStep_;
+    int32_t minRet = GetMinVolumeLevel(volumeType);
+    int32_t maxRet = GetMaxVolumeLevel(volumeType);
+    if (adjustType == VolumeAdjustType::VOLUME_UP) {
+        CHECK_AND_RETURN_RET_LOG(volumeLevelInInt < maxRet, ERR_OPERATION_FAILED, "volumeLevelInInt is biggest");
+        volumeLevelInInt = volumeLevelInInt + volumeStep_;
+    } else {
+        CHECK_AND_RETURN_RET_LOG(volumeLevelInInt > minRet, ERR_OPERATION_FAILED, "volumeLevelInInt is smallest");
+        volumeLevelInInt = volumeLevelInInt - volumeStep_;
+    }
     volumeLevelInInt = volumeLevelInInt > GetMaxVolumeLevel(volumeType) ? GetMaxVolumeLevel(volumeType) :
         volumeLevelInInt;
     volumeLevelInInt = volumeLevelInInt < GetMinVolumeLevel(volumeType) ? GetMinVolumeLevel(volumeType) :

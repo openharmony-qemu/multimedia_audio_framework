@@ -731,7 +731,8 @@ void AudioPolicyServerHandler::HandleRingerModeUpdatedEvent(const AppExecFwk::In
             continue;
         }
 
-        AUDIO_DEBUG_LOG("ringerModeListenerCb client %{public}d", it->first);
+        AUDIO_INFO_LOG("Trigger ringerModeListenerCb client %{public}d :RingerMode %{public}d", it->first,
+            static_cast<int32_t>(eventContextObj->ringMode));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_RINGER_MODE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_RINGER_MODE]) {
