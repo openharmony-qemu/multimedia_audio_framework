@@ -33,6 +33,7 @@ ohos_shared_library("audio_capturer_source") {
     "../manager/include",
     "../../audioutils/include",
     "../../audioeffect/include",
+    "../../audioschedule/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include/",
   ]
@@ -40,6 +41,7 @@ ohos_shared_library("audio_capturer_source") {
   deps = [
     "../../../../services/audio_service:audio_common",
     "../../audioeffect:audio_effect",
+    "../../audioschedule:audio_schedule",
     "../../audioutils:audio_utils",
     "../manager:hdiadapter_utils",
   ]
