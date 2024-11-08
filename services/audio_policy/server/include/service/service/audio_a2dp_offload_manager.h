@@ -65,7 +65,6 @@ private:
     std::string a2dpOffloadDeviceAddress_ = "";
     std::mutex connectionMutex_;
     std::condition_variable connectionCV_;
-    static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
 };
 }
