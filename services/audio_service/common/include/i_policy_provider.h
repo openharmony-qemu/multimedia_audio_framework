@@ -62,7 +62,7 @@ namespace {
 }
 class IPolicyProvider {
 public:
-    virtual int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo) = 0;
+    virtual int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) = 0;
 
     virtual int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) = 0;
 
