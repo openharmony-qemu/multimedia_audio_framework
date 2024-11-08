@@ -936,10 +936,10 @@ int32_t AudioProcessInClientInner::Start()
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig_.streamInfo;
-    // eg: 100005_48000_2_1_dump_process_client_audio.pcm
-    std::string dumpFileName = std::to_string(sessionId_) + '_' +
+    // eg: 100005_dump_process_client_audio_48000_2_1.pcm
+    std::string dumpFileName = std::to_string(sessionId_) + "_dump_process_client_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
-        "_dump_process_client_audio.pcm";
+        ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
