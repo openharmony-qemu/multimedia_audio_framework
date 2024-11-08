@@ -6368,7 +6368,7 @@ void AudioPolicyService::RegiestPolicy()
  * is invoked. If deviceStatusUpdateSharedMutex_ write lock is not invoked at the outer layer, lockFlag can be
  * set to true. When deviceStatusUpdateSharedMutex_ write lock has been invoked, lockFlag must be set to false.
  */
-int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     AudioSamplingRate samplingRate = config.streamInfo.samplingRate;
