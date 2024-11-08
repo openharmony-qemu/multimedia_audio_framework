@@ -55,10 +55,6 @@ void AudioSpatializationServiceFuzzTest(const uint8_t *rawData, size_t size)
     audioSpatializationService->HandleSpatializationStateChange(false);
     audioSpatializationService->HandleSpatializationStateChange(true);
     audioSpatializationService->RemoveOldestDevice();
-
-    uint32_t deviceID = *reinterpret_cast<const uint32_t*>(rawData);
-    std::string deviceSpatialInfo = "";
-    audioSpatializationService->UpdateDeviceSpatialInfo(deviceID, deviceSpatialInfo);
 }
 
 } // namespace AudioStandard

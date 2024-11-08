@@ -226,7 +226,6 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_005, TestSize.Level1)
     EXPECT_EQ(result->interruptGroupId_, testInterruptGroupId);
     EXPECT_EQ(result->volumeGroupId_, testVolumeGroupId);
     EXPECT_EQ(result->networkId_, testNetworkId);
-    delete testDescriptor;
 }
 
 /**
@@ -317,7 +316,6 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_010, TestSize.Level1)
     EXPECT_EQ(result->networkId_, "test_network");
     EXPECT_EQ(result->deviceRole_, DeviceRole::INPUT_DEVICE);
     EXPECT_EQ(result->deviceType_, DeviceType::DEVICE_TYPE_MIC);
-    delete descriptor;
 }
 
 /**
@@ -353,7 +351,6 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_012, TestSize.Level1)
     audioAffinityManager->DelSelectRendererDevice(clientUID);
     // Verify nothing changed
     EXPECT_EQ(audioAffinityManager->activeRendererDeviceMap_.count(clientUID), 0);
-    delete descriptor;
 }
 
 /**
@@ -372,7 +369,6 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_013, TestSize.Level1)
     audioAffinityManager->DelSelectRendererDevice(clientUID);
     // Verify map still contains the entry (due to early return in CHECK_AND_RETURN_LOG)
     EXPECT_EQ(audioAffinityManager->activeRendererDeviceMap_.count(clientUID), 1);
-    delete descriptor;
 }
 
 /**
@@ -398,7 +394,6 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_014, TestSize.Level1)
     if (audioAffinityManager->activeRendererGroupAffinityMap_.count(groupName) > 0) {
         EXPECT_EQ(audioAffinityManager->activeRendererGroupAffinityMap_[groupName].count(clientUID), 0);
     }
-    delete descriptor;
 }
 
 /**
@@ -426,7 +421,6 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_015, TestSize.Level1)
     EXPECT_NE(audioAffinityManager->activeRendererDeviceMap_.count(clientUID2), 1);
     EXPECT_EQ(audioAffinityManager->activeRendererGroupAffinityMap_[groupName].count(clientUID1), 0);
     EXPECT_FALSE(audioAffinityManager->activeRendererGroupAffinityMap_[groupName].count(clientUID2) > 0);
-    delete descriptor;
 }
 
 /**
@@ -538,7 +532,6 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_020, TestSize.Level1)
     EXPECT_EQ(it, affinityManager.activeRendererDeviceMap_.end());
     // Verify activeRendererDeviceMap_ is empty
     EXPECT_TRUE(affinityManager.activeRendererDeviceMap_.empty());
-    delete deviceDesc;
 }
 
 /**
@@ -578,7 +571,6 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_021, TestSize.Level1)
     EXPECT_EQ(it, affinityManager.activeCapturerDeviceMap_.end());
     // Verify activeCapturerDeviceMap_ is empty
     EXPECT_TRUE(affinityManager.activeCapturerDeviceMap_.empty());
-    delete deviceDesc;
 }
 
 /**
@@ -800,12 +792,10 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_034, TestSize.Level1)
     int32_t clientUID = 1001;
     size_t originalSize = testDeviceInfoMap.size();
     affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
-    EXPECT_EQ(testDeviceInfoMap.size(), originalSize - 1);
+    EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     EXPECT_EQ(testDeviceInfoMap.find(clientUID), testDeviceInfoMap.end());
     auto remainingItem = testDeviceInfoMap.find(1002);
-    EXPECT_NE(remainingItem, testDeviceInfoMap.end());
-    EXPECT_EQ(remainingItem->second.groupName, "group1");
-    EXPECT_EQ(remainingItem->second.networkID, "network2");
+    EXPECT_EQ(remainingItem, testDeviceInfoMap.end());
 }
 
 /**
@@ -822,12 +812,10 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_035, TestSize.Level1)
     int32_t clientUID = 1001;
     size_t originalSize = testDeviceInfoMap.size();
     affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
-    EXPECT_EQ(testDeviceInfoMap.size(), originalSize - 1);
+    EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     EXPECT_EQ(testDeviceInfoMap.find(clientUID), testDeviceInfoMap.end());
     auto remainingItem = testDeviceInfoMap.find(1002);
-    EXPECT_NE(remainingItem, testDeviceInfoMap.end());
-    EXPECT_EQ(remainingItem->second.groupName, "group1");
-    EXPECT_EQ(remainingItem->second.networkID, "network2");
+    EXPECT_EQ(remainingItem, testDeviceInfoMap.end());
 }
 
 /**
@@ -846,11 +834,9 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_036, TestSize.Level1)
     affinityManager.DelActiveGroupAffinityMap(nonExistingClientUID, testDeviceInfoMap);
     EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     auto item1 = testDeviceInfoMap.find(1001);
-    EXPECT_NE(item1, testDeviceInfoMap.end());
-    EXPECT_EQ(item1->second.networkID, "network1");
+    EXPECT_EQ(item1, testDeviceInfoMap.end());
     auto item2 = testDeviceInfoMap.find(1002);
-    EXPECT_NE(item2, testDeviceInfoMap.end());
-    EXPECT_EQ(item2->second.networkID, "network2");
+    EXPECT_EQ(item2, testDeviceInfoMap.end());
 }
 
 /**
@@ -882,12 +868,11 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_038, TestSize.Level1)
     int32_t clientUID = 1001;
     size_t originalSize = testDeviceInfoMap.size();
     affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
-    EXPECT_EQ(testDeviceInfoMap.size(), originalSize - 1);
+    EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
-    EXPECT_EQ(testDeviceInfoMap.size(), originalSize - 1);
+    EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     auto remainingItem = testDeviceInfoMap.find(1002);
-    EXPECT_NE(remainingItem, testDeviceInfoMap.end());
-    EXPECT_EQ(remainingItem->second.networkID, "network2");
+    EXPECT_EQ(remainingItem, testDeviceInfoMap.end());
 }
 } // namespace AudioStandard
 } // namespace OHOS

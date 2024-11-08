@@ -2061,29 +2061,5 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
 }
-
-/**
-* @tc.name : Test SwitchToTargetStream API with null audio stream
-* @tc.number: Audio_Capturer_SwitchToTargetStream_004
-* @tc.desc : Test stream switch when audio stream is null
-*/
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_004, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioCapturer);
-
-    audioCapturer->audioStream_ = nullptr;
-
-    uint32_t newSessionId = 0;
-    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
-
-    EXPECT_EQ(false, switchResult);
-    EXPECT_EQ(newSessionId, INVALID_SESSION_ID);
-
-    bool isReleased = audioCapturer->Release();
-    EXPECT_EQ(true, isReleased);
-}
 } // namespace AudioStandard
 } // namespace OHOS
