@@ -2835,14 +2835,14 @@ void AudioPolicyService::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeI
     int32_t runningStreamCount = 0;
     for (auto &capturerChangeInfo : capturerChangeInfos) {
         SourceType sourceType = capturerChangeInfo->capturerInfo.sourceType;
+        int32_t clientUID = capturerChangeInfo->clientUID;
         if ((sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE && audioScene_ != AUDIO_SCENE_PHONE_CALL) ||
             (sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE && capturerChangeInfo->capturerState != CAPTURER_RUNNING)) {
             AUDIO_INFO_LOG("stream %{public}d not running, no need fetch device", capturerChangeInfo->sessionId);
             continue;
         }
         runningStreamCount++;
-        unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType,
-            capturerChangeInfo->clientUID);
+        unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType, clientUID);
         AudioDeviceDescriptor inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
         if (HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE) {
             continue;
@@ -2852,8 +2852,7 @@ void AudioPolicyService::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeI
             ActivateArmDevice(desc->macAddress_, desc->deviceRole_);
         }
         if (needUpdateActiveDevice) {
-            unique_ptr<AudioDeviceDescriptor> preferredDesc =
-                audioAffinityManager_.GetCapturerDevice(capturerChangeInfo->clientUID);
+            unique_ptr<AudioDeviceDescriptor> preferredDesc = audioAffinityManager_.GetCapturerDevice(clientUID);
             if (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) && !IsSameDevice(desc, GetCurrentInputDevice())
                 && desc->deviceType_ != preferredDesc->deviceType_)
                 || ((preferredDesc->deviceType_ == DEVICE_TYPE_NONE)
