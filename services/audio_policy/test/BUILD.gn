@@ -917,6 +917,7 @@ ohos_unittest("audio_stream_collector_unit_test") {
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_service",
+    "../../audio_service:audio_client",
   ]
 }
 

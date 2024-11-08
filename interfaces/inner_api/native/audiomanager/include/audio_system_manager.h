@@ -24,58 +24,15 @@
 #include <unordered_map>
 
 #include "parcel.h"
+#include "audio_device_descriptor.h"
 #include "audio_info.h"
+#include "audio_stream_change_info.h"
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-class AudioDeviceDescriptor;
-class AudioDeviceDescriptor : public Parcelable {
-    friend class AudioSystemManager;
-public:
-    DeviceType getType();
-    DeviceRole getRole() const;
-    DeviceType deviceType_ = DEVICE_TYPE_NONE;
-    DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
-    int32_t deviceId_ = 0;
-    int32_t channelMasks_ = 0;
-    int32_t channelIndexMasks_ = 0;
-    std::string deviceName_;
-    std::string macAddress_;
-    int32_t interruptGroupId_ = 0;
-    int32_t volumeGroupId_ = 0;
-    std::string networkId_;
-    std::string displayName_;
-    bool exceptionFlag_ = false;
-    DeviceStreamInfo audioStreamInfo_ = {};
-    DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
-    int64_t connectTimeStamp_ = 0;
-    std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
-    ConnectState connectState_ = CONNECTED;
-    bool isScoRealConnected_ = false;
-    bool isEnable_ = true;
-
-    AudioDeviceDescriptor();
-    AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId, int32_t volumeGroupId,
-        std::string networkId);
-    AudioDeviceDescriptor(DeviceType type, DeviceRole role);
-    AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
-    AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
-    virtual ~AudioDeviceDescriptor();
-
-    bool Marshalling(Parcel &parcel) const override;
-    static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
-    void SetDeviceInfo(std::string deviceName, std::string macAddress);
-    void SetDeviceCapability(const DeviceStreamInfo &audioStreamInfo, int32_t channelMask,
-        int32_t channelIndexMasks = 0);
-
-    bool isSameDevice(const DeviceInfo &deviceInfo);
-    bool isSameDeviceDesc(const std::unique_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    static DeviceType MapInternalToExternalDeviceType(DeviceType deviceType);
-};
 
 struct AudioSpatialEnabledStateForDevice {
     sptr<AudioDeviceDescriptor> deviceDescriptor;
@@ -805,7 +762,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t SetDeviceActive(ActiveDeviceType deviceType, bool flag) const;
+    int32_t SetDeviceActive(DeviceType deviceType, bool flag) const;
 
     /**
      * @brief get device active.
@@ -814,7 +771,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
      * @since 9
      */
-    bool IsDeviceActive(ActiveDeviceType deviceType) const;
+    bool IsDeviceActive(DeviceType deviceType) const;
 
     /**
      * @brief get active output device.
@@ -1276,7 +1233,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 11
      */
-    int32_t SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const;
+    int32_t SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address) const;
 
     /**
      * @brief get the effect algorithmic latency value for a specified audio stream.

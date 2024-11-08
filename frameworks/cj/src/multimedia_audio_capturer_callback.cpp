@@ -131,7 +131,7 @@ void CjAudioCapturerDeviceChangeCallback::RegisterFunc(std::function<void(CArrDe
     func_ = cjCallback;
 }
 
-void CjAudioCapturerDeviceChangeCallback::OnStateChange(const DeviceInfo &deviceInfo)
+void CjAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     CArrDeviceDescriptor arr;

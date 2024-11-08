@@ -41,12 +41,12 @@ public:
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
-    int32_t UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo);
+    int32_t UpdateTracker(const AudioMode &mode, AudioDeviceDescriptor &deviceInfo);
     int32_t UpdateTrackerInternal(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
-    int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &outputDeviceInfo);
+    int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, AudioDeviceDescriptor &outputDeviceInfo);
     int32_t UpdateRendererPipeInfo(const int32_t sessionId, const AudioPipeType pipeType);
-    int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &inputDeviceInfo);
+    int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, AudioDeviceDescriptor &inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
@@ -68,7 +68,7 @@ public:
     void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);
     int32_t GetPipeType(const int32_t sessionId, AudioPipeType &pipeType);
     bool ExistStreamForPipe(AudioPipeType pipeType);
-    int32_t GetRendererDeviceInfo(const int32_t sessionId, DeviceInfo &outputDeviceInfo);
+    int32_t GetRendererDeviceInfo(const int32_t sessionId, AudioDeviceDescriptor &outputDeviceInfo);
 
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
@@ -94,8 +94,8 @@ private:
     int32_t CheckRendererUpdataState(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
-    int32_t UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo);
-    int32_t UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceInfo);
+    int32_t UpdateRendererDeviceInfo(AudioDeviceDescriptor &outputDeviceInfo);
+    int32_t UpdateCapturerDeviceInfo(AudioDeviceDescriptor &inputDeviceInfo);
     int32_t UpdateRendererStreamInternal(AudioStreamChangeInfo &streamChangeInfo);
     AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
     AudioStreamType GetStreamTypeFromSourceType(SourceType sourceType);

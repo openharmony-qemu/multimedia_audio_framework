@@ -82,7 +82,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
                 needRelease = true;
                 endpointName = (*paired).second->GetEndpointName();
-                delayTime = GetReleaseDelayTime((*paired).second->GetDeviceInfo().deviceType, destoryAtOnce);
+                delayTime = GetReleaseDelayTime((*paired).second, isSwitchStream);
             }
             linkedPairedList_.erase(paired);
             isFind = true;
@@ -335,7 +335,7 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
 {
     CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
         "Wrong usage ,should not be dualtone");
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (!ret) {
         AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
@@ -346,10 +346,10 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
         return false;
     }
     AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
-        "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
-    if (deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADPHONES ||
-        deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceInfo.deviceType == DEVICE_TYPE_USB_HEADSET ||
-        deviceInfo.deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        "supportLowLatency: %{public}d", deviceInfo.deviceType_, deviceInfo.isLowLatencyDevice_);
+    if (deviceInfo.deviceType_ == DEVICE_TYPE_WIRED_HEADSET || deviceInfo.deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES ||
+        deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || deviceInfo.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
+        deviceInfo.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         switch (config.rendererInfo.streamUsage) {
             case STREAM_USAGE_ALARM:
             case STREAM_USAGE_VOICE_RINGTONE:
@@ -531,15 +531,15 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
     return SUCCESS;
 }
 
-bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo)
 {
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
         config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-        return config.rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST || deviceInfo.networkId != LOCAL_NETWORK_ID;
+        return config.rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST || deviceInfo.networkId_ != LOCAL_NETWORK_ID;
     }
 
     if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        return config.capturerInfo.originalFlag == AUDIO_FLAG_VOIP_FAST || deviceInfo.networkId != LOCAL_NETWORK_ID;
+        return config.capturerInfo.originalFlag == AUDIO_FLAG_VOIP_FAST || deviceInfo.networkId_ != LOCAL_NETWORK_ID;
     }
     return false;
 }
@@ -548,7 +548,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 {
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
-    DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
+    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
     std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
         IsEndpointTypeVoip(config, deviceInfo));
@@ -557,7 +557,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t totalSizeInframe = 0;
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
-    CHECK_AND_RETURN_RET_LOG(*deviceInfo.audioStreamInfo.samplingRate.rbegin() > 0, nullptr,
+    CHECK_AND_RETURN_RET_LOG(*deviceInfo.audioStreamInfo_.samplingRate.rbegin() > 0, nullptr,
         "Sample rate in server is invalid.");
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
@@ -566,7 +566,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 
     std::shared_ptr<OHAudioBuffer> buffer = audioEndpoint->GetEndpointType()
          == AudioEndpoint::TYPE_INDEPENDENT ? audioEndpoint->GetBuffer() : nullptr;
-    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, deviceInfo.audioStreamInfo, buffer);
+    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, deviceInfo.audioStreamInfo_, buffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
@@ -597,7 +597,7 @@ void AudioService::ResetAudioEndpoint()
                 endpointList_.erase(endpointName);
             }
 
-            DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
+            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
             std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
                 IsEndpointTypeVoip(config, deviceInfo));
             CHECK_AND_RETURN_LOG(audioEndpoint != nullptr, "Get new endpoint failed");
@@ -717,43 +717,43 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
     return;
 }
 
-DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config)
+AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config)
 {
     // send the config to AudioPolicyServera and get the device info.
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (ret) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
-            "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
+            "supportLowLatency: %{public}d", deviceInfo.deviceType_, deviceInfo.isLowLatencyDevice_);
         return deviceInfo;
     } else {
         AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
     }
 
     if (config.audioMode == AUDIO_MODE_RECORD) {
-        deviceInfo.deviceId = 1;
-        deviceInfo.networkId = LOCAL_NETWORK_ID;
-        deviceInfo.deviceRole = INPUT_DEVICE;
-        deviceInfo.deviceType = DEVICE_TYPE_MIC;
+        deviceInfo.deviceId_ = 1;
+        deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+        deviceInfo.deviceRole_ = INPUT_DEVICE;
+        deviceInfo.deviceType_ = DEVICE_TYPE_MIC;
     } else {
-        deviceInfo.deviceId = 6; // 6 for test
-        deviceInfo.networkId = LOCAL_NETWORK_ID;
-        deviceInfo.deviceRole = OUTPUT_DEVICE;
-        deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
+        deviceInfo.deviceId_ = 6; // 6 for test
+        deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+        deviceInfo.deviceRole_ = OUTPUT_DEVICE;
+        deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
     }
     AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
-    deviceInfo.audioStreamInfo = targetStreamInfo;
-    deviceInfo.deviceName = "mmap_device";
+    deviceInfo.audioStreamInfo_ = targetStreamInfo;
+    deviceInfo.deviceName_ = "mmap_device";
     return deviceInfo;
 }
 
-std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo &deviceInfo,
+std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
     const AudioProcessConfig &clientConfig, bool isVoipStream)
 {
     int32_t endpointSeparateFlag = -1;
     GetSysPara("persist.multimedia.audioflag.fast.disableseparate", endpointSeparateFlag);
-    if (deviceInfo.deviceRole == INPUT_DEVICE || deviceInfo.networkId != LOCAL_NETWORK_ID ||
-        deviceInfo.deviceRole == OUTPUT_DEVICE || endpointSeparateFlag == 1) {
+    if (deviceInfo.deviceRole_ == INPUT_DEVICE || deviceInfo.networkId_ != LOCAL_NETWORK_ID ||
+        deviceInfo.deviceRole_ == OUTPUT_DEVICE || endpointSeparateFlag == 1) {
         // Create shared stream.
         int32_t endpointFlag = AUDIO_FLAG_MMAP;
         if (isVoipStream) {
@@ -773,7 +773,8 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
         }
     } else {
         // Create Independent stream.
-        std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId) + "_" + std::to_string(g_id);
+        std::string deviceKey = deviceInfo.networkId_ + std::to_string(deviceInfo.deviceId_) + "_" +
+            std::to_string(g_id);
         std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT,
             g_id, clientConfig, deviceInfo);
         CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create independent AudioEndpoint failed.");
