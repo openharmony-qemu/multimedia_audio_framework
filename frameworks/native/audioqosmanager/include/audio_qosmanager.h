@@ -16,8 +16,6 @@
 #ifndef AUDIO_QOSMANAGER_H
 #define AUDIO_QOSMANAGER_H
 
-#include <inttypes.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

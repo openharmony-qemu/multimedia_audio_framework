@@ -36,6 +36,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
 constexpr int32_t MAX_NUM_STREAMS = 3;
 constexpr int32_t RENDERER_STREAM_USAGE_SHIFT = 16;
 constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
@@ -72,31 +73,31 @@ constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIN_SESSIONID;
 const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
 
-const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
-const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
-const std::string MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
-const std::string MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
-const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
-const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
-const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
-const std::string CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
-const std::string RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
-const std::string MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
-const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
-const std::string DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
-const std::string CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
+const char* MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
+const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
+const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
+const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
+const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
+const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
+const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
+const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
+const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
+const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
+const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
+const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
+const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 
-constexpr std::string_view PRIMARY_WAKEUP = "Built_in_wakeup";
-constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
+const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 
-const std::string INNER_CAPTURER_SOURCE = "Speaker.monitor";
-const std::string INNER_CAPTURER_SINK = "InnerCapturerSink";
-const std::string NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
-const std::string REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
-const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
-const std::string DUP_STREAM = "DupStream";
-const std::string DUAL_TONE_STREAM = "DualToneStream";
-const std::string NORMAL_STREAM = "NormalStream";
+const char* INNER_CAPTURER_SOURCE = "Speaker.monitor";
+const char* INNER_CAPTURER_SINK = "InnerCapturerSink";
+const char* NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
+const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
+const char* MONITOR_SOURCE_SUFFIX = ".monitor";
+const char* DUP_STREAM = "DupStream";
+const char* DUAL_TONE_STREAM = "DualToneStream";
+const char* NORMAL_STREAM = "NormalStream";
+}
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
@@ -939,27 +940,21 @@ enum DeviceGroup {
     DEVICE_GROUP_WIRELESS,
     /** Remote cast device */
     DEVICE_GROUP_REMOTE_CAST,
-};
-
-static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
-    {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_BUILT_IN},
-    {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
-    {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN},
-    {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
-    {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
-    {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
-    {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
-    {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
-    {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+    /* earpiece device*/
+    DEVICE_GROUP_EARPIECE,
 };
 
 static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
+    static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
+        {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
+        {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
+        {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
+        {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+    };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
-    if (it == DEVICE_GROUP_FOR_VOLUME.end()) {
-        return DEVICE_GROUP_INVALID;
-    }
-    return it->second;
+    return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
 }
 
 enum RouterType {
@@ -1056,13 +1051,6 @@ enum PolicyType {
     EDM_POLICY_TYPE = 0,
     PRIVACY_POLCIY_TYPE = 1,
     TEMPORARY_POLCIY_TYPE = 2,
-};
-
-static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
-    SOURCE_TYPE_PLAYBACK_CAPTURE,
-    SOURCE_TYPE_WAKEUP,
-    SOURCE_TYPE_VIRTUAL_CAPTURE,
-    SOURCE_TYPE_REMOTE_CAST
 };
 } // namespace AudioStandard
 } // namespace OHOS

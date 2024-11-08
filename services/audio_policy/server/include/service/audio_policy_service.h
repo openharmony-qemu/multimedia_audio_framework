@@ -42,7 +42,7 @@
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "audio_policy_parser_factory.h"
-#include "audio_effect_manager.h"
+#include "audio_effect_service.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
 #include "audio_device_manager.h"
@@ -239,7 +239,7 @@ public:
 
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo);
+        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
     void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
@@ -520,10 +520,9 @@ public:
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
-        audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
+        audioEffectService_(AudioEffectService::GetAudioEffectService()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
@@ -596,11 +595,7 @@ private:
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
-    int32_t LoadUsbModule(string deviceInfo, DeviceRole deviceRole);
-
     int32_t LoadDpModule(string deviceInfo);
-
-    int32_t LoadDefaultUsbModule(DeviceRole deviceRole);
 
     int32_t RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address);
 
@@ -635,6 +630,8 @@ private:
 
     void FetchOutputDevice(vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+
+    void FetchEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
 
     bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -919,6 +916,7 @@ private:
     void WriteServiceStartupError(string reason);
 
     bool LoadToneDtmfConfig();
+    bool LoadAudioPolicyConfig();
 
     void CreateRecoveryThread();
     void RecoveryPreferredDevices();
@@ -959,6 +957,7 @@ private:
     std::string GetEcFormat(const std::string &halName, StreamPropInfo &streamPropInfo);
     std::string GetEcChannels(const std::string &halName, StreamPropInfo &streamPropInfo);
     AudioEcInfo GetAudioEcInfo();
+    void ResetAudioEcInfo();
     std::string ShouldOpenMicRef(SourceType source);
     void UpdateEnhanceEffectState(SourceType source);
     void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType sourceType);
@@ -967,7 +966,11 @@ private:
     void UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
-    void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
+    bool IsVoipDeviceChanged(const DeviceType inputDevcie, const DeviceType outputDevice);
+    void SetInputDeviceTypeForReload(DeviceType deviceType);
+    DeviceType GetInputDeviceTypeForReload();
+    void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
+        const std::string &caller);
     void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
         const AudioEnhancePropertyArray &newPropertyArray);
     void ReloadSourceForSession(SessionInfo sessionInfo);
@@ -1077,7 +1080,10 @@ private:
 
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 
-    int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected, const std::string &address);
+    int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected,
+        const std::string &address, DeviceRole role);
+
+    bool NoNeedChangeUsbDevice(const string &address);
 
     void ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
@@ -1128,6 +1134,13 @@ private:
 
     void UnloadA2dpModule();
 
+    bool HasArm(const DeviceRole role);
+    bool HasHifi(const DeviceRole role);
+    bool IsArmDevice(const string &address, const DeviceRole role);
+    void PresetArmIdleInput(const string &address);
+    void ActivateArmDevice(const string &address, const DeviceRole role);
+    void UpdateArmModuleInfo(const string &address, const DeviceRole role, AudioModuleInfo &moduleInfo);
+
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
@@ -1173,7 +1186,6 @@ private:
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
     IAudioPolicyInterface& audioPolicyManager_;
-    Parser& audioPolicyConfigParser_;
 #ifdef FEATURE_DTMF_TONE
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
 #endif
@@ -1221,7 +1233,7 @@ private:
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     GlobalConfigs globalConfigs_;
-    AudioEffectManager& audioEffectManager_;
+    AudioEffectService& audioEffectService_;
 
     bool isMicrophoneMuteTemporary_ = false;
 
@@ -1229,8 +1241,6 @@ private:
 
     mutable std::shared_mutex deviceStatusUpdateSharedMutex_;
 
-    bool hasArmUsbDevice_ = false;
-    bool hasHifiUsbDevice_ = false; // Only the first usb device is supported now, hifi or arm.
     bool hasDpDevice_ = false; // Only the first dp device is supported.
 
     AudioDeviceManager &audioDeviceManager_;
@@ -1297,6 +1307,8 @@ private:
     bool isMicRefRecordOn_ = false;
     std::mutex audioEcInfoMutex_;
     AudioEcInfo audioEcInfo_;
+    std::mutex inputDeviceReloadMutex_;
+    DeviceType inputDeviceForReload_ = DEVICE_TYPE_DEFAULT;
     AudioModuleInfo usbSinkModuleInfo_ = {};
     AudioModuleInfo usbSourceModuleInfo_ = {};
     AudioModuleInfo dpSinkModuleInfo_ = {};
@@ -1357,7 +1369,7 @@ private:
     AudioPolicyService *audioPolicyService_ = nullptr;
     std::mutex connectionMutex_;
     std::condition_variable connectionCV_;
-    static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
+    static const int32_t CONNECTION_TIMEOUT_IN_MS;
 };
 
 class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {

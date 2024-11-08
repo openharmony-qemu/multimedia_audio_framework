@@ -835,9 +835,9 @@ static int PaHdiCapturerInit(struct Userdata *u)
             AUDIO_ERR_LOG("Audio capturer start failed!");
             goto fail;
         }
+        StartAuxCapture(u);
         u->isCapturerStarted = true;
     }
-
     return ret;
 
 fail:

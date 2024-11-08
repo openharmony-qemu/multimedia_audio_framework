@@ -87,6 +87,7 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
+static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -427,6 +428,7 @@ void RendererInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t da
 
 void RendererInClientInner::InitCallbackHandler()
 {
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     if (callbackHandler_ == nullptr) {
         callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
     }
@@ -648,10 +650,14 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
-    uint64_t framePosition = 0;
+    uint64_t readIndex = 0;
     uint64_t timestampVal = 0;
+    uint64_t latency = 0;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(framePosition, timestampVal);
+    int32_t ret = ipcStream_->GetAudioPosition(readIndex, timestampVal, latency);
+
+    uint64_t framePosition = readIndex > lastFlushReadIndex_ ? readIndex - lastFlushReadIndex_ : 0;
+    framePosition = framePosition > latency ? framePosition - latency : 0;
 
     // add MCR latency
     uint32_t mcrLatency = 0;
@@ -659,8 +665,6 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         mcrLatency = converter_->GetLatency();
         framePosition = framePosition - (mcrLatency * rendererRate_ / AUDIO_MS_PER_S);
     }
-
-    framePosition = framePosition > lastFlushPosition_ ? framePosition - lastFlushPosition_ : 0;
 
     if (lastFramePosition_ < framePosition) {
         lastFramePosition_ = framePosition;
@@ -670,9 +674,9 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosition_;
         timestampVal = lastFrameTimestamp_;
     }
-    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", lastFlushPosition %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u", framePosition, lastFlushPosition_,
-        timestampVal, mcrLatency);
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
+        ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u, Sinklatency %{public}" PRIu64, framePosition,
+        lastFlushReadIndex_, timestampVal, mcrLatency, latency);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -1309,6 +1313,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
+    preWriteEndTime_ = 0;
     return true;
 }
 
@@ -1635,6 +1640,14 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
     return true;
 }
 
+void RendererInClientInner::DfxWriteInterval()
+{
+    if (preWriteEndTime_ != 0 &&
+        ((ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_) > MAX_WRITE_INTERVAL_MS) {
+        AUDIO_WARNING_LOG("[%{public}s] write interval too long cost %{public}" PRId64,
+            logUtilsTag_.c_str(), (ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_);
+    }
+}
 int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
@@ -1708,12 +1721,14 @@ int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize
             "Status changed while write");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
     }
+    preWriteEndTime_ = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
     return speedCached ? oriBufferSize : bufferSize - targetSize;
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
     // eg: RendererInClient::sessionId:100001 WriteSize:3840
+    DfxWriteInterval();
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
@@ -1758,8 +1773,9 @@ void RendererInClientInner::ResetFramePosition()
 {
     Trace trace("RendererInClientInner::ResetFramePosition");
     uint64_t timestampVal = 0;
+    uint64_t latency = 0;
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(lastFlushPosition_, timestampVal);
+    int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampVal, latency);
     if (ret != SUCCESS) {
         AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
         return;
@@ -2253,6 +2269,7 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
 void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     ipcStream_->SetSilentModeAndMixWithOthers(on);
     if (offloadEnable_) {
         ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_ * duckVolume_);

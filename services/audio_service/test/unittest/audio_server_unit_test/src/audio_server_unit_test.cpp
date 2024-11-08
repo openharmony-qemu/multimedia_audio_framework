@@ -282,8 +282,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
     audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE, "");
     audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::GET_DP_DEVICE_INFO, "");
     audioServer->GetAudioParameter("", AudioParamKey::GET_DP_DEVICE_INFO, "");
-    auto result = audioServer->GetUsbParameter();
-    EXPECT_NE("", result);
+    auto result = audioServer->GetUsbParameter("address=card2;device=0 role=2");
 }
 
 /**

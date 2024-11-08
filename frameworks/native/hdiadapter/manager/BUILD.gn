@@ -24,6 +24,7 @@ ohos_shared_library("hdiadapter_manager") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [

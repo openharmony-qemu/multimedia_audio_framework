@@ -93,6 +93,7 @@ int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, f
     switch (streamType) {
         case STREAM_RING:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
             sceneType = "SCENE_RING";
             break;
         case STREAM_VOICE_ASSISTANT:

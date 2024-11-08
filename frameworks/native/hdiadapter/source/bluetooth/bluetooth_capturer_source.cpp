@@ -40,6 +40,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_proxy_manager.h"
+#include "audio_enhance_chain_manager.h"
 #include "audio_attribute.h"
 #include "audio_log_utils.h"
 
@@ -160,6 +161,7 @@ private:
     static constexpr uint32_t STEREO_CHANNEL_COUNT = 2;
 
     int32_t CreateCapture(struct AudioPort &capturePort);
+    int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice, const std::string &deviceName = "");
     int32_t InitAudioManager();
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
 
@@ -199,6 +201,7 @@ private:
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
 
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
     std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
@@ -376,8 +379,12 @@ int32_t BluetoothCapturerSourceInner::Init(const IAudioSourceAttr &attr)
     ret = CreateCapture(audioPort_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "create capture failed");
 
-    captureInited_ = true;
+    ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_, "");
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set device %{public}d failed", currentActiveDevice_);
+    }
 
+    captureInited_ = true;
     SetMute(muteState_);
 
     return SUCCESS;
@@ -570,6 +577,21 @@ int32_t BluetoothCapturerSourceInner::SetInputRoute(DeviceType inputDevice, cons
 {
     AUDIO_WARNING_LOG("SetInputRoutes not supported.");
     return ERR_NOT_SUPPORTED;
+}
+
+int32_t BluetoothCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice,
+    const std::string &deviceName)
+{
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+    uint32_t captureId = 0;
+    int32_t ret = GetCaptureId(captureId);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("GetCaptureId failed");
+    }
+
+    audioEnhanceChainManager->SetInputDevice(captureId, inputDevice, deviceName);
+    return SUCCESS;
 }
 
 int32_t BluetoothCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,

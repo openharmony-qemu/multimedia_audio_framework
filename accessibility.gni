@@ -17,3 +17,8 @@ if (defined(global_parts_info) &&
 } else {
   accessibility_enable = false
 }
+
+usb_manager_enable = false
+if (defined(global_parts_info) && defined(global_parts_info.usb_usb_manager)) {
+  usb_manager_enable = true
+}

@@ -26,7 +26,7 @@
 #include "fast_audio_renderer_sink.h"
 #include "audio_process_in_server.h"
 #include "fast_audio_renderer_sink.h"
-#include "audio_endpoint_separate.cpp"
+#include "audio_endpoint.h"
 #include "audio_service.h"
 
 using namespace testing::ext;

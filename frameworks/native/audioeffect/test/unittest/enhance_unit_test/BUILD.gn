@@ -12,9 +12,14 @@
 # limitations under the License.
 
 import("//build/test.gni")
-import("../../../../../../config.gni")
+import("../../../../../../audio_framework_test_sources.gni")
 
 module_output_path = "multimedia_audio_framework/audio_enhance_chain_manager"
+audio_effect_sources = []
+cur_path = "../../../../../../"
+foreach(source, audio_effect_sources_template) {
+  audio_effect_sources += [ "$cur_path$source" ]
+}
 
 ohos_unittest("audio_enhance_chain_manager_unit_test") {
   testonly = true
@@ -32,6 +37,7 @@ ohos_unittest("audio_enhance_chain_manager_unit_test") {
   ]
 
   sources = [ "src/audio_enhance_chain_manager_unit_test.cpp" ]
+  sources += audio_effect_sources
 
   deps = [
     "../../../../audioeffect:audio_effect",
@@ -64,6 +70,7 @@ ohos_unittest("audio_enhance_chain_adapter_unit_test") {
   ]
 
   sources = [ "src/audio_enhance_chain_adapter_unit_test.cpp" ]
+  sources += audio_effect_sources
 
   deps = [
     "../../../../audioeffect:audio_effect",

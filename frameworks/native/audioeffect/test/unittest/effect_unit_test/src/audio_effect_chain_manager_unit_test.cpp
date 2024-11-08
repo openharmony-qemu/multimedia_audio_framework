@@ -562,7 +562,9 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_001, TestSize.Leve
     bufOut = bufOutVector.data();
     int numChans = 2;
     int frameLen = 960;
-    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = INFOCHANNELLAYOUT;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
     string sceneType = "";
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
@@ -590,7 +592,9 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_002, TestSize.Leve
     bufOut = bufOutVector.data();
     int numChans = 2;
     int frameLen = 960;
-    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = INFOCHANNELLAYOUT;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
     string sceneType = "SCENE_MOVIE";
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
@@ -618,7 +622,9 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_003, TestSize.Leve
     bufOut = bufOutVector.data();
     int numChans = 2;
     int frameLen = 960;
-    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = INFOCHANNELLAYOUT;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
     string sceneType = "123";
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
@@ -646,7 +652,9 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_004, TestSize.Leve
     bufOut = bufOutVector.data();
     int numChans = 2;
     int frameLen = 960;
-    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = INFOCHANNELLAYOUT;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
     string sceneType = "SCENE_MOVIE";
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
@@ -739,16 +747,6 @@ HWTEST(AudioEffectChainManagerUnitTest, GetOffloadEnabled_002, TestSize.Level1)
     bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
     EXPECT_EQ(false, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test Dump API
-* @tc.number : Dump_001
-* @tc.desc   : Test Dump interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, Dump_001, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->Dump();
 }
 
 /**

@@ -1249,7 +1249,7 @@ static void HandleFading(pa_sink *si, size_t length, pa_sink_input *sinkIn, pa_m
     CheckPrimaryFadeinIsDone(si, sinkIn);
 
     const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
-    if (pa_safe_streq(sinkFadeoutPause, "0") && (length == infoIn->chunk.length)) {
+    if (pa_safe_streq(sinkFadeoutPause, "0") && (length <= infoIn->chunk.length)) {
         u->streamAvailable++;
     }
 }
@@ -1280,7 +1280,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = GetExistFlag(sinkIn, sSceneType, sSceneMode, u->actualSpatializationEnabled ? "1" : "0");
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sSceneType, sceneType);
-        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
+        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently())) {
             continue;
         } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             RecordEffectChainStatus(existFlag, sSceneType, sSceneMode, u->actualSpatializationEnabled);
@@ -2249,6 +2249,9 @@ static bool InputIsOffload(pa_sink_input *i)
     if (monitorLinked(i->sink, true)) {
         return false;
     }
+    if (strncmp(i->sink->driver, "module_hdi_sink", 15)) { // 15 cmp length
+        return false;
+    }
     struct Userdata *u = i->sink->userdata;
     if (!u->offload_enable || !u->offload.inited) {
         return false;
@@ -3178,8 +3181,8 @@ static void SinkRenderMultiChannel(pa_sink *si, size_t length, pa_memchunk *chun
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     CHECK_AND_RETURN_LOG(chunkIn != NULL, "chunkIn is null");
-    CHECK_AND_RETURN_LOG(chunkIn->length > 0, "chunkIn->length < 0");
-    pa_assert(pa_frame_aligned(chunkIn->length, &si->sample_spec));
+    CHECK_AND_RETURN_LOG(length > 0, "length <= 0");
+    pa_assert(pa_frame_aligned(length, &si->sample_spec));
 
     pa_assert(!si->thread_info.rewind_requested);
     pa_assert(si->thread_info.rewind_nbytes == 0);

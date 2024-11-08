@@ -243,11 +243,6 @@ const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MOD
     {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
 };
 
-const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_SCENE_MODES {
-    {ENHANCE_NONE, "ENHANCE_NONE"},
-    {ENHANCE_DEFAULT, "ENHANCE_DEFAULT"},
-};
-
 const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
     {DEVICE_TYPE_NONE, "DEVICE_TYPE_NONE"},
     {DEVICE_TYPE_INVALID, "DEVICE_TYPE_INVALID"},
@@ -422,23 +417,6 @@ enum AudioSpatializationSceneType {
     SPATIALIZATION_SCENE_TYPE_AUDIOBOOK = 3,
     SPATIALIZATION_SCENE_TYPE_MAX = SPATIALIZATION_SCENE_TYPE_AUDIOBOOK,
 };
-
-const std::unordered_map<DeviceType, std::vector<std::string>> HDI_EFFECT_LIB_MAP {
-    {DEVICE_TYPE_SPEAKER, {"libspeaker_processing_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966oo"}},
-    {DEVICE_TYPE_BLUETOOTH_A2DP, {"libspatialization_processing_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966gg"}},
-};
-
-const std::unordered_map<std::string, uint8_t> EFFECT_CHAIN_TYPE_MAP {
-    {"UNKNOWN", 0},
-    {"NONE", 1},
-    {"SCENE_OTHERS", 2},
-    {"SCENE_MUSIC", 3},
-    {"SCENE_MOVIE", 4},
-    {"SCENE_GAME", 5},
-    {"SCENE_SPEECH", 6},
-    {"SCENE_RING", 7},
-    {"SCENE_VOIP_DOWN", 8}
-} ;
 
 struct AudioRendererInfoForSpatialization {
     RendererState rendererState;

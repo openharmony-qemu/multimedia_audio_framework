@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,42 +18,14 @@
 
 #include "audio_server.h"
 
-#include <cinttypes>
-#include <codecvt>
-#include <csignal>
-#include <fstream>
-#include <sstream>
-#include <thread>
 #include <unordered_map>
 #include <vector>
-#include <dlfcn.h>
-#include <format>
 
-#include "bundle_mgr_interface.h"
-#include "bundle_mgr_proxy.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
-#include "hisysevent.h"
-#include "parameters.h"
-
-#include "audio_capturer_source.h"
-#include "fast_audio_capturer_source.h"
-#include "bluetooth_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_asr.h"
-#include "audio_manager_listener_proxy.h"
-#include "audio_service.h"
-#include "audio_schedule.h"
-#include "audio_info.h"
-#include "audio_utils.h"
-#include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
-#include "i_standard_audio_server_manager_listener.h"
-#include "playback_capturer_manager.h"
-#include "config/audio_param_parser.h"
-#include "media_monitor_manager.h"
 
 using namespace std;
 
@@ -397,7 +369,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
         std::vector<std::string> modes = VOICE_CALL_ASSISTANT_SUPPRESSION.at(asrVoiceControlMode);
         std::set<std::string> needSuppression = VOICE_CALL_ASSISTANT_NEED_SUPPRESSION.at(asrVoiceControlMode);
         for (size_t i = 0; i < modes.size(); i++) {
-            if (needSuppression.contains(modes[i]) && on) {
+            if (needSuppression.count(modes[i]) != 0 && on) {
                 audioRendererSinkInstance->SetAudioParameter(parmKey, "",
                     modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
                 continue;

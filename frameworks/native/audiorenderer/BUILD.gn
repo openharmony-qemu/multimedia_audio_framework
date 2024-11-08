@@ -40,6 +40,7 @@ ohos_shared_library("audio_renderer") {
   configs = [ ":audio_renderer_config" ]
 
   sources = [
+    "../../../services/audio_service/client/src/audio_device_descriptor.cpp",
     "src/audio_renderer.cpp",
     "src/audio_renderer_proxy_obj.cpp",
   ]

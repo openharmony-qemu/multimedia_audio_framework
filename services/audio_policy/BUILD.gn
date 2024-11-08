@@ -120,6 +120,8 @@ ohos_shared_library("audio_setting_provider") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
 
   defines = []
   if (audio_framework_feature_support_os_account) {
@@ -172,7 +174,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/data_share_observer_callback.cpp",
     "server/src/service/device_init_callback.cpp",
     "server/src/service/effect/audio_effect_config_parser.cpp",
-    "server/src/service/effect/audio_effect_manager.cpp",
+    "server/src/service/effect/audio_effect_service.cpp",
     "server/src/service/interrupt/audio_interrupt_service.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/listener/power_state_listener.cpp",
@@ -226,7 +228,7 @@ ohos_shared_library("audio_policy_service") {
 
   public_configs = [ ":audio_policy_public_config" ]
 
-  deps = [
+  public_deps = [
     "../../frameworks/native/audioadapter:pulse_audio_service_adapter",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioutils:audio_utils",
@@ -237,7 +239,7 @@ ohos_shared_library("audio_policy_service") {
     "../audio_service:audio_common",
   ]
 
-  external_deps = [
+  public_external_deps = [
     "ability_base:session_info",
     "ability_base:want",
     "ability_base:zuri",
@@ -267,7 +269,6 @@ ohos_shared_library("audio_policy_service") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_single",
-    "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -278,14 +279,20 @@ ohos_shared_library("audio_policy_service") {
     "samgr:samgr_proxy",
   ]
 
-  public_external_deps = [
+  public_external_deps += [
     "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
+  if (usb_manager_enable) {
+    defines += [ "USB_ENABLE" ]
+    public_external_deps += [ "usb_manager:usbsrv_client" ]
+    sources += [ "server/src/service/manager/audio_usb_manager.cpp" ]
+  }
+
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
-    external_deps += [ "config_policy:configpolicy_util" ]
+    public_external_deps += [ "config_policy:configpolicy_util" ]
   }
 
   if (appgallery_part_enable == true) {
@@ -293,12 +300,12 @@ ohos_shared_library("audio_policy_service") {
   }
 
   if (bluetooth_part_enable == true) {
-    deps += [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
-    external_deps += [ "bluetooth:btframework" ]
+    public_deps +=
+        [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
   }
 
   if (avsession_part_enable == true) {
-    external_deps += [
+    public_external_deps += [
       "ability_base:want",
       "ability_runtime:wantagent_innerkits",
       "av_session:avsession_client",
@@ -308,16 +315,19 @@ ohos_shared_library("audio_policy_service") {
 
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
-    external_deps += [ "input:libmmi-client" ]
+    public_external_deps += [ "input:libmmi-client" ]
   }
 
   if (audio_framework_feature_device_manager) {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
-    external_deps += [ "device_manager:devicemanagersdk" ]
+    public_external_deps += [ "device_manager:devicemanagersdk" ]
   }
 
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libaudio_policy_service.versionscript"
 }
 
 ohos_prebuilt_etc("audio_interrupt_policy_config") {
@@ -468,9 +478,12 @@ ohos_shared_library("audio_policy_client") {
   ]
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk" ]
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
   part_name = "audio_framework"
 
   ldflags = [ "-Wl,-Bsymbolic" ]
+  version_script = "libaudio_policy_client.versionscript"
 }
 
 group("audio_policy_test_packages") {

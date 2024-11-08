@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -390,16 +390,17 @@ bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
     AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
         g_tokenIdRecordMap[targetTokenId].size());
     if (g_tokenIdRecordMap[targetTokenId].empty()) {
+        g_tokenIdRecordMap.erase(targetTokenId);
+
         Trace trace("PrivacyKit::StopUsingPermission");
         AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d sessionId:%{public}d",
             targetTokenId, sessionId);
-        int res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         if (res != 0) {
             AUDIO_ERR_LOG("StopUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
                 targetTokenId, res);
             return false;
         }
-        g_tokenIdRecordMap.erase(targetTokenId);
     }
     return true;
 }
@@ -1266,7 +1267,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_MUSIC},
-    {STREAM_VOICE_CALL_ASSISTANT, STREAM_MUSIC},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
     {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
     {STREAM_VOICE_ASSISTANT, STREAM_MUSIC},
     {STREAM_VOICE_COMMUNICATION, STREAM_MUSIC},
@@ -1281,12 +1282,13 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_ACCESSIBILITY, STREAM_MUSIC},
     {STREAM_ALL, STREAM_ALL},
 
-    {STREAM_RING, STREAM_RING},
-    {STREAM_VOICE_RING, STREAM_RING},
-    {STREAM_SYSTEM, STREAM_RING},
-    {STREAM_NOTIFICATION, STREAM_RING},
-    {STREAM_SYSTEM_ENFORCED, STREAM_RING},
-    {STREAM_ALARM, STREAM_RING},
+    {STREAM_RING, STREAM_MUSIC},
+    {STREAM_VOICE_RING, STREAM_MUSIC},
+    {STREAM_ALARM, STREAM_MUSIC},
+
+    {STREAM_SYSTEM, STREAM_SYSTEM},
+    {STREAM_NOTIFICATION, STREAM_SYSTEM},
+    {STREAM_SYSTEM_ENFORCED, STREAM_SYSTEM},
 
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
 };

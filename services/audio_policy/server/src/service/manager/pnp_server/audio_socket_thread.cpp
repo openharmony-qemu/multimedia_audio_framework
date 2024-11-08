@@ -37,8 +37,9 @@ AudioEvent AudioSocketThread::audioSocketEvent_ = {
     .eventType = AUDIO_EVENT_UNKNOWN,
     .deviceType = AUDIO_DEVICE_UNKNOWN,
 };
-
+namespace {
 AudioDevBusUsbDevice g_audioUsbDeviceList[AUDIO_UEVENT_USB_DEVICE_COUNT] = {};
+}
 
 bool AudioSocketThread::IsUpdatePnpDeviceState(AudioEvent *pnpDeviceEvent)
 {

@@ -32,6 +32,17 @@ constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
+const std::unordered_map<std::string, uint8_t> EFFECT_CHAIN_TYPE_MAP {
+    {"UNKNOWN", 0},
+    {"NONE", 1},
+    {"SCENE_OTHERS", 2},
+    {"SCENE_MUSIC", 3},
+    {"SCENE_MOVIE", 4},
+    {"SCENE_GAME", 5},
+    {"SCENE_SPEECH", 6},
+    {"SCENE_RING", 7},
+    {"SCENE_VOIP_DOWN", 8}
+};
 
 map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::CreateStreamMap()
 {

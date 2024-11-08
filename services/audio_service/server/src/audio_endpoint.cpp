@@ -24,6 +24,7 @@
 #include <thread>
 #include <vector>
 #include <mutex>
+#include <numeric>
 
 #include "securec.h"
 
@@ -64,7 +65,7 @@ namespace {
     static const int32_t HALF_FACTOR = 2;
 }
 
-static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
+enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
 {
     enum HdiAdapterFormat adapterFormat;
     switch (format) {
@@ -326,7 +327,6 @@ private:
 
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
-    FILE *dumpDcp_ = nullptr;
     FILE *dumpHdi_ = nullptr;
     std::string dumpDcpName_ = "";
     std::string dumpHdiName_ = "";
@@ -581,7 +581,6 @@ void AudioEndpointInner::Release()
         DisableFastInnerCap();
     }
 
-    DumpFileUtil::CloseDumpFile(&dumpDcp_);
     DumpFileUtil::CloseDumpFile(&dumpHdi_);
 }
 
@@ -713,7 +712,6 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
         + std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_DCP_FILENAME, &dumpDcp_);
 }
 
 bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
@@ -1421,11 +1419,15 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
             int32_t vol = srcDataList[i].volumeStart; // change to modify volume of each channel
             int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset;
             sum += (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER; // 1/65536
-            ZeroVolumeCheck(vol);
         }
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
+
+    ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(
+        dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
+    ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart + channelVolumes.channel, 0) /
+        channelVolumes.channel);
     HandleZeroVolumeCheckEvent();
 }
 
@@ -1549,12 +1551,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             CheckPlaySignal(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength);
             audioDataList.push_back(streamData);
             curReadSpan->readStartTime = ClockTime::GetCurNano();
-            DumpFileUtil::WriteDumpFile(dumpDcp_, static_cast<void *>(streamData.bufferDesc.buffer),
+            processList_[i]->WriteDumpFile(static_cast<void *>(streamData.bufferDesc.buffer),
                 streamData.bufferDesc.bufLength);
-            if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-                Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpDcpName_,
-                    static_cast<void *>(streamData.bufferDesc.buffer), streamData.bufferDesc.bufLength);
-            }
         }
     }
 }

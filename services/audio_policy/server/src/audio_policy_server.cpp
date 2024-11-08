@@ -32,6 +32,9 @@
 #include "parameters.h"
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
+#ifdef USB_ENABLE
+#include "audio_usb_manager.h"
+#endif
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -357,12 +360,14 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
             std::lock_guard<std::mutex> lock(keyEventMutex_);
             AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
             if (volumeApplyToAll_) {
-                streamInFocus = AudioStreamType::STREAM_ALL;
+                bool isStreamMuted = GetStreamMuteInternal(STREAM_ALL);
+                SetStreamMuteInternal(STREAM_ALL, !isStreamMuted, true);
+                SetStreamMuteInternal(STREAM_SYSTEM, !isStreamMuted, true);
             } else {
                 streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+                bool isMuted = GetStreamMuteInternal(streamInFocus);
+                SetStreamMuteInternal(streamInFocus, !isMuted, true);
             }
-            bool isMuted = GetStreamMuteInternal(streamInFocus);
-            SetStreamMuteInternal(streamInFocus, !isMuted, true);
         });
     if (muteKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
@@ -409,6 +414,7 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
@@ -510,6 +516,9 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.dms.rotation_changed");
     SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
     SubscribeCommonEvent("usual.event.SCREEN_ON");
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().SubscribeEvent();
+#endif
     SubscribeSafeVolumeEvent();
 }
 
@@ -725,6 +734,9 @@ bool AudioPolicyServer::IsVolumeUnadjustable()
 
 int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("Uid %{public}d send AdjustVolumeByStep volume key: %{public}s.", callerUid,
+        (adjustType == VolumeAdjustType::VOLUME_UP) ? "up" : "down");
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("AdjustVolumeByStep: No system permission");
         return ERR_PERMISSION_DENIED;
@@ -736,38 +748,34 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
     }
 
     int32_t volumeLevelInInt = GetSystemVolumeLevel(streamInFocus);
-    int32_t ret = ERROR;
-    if (adjustType == VolumeAdjustType::VOLUME_UP) {
-        ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt + volumeStep_, false);
-        AUDIO_INFO_LOG("AdjustVolumeByStep Up, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
-    }
-
-    if (adjustType == VolumeAdjustType::VOLUME_DOWN) {
-        ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt - volumeStep_, false);
-        AUDIO_INFO_LOG("AdjustVolumeByStep Down, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
-    }
+    volumeLevelInInt = (adjustType == VolumeAdjustType::VOLUME_UP) ? volumeLevelInInt + volumeStep_ :
+        volumeLevelInInt - volumeStep_;
+    volumeLevelInInt = volumeLevelInInt > GetMaxVolumeLevel(streamInFocus) ? GetMaxVolumeLevel(streamInFocus) :
+        volumeLevelInInt;
+    volumeLevelInInt = volumeLevelInInt < GetMinVolumeLevel(streamInFocus) ? GetMinVolumeLevel(streamInFocus) :
+        volumeLevelInInt;
+    int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, false);
     return ret;
 }
 
 int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
 {
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("Uid %{public}d send AdjustSystemVolumeByStep VolumeType: %{public}d volume key: %{public}s.",
+        callerUid, volumeType, (adjustType == VolumeAdjustType::VOLUME_UP) ? "up" : "down");
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("AdjustSystemVolumeByStep: No system permission");
         return ERR_PERMISSION_DENIED;
     }
 
     int32_t volumeLevelInInt = GetSystemVolumeLevel(volumeType);
-    int32_t ret = ERROR;
-
-    if (adjustType == VolumeAdjustType::VOLUME_UP) {
-        ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt + volumeStep_, false);
-        AUDIO_INFO_LOG("AdjustSystemVolumeByStep Up, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
-    }
-
-    if (adjustType == VolumeAdjustType::VOLUME_DOWN) {
-        ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt - volumeStep_, false);
-        AUDIO_INFO_LOG("AdjustSystemVolumeByStep Down, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
-    }
+    volumeLevelInInt = (adjustType == VolumeAdjustType::VOLUME_UP) ? volumeLevelInInt + volumeStep_ :
+        volumeLevelInInt - volumeStep_;
+    volumeLevelInInt = volumeLevelInInt > GetMaxVolumeLevel(volumeType) ? GetMaxVolumeLevel(volumeType) :
+        volumeLevelInInt;
+    volumeLevelInInt = volumeLevelInInt < GetMinVolumeLevel(volumeType) ? GetMinVolumeLevel(volumeType) :
+        volumeLevelInInt;
+    int32_t ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt, false);
     return ret;
 }
 
@@ -844,7 +852,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     int32_t result = audioPolicyService_.SetStreamMute(streamType, mute);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Fail to set stream mute!");
 
-    if (!mute && GetSystemVolumeLevelInternal(streamType) == 0) {
+    if (!mute && GetSystemVolumeLevelInternal(streamType) == 0 && !VolumeUtils::IsPCVolumeEnable()) {
         // If mute state is set to false but volume is 0, set volume to 1
         audioPolicyService_.SetSystemVolumeLevel(streamType, 1);
     }
@@ -2095,10 +2103,14 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCap
         if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
                 targetMuteState, appUid);
+            int32_t res = SUCCESS;
             if (targetMuteState) {
-                PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+                res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             } else {
-                PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+                res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+            }
+            if (res != SUCCESS) {
+                AUDIO_ERR_LOG("update using permission failed, error code %{public}d", res);
             }
         }
     }

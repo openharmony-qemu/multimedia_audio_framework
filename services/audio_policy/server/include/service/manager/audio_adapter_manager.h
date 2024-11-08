@@ -375,6 +375,7 @@ public:
             STREAM_ALARM,
             STREAM_ACCESSIBILITY,
             STREAM_ULTRASONIC,
+            STREAM_SYSTEM,
             STREAM_VOICE_CALL_ASSISTANT,
             STREAM_ALL
         };
