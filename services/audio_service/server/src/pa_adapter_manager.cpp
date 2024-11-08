@@ -372,7 +372,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
                 deviceName = INNER_CAPTURER_SOURCE;
             }
         } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
-            deviceName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
+            deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME) + std::string(MONITOR_SOURCE_SUFFIX);
         }
         return PolicyHandler::GetInstance().NotifyCapturerAdded(processConfig.capturerInfo,
             processConfig.streamInfo, sessionId);
@@ -659,7 +659,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
-    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK.c_str() :
+    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK :
         (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
     uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;

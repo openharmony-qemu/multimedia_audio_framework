@@ -13,8 +13,13 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
-import("../../../config.gni")
+import("../../../audio_framework_test_sources.gni")
+
+audio_policy_service_sources = []
+cur_path = "../../../"
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
 
 ohos_fuzztest("AudioUtilsFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -36,6 +41,9 @@ ohos_fuzztest("AudioUtilsFuzzTest") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_utils_fuzzer.cpp" ]
+  sources += audio_policy_service_sources
+
+  defines = audio_policy_service_defines
 
   deps = [
     "../../../frameworks/native/audioutils:audio_utils",

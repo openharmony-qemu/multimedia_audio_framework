@@ -55,10 +55,10 @@ static void FillSoundCard(const string &path, SoundCard &card)
         if (file == "usbbus") {
             card.usbBus_ = ReadTextFile(path + "/" + file);
             continue;
-        } else if (file.starts_with("pcm")) {
-            if (file.ends_with("c")) {
+        } else if (file.find("pcm", 0) == 0) {
+            if (file.back() == 'c') {
                 card.isCapturer_ = true;
-            } else if (file.ends_with("p")) {
+            } else if (file.back() == 'p') {
                 card.isPlayer_ = true;
             }
         }
@@ -76,7 +76,7 @@ static vector<SoundCard> GetUsbSoundCards()
     struct dirent *tmp;
     while ((tmp = readdir(dir)) != nullptr) {
         string file(tmp->d_name);
-        if (file.length() <= card.length() || !file.starts_with(card)) {continue;}
+        if (file.length() <= card.length() || !(file.find(card, 0) == 0)) {continue;}
         string sIndex = file.substr(card.length());
         if (!IsNumericStr(sIndex)) {continue;}
         SoundCard card = {.cardNum_ = stoi(sIndex)};

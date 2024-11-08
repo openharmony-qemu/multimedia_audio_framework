@@ -39,6 +39,10 @@ constexpr uint32_t SCENE_TYPE_MASK = 0x00FF0000;
 constexpr uint32_t CAPTURER_ID_MASK = 0x0000FF00;
 constexpr uint32_t RENDERER_ID_MASK = 0x000000FF;
 constexpr uint32_t VOLUME_FACTOR = 100;
+const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_SCENE_MODES {
+    {ENHANCE_NONE, "ENHANCE_NONE"},
+    {ENHANCE_DEFAULT, "ENHANCE_DEFAULT"},
+};
 
 static int32_t FindEnhanceLib(const std::string &enhance,
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList,

@@ -39,7 +39,7 @@ ohos_shared_library("audio_bluetooth_client") {
     "../audioutils:audio_utils",
   ]
 
-  external_deps = [
+  public_external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
     "hdf_core:libhdf_ipc_adapter",
@@ -49,6 +49,10 @@ ohos_shared_library("audio_bluetooth_client") {
     "ipc:ipc_single",
   ]
 
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
   part_name = "audio_framework"
   subsystem_name = "multimedia"
+  version_script = "libaudio_bluetooth_client.versionscript"
 }
