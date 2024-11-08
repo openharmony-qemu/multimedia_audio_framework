@@ -1267,7 +1267,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_MUSIC},
-    {STREAM_VOICE_CALL_ASSISTANT, STREAM_MUSIC},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
     {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
     {STREAM_VOICE_ASSISTANT, STREAM_MUSIC},
     {STREAM_VOICE_COMMUNICATION, STREAM_MUSIC},
