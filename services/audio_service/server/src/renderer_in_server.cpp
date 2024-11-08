@@ -1199,6 +1199,7 @@ bool RendererInServer::IsHighResolution() const noexcept
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", on);
     if (silentModeAndMixWithOthers_) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
     } else {
@@ -1228,6 +1229,7 @@ int32_t RendererInServer::SetClientVolume(bool isStreamVolumeChange, bool isMedi
 
 int32_t RendererInServer::SetMute(bool isMute)
 {
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     if (isMute) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
     } else {
