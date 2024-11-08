@@ -202,7 +202,6 @@ static const char* SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const char* SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const char* PREDICATES_STRING = "settings.general.device_name";
 static const char* USER_DEFINED_STRING = "settings.general.user_defined_device_name";
-static const char* EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
