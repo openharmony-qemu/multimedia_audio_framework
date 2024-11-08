@@ -144,7 +144,7 @@ unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
                 desc = move(a2dpInDesc);
             }
             AUDIO_DEBUG_LOG(" RecongnitionsourceType %{public}d clientUID %{public}d fetch device %{public}d",
-            sourceType, clientUID, desc->deviceType_);
+                sourceType, clientUID, desc->deviceType_);
             return desc;
         }
     }
