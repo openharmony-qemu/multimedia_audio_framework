@@ -144,8 +144,8 @@
                 <focus_type value="STREAM_NAVIGATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_ACCESSIBILITY" is_forced="true" action_type="PLAY" action_on="incoming"/>
-                <focus_type value="STREAM_VOICE_CALL"  is_forced="true" action_type="PLAY" action_on="incoming"/>
-                <focus_type value="STREAM_VOICE_MESSAGE"  is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_VOICE_MESSAGE" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_SYSTEM" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_VOICE_RING" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -961,6 +961,7 @@
                 <focus_type value="STREAM_SYSTEM_ENFORCED" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_DTMF" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_VOICE_ASSISTANT" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_VOICE_RING" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_ACCESSIBILITY" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -977,7 +978,6 @@
                 <focus_type value="SOURCE_TYPE_VOICE_TRANSCRIPTION" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
             <private>
-                <focus_type value="STREAM_VOICE_RING" is_forced="true" action_type="STOP" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
                 <focus_type value="STREAM_INTERNAL_FORCE_STOP" is_forced="true" action_type="STOP" action_on="existing"/>
             </private>
