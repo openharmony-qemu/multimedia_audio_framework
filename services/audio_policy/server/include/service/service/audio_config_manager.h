@@ -102,8 +102,7 @@ public:
 
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 private:
-    AudioConfigManager() :
-        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
+    AudioConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
     {
     }
     ~AudioConfigManager()
