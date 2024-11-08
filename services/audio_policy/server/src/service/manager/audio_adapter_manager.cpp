@@ -1974,6 +1974,14 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
     LoadVolumeMap();
     LoadMuteStatusMap();
+
+    auto iter = VOLUME_TYPE_LIST.begin();
+    while (iter != VOLUME_TYPE_LIST.end()) {
+        SetVolumeDb(*iter);
+        AUDIO_INFO_LOG("NotifyAccountsChanged: volume: %{public}d, mute: %{public}d for stream type %{public}d",
+            volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
+        iter++;
+    }
 }
 
 int32_t AudioAdapterManager::DoRestoreData()
