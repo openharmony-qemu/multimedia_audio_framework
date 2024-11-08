@@ -51,11 +51,11 @@ public:
     sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
         std::string macAddress);
     sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
-        std::string macAddress, std::string deviceRole);
+        std::string macAddress, DeviceRole deviceRole);
     void DelConnectedDevice(std::string networkId, int32_t deviceType);
     void DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress);
     void DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress,
-        std::string deviceRole);
+        DeviceRole deviceRole);
     void AddConnectedDevice(sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     DeviceType FindConnectedHeadset();
     void SetDisplayName(const std::string macAddress, const std::string deviceName);
@@ -63,6 +63,9 @@ public:
     sptr<AudioDeviceDescriptor> CheckExistOutputDevice(DeviceType activeDevice, std::string macAddress);
     std::vector<sptr<AudioDeviceDescriptor>> GetCopy();
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
+    bool HasArm(const DeviceRole role);
+    bool HasHifi(const DeviceRole role);
+    bool IsArmDevice(const std::string &address, const DeviceRole role);
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}

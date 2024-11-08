@@ -3230,7 +3230,7 @@ int32_t AudioPolicyService::HandleActiveDevice(DeviceType deviceType)
 int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole,
     const std::string &address)
 {
-    Tracetrace("AudioPolicyService::HandleArmUsbDevice");
+    Trace trace("AudioPolicyService::HandleArmUsbDevice");
     if (deviceType != DEVICE_TYPE_USB_ARM_HEADSET && GetCurrentOutputDeviceType() == DEVICE_TYPE_USB_HEADSET) {
         std::string activePort = GetSinkPortName(DEVICE_TYPE_USB_ARM_HEADSET);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
@@ -3853,12 +3853,12 @@ int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &i
     if (devType == DEVICE_TYPE_USB_HEADSET || devType == DEVICE_TYPE_USB_ARM_HEADSET) {
         CHECK_AND_RETURN_RET(!address.empty() && role != DEVICE_ROLE_NONE, ERROR);
         AUDIO_INFO_LOG("Entry. Addr:%{public}s, Role:%{public}d, HasHifi:%{public}d, HasArm:%{public}d",
-            address.c_str(), role, HasHifi(role), HasArm(role));
+            address.c_str(), role, audioConnectedDevice_.HasHifi(role), audioConnectedDevice_.HasArm(role));
         if (isConnected) {
-            if (HasHifi(role) || NoNeedChangeUsbDevice(address)) {
+            if (audioConnectedDevice_.HasHifi(role) || NoNeedChangeUsbDevice(address)) {
                 devType = DEVICE_TYPE_USB_ARM_HEADSET;
             }
-        } else if (IsArmDevice(address, role)) {
+        } else if (audioConnectedDevice_.IsArmDevice(address, role)) {
             devType = DEVICE_TYPE_USB_ARM_HEADSET;
             // Temporary resolution to avoid pcm driver problem
             string condition = string("address=") + address + " role=" + to_string(DEVICE_ROLE_NONE);
@@ -3952,37 +3952,13 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         "OnDeviceStatusUpdated 5 param");
 }
 
-bool AudioPolicyService::IsArmDevice(const string& address, const DeviceRole role)
-{
-    for (auto& item : connectedDevices_) {
-        if (item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET &&
-            item->macAddress_ == address && item->deviceRole_ == role) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool AudioPolicyService::HasArm(const DeviceRole role)
-{
-    return std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [role](const auto& item) {
-        return item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET && item->deviceRole_ == role;
-    }) != connectedDevices_.cend();
-}
-
-bool AudioPolicyService::HasHifi(const DeviceRole role)
-{
-    return std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [role](const auto& item) {
-        return item->deviceType_ == DEVICE_TYPE_USB_HEADSET && item->deviceRole_ == role;
-    }) != connectedDevices_.cend();
-}
-
 void AudioPolicyService::PresetArmIdleInput(const string& address)
 {
     AUDIO_INFO_LOG("Entry. address=%{public}s", address.c_str());
-    auto it = deviceClassInfo_.find(ClassType::TYPE_USB);
-    CHECK_AND_RETURN_RET(it != deviceClassInfo_.end(),);
-    for (auto &moduleInfo : it->second) {
+    std::list<AudioModuleInfo> moduleInfoList;
+    bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
+    CHECK_AND_RETURN_RET(ret,);
+    for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
         if (configRole != INPUT_DEVICE) {continue;}
         UpdateArmModuleInfo(address, INPUT_DEVICE, moduleInfo);
@@ -3995,20 +3971,22 @@ void AudioPolicyService::PresetArmIdleInput(const string& address)
 void AudioPolicyService::ActivateArmDevice(const string& address, const DeviceRole role)
 {
     AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d", address.c_str(), role);
-    auto it = deviceClassInfo_.find(ClassType::TYPE_USB);
-    CHECK_AND_RETURN_RET(it != deviceClassInfo_.end(),);
-    for (auto &moduleInfo : it->second) {
+    std::list<AudioModuleInfo> moduleInfoList;
+    bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
+    CHECK_AND_RETURN_RET(ret,);
+    for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
         if (configRole != role) {continue;}
         AUDIO_INFO_LOG("[module_reload]: module[%{public}s], role[%{public}d]", moduleInfo.name.c_str(), role);
-        if (!(isEcFeatureEnable_ && role == INPUT_DEVICE) && IOHandles_.find(moduleInfo.name) != IOHandles_.end()) {
-            MuteDefaultSinkPort();
-            ClosePortAndEraseIOHandle(moduleInfo.name);
+        if (!(isEcFeatureEnable_ && role == INPUT_DEVICE) && audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
+            audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(),
+                GetSinkPortName(GetCurrentOutputDeviceType()));
+            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name);
         }
         UpdateArmModuleInfo(address, role, moduleInfo);
         if (isEcFeatureEnable_) {
             if (role == OUTPUT_DEVICE) {
-                int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+                int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
                 CHECK_AND_RETURN_LOG(ret == SUCCESS,
                     "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
                 usbSinkModuleInfo_ = moduleInfo;
@@ -4017,7 +3995,7 @@ void AudioPolicyService::ActivateArmDevice(const string& address, const DeviceRo
                 usbSourceModuleInfo_ = moduleInfo;
             }
         } else {
-            int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+            int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
             CHECK_AND_RETURN_LOG(ret == SUCCESS,
                 "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
         }
@@ -4027,9 +4005,7 @@ void AudioPolicyService::ActivateArmDevice(const string& address, const DeviceRo
 void AudioPolicyService::UpdateArmModuleInfo(const string& address, const DeviceRole role, AudioModuleInfo& moduleInfo)
 {
     string condition = string("address=") + address + " role=" + to_string(role);
-    string identity = IPCSkeleton::ResetCallingIdentity();
-    string deviceInfo = GetAudioServerProxy()->GetAudioParameter(LOCAL_NETWORK_ID, USB_DEVICE, condition);
-    IPCSkeleton::SetCallingIdentity(identity);
+    string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
     AUDIO_INFO_LOG("device info from usb hal is %{public}s", deviceInfo.c_str());
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);

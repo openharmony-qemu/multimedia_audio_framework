@@ -138,7 +138,7 @@ sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::
 }
 
 sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
-    std::string macAddress, std::string deviceRole)
+    std::string macAddress, DeviceRole deviceRole)
 {
     auto isPresent = [&networkId, &deviceType, &macAddress, &deviceRole] (const sptr<AudioDeviceDescriptor> &desc) {
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_ && macAddress == desc->macAddress_
@@ -155,7 +155,7 @@ sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::
 }
 
 void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress,
-    std::string deviceRole)
+    DeviceRole deviceRole)
 {
     auto isPresent = [&deviceType, &networkId, &macAddress,
         &deviceRole] (const sptr<AudioDeviceDescriptor> &descriptor) {
@@ -324,6 +324,31 @@ std::vector<sptr<OHOS::AudioStandard::AudioDeviceDescriptor>> AudioConnectedDevi
         }
     }
     return devices;
+}
+
+bool AudioConnectedDevice::IsArmDevice(const std::string& address, const DeviceRole role)
+{
+    for (auto& item : connectedDevices_) {
+        if (item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET &&
+            item->macAddress_ == address && item->deviceRole_ == role) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioConnectedDevice::HasArm(const DeviceRole role)
+{
+    return std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [role](const auto& item) {
+        return item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET && item->deviceRole_ == role;
+    }) != connectedDevices_.cend();
+}
+
+bool AudioConnectedDevice::HasHifi(const DeviceRole role)
+{
+    return std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [role](const auto& item) {
+        return item->deviceType_ == DEVICE_TYPE_USB_HEADSET && item->deviceRole_ == role;
+    }) != connectedDevices_.cend();
 }
 
 }

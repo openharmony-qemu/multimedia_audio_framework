@@ -1062,9 +1062,6 @@ private:
 
     void UnloadA2dpModule();
 
-    bool HasArm(const DeviceRole role);
-    bool HasHifi(const DeviceRole role);
-    bool IsArmDevice(const string &address, const DeviceRole role);
     void PresetArmIdleInput(const string &address);
     void ActivateArmDevice(const string &address, const DeviceRole role);
     void UpdateArmModuleInfo(const string &address, const DeviceRole role, AudioModuleInfo &moduleInfo);
