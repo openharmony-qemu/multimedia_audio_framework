@@ -603,7 +603,7 @@ error:
 napi_value NapiAudioEnum::CreateLocalNetworkIdObject(napi_env env)
 {
     napi_value result = nullptr;
-    napi_create_string_utf8(env, LOCAL_NETWORK_ID.c_str(), NAPI_AUTO_LENGTH, &result);
+    napi_create_string_utf8(env, LOCAL_NETWORK_ID, NAPI_AUTO_LENGTH, &result);
     return result;
 }
 

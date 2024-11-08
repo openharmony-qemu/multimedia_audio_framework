@@ -49,24 +49,15 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-
-static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
-static const std::string PIPE_PRIMARY_OUTPUT = "primary_output";
-static const std::string PIPE_FAST_OUTPUT = "fast_output";
-static const std::string PIPE_OFFLOAD_OUTPUT = "offload_output";
-static const std::string PIPE_VOIP_OUTPUT = "voip_output";
-static const std::string PIPE_PRIMARY_INPUT = "primary_input";
-static const std::string PIPE_OFFLOAD_INPUT = "offload_input";
-static const std::string PIPE_A2DP_OUTPUT = "a2dp_output";
-static const std::string PIPE_FAST_A2DP_OUTPUT = "fast_a2dp_output";
-static const std::string PIPE_USB_ARM_OUTPUT = "usb_arm_output";
-static const std::string PIPE_USB_ARM_INPUT = "usb_arm_input";
-static const std::string PIPE_DP_OUTPUT = "dp_output";
-static const std::string PIPE_DISTRIBUTED_OUTPUT = "distributed_output";
-static const std::string PIPE_FAST_DISTRIBUTED_OUTPUT = "fast_distributed_output";
-static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
-static const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
-std::string PIPE_WAKEUP_INPUT = "wakeup_input";
+namespace {
+static const char* INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
+static const char* PIPE_PRIMARY_OUTPUT = "primary_output";
+static const char* PIPE_PRIMARY_INPUT = "primary_input";
+static const char* PIPE_USB_ARM_OUTPUT = "usb_arm_output";
+static const char* PIPE_USB_ARM_INPUT = "usb_arm_input";
+static const char* PIPE_DP_OUTPUT = "dp_output";
+static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
+static const char* PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 10; // 10s
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
@@ -82,7 +73,20 @@ static const unsigned int BUFFER_CALC_20MS = 20;
 static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
-
+static const std::vector<std::string> SourceNames = {
+    std::string(PRIMARY_MIC),
+    std::string(BLUETOOTH_MIC),
+    std::string(USB_MIC),
+    std::string(PRIMARY_WAKEUP),
+    std::string(FILE_SOURCE)
+};
+static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_REMOTE_CAST
+};
+}
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
     STREAM_RING,
@@ -189,20 +193,18 @@ static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     {SOURCE_TYPE_INVALID, 0},
 };
 
-static const std::string SETTINGS_DATA_BASE_URI =
+static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
-static const std::string SETTINGS_DATA_SECURE_URI =
+static const char* SETTINGS_DATA_SECURE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/USER_SETTINGSDATA_SECURE_";
-static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
-static const std::string SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
-static const std::string SETTINGS_DATA_FIELD_VALUE = "VALUE";
-static const std::string PREDICATES_STRING = "settings.general.device_name";
-static const std::string USER_DEFINED_STRING = "settings.general.user_defined_device_name";
-static const std::string EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
-static const std::string FLAG_MMAP_STRING = "AUDIO_FLAG_MMAP";
-static const std::string USAGE_VOIP_STRING = "AUDIO_USAGE_VOIP";
-static const std::string CONFIG_AUDIO_BALANACE_KEY = "master_balance";
-static const std::string CONFIG_AUDIO_MONO_KEY = "master_mono";
+static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
+static const char* SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
+static const char* SETTINGS_DATA_FIELD_VALUE = "VALUE";
+static const char* PREDICATES_STRING = "settings.general.device_name";
+static const char* USER_DEFINED_STRING = "settings.general.user_defined_device_name";
+static const char* EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
+static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
+static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 const uint32_t REHANDLE_DEVICE_RETRY_INTERVAL_IN_MICROSECONDS = 30000;
@@ -211,7 +213,7 @@ const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 #endif
-const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
+const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 const int32_t UID_AUDIO = 1041;
 const int MEDIA_RENDER_ID = 0;
 const int CALL_RENDER_ID = 1;
@@ -234,6 +236,7 @@ const unsigned int BLUETOOTH_TIME_OUT_SECONDS = 8;
 mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
+const int32_t AudioA2dpOffloadManager::CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
 
 static string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
 {
@@ -366,17 +369,8 @@ AudioPolicyService::~AudioPolicyService()
     Deinit();
 }
 
-bool AudioPolicyService::Init(void)
+bool AudioPolicyService::LoadAudioPolicyConfig()
 {
-    serviceFlag_.reset();
-    audioPolicyManager_.Init();
-    audioEffectService_.EffectServiceInit();
-    audioDeviceManager_.ParseDeviceXml();
-    audioAffinityManager_.ParseAffinityXml();
-    audioPnpServer_.init();
-    audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
-    if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
-
     bool ret = audioConfigManager_.Init();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
@@ -389,6 +383,24 @@ bool AudioPolicyService::Init(void)
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
     }
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Config Parse failed");
+    return ret;
+}
+
+bool AudioPolicyService::Init(void)
+{
+    serviceFlag_.reset();
+    audioPolicyManager_.Init();
+    audioEffectService_.EffectServiceInit();
+    audioDeviceManager_.ParseDeviceXml();
+    audioAffinityManager_.ParseAffinityXml();
+    audioPnpServer_.init();
+    audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
+
+    bool ret = LoadAudioPolicyConfig();
+    if (!ret) {
+        return ret;
+    }
 
 #ifdef FEATURE_DTMF_TONE
     ret = audioToneManager_.LoadToneDtmfConfig();
@@ -4357,8 +4369,8 @@ int32_t AudioPolicyService::GetUserSetDeviceNameFromDataShareHelper(std::string 
 
     int32_t osAccountId = AudioSettingProvider::GetCurrentUserId();
     std::string accountIdStr = std::to_string(osAccountId);
-    std::shared_ptr<Uri> uri = std::make_shared<Uri>(SETTINGS_DATA_SECURE_URI + accountIdStr + "?Proxy=true&key=" +
-        USER_DEFINED_STRING);
+    std::shared_ptr<Uri> uri = std::make_shared<Uri>(std::string(SETTINGS_DATA_SECURE_URI) + accountIdStr +
+        "?Proxy=true&key=" + std::string(USER_DEFINED_STRING));
 
     std::vector<std::string> columns;
     columns.emplace_back(SETTINGS_DATA_FIELD_VALUE);
@@ -6729,8 +6741,8 @@ void AudioPolicyService::RegisterDataObserver()
 
     int32_t osAccountId = AudioSettingProvider::GetCurrentUserId();
     std::string accountIdStr = std::to_string(osAccountId);
-    std::shared_ptr<Uri> uri = std::make_shared<Uri>(SETTINGS_DATA_SECURE_URI + accountIdStr + "?Proxy=true&key=" +
-        USER_DEFINED_STRING);
+    std::shared_ptr<Uri> uri = std::make_shared<Uri>(std::string(SETTINGS_DATA_SECURE_URI) + accountIdStr +
+        "?Proxy=true&key=" + std::string(USER_DEFINED_STRING));
     sptr<AAFwk::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
     dataShareHelper->RegisterObserver(*uri, settingDataObserver);
 

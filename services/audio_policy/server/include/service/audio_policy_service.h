@@ -856,6 +856,7 @@ private:
 
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
+    bool LoadAudioPolicyConfig();
     void CreateRecoveryThread();
     void RecoveryPreferredDevices();
 
@@ -1108,7 +1109,6 @@ private:
     mutable std::mutex a2dpDeviceMapMutex_;
     mutable std::mutex a2dpInDeviceMapMutex_;
     IAudioPolicyInterface& audioPolicyManager_;
-
     AudioStreamCollector& streamCollector_;
     AudioRouterCenter& audioRouterCenter_;
     std::unique_ptr<DeviceStatusListener> deviceStatusListener_;

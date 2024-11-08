@@ -26,41 +26,35 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static const std::string PRIMARY_CLASS = "primary";
-static const std::string A2DP_CLASS = "a2dp";
-static const std::string USB_CLASS = "usb";
-static const std::string DP_CLASS = "dp";
-static const std::string FILE_CLASS = "file_io";
-static const std::string REMOTE_CLASS = "remote";
-static const std::string OFFLOAD_CLASS = "offload";
-static const std::string MCH_CLASS = "multichannel";
-static const std::string INVALID_CLASS = "invalid";
-static const std::string BLUETOOTH_SPEAKER = "Bt_Speaker";
-static const std::string BLUETOOTH_MIC = "Bt_Mic";
-static const std::string PRIMARY_SPEAKER = "Speaker";
-static const std::string OFFLOAD_PRIMARY_SPEAKER = "Offload_Speaker";
-static const std::string MCH_PRIMARY_SPEAKER = "MCH_Speaker";
-static const std::string USB_SPEAKER = "Usb_arm_speaker";
-static const std::string DP_SINK = "DP_speaker";
-static const std::string USB_MIC = "Usb_arm_mic";
-static const std::string PRIMARY_MIC = "Built_in_mic";
-static const std::string PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
-static const std::string FILE_SINK = "file_sink";
-static const std::string FILE_SOURCE = "file_source";
-static const std::string PIPE_SINK = "fifo_output";
-static const std::string PIPE_SOURCE = "fifo_input";
-static const std::string INTERNAL_PORT = "internal";
-static const std::string ROLE_SOURCE = "source";
-static const std::string ROLE_SINK = "sink";
-static const std::string PORT_NONE = "none";
-
-const std::vector<std::string> SourceNames = {
-    std::string(PRIMARY_MIC),
-    std::string(BLUETOOTH_MIC),
-    std::string(USB_MIC),
-    std::string(PRIMARY_WAKEUP),
-    std::string(FILE_SOURCE)
-};
+namespace {
+static const char* PRIMARY_CLASS = "primary";
+static const char* A2DP_CLASS = "a2dp";
+static const char* USB_CLASS = "usb";
+static const char* DP_CLASS = "dp";
+static const char* FILE_CLASS = "file_io";
+static const char* REMOTE_CLASS = "remote";
+static const char* OFFLOAD_CLASS = "offload";
+static const char* MCH_CLASS = "multichannel";
+static const char* INVALID_CLASS = "invalid";
+static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
+static const char* BLUETOOTH_MIC = "Bt_Mic";
+static const char* PRIMARY_SPEAKER = "Speaker";
+static const char* OFFLOAD_PRIMARY_SPEAKER = "Offload_Speaker";
+static const char* MCH_PRIMARY_SPEAKER = "MCH_Speaker";
+static const char* USB_SPEAKER = "Usb_arm_speaker";
+static const char* DP_SINK = "DP_speaker";
+static const char* USB_MIC = "Usb_arm_mic";
+static const char* PRIMARY_MIC = "Built_in_mic";
+static const char* PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
+static const char* FILE_SINK = "file_sink";
+static const char* FILE_SOURCE = "file_source";
+static const char* PIPE_SINK = "fifo_output";
+static const char* PIPE_SOURCE = "fifo_input";
+static const char* INTERNAL_PORT = "internal";
+static const char* ROLE_SOURCE = "source";
+static const char* ROLE_SINK = "sink";
+static const char* PORT_NONE = "none";
+}
 
 enum NodeName {
     DEVICE_CLASS,

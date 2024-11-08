@@ -18,7 +18,6 @@
 
 #include "gtest/gtest.h"
 #include "audio_effect_chain.h"
-#include "audio_effect_chain.cpp"
 
 namespace OHOS {
 namespace AudioStandard {

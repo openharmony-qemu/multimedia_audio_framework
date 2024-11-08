@@ -24,6 +24,7 @@ ohos_shared_library("pulse_audio_service_adapter") {
   sources = [ "src/pulse_audio_service_adapter_impl.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -47,4 +48,5 @@ ohos_shared_library("pulse_audio_service_adapter") {
   ]
   part_name = "audio_framework"
   subsystem_name = "multimedia"
+  version_script = "libpulse_audio_service_adapter.versionscript"
 }

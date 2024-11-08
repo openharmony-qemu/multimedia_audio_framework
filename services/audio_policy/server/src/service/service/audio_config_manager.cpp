@@ -39,13 +39,14 @@ static const std::string EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
 
 bool AudioConfigManager::Init()
 {
-    bool ret = audioPolicyConfigParser_.LoadConfiguration();
+    std::unique_ptr<AudioPolicyParser> audioPolicyConfigParser = make_unique<AudioPolicyParser>(*this);
+    bool ret = audioPolicyConfigParser.LoadConfiguration();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
-    ret = audioPolicyConfigParser_.Parse();
+    ret = audioPolicyConfigParser.Parse();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
         AUDIO_ERR_LOG("Audio Policy Config Parse Configuration failed");

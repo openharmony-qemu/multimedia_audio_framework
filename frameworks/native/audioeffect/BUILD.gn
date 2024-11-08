@@ -57,7 +57,7 @@ ohos_shared_library("audio_effect") {
   }
   install_enable = true
 
-  configs = [ ":audio_effect_config" ]
+  public_configs = [ ":audio_effect_config" ]
 
   sources = [
     "src/audio_effect_chain.cpp",
@@ -72,12 +72,12 @@ ohos_shared_library("audio_effect") {
     "src/audio_head_tracker.cpp",
   ]
 
-  deps = [
+  public_deps = [
     "../../../services/audio_policy:audio_setting_provider",
     "../audioutils:audio_utils",
   ]
 
-  external_deps = [
+  public_external_deps = [
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
@@ -92,13 +92,15 @@ ohos_shared_library("audio_effect") {
   ]
 
   if (sensor_enable == true) {
-    external_deps += [ "sensor:sensor_interface_native" ]
+    public_external_deps += [ "sensor:sensor_interface_native" ]
   }
 
-  version_script = "../../../audio_framework.versionscript"
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
+  version_script = "libaudio_effect.versionscript"
 }
 
 ohos_static_library("audio_effect_integration") {

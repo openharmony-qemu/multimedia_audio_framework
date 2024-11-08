@@ -49,7 +49,6 @@ public:
         : audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance())
     {}
     void Init() {Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(shared_from_this());};
-
     void ConnectA2dpOffload(const std::string &deviceAddress, const std::vector<int32_t> &sessionIds);
     void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState) override;
 

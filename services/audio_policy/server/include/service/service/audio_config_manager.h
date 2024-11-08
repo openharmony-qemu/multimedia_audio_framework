@@ -102,7 +102,7 @@ public:
 
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 private:
-    AudioConfigManager() : audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
+    AudioConfigManager() :
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
     {
     }
@@ -110,8 +110,6 @@ private:
     {
     }
 private:
-    Parser& audioPolicyConfigParser_;
-
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap_ {};
 

@@ -31,26 +31,15 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static const std::string PRIVACY_TYPE = "privacy";
-static const std::string PUBLIC_TYPE = "public";
-static const std::string NEGATIVE_TYPE = "negative";
+static const char* PRIVACY_TYPE = "privacy";
+static const char* PUBLIC_TYPE = "public";
+static const char* NEGATIVE_TYPE = "negative";
 
 enum DeviceNodeName {
     UNKNOWN_NODE = -1,
     ADAPTER,
     DEVICES,
     DEVICE,
-};
-
-static std::map<std::string, DeviceType> deviceTypeMap_ = {
-    {"DEVICE_TYPE_WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
-    {"DEVICE_TYPE_WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
-    {"DEVICE_TYPE_BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
-    {"DEVICE_TYPE_BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
-    {"DEVICE_TYPE_BLUETOOTH_A2DP_IN", DEVICE_TYPE_BLUETOOTH_A2DP_IN},
-    {"DEVICE_TYPE_USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
-    {"DEVICE_TYPE_DP", DEVICE_TYPE_DP},
-    {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
 };
 
 class AudioDeviceParser : public Parser {

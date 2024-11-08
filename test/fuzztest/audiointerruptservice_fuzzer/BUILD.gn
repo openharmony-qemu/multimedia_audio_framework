@@ -13,8 +13,13 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
-import("../../../config.gni")
+import("../../../audio_framework_test_sources.gni")
+
+audio_policy_service_sources = []
+cur_path = "../../../"
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
 
 ohos_fuzztest("AudioInterruptServiceFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -41,6 +46,9 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
   cflags_cc += [ "-fno-access-control" ]
 
   sources = [ "audio_interrupt_service_fuzzer.cpp" ]
+  sources += audio_policy_service_sources
+
+  defines = audio_policy_service_defines
 
   deps = [ "../../../services/audio_policy:audio_policy_service" ]
   external_deps = [

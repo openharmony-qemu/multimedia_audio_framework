@@ -13,8 +13,17 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
-import("../../../config.gni")
+import("../../../audio_framework_test_sources.gni")
+
+audio_policy_service_sources = []
+cur_path = "../../../"
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
+audio_policy_client_sources = []
+foreach(source, audio_policy_client_sources_template) {
+  audio_policy_client_sources += [ "$cur_path$source" ]
+}
 
 ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -39,13 +48,14 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_policy_another_fuzzer.cpp" ]
+  sources += audio_policy_client_sources
+  sources += audio_policy_service_sources
 
-  defines = []
-  if (audio_framework_feature_dtmf_tone) {
-    defines += [ "FEATURE_DTMF_TONE" ]
-  }
+  defines = audio_policy_service_defines
+  defines += audio_policy_client_defines
 
   deps = [
+    "../../../frameworks/native/audioutils:audio_utils",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service",
   ]
@@ -70,6 +80,7 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
   if (accessibility_enable == true) {
     external_deps += [

@@ -127,6 +127,33 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
+static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
+    SOURCE_TYPE_INVALID,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
+};
+
+static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
+};
+
 static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
 {
     for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
@@ -564,7 +591,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
             parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
         }
-        if (key.starts_with("need_change_usb_device#C")) {
+        if (key.find("need_change_usb_device#C", 0) == 0) {
             parmKey = AudioParamKey::USB_DEVICE;
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), key);
         }
@@ -628,7 +655,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
     } else if (role == INPUT_DEVICE) {
         IAudioCapturerSource *capturerSource = IAudioCapturerSource::GetInstance("usb", "");
         capturerSource->SetAddress(address);
-        if (usbInfoMap_.contains(address)) {
+        if (usbInfoMap_.count(address) != 0) {
             usbInfoStr = usbInfoMap_[address];
         } else {
             usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);

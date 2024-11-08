@@ -25,9 +25,10 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr size_t AUDIO_DEVICE_INFO_SIZE_LIMIT = 30;
 constexpr int32_t INVALID_GROUP_ID = -1;
-
-const std::string LOCAL_NETWORK_ID = "LocalDevice";
-const std::string REMOTE_NETWORK_ID = "RemoteDevice";
+namespace {
+const char* LOCAL_NETWORK_ID = "LocalDevice";
+const char* REMOTE_NETWORK_ID = "RemoteDevice";
+}
 
 enum API_VERSION {
     API_7 = 7,
