@@ -1278,11 +1278,6 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     audioEffectChainManager->StreamVolumeUpdate(std::to_string(streamIndex_), clientVolume);
 
-    if (clientVolume == MIN_VOLUME) {
-        pa_proplist_sets(propList, "clientVolumeIsZero", "true");
-    } else {
-        pa_proplist_sets(propList, "clientVolumeIsZero", "false");
-    }
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);

@@ -1705,12 +1705,11 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         }
         const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
-        const char *clientVolumeIsZero = safeProplistGets(input->proplist, "clientVolumeIsZero", "false");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volume = GetCurVolume(sessionID, streamType, deviceClass);
-        bool isZeroVolume = IsSameVolume(volume, 0.0f) || pa_safe_streq(clientVolumeIsZero, "true");
+        bool isZeroVolume = IsSameVolume(volume, 0.0f);
         if (EffectChainManagerSceneCheck(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
             g_effectAllStreamVolumeZeroMap[i] = false;
             g_effectStartVolZeroTimeMap[i] = 0;
@@ -1804,12 +1803,11 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
             continue;
         }
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
-        const char *clientVolumeIsZero = safeProplistGets(input->proplist, "clientVolumeIsZero", "false");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volume = GetCurVolume(sessionID, streamType, deviceClass);
-        bool isZeroVolume = IsSameVolume(volume, 0.0f) || pa_safe_streq(clientVolumeIsZero, "true");
+        bool isZeroVolume = IsSameVolume(volume, 0.0f);
         if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
             u->primary.speakerPaAllStreamVolumeZero = false;
             u->primary.speakerPaAllStreamStartVolZeroTime = 0;
