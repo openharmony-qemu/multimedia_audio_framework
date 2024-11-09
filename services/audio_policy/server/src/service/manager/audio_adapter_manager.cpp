@@ -337,13 +337,6 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         InitKVStoreInternal();
     }
 
-    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO || currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        if (isBtFirstSetVolume_ && volumeLevel > safeVolume_) {
-            volumeLevel = safeVolume_;
-            isBtFirstSetVolume_ = false;
-        }
-    }
-
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
 
     if (handler_ != nullptr) {
@@ -1252,9 +1245,6 @@ void AudioAdapterManager::DeleteAudioPolicyKvStore()
 
 void AudioAdapterManager::UpdateSafeVolume()
 {
-    if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
-        return;
-    }
     auto currentActiveOutputDeviceDescriptor =
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     switch (currentActiveDevice_) {
@@ -1262,6 +1252,11 @@ void AudioAdapterManager::UpdateSafeVolume()
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+            if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
+                AUDIO_INFO_LOG("1st connect bt device volume is safe");
+                isWiredBoot_ = false;
+                return;
+            }
             if (isWiredBoot_) {
                 AUDIO_INFO_LOG("1st connect wired device:%{public}d after boot, update current volume to safevolume",
                     currentActiveDevice_);
@@ -1272,6 +1267,11 @@ void AudioAdapterManager::UpdateSafeVolume()
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
+            if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
+                AUDIO_INFO_LOG("1st connect bt device volume is safe");
+                isBtBoot_ = false;
+                return;
+            }
             if (currentActiveOutputDeviceDescriptor != nullptr) {
                 AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveOutputDeviceDescriptor->deviceCategory_);
                 if (currentActiveOutputDeviceDescriptor->deviceCategory_ != BT_HEADPHONE &&

@@ -286,7 +286,6 @@ private:
     int32_t safeVolumeTimeout_ = DEFAULT_SAFE_VOLUME_TIMEOUT;
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
-    bool isBtFirstSetVolume_ = true;
     int32_t curActiveCount_ = 0;
 
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
