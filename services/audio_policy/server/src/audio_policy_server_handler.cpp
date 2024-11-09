@@ -1287,6 +1287,9 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
         case EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE:
             HandleHeadTrackingEnabledChangeEvent(event);
             break;
+        case EventAudioServerCmd::SEND_NN_STATE_CHANGE:
+            HandleSendNNStateChangeEvent(event);
+            break;
         default:
             break;
     }
