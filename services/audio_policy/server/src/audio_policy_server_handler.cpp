@@ -1031,6 +1031,21 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     }
 }
 
+void AudioPolicyServerHandler::HandleSendNNStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> sendNNStateChangeCb = it->second;
+        if (sendNNStateChangeCb == nullptr) {
+            AUDIO_ERR_LOG("sendNNStateChangeCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        sendNNStateChangeCb->OnSendNNStateChange(eventContextObj->nnState);
+    }
+}
+
 void AudioPolicyServerHandler::HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
