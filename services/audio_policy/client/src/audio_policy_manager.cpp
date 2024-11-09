@@ -1720,7 +1720,9 @@ int32_t AudioPolicyManager::RegisterSendNNStateEventListener(
         }
     }
 
-    audioPolicyClientStubCB_->AddSendNNStateChangeCallback(callback);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddSendNNStateChangeCallback(callback);
+    }
     return SUCCESS;
 }
 

@@ -1211,9 +1211,6 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
         case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
             HandlePipeStreamCleanEvent(event);
             break;
-        case EventAudioServerCmd::SEND_NN_STATE_CHANGE:
-            HandleSendNNStateChangeEvent(event);
-            break;
         default:
             break;
     }
@@ -1237,6 +1234,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::MICROPHONE_BLOCKED:
             HandleMicrophoneBlockedCallback(event);
+            break;
+        case EventAudioServerCmd::SEND_NN_STATE_CHANGE:
+            HandleSendNNStateChangeEvent(event);
             break;
         default:
             break;
