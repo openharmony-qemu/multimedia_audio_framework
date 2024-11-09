@@ -551,6 +551,8 @@ private:
 
     std::vector<SinkInput> FilterSinkInputs(int32_t sessionId);
 
+    std::vector<SinkInput> FilterSinkInputs(int32_t sessionId, std::vector<SinkInput> sinkInputs);
+
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
 
     int32_t MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
@@ -609,6 +611,7 @@ private:
 
     void MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices,
+        std::vector<SinkInput> sinkInputs,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void MoveToNewInputDevice(shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,

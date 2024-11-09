@@ -452,7 +452,8 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices =
         GetServerPtr()->audioPolicyService_.audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
     GetServerPtr()->audioPolicyService_.
-        MoveToNewOutputDevice(rendererChangeInfo, outputDevices, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+        MoveToNewOutputDevice(rendererChangeInfo, outputDevices, sinkInputs,
+        AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     std::unique_ptr<AudioDeviceDescriptor> adc = std::make_unique<AudioDeviceDescriptor>();
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
