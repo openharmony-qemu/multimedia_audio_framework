@@ -1111,7 +1111,7 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level1)
 {
     auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_NONE);
-    EXPECT_FALSE(isActive);
+    EXPECT_EQ(false, isActive);
 }
 
 /**

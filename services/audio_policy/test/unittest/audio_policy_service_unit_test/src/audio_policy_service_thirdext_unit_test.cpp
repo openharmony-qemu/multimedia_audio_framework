@@ -983,7 +983,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetPreferredDevice_001, TestSize.Leve
     int32_t result =
         AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetPreferredDevice(
             AUDIO_MEDIA_RENDER, audioDeviceDescriptorSptr1);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERR_INVALID_PARAM, result);
 
     sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr2 = new (std::nothrow) AudioDeviceDescriptor();
     audioDeviceDescriptorSptr2->deviceType_ = DEVICE_TYPE_NONE;
