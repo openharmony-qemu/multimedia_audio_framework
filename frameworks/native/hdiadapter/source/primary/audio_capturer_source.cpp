@@ -1048,9 +1048,7 @@ int32_t AudioCapturerSourceInner::Start(void)
         }
 
         int32_t ret = audioCapture_->Start(audioCapture_);
-        if (ret < 0) {
-            return ERR_NOT_STARTED;
-        }
+        CHECK_AND_RETURN_RET(ret > 0, ERR_NOT_STARTED);
         started_ = true;
     }
 

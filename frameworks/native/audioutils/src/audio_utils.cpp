@@ -129,7 +129,7 @@ WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : fun
 WatchTimeout::~WatchTimeout()
 {
     if (!isChecked_) {
-        Check();
+        CheckCurrTimeout();
     }
 }
 
