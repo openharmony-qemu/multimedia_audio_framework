@@ -507,6 +507,7 @@ int32_t FastAudioCapturerSourceInner::Start(void)
         WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:Start");
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastCapturer",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        guard.CheckCurrTimeout();
         if (keepRunningLock) {
             runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
         }

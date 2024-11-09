@@ -258,7 +258,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     keyOption->SetFinalKey(keyType);
     keyOption->SetFinalKeyDown(true);
     keyOption->SetFinalKeyDownDuration(VOLUME_KEY_DURATION);
-    guard.Check();
+    guard.CheckCurrTimeout();
     int32_t keySubId = im->SubscribeKeyEvent(keyOption, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
         AUDIO_PRERELEASE_LOGI("Receive volume key event: %{public}s.",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
@@ -306,7 +306,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
     keyOptionMute->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_MUTE);
     keyOptionMute->SetFinalKeyDown(true);
     keyOptionMute->SetFinalKeyDownDuration(VOLUME_MUTE_KEY_DURATION);
-    guard.Check();
+    guard.CheckCurrTimeout();
     int32_t muteKeySubId = im->SubscribeKeyEvent(keyOptionMute,
         [this](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
             AUDIO_INFO_LOG("Receive volume key event: mute");
@@ -429,6 +429,7 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
     WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback:AddRemoteDevstatus");
     bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_,
         false);
+    guard.CheckCurrTimeout();
     if (!RegisterSuccess) {
         AUDIO_ERR_LOG("register power state callback failed");
     } else {
@@ -1175,7 +1176,7 @@ int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
     lastMicMuteSettingPid_ = IPCSkeleton::GetCallingPid();
     WatchTimeout guard("PrivacyKit::SetMutePolicy:SetMicrophoneMuteAudioConfig");
     PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[TEMPORARY_POLCIY_TYPE], MICPHONE_CALLER, isMute);
-    guard.Check();
+    guard.CheckCurrTimeout();
     return SetMicrophoneMuteCommon(isMute, false);
 }
 
@@ -1187,7 +1188,7 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const 
         "MICROPHONE_CONTROL_PERMISSION permission denied");
     WatchTimeout guard("PrivacyKit::SetMutePolicy:SetMicrophoneMutePersistent");
     int32_t ret = PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[type], MICPHONE_CALLER, isMute);
-    guard.Check();
+    guard.CheckCurrTimeout();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("PrivacyKit SetMutePolicy failed ret is %{public}d", ret);
         return ret;
@@ -1971,11 +1972,11 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCap
             if (targetMuteState) {
                 WatchTimeout guard("PrivacyKit::StopUsingPermission:UpdateMicPrivacyByCapturerState");
                 res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-                guard.Check();
+                guard.CheckCurrTimeout();
             } else {
                 WatchTimeout guard("PrivacyKit::StartUsingPermission:UpdateMicPrivacyByCapturerState");
                 res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-                guard.Check();
+                guard.CheckCurrTimeout();
             }
             if (res != SUCCESS) {
                 AUDIO_ERR_LOG("update using permission failed, error code %{public}d", res);
@@ -1993,7 +1994,7 @@ int32_t AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName
     if (systemAbilityManager == nullptr) {
         return ERR_INVALID_PARAM;
     }
-    guard.Check();
+    guard.CheckCurrTimeout();
 
     sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (remoteObject == nullptr) {
@@ -2006,6 +2007,7 @@ int32_t AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName
     }
     WatchTimeout reguard("bundleMgrProxy->GetUidByBundleName:getUidByBundleName");
     int32_t iUid = bundleMgrProxy->GetUidByBundleName(bundle_name, user_id);
+    reguard.CheckCurrTimeout();
 
     return iUid;
 }
@@ -2324,6 +2326,7 @@ void AudioPolicyServer::RegisterPowerStateListener()
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     WatchTimeout guard("powerMgrClient.RegisterSyncSleepCallback:RegisterPowerStateListener");
     bool ret = powerMgrClient.RegisterSyncSleepCallback(powerStateListener_, SleepPriority::HIGH);
+    guard.CheckCurrTimeout();
     if (!ret) {
         AUDIO_ERR_LOG("register sync sleep callback failed");
     } else {
@@ -2341,6 +2344,7 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     WatchTimeout guard("powerMgrClient.UnRegisterSyncSleepCallback:UnRegisterPowerStateListener");
     bool ret = powerMgrClient.UnRegisterSyncSleepCallback(powerStateListener_);
+    guard.CheckCurrTimeout();
     if (!ret) {
         AUDIO_WARNING_LOG("unregister sync sleep callback failed");
     } else {
@@ -2363,6 +2367,7 @@ void AudioPolicyServer::RegisterSyncHibernateListener()
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     WatchTimeout guard("powerMgrClient.RegisterSyncHibernateCallback:RegisterSyncHibernateListener");
     bool ret = powerMgrClient.RegisterSyncHibernateCallback(syncHibernateListener_);
+    guard.CheckCurrTimeout();
     if (!ret) {
         AUDIO_ERR_LOG("register sync hibernate callback failed");
     } else {
@@ -2380,6 +2385,7 @@ void AudioPolicyServer::UnRegisterSyncHibernateListener()
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     WatchTimeout guard("powerMgrClient.UnRegisterSyncHibernateCallback:UnRegisterSyncHibernateListener");
     bool ret = powerMgrClient.UnRegisterSyncHibernateCallback(syncHibernateListener_);
+    guard.CheckCurrTimeout();
     if (!ret) {
         AUDIO_WARNING_LOG("unregister sync hibernate callback failed");
     } else {
@@ -2686,7 +2692,7 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleInfoFromUid");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, bundleInfo, "systemAbilityManager is nullptr");
-    guard.Check();
+    guard.CheckCurrTimeout();
 
     sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_PRELOG(remoteObject != nullptr, bundleInfo, "remoteObject is nullptr");
@@ -2705,7 +2711,7 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
         bundleInfo,
         AppExecFwk::Constants::ALL_USERID);
-    reguard.Check();
+    reguard.CheckCurrTimeout();
 
     return bundleInfo;
 }

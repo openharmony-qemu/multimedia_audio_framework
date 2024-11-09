@@ -4423,7 +4423,7 @@ std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareH
     WatchTimeout guard("DataShare::DataShareHelper::Create", CALL_IPC_COST_TIME_MS);
     std::pair<int, std::shared_ptr<DataShare::DataShareHelper>> res = DataShare::DataShareHelper::Create(remoteObject,
         SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
-    guard.Check();
+    guard.CheckCurrTimeout();
     if (res.first == DataShare::E_DATA_SHARE_NOT_READY) {
         AUDIO_WARNING_LOG("DataShareHelper::Create failed: E_DATA_SHARE_NOT_READY");
         return nullptr;
@@ -4452,7 +4452,7 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
         dataShareHelper->Release();
         return ERROR;
     }
-    guard.Check();
+    guard.CheckCurrTimeout();
 
     int32_t numRows = 0;
     resultSet->GetRowCount(numRows);
@@ -4483,7 +4483,7 @@ bool AudioPolicyService::IsDataShareReady()
     WatchTimeout guard("DataShare::DataShareHelper::Create:IsDataShareReady", CALL_IPC_COST_TIME_MS);
     std::pair<int, std::shared_ptr<DataShare::DataShareHelper>> res = DataShare::DataShareHelper::Create(remoteObject,
         SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
-    guard.Check();
+    guard.CheckCurrTimeout();
     if (res.first == DataShare::E_OK) {
         AUDIO_INFO_LOG("DataShareHelper is ready.");
         auto helper = res.second;

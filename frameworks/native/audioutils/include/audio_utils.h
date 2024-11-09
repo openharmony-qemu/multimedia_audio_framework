@@ -51,7 +51,7 @@ const int32_t SIGNAL_THRESHOLD = 10;
 const int32_t BLANK_THRESHOLD_MS = 100;
 const int32_t DETECTED_ZERO_THRESHOLD = 1;
 const size_t MILLISECOND_PER_SECOND = 1000;
-const int64_t DEFAULT_TIMEOUT_NS = 40000000; // 40 ms
+const int64_t DEFAULT_TIMEOUT_NS = 40 * 1000 * 1000;
 const size_t MOCK_INTERVAL = 2000;
 const int32_t GET_EXTRA_PARAM_LEN = 200;
 const int32_t YEAR_BASE = 1900;
@@ -124,7 +124,7 @@ public:
  * Example 1: Use specific timeout call Check().
  *     WatchTimeout guard("DoSomeWorkFunction", 50 * AUDIO_US_PER_SECOND); // if func cost more than 50 ms, print log
  *     DoSomeWorkFunction();
- *     guard.Check();
+ *     guard.CheckCurrTimeout();
  * Example 2: Use default timeout(40ms) and auto-check in release.
  *     WatchTimeout guard("DoSomeWorkFunction")
  *     DoSomeWorkFunction();
@@ -133,11 +133,11 @@ class WatchTimeout {
 public:
     WatchTimeout(const std::string &funcName, int64_t timeoutNs = DEFAULT_TIMEOUT_NS);
     ~WatchTimeout();
-    void Check();
+    void CheckCurrTimeout();
 private:
     const std::string funcName_;
-    int64_t timeout_ = 0;
-    int64_t startTime_ = 0;
+    int64_t timeoutNs_ = 0;
+    int64_t startTimeNs_ = 0;
     bool isChecked_ = false;
 };
 
