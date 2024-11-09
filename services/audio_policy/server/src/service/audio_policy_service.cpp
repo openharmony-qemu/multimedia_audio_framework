@@ -1959,6 +1959,7 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
         audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
         audioModuleInfo.format = "s16le"; // 16bit little endian
         audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
+        audioModuleInfo.renderInIdleState = "1";
     } else if (deviceRole == DeviceRole::INPUT_DEVICE) {
         audioModuleInfo.lib = "libmodule-hdi-source.z.so";
         audioModuleInfo.format = "s16le"; // we assume it is bigger endian
@@ -1981,7 +1982,6 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     audioModuleInfo.channels = "2";
     audioModuleInfo.rate = "48000";
     audioModuleInfo.bufferSize = "3840";
-    audioModuleInfo.renderInIdleState = "1";
 
     return audioModuleInfo;
 }
