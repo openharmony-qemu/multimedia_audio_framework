@@ -60,10 +60,12 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
     headTracker_ = headTracker;
     dumpNameIn_ = "dump_effect_in_" + scene + "_"
         + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
+        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4_"
+        + GetTime() + ".pcm";
     dumpNameOut_ = "dump_effect_out_" + scene + "_"
         + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
+        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4_"
+        + GetTime() + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
 }
@@ -84,10 +86,12 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     dumpNameIn_ = "dump_effect_in_" + scene + "_"
         + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
+        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4_"
+        + GetTime() + ".pcm";
     dumpNameOut_ = "dump_effect_out_" + scene + "_"
         + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
+        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4_"
+        + GetTime() + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
 }

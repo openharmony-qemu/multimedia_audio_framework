@@ -732,6 +732,14 @@ std::string AudioSpatializationService::GetCurrentDeviceAddress() const
     return currentDeviceAddress_;
 }
 
+std::string AudioSpatializationService::GetCurrTimestamp()
+{
+    std::time_t now = std::time(nullptr);
+    std::ostringstream oss;
+    oss << now;
+    return oss.str();
+}
+
 std::string AudioSpatializationService::GetSha256EncryptAddress(const std::string& address)
 {
     const int32_t HexWidth = 2;
@@ -763,7 +771,7 @@ std::string AudioSpatializationService::EncapsulateDeviceInfo(const std::string 
     value << "|" << addressToSpatialDeviceStateMap_[encryptedAddress].isSpatializationSupported;
     value << "|" << addressToSpatialDeviceStateMap_[encryptedAddress].isHeadTrackingSupported;
     value << "|" << addressToSpatialDeviceStateMap_[encryptedAddress].spatialDeviceType;
-    value << "|" << GetTime();
+    value << "|" << GetCurrTimestamp();
     return value.str();
 }
 

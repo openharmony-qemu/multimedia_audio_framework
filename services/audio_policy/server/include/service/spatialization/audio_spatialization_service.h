@@ -100,6 +100,7 @@ private:
     void UpdateDeviceSpatialInfo(const uint32_t deviceID, const std::string deviceSpatialInfo);
     void UpdateDeviceSpatialMapInfo(const std::string address, const std::string deviceSpatialInfo);
     std::string RemoveOldestDevice();
+    std::string GetCurrTimestamp();
     std::string EncapsulateDeviceInfo(const std::string address);
     std::string ExtractTimestamp(const std::string deviceSpatialInfo);
     std::string GetSha256EncryptAddress(const std::string& address);
