@@ -283,7 +283,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-    logUtilsTag_ = "IpcClientPlay::" + std::to_string(sessionId_);
+    logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
     InitDirectPipeType();
 
     proxyObj_ = proxyObj;

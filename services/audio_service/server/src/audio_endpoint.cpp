@@ -1982,6 +1982,7 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     int32_t ret = dstAudioBuffer_->GetReadbuffer(curReadPos, readBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get read buffer fail, ret %{public}d.", ret);
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+    DfxOperation(readBuf, dstStreamInfo_.format, dstStreamInfo_.channels);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
             static_cast<void *>(readBuf.buffer), readBuf.bufLength);
