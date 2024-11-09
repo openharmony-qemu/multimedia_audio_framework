@@ -24,6 +24,7 @@
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
 #include "audio_spatialization_manager.h"
+#include "audio_noise_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -82,6 +83,8 @@ public:
     int32_t AddHeadTrackingEnabledChangeCallback(const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);
     int32_t RemoveHeadTrackingEnabledChangeCallback();
     size_t GetHeadTrackingEnabledChangeCallbacSize() const;
+    int32_t AddSendNNStateChangeCallback(const std::shared_ptr<AudioSendNNStateChangeCallback> &cb);
+    int32_t RemoveSendNNStateChangeCallback();
     size_t GetFocusInfoChangeCallbackSize() const;
     int32_t AddAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb);
     int32_t RemoveAudioSessionCallback();
@@ -115,6 +118,7 @@ public:
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void OnSendNNStateChange(const int32_t &nnState) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
 
 private:
@@ -132,6 +136,7 @@ private:
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioSendNNStateChangeCallback>> sendNNStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
         microphoneBlockedCallbackList_;
@@ -155,6 +160,7 @@ private:
     mutable std::mutex headTrackingDataRequestedChangeMutex_;
     mutable std::mutex spatializationEnabledChangeMutex_;
     mutable std::mutex headTrackingEnabledChangeMutex_;
+    mutable std::mutex sendNNStateChangeMutex_;
     mutable std::mutex audioSessionMutex_;
     mutable std::mutex microphoneBlockedMutex_;
 };

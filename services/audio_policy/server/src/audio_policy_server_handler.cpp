@@ -477,6 +477,17 @@ bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(int32_t clientId,
         eventContextObj));
 }
 
+bool AudioPolicyServerHandler::SendNNStateChangeCallback(const int32_t &state)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->nnState = state;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SEND_NN_STATE_CHANGE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SEND_NN_STATE_CHANGE event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendHeadTrackingDeviceChangeEvent(
     const std::unordered_map<std::string, bool> &changeInfo)
 {

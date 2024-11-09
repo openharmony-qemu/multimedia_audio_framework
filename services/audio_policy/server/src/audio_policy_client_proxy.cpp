@@ -503,6 +503,26 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const sptr<
     reply.ReadInt32();
 }
 
+void AudioPolicyClientProxy::OnSendNNStateChange(const int32_t &state)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_SEND_NN_STATE_CHANGE));
+    data.WriteInt32(state);
+
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending enabled info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
 void AudioPolicyClientProxy::OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent)
 {
     MessageParcel data;

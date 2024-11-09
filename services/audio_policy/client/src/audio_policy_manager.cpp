@@ -1705,6 +1705,25 @@ int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::RegisterSendNNStateEventListener(
+    const std::shared_ptr<AudioSendNNStateChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Start to register");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    audioPolicyClientStubCB_->AddSendNNStateChangeCallback(callback);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::UnregisterSpatializationEnabledEventListener()
 {
     AUDIO_DEBUG_LOG("Start to unregister");
@@ -1729,6 +1748,15 @@ int32_t AudioPolicyManager::UnregisterHeadTrackingEnabledEventListener()
             callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, false);
         }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnRegisterSendNNStateEventListener()
+{
+    AUDIO_DEBUG_LOG("Start to unregister");
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveSendNNStateChangeCallback();
     }
     return SUCCESS;
 }

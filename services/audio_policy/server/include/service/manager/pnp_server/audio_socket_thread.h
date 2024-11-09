@@ -57,6 +57,7 @@ private:
     static int32_t SetAudioAnahsEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);
     static int32_t ReadAndScanDpState(const std::string &path, uint32_t &eventType);
     static int32_t ReadAndScanDpName(const std::string &path, std::string &name);
+    static int32_t ParseNNState(struct AudioPnpUevent *audioPnpUevent);
 };
 
 } // namespace AudioStandard
