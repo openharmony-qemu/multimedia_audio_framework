@@ -1566,7 +1566,9 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
 
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
 
-    InterruptEventInternal forceActive {INTERRUPT_TYPE_END, INTERRUPT_SHARE, INTERRUPT_HINT_RESUME, 1.0f};
+    InterruptEventInternal forceActive {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 1.0f};
+    // RESUME event should be INTERRUPT_SHARE. But mark it as INTERRUPT_FORCE here for state checking.
+    // The force type will be changed to INTERRUPT_SHARE in client.
     InterruptEventInternal forceUnduck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNDUCK, 1.0f};
     InterruptEventInternal forceDuck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK, DUCK_FACTOR};
     InterruptEventInternal forcePause {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
