@@ -1370,7 +1370,7 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetHapBuildApiVersion");
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(saManager != nullptr, 0, "failed: saManager is nullptr");
-    guard.Check();
+    guard.CheckCurrTimeout();
 
     sptr<IRemoteObject> remoteObject = saManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, 0, "failed: remoteObject is nullptr");
@@ -1387,7 +1387,7 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
         bundleInfo,
         AppExecFwk::Constants::ALL_USERID);
-    reguard.Check();
+    reguard.CheckCurrTimeout();
     int32_t hapApiVersion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
     AUDIO_INFO_LOG("callerUid %{public}d, version %{public}d", callerUid, hapApiVersion);
     return hapApiVersion;
@@ -1538,7 +1538,7 @@ const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
-    guard.Check();
+    guard.CheckCurrTimeout();
 
     sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
@@ -1548,6 +1548,7 @@ const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
 
     WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
     bundleMgrProxy->GetNameForUid(uid, bundleName);
+    reguard.CheckCurrTimeout();
 
     return bundleName;
 }

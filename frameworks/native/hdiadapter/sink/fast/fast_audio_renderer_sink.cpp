@@ -661,6 +661,7 @@ void FastAudioRendererSinkInner::KeepRunningLock()
         WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:KeepRunningLock");
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        guard.CheckCurrTimeout();
         if (keepRunningLock) {
             runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
         }

@@ -843,6 +843,7 @@ int32_t AudioRendererSinkInner::Start(void)
         WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:Start");
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock(
             lockName, PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        guard.CheckCurrTimeout();
         if (keepRunningLock) {
             runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
         }

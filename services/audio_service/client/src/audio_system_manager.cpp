@@ -213,7 +213,7 @@ std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetSelfBundleName");
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    guard.Check();
+    guard.CheckCurrTimeout();
     sptr<OHOS::IRemoteObject> remoteObject =
         systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
@@ -223,6 +223,7 @@ std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
 
     WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetSelfBundleName");
     iBundleMgr->GetNameForUid(uid, bundleName);
+    reguard.CheckCurrTimeout();
     return bundleName;
 }
 
@@ -1209,7 +1210,7 @@ std::string AudioSystemManager::GetSelfBundleName()
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();GetSelfBundleName");
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    guard.Check();
+    guard.CheckCurrTimeout();
     sptr<OHOS::IRemoteObject> remoteObject =
         systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
@@ -1224,6 +1225,7 @@ std::string AudioSystemManager::GetSelfBundleName()
     } else {
         AUDIO_DEBUG_LOG("Get bundle info failed");
     }
+    reguard.CheckCurrTimeout();
     return bundleName;
 }
 
