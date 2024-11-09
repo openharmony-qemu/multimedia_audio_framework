@@ -1070,6 +1070,10 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
     }
     // Notify valid forced event callbacks to app
     InterruptEvent interruptEventForced {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
+    if (interruptEventForced.hintType == INTERRUPT_HINT_RESUME) {
+        // Reusme event should be INTERRUPT_SHARE type. Change the force type before sending the interrupt event.
+        interruptEventForced.forceType = INTERRUPT_SHARE;
+    }
     NotifyEvent(interruptEventForced);
 }
 
