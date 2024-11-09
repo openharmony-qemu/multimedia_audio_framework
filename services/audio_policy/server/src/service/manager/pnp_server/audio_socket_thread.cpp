@@ -623,19 +623,11 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
         msgTmp += strlen(msgTmp) + 1;
     }
 
-    if (AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) {
-        return true;
-    }
-    if (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) {
-        return true;
-    }
-    if (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) {
-        return true;
-    }
-    if (AudioAnahsDetectDevice(&audioPnpUevent) == SUCCESS) {
-        return true;
-    }
-    if (ParseNNState(&audioPnpUevent) == SUCCESS) {
+    if ((AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioAnahsDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (ParseNNState(&audioPnpUevent) == SUCCESS)) {
         return true;
     }
 

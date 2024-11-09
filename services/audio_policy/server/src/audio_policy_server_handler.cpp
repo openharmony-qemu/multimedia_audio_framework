@@ -1211,6 +1211,9 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
         case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
             HandlePipeStreamCleanEvent(event);
             break;
+        case EventAudioServerCmd::SEND_NN_STATE_CHANGE:
+            HandleSendNNStateChangeEvent(event);
+            break;
         default:
             break;
     }
@@ -1286,9 +1289,6 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE:
             HandleHeadTrackingEnabledChangeEvent(event);
-            break;
-        case EventAudioServerCmd::SEND_NN_STATE_CHANGE:
-            HandleSendNNStateChangeEvent(event);
             break;
         default:
             break;
