@@ -44,7 +44,7 @@ private:
     std::map<std::string, DeviceVolumeType> audioDeviceMap_;
 
     void ParseStreamInfos(xmlNode *node, StreamVolumeInfoMap &streamVolumeInfoMap);
-    bool ParseStreamVolumeInfoAttr(xmlNode *node, std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
+    int32_t ParseStreamVolumeInfoAttr(xmlNode *node, std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
     void ParseDeviceVolumeInfos(xmlNode *node, std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
     void ParseVolumePoints(xmlNode *node, std::shared_ptr<DeviceVolumeInfo> &deviceVolInfo);
     int32_t ParseVolumeConfig(const char *path, StreamVolumeInfoMap &streamVolumeInfoMap);

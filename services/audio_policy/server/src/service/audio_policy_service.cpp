@@ -1736,7 +1736,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         FetchDevice(false);
         ReloadSourceForDeviceChange(GetCurrentInputDeviceType(), GetCurrentOutputDeviceType(),
             "SelectInputDevice fast");
-        return true;
+        return SUCCESS;
     }
 
     AudioScene scene = GetAudioScene(true);
@@ -9437,6 +9437,7 @@ bool AudioPolicyService::IsStreamSupported(AudioStreamType streamType)
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_WAKEUP:
+        case STREAM_SYSTEM:
         case STREAM_CAMCORDER:
             return true;
         default:
