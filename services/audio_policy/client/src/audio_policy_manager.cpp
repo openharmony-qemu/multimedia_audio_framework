@@ -125,12 +125,12 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
 
 void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 {
-    std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+    std::unique_lock<std::mutex> lockRegisterCallbackMutex(registerCallbackMutex_);
     if (audioPolicyClientStubCB_ == nullptr) {
         AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null.");
         return;
     }
-    lock.unlock();
+    lockRegisterCallbackMutex.unlock();
 
     int32_t retry = RETRY_TIMES;
     sptr<IAudioPolicy> gsp = nullptr;
