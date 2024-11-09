@@ -219,7 +219,6 @@ void AudioEffectChainManagerFirst(const uint8_t* rawData, size_t size,
     }
 
     audioEffectChain->IsEmptyEffectHandles();
-    audioEffectChain->Dump();
     const uint32_t channels = *reinterpret_cast<const uint32_t*>(rawData);
     const uint64_t channelLayout = COMMON_UINT64_NUM;
     audioEffectChain->UpdateMultichannelIoBufferConfig(channels, channelLayout);

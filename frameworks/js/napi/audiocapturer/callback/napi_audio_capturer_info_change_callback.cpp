@@ -33,6 +33,9 @@ NapiAudioCapturerInfoChangeCallback::NapiAudioCapturerInfoChangeCallback(napi_en
 
 NapiAudioCapturerInfoChangeCallback::~NapiAudioCapturerInfoChangeCallback()
 {
+    if (regAcInfoChgTsfn_) {
+        napi_release_threadsafe_function(acInfoChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("Instance destroy");
 }
 
@@ -47,6 +50,16 @@ void NapiAudioCapturerInfoChangeCallback::SaveCallbackReference(napi_value args)
         "Creating reference for callback fail");
 
     callback_ = callback;
+}
+
+void NapiAudioCapturerInfoChangeCallback::CreateCaptureInfoChangeTsfn(napi_env env)
+{
+    regAcInfoChgTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "AudioCapturerChangeInfo";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env_, nullptr, nullptr, cbName, 0, 1, nullptr, CapturerChangeInfoTsfnFinalize,
+        nullptr, SafeJsCallbackCapturerChangeInfoWork, &acInfoChgTsfn_);
 }
 
 bool NapiAudioCapturerInfoChangeCallback::ContainSameJsCallback(napi_value args)
@@ -76,8 +89,7 @@ void NapiAudioCapturerInfoChangeCallback::SafeJsCallbackCapturerChangeInfoWork(
         "OnJsCallbackCapturerChangeInfo: no memory");
     std::shared_ptr<AudioCapturerChangeInfoJsCallback> safeContext(
         static_cast<AudioCapturerChangeInfoJsCallback*>(data),
-        [event](AudioCapturerChangeInfoJsCallback *ptr) {
-            napi_release_threadsafe_function(event->acInfoChgTsfn, napi_tsfn_abort);
+        [](AudioCapturerChangeInfoJsCallback *ptr) {
             delete ptr;
     });
     if (event == nullptr || event->callback_ == nullptr) {
@@ -118,15 +130,9 @@ void NapiAudioCapturerInfoChangeCallback::OnJsCallbackCapturerChangeInfo(napi_re
     CHECK_AND_RETURN_LOG(method != nullptr, "method is nullptr");
     AudioCapturerChangeInfoJsCallback *event =
         new AudioCapturerChangeInfoJsCallback {method, env_, capturerChangeInfo};
-
-    napi_value cbName;
-    event->callbackName = "AudioCapturerChangeInfo";
-    napi_create_string_utf8(event->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->env_, nullptr, nullptr, cbName, 0, 1, event, CapturerChangeInfoTsfnFinalize,
-        nullptr, SafeJsCallbackCapturerChangeInfoWork, &event->acInfoChgTsfn);
     
-    napi_acquire_threadsafe_function(event->acInfoChgTsfn);
-    napi_call_threadsafe_function(event->acInfoChgTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(acInfoChgTsfn_);
+    napi_call_threadsafe_function(acInfoChgTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

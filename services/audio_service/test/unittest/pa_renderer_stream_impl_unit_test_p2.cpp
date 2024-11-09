@@ -171,8 +171,9 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_004, TestSize.Level1)
     }
     uint64_t framePosition = 0;
     uint64_t timestamp = 0;
+    uint64_t latency = 0;
     unit->firstGetPaLatency_ = true;
-    unit->GetCurrentPosition(framePosition, timestamp);
+    unit->GetCurrentPosition(framePosition, timestamp, latency);
     EXPECT_EQ(false, unit->firstGetPaLatency_);
 }
 
@@ -196,8 +197,9 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_005, TestSize.Level1)
     }
     uint64_t framePosition = 0;
     uint64_t timestamp = 0;
+    uint64_t latency = 0;
     unit->offloadEnable_ = true;
-    int32_t ret = unit->GetCurrentPosition(framePosition, timestamp);
+    int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -367,8 +369,9 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_013, TestSize.Level1)
     }
     uint64_t framePosition = 0;
     uint64_t timestamp = 0;
+    uint64_t latency = 0;
     unit->firstGetPaLatency_ = true;
-    unit->GetCurrentPosition(framePosition, timestamp);
+    unit->GetCurrentPosition(framePosition, timestamp, latency);
     EXPECT_EQ(false, unit->firstGetPaLatency_);
 }
 
@@ -392,8 +395,9 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_014, TestSize.Level1)
     }
     uint64_t framePosition = 0;
     uint64_t timestamp = 0;
+    uint64_t latency = 0;
     unit->offloadEnable_ = true;
-    int32_t ret = unit->GetCurrentPosition(framePosition, timestamp);
+    int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 

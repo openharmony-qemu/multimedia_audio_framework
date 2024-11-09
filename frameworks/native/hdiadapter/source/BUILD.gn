@@ -25,6 +25,7 @@ ohos_shared_library("audio_capturer_source") {
   sources = [ "primary/audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -62,6 +63,7 @@ ohos_shared_library("audio_capturer_source") {
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
+  version_script = "libaudio_capturer_source.versionscript"
 }
 
 ohos_shared_library("fast_audio_capturer_source") {
@@ -75,6 +77,7 @@ ohos_shared_library("fast_audio_capturer_source") {
   sources = [ "fast/fast_audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -103,6 +106,65 @@ ohos_shared_library("fast_audio_capturer_source") {
   subsystem_name = "multimedia"
 }
 
+ohos_shared_library("bluetooth_capturer_source") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  install_enable = true
+
+  sources = [ "bluetooth/bluetooth_capturer_source.cpp" ]
+
+  cflags = [ "-fPIC" ]
+  cflags += [ "-Wall" ]
+
+  cflags_cc = cflags
+
+  include_dirs = [
+    "common",
+    "../common/include",
+    "../manager/include",
+    "../../audioutils/include",
+    "../../audioeffect/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include/",
+  ]
+
+  deps = [
+    "../../../../services/audio_service:audio_common",
+    "../../audioeffect:audio_effect",
+    "../../audioutils:audio_utils",
+    "../manager:hdiadapter_utils",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "drivers_peripheral_bluetooth:hdi_audio_bluetooth_header",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "media_foundation:media_monitor_client",
+    "samgr:samgr_proxy",
+  ]
+  defines = []
+  if (audio_framework_feature_power_manager) {
+    external_deps += [ "power_manager:powermgr_client" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+  }
+
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_shared_library("remote_audio_capturer_source") {
   sanitize = {
     cfi = true
@@ -114,6 +176,7 @@ ohos_shared_library("remote_audio_capturer_source") {
   sources = [ "remote/remote_audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -156,6 +219,7 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   sources = [ "remote_fast/remote_fast_audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -233,12 +297,14 @@ ohos_shared_library("capturer_source_adapter") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
 
   include_dirs = [
     "common",
     "file",
     "primary",
     "remote",
+    "bluetooth",
     "../common/include",
     "../devicemanager/interface",
     "../../../../interfaces/inner_api/native/audiocommon/include",
@@ -247,6 +313,7 @@ ohos_shared_library("capturer_source_adapter") {
   deps = [
     ":audio_capturer_file_source",
     ":audio_capturer_source",
+    ":bluetooth_capturer_source",
   ]
 
   if (audio_framework_feature_daudio_enable == true) {

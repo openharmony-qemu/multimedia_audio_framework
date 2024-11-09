@@ -82,9 +82,9 @@ std::shared_ptr<AudioPolicyServerHandler> GetServerHandlerTest()
 
 sptr<AudioPolicyServer> GetPolicyServerTest()
 {
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server =
+    static int32_t systemAbilityId = 3009;
+    static bool runOnCreate = false;
+    static sptr<AudioPolicyServer> server =
         sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
     return server;
 }

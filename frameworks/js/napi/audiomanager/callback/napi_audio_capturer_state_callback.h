@@ -32,13 +32,13 @@ public:
     void SaveCallbackReference(napi_value args);
     void OnCapturerStateChange(
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+    void CreateCaptureStateTsfn(napi_env env);
+    bool GetCaptureStateTsfnFlag();
 
 private:
     struct AudioCapturerStateJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> changeInfos;
-        std::string callbackName = "unknown";
-        napi_threadsafe_function amacStateTsfn = nullptr;
     };
 
     void OnJsCallbackCapturerState(std::unique_ptr<AudioCapturerStateJsCallback> &jsCb);
@@ -48,6 +48,8 @@ private:
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> capturerStateCallback_ = nullptr;
+    bool regAmacStateTsfn_ = false;
+    napi_threadsafe_function amacStateTsfn_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

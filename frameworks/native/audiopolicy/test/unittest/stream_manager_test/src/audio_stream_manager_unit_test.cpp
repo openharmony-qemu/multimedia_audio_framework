@@ -573,17 +573,17 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
         EXPECT_EQ(SUCCESS, ret);
         EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
         EXPECT_EQ(2, audioRendererChangeInfos[0]->rendererState);
-        EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.deviceRole, DeviceRole::OUTPUT_DEVICE);
-        EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.deviceType, DeviceType::DEVICE_TYPE_SPEAKER);
-        EXPECT_GE(audioRendererChangeInfos[0]->outputDeviceInfo.deviceId, MIN_DEVICE_ID);
-        EXPECT_EQ(true, (*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.samplingRate.rbegin()
+        EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.deviceRole_, DeviceRole::OUTPUT_DEVICE);
+        EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.deviceType_, DeviceType::DEVICE_TYPE_SPEAKER);
+        EXPECT_GE(audioRendererChangeInfos[0]->outputDeviceInfo.deviceId_, MIN_DEVICE_ID);
+        EXPECT_EQ(true, (*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo_.samplingRate.rbegin()
             >= SAMPLE_RATE_8000) ||
-            ((*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.samplingRate.begin()
+            ((*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo_.samplingRate.begin()
             <= SAMPLE_RATE_96000)));
-        EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.encoding,
+        EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo_.encoding,
             AudioEncodingType::ENCODING_PCM);
-        EXPECT_EQ(true, (*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.channels.rbegin() >= MONO)
-            && ((*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.channels.begin() <= CHANNEL_8)));
+        EXPECT_EQ(true, (*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo_.channels.rbegin() >= MONO)
+            && ((*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo_.channels.begin() <= CHANNEL_8)));
         audioRendererChangeInfos.clear();
     }
 
@@ -1281,15 +1281,16 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerGetCurrentCapturerC
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(1, static_cast<int32_t>(audioCapturerChangeInfos.size()));
     EXPECT_EQ(2, audioCapturerChangeInfos[0]->capturerState);
-    EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceRole, DeviceRole::INPUT_DEVICE);
-    EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceType, DeviceType::DEVICE_TYPE_MIC);
-    EXPECT_GE(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceId, MIN_DEVICE_ID);
-    EXPECT_EQ(true, (*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.samplingRate.rbegin()
-        >= SAMPLE_RATE_8000)
-        || ((*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.samplingRate.begin() <= SAMPLE_RATE_96000)));
-    EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.encoding, AudioEncodingType::ENCODING_PCM);
-    EXPECT_EQ(true, (*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.channels.rbegin() >= MONO)
-        && ((*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.channels.begin() <= CHANNEL_8)));
+    EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceRole_, DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceType_, DeviceType::DEVICE_TYPE_MIC);
+    EXPECT_GE(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceId_, MIN_DEVICE_ID);
+    EXPECT_EQ(true,
+        (*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.samplingRate.rbegin() >= SAMPLE_RATE_8000)
+        || ((*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.samplingRate.begin()
+        <= SAMPLE_RATE_96000)));
+    EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
+    EXPECT_EQ(true, (*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.channels.rbegin() >= MONO)
+        && ((*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.channels.begin() <= CHANNEL_8)));
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);

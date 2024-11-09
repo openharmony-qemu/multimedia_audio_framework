@@ -13,10 +13,13 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
-import("../../../config.gni")
-import("../../../sensor.gni")
-import("../../../window_manager.gni")
+import("../../../audio_framework_test_sources.gni")
+
+audio_effect_sources = []
+cur_path = "../../../"
+foreach(source, audio_effect_sources_template) {
+  audio_effect_sources += [ "$cur_path$source" ]
+}
 
 ohos_fuzztest("AudioEffectFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -37,6 +40,7 @@ ohos_fuzztest("AudioEffectFuzzTest") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_effect_fuzzer.cpp" ]
+  sources += audio_effect_sources
 
   deps = [
     "../../../frameworks/native/audioeffect:audio_effect",

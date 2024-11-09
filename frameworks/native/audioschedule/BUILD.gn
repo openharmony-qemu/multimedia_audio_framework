@@ -36,6 +36,7 @@ ohos_shared_library("audio_schedule") {
     "-Wall",
     "-Werror",
   ]
+  cflags += [ "-Os" ]
 
   deps = [ "../audioutils:audio_utils" ]
 

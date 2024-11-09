@@ -467,7 +467,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_022, TestSize.Le
     int32_t result = audioPolicyClient_->AddDeviceChangeWithInfoCallback(1, cb);
     EXPECT_EQ(result, SUCCESS);
 
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
     audioPolicyClient_->OnRendererDeviceChange(0, deviceInfo, reason);
     EXPECT_NE(audioPolicyClient_, nullptr);

@@ -35,7 +35,12 @@ const int32_t END_POS = 13;
 std::string GetEncryptAddr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
-        return std::string("");
+        string macHead("card=");
+        if (addr.find(macHead, 0) == 0) {
+            auto n = addr.substr(macHead.length(), addr.find(';'));
+            return string("c**=") + n + "**";
+        }
+        return "";
     }
     std::string tmp = "**:**:**:**:**:**";
     std::string out = addr;
@@ -245,14 +250,10 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
 {
     auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &descriptor) {
         if (descriptor->deviceType_ == devDesc->deviceType_ &&
-            descriptor->networkId_ == devDesc->networkId_) {
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
-                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
-                return true;
-            } else {
-                // if the disconnecting device is A2DP, need to compare mac address in addition.
-                return descriptor->macAddress_ == devDesc->macAddress_;
-            }
+            descriptor->networkId_ == devDesc->networkId_ &&
+            descriptor->deviceRole_ == devDesc->deviceRole_ &&
+            descriptor->macAddress_ == devDesc->macAddress_) {
+            return true;
         }
         return false;
     };
@@ -340,14 +341,9 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
     auto isPresent = [&deviceDescriptor](const shared_ptr<AudioDeviceDescriptor> &descriptor) {
         if (descriptor->deviceType_ == deviceDescriptor->deviceType_ &&
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
-            descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
-                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
-                return true;
-            } else {
-                // if the disconnecting device is A2DP, need to compare mac address in addition.
-                return descriptor->macAddress_ == deviceDescriptor->macAddress_;
-            }
+            descriptor->deviceRole_ == deviceDescriptor->deviceRole_ &&
+            descriptor->macAddress_ == deviceDescriptor->macAddress_) {
+            return true;
         }
         return false;
     };
@@ -421,6 +417,8 @@ std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioD
             iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
+        } else if (iter->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+            devices.append(":" + GetEncryptAddr(iter->macAddress_));
         }
         devices.append(" ");
     }
@@ -433,7 +431,7 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
     auto isPresent = [&devDesc] (const shared_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         return devDesc.deviceType_ == desc->deviceType_ && devDesc.macAddress_ == desc->macAddress_ &&
-            devDesc.networkId_ == desc->networkId_;
+            devDesc.networkId_ == desc->networkId_ && devDesc.deviceRole_ == desc->deviceRole_;
     };
 
     auto removeBeginIt = std::remove_if(descArray.begin(), descArray.end(), isPresent);
@@ -775,6 +773,19 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
         }
     }
     return audioDeviceDescriptors;
+}
+
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetDeviceByMacAddressAndDeviceType(
+    const vector<unique_ptr<AudioDeviceDescriptor>> &descs, const string &macAddress, DeviceType deviceType)
+{
+    auto isPresent = [&](const unique_ptr<AudioDeviceDescriptor> &desc) {
+        return desc && desc->macAddress_ == macAddress && desc->deviceType_ == deviceType;
+    };
+    auto it = find_if(descs.begin(), descs.end(), isPresent);
+    if (it != descs.end()) {
+        return make_unique<AudioDeviceDescriptor>(**it);
+    }
+    return make_unique<AudioDeviceDescriptor>();
 }
 
 unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManager::GetDevicePrivacyMaps()

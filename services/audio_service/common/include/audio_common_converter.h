@@ -19,12 +19,24 @@
 
 namespace OHOS {
 namespace AudioStandard {
+struct BufferBaseInfo {
+    uint8_t *buffer = nullptr;
+    size_t bufLength = 0;
+    uint32_t frameSize = 0;
+    uint32_t samplePerFrame = 0;
+    int32_t format = 0;
+    uint32_t channelCount = 0;
+    float volumeBg = 0.f;
+    float volumeEd = 0.f;
+};
+
 class AudioCommonConverter {
 public:
-    static void ConvertBufferToFloat(const uint8_t *buffer, uint32_t samplePerFrame, std::vector<float> &floatBuffer,
-                                     float volume);
-    static void ConvertBufferTo32Bit(const uint8_t *buffer, int32_t format, int32_t *dst, size_t count, float volume);
-    static void ConvertBufferTo16Bit(const uint8_t *buffer, int32_t format, int16_t *dst, size_t count, float volume);
+    static void ConvertBufferToFloat(const BufferBaseInfo &srcBuffer, std::vector<float> &floatBuffer);
+    static void ConvertFloatToFloatWithVolume(const BufferBaseInfo &srcBuffer, std::vector<float> &floatBuffer);
+    static void ConvertBufferTo32Bit(const BufferBaseInfo &srcBuffer, std::vector<char> &dstBuffer);
+    static void ConvertBufferTo16Bit(const BufferBaseInfo &srcBuffer, std::vector<char> &dstBuffer);
+
     static void ConvertFloatToAudioBuffer(const std::vector<float> &floatBuffer, uint8_t *buffer,
                                           uint32_t samplePerFrame);
 };

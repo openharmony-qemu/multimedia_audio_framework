@@ -272,7 +272,7 @@ public:
 
     float GetMaxStreamVolume(void);
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
-        const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
+        const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 
     int32_t RegisterAudioStreamPolicyServerDiedCb(
@@ -436,6 +436,8 @@ public:
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
+
+    int32_t SetVoiceRingtoneMute(bool isMute);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);

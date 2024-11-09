@@ -28,6 +28,7 @@ ohos_shared_library("audio_renderer_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -101,6 +102,8 @@ ohos_shared_library("fast_audio_renderer_sink") {
     external_deps += [ "power_manager:powermgr_client" ]
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -120,6 +123,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
 
   cflags_cc = cflags
 
@@ -177,6 +181,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -224,6 +229,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -271,6 +277,7 @@ ohos_shared_library("audio_renderer_file_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
 
   cflags_cc = cflags
 
@@ -303,6 +310,7 @@ ohos_shared_library("offload_audio_renderer_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
 
   cflags_cc = cflags
 
@@ -311,9 +319,13 @@ ohos_shared_library("offload_audio_renderer_sink") {
     "../common/include",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include/",
   ]
 
-  deps = [ "../../audioutils:audio_utils" ]
+  deps = [
+    "../../../../services/audio_service:audio_common",
+    "../../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "c_utils:utils",
@@ -349,6 +361,7 @@ ohos_shared_library("multichannel_audio_renderer_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
   cflags_cc = cflags
 
   include_dirs = [
@@ -395,6 +408,7 @@ ohos_shared_library("renderer_sink_adapter") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  cflags += [ "-Os" ]
 
   include_dirs = [
     "common",

@@ -63,6 +63,7 @@ ohos_shared_library("audio_common") {
     "-Wall",
     "-Werror",
   ]
+  cflags += [ "-Os" ]
   if (target_cpu == "arm") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
@@ -159,6 +160,7 @@ ohos_shared_library("audio_client") {
   sources = [
     "client/src/audio_anahs_manager.cpp",
     "client/src/audio_device_descriptor.cpp",
+    "client/src/audio_filter.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
@@ -228,6 +230,8 @@ ohos_shared_library("audio_client") {
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -270,6 +274,7 @@ config("audio_service_config") {
     "../../frameworks/native/hdiadapter/sink/remote_fast",
     "../../frameworks/native/hdiadapter/sink/primary",
     "../../frameworks/native/hdiadapter/sink/offload",
+    "../../frameworks/native/hdiadapter/source/bluetooth",
     "../../frameworks/native/hdiadapter/source/common",
     "../../frameworks/native/hdiadapter/source/fast",
     "../../frameworks/native/hdiadapter/source/primary",
@@ -327,9 +332,10 @@ ohos_shared_library("audio_process_service") {
     "server/src/renderer_in_server.cpp",
   ]
 
-  configs = [ ":audio_service_config" ]
+  public_configs = [ ":audio_service_config" ]
 
-  deps = [
+  public_deps = [
+    ":audio_client",
     ":audio_common",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
@@ -345,13 +351,13 @@ ohos_shared_library("audio_process_service") {
   ]
 
   if (audio_framework_feature_daudio_enable == true) {
-    deps += [
+    public_deps += [
       "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
       "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
     ]
   }
 
-  external_deps = [
+  public_external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hdf_core:libhdf_utils",
@@ -364,21 +370,24 @@ ohos_shared_library("audio_process_service") {
     "samgr:samgr_proxy",
   ]
 
-  public_external_deps = [ "bounds_checking_function:libsec_static" ]
+  public_external_deps += [ "bounds_checking_function:libsec_static" ]
 
   defines = []
   if (audio_framework_feature_power_manager) {
-    external_deps += [ "power_manager:powermgr_client" ]
+    public_external_deps += [ "power_manager:powermgr_client" ]
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
   if (ressche_enable == true) {
-    external_deps += [ "resource_schedule_service:ressched_client" ]
+    public_external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
   }
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libaudio_process_service.versionscript"
 }
 
 ohos_shared_library("audio_service") {
@@ -396,14 +405,15 @@ ohos_shared_library("audio_service") {
     "server/src/audio_manager_listener_proxy.cpp",
     "server/src/audio_manager_stub.cpp",
     "server/src/audio_server.cpp",
+    "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
     "server/src/audio_server_effect.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
 
-  configs = [ ":audio_service_config" ]
+  public_configs = [ ":audio_service_config" ]
 
-  deps = [
+  public_deps = [
     ":audio_common",
     ":audio_process_service",
     "../../frameworks/native/audioeffect:audio_effect",
@@ -415,12 +425,13 @@ ohos_shared_library("audio_service") {
     "../../frameworks/native/hdiadapter/sink:offload_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:audio_capturer_source",
+    "../../frameworks/native/hdiadapter/source:bluetooth_capturer_source",
     "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
-  external_deps = [
+  public_external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_base",
@@ -440,12 +451,12 @@ ohos_shared_library("audio_service") {
     "samgr:samgr_proxy",
   ]
 
-  public_external_deps = [ "libxml2:libxml2" ]
+  public_external_deps += [ "libxml2:libxml2" ]
 
   defines = []
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
-    external_deps += [ "config_policy:configpolicy_util" ]
+    public_external_deps += [ "config_policy:configpolicy_util" ]
   }
 
   if (build_variant == "user") {
@@ -459,19 +470,23 @@ ohos_shared_library("audio_service") {
   }
 
   if (sensor_enable == true) {
-    external_deps += [ "sensor:sensor_interface_native" ]
+    public_external_deps += [ "sensor:sensor_interface_native" ]
   }
 
   if (ressche_enable == true) {
-    external_deps += [ "resource_schedule_service:ressched_client" ]
+    public_external_deps += [ "resource_schedule_service:ressched_client" ]
   }
 
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
 
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libaudio_service.versionscript"
 }
 
 ohos_shared_library("audio_sasdk") {

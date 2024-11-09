@@ -210,7 +210,7 @@ CAudioCapturerChangeInfo MMAAudioCapturerImpl::GetAudioCapturerChangeInfo(int32_
 
 CArrDeviceDescriptor MMAAudioCapturerImpl::GetInputDevices(int32_t *errorCode)
 {
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();

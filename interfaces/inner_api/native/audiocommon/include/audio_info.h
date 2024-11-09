@@ -36,6 +36,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
 constexpr int32_t MAX_NUM_STREAMS = 3;
 constexpr int32_t RENDERER_STREAM_USAGE_SHIFT = 16;
 constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
@@ -44,6 +45,7 @@ constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
+constexpr int32_t RSS_UID = 1096;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
@@ -71,31 +73,31 @@ constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIN_SESSIONID;
 const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
 
-const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
-const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
-const std::string MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
-const std::string MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
-const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
-const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
-const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
-const std::string CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
-const std::string RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
-const std::string MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
-const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
-const std::string DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
-const std::string CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
+const char* MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
+const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
+const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
+const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
+const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
+const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
+const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
+const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
+const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
+const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
+const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
+const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
+const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 
-constexpr std::string_view PRIMARY_WAKEUP = "Built_in_wakeup";
-constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
+const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 
-const std::string INNER_CAPTURER_SOURCE = "Speaker.monitor";
-const std::string INNER_CAPTURER_SINK = "InnerCapturerSink";
-const std::string NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
-const std::string REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
-const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
-const std::string DUP_STREAM = "DupStream";
-const std::string DUAL_TONE_STREAM = "DualToneStream";
-const std::string NORMAL_STREAM = "NormalStream";
+const char* INNER_CAPTURER_SOURCE = "Speaker.monitor";
+const char* INNER_CAPTURER_SINK = "InnerCapturerSink";
+const char* NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
+const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
+const char* MONITOR_SOURCE_SUFFIX = ".monitor";
+const char* DUP_STREAM = "DupStream";
+const char* DUAL_TONE_STREAM = "DualToneStream";
+const char* NORMAL_STREAM = "NormalStream";
+}
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
@@ -294,6 +296,17 @@ enum CallbackChange : int32_t {
     CALLBACK_CAPTURER_STATE_CHANGE,
     CALLBACK_MICMUTE_STATE_CHANGE,
     CALLBACK_AUDIO_SESSION,
+    CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE,
+    CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE,
+    CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_SET_DEVICE_CHANGE,
+    CALLBACK_SET_RINGER_MODE,
+    CALLBACK_SET_MIC_STATE_CHANGE,
+    CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
+    CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
+    CALLBACK_SET_MICROPHONE_BLOCKED,
+    CALLBACK_DEVICE_CHANGE_WITH_INFO,
+    CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -304,6 +317,17 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_CAPTURER_STATE_CHANGE,
     CALLBACK_MICMUTE_STATE_CHANGE,
     CALLBACK_AUDIO_SESSION,
+    CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE,
+    CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE,
+    CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_SET_DEVICE_CHANGE,
+    CALLBACK_SET_RINGER_MODE,
+    CALLBACK_SET_MIC_STATE_CHANGE,
+    CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
+    CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
+    CALLBACK_SET_MICROPHONE_BLOCKED,
+    CALLBACK_DEVICE_CHANGE_WITH_INFO,
+    CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -565,6 +589,7 @@ struct AudioCapturerOptions {
     AudioStreamInfo streamInfo;
     AudioCapturerInfo capturerInfo;
     AudioPlaybackCaptureConfig playbackCaptureConfig;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
 struct AppInfo {
@@ -769,155 +794,6 @@ struct StreamSetStateEventInternal {
     StreamUsage streamUsage;
 };
 
-class AudioRendererChangeInfo {
-public:
-    int32_t createrUID;
-    int32_t clientUID;
-    int32_t sessionId;
-    int32_t callerPid;
-    int32_t clientPid;
-    int32_t tokenId;
-    int32_t channelCount;
-    AudioRendererInfo rendererInfo;
-    RendererState rendererState;
-    DeviceInfo outputDeviceInfo;
-    bool prerunningState = false;
-
-    AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
-    {
-        *this = audioRendererChangeInfo;
-    }
-    AudioRendererChangeInfo() = default;
-    ~AudioRendererChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(clientUID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && parcel.WriteInt32(tokenId)
-            && parcel.WriteInt32(channelCount)
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
-            && parcel.WriteInt32(rendererInfo.rendererFlags)
-            && parcel.WriteInt32(rendererInfo.originalFlag)
-            && parcel.WriteInt32(rendererInfo.samplingRate)
-            && parcel.WriteInt32(rendererInfo.format)
-            && rendererInfo.Marshalling(parcel)
-            && parcel.WriteInt32(static_cast<int32_t>(rendererState))
-            && outputDeviceInfo.Marshalling(parcel);
-    }
-    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && parcel.WriteInt32(tokenId)
-            && parcel.WriteInt32(channelCount)
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
-            && parcel.WriteInt32(rendererInfo.rendererFlags)
-            && parcel.WriteInt32(rendererInfo.originalFlag)
-            && parcel.WriteInt32(rendererInfo.samplingRate)
-            && parcel.WriteInt32(rendererInfo.format)
-            && rendererInfo.Marshalling(parcel)
-            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
-                RENDERER_INVALID)
-            && outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion);
-    }
-    void Unmarshalling(Parcel &parcel)
-    {
-        createrUID = parcel.ReadInt32();
-        clientUID = parcel.ReadInt32();
-        sessionId = parcel.ReadInt32();
-        callerPid = parcel.ReadInt32();
-        clientPid = parcel.ReadInt32();
-        tokenId = parcel.ReadInt32();
-        channelCount = parcel.ReadInt32();
-
-        rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
-        rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        rendererInfo.rendererFlags = parcel.ReadInt32();
-        rendererInfo.originalFlag = parcel.ReadInt32();
-        rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        rendererInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
-        rendererInfo.Unmarshalling(parcel);
-
-        rendererState = static_cast<RendererState>(parcel.ReadInt32());
-        outputDeviceInfo.Unmarshalling(parcel);
-    }
-};
-
-class AudioCapturerChangeInfo {
-public:
-    int32_t createrUID;
-    int32_t clientUID;
-    int32_t sessionId;
-    int32_t callerPid;
-    int32_t clientPid;
-    AudioCapturerInfo capturerInfo;
-    CapturerState capturerState;
-    DeviceInfo inputDeviceInfo;
-    bool muted;
-    uint32_t appTokenId;
-
-    AudioCapturerChangeInfo(const AudioCapturerChangeInfo &audioCapturerChangeInfo)
-    {
-        *this = audioCapturerChangeInfo;
-    }
-    AudioCapturerChangeInfo() = default;
-    ~AudioCapturerChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(clientUID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && capturerInfo.Marshalling(parcel)
-            && parcel.WriteInt32(static_cast<int32_t>(capturerState))
-            && inputDeviceInfo.Marshalling(parcel)
-            && parcel.WriteBool(muted)
-            && parcel.WriteUint32(appTokenId);
-    }
-
-    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && capturerInfo.Marshalling(parcel)
-            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(capturerState) : CAPTURER_INVALID)
-            && inputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
-            && parcel.WriteBool(muted)
-            && parcel.WriteUint32(appTokenId);
-    }
-
-    void Unmarshalling(Parcel &parcel)
-    {
-        createrUID = parcel.ReadInt32();
-        clientUID = parcel.ReadInt32();
-        sessionId = parcel.ReadInt32();
-        callerPid = parcel.ReadInt32();
-        clientPid = parcel.ReadInt32();
-        capturerInfo.Unmarshalling(parcel);
-        capturerState = static_cast<CapturerState>(parcel.ReadInt32());
-        inputDeviceInfo.Unmarshalling(parcel);
-        muted = parcel.ReadBool();
-        appTokenId = parcel.ReadUint32();
-    }
-};
-
-struct AudioStreamChangeInfo {
-    AudioRendererChangeInfo audioRendererChangeInfo;
-    AudioCapturerChangeInfo audioCapturerChangeInfo;
-};
-
 enum AudioPin {
     AUDIO_PIN_NONE = 0, // Invalid pin
     AUDIO_PIN_OUT_SPEAKER = 1 << 0, // Speaker output pin
@@ -1064,27 +940,21 @@ enum DeviceGroup {
     DEVICE_GROUP_WIRELESS,
     /** Remote cast device */
     DEVICE_GROUP_REMOTE_CAST,
-};
-
-static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
-    {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_BUILT_IN},
-    {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
-    {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN},
-    {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
-    {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
-    {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
-    {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
-    {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
-    {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+    /* earpiece device*/
+    DEVICE_GROUP_EARPIECE,
 };
 
 static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
+    static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
+        {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
+        {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
+        {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
+        {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+    };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
-    if (it == DEVICE_GROUP_FOR_VOLUME.end()) {
-        return DEVICE_GROUP_INVALID;
-    }
-    return it->second;
+    return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
 }
 
 enum RouterType {
@@ -1181,13 +1051,6 @@ enum PolicyType {
     EDM_POLICY_TYPE = 0,
     PRIVACY_POLCIY_TYPE = 1,
     TEMPORARY_POLCIY_TYPE = 2,
-};
-
-static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
-    SOURCE_TYPE_PLAYBACK_CAPTURE,
-    SOURCE_TYPE_WAKEUP,
-    SOURCE_TYPE_VIRTUAL_CAPTURE,
-    SOURCE_TYPE_REMOTE_CAST
 };
 } // namespace AudioStandard
 } // namespace OHOS

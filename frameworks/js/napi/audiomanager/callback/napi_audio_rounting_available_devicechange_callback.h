@@ -37,13 +37,14 @@ public:
     void RemoveRoutingAvailbleDeviceChangeCbRef(napi_env env, napi_value callback);
     void RemoveAllRoutinAvailbleDeviceChangeCb();
     int32_t GetRoutingAvailbleDeviceChangeCbListSize();
+    void CreateRouDevChgTsfn(napi_env env);
+    bool GetRouDevChgTsfnFlag();
 
 private:
     struct AudioRountingJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         DeviceChangeAction deviceChangeAction;
-        napi_threadsafe_function amRouDevChgTsfn = nullptr;
     };
 
     void OnJsCallbackAvailbleDeviceChange(std::unique_ptr<AudioRountingJsCallback> &jsCb);
@@ -54,6 +55,8 @@ private:
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> deviceChangeCallback_ = nullptr;
     std::list<std::pair<std::shared_ptr<AutoRef>, AudioDeviceUsage>> availableDeviceChangeCbList_;
+    bool regAmRouDevChgTsfn_ = false;
+    napi_threadsafe_function amRouDevChgTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

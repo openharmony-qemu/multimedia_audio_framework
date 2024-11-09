@@ -443,7 +443,7 @@ napi_value NapiAudioRoutingManager::SetCommunicationDevice(napi_env env, napi_ca
         CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
             "context object state is error.");
         context->intValue = napiAudioRoutingManager->audioMngr_->SetDeviceActive(
-            static_cast<ActiveDeviceType>(context->deviceType), context->isActive);
+            static_cast<DeviceType>(context->deviceType), context->isActive);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SelectInputDevice failed", NAPI_ERR_SYSTEM);
     };
 
@@ -482,7 +482,7 @@ napi_value NapiAudioRoutingManager::IsCommunicationDeviceActive(napi_env env, na
         CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
             "context object state is error.");
         context->isActive = napiAudioRoutingManager->audioMngr_->IsDeviceActive(
-            static_cast<ActiveDeviceType>(context->deviceType));
+            static_cast<DeviceType>(context->deviceType));
         context->isTrue = context->isActive;
     };
 
@@ -515,7 +515,7 @@ napi_value NapiAudioRoutingManager::IsCommunicationDeviceActiveSync(napi_env env
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr, result, "napiAudioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager->audioMngr_ != nullptr, result, "audioMngr_ nullptr");
-    bool isActive = napiAudioRoutingManager->audioMngr_->IsDeviceActive(static_cast<ActiveDeviceType>(deviceType));
+    bool isActive = napiAudioRoutingManager->audioMngr_->IsDeviceActive(static_cast<DeviceType>(deviceType));
 
     NapiParamUtils::SetValueBoolean(env, isActive, result);
     return result;
@@ -917,6 +917,9 @@ void NapiAudioRoutingManager::RegisterDeviceChangeCallback(napi_env env, size_t 
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiRoutingMgr->deviceChangeCallbackNapi_);
     cb->SaveRoutingManagerDeviceChangeCbRef(deviceFlag, args[PARAM2]);
+    if (!cb->GetDevChgTsfnFlag()) {
+        cb->CreateDevChgTsfn(env);
+    }
 }
 
 void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -953,6 +956,9 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_e
         std::static_pointer_cast<NapiAudioPreferredOutputDeviceChangeCallback>(
         napiRoutingMgr->preferredOutputDeviceCallbackNapi_);
     cb->SaveCallbackReference(streamType, args[PARAM2]);
+    if (!cb->GetPreferredOutTsfnFlag()) {
+        cb->CreatePreferredOutTsfn(env);
+    }
 }
 
 void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -988,6 +994,9 @@ void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_en
         std::static_pointer_cast<NapiAudioPreferredInputDeviceChangeCallback>(
         napiRoutingMgr->preferredInputDeviceCallbackNapi_);
     cb->SaveCallbackReference(captureInfo.sourceType, args[PARAM2]);
+    if (!cb->GetPerferredInTsfnFlag()) {
+        cb->CreatePerferredInTsfn(env);
+    }
 }
 
 void NapiAudioRoutingManager::RegisterAvaiableDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
@@ -1029,6 +1038,9 @@ void NapiAudioRoutingManager::RegisterAvaiableDeviceChangeCallback(napi_env env,
         std::static_pointer_cast<NapiAudioRountingAvailableDeviceChangeCallback>(
         napiRoutingMgr->availableDeviceChangeCallbackNapi_);
     cb->SaveRoutingAvailbleDeviceChangeCbRef(usage, args[PARAM2]);
+    if (!cb->GetRouDevChgTsfnFlag()) {
+        cb->CreateRouDevChgTsfn(env);
+    }
 }
 
 void NapiAudioRoutingManager::RegisterMicrophoneBlockedCallback(napi_env env, size_t argc, napi_value *args,
@@ -1050,6 +1062,9 @@ void NapiAudioRoutingManager::RegisterMicrophoneBlockedCallback(napi_env env, si
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiRoutingMgr->microphoneBlockedCallbackNapi_);
     cb->SaveMicrophoneBlockedCallbackReference(args[PARAM1]);
+    if (!cb->GetMicBlockedTsfnFlag()) {
+        cb->CreateMicBlockedTsfn(env);
+    }
 }
 
 napi_value NapiAudioRoutingManager::On(napi_env env, napi_callback_info info)

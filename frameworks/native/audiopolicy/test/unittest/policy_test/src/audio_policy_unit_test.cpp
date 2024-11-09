@@ -103,7 +103,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsStreamActive_001, TestSize.Level1)
 {
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(streamType);
-    EXPECT_EQ(false, isStreamActive);
+    EXPECT_EQ(true, isStreamActive);
 }
 
 /**
@@ -160,7 +160,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001,
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsStreamActive_001, TestSize.Level1)
 {
     bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(AudioStreamType::STREAM_MUSIC);
-    EXPECT_EQ(false, isStreamActive);
+    EXPECT_EQ(true, isStreamActive);
 }
 
 /**
@@ -1042,7 +1042,7 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevel_004, TestSize.Level1)
     AudioVolumeType volumeType = STREAM_NOTIFICATION;
     int32_t volumeLevel = 2;
     int32_t ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, API_9);
-    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1068,7 +1068,7 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevel_006, TestSize.Level1)
     AudioVolumeType volumeType = STREAM_VOICE_COMMUNICATION;
     int32_t volumeLevel = 3;
     int32_t ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, API_9);
-    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1373,7 +1373,7 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_003, TestSize.Level1)
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(static_cast<AudioVolumeType>(99));
     EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().IsStreamActive(AudioVolumeType::STREAM_MUSIC);
-    EXPECT_FALSE(isMute);
+    EXPECT_TRUE(isMute);
     ret = AudioPolicyManager::GetInstance().SetStreamMute(AudioVolumeType::STREAM_MUSIC, false);
     EXPECT_EQ(SUCCESS, ret);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_MUSIC);

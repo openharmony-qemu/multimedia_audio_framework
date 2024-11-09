@@ -39,6 +39,10 @@ constexpr uint32_t SCENE_TYPE_MASK = 0x00FF0000;
 constexpr uint32_t CAPTURER_ID_MASK = 0x0000FF00;
 constexpr uint32_t RENDERER_ID_MASK = 0x000000FF;
 constexpr uint32_t VOLUME_FACTOR = 100;
+const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_SCENE_MODES {
+    {ENHANCE_NONE, "ENHANCE_NONE"},
+    {ENHANCE_DEFAULT, "ENHANCE_DEFAULT"},
+};
 
 static int32_t FindEnhanceLib(const std::string &enhance,
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList,
@@ -287,8 +291,9 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
     auto it = sceneTypeToEnhanceChainMap_.find(sceneKeyCode);
     if (it != sceneTypeToEnhanceChainMap_.end() && it->second != nullptr) {
-        AUDIO_INFO_LOG("Now enhanceChain num is : %{public}u", chainNum_);
         sceneTypeToEnhanceChainCountMap_[sceneKeyCode]++;
+        AUDIO_INFO_LOG("Now enhanceChain num is:%{public}u scenKey[%{public}u] count: %{public}d", chainNum_,
+            sceneKeyCode, sceneTypeToEnhanceChainCountMap_[sceneKeyCode]);
         audioEnhanceChain = it->second;
         if (audioEnhanceChain->IsEmptyEnhanceHandles()) {
             return ERROR;
@@ -300,6 +305,8 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     if (CreateEnhanceChainInner(audioEnhanceChain, sceneKeyCode, deviceAttr, createFlag, defaultFlag)) {
         return ERROR;
     }
+    AUDIO_INFO_LOG("Now enhanceChain num is:%{public}u scenKey[%{public}u] count: %{public}d", chainNum_,
+        sceneKeyCode, sceneTypeToEnhanceChainCountMap_[sceneKeyCode]);
     // means map to default chain
     if (!createFlag) {
         return audioEnhanceChain->IsDefaultChain();
@@ -404,7 +411,6 @@ int32_t AudioEnhanceChainManager::CreateEnhanceChainInner(std::shared_ptr<AudioE
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChain != nullptr, ERROR, "AudioEnhanceChain construct failed.");
     sceneTypeToEnhanceChainMap_[sceneKeyCode] = audioEnhanceChain;
     sceneTypeToEnhanceChainCountMap_[sceneKeyCode] = 1;
-    AUDIO_INFO_LOG("Now enhanceChain num is : %{public}u", chainNum_);
     return SUCCESS;
 }
 
@@ -454,7 +460,7 @@ int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(const uint32_t
 
     auto chainMapIter = sceneTypeToEnhanceChainMap_.find(sceneKeyCode);
     if (chainMapIter == sceneTypeToEnhanceChainMap_.end() || chainMapIter->second == nullptr) {
-        AUDIO_INFO_LOG("Now enhanceChain num is : %{public}u", chainNum_);
+        AUDIO_INFO_LOG("Now enhanceChain num is:%{public}u cannot find scenKey[%{public}u]", chainNum_, sceneKeyCode);
         sceneTypeToEnhanceChainCountMap_.erase(sceneKeyCode);
         sceneTypeToEnhanceChainMap_.erase(sceneKeyCode);
         return SUCCESS;
@@ -462,7 +468,8 @@ int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(const uint32_t
     auto chainCountIter = sceneTypeToEnhanceChainCountMap_.find(sceneKeyCode);
     if (chainCountIter->second > 1) {
         chainCountIter->second--;
-        AUDIO_INFO_LOG("Now enhanceChain num is : %{public}u", chainNum_);
+        AUDIO_INFO_LOG("Now enhanceChain num is:%{public}u scenKey[%{public}u] count: %{public}d", chainNum_,
+            sceneKeyCode, chainCountIter->second);
         return SUCCESS;
     }
     if (DeleteEnhanceChainInner(chainMapIter->second, sceneKeyCode) != SUCCESS) {
@@ -508,7 +515,8 @@ int32_t AudioEnhanceChainManager::DeleteEnhanceChainInner(std::shared_ptr<AudioE
     }
     sceneTypeToEnhanceChainCountMap_.erase(sceneKeyCode);
     sceneTypeToEnhanceChainMap_.erase(sceneKeyCode);
-    AUDIO_INFO_LOG("Now enhanceChain num is : %{public}u", chainNum_);
+    AUDIO_INFO_LOG("Now enhanceChain num is:%{public}u scenKey[%{public}u] count: %{public}d", chainNum_,
+        sceneKeyCode, 0);
     return SUCCESS;
 }
 

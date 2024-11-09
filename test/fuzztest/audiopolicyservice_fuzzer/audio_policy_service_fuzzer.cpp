@@ -151,7 +151,8 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
     uint8_t num = *reinterpret_cast<const uint8_t *>(rawData);
     DeviceType deviceType = static_cast<DeviceType>(num % DEVICE_TYPE_FILE_SOURCE);
     bool isConnected = static_cast<bool>(num % MOD_NUM_TWO);
-    GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(deviceType, isConnected);
+    AudioDeviceDescriptor audioDeviceDescriptor;
+    GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
 
     GetServerPtr()->audioPolicyService_.IsA2dpOffloadConnected();
     int32_t state = (num % MOD_NUM_TWO) + CONNECTING_NUMBER; // DATA_LINK_CONNECTING = 10, DATA_LINK_CONNECTED = 11;
@@ -263,8 +264,7 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.FilterSinkInputs(fuzzInt32One);
     GetServerPtr()->audioPolicyService_.FilterSourceOutputs(fuzzInt32One);
     GetServerPtr()->audioPolicyService_.RememberRoutingInfo(fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzDeviceType, fuzzBool);
-    GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzDeviceType, fuzzBool, fuzzString, fuzzString);
+    GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzAudioDeviceDescriptor, fuzzBool);
 }
 
 void AudioDeviceConnectTest(const uint8_t *rawData, size_t size)

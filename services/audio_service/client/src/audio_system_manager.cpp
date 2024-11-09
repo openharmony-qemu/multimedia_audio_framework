@@ -243,37 +243,23 @@ AudioScene AudioSystemManager::GetAudioScene() const
     return AudioPolicyManager::GetInstance().GetAudioScene();
 }
 
-int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool flag) const
+int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag) const
 {
     AUDIO_INFO_LOG("device: %{public}d", deviceType);
-    switch (deviceType) {
-        case EARPIECE:
-        case SPEAKER:
-        case BLUETOOTH_SCO:
-        case USB_HEADSET:
-        case FILE_SINK_DEVICE:
-            break;
-        default:
-            AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
-            return ERR_NOT_SUPPORTED;
+    if (!IsActiveDeviceType(deviceType)) {
+        AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
+        return ERR_NOT_SUPPORTED;
     }
 
     /* Call Audio Policy SetDeviceActive */
     return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag));
 }
 
-bool AudioSystemManager::IsDeviceActive(ActiveDeviceType deviceType) const
+bool AudioSystemManager::IsDeviceActive(DeviceType deviceType) const
 {
-    switch (deviceType) {
-        case EARPIECE:
-        case SPEAKER:
-        case BLUETOOTH_SCO:
-        case USB_HEADSET:
-        case FILE_SINK_DEVICE:
-            break;
-        default:
-            AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
-            return false;
+    if (!IsActiveDeviceType(deviceType)) {
+        AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
+        return ERR_NOT_SUPPORTED;
     }
 
     /* Call Audio Policy IsDeviceActive */
@@ -300,6 +286,7 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
         case STREAM_CAMCORDER:
@@ -435,6 +422,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
         case STREAM_RING:
         case STREAM_MUSIC:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_VOICE_RING:
@@ -464,6 +452,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
             break;
@@ -541,6 +530,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
             break;
@@ -571,6 +561,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
             break;
@@ -658,6 +649,12 @@ int32_t AudioSystemManager::SetMicrophoneMute(bool isMute)
     return AudioPolicyManager::GetInstance().SetMicrophoneMute(isMute);
 }
 
+int32_t AudioSystemManager::SetVoiceRingtoneMute(bool isMute)
+{
+    AUDIO_INFO_LOG("Set Voice Ringtone is %{public}d", isMute);
+    return AudioPolicyManager::GetInstance().SetVoiceRingtoneMute(isMute);
+}
+
 bool AudioSystemManager::IsMicrophoneMute()
 {
     std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
@@ -742,7 +739,8 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     // operation chack
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::INPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an input device");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter->uid >= 0, ERR_INVALID_PARAM, "invalid uid.");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter->uid >= 0 || (audioCapturerFilter->uid == -1),
+        ERR_INVALID_PARAM, "invalid uid.");
     AUDIO_DEBUG_LOG("[%{public}d] SelectInputDevice: uid<%{public}d> device<type:%{public}d>",
         getpid(), audioCapturerFilter->uid, static_cast<int32_t>(audioDeviceDescriptors[0]->deviceType_));
 
@@ -1536,7 +1534,7 @@ AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImp
     AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl destroy");
 }
 
-int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const
+int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address) const
 {
     AUDIO_INFO_LOG("device: %{public}d", deviceType);
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),

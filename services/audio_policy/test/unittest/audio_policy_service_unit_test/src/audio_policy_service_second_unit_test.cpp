@@ -475,50 +475,101 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_001, TestSize.Level1
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     std::string sinkPortName = "";
     std::string networkId = "";
+    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     int32_t ret;
 
     server->audioPolicyService_.normalVoipFlag_ = false;
     server->audioPolicyService_.enableFastVoip_ = false;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId);
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     networkId = LOCAL_NETWORK_ID;
     server->audioPolicyService_.normalVoipFlag_ = true;
     server->audioPolicyService_.enableFastVoip_ = true;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId);
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = PRIMARY_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
     server->audioPolicyService_.enableFastVoip_ = false;
     server->audioPolicyService_.normalVoipFlag_ = false;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId);
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = BLUETOOTH_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
     server->audioPolicyService_.enableFastVoip_ = false;
     server->audioPolicyService_.normalVoipFlag_ = false;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId);
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = PRIMARY_SPEAKER;
     networkId = LOCAL_NETWORK_ID;
     server->audioPolicyService_.enableFastVoip_ = true;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId);
-    EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = USB_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId);
-    EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = PRIMARY_SPEAKER;
     networkId = LOCAL_NETWORK_ID;
     server->audioPolicyService_.enableFastVoip_ = false;
     server->audioPolicyService_.normalVoipFlag_ = false;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId);
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_VOIP_DIRECT);
+}
+
+/**
+ * @tc.name  : Test GetVoipRendererFlag.
+ * @tc.number: GetVoipRendererFlag_002
+ * @tc.desc  : Test GetVoipRendererFlag interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1)
+{
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    std::string sinkPortName = "";
+    std::string networkId = "";
+    AudioSamplingRate samplingRate = SAMPLE_RATE_16000;
+    int32_t ret;
+
+    sinkPortName = PRIMARY_SPEAKER;
+    networkId = LOCAL_NETWORK_ID;
+    server->audioPolicyService_.enableFastVoip_ = true;
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
+
+    sinkPortName = USB_SPEAKER;
+    networkId = REMOTE_NETWORK_ID;
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
+
+    samplingRate = SAMPLE_RATE_48000;
+    sinkPortName = PRIMARY_SPEAKER;
+    networkId = LOCAL_NETWORK_ID;
+    server->audioPolicyService_.enableFastVoip_ = true;
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
+
+    sinkPortName = USB_SPEAKER;
+    networkId = REMOTE_NETWORK_ID;
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
+
+    samplingRate = SAMPLE_RATE_44100;
+    sinkPortName = PRIMARY_SPEAKER;
+    networkId = LOCAL_NETWORK_ID;
+    server->audioPolicyService_.enableFastVoip_ = true;
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
+
+    sinkPortName = USB_SPEAKER;
+    networkId = REMOTE_NETWORK_ID;
+    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
+
 }
 
 /**
@@ -590,9 +641,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetProcessDeviceInfo_001, TestSize.Level
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     AudioProcessConfig config;
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     int32_t ret;
-    
+
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
@@ -627,13 +678,13 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipDeviceInfo_001, TestSize.Level1)
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     AudioRendererInfo rendererInfo;
     AudioProcessConfig config;
-    DeviceInfo deviceInfo;
-    deviceInfo.deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList =
         AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
     int32_t type;
     int32_t ret;
-    
+
     type = AUDIO_FLAG_NORMAL;
     ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, ERROR);
@@ -663,7 +714,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetSharedVolume_001, TestSize.Level1)
     AudioVolumeType streamType = AudioStreamType::STREAM_RING;
     DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
     Volume vol;
-    
+
     bool ret = server->audioPolicyService_.GetSharedVolume(streamType, deviceType, vol);
     EXPECT_EQ(ret, false);
 }
@@ -784,7 +835,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetPipeNameByDeviceForEc_001, TestSize.L
     deviceType = DeviceType::DEVICE_TYPE_MAX;
     pipeNameByDeviceForEc = server->audioPolicyService_.GetPipeNameByDeviceForEc(role, deviceType);
     EXPECT_EQ(pipeNameByDeviceForEc, PIPE_PRIMARY_OUTPUT_UNITTEST);
-    
+
     role = ROLE_SOURCE;
     deviceType = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
     pipeNameByDeviceForEc = server->audioPolicyService_.GetPipeNameByDeviceForEc(role, deviceType);
@@ -849,7 +900,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, ReloadSourceModuleForEc_001, TestSize.Le
     server->audioPolicyService_.audioScene_ = AudioScene::AUDIO_SCENE_PHONE_CHAT;
     server->audioPolicyService_.normalSourceOpened_ = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
     server->audioPolicyService_.ReloadSourceModuleForEc(inputDevice, outputDevice, isForceReload);
-    
+
     inputDevice = DeviceType::DEVICE_TYPE_MIC;
     outputDevice = DeviceType::DEVICE_TYPE_SPEAKER;
     server->audioPolicyService_.audioEcInfo_.inputDevice = DeviceType::DEVICE_TYPE_MIC;
@@ -1192,7 +1243,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.L
 HWTEST_F(AudioPolicyServiceExtUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    
+
     server->audioPolicyService_.currentActiveDevice_.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.GetA2dpOffloadCodecAndSendToDsp();
 

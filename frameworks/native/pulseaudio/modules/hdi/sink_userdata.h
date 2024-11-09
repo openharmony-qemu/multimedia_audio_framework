@@ -76,6 +76,7 @@ struct Userdata {
     bool isFirstStarted;
     bool isEffectBufferAllocated;
     pa_hashmap *sceneToCountMap;
+    pa_hashmap *sceneToResamplerMap;
     uint64_t lastRecodedLatency;
     uint32_t continuesGetLatencyErrCount;
     uint32_t streamAvailable;

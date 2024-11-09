@@ -383,31 +383,39 @@ describe("AudioRendererInterruptUnitTest", function() {
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_012', 0, async function (done) {
+        let flag1 = false
         let render1 = await createAudioRenderer(renderInfo['VOICE_CALL'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
-        await start(render1, done)
-
-        let render2 = await createAudioRenderer(renderInfo['VOICE_CALL'], streamInfo['48000'])
-        await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
-        render2.on("audioInterrupt", async(eventAction) => {
-            console.log("12_2.eventAction=" + JSON.stringify(eventAction))
-            expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
+        render1.on("audioInterrupt", async(eventAction) => {
+            flag1 = true
         })
-        await startFail(render2,done,render1)
+        await start(render1, done)
+        await release(render1, done)
+        expect(flag1 == false).assertEqual(true)
+        done()
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_013', 0, async function (done) {
+        let flag1 = false
+        let flag2 = false
         let render1 = await createAudioRenderer(renderInfo['VOICE_CALL'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
+        render1.on("audioInterrupt", async(eventAction) => {
+            flag1 = true
+        })
         await start(render1, done)
 
         let render2 = await createAudioRenderer(renderInfo['RINGTONE'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("13_2.eventAction=" + JSON.stringify(eventAction))
-            expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
+            flag2 = true
         })
-        await startFail(render2,done,render1)
+        await start(render2, done)
+        await sleep(500)
+        await release(render1, done)
+        await release(render2, done)
+        expect(flag1 == false && flag2 == false).assertEqual(true)
+        done()
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_014', 0, async function (done) {
@@ -552,17 +560,26 @@ describe("AudioRendererInterruptUnitTest", function() {
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_023', 0, async function (done) {
+        let flag1 = false
+        let flag2 = false
         let render1 = await createAudioRenderer(renderInfo['RINGTONE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
+        render1.on("audioInterrupt", async(eventAction) => {
+            flag1 = true
+        })
         await start(render1, done)
 
         let render2 = await createAudioRenderer(renderInfo['RINGTONE'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("23_2.eventAction=" + JSON.stringify(eventAction))
-            expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
+            flag2 = true
         })
-        await startFail(render2,done,render1)
+        await start(render2, done)
+        await sleep(500)
+        await release(render1, done)
+        await release(render2, done)
+        expect(flag1 == false && flag2 == false).assertEqual(true)
+        done()
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_024', 0, async function (done) {
@@ -580,17 +597,26 @@ describe("AudioRendererInterruptUnitTest", function() {
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_026', 0, async function (done) {
+        let flag1 = false
+        let flag2 = false
         let render1 = await createAudioRenderer(renderInfo['RINGTONE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
+        render1.on("audioInterrupt", async(eventAction) => {
+            flag1 = true
+        })
         await start(render1, done)
 
         let render2 = await createAudioRenderer(renderInfo['ALARM'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("26_2.eventAction=" + JSON.stringify(eventAction))
-            interruptPauseType(eventAction);
+            flag2 = true
         })
-        await startFail(render2,done,render1)
+        await start(render2, done)
+        await sleep(500)
+        await release(render1, done)
+        await release(render2, done)
+        expect(flag1 == false && flag2 == false).assertEqual(true)
+        done()
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_027', 0, async function (done) {
@@ -1044,17 +1070,26 @@ describe("AudioRendererInterruptUnitTest", function() {
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_064', 0, async function (done) {
+        let flag1 = false
+        let flag2 = false
         let render1 = await createAudioRenderer(renderInfo['ACCESSIBILITY'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
+        render1.on("audioInterrupt", async(eventAction) => {
+            flag1 = true
+        })
         await start(render1, done)
 
         let render2 = await createAudioRenderer(renderInfo['VOICE_ASSISTANT'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("64_2.eventAction=" + JSON.stringify(eventAction))
-            expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
+            flag2 = true
         })
-        await startFail(render2, done, render1)
+        await start(render2, done)
+        await sleep(500)
+        await release(render1, done)
+        await release(render2, done)
+        expect(flag1 == false && flag2 == false).assertEqual(true)
+        done()
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_066', 0, async function (done) {

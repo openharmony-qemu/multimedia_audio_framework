@@ -33,9 +33,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const int32_t HDF_ERR_INVALID_PARAM = -1;
+    AudioDevBusUsbDevice g_audioUsbDeviceList[AUDIO_UEVENT_USB_DEVICE_COUNT] = {};
 } // namespace
-
-AudioDevBusUsbDevice g_audioUsbDeviceList[AUDIO_UEVENT_USB_DEVICE_COUNT] = {};
 
 void AudioSocketThreadUnitTest::SetUpTestCase(void) {}
 void AudioSocketThreadUnitTest::TearDownTestCase(void) {}

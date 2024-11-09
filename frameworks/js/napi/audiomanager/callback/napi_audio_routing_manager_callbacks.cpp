@@ -36,7 +36,26 @@ NapiAudioPreferredOutputDeviceChangeCallback::NapiAudioPreferredOutputDeviceChan
 
 NapiAudioPreferredOutputDeviceChangeCallback::~NapiAudioPreferredOutputDeviceChangeCallback()
 {
+    if (regAmOutputDevChgTsfn_) {
+        napi_release_threadsafe_function(amOutputDevChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioPreferredOutputDeviceChangeCallback: instance destroy");
+}
+
+void NapiAudioPreferredOutputDeviceChangeCallback::CreatePreferredOutTsfn(napi_env env)
+{
+    regAmOutputDevChgTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "PreferredOutputDeviceChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        ActiveOutputDeviceChangeTsfnFinalize, nullptr, SafeJsCallbackActiveOutputDeviceChangeWork,
+        &amOutputDevChgTsfn_);
+}
+
+bool NapiAudioPreferredOutputDeviceChangeCallback::GetPreferredOutTsfnFlag()
+{
+    return regAmOutputDevChgTsfn_;
 }
 
 void NapiAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(AudioStreamType streamType,
@@ -116,8 +135,7 @@ void NapiAudioPreferredOutputDeviceChangeCallback::SafeJsCallbackActiveOutputDev
         "OnJsCallbackActiveOutputDeviceChange: no memory");
     std::shared_ptr<AudioActiveOutputDeviceChangeJsCallback> safeContext(
         static_cast<AudioActiveOutputDeviceChangeJsCallback*>(data),
-        [event](AudioActiveOutputDeviceChangeJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amOutputDevChgTsfn, napi_tsfn_abort);
+        [](AudioActiveOutputDeviceChangeJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -164,14 +182,8 @@ void NapiAudioPreferredOutputDeviceChangeCallback::OnJsCallbackActiveOutputDevic
     AudioActiveOutputDeviceChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        ActiveOutputDeviceChangeTsfnFinalize, nullptr, SafeJsCallbackActiveOutputDeviceChangeWork,
-        &event->amOutputDevChgTsfn);
-
-    napi_acquire_threadsafe_function(event->amOutputDevChgTsfn);
-    napi_call_threadsafe_function(event->amOutputDevChgTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amOutputDevChgTsfn_);
+    napi_call_threadsafe_function(amOutputDevChgTsfn_, event, napi_tsfn_blocking);
 }
 
 NapiAudioPreferredInputDeviceChangeCallback::NapiAudioPreferredInputDeviceChangeCallback(napi_env env)
@@ -182,6 +194,9 @@ NapiAudioPreferredInputDeviceChangeCallback::NapiAudioPreferredInputDeviceChange
 
 NapiAudioPreferredInputDeviceChangeCallback::~NapiAudioPreferredInputDeviceChangeCallback()
 {
+    if (regAmInputDevChgTsfn_) {
+        napi_release_threadsafe_function(amInputDevChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioPreferredInputDeviceChangeCallback: instance destroy");
 }
 
@@ -204,6 +219,22 @@ void NapiAudioPreferredInputDeviceChangeCallback::SaveCallbackReference(SourceTy
     preferredInputDeviceCbList_.push_back({cb, sourceType});
     AUDIO_INFO_LOG("Save callback reference success, prefer input device callback list size [%{public}zu]",
         preferredInputDeviceCbList_.size());
+}
+
+void NapiAudioPreferredInputDeviceChangeCallback::CreatePerferredInTsfn(napi_env env)
+{
+    regAmInputDevChgTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "PreferredInputDeviceChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        ActiveInputDeviceChangeTsfnFinalize, nullptr, SafeJsCallbackActiveInputDeviceChangeWork,
+        &amInputDevChgTsfn_);
+}
+
+bool NapiAudioPreferredInputDeviceChangeCallback::GetPerferredInTsfnFlag()
+{
+    return regAmInputDevChgTsfn_;
 }
 
 void NapiAudioPreferredInputDeviceChangeCallback::RemoveCallbackReference(napi_env env, napi_value callback)
@@ -259,8 +290,7 @@ void NapiAudioPreferredInputDeviceChangeCallback::SafeJsCallbackActiveInputDevic
         "OnJsCallbackActiveInputDeviceChange: no memory");
     std::shared_ptr<AudioActiveInputDeviceChangeJsCallback> safeContext(
         static_cast<AudioActiveInputDeviceChangeJsCallback*>(data),
-        [event](AudioActiveInputDeviceChangeJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amInputDevChgTsfn, napi_tsfn_abort);
+        [](AudioActiveInputDeviceChangeJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -305,14 +335,8 @@ void NapiAudioPreferredInputDeviceChangeCallback::OnJsCallbackActiveInputDeviceC
     AudioActiveInputDeviceChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        ActiveInputDeviceChangeTsfnFinalize, nullptr, SafeJsCallbackActiveInputDeviceChangeWork,
-        &event->amInputDevChgTsfn);
-
-    napi_acquire_threadsafe_function(event->amInputDevChgTsfn);
-    napi_call_threadsafe_function(event->amInputDevChgTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amInputDevChgTsfn_);
+    napi_call_threadsafe_function(amInputDevChgTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

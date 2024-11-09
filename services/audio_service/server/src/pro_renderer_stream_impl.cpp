@@ -22,7 +22,7 @@
 #include "audio_utils.h"
 #include "securec.h"
 #include "policy_handler.h"
-#include "audio_common_converter.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,10 +34,11 @@ constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
 constexpr uint32_t DOUBLE_VALUE = 2;
 constexpr int32_t DEFAULT_RESAMPLE_QUANTITY = 2;
 constexpr int32_t STEREO_CHANNEL_COUNT = 2;
-constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 4;
+constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 2;
 constexpr int32_t DRAIN_WAIT_TIMEOUT_TIME = 100;
 constexpr int32_t FIRST_FRAME_TIMEOUT_TIME = 500;
 const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
+const std::string DEVICE_NAME = "primary";
 
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
     : isDirect_(isDirect),
@@ -201,6 +202,7 @@ int32_t ProRendererStreamImpl::Pause(bool isStandby)
     if (isFirstFrame_) {
         firstFrameSync_.notify_all();
     }
+    AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.f);
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_PAUSED);
@@ -261,6 +263,7 @@ int32_t ProRendererStreamImpl::Stop()
     if (isFirstFrame_) {
         firstFrameSync_.notify_all();
     }
+    AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.f);
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
@@ -299,7 +302,7 @@ int32_t ProRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
+int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
 {
     int64_t timeSec = 0;
     int64_t timeNsec = 0;
@@ -308,6 +311,7 @@ int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint6
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
     timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    latency = 0;
     return SUCCESS;
 }
 
@@ -334,6 +338,7 @@ int32_t ProRendererStreamImpl::SetRate(int32_t rate)
         default:
             return ERR_INVALID_PARAM;
     }
+    (void)currentRate;
     renderRate_ = rate;
     return SUCCESS;
 }
@@ -405,40 +410,38 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         return ERR_WRITE_BUFFER;
     }
     std::lock_guard lock(peekMutex);
-    float volume = GetStreamVolume();
+    GetStreamVolume();
     if (isNeedMcr_ && !isNeedResample_) {
-        ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength, volume);
+        ConvertSrcToFloat(bufferDesc);
         downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleDesBuffer.data());
         ConvertFloatToDes(writeIndex);
     } else if (isNeedMcr_ && isNeedResample_) {
-        ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength, volume);
+        ConvertSrcToFloat(bufferDesc);
         downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleSrcBuffer.data());
     }
     if (isNeedResample_) {
         if (!isNeedMcr_) {
-            ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength, volume);
+            ConvertSrcToFloat(bufferDesc);
         }
         resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
         DumpFileUtil::WriteDumpFile(dumpFile_, resampleDesBuffer.data(), resampleDesBuffer.size() * sizeof(float));
         ConvertFloatToDes(writeIndex);
     } else if (!isNeedMcr_) {
-        auto streamInfo = processConfig_.streamInfo;
-        uint32_t samplePerFrame = GetSamplePerFrame(streamInfo.format);
-        uint32_t frameLength = bufferDesc.bufLength / samplePerFrame;
+        bufferInfo_.bufLength = bufferDesc.bufLength;
+        bufferInfo_.frameSize = bufferDesc.bufLength / bufferInfo_.samplePerFrame;
+        bufferInfo_.buffer = bufferDesc.buffer;
         if (desFormat_ == AudioSampleFormat::SAMPLE_S16LE) {
-            AudioCommonConverter::ConvertBufferTo16Bit(bufferDesc.buffer, streamInfo.format,
-                reinterpret_cast<int16_t *>(sinkBuffer_[writeIndex].data()), frameLength, volume);
+            AudioCommonConverter::ConvertBufferTo16Bit(bufferInfo_, sinkBuffer_[writeIndex]);
         } else {
-            AudioCommonConverter::ConvertBufferTo32Bit(bufferDesc.buffer, streamInfo.format,
-                reinterpret_cast<int32_t *>(sinkBuffer_[writeIndex].data()), frameLength, volume);
+            AudioCommonConverter::ConvertBufferTo32Bit(bufferInfo_, sinkBuffer_[writeIndex]);
         }
     }
     readQueue_.emplace(writeIndex);
     if (isFirstFrame_) {
         firstFrameSync_.notify_all();
     }
-    AUDIO_DEBUG_LOG("buffer length:%{public}zu ,sink buffer length:%{public}zu,volume:%{public}f", bufferDesc.bufLength,
-        sinkBuffer_[0].size(), volume);
+    AUDIO_DEBUG_LOG("buffer length:%{public}zu ,sink buffer length:%{public}zu", bufferDesc.bufLength,
+        sinkBuffer_[0].size());
     totalBytesWritten_ += bufferDesc.bufLength;
     sinkBytesWritten_ += bufferDesc.bufLength;
     return SUCCESS;
@@ -652,29 +655,19 @@ void ProRendererStreamImpl::SetOffloadDisable()
     }
 }
 
-void ProRendererStreamImpl::ConvertSrcToFloat(uint8_t *buffer, size_t bufLength, float volume)
+void ProRendererStreamImpl::ConvertSrcToFloat(const BufferDesc &bufferDesc)
 {
-    auto streamInfo = processConfig_.streamInfo;
-    uint32_t samplePerFrame = GetSamplePerFrame(streamInfo.format);
-    if (streamInfo.format == AudioSampleFormat::SAMPLE_F32LE) {
-        if (volume >= 1.0f) {
-            auto error =
-                memcpy_s(resampleSrcBuffer.data(), resampleSrcBuffer.size() * samplePerFrame, buffer, bufLength);
-            if (error != EOK) {
-                AUDIO_ERR_LOG("copy failed");
-            }
-        } else {
-            float *tempBuffer = reinterpret_cast<float *>(buffer);
-            for (uint32_t i = 0; i < resampleSrcBuffer.size(); i++) {
-                resampleSrcBuffer[i] = volume * tempBuffer[i];
-            }
-        }
+    bufferInfo_.buffer = bufferDesc.buffer;
+    bufferInfo_.bufLength = bufferDesc.bufLength;
+    bufferInfo_.frameSize = bufferDesc.bufLength / bufferInfo_.samplePerFrame;
+
+    if (bufferInfo_.format == AudioSampleFormat::SAMPLE_F32LE) {
+        AudioCommonConverter::ConvertFloatToFloatWithVolume(bufferInfo_, resampleSrcBuffer);
         return;
     }
-
-    AUDIO_DEBUG_LOG("ConvertSrcToFloat resample buffer,samplePerFrame:%{public}d,size:%{public}zu", samplePerFrame,
-        resampleSrcBuffer.size());
-    AudioCommonConverter::ConvertBufferToFloat(buffer, samplePerFrame, resampleSrcBuffer, volume);
+    AUDIO_DEBUG_LOG("ConvertSrcToFloat resample buffer,samplePerFrame:%{public}d,size:%{public}zu",
+        bufferInfo_.samplePerFrame, resampleSrcBuffer.size());
+    AudioCommonConverter::ConvertBufferToFloat(bufferInfo_, resampleSrcBuffer);
 }
 
 void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
@@ -692,16 +685,16 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
         reinterpret_cast<uint8_t *>(sinkBuffer_[writeIndex].data()), samplePerFrame);
 }
 
-float ProRendererStreamImpl::GetStreamVolume()
+void ProRendererStreamImpl::GetStreamVolume()
 {
-    float volume = 1.0f;
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
-    DeviceType currentOutputDevice = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    Volume vol = {true, 1.0f, 0};
-    if (PolicyHandler::GetInstance().GetSharedVolume(volumeType, currentOutputDevice, vol)) {
-        volume = vol.isMute ? 0 : vol.volumeFloat;
+    bufferInfo_.volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
+    bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME);
+    if (bufferInfo_.volumeBg != bufferInfo_.volumeEd) {
+        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, bufferInfo_.volumeEd);
+        AudioVolume::GetInstance()->Monitor(streamIndex_, true);
+        AUDIO_INFO_LOG("audio volume begin:%{public}f,end:%{public}f", bufferInfo_.volumeBg, bufferInfo_.volumeEd);
     }
-    return volume;
 }
 
 void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
@@ -713,6 +706,10 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     handleTimeModel_.ConfigSampleRate(currentRate_);
+    bufferInfo_.channelCount = streamInfo.channels;
+    bufferInfo_.format = streamInfo.format;
+    bufferInfo_.samplePerFrame = GetSamplePerFrame(streamInfo.format);
+    bufferInfo_.frameSize = spanSizeInFrame_;
 }
 
 void ProRendererStreamImpl::BlockStream() noexcept

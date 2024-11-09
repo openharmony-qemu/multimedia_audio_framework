@@ -44,30 +44,6 @@ namespace {
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
 }
 
-static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
-{
-    enum HdiAdapterFormat adapterFormat;
-    switch (format) {
-        case AudioSampleFormat::SAMPLE_U8:
-            adapterFormat = HdiAdapterFormat::SAMPLE_U8;
-            break;
-        case AudioSampleFormat::SAMPLE_S16LE:
-            adapterFormat = HdiAdapterFormat::SAMPLE_S16;
-            break;
-        case AudioSampleFormat::SAMPLE_S24LE:
-            adapterFormat = HdiAdapterFormat::SAMPLE_S24;
-            break;
-        case AudioSampleFormat::SAMPLE_S32LE:
-            adapterFormat = HdiAdapterFormat::SAMPLE_S32;
-            break;
-        default:
-            adapterFormat = HdiAdapterFormat::INVALID_WIDTH;
-            break;
-    }
-
-    return adapterFormat;
-}
-
 AudioEndpointSeparate::AudioEndpointSeparate(EndpointType type, uint64_t id,
     AudioStreamType streamType) : endpointType_(type), id_(id), streamType_(streamType)
 {
@@ -77,7 +53,7 @@ AudioEndpointSeparate::AudioEndpointSeparate(EndpointType type, uint64_t id,
 std::string AudioEndpointSeparate::GetEndpointName()
 {
     // temp method to get device key, should be same with AudioService::GetAudioEndpointForDevice.
-    return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceId) + "_" + std::to_string(id_);
+    return deviceInfo_.networkId_ + std::to_string(deviceInfo_.deviceId_) + "_" + std::to_string(id_);
 }
 
 bool AudioEndpointSeparate::ShouldInnerCap()
@@ -188,25 +164,25 @@ void AudioEndpointSeparate::Dump(std::string &dumpString)
     dumpString += "\n";
 }
 
-bool AudioEndpointSeparate::Config(const DeviceInfo &deviceInfo)
+bool AudioEndpointSeparate::Config(const AudioDeviceDescriptor &deviceInfo)
 {
-    AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole);
-    if (deviceInfo.deviceRole == INPUT_DEVICE || deviceInfo.networkId != LOCAL_NETWORK_ID) {
+    AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole_);
+    if (deviceInfo.deviceRole_ == INPUT_DEVICE || deviceInfo.networkId_ != LOCAL_NETWORK_ID) {
         return false;
     }
 
     deviceInfo_ = deviceInfo;
-    if (!deviceInfo_.audioStreamInfo.CheckParams()) {
+    if (!deviceInfo_.audioStreamInfo_.CheckParams()) {
         AUDIO_ERR_LOG("%{public}s samplingRate or channels size is 0", __func__);
         return false;
     }
     dstStreamInfo_ = {
-        *deviceInfo.audioStreamInfo.samplingRate.rbegin(),
-        deviceInfo.audioStreamInfo.encoding,
-        deviceInfo.audioStreamInfo.format,
-        *deviceInfo.audioStreamInfo.channels.rbegin()
+        *deviceInfo.audioStreamInfo_.samplingRate.rbegin(),
+        deviceInfo.audioStreamInfo_.encoding,
+        deviceInfo.audioStreamInfo_.format,
+        *deviceInfo.audioStreamInfo_.channels.rbegin()
     };
-    dstStreamInfo_.channelLayout = deviceInfo.audioStreamInfo.channelLayout;
+    dstStreamInfo_.channelLayout = deviceInfo.audioStreamInfo_.channelLayout;
 
     fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
 
@@ -215,8 +191,8 @@ bool AudioEndpointSeparate::Config(const DeviceInfo &deviceInfo)
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
     attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
-    attr.deviceNetworkId = deviceInfo.networkId.c_str();
-    attr.deviceType = static_cast<int32_t>(deviceInfo.deviceType);
+    attr.deviceNetworkId = deviceInfo.networkId_.c_str();
+    attr.deviceType = static_cast<int32_t>(deviceInfo.deviceType_);
 
     fastSink_->Init(attr);
     if (!fastSink_->IsInited()) {
@@ -242,10 +218,10 @@ bool AudioEndpointSeparate::Config(const DeviceInfo &deviceInfo)
     return true;
 }
 
-int32_t AudioEndpointSeparate::GetAdapterBufferInfo(const DeviceInfo &deviceInfo)
+int32_t AudioEndpointSeparate::GetAdapterBufferInfo(const AudioDeviceDescriptor &deviceInfo)
 {
     int32_t ret = 0;
-    AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole);
+    AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole_);
 
     CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr, ERR_INVALID_HANDLE, "%{public}s fast sink is null.", __func__);
     ret = fastSink_->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_,
@@ -261,9 +237,9 @@ int32_t AudioEndpointSeparate::GetAdapterBufferInfo(const DeviceInfo &deviceInfo
     return SUCCESS;
 }
 
-int32_t AudioEndpointSeparate::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
+int32_t AudioEndpointSeparate::PrepareDeviceBuffer(const AudioDeviceDescriptor &deviceInfo)
 {
-    AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole);
+    AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole_);
     if (dstAudioBuffer_ != nullptr) {
         AUDIO_INFO_LOG("%{public}s endpoint buffer is preapred, fd:%{public}d", __func__, dstBufferFd_);
         return SUCCESS;
@@ -314,7 +290,7 @@ void AudioEndpointSeparate::InitAudiobuffer(bool resetReadWritePos)
             AUDIO_ERR_LOG("InitAudiobuffer failed.");
             return;
         }
-        if (deviceInfo_.deviceRole == INPUT_DEVICE) {
+        if (deviceInfo_.deviceRole_ == INPUT_DEVICE) {
             spanInfo->spanStatus = SPAN_WRITE_DONE;
         } else {
             spanInfo->spanStatus = SPAN_READ_DONE;

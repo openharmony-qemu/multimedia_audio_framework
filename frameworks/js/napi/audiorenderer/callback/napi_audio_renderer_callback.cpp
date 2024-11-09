@@ -33,6 +33,11 @@ NapiAudioRendererCallback::NapiAudioRendererCallback(napi_env env)
 
 NapiAudioRendererCallback::~NapiAudioRendererCallback()
 {
+    if (regArStateChgTsfn_) {
+        napi_release_threadsafe_function(arStateChgTsfn_, napi_tsfn_abort);
+    } else if (regArInterruptTsfn_) {
+        napi_release_threadsafe_function(arInterruptTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("instance destroy");
 }
 
@@ -84,6 +89,36 @@ void NapiAudioRendererCallback::SaveCallbackReference(const std::string &callbac
     }
 }
 
+void NapiAudioRendererCallback::CreateArInterrupt(napi_env env)
+{
+    regArInterruptTsfn_ = true;
+    std::string callbackName = "Interrupt";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        InterruptTsfnFinalize, nullptr, SafeJsCallbackInterruptWork, &arInterruptTsfn_);
+}
+
+void NapiAudioRendererCallback::CreateArStateChange(napi_env env)
+{
+    regArStateChgTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "stateChange";
+    napi_create_string_utf8(env_, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        StateChangeTsfnFinalize, nullptr, SafeJsCallbackStateChangeWork, &arStateChgTsfn_);
+}
+
+bool NapiAudioRendererCallback::GetArInterruptTsfnFlag()
+{
+    return regArInterruptTsfn_;
+}
+
+bool NapiAudioRendererCallback::GetArStateChangeTsfnFlag()
+{
+    return regArStateChgTsfn_;
+}
+
 void NapiAudioRendererCallback::RemoveCallbackReference(const std::string &callbackName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -104,8 +139,7 @@ void NapiAudioRendererCallback::SafeJsCallbackInterruptWork(napi_env env, napi_v
         "OnJsCallbackInterrupt: no memory");
     std::shared_ptr<AudioRendererJsCallback> safeContext(
         static_cast<AudioRendererJsCallback*>(data),
-        [event](AudioRendererJsCallback *ptr) {
-            napi_release_threadsafe_function(event->arInterruptTsfn, napi_tsfn_abort);
+        [](AudioRendererJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -149,13 +183,8 @@ void NapiAudioRendererCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioRende
     AudioRendererJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        InterruptTsfnFinalize, nullptr, SafeJsCallbackInterruptWork, &event->arInterruptTsfn);
-
-    napi_acquire_threadsafe_function(event->arInterruptTsfn);
-    napi_call_threadsafe_function(event->arInterruptTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(arInterruptTsfn_);
+    napi_call_threadsafe_function(arInterruptTsfn_, event, napi_tsfn_blocking);
 }
 
 void NapiAudioRendererCallback::SafeJsCallbackStateChangeWork(napi_env env, napi_value js_cb, void *context, void *data)
@@ -165,8 +194,7 @@ void NapiAudioRendererCallback::SafeJsCallbackStateChangeWork(napi_env env, napi
         "OnJsCallbackStateChange: no memory");
     std::shared_ptr<AudioRendererJsCallback> safeContext(
         static_cast<AudioRendererJsCallback*>(data),
-        [event](AudioRendererJsCallback *ptr) {
-            napi_release_threadsafe_function(event->arStateChgTsfn, napi_tsfn_abort);
+        [](AudioRendererJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -211,13 +239,8 @@ void NapiAudioRendererCallback::OnJsCallbackStateChange(std::unique_ptr<AudioRen
     AudioRendererJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        StateChangeTsfnFinalize, nullptr, SafeJsCallbackStateChangeWork, &event->arStateChgTsfn);
-
-    napi_acquire_threadsafe_function(event->arStateChgTsfn);
-    napi_call_threadsafe_function(event->arStateChgTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(arStateChgTsfn_);
+    napi_call_threadsafe_function(arStateChgTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

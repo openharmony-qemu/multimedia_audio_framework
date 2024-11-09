@@ -35,7 +35,25 @@ NapiAudioVolumeKeyEvent::NapiAudioVolumeKeyEvent(napi_env env)
 
 NapiAudioVolumeKeyEvent::~NapiAudioVolumeKeyEvent()
 {
+    if (regVolumeTsfn_) {
+        napi_release_threadsafe_function(amVolEntTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioVolumeKeyEvent::Destructor");
+}
+
+void NapiAudioVolumeKeyEvent::CreateVolumeTsfn(napi_env env)
+{
+    regVolumeTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "volumeChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        VolumeEventTsfnFinalize, nullptr, SafeJsCallbackVolumeEventWork, &amVolEntTsfn_);
+}
+
+bool NapiAudioVolumeKeyEvent::GetVolumeTsfnFlag()
+{
+    return regVolumeTsfn_;
 }
 
 void NapiAudioVolumeKeyEvent::OnVolumeKeyEvent(VolumeEvent volumeEvent)
@@ -82,8 +100,7 @@ void NapiAudioVolumeKeyEvent::SafeJsCallbackVolumeEventWork(napi_env env, napi_v
         "OnJsCallbackVolumeEvent: no memory");
     std::shared_ptr<AudioVolumeKeyEventJsCallback> safeContext(
         static_cast<AudioVolumeKeyEventJsCallback*>(event),
-        [event](AudioVolumeKeyEventJsCallback *ptr) {
-            napi_release_threadsafe_function(event->amVolEntTsfn, napi_tsfn_abort);
+        [](AudioVolumeKeyEventJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -127,13 +144,8 @@ void NapiAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
     AudioVolumeKeyEventJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        VolumeEventTsfnFinalize, nullptr, SafeJsCallbackVolumeEventWork, &event->amVolEntTsfn);
-    
-    napi_acquire_threadsafe_function(event->amVolEntTsfn);
-    napi_call_threadsafe_function(event->amVolEntTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(amVolEntTsfn_);
+    napi_call_threadsafe_function(amVolEntTsfn_, event, napi_tsfn_blocking);
 }
 
 bool NapiAudioVolumeKeyEvent::ContainSameJsCallback(napi_value args)

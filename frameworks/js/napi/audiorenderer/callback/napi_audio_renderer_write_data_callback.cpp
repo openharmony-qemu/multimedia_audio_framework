@@ -50,6 +50,9 @@ NapiRendererWriteDataCallback::~NapiRendererWriteDataCallback()
     if (napiRenderer_ != nullptr) {
         napiRenderer_->writeCallbackCv_.notify_all();
     }
+    if (regArWriteDataTsfn_) {
+        napi_release_threadsafe_function(arWriteDataTsfn_, napi_tsfn_abort);
+    }
 }
 
 void NapiRendererWriteDataCallback::AddCallbackReference(const std::string &callbackName, napi_value args)
@@ -67,6 +70,21 @@ void NapiRendererWriteDataCallback::AddCallbackReference(const std::string &call
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
+}
+
+void NapiRendererWriteDataCallback::CreateWriteDTsfn(napi_env env)
+{
+    regArWriteDataTsfn_ = true;
+    std::string callbackName = "writeData";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        WriteDataTsfnFinalize, nullptr, SafeJsCallbackWriteDataWork, &arWriteDataTsfn_);
+}
+
+bool NapiRendererWriteDataCallback::GetWriteDTsfnFlag()
+{
+    return regArWriteDataTsfn_;
 }
 
 void NapiRendererWriteDataCallback::RemoveCallbackReference(napi_env env, napi_value callback)
@@ -136,13 +154,8 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
     RendererWriteDataJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        WriteDataTsfnFinalize, nullptr, SafeJsCallbackWriteDataWork, &event->arWriteDataTsfn);
-
-    napi_acquire_threadsafe_function(event->arWriteDataTsfn);
-    napi_call_threadsafe_function(event->arWriteDataTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(arWriteDataTsfn_);
+    napi_call_threadsafe_function(arWriteDataTsfn_, event, napi_tsfn_blocking);
 
     if (napiRenderer_ == nullptr) {
         return;
@@ -178,8 +191,7 @@ void NapiRendererWriteDataCallback::SafeJsCallbackWriteDataWork(
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     std::shared_ptr<RendererWriteDataJsCallback> safeContext(
         static_cast<RendererWriteDataJsCallback*>(data),
-        [event](RendererWriteDataJsCallback *ptr) {
-            napi_release_threadsafe_function(event->arWriteDataTsfn, napi_tsfn_abort);
+        [](RendererWriteDataJsCallback *ptr) {
             delete ptr;
     });
     WorkCallbackRendererWriteDataInner(event);

@@ -641,15 +641,15 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_022, TestSize.Level1)
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
         spanSizeInFrame, g_audioStreamInfo, buffer);
     audioProcessInServerRet.streamStatus_->store(STREAM_STOPPING);
-    bool destoryAtOnce = false;
+    bool isSwitchStream = false;
 
     EXPECT_NE(audioProcessInServerRet.releaseCallback_, nullptr);
-    auto ret = audioProcessInServerRet.Release(destoryAtOnce);
+    auto ret = audioProcessInServerRet.Release(isSwitchStream);
     EXPECT_EQ(ret, SUCCESS);
 
     audioProcessInServerRet.isInited_ = true;
     audioProcessInServerRet.needCheckBackground_ = false;
-    ret = audioProcessInServerRet.Release(destoryAtOnce);
+    ret = audioProcessInServerRet.Release(isSwitchStream);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -672,14 +672,14 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_023, TestSize.Level1)
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
         spanSizeInFrame, g_audioStreamInfo, buffer);
     audioProcessInServerRet.streamStatus_->store(STREAM_STOPPING);
-    bool destoryAtOnce = false;
+    bool isSwitchStream = false;
 
-    auto ret = audioProcessInServerRet.Release(destoryAtOnce);
+    auto ret = audioProcessInServerRet.Release(isSwitchStream);
     EXPECT_EQ(ret, SUCCESS);
 
     audioProcessInServerRet.isInited_ = true;
     audioProcessInServerRet.needCheckBackground_ = true;
-    ret = audioProcessInServerRet.Release(destoryAtOnce);
+    ret = audioProcessInServerRet.Release(isSwitchStream);
     EXPECT_EQ(ret, SUCCESS);
 }
 

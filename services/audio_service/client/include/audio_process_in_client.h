@@ -72,7 +72,7 @@ public:
 
     virtual int32_t Stop() = 0;
 
-    virtual int32_t Release(bool destoryAtOnce = false) = 0;
+    virtual int32_t Release(bool isSwitchStream = false) = 0;
 
     // methods for support IAudioStream
     virtual int32_t GetSessionID(uint32_t &sessionID) = 0;

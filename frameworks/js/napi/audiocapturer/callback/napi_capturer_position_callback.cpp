@@ -32,6 +32,9 @@ NapiCapturerPositionCallback::NapiCapturerPositionCallback(napi_env env)
 
 NapiCapturerPositionCallback::~NapiCapturerPositionCallback()
 {
+    if (regAcPosTsfn_) {
+        napi_release_threadsafe_function(acPosTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiCapturerPositionCallback: instance destroy");
 }
 
@@ -50,6 +53,21 @@ void NapiCapturerPositionCallback::SaveCallbackReference(const std::string &call
     } else {
         AUDIO_ERR_LOG("NapiCapturerPositionCallback: Unknown callback type: %{public}s", callbackName.c_str());
     }
+}
+
+void NapiCapturerPositionCallback::CreateCapturePositionTsfn(napi_env env)
+{
+    regAcPosTsfn_ = true;
+    std::string callbackName = "CapturePosition";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        CapturePostionTsfnFinalize, nullptr, SafeJsCallbackCapturerPositionWork, &acPosTsfn_);
+}
+
+bool NapiCapturerPositionCallback::GetCapturePositionFlag()
+{
+    return regAcPosTsfn_;
 }
 
 void NapiCapturerPositionCallback::OnMarkReached(const int64_t &framePosition)
@@ -74,8 +92,7 @@ void NapiCapturerPositionCallback::SafeJsCallbackCapturerPositionWork(
         "OnJsCapturerPositionCallback: no memory");
     std::shared_ptr<CapturerPositionJsCallback> safeContext(
         static_cast<CapturerPositionJsCallback*>(data),
-        [event](CapturerPositionJsCallback *ptr) {
-            napi_release_threadsafe_function(event->acPosTsfn, napi_tsfn_abort);
+        [](CapturerPositionJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
@@ -111,16 +128,16 @@ void NapiCapturerPositionCallback::CapturePostionTsfnFinalize(napi_env env, void
 
 void NapiCapturerPositionCallback::OnJsCapturerPositionCallback(std::unique_ptr<CapturerPositionJsCallback> &jsCb)
 {
+    if (jsCb.get() == nullptr) {
+        AUDIO_ERR_LOG("OnJsCapturerPositionCallback: jsCb.get() is null");
+        return;
+    }
+
     CapturerPositionJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
-    napi_value cbName;
-    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
-    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
-        CapturePostionTsfnFinalize, nullptr, SafeJsCallbackCapturerPositionWork, &event->acPosTsfn);
-    
-    napi_acquire_threadsafe_function(event->acPosTsfn);
-    napi_call_threadsafe_function(event->acPosTsfn, event, napi_tsfn_blocking);
+    napi_acquire_threadsafe_function(acPosTsfn_);
+    napi_call_threadsafe_function(acPosTsfn_, event, napi_tsfn_blocking);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

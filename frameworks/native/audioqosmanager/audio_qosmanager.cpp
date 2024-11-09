@@ -15,25 +15,17 @@
 
 #include "audio_qosmanager.h"
 #include <unistd.h>
-#include <sys/types.h>
 #include <cstring>
 #include <unordered_map>
-#include <set>
 
 #ifdef QOSMANAGER_ENABLE
 #include "qos.h"
 #include "concurrent_task_client.h"
 #endif
 
-#include "audio_utils.h"
-#include "audio_common_log.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-using namespace OHOS::AudioStandard;
 
 #ifdef QOSMANAGER_ENABLE
 void SetThreadQosLevel()

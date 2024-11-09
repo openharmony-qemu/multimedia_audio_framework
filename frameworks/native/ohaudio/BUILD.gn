@@ -18,6 +18,7 @@ config("audio_config") {
   include_dirs = [
     "../audiocapturer/include",
     "../audiorenderer/include",
+    "../audioutils/include/",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../interfaces/inner_api/native/audiomanager/include",

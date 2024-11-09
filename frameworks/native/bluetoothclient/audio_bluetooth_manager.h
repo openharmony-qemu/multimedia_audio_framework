@@ -41,6 +41,8 @@ public:
     virtual void OnPlayingStatusChanged(const BluetoothRemoteDevice &device, int playingState, int error);
     virtual void OnMediaStackChanged(const BluetoothRemoteDevice &device, int action);
     virtual void OnVirtualDeviceChanged(int32_t action, std::string macAddress);
+    virtual void OnCaptureConnectionStateChanged(const BluetoothRemoteDevice &device, int state,
+        const A2dpCodecInfo &info);
 
 private:
     BLUETOOTH_DISALLOW_COPY_AND_ASSIGN(AudioA2dpListener);
@@ -53,10 +55,13 @@ public:
     static void RegisterBluetoothA2dpListener();
     static void UnregisterBluetoothA2dpListener();
     static void DisconnectBluetoothA2dpSink();
+    static void DisconnectBluetoothA2dpSource();
     static int32_t SetActiveA2dpDevice(const std::string& macAddress);
     static std::string GetActiveA2dpDevice();
     static int32_t SetDeviceAbsVolume(const std::string& macAddress, int32_t volume);
     static int32_t GetA2dpDeviceStreamInfo(const std::string& macAddress,
+        AudioStandard::AudioStreamInfo &streamInfo);
+    static int32_t GetA2dpInDeviceStreamInfo(const std::string &macAddress,
         AudioStandard::AudioStreamInfo &streamInfo);
     static bool HasA2dpDeviceConnected();
     static void CheckA2dpDeviceReconnect();
@@ -77,6 +82,14 @@ public:
     {
         return connectionState_;
     }
+    static void SetCaptureConnectionState(int32_t state)
+    {
+        captureConnectionState_ = state;
+    }
+    static int32_t GetCaptureConnectionState()
+    {
+        return captureConnectionState_;
+    }
     static BluetoothRemoteDevice GetCurrentActiveA2dpDevice()
     {
         return activeA2dpDevice_;
@@ -86,6 +99,7 @@ private:
     static A2dpSource *a2dpInstance_;
     static std::shared_ptr<AudioA2dpListener> a2dpListener_;
     static int connectionState_;
+    static int32_t captureConnectionState_;
     static BluetoothRemoteDevice activeA2dpDevice_;
     static std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> a2dpPlayingStateChangedListeners_;
 };

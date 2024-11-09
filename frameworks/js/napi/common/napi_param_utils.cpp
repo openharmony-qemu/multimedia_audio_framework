@@ -279,24 +279,24 @@ napi_status NapiParamUtils::CreateArrayBuffer(const napi_env &env, const size_t 
 }
 
 void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor,
-    const DeviceInfo &deviceInfo)
+    const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
-    audioDeviceDescriptor->deviceRole_ = deviceInfo.deviceRole;
-    audioDeviceDescriptor->deviceType_ = deviceInfo.deviceType;
-    audioDeviceDescriptor->deviceId_ = deviceInfo.deviceId;
-    audioDeviceDescriptor->channelMasks_ = deviceInfo.channelMasks;
-    audioDeviceDescriptor->channelIndexMasks_ = deviceInfo.channelIndexMasks;
-    audioDeviceDescriptor->deviceName_ = deviceInfo.deviceName;
-    audioDeviceDescriptor->macAddress_ = deviceInfo.macAddress;
-    audioDeviceDescriptor->interruptGroupId_ = deviceInfo.interruptGroupId;
-    audioDeviceDescriptor->volumeGroupId_ = deviceInfo.volumeGroupId;
-    audioDeviceDescriptor->networkId_ = deviceInfo.networkId;
-    audioDeviceDescriptor->displayName_ = deviceInfo.displayName;
-    audioDeviceDescriptor->audioStreamInfo_.samplingRate = deviceInfo.audioStreamInfo.samplingRate;
-    audioDeviceDescriptor->audioStreamInfo_.encoding = deviceInfo.audioStreamInfo.encoding;
-    audioDeviceDescriptor->audioStreamInfo_.format = deviceInfo.audioStreamInfo.format;
-    audioDeviceDescriptor->audioStreamInfo_.channels = deviceInfo.audioStreamInfo.channels;
+    audioDeviceDescriptor->deviceRole_ = deviceInfo.deviceRole_;
+    audioDeviceDescriptor->deviceType_ = deviceInfo.deviceType_;
+    audioDeviceDescriptor->deviceId_ = deviceInfo.deviceId_;
+    audioDeviceDescriptor->channelMasks_ = deviceInfo.channelMasks_;
+    audioDeviceDescriptor->channelIndexMasks_ = deviceInfo.channelIndexMasks_;
+    audioDeviceDescriptor->deviceName_ = deviceInfo.deviceName_;
+    audioDeviceDescriptor->macAddress_ = deviceInfo.macAddress_;
+    audioDeviceDescriptor->interruptGroupId_ = deviceInfo.interruptGroupId_;
+    audioDeviceDescriptor->volumeGroupId_ = deviceInfo.volumeGroupId_;
+    audioDeviceDescriptor->networkId_ = deviceInfo.networkId_;
+    audioDeviceDescriptor->displayName_ = deviceInfo.displayName_;
+    audioDeviceDescriptor->audioStreamInfo_.samplingRate = deviceInfo.audioStreamInfo_.samplingRate;
+    audioDeviceDescriptor->audioStreamInfo_.encoding = deviceInfo.audioStreamInfo_.encoding;
+    audioDeviceDescriptor->audioStreamInfo_.format = deviceInfo.audioStreamInfo_.format;
+    audioDeviceDescriptor->audioStreamInfo_.channels = deviceInfo.audioStreamInfo_.channels;
 }
 
 napi_status NapiParamUtils::GetRendererOptions(const napi_env &env, AudioRendererOptions *opts, napi_value in)
@@ -508,7 +508,8 @@ napi_status NapiParamUtils::SetAudioSpatialEnabledStateForDevice(const napi_env 
     return napi_ok;
 }
 
-napi_status NapiParamUtils::SetValueDeviceInfo(const napi_env &env, const DeviceInfo &deviceInfo, napi_value &result)
+napi_status NapiParamUtils::SetValueDeviceInfo(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
+    napi_value &result)
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
@@ -1065,7 +1066,7 @@ napi_status NapiParamUtils::GetExtraParametersVector(const napi_env &env,
 napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
     const std::vector<std::pair<std::string, std::string>> &extraParameters, napi_value &result)
 {
-    napi_status status = napi_create_array_with_length(env, extraParameters.size(), &result);
+    napi_status status = napi_create_object(env, &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "malloc array buffer failed");
 
     for (auto it = extraParameters.begin(); it != extraParameters.end(); it++) {
@@ -1100,7 +1101,7 @@ napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectProp
 
         effectArray.property.push_back(prop);
     }
-    
+
     int32_t size = effectArray.property.size();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
                              napi_invalid_arg, "Audio effect property array size invalid");
@@ -1141,7 +1142,7 @@ napi_status NapiParamUtils::GetEnhancePropertyArray(napi_env env, AudioEnhancePr
 
         enhanceArray.property.push_back(prop);
     }
-    
+
     int32_t size = enhanceArray.property.size();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
                              napi_invalid_arg, "Audio enhance property array size invalid");

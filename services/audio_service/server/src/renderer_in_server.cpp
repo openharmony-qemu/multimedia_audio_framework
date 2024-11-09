@@ -51,6 +51,8 @@ namespace {
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    constexpr int32_t DEFAULT_SPAN_SIZE = 4;
+    constexpr int32_t DIRECT_SPAN_SIZE = 1;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -79,7 +81,11 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    totalSizeInFrame_ = spanSizeInFrame_ * 4; // 4 frames
+    int32_t frameCount = DEFAULT_SPAN_SIZE;
+    if (managerType_ == VOIP_PLAYBACK || managerType_ == DIRECT_PLAYBACK) {
+        frameCount = DIRECT_SPAN_SIZE;
+    }
+    totalSizeInFrame_ = spanSizeInFrame_ * frameCount; // 4 frames
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
@@ -466,6 +472,13 @@ int32_t RendererInServer::WriteData()
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         FutexTool::FutexWake(audioServerBuffer_->GetFutex());
+        if (!offloadEnable_) {
+            CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+                "invalid write and read position.");
+            uint64_t dataSize = currentWriteFrame - currentReadFrame;
+            AUDIO_INFO_LOG("sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
+                streamIndex_, dataSize);
+        }
         return ERR_OPERATION_FAILED;
     }
 
@@ -847,7 +860,6 @@ int32_t RendererInServer::Release()
     AudioXCollie audioXCollie(
         "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ == I_STATUS_RELEASED) {
@@ -863,6 +875,7 @@ int32_t RendererInServer::Release()
 
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
+    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
@@ -896,13 +909,13 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
+int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency)
 {
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
-    stream_->GetCurrentPosition(framePos, timestamp);
+    stream_->GetCurrentPosition(framePos, timestamp, latency);
     return SUCCESS;
 }
 
@@ -1186,6 +1199,7 @@ bool RendererInServer::IsHighResolution() const noexcept
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", on);
     if (silentModeAndMixWithOthers_) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
     } else {
@@ -1215,6 +1229,7 @@ int32_t RendererInServer::SetClientVolume(bool isStreamVolumeChange, bool isMedi
 
 int32_t RendererInServer::SetMute(bool isMute)
 {
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     if (isMute) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
     } else {

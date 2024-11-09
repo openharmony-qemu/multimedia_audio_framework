@@ -35,6 +35,11 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const int64_t GENERAL_MAX_HANDLE_COST_IN_NANOSEC = 10000000; // 10ms = 10ns * 1000 * 1000
+const int64_t VOIP_MAX_HANDLE_COST_IN_NANOSEC = 20000000; // 20ms = 20ns * 1000 * 1000
+}
+
 class FastAudioCapturerSourceInner : public FastAudioCapturerSource {
 public:
     int32_t Init(const IAudioSourceAttr &attr) override;
@@ -100,6 +105,7 @@ private:
     bool capturerInited_ = false;
     bool started_ = false;
     bool paused_ = false;
+    std::atomic<bool> isCheckPositionSuccess_ = true;
 
     uint32_t captureId_ = 0;
     uint32_t openMic_ = 0;
@@ -139,7 +145,7 @@ FastAudioCapturerSourceInner::FastAudioCapturerSourceInner() : attr_({}), captur
 
 FastAudioCapturerSourceInner::~FastAudioCapturerSourceInner()
 {
-    AUDIO_DEBUG_LOG("~FastAudioCapturerSourceInner");
+    AUDIO_INFO_LOG("~FastAudioCapturerSourceInner");
 }
 
 FastAudioCapturerSource *FastAudioCapturerSource::GetInstance()
@@ -161,8 +167,9 @@ bool FastAudioCapturerSourceInner::IsInited(void)
 
 void FastAudioCapturerSourceInner::DeInit()
 {
-    AUDIO_INFO_LOG("Deinit, flag %{public}d", attr_.audioStreamFlag);
-    if (started_) {
+    AUDIO_INFO_LOG("Deinit, flag %{public}d, is check position success %{public}d", attr_.audioStreamFlag,
+        isCheckPositionSuccess_.load());
+    if (started_ || !isCheckPositionSuccess_) {
         Stop();
         started_ = false;
     }
@@ -490,18 +497,19 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
-    int64_t maxHandleCost = 10000000; // 10ms
+    int64_t maxHandleCost = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? VOIP_MAX_HANDLE_COST_IN_NANOSEC :
+        GENERAL_MAX_HANDLE_COST_IN_NANOSEC;
     int64_t waitTime = 2000000; // 2ms
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(waitTime); // us
+        int64_t timeBeforeGetPos = ClockTime::GetCurNano();
         int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
-        int64_t curTime = ClockTime::GetCurNano();
-        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
-        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        int64_t curSec = timeBeforeGetPos / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = timeBeforeGetPos - curSec * AUDIO_NS_PER_SECOND;
+        AUDIO_WARNING_LOG("DspSec: %{public}" PRId64 ", dspNanoSec: %{public}" PRId64 ", Time before get pos: "
+            "%{public}" PRId64 ", time cost: %{public}" PRId64 "", timeSec, timeNanoSec, timeBeforeGetPos,
+            ClockTime::GetCurNano() - timeBeforeGetPos);
         if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
-            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d, curSec[%{public}" PRId64"], "
-                "curNanoSec[%{public}" PRId64"], dspSec[%{public}" PRId64"], dspNanoSec[%{public}" PRId64"]",
-                tryCount, ret, curSec, curNanoSec, timeSec, timeNanoSec);
             continue;
         } else {
             AUDIO_INFO_LOG("CheckPositionTime end, position and time is ok.");
@@ -551,11 +559,12 @@ int32_t FastAudioCapturerSourceInner::Start(void)
                 audioCapturerSourceCallback_->OnCapturerState(false);
             }
             AUDIO_ERR_LOG("CheckPositionTime failed!");
+            isCheckPositionSuccess_ = false;
             return ERR_NOT_STARTED;
         }
         started_ = true;
     }
-
+    isCheckPositionSuccess_ = true;
     return SUCCESS;
 }
 
@@ -660,6 +669,7 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
 int32_t FastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
     const std::string &deviceName)
 {
+    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d", audioScene, activeDevice);
     return ERR_DEVICE_NOT_SUPPORTED;
 }
 
@@ -707,7 +717,7 @@ void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallbac
 
 int32_t FastAudioCapturerSourceInner::Stop(void)
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_INFO_LOG("Enter, is check position success %{public}d", isCheckPositionSuccess_.load());
 #ifdef FEATURE_POWER_MANAGER
     if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
@@ -717,7 +727,7 @@ int32_t FastAudioCapturerSourceInner::Stop(void)
     }
 #endif
 
-    if (started_ && audioCapture_ != nullptr) {
+    if ((started_ || !isCheckPositionSuccess_) && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Stop(audioCapture_);
         if (audioCapturerSourceCallback_ != nullptr) {
             audioCapturerSourceCallback_->OnCapturerState(false);

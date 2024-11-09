@@ -38,6 +38,7 @@
 
 #include "audio_capturer_source.h"
 #include "fast_audio_capturer_source.h"
+#include "bluetooth_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_asr.h"
@@ -126,78 +127,31 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
-static const std::map<std::string, AsrAecMode> AEC_MODE_MAP = {
-    {"BYPASS", AsrAecMode::BYPASS},
-    {"STANDARD", AsrAecMode::STANDARD}
+static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
+    SOURCE_TYPE_INVALID,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
 };
 
-static const std::map<AsrAecMode, std::string> AEC_MODE_MAP_VERSE = {
-    {AsrAecMode::BYPASS, "BYPASS"},
-    {AsrAecMode::STANDARD, "STANDARD"}
-};
-
-static const std::map<std::string, AsrNoiseSuppressionMode> NS_MODE_MAP = {
-    {"BYPASS", AsrNoiseSuppressionMode::BYPASS},
-    {"STANDARD", AsrNoiseSuppressionMode::STANDARD},
-    {"NEAR_FIELD", AsrNoiseSuppressionMode::NEAR_FIELD},
-    {"FAR_FIELD", AsrNoiseSuppressionMode::FAR_FIELD}
-};
-
-static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = {
-    {AsrNoiseSuppressionMode::BYPASS, "BYPASS"},
-    {AsrNoiseSuppressionMode::STANDARD, "STANDARD"},
-    {AsrNoiseSuppressionMode::NEAR_FIELD, "NEAR_FIELD"},
-    {AsrNoiseSuppressionMode::FAR_FIELD, "FAR_FIELD"}
-};
-
-static const std::map<std::string, AsrWhisperDetectionMode> WHISPER_DETECTION_MODE_MAP = {
-    {"BYPASS", AsrWhisperDetectionMode::BYPASS},
-    {"STANDARD", AsrWhisperDetectionMode::STANDARD},
-};
-
-static const std::map<AsrWhisperDetectionMode, std::string> WHISPER_DETECTION_MODE_MAP_VERSE = {
-    {AsrWhisperDetectionMode::BYPASS, "BYPASS"},
-    {AsrWhisperDetectionMode::STANDARD, "STANDARD"},
-};
-
-static const std::map<std::string, AsrVoiceControlMode> VC_MODE_MAP = {
-    {"audio2voicetx", AsrVoiceControlMode::AUDIO_2_VOICETX},
-    {"audiomix2voicetx", AsrVoiceControlMode::AUDIO_MIX_2_VOICETX},
-    {"audio2voicetxex", AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX},
-    {"audiomix2voicetxex", AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX},
-};
-
-static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE = {
-    {AsrVoiceControlMode::AUDIO_2_VOICETX, "audio2voicetx"},
-    {AsrVoiceControlMode::AUDIO_MIX_2_VOICETX, "audiomix2voicetx"},
-    {AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX, "audio2voicetxex"},
-    {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "audiomix2voicetxex"},
-};
-
-static const std::map<std::string, AsrVoiceMuteMode> VM_MODE_MAP = {
-    {"output_mute", AsrVoiceMuteMode::OUTPUT_MUTE},
-    {"input_mute", AsrVoiceMuteMode::INPUT_MUTE},
-    {"mute_tts", AsrVoiceMuteMode::TTS_MUTE},
-    {"mute_call", AsrVoiceMuteMode::CALL_MUTE},
-    {"ouput_mute_ex", AsrVoiceMuteMode::OUTPUT_MUTE_EX},
-};
-
-static const std::map<AsrVoiceMuteMode, std::string> VM_MODE_MAP_VERSE = {
-    {AsrVoiceMuteMode::OUTPUT_MUTE, "output_mute"},
-    {AsrVoiceMuteMode::INPUT_MUTE, "input_mute"},
-    {AsrVoiceMuteMode::TTS_MUTE, "mute_tts"},
-    {AsrVoiceMuteMode::CALL_MUTE, "mute_call"},
-    {AsrVoiceMuteMode::OUTPUT_MUTE_EX, "ouput_mute_ex"},
-};
-
-static const std::map<std::string, bool> RES_MAP = {
-    {"true", true},
-    {"false", false},
-};
-
-static const std::map<bool, std::string> RES_MAP_VERSE = {
-    {true, "true"},
-    {false, "false"},
+static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
 };
 
 static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
@@ -235,23 +189,6 @@ private:
     std::function<void(bool, int32_t)> callback_;
 };
 
-std::vector<std::string> splitString(const std::string& str, const std::string& pattern)
-{
-    std::vector<std::string> res;
-    if (str == "")
-        return res;
-    std::string strs = str + pattern;
-    size_t pos = strs.find(pattern);
-
-    while (pos != strs.npos) {
-        std::string temp = strs.substr(0, pos);
-        res.push_back(temp);
-        strs = strs.substr(pos + 1, strs.size());
-        pos = strs.find(pattern);
-    }
-    return res;
-}
-
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
 #ifdef PA
@@ -267,7 +204,7 @@ void *AudioServer::paDaemonThread(void *arg)
     AUDIO_INFO_LOG("Calling ohos_pa_main\n");
     ohos_pa_main(PA_ARG_COUNT, argv);
     AUDIO_INFO_LOG("Exiting ohos_pa_main\n");
-    exit(-1);
+    _exit(-1);
 }
 #endif
 
@@ -527,87 +464,6 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
 }
 
-int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
-    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "asr_aec_mode";
-    std::string value = key + "=";
-    std::string keyAec = "ASR_AEC";
-    std::string valueAec = "";
-
-    auto it = AEC_MODE_MAP_VERSE.find(asrAecMode);
-    if (it != AEC_MODE_MAP_VERSE.end()) {
-        value = key + "=" + it->second;
-        if (it->second == "STANDARD") {
-            valueAec = "ASR_AEC=ON";
-        } else {
-            valueAec = "ASR_AEC=OFF";
-        }
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-    AudioServer::audioParameters[key] = value;
-    AudioServer::audioParameters[keyAec] = valueAec;
-    AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", valueAec);
-    return 0;
-}
-
-int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
-    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "asr_aec_mode";
-    std::string keyAec = "ASR_AEC";
-    AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    std::string asrAecModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);
-    auto it = AudioServer::audioParameters.find(key);
-    if (it != AudioServer::audioParameters.end()) {
-        asrAecModeSink = it->second;
-    } else {
-        // if asr_aec_mode null, return ASR_AEC.
-        // if asr_aec_mode null and ASR_AEC null, return err.
-        auto itAec = AudioServer::audioParameters.find(keyAec);
-        std::string asrAecSink = itAec->second;
-        if (asrAecSink == "ASR_AEC=ON") {
-            asrAecMode = AsrAecMode::STANDARD;
-        } else if (asrAecSink == "ASR_AEC=OFF") {
-            asrAecMode = AsrAecMode::BYPASS;
-        } else {
-            AUDIO_ERR_LOG("get value failed.");
-            return ERR_INVALID_PARAM;
-        }
-        return 0;
-    }
-
-    std::vector<std::string> resMode = splitString(asrAecModeSink, "=");
-    const int32_t resSize = 2;
-    std::string modeString = "";
-    if (resMode.size() == resSize) {
-        modeString = resMode[1];
-        auto it = AEC_MODE_MAP.find(modeString);
-        if (it != AEC_MODE_MAP.end()) {
-            asrAecMode = it->second;
-        } else {
-            AUDIO_ERR_LOG("get value failed.");
-            return ERR_INVALID_PARAM;
-        }
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-    return 0;
-}
-
 int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
 {
     if (!PermissionUtil::VerifyIsAudio()) {
@@ -628,192 +484,6 @@ int32_t AudioServer::RestoreRenderSink(const std::string &sinkName)
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName.c_str(), "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     return audioRendererSinkInstance->RestoreRenderSink();
-}
-
-int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
-    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "asr_ns_mode";
-    std::string value = key + "=";
-
-    auto it = NS_MODE_MAP_VERSE.find(asrNoiseSuppressionMode);
-    if (it != NS_MODE_MAP_VERSE.end()) {
-        value = key + "=" + it->second;
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-    AudioServer::audioParameters[key] = value;
-    AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
-    return 0;
-}
-
-int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
-    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "asr_ns_mode";
-    AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    std::string asrNoiseSuppressionModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);
-    auto it = AudioServer::audioParameters.find(key);
-    if (it != AudioServer::audioParameters.end()) {
-        asrNoiseSuppressionModeSink = it->second;
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-
-    std::vector<std::string> resMode = splitString(asrNoiseSuppressionModeSink, "=");
-    const int32_t resSize = 2;
-    std::string modeString = "";
-    if (resMode.size() == resSize) {
-        modeString = resMode[1];
-        auto it = NS_MODE_MAP.find(modeString);
-        if (it != NS_MODE_MAP.end()) {
-            asrNoiseSuppressionMode = it->second;
-        } else {
-            AUDIO_ERR_LOG("get value failed.");
-            return ERR_INVALID_PARAM;
-        }
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-    return 0;
-}
-
-int32_t AudioServer::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
-    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "asr_wd_mode";
-    std::string value = key + "=";
-
-    auto it = WHISPER_DETECTION_MODE_MAP_VERSE.find(asrWhisperDetectionMode);
-    if (it != WHISPER_DETECTION_MODE_MAP_VERSE.end()) {
-        value = key + "=" + it->second;
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-    AudioServer::audioParameters[key] = value;
-    AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
-    return 0;
-}
-
-int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhisperDetectionMode)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
-    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "asr_wd_mode";
-    AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    std::string asrWhisperDetectionModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);
-    auto it = AudioServer::audioParameters.find(key);
-    if (it != AudioServer::audioParameters.end()) {
-        asrWhisperDetectionModeSink = it->second;
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-
-    std::vector<std::string> resMode = splitString(asrWhisperDetectionModeSink, "=");
-    const int32_t resSize = 2;
-    std::string modeString = "";
-    if (resMode.size() == resSize) {
-        modeString = resMode[1];
-        auto it = WHISPER_DETECTION_MODE_MAP.find(modeString);
-        if (it != WHISPER_DETECTION_MODE_MAP.end()) {
-            asrWhisperDetectionMode = it->second;
-        } else {
-            AUDIO_ERR_LOG("get value failed.");
-            return ERR_INVALID_PARAM;
-        }
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-    return 0;
-}
-
-int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
-    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "avcm";
-    std::string value = key + "=";
-
-    auto it = VC_MODE_MAP_VERSE.find(asrVoiceControlMode);
-    auto res = RES_MAP_VERSE.find(on);
-    if ((it != VC_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
-        value = it->second + "=" + res->second;
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-    AudioServer::audioParameters[key] = value;
-    AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
-    return 0;
-}
-
-int32_t AudioServer::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
-    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "avmm";
-    std::string value = key + "=";
-
-    auto it = VM_MODE_MAP_VERSE.find(asrVoiceMuteMode);
-    auto res = RES_MAP_VERSE.find(on);
-    if ((it != VM_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
-        value = it->second + "=" + res->second;
-    } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
-    }
-    AudioServer::audioParameters[key] = value;
-    AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
-    return 0;
-}
-
-int32_t AudioServer::IsWhispering()
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
-    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "asr_is_whisper";
-    AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-
-    std::string isWhisperSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);
-    int32_t whisperRes = 0;
-    if (isWhisperSink == "TRUE") {
-        whisperRes = 1;
-    }
-    return whisperRes;
 }
 
 void AudioServer::SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
@@ -921,9 +591,9 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
             parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
         }
-        if (key == "need_change_usb_device") {
+        if (key.find("need_change_usb_device#C", 0) == 0) {
             parmKey = AudioParamKey::USB_DEVICE;
-            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "need_change_usb_device");
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), key);
         }
         if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel") {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
@@ -961,32 +631,53 @@ const std::string AudioServer::GetDPParameter(const std::string &condition)
     return dpAudioRendererSinkInstance->GetAudioParameter(AudioParamKey::GET_DP_DEVICE_INFO, condition);
 }
 
-const std::string AudioServer::GetUsbParameter()
+static std::string GetField(const std::string &src, const char* field, const char sep)
 {
-    IAudioRendererSink *usbAudioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
-    IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
-    if (usbAudioRendererSinkInstance != nullptr && usbAudioCapturerSinkInstance != nullptr) {
-        std::string usbInfoStr =
-            usbAudioRendererSinkInstance->GetAudioParameter(AudioParamKey::USB_DEVICE, "get_usb_info");
-        // Preload usb sink and source, make pa load module faster to avoid blocking client write
-        usbAudioRendererSinkInstance->Preload(usbInfoStr);
-        usbAudioCapturerSinkInstance->Preload(usbInfoStr);
-        return usbInfoStr;
+    auto str = std::string(field) + '=';
+    auto pos = src.find(str) + str.length();
+    auto end = src.find(sep, pos);
+    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
+}
+
+const std::string AudioServer::GetUsbParameter(const std::string &condition)
+{
+    AUDIO_INFO_LOG("AudioServer::GetUsbParameter Entry. condition=%{public}s", condition.c_str());
+    string address = GetField(condition, "address", ' ');
+    DeviceRole role = static_cast<DeviceRole>(stoi(GetField(condition, "role", ' ')));
+    IAudioRendererSink *rendererSink = IAudioRendererSink::GetInstance("usb", "");
+    std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
+    std::string usbInfoStr;
+    if (role == OUTPUT_DEVICE) {
+        rendererSink->SetAddress(address);
+        usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
+        AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
+        rendererSink->Preload(usbInfoStr);
+    } else if (role == INPUT_DEVICE) {
+        IAudioCapturerSource *capturerSource = IAudioCapturerSource::GetInstance("usb", "");
+        capturerSource->SetAddress(address);
+        if (usbInfoMap_.count(address) != 0) {
+            usbInfoStr = usbInfoMap_[address];
+        } else {
+            usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
+        }
+        AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
+    } else {
+        usbInfoMap_.erase(address);
     }
-    return "";
+    return usbInfoStr;
 }
 
 const std::string AudioServer::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
     const std::string& condition)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    bool ret = VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio() || ret, "", "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio() ||
+        VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION), "", "refused for %{public}d", callingUid);
 
     if (networkId == LOCAL_NETWORK_ID) {
         AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
         if (key == AudioParamKey::USB_DEVICE) {
-            return GetUsbParameter();
+            return GetUsbParameter(condition);
         }
         if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
             return GetDPParameter(condition);
@@ -1039,19 +730,6 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
 
     AUDIO_DEBUG_LOG("Transaction Id: %{public}" PRIu64, transactionId);
     return transactionId;
-}
-
-bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
-    std::vector<Effect>& successEffectList)
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false, "LoadAudioEffectLibraries refused for %{public}d",
-        callingUid);
-    bool loadSuccess = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
-    if (!loadSuccess) {
-        AUDIO_WARNING_LOG("Load audio effect failed, please check log");
-    }
-    return loadSuccess;
 }
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
@@ -1114,6 +792,8 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     IAudioRendererSink *audioRendererSinkInstance;
     if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+        auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+        primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
     } else {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     }
@@ -1169,6 +849,8 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+        auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+        primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
     } else {
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
@@ -2081,12 +1763,14 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
     IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
     IAudioCapturerSource *fastAudioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
     IAudioCapturerSource *voipFastAudioCapturerSourceInstance = FastAudioCapturerSource::GetVoipInstance();
+    IAudioCapturerSource *bluetoothAudioCapturerSourceInstance = BluetoothCapturerSource::GetInstance();
 
     for (auto audioCapturerSourceInstance : {
         primaryAudioCapturerSourceInstance,
         usbAudioCapturerSinkInstance,
         fastAudioCapturerSourceInstance,
-        voipFastAudioCapturerSourceInstance
+        voipFastAudioCapturerSourceInstance,
+        bluetoothAudioCapturerSourceInstance
     }) {
         if (audioCapturerSourceInstance != nullptr) {
             audioCapturerSourceInstance->RegisterAudioCapturerSourceCallback(make_unique<CapturerStateOb>(
@@ -2111,6 +1795,7 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
 
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
+    AUDIO_INFO_LOG("Enter the notifyStreamVolumeChanged interface");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("NotifyStreamVolumeChanged refused for %{public}d", callingUid);

@@ -28,7 +28,7 @@ using namespace std;
 const int32_t LIMITSIZE = 4;
 const uint64_t CAPSESSION_ID = 123456;
 
-void AudioEffectManagerFuzzTest(const uint8_t *rawData, size_t size)
+void AudioEffectServiceFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -130,7 +130,7 @@ void AudioPolicyServSendFuzzTest(const uint8_t *rawData, size_t size)
     int32_t clientPid = *reinterpret_cast<const int32_t*>(rawData);
     uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
     int32_t streamFlag = *reinterpret_cast<const int32_t*>(rawData);
-    DeviceInfo outputDeviceInfo;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     audioPolicyServerHandler->SendRendererDeviceChangeEvent(clientPid, sessionId, outputDeviceInfo, reason);
     audioPolicyServerHandler->SendRecreateRendererStreamEvent(clientPid, sessionId, streamFlag, reason);
@@ -186,7 +186,7 @@ void AudioPolicyServHandleFuzzTest(const uint8_t *rawData, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioEffectManagerFuzzTest(rawData, size);
+    OHOS::AudioStandard::AudioEffectServiceFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioSendCallbackFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioPolicyServSendFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioPolicyServHandleFuzzTest(rawData, size);

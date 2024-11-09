@@ -152,7 +152,8 @@ public:
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
-    static bool NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
+    static bool NotifyStart(uint32_t targetTokenId, uint32_t sessionId);
+    static bool NotifyStop(uint32_t targetTokenId, uint32_t sessionId);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
@@ -209,25 +210,25 @@ enum AudioDumpFileType {
     AUDIO_PULSE = 2,
 };
 
-const std::string DUMP_SERVER_PARA = "sys.audio.dump.writeserver.enable";
-const std::string DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
-const std::string DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
-const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";
-const std::string DUMP_APP_DIR = "/data/storage/el2/base/cache/";
-const std::string DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
-const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
-const std::string DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
-const std::string DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
-const std::string DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
-const std::string DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
-const std::string DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
-const std::string DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";
-const std::string DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
-const std::string DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
-const std::string DUMP_ENDPOINT_DCP_FILENAME = "dump_endpoint_dcp_audio.pcm";
-const std::string DUMP_ENDPOINT_HDI_FILENAME = "dump_endpoint_hdi_audio.pcm";
+namespace {
+const char* DUMP_SERVER_PARA = "sys.audio.dump.writeserver.enable";
+const char* DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
+const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
+const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
+const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
+const char* DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
+const char* DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
+const char* DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
+const char* DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
+const char* DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
+const char* DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
+const char* DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
+const char* DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";
+const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
+const char* DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
 const uint32_t PARAM_VALUE_LENTH = 150;
-const std::string BETA_VERSION = "beta";
+const char* BETA_VERSION = "beta";
+}
 
 class DumpFileUtil {
 public:
@@ -624,6 +625,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_EC = 6,
     HDI_CAPTURE_OFFSET_MIC_REF = 7,
     HDI_CAPTURE_OFFSET_WAKEUP = 8,
+    HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
 };
 
 enum HdiRenderOffset : uint32_t {
