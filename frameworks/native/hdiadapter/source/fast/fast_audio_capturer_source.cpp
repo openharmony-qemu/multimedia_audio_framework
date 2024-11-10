@@ -544,6 +544,7 @@ int32_t FastAudioCapturerSourceInner::Start(void)
             audioCapturerSourceCallback_->OnCapturerState(true);
         }
 
+        CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
         int32_t ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
             if (audioCapturerSourceCallback_ != nullptr) {
