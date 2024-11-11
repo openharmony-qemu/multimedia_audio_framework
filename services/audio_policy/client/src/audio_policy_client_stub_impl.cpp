@@ -734,7 +734,7 @@ void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(const sp
 }
 
 int32_t AudioPolicyClientStubImpl::AddSendNNStateChangeCallback(
-    const std::shared_ptr<AudioSendNNStateChangeCallback> &cb)
+    const std::shared_ptr<AudioNNStateChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(sendNNStateChangeMutex_);
     sendNNStateChangeCallbackList_.push_back(cb);
@@ -746,6 +746,12 @@ int32_t AudioPolicyClientStubImpl::RemoveSendNNStateChangeCallback()
     std::lock_guard<std::mutex> lockCbMap(sendNNStateChangeMutex_);
     sendNNStateChangeCallbackList_.clear();
     return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetSendNNStateChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(sendNNStateChangeMutex_);
+    return sendNNStateChangeCallbackList_.size();
 }
 
 void AudioPolicyClientStubImpl::OnSendNNStateChange(const int32_t &nnState)

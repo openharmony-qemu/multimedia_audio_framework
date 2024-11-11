@@ -1042,7 +1042,11 @@ void AudioPolicyServerHandler::HandleSendNNStateChangeEvent(const AppExecFwk::In
             AUDIO_ERR_LOG("sendNNStateChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        sendNNStateChangeCb->OnSendNNStateChange(eventContextObj->nnState);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SEND_NN_STATE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SEND_NN_STATE_CHANGE]) {
+            sendNNStateChangeCb->OnSendNNStateChange(eventContextObj->nnState);
+        }
     }
 }
 

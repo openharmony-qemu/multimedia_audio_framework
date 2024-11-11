@@ -442,7 +442,7 @@ bool AudioSocketThread::DeleteAudioUsbDevice(const char *devName)
     return false;
 }
 
-int32_t AudioSocketThread::ParseNNState(struct AudioPnpUevent *audioPnpUevent)
+int32_t AudioSocketThread::AudioNnDetectDevice(struct AudioPnpUevent *audioPnpUevent)
 {
     if (audioPnpUevent == NULL) {
         return HDF_ERR_INVALID_PARAM;
@@ -627,7 +627,7 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
         (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioAnahsDetectDevice(&audioPnpUevent) == SUCCESS) ||
-        (ParseNNState(&audioPnpUevent) == SUCCESS)) {
+        (AudioNnDetectDevice(&audioPnpUevent) == SUCCESS)) {
         return true;
     }
 

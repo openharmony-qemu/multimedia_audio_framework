@@ -18,9 +18,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioSendNNStateChangeCallback {
+class AudioNNStateChangeCallback {
 public:
-    virtual ~AudioSendNNStateChangeCallback() = default;
+    virtual ~AudioNNStateChangeCallback() = default;
 
     virtual void OnSendNNStateChange(const bool &isSendNNState) = 0;
 };
