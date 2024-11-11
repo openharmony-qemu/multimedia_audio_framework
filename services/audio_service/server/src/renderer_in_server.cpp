@@ -51,8 +51,7 @@ namespace {
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
-    constexpr int32_t DEFAULT_SPAN_SIZE = 4;
-    constexpr int32_t DIRECT_SPAN_SIZE = 1;
+    constexpr int32_t DEFAULT_SPAN_SIZE = 1;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -81,11 +80,7 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    int32_t frameCount = DEFAULT_SPAN_SIZE;
-    if (managerType_ == VOIP_PLAYBACK || managerType_ == DIRECT_PLAYBACK) {
-        frameCount = DIRECT_SPAN_SIZE;
-    }
-    totalSizeInFrame_ = spanSizeInFrame_ * frameCount; // 4 frames
+    totalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
@@ -271,8 +266,8 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_UNDERRUN:
             AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
                 audioServerBuffer_->GetAvailableDataFrames());
-            // In plan, maxlength is 4
-            if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(4 * spanSizeInFrame_)) {
+            if (audioServerBuffer_->GetAvailableDataFrames() ==
+                static_cast<int32_t>(DEFAULT_SPAN_SIZE * spanSizeInFrame_)) {
                 AUDIO_INFO_LOG("Buffer is empty");
                 needForceWrite_ = 0;
             } else {
