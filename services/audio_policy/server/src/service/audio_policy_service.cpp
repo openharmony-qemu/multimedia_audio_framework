@@ -159,16 +159,6 @@ std::map<std::string, AudioSampleFormat> AudioPolicyService::formatStrToEnum = {
     {"s32le", SAMPLE_S32LE},
 };
 
-std::map<std::string, ClassType> AudioPolicyService::classStrToEnum = {
-    {PRIMARY_CLASS, TYPE_PRIMARY},
-    {A2DP_CLASS, TYPE_A2DP},
-    {USB_CLASS, TYPE_USB},
-    {DP_CLASS, TYPE_DP},
-    {FILE_CLASS, TYPE_FILE_IO},
-    {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
-    {INVALID_CLASS, TYPE_INVALID},
-};
-
 std::map<std::string, ClassType> AudioPolicyService::portStrToEnum = {
     {PRIMARY_SPEAKER, TYPE_PRIMARY},
     {PRIMARY_MIC, TYPE_PRIMARY},
@@ -542,11 +532,10 @@ void AudioPolicyService::Deinit(void)
         audioPolicyManager_.CloseAudioPort(handle.second);
     });
     audioPolicyManager_.Deinit();
-    audioIOHandleMap_.DeInit();
 #ifdef USB_ENABLE
     AudioUsbManager::GetInstance().Deinit();
 #endif
-
+    audioIOHandleMap_.DeInit();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
     audioPnpServer_.StopPnpServer();
 
@@ -3712,7 +3701,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
         }
         descForCb.push_back(it);
         audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
-            updatedDesc.macAddress_);
+            updatedDesc.macAddress_, updatedDesc.deviceRole_);
     }
 
     // reset disconnected device info in stream
@@ -5359,9 +5348,10 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
 {
     AUDIO_INFO_LOG("Start");
 
+    DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
     for (sptr<AudioDeviceDescriptor> deviceDesc : desc) {
         if (deviceDesc->deviceRole_ == OUTPUT_DEVICE) {
-            DeviceType type = GetCurrentOutputDeviceType();
+            DeviceType type = curOutputDeviceType;
             std::string macAddress = GetCurrentOutputDeviceMacAddr();
             auto itr = audioConnectedDevice_.CheckExistOutputDevice(type, macAddress);
             if (itr != nullptr) {
