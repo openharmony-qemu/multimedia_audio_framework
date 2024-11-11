@@ -1198,7 +1198,6 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
     CHECK_AND_RETURN_RET_LOG(m != NULL, -1, "m is null");
     CHECK_AND_RETURN_RET_LOG(u != NULL, -1, "u is null");
 
-
     if (!(u->thread = pa_thread_new("OS_ReadHdi", ThreadFuncCapturerTimer, u))) {
         AUDIO_ERR_LOG("Failed to create hdi-source-record thread!");
         return -1;
