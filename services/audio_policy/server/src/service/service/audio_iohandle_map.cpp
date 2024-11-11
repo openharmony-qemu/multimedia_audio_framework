@@ -1,0 +1,223 @@
+/*
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioIOHandleMap"
+#endif
+
+#include "audio_iohandle_map.h"
+#include "parameter.h"
+#include "parameters.h"
+#include "audio_utils.h"
+#include "audio_policy_manager_factory.h"
+
+#include "audio_server_proxy.h"
+
+namespace OHOS {
+namespace AudioStandard {
+
+static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
+static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
+static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
+
+std::map<std::string, std::string> AudioIOHandleMap::sinkPortStrToClassStrMap_ = {
+    {PRIMARY_SPEAKER, PRIMARY_CLASS},
+    {BLUETOOTH_SPEAKER, A2DP_CLASS},
+    {USB_SPEAKER, USB_CLASS},
+    {DP_SINK, DP_CLASS},
+    {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
+};
+
+void AudioIOHandleMap::DeInit()
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    IOHandles_.clear();
+}
+
+std::unordered_map<std::string, AudioIOHandle> AudioIOHandleMap::GetCopy()
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    return IOHandles_;
+}
+
+bool AudioIOHandleMap::GetModuleIdByKey(std::string moduleName, AudioIOHandle& moduleId)
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    if (IOHandles_.count(moduleName)) {
+        moduleId = IOHandles_[moduleName];
+        return true;
+    }
+    return false;
+}
+
+bool AudioIOHandleMap::CheckIOHandleExist(std::string moduleName)
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    return (IOHandles_.find(moduleName) != IOHandles_.end());
+}
+
+void AudioIOHandleMap::DelIOHandleInfo(std::string moduleName)
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    IOHandles_.erase(moduleName);
+}
+
+void AudioIOHandleMap::AddIOHandleInfo(std::string moduleName, const AudioIOHandle& moduleId)
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    IOHandles_[moduleName] = moduleId;
+}
+
+// private methods
+AudioIOHandle AudioIOHandleMap::GetSinkIOHandle(DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    AudioIOHandle ioHandle;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+            ioHandle = IOHandles_[PRIMARY_SPEAKER];
+            break;
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            ioHandle = IOHandles_[USB_SPEAKER];
+            break;
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+            ioHandle = IOHandles_[BLUETOOTH_SPEAKER];
+            break;
+        case DeviceType::DEVICE_TYPE_FILE_SINK:
+            ioHandle = IOHandles_[FILE_SINK];
+            break;
+        case DeviceType::DEVICE_TYPE_DP:
+            ioHandle = IOHandles_[DP_SINK];
+            break;
+        default:
+            ioHandle = IOHandles_[PRIMARY_SPEAKER];
+            break;
+    }
+    return ioHandle;
+}
+
+AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    AudioIOHandle ioHandle;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            ioHandle = IOHandles_[USB_MIC];
+            break;
+        case DeviceType::DEVICE_TYPE_MIC:
+            ioHandle = IOHandles_[PRIMARY_MIC];
+            break;
+        case DeviceType::DEVICE_TYPE_FILE_SOURCE:
+            ioHandle = IOHandles_[FILE_SOURCE];
+            break;
+        default:
+            ioHandle = IOHandles_[PRIMARY_MIC];
+            break;
+    }
+    return ioHandle;
+}
+
+int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleName,
+    const AudioModuleInfo &moduleInfo)
+{
+    AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
+        "OpenAudioPort failed %{public}d", ioHandle);
+
+    AddIOHandleInfo(moduleName, ioHandle);
+    return SUCCESS;
+}
+
+int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleName)
+{
+    AudioIOHandle ioHandle;
+    CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), ERROR,
+        "can not find %{public}s in io map", moduleName.c_str());
+    DelIOHandleInfo(moduleName);
+
+    AUDIO_INFO_LOG("[close-module] %{public}s,id:%{public}d", moduleName.c_str(), ioHandle);
+    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
+    return SUCCESS;
+}
+
+void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync)
+{
+    if (sinkPortStrToClassStrMap_.count(portName) > 0) {
+        // Mute by render sink. (primary、a2dp、usb、dp、offload)
+        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName),
+            duration, true);
+    } else {
+        // Mute by pa.
+        AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, true, isSync);
+    }
+    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
+
+    // Muted and then unmute.
+    std::thread switchThread(&AudioIOHandleMap::UnmutePortAfterMuteDuration, this, duration, portName,
+        DEVICE_TYPE_NONE);
+    switchThread.detach();
+}
+
+void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)
+{
+    if (networkID != LOCAL_NETWORK_ID || (networkID == LOCAL_NETWORK_ID && sinkName != PRIMARY_SPEAKER)) {
+        // PA may move the sink to default when unloading module.
+        MuteSinkPort(PRIMARY_SPEAKER, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+    }
+}
+
+void AudioIOHandleMap::SetMoveFinish(bool flag)
+{
+    moveDeviceFinished_ = flag;
+}
+
+void AudioIOHandleMap::NotifyUnmutePort()
+{
+    std::unique_lock<std::mutex> lock(moveDeviceMutex_);
+    moveDeviceFinished_ = true;
+    moveDeviceCV_.notify_all();
+}
+
+void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType)
+{
+    Trace trace("UnmutePortAfterMuteDuration:" + portName + " for " + std::to_string(muteDuration) + "us");
+
+    if (!moveDeviceFinished_.load()) {
+        std::unique_lock<std::mutex> lock(moveDeviceMutex_);
+        bool loadWaiting = moveDeviceCV_.wait_for(lock,
+            std::chrono::milliseconds(WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS),
+            [this] { return moveDeviceFinished_.load(); }
+        );
+        if (!loadWaiting) {
+            AUDIO_ERR_LOG("move device time out");
+        }
+    }
+    AUDIO_INFO_LOG("%{public}d us for device type[%{public}s]", muteDuration, portName.c_str());
+
+    usleep(muteDuration);
+    if (sinkPortStrToClassStrMap_.count(portName) > 0) {
+        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName),
+            muteDuration, false);
+    } else {
+        AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
+    }
+}
+}
+}

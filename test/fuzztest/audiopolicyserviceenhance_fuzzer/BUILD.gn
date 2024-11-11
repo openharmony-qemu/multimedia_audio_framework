@@ -29,6 +29,7 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     "../../../services/audio_policy/server/include",
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include/service/manager",
+    "../../../services/audio_policy/server/include/service/service",
     "../../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
   cflags = [

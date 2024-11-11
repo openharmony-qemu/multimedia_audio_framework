@@ -163,7 +163,7 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
 
     GetServerPtr()->audioPolicyService_.UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
     GetServerPtr()->audioPolicyService_.GetA2dpOffloadCodecAndSendToDsp();
-    GetServerPtr()->audioPolicyService_.UpdateAudioCapturerMicrophoneDescriptor(deviceType);
+    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.UpdateAudioCapturerMicrophoneDescriptor(deviceType);
 
     // the max value of BluetoothOffloadState is A2DP_OFFLOAD.
     BluetoothOffloadState flag = static_cast<BluetoothOffloadState>(num % (A2DP_OFFLOAD + 1));
@@ -263,7 +263,6 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
         fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.FilterSinkInputs(fuzzInt32One);
     GetServerPtr()->audioPolicyService_.FilterSourceOutputs(fuzzInt32One);
-    GetServerPtr()->audioPolicyService_.RememberRoutingInfo(fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzAudioDeviceDescriptor, fuzzBool);
 }
 

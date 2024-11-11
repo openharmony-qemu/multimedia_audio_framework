@@ -149,16 +149,17 @@ void InitGetServerService(const uint8_t *rawData, size_t size, DeviceRole device
 
     AudioModuleInfo audioModuleInfo = GetServerPtr()->
         audioPolicyService_.ConstructRemoteAudioModuleInfo(LOCAL_NETWORK_ID, deviceRole, DEVICE_TYPE_BLUETOOTH_A2DP);
-    GetServerPtr()->audioPolicyService_.deviceClassInfo_.insert({ClassType::TYPE_A2DP, {audioModuleInfo}});
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.deviceClassInfo_.insert({ClassType::TYPE_A2DP,
+        {audioModuleInfo}});
 
     AudioIOHandle ioHandle = GetServerPtr()->audioPolicyService_.audioPolicyManager_.OpenAudioPort(audioModuleInfo);
 
-    GetServerPtr()->audioPolicyService_.IOHandles_.insert({audioModuleInfo.name, ioHandle});
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.AddIOHandleInfo(audioModuleInfo.name, ioHandle);
 }
 
 void ThreadFunctionTest()
 {
-    GetServerPtr()->audioPolicyService_.isAdapterInfoMap_.store(true);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(true);
 }
 
 void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStreamInfo audioStreamInfo,
@@ -171,8 +172,8 @@ void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStre
     GetServerPtr()->audioPolicyService_.LoadSinksForCapturer();
     GetServerPtr()->audioPolicyService_.HandleRemoteCastDevice(true, audioStreamInfo);
     GetServerPtr()->audioPolicyService_.HandleRemoteCastDevice(false, audioStreamInfo);
-    GetServerPtr()->audioPolicyService_.OnVoipConfigParsed(false);
-    GetServerPtr()->audioPolicyService_.GetVoipConfig();
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(false);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVoipConfig();
     pid_t clientPid = *reinterpret_cast<const pid_t*>(rawData);
     GetServerPtr()->audioPolicyService_.ReduceAudioPolicyClientProxyMap(clientPid);
     AudioStreamChangeInfo streamChangeInfo;
@@ -191,15 +192,15 @@ void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStre
     GetServerPtr()->audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object, sessionId);
     mode = AUDIO_MODE_PLAYBACK;
     GetServerPtr()->audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object, sessionId);
-    GetServerPtr()->audioPolicyService_.GetSinkIOHandle(DEVICE_TYPE_BLUETOOTH_SCO);
-    GetServerPtr()->audioPolicyService_.GetSinkIOHandle(DEVICE_TYPE_USB_ARM_HEADSET);
-    GetServerPtr()->audioPolicyService_.GetSinkIOHandle(DEVICE_TYPE_BLUETOOTH_A2DP);
-    GetServerPtr()->audioPolicyService_.GetSinkIOHandle(DEVICE_TYPE_FILE_SINK);
-    GetServerPtr()->audioPolicyService_.GetSinkIOHandle(DEVICE_TYPE_DP);
-    GetServerPtr()->audioPolicyService_.GetSourceIOHandle(DEVICE_TYPE_USB_ARM_HEADSET);
-    GetServerPtr()->audioPolicyService_.GetSourceIOHandle(DEVICE_TYPE_MIC);
-    GetServerPtr()->audioPolicyService_.GetSourceIOHandle(DEVICE_TYPE_FILE_SOURCE);
-    GetServerPtr()->audioPolicyService_.GetSourceIOHandle(DEVICE_TYPE_DP);
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSinkIOHandle(DEVICE_TYPE_BLUETOOTH_SCO);
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSinkIOHandle(DEVICE_TYPE_USB_ARM_HEADSET);
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSinkIOHandle(DEVICE_TYPE_BLUETOOTH_A2DP);
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSinkIOHandle(DEVICE_TYPE_FILE_SINK);
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSinkIOHandle(DEVICE_TYPE_DP);
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSourceIOHandle(DEVICE_TYPE_USB_ARM_HEADSET);
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSourceIOHandle(DEVICE_TYPE_MIC);
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSourceIOHandle(DEVICE_TYPE_FILE_SOURCE);
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSourceIOHandle(DEVICE_TYPE_DP);
     SinkInput sinkInput = {};
     SourceOutput sourceOutput = {};
     GetServerPtr()->audioPolicyService_.WriteOutDeviceChangedSysEvents(remoteDeviceDescriptor, sinkInput);
@@ -225,8 +226,8 @@ void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)
     pipeInfo.streamPropInfos_.push_back(streamPropInfo);
     pipeInfos_.push_back(pipeInfo);
     adapterInfo.pipeInfos_ = pipeInfos_;
-    GetServerPtr()->audioPolicyService_.adapterInfoMap_ = {};
-    GetServerPtr()->audioPolicyService_.adapterInfoMap_.
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_ = {};
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.
         insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
     GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
 
@@ -265,7 +266,7 @@ void MakeAdapterInfoMap()
     pipeInfo.streamPropInfos_.push_back(streamPropInfo);
     pipeInfos_.push_back(pipeInfo);
     adapterInfo.pipeInfos_ = pipeInfos_;
-    GetServerPtr()->audioPolicyService_.adapterInfoMap_.
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.
         insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
 }
 
@@ -347,14 +348,14 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.CheckSpatializationAndEffectState();
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->IsA2dpOffloadConnecting(MOD_NUM_TWO);
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->a2dpOffloadDeviceAddress_ = "A2dpMacAddress";
-    GetServerPtr()->
-        audioPolicyService_.audioA2dpOffloadManager_->currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->audioA2dpOffloadFlag_.currentOffloadConnectionState_
+        = CONNECTION_STATUS_CONNECTED;
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddressS", A2DP_STOPPED);
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddressS", A2DP_PLAYING);
-    GetServerPtr()->
-        audioPolicyService_.audioA2dpOffloadManager_->currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->audioA2dpOffloadFlag_.currentOffloadConnectionState_
+            = CONNECTION_STATUS_CONNECTING;
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddress", A2DP_PLAYING);
     GetServerPtr()->
@@ -431,7 +432,7 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     std::string moduleName = dis->networkId_ + (dis->deviceRole_ == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
     AudioModuleInfo audioModuleInfo;
     AudioIOHandle ioHandle = GetServerPtr()->audioPolicyService_.audioPolicyManager_.OpenAudioPort(audioModuleInfo);
-    GetServerPtr()->audioPolicyService_.IOHandles_.insert({moduleName, ioHandle});
+    GetServerPtr()->audioPolicyService_.audioIOHandleMap_.AddIOHandleInfo(moduleName, ioHandle);
     GetServerPtr()->audioPolicyService_.MoveToRemoteOutputDevice(sinkInputs, dis);
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = SYSTEM_ABILITY_ID;

@@ -19,6 +19,7 @@
 #include <string>
 
 #include "audio_device_info.h"
+#include "audio_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
