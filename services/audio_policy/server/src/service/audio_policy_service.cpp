@@ -6941,7 +6941,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
         deviceInfo.deviceId_ = GetCurrentInputDevice().deviceId_;
-        deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+        deviceInfo.networkId_ = GetCurrentInputDevice().networkId_;
         deviceInfo.deviceRole_ = INPUT_DEVICE;
         deviceInfo.deviceType_ = GetCurrentInputDeviceType();
     }
