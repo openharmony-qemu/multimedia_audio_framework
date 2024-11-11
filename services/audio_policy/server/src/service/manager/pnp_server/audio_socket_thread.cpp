@@ -477,7 +477,7 @@ int32_t AudioSocketThread::AudioNnDetectDevice(struct AudioPnpUevent *audioPnpUe
         AUDIO_ERR_LOG("get AudioPolicyServerHandler instance failed");
         return HDF_ERR_INVALID_PARAM;
     }
-    bool ret = handle->SendNNStateChangeCallback(nnState);
+    bool ret = handle->SendNnStateChangeCallback(nnState);
     AUDIO_INFO_LOG("NN state change callback ret is [%{public}d]", ret);
     return ret;
 }
