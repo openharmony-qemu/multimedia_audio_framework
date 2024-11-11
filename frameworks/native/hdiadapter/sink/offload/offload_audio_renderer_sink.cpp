@@ -435,6 +435,20 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
     frames = frames_ * SECOND_TO_MICROSECOND / attr_.sampleRate;
     timeSec = timestamp.tvSec;
     timeNanoSec = timestamp.tvNSec;
+    // check hdi timestamp out of range 40 * 1000 * 1000 ns
+    struct timespec time;
+    clockid_t clockId = CLOCK_MONOTONIC;
+    if (clock_gettime(clockId, &time) >= 0) {
+        int64_t curNs = time.tv_sec * AUDIO_NS_PER_SECOND + time.tv_nsec;
+        int64_t hdiNs = timestamp.tvSec * AUDIO_NS_PER_SECOND + timestamp.tvNSec;
+        int64_t outNs = 40 * 1000 * 1000; // 40 * 1000 * 1000 ns
+        if (curNs <= hdiNs || curNs > hdiNs + outNs) {
+            AUDIO_PRERELEASE_LOGW("HDI time is not in the range, timestamp: %{public}" PRId64
+                ", now: %{public}" PRId64, hdiNs, curNs);
+            timeSec = time.tv_sec;
+            timeNanoSec = time.tv_nsec;
+        }
+    }
     return ret;
 }
 

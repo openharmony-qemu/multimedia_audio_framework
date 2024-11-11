@@ -3658,6 +3658,9 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
                 uint64_t time = now > u->offload.hdiPosTs ? (now - u->offload.hdiPosTs) / PA_USEC_PER_MSEC : 0;
                 uint64_t hdiPos = u->offload.hdiPos + time * PA_USEC_PER_MSEC;
                 *((uint64_t *)data) = pos > hdiPos ? (pos - hdiPos) : 0;
+                AUDIO_DEBUG_LOG("offload latency: %{public}" PRIu64 " write pos: %{public}" PRIu64
+                    " hdi pos: %{public}" PRIu64 " time: %{public}" PRIu64,
+                    *((uint64_t *)data), pos, u->offload.hdiPos, time * PA_USEC_PER_MSEC);
             } else if (u->sink_latency) {
                 *((uint64_t *)data) = u->sink_latency * PA_USEC_PER_MSEC;
             } else {

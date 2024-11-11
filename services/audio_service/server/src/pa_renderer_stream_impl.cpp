@@ -438,21 +438,10 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
         preTimeGetPaLatency_ = curTimeGetLatency;
     }
 
-    pa_usec_t paLatency {0};
-    int32_t negative {0};
-    if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0 && negative) {
-        return ERR_OPERATION_FAILED;
-    }
-
     const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
     CHECK_AND_RETURN_RET_LOG(info != nullptr, ERR_OPERATION_FAILED, "pa_stream_get_timing_info failed");
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
     uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
-    uint64_t writeIndex = pa_bytes_to_usec(info->write_index, sampleSpec);
-    if (writeIndex <= paLatency || sampleSpec == nullptr) {
-        AUDIO_ERR_LOG("error data!");
-        return ERR_OPERATION_FAILED;
-    }
     framePosition = readIndex * sampleSpec->rate / AUDIO_US_PER_S;
     latency = info->sink_usec * sampleSpec->rate / AUDIO_US_PER_S;
     lock.Unlock();
@@ -500,28 +489,25 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
         return ERR_ILLEGAL_STATE;
     }
     pa_usec_t paLatency {0};
-    pa_usec_t cacheLatency {0};
-    int32_t negative {0};
 
     UpdatePaTimingInfo();
-
-    if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
-        if (negative) {
-            AUDIO_WARNING_LOG("pa_stream_get_latency failed");
-            return ERR_OPERATION_FAILED;
-        }
-    }
-
+    const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
+    CHECK_AND_RETURN_RET_LOG(info != nullptr, ERR_OPERATION_FAILED, "pa_stream_get_timing_info failed");
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    uint64_t readIndex = pa_bytes_to_usec(info->read_index < 0 ? 0 : info->read_index, sampleSpec);
+    uint64_t writeIndex = pa_bytes_to_usec(info->write_index < 0 ? 0 : info->write_index, sampleSpec);
+    pa_usec_t usec = readIndex >= info->sink_usec ? readIndex - info->sink_usec : 0;
+    paLatency = writeIndex >= usec ? writeIndex - usec : 0;
     lock.Unlock();
 
-    latency = paLatency + cacheLatency;
+    latency = paLatency;
     uint32_t algorithmLatency = GetEffectChainLatency();
     latency += offloadEnable_ ? 0 : algorithmLatency * AUDIO_US_PER_MS;
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     latency += a2dpOffloadLatency * AUDIO_US_PER_MS;
-    AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", cache latency: %{public}"
-        PRIu64 ", algo latency: %{public}u ms, a2dp offload latency: %{public}u ms",
-        latency, paLatency, cacheLatency, algorithmLatency, a2dpOffloadLatency);
+    AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", algo latency: %{public}u ms"
+        ", a2dp offload latency: %{public}u ms, write: %{public}" PRIu64 ", read: %{public}" PRIu64 ", sink:%{public}"
+        PRIu64, latency, paLatency, algorithmLatency, a2dpOffloadLatency, writeIndex, readIndex, info->sink_usec);
 
     preLatency_ = latency;
     preTimeGetLatency_ = curTimeGetLatency;
