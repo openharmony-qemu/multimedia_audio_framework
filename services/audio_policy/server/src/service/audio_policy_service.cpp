@@ -1501,6 +1501,24 @@ std::vector<SinkInput> AudioPolicyService::FilterSinkInputs(int32_t sessionId)
     return targetSinkInputs;
 }
 
+std::vector<SinkInput> AudioPolicyService::FilterSinkInputs(int32_t sessionId, std::vector<SinkInput> sinkInputs)
+{
+    // find sink-input id with audioRendererFilter
+    std::vector<SinkInput> targetSinkInputs = {};
+
+    for (size_t i = 0; i < sinkInputs.size(); i++) {
+        CHECK_AND_CONTINUE_LOG(sinkInputs[i].uid != dAudioClientUid,
+            "Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
+        CHECK_AND_CONTINUE_LOG(sinkInputs[i].streamType != STREAM_DEFAULT,
+            "Sink-input[%{public}zu] of effect sink, don't move", i);
+        AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());
+        if (sessionId == sinkInputs[i].streamId) {
+            targetSinkInputs.push_back(sinkInputs[i]);
+        }
+    }
+    return targetSinkInputs;
+}
+
 std::vector<SourceOutput> AudioPolicyService::FilterSourceOutputs(int32_t sessionId)
 {
     std::vector<SourceOutput> targetSourceOutputs = {};
@@ -2499,10 +2517,11 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(shared_ptr<AudioRendererCha
 }
 
 void AudioPolicyService::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices, const AudioStreamDeviceChangeReasonExt reason)
+    vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices, std::vector<SinkInput> sinkInputs,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::MoveToNewOutputDevice");
-    std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(rendererChangeInfo->sessionId);
+    std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(rendererChangeInfo->sessionId, sinkInputs);
 
     bool needTriggerCallback = true;
     if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) {
@@ -2802,6 +2821,7 @@ void AudioPolicyService::FetchOutputDevice(vector<shared_ptr<AudioRendererChange
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
     bool hasDirectChangeDevice = false;
+    std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
     for (auto &rendererChangeInfo : rendererChangeInfos) {
         if (!IsRendererStreamRunning(rendererChangeInfo) || (audioScene_ == AUDIO_SCENE_DEFAULT &&
             audioRouterCenter_.isCallRenderRouter(rendererChangeInfo->rendererInfo.streamUsage))) {
@@ -2837,7 +2857,7 @@ void AudioPolicyService::FetchOutputDevice(vector<shared_ptr<AudioRendererChange
             continue;
         }
         if (NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason)) { continue; }
-        MoveToNewOutputDevice(rendererChangeInfo, descs, reason);
+        MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs, reason);
     }
     FetchEnd(isUpdateActiveDevice, runningStreamCount);
 }
@@ -2990,7 +3010,8 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRender
             streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_NORMAL_OUT);
         }
         ResetOffloadMode(rendererChangeInfo->sessionId);
-        MoveToNewOutputDevice(rendererChangeInfo, descs);
+        std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+        MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs);
     }
 }
 
