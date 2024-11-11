@@ -1623,7 +1623,7 @@ void AudioPolicyService::StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceD
     distributedRoutingInfo_.type = type;
 }
 
-DistributedRoutingInfo& AudioPolicyService::GetDistributedRoutingRoleInfo()
+DistributedRoutingInfo AudioPolicyService::GetDistributedRoutingRoleInfo()
 {
     return distributedRoutingInfo_;
 }
