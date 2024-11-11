@@ -35,6 +35,7 @@
 
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
+#include "audio_log_utils.h"
 #include "audio_utils.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
@@ -129,6 +130,8 @@ private:
     uint32_t openMic_ = 0;
     uint32_t captureId_ = 0;
     std::string adapterNameCase_ = "";
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
 
     // for get amplitude
     float maxAmplitude_ = 0;
@@ -339,6 +342,7 @@ AudioCapturerSourceInner::AudioCapturerSourceInner(const std::string &halName)
 AudioCapturerSourceInner::~AudioCapturerSourceInner()
 {
     AUDIO_WARNING_LOG("~AudioCapturerSourceInner");
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string &halName,
@@ -634,6 +638,8 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
 
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
+    DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void*>(frame), replyBytes);
@@ -645,6 +651,17 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     }
     return SUCCESS;
+}
+
+void AudioCapturerSourceInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void AudioCapturerSourceInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -711,6 +728,7 @@ int32_t AudioCapturerSourceInner::Start(void)
         + "_source_" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel)
         + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    logUtilsTag_ = "AudioSource";
 
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {

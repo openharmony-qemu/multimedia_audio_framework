@@ -100,15 +100,6 @@ AudioEffectChain::~AudioEffectChain()
     DumpFileUtil::CloseDumpFile(&dumpFileOutput_);
 }
 
-void AudioEffectChain::Dump()
-{
-    std::lock_guard<std::mutex> lock(reloadMutex_);
-    for (AudioEffectHandle handle : standByEffectHandles_) {
-        AUDIO_INFO_LOG("standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType_.c_str(),
-            handle);
-    }
-}
-
 void AudioEffectChain::SetEffectMode(const std::string &mode)
 {
     effectMode_ = mode;
@@ -436,6 +427,26 @@ void AudioEffectChain::SetFinalVolume(const float volume)
 float AudioEffectChain::GetFinalVolume()
 {
     return finalVolume_;
+}
+
+void AudioEffectChain::SetCurrVolume(const float volume)
+{
+    currVolume_ = volume;
+}
+
+float AudioEffectChain::GetCurrVolume()
+{
+    return currVolume_;
+}
+
+void AudioEffectChain::SetFinalVolumeState(const bool state)
+{
+    sendFinalVolumeState_ = state;
+}
+
+bool AudioEffectChain::GetFinalVolumeState()
+{
+    return sendFinalVolumeState_;
 }
 
 void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)

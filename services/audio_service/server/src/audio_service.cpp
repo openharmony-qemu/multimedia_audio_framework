@@ -35,6 +35,7 @@ namespace AudioStandard {
 static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10ms
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3ms
+static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 
 AudioService *AudioService::GetInstance()
@@ -74,7 +75,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
                 needRelease = true;
                 endpointName = (*paired).second->GetEndpointName();
-                delayTime = GetReleaseDelayTime((*paired).second->GetDeviceInfo().deviceType, isSwitchStream);
+                delayTime = GetReleaseDelayTime((*paired).second, isSwitchStream);
             }
             linkedPairedList_.erase(paired);
             isFind = true;
@@ -108,10 +109,13 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
     releaseEndpointThread.detach();
 }
 
-
-int32_t AudioService::GetReleaseDelayTime(DeviceType deviceType, bool isSwitchStream)
+int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream)
 {
-    if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (endpoint->GetEndpointType()  == AudioEndpoint::EndpointType::TYPE_VOIP_MMAP) {
+        return VOIP_ENDPOINT_RELEASE_DELAY_TIME;
+    }
+
+    if (endpoint->GetDeviceInfo().deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) {
         return NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
     }
     if (!isSwitchStream) {
@@ -326,7 +330,7 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
         "Wrong usage ,should not be dualtone");
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (!ret) {
         AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
         return false;
@@ -570,34 +574,63 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 void AudioService::ResetAudioEndpoint()
 {
     std::lock_guard<std::mutex> lock(processListMutex_);
-    AudioProcessConfig config;
-    sptr<AudioProcessInServer> processInServer;
-    auto paired = linkedPairedList_.begin();
-    while (paired != linkedPairedList_.end()) {
-        if ((*paired).second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
-            AUDIO_INFO_LOG("Session id %{public}u", (*paired).first->GetSessionId());
-            linkedPairedList_.erase(paired);
-            config = (*paired).first->processConfig_;
-            int32_t ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unlink process to old endpoint failed");
-            std::string endpointName = (*paired).second->GetEndpointName();
-            if (endpointList_.find(endpointName) != endpointList_.end()) {
-                (*paired).second->Release();
-                AUDIO_INFO_LOG("Erase endpoint %{public}s from endpointList_", endpointName.c_str());
-                endpointList_.erase(endpointName);
-            }
 
+    std::vector<std::string> audioEndpointNames;
+    for (auto paired = linkedPairedList_.begin(); paired != linkedPairedList_.end(); paired++) {
+        if (paired->second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
+            // unlink old link
+            if (UnlinkProcessToEndpoint(paired->first, paired->second) != SUCCESS) {
+                AUDIO_ERR_LOG("Unlink process to old endpoint failed");
+            }
+            audioEndpointNames.push_back(paired->second->GetEndpointName());
+        }
+    }
+
+    // release old endpoint
+    for (auto &endpointName : audioEndpointNames) {
+        if (endpointList_.count(endpointName) > 0) {
+            endpointList_[endpointName]->Release();
+            AUDIO_INFO_LOG("Erase endpoint %{public}s from endpointList_", endpointName.c_str());
+            endpointList_.erase(endpointName);
+        }
+    }
+
+    ReLinkProcessToEndpoint();
+}
+
+void AudioService::ReLinkProcessToEndpoint()
+{
+    using LinkPair = std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>;
+    std::vector<std::vector<LinkPair>::iterator> errorLinkedPaireds;
+    for (auto paired = linkedPairedList_.begin(); paired != linkedPairedList_.end(); paired++) {
+        if (paired->second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
+            AUDIO_INFO_LOG("Session id %{public}u", paired->first->GetSessionId());
+
+            // get new endpoint
+            const AudioProcessConfig &config = paired->first->processConfig_;
             DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
             std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
                 IsEndpointTypeVoip(config, deviceInfo));
-            CHECK_AND_RETURN_LOG(audioEndpoint != nullptr, "Get new endpoint failed");
-
-            ret = LinkProcessToEndpoint((*paired).first, audioEndpoint);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "LinkProcessToEndpoint failed");
-            linkedPairedList_.push_back(std::make_pair((*paired).first, audioEndpoint));
-            CheckInnerCapForProcess((*paired).first, audioEndpoint);
+            if (audioEndpoint == nullptr) {
+                AUDIO_ERR_LOG("Get new endpoint failed");
+                errorLinkedPaireds.push_back(paired);
+                continue;
+            }
+            // link new endpoint
+            if (LinkProcessToEndpoint(paired->first, audioEndpoint) != SUCCESS) {
+                AUDIO_ERR_LOG("LinkProcessToEndpoint failed");
+                errorLinkedPaireds.push_back(paired);
+                continue;
+            }
+            // reset shared_ptr before to new
+            paired->second.reset();
+            paired->second = audioEndpoint;
+            CheckInnerCapForProcess(paired->first, audioEndpoint);
         }
-        paired++;
+    }
+
+    for (auto &paired : errorLinkedPaireds) {
+        linkedPairedList_.erase(paired);
     }
 }
 
@@ -710,7 +743,7 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 {
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
     if (ret) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
             "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
