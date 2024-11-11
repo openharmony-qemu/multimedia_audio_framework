@@ -232,7 +232,6 @@ void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
 class AudioInfoDumpUtils {
 public:
     static const std::string GetStreamName(AudioStreamType streamType);
-    static const std::string GetStreamNameExt(AudioStreamType streamType);
     static const std::string GetDeviceTypeName(DeviceType deviceType);
     static const std::string GetConnectTypeName(ConnectType connectType);
     static const std::string GetSourceName(SourceType sourceType);

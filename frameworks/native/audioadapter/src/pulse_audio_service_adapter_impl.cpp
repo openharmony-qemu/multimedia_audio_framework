@@ -68,7 +68,8 @@ static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM
     {"ultrasonic", STREAM_ULTRASONIC},
     {"wakeup", STREAM_WAKEUP},
     {"voice_message", STREAM_VOICE_MESSAGE},
-    {"navigation", STREAM_NAVIGATION}
+    {"navigation", STREAM_NAVIGATION},
+    {"camcorder", STREAM_CAMCORDER}
 };
 
 AudioServiceAdapter::~AudioServiceAdapter() = default;

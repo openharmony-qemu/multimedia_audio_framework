@@ -39,7 +39,7 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
 {
     int32_t ret;
     char event[AUDIO_PNP_INFO_LEN_MAX] = {0};
-    if (audioEvent.eventType == AUDIO_EVENT_UNKNOWN || audioEvent.deviceType == AUDIO_DEVICE_UNKNOWN) {
+    if (audioEvent.eventType == PNP_EVENT_UNKNOWN || audioEvent.deviceType == PNP_DEVICE_UNKNOWN) {
         AUDIO_ERR_LOG("audio event is not updated");
         return event;
     }
@@ -109,6 +109,14 @@ void AudioPnpServer::OnPnpDeviceStatusChanged(const std::string &info)
     }
 }
 
+void MicrophoneBlocked::OnMicrophoneBlocked(const std::string &info, AudioPnpServer &audioPnpServer)
+{
+    std::lock_guard<std::mutex> lock(audioPnpServer.pnpMutex_);
+    if (audioPnpServer.pnpCallback_ != nullptr) {
+        audioPnpServer.pnpCallback_->OnMicrophoneBlocked(info);
+    }
+}
+
 void AudioPnpServer::OpenAndReadInput()
 {
     int32_t ret = -1;
@@ -125,7 +133,12 @@ void AudioPnpServer::OpenAndReadInput()
         }
         eventInfo_ = GetAudioEventInfo(AudioInputThread::audioInputEvent_);
         CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid input info");
-        OnPnpDeviceStatusChanged(eventInfo_);
+        if (AudioSocketThread::audioSocketEvent_.eventType == PNP_EVENT_MIC_BLOCKED ||
+            AudioSocketThread::audioSocketEvent_.eventType == PNP_EVENT_MIC_UNBLOCKED) {
+            MicrophoneBlocked::GetInstance().OnMicrophoneBlocked(eventInfo_, GetAudioPnpServer());
+        } else {
+            OnPnpDeviceStatusChanged(eventInfo_);
+        }
     } while (g_inputRunThread);
     return;
 }
@@ -166,9 +179,12 @@ void AudioPnpServer::OpenAndReadWithSocket()
             }
             eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
             CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid socket info");
-            OnPnpDeviceStatusChanged(eventInfo_);
-        } else if (((uint32_t)fd.revents & POLLERR) == POLLERR) {
-            AUDIO_ERR_LOG("audio event poll error");
+            if (AudioSocketThread::audioSocketEvent_.eventType == PNP_EVENT_MIC_BLOCKED ||
+                AudioSocketThread::audioSocketEvent_.eventType == PNP_EVENT_MIC_UNBLOCKED) {
+                MicrophoneBlocked::GetInstance().OnMicrophoneBlocked(eventInfo_, GetAudioPnpServer());
+            } else {
+                OnPnpDeviceStatusChanged(eventInfo_);
+            }
         }
     }
     close(socketFd);

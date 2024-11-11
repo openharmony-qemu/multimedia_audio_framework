@@ -35,6 +35,7 @@ private:
     void HandleAudioFocusRequested(MessageParcel &data, MessageParcel &reply);
     void HandleAudioFocusAbandoned(MessageParcel &data, MessageParcel &reply);
     void HandleDeviceChange(MessageParcel &data, MessageParcel &reply);
+    void HandleMicrophoneBlocked(MessageParcel &data, MessageParcel &reply);
     void HandleRingerModeUpdated(MessageParcel &data, MessageParcel &reply);
     void HandleMicStateChange(MessageParcel &data, MessageParcel &reply);
     void HandlePreferredOutputDeviceUpdated(MessageParcel &data, MessageParcel &reply);

@@ -52,6 +52,29 @@ private:
     OH_AudioRoutingManager_OnDeviceChangedCallback callback_;
 };
 
+class OHMicrophoneBlockCallback : public AudioManagerMicrophoneBlockedCallback {
+public:
+    explicit OHMicrophoneBlockCallback(OH_AudioRoutingManager_OnDeviceBlockStatusCallback callback, void *userData)
+        : blockedCallback_(callback)
+    {
+    }
+
+    OH_AudioRoutingManager_OnDeviceBlockStatusCallback GetCallback()
+    {
+        return blockedCallback_;
+    }
+
+    ~OHMicrophoneBlockCallback()
+    {
+        AUDIO_INFO_LOG("~OHMicrophoneBlockCallback called.");
+        blockedCallback_ = nullptr;
+    }
+    void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
+
+private:
+    OH_AudioRoutingManager_OnDeviceBlockStatusCallback blockedCallback_;
+};
+
 class OHAudioRoutingManager {
 public:
     ~OHAudioRoutingManager();
@@ -74,12 +97,16 @@ public:
         OH_AudioRoutingManager_OnDeviceChangedCallback callback);
     OH_AudioCommon_Result UnsetDeviceChangeCallback(DeviceFlag flag,
         OH_AudioRoutingManager_OnDeviceChangedCallback ohOnDeviceChangedcallback);
+    OH_AudioCommon_Result SetMicrophoneBlockedCallback(OH_AudioRoutingManager_OnDeviceBlockStatusCallback callback,
+        void* userData);
+    OH_AudioCommon_Result UnsetMicrophoneBlockedCallback(OH_AudioRoutingManager_OnDeviceBlockStatusCallback callback);
 
 private:
     OHAudioRoutingManager();
     static OHAudioRoutingManager *ohAudioRoutingManager_;
     AudioSystemManager *audioSystemManager_ = AudioSystemManager::GetInstance();
     std::vector<std::shared_ptr<OHAudioDeviceChangedCallback>> ohAudioOnDeviceChangedCallbackArray_;
+    std::vector<std::shared_ptr<OHMicrophoneBlockCallback>> ohMicroPhoneBlockCallbackArray_;
 };
 OHAudioRoutingManager* OHAudioRoutingManager::ohAudioRoutingManager_ = nullptr;
 

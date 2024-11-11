@@ -67,6 +67,11 @@ public:
         const uint32_t sessionId, const std::weak_ptr<DeviceChangeWithInfoCallback> &cb);
     int32_t RemoveDeviceChangeWithInfoCallback(const uint32_t sessionId);
     size_t GetDeviceChangeWithInfoCallbackkSize() const;
+    int32_t AddMicrophoneBlockedCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb);
+    int32_t RemoveMicrophoneBlockedCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb);
+    size_t GetMicrophoneBlockedCallbackSize() const;
     int32_t AddHeadTrackingDataRequestedChangeCallback(const std::string &macAddress,
         const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb);
     int32_t RemoveHeadTrackingDataRequestedChangeCallback(const std::string &macAddress);
@@ -92,6 +97,7 @@ public:
     void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
     void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+    void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
@@ -127,6 +133,8 @@ private:
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
+    std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
+        microphoneBlockedCallbackList_;
 
     std::unordered_map<uint32_t,
         std::weak_ptr<DeviceChangeWithInfoCallback>> deviceChangeWithInfoCallbackMap_;
@@ -148,6 +156,7 @@ private:
     mutable std::mutex spatializationEnabledChangeMutex_;
     mutable std::mutex headTrackingEnabledChangeMutex_;
     mutable std::mutex audioSessionMutex_;
+    mutable std::mutex microphoneBlockedMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

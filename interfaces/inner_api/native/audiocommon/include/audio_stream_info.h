@@ -153,10 +153,15 @@ enum AudioStreamType {
      * Indicates audio streams for voice call assistant.
      */
     STREAM_VOICE_CALL_ASSISTANT = 26,
+
+    /**
+     * Indicates audio streams for camcorder.
+     */
+    STREAM_CAMCORDER = 27,
     /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_VOICE_CALL_ASSISTANT,
+    STREAM_TYPE_MAX = STREAM_CAMCORDER,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.
@@ -527,6 +532,7 @@ const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_REMOTE_CAST,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
 };
 
 const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
@@ -537,6 +543,7 @@ const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
 };
 
 // Supported audio parameters for fast audio stream

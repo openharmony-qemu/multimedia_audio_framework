@@ -103,6 +103,7 @@ ohos_shared_library("audio") {
     "c_utils:utils",
     "hilog:libhilog",
     "hiview:libxpower_event_js",
+    "init:libbegetutil",
     "napi:ace_napi",
   ]
   relative_install_dir = "module/multimedia"

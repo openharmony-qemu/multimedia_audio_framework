@@ -1075,7 +1075,8 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
         stream = STREAM_ACCESSIBILITY;
     else if (!streamType.compare(std::string("ultrasonic")))
         stream = STREAM_ULTRASONIC;
-
+    else if (!streamType.compare(std::string("camcorder")))
+        stream = STREAM_CAMCORDER;
     return stream;
 }
 
