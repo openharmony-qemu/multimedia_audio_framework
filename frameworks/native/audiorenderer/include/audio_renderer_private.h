@@ -143,6 +143,7 @@ public:
     void EnableVoiceModemCommunicationStartStream(bool enable) override;
 
     bool IsNoStreamRenderer() const override;
+    void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
 
