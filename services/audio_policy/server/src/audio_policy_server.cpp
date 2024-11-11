@@ -313,7 +313,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     int32_t keySubId = im->SubscribeKeyEvent(keyOption, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
         AUDIO_PRERELEASE_LOGI("Receive volume key event: %{public}s.",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
-        std::lock_guard<std::mutex> lock(keyEventMutex_);
+        std::lock_guard<std::mutex> lock(systemVolumeMutex_);
         AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
         if (volumeApplyToAll_) {
             streamInFocus = AudioStreamType::STREAM_ALL;
@@ -361,7 +361,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
     int32_t muteKeySubId = im->SubscribeKeyEvent(keyOptionMute,
         [this](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
             AUDIO_INFO_LOG("Receive volume key event: mute");
-            std::lock_guard<std::mutex> lock(keyEventMutex_);
+            std::lock_guard<std::mutex> lock(systemVolumeMutex_);
             AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
             if (volumeApplyToAll_) {
                 bool isStreamMuted = GetStreamMuteInternal(STREAM_ALL);
@@ -659,6 +659,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(AudioStreamType streamType
         return ERR_NOT_SUPPORTED;
     }
 
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetSystemVolumeLevelInternal(streamType, volumeLevel, false);
 }
 
@@ -676,6 +677,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
         return ERR_NOT_SUPPORTED;
     }
 
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetSystemVolumeLevelInternal(streamType, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
 }
 
@@ -701,6 +703,7 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
 {
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return GetSystemVolumeLevelInternal(streamType);
 }
 
@@ -753,7 +756,8 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
         streamInFocus = AudioStreamType::STREAM_MUSIC;
     }
 
-    int32_t volumeLevelInInt = GetSystemVolumeLevel(streamInFocus);
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
     int32_t minRet = GetMinVolumeLevel(streamInFocus);
     int32_t maxRet = GetMaxVolumeLevel(streamInFocus);
     if (adjustType == VolumeAdjustType::VOLUME_UP) {
@@ -781,7 +785,8 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
         return ERR_PERMISSION_DENIED;
     }
 
-    int32_t volumeLevelInInt = GetSystemVolumeLevel(volumeType);
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(volumeType);
     int32_t minRet = GetMinVolumeLevel(volumeType);
     int32_t maxRet = GetMaxVolumeLevel(volumeType);
     if (adjustType == VolumeAdjustType::VOLUME_UP) {
@@ -819,6 +824,7 @@ int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool 
         return ERR_PERMISSION_DENIED;
     }
 
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetStreamMuteInternal(streamType, mute, false);
 }
 
@@ -829,6 +835,7 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
         return ERR_PERMISSION_DENIED;
     }
 
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetStreamMuteInternal(streamType, mute, false);
 }
 
@@ -858,7 +865,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     bool updateRingerMode = false;
     if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
         // Check whether the currentRingerMode is suitable for the ringtone mute state.
-        AudioRingerMode currentRingerMode = GetRingerMode();
+        AudioRingerMode currentRingerMode = audioPolicyService_.GetRingerMode();
         if ((currentRingerMode == RINGER_MODE_NORMAL && mute) || (currentRingerMode != RINGER_MODE_NORMAL && !mute)) {
             // When isUpdateUi is false, the func is called by others. Need to verify permission.
             if (!isUpdateUi && !VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
@@ -930,7 +937,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
     bool updateRingerMode = false;
     if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
         // Check whether the currentRingerMode is suitable for the ringtone volume level.
-        AudioRingerMode currentRingerMode = GetRingerMode();
+        AudioRingerMode currentRingerMode = audioPolicyService_.GetRingerMode();
         if ((currentRingerMode == RINGER_MODE_NORMAL && volumeLevel == 0) ||
             (currentRingerMode != RINGER_MODE_NORMAL && volumeLevel > 0)) {
             // When isUpdateUi is false, the func is called by others. Need to verify permission.
@@ -981,6 +988,7 @@ bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
             "GetStreamMute permission denied for stream type : %{public}d", streamType);
     }
 
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return GetStreamMuteInternal(streamType);
 }
 
@@ -1189,6 +1197,7 @@ int32_t AudioPolicyServer::SetRingerModeLegacy(AudioRingerMode ringMode)
         return ERR_PERMISSION_DENIED;
     }
 
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetRingerModeInner(ringMode);
 }
 
@@ -1200,6 +1209,7 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
         return ERR_PERMISSION_DENIED;
     }
 
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetRingerModeInner(ringMode);
 }
 
@@ -1210,7 +1220,7 @@ int32_t AudioPolicyServer::SetRingerModeInner(AudioRingerMode ringMode)
     if (ringMode == AudioRingerMode::RINGER_MODE_SILENT) {
         isPermissionRequired = true;
     } else {
-        AudioRingerMode currentRingerMode = GetRingerMode();
+        AudioRingerMode currentRingerMode = audioPolicyService_.GetRingerMode();
         if (currentRingerMode == AudioRingerMode::RINGER_MODE_SILENT) {
             isPermissionRequired = true;
         }
@@ -1370,6 +1380,7 @@ bool AudioPolicyServer::IsMicrophoneMute()
 
 AudioRingerMode AudioPolicyServer::GetRingerMode()
 {
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return audioPolicyService_.GetRingerMode();
 }
 
@@ -2328,6 +2339,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     if (!IsVolumeLevelValid(streamInFocus, volume)) {
         return ERR_NOT_SUPPORTED;
     }
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     int32_t ret = audioPolicyService_.SetA2dpDeviceVolume(macAddress, volume);
 
     VolumeEvent volumeEvent;

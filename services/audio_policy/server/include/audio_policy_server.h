@@ -613,7 +613,7 @@ private:
     sptr<SyncHibernateListener> syncHibernateListener_;
     bool powerStateCallbackRegister_;
 
-    std::mutex keyEventMutex_;
+    std::mutex systemVolumeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
 
