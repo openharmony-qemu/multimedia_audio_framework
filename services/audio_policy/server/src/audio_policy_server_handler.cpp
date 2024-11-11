@@ -1043,8 +1043,8 @@ void AudioPolicyServerHandler::HandleNnStateChangeEvent(const AppExecFwk::InnerE
             continue;
         }
         if (clientCallbacksMap_.count(it->first) > 0 &&
-            clientCallbacksMap_[it->first].count(CALLBACK_SEND_NN_STATE_CHANGE) > 0 &&
-            clientCallbacksMap_[it->first][CALLBACK_SEND_NN_STATE_CHANGE]) {
+            clientCallbacksMap_[it->first].count(CALLBACK_NN_STATE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_NN_STATE_CHANGE]) {
             nnStateChangeCb->OnNnStateChange(eventContextObj->nnState);
         }
     }
@@ -1239,7 +1239,7 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
         case EventAudioServerCmd::MICROPHONE_BLOCKED:
             HandleMicrophoneBlockedCallback(event);
             break;
-        case EventAudioServerCmd::SEND_NN_STATE_CHANGE:
+        case EventAudioServerCmd::NN_STATE_CHANGE:
             HandleNnStateChangeEvent(event);
             break;
         default:
