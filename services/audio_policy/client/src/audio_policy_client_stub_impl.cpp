@@ -733,32 +733,31 @@ void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(const sp
     }
 }
 
-int32_t AudioPolicyClientStubImpl::AddSendNNStateChangeCallback(
-    const std::shared_ptr<AudioNNStateChangeCallback> &cb)
+int32_t AudioPolicyClientStubImpl::AddNnStateChangeCallback(const std::shared_ptr<AudioNnStateChangeCallback> &cb)
 {
-    std::lock_guard<std::mutex> lockCbMap(sendNNStateChangeMutex_);
-    sendNNStateChangeCallbackList_.push_back(cb);
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    nnStateChangeCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemoveSendNNStateChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveNnStateChangeCallback()
 {
-    std::lock_guard<std::mutex> lockCbMap(sendNNStateChangeMutex_);
-    sendNNStateChangeCallbackList_.clear();
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    nnStateChangeCallbackList_.clear();
     return SUCCESS;
 }
 
-size_t AudioPolicyClientStubImpl::GetSendNNStateChangeCallbackSize() const
+size_t AudioPolicyClientStubImpl::GetNnStateChangeCallbackSize() const
 {
-    std::lock_guard<std::mutex> lockCbMap(sendNNStateChangeMutex_);
-    return sendNNStateChangeCallbackList_.size();
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    return nnStateChangeCallbackList_.size();
 }
 
-void AudioPolicyClientStubImpl::OnSendNNStateChange(const int32_t &nnState)
+void AudioPolicyClientStubImpl::OnNnStateChange(const int32_t &nnState)
 {
-    std::lock_guard<std::mutex> lockCbMap(sendNNStateChangeMutex_);
-    for (const auto &callback : sendNNStateChangeCallbackList_) {
-        callback->OnSendNNStateChange(nnState);
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    for (const auto &callback : nnStateChangeCallbackList_) {
+        callback->OnNnStateChange(nnState);
     }
 }
 } // namespace AudioStandard

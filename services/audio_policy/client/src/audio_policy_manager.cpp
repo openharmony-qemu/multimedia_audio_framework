@@ -1705,8 +1705,7 @@ int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::RegisterSendNNStateEventListener(
-    const std::shared_ptr<AudioNNStateChangeCallback> &callback)
+int32_t AudioPolicyManager::RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("Start to register");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
@@ -1715,19 +1714,15 @@ int32_t AudioPolicyManager::RegisterSendNNStateEventListener(
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
         CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
-        if (ret != SUCCESS) {
-            return ret;
-        }
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     }
 
-    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SEND_NN_STATE_CHANGE].mutex);
-    if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddSendNNStateChangeCallback(callback);
-        size_t callbackSize = audioPolicyClientStubCB_->GetSendNNStateChangeCallbackSize();
-        if (callbackSize == 1) {
-            callbackChangeInfos_[CALLBACK_SEND_NN_STATE_CHANGE].isEnable = true;
-            SetClientCallbacksEnable(CALLBACK_SEND_NN_STATE_CHANGE, true);
-        }
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_NN_STATE_CHANGE].mutex);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
+    audioPolicyClientStubCB_->AddNnStateChangeCallback(callback);
+    if (audioPolicyClientStubCB_->GetNnStateChangeCallbackSize() == 1) {
+        callbackChangeInfos_[CALLBACK_NN_STATE_CHANGE].isEnable = true;
+        SetClientCallbacksEnable(CALLBACK_NN_STATE_CHANGE, true);
     }
     return SUCCESS;
 }
@@ -1760,16 +1755,15 @@ int32_t AudioPolicyManager::UnregisterHeadTrackingEnabledEventListener()
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::UnRegisterSendNNStateEventListener()
+int32_t AudioPolicyManager::UnregisterNnStateEventListener()
 {
     AUDIO_DEBUG_LOG("Start to unregister");
-    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SEND_NN_STATE_CHANGE].mutex);
-    if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveSendNNStateChangeCallback();
-        if (audioPolicyClientStubCB_->GetSendNNStateChangeCallbackSize() == 0) {
-            callbackChangeInfos_[CALLBACK_SEND_NN_STATE_CHANGE].isEnable = false;
-            SetClientCallbacksEnable(CALLBACK_SEND_NN_STATE_CHANGE, false);
-        }
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_NN_STATE_CHANGE].mutex);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
+    audioPolicyClientStubCB_->RemoveNnStateChangeCallback();
+    if (audioPolicyClientStubCB_->GetNnStateChangeCallbackSize() == 0) {
+        callbackChangeInfos_[CALLBACK_NN_STATE_CHANGE].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_NN_STATE_CHANGE, false);
     }
     return SUCCESS;
 }

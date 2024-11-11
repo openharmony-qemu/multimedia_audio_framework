@@ -75,7 +75,7 @@ public:
         CONCURRENCY_EVENT_WITH_SESSIONID,
         AUDIO_SESSION_DEACTIVE_EVENT,
         MICROPHONE_BLOCKED,
-        SEND_NN_STATE_CHANGE,
+        NN_STATE_CHANGE,
     };
     /* event data */
     class EventContextObj {
@@ -186,7 +186,7 @@ public:
     bool SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
-    bool SendNNStateChangeCallback(const int32_t &state);
+    bool SendNnStateChangeCallback(const int32_t &state);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -224,7 +224,7 @@ private:
     void HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleSendNNStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

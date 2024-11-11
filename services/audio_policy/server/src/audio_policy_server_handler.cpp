@@ -477,14 +477,14 @@ bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(int32_t clientId,
         eventContextObj));
 }
 
-bool AudioPolicyServerHandler::SendNNStateChangeCallback(const int32_t &state)
+bool AudioPolicyServerHandler::SendNnStateChangeCallback(const int32_t &state)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->nnState = state;
     lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SEND_NN_STATE_CHANGE, eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SEND_NN_STATE_CHANGE event failed");
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::NN_STATE_CHANGE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send NN_STATE_CHANGE event failed");
     return ret;
 }
 
@@ -1031,21 +1031,21 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     }
 }
 
-void AudioPolicyServerHandler::HandleSendNNStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+void AudioPolicyServerHandler::HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        sptr<IAudioPolicyClient> sendNNStateChangeCb = it->second;
-        if (sendNNStateChangeCb == nullptr) {
-            AUDIO_ERR_LOG("sendNNStateChangeCb : nullptr for client : %{public}d", it->first);
+        sptr<IAudioPolicyClient> nnStateChangeCb = it->second;
+        if (nnStateChangeCb == nullptr) {
+            AUDIO_ERR_LOG("nnStateChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SEND_NN_STATE_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SEND_NN_STATE_CHANGE]) {
-            sendNNStateChangeCb->OnSendNNStateChange(eventContextObj->nnState);
+            nnStateChangeCb->OnNnStateChange(eventContextObj->nnState);
         }
     }
 }
@@ -1240,7 +1240,7 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             HandleMicrophoneBlockedCallback(event);
             break;
         case EventAudioServerCmd::SEND_NN_STATE_CHANGE:
-            HandleSendNNStateChangeEvent(event);
+            HandleNnStateChangeEvent(event);
             break;
         default:
             break;

@@ -18,11 +18,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioNNStateChangeCallback {
+class AudioNnStateChangeCallback {
 public:
-    virtual ~AudioNNStateChangeCallback() = default;
+    virtual ~AudioNnStateChangeCallback() = default;
 
-    virtual void OnSendNNStateChange(const bool &isSendNNState) = 0;
+    virtual void OnNnStateChange(const int32_t &nnState) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

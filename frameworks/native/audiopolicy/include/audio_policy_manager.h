@@ -339,13 +339,13 @@ public:
     int32_t RegisterHeadTrackingEnabledEventListener(
         const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
 
-    int32_t RegisterSendNNStateEventListener(const std::shared_ptr<AudioNNStateChangeCallback> &callback);
+    int32_t RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback);
 
     int32_t UnregisterSpatializationEnabledEventListener();
 
     int32_t UnregisterHeadTrackingEnabledEventListener();
 
-    int32_t UnRegisterSendNNStateEventListener();
+    int32_t UnregisterNnStateEventListener();
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
 
