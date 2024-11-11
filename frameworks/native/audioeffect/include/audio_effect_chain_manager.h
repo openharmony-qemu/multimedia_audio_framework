@@ -113,7 +113,6 @@ public:
     void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
     std::string GetDeviceTypeName();
     bool GetOffloadEnabled();
-    void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
     int32_t InitAudioEffectChainDynamic(const std::string &sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
