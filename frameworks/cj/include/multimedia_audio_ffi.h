@@ -105,6 +105,32 @@ enum AudioRoutingManagerCallbackType : int32_t {
     OUTPUT_DEVICE_CHANGE_FOR_RENDERER_INFO
 };
 
+struct CAudioStreamDeviceChangeInfo {
+    int32_t changeReason;
+    CArrDeviceDescriptor deviceDescriptors;
+};
+
+struct CAudioRendererInfo {
+    int32_t usage;
+    int32_t rendererFlags;
+};
+
+struct CAudioRendererOptions {
+    CAudioRendererInfo audioRendererInfo;
+    CAudioStreamInfo audioStreamInfo;
+    int32_t privacyType;
+};
+
+enum AudioRendererCallbackType : int32_t {
+    AR_AUDIO_INTERRUPT = 0,
+    AR_MARK_REACH,
+    AR_PERIOD_REACH,
+    AR_STATE_CHANGE,
+    AR_OUTPUT_DEVICE_CHANGE,
+    AR_OUTPUT_DEVICE_CHANGE_WITH_INFO,
+    AR_WRITE_DATA
+};
+
 // Audio Capturer
 // MMA is the addreviation of MultimediaAudio
 FFI_EXPORT int64_t FfiMMACreateAudioCapturer(CAudioCapturerOptions options, int32_t *errorCode);
@@ -148,7 +174,10 @@ FFI_EXPORT CArrDeviceDescriptor FfiMMAARMGetPreferredInputDeviceForCapturerInfo(
 FFI_EXPORT void FfiMMAARMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode);
 FFI_EXPORT void FfiMMAARMOnWithFlags(int64_t id, int32_t callbackType, void (*callback)(), int32_t flags,
     int32_t *errorCode);
+// this func spells errors will be removed
 FFI_EXPORT void FfiMMAARMWOnithCapturerInfo(int64_t id, int32_t callbackType, void (*callback)(),
+    CAudioCapturerInfo capturerInfo, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARMOnWithCapturerInfo(int64_t id, int32_t callbackType, void (*callback)(),
     CAudioCapturerInfo capturerInfo, int32_t *errorCode);
 
 // Audio Volumne Manager
@@ -184,6 +213,29 @@ FFI_EXPORT int32_t FfiMMAGetVolume(int64_t id, int32_t volumeType, int32_t *erro
 FFI_EXPORT bool FfiMMAIsMicrophoneMute(int64_t id, int32_t *errorCode);
 FFI_EXPORT bool FfiMMAIsMute(int64_t id, int32_t volumeType, int32_t *errorCode);
 FFI_EXPORT bool FfiMMAIsVolumeUnadjustable(int64_t id, int32_t *errorCode);
+
+/* Audio Renderer */
+FFI_EXPORT int64_t FfiMMACreateAudioRenderer(CAudioRendererOptions options, int32_t *errorCode);
+FFI_EXPORT int32_t FfiMMAARGetState(int64_t id, int32_t *errorCode);
+FFI_EXPORT int64_t FfiMMAARGetAudioTime(int64_t id, int32_t *errorCode);
+FFI_EXPORT uint32_t FfiMMAARGetBufferSize(int64_t id, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARFlush(int64_t id, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARPause(int64_t id, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARDrain(int64_t id, int32_t *errorCode);
+FFI_EXPORT CArrDeviceDescriptor FfiMMAARGetCurrentOutputDevices(int64_t id, int32_t *errorCode);
+FFI_EXPORT double FfiMMAARGetSpeed(int64_t id, int32_t *errorCode);
+FFI_EXPORT bool FfiMMAARGetSilentModeAndMixWithOthers(int64_t id, int32_t *errorCode);
+FFI_EXPORT double FfiMMAARGetVolume(int64_t id, int32_t *errorCode);
+FFI_EXPORT uint32_t FfiMMAARGetUnderflowCount(int64_t id, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARSetVolumeWithRamp(int64_t id, double volume, int32_t duration, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARSetSpeed(int64_t id, double speed, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARSetVolume(int64_t id, double volume, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARSetSilentModeAndMixWithOthers(int64_t id, bool on, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARSetInterruptMode(int64_t id, int32_t mode, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARSetChannelBlendMode(int64_t id, int32_t mode, int32_t *errorCode);
+FFI_EXPORT void FfiMMAAROnWithFrame(int64_t id, int32_t callbackType, void (*callback)(), int64_t frame,
+    int32_t *errorCode);
+FFI_EXPORT void FfiMMAAROn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -44,12 +44,12 @@ class CjCapturerPositionCallback : public CapturerPositionCallback {
 public:
     CjCapturerPositionCallback() = default;
     virtual ~CjCapturerPositionCallback() = default;
-    void RegisterFunc(std::function<void(int32_t)> cjCallback);
+    void RegisterFunc(std::function<void(int64_t)> cjCallback);
 
     void OnMarkReached(const int64_t &framePosition) override;
 
 private:
-    std::function<void(int32_t)> func_{};
+    std::function<void(int64_t)> func_{};
     std::mutex cbMutex_;
 };
 
@@ -57,11 +57,11 @@ class CjCapturerPeriodPositionCallback : public CapturerPeriodPositionCallback {
 public:
     CjCapturerPeriodPositionCallback() = default;
     virtual ~CjCapturerPeriodPositionCallback() = default;
-    void RegisterFunc(std::function<void(int32_t)> cjCallback);
+    void RegisterFunc(std::function<void(int64_t)> cjCallback);
     void OnPeriodReached(const int64_t &frameNumber) override;
 
 private:
-    std::function<void(int32_t)> func_{};
+    std::function<void(int64_t)> func_{};
     std::mutex cbMutex_;
 };
 

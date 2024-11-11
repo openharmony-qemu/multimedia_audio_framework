@@ -26,27 +26,31 @@ void CjAudioCapturerStateChangeCallback::OnCapturerStateChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
+    if (func_ == nullptr) {
+        return;
+    }
     CArrAudioCapturerChangeInfo arrInfo;
     arrInfo.size = static_cast<int64_t>(audioCapturerChangeInfos.size());
     auto head = static_cast<CAudioCapturerChangeInfo *>(
-        malloc(sizeof(CAudioCapturerChangeInfo) * audioCapturerChangeInfos.size()));
+        malloc(sizeof(CAudioCapturerChangeInfo) * (arrInfo.size)));
     if (head == nullptr) {
         return;
     }
-    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
-    for (int32_t i = 0; i < static_cast<int32_t>(audioCapturerChangeInfos.size()); i++) {
-        Convert2CAudioCapturerChangeInfo(head[i], *(audioCapturerChangeInfos[i]), errorCode);
-    }
-    if (*errorCode != SUCCESS_CODE) {
-        free(errorCode);
-        errorCode = nullptr;
+    int32_t errorCode = SUCCESS_CODE;
+    arrInfo.head = head;
+    if (memset_s(head, arrInfo.size, 0, arrInfo.size) != EOK) {
+        FreeCArrAudioCapturerChangeInfo(arrInfo);
         return;
     }
-    arrInfo.head = head;
+    for (int32_t i = 0; i < static_cast<int32_t>(arrInfo.size); i++) {
+        Convert2CAudioCapturerChangeInfo(head[i], *(audioCapturerChangeInfos[i]), &errorCode);
+    }
+    if (errorCode != SUCCESS_CODE) {
+        FreeCArrAudioCapturerChangeInfo(arrInfo);
+        return;
+    }
     func_(arrInfo);
     FreeCArrAudioCapturerChangeInfo(arrInfo);
-    free(errorCode);
-    errorCode = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

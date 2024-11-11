@@ -38,6 +38,8 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
     "src/multimedia_audio_common.cpp",
     "src/multimedia_audio_ffi.cpp",
     "src/multimedia_audio_manager_impl.cpp",
+    "src/multimedia_audio_renderer_callback.cpp",
+    "src/multimedia_audio_renderer_impl.cpp",
     "src/multimedia_audio_routing_manager_callback.cpp",
     "src/multimedia_audio_routing_manager_impl.cpp",
     "src/multimedia_audio_stream_manager_callback.cpp",

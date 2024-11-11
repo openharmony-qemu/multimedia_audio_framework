@@ -25,18 +25,18 @@ void CjAudioManagerMicrophoneBlockedCallback::RegisterFunc(std::function<void(CA
 void CjAudioManagerMicrophoneBlockedCallback::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
+    if (func_ == nullptr) {
+        return;
+    }
     CArrDeviceDescriptor arr;
-    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
-    Convert2CArrDeviceDescriptor(arr, microphoneBlockedInfo.devices, errorCode);
-    if (*errorCode != SUCCESS_CODE) {
-        free(errorCode);
-        errorCode = nullptr;
+    int32_t errorCode = SUCCESS_CODE;
+    Convert2CArrDeviceDescriptor(arr, microphoneBlockedInfo.devices, &errorCode);
+    if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     func_(arr);
     FreeCArrDeviceDescriptor(arr);
-    free(errorCode);
-    errorCode = nullptr;
 }
 
 void CjAudioPreferredInputDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
@@ -48,18 +48,18 @@ void CjAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
     const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
+    if (func_ == nullptr) {
+        return;
+    }
     CArrDeviceDescriptor arr;
-    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
-    Convert2CArrDeviceDescriptor(arr, desc, errorCode);
-    if (*errorCode != SUCCESS_CODE) {
-        free(errorCode);
-        errorCode = nullptr;
+    int32_t errorCode = SUCCESS_CODE;
+    Convert2CArrDeviceDescriptor(arr, desc, &errorCode);
+    if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     func_(arr);
     FreeCArrDeviceDescriptor(arr);
-    free(errorCode);
-    errorCode = nullptr;
 }
 
 void CjAudioManagerDeviceChangeCallback::RegisterFunc(std::function<void(CDeviceChangeAction)> cjCallback)
@@ -70,12 +70,14 @@ void CjAudioManagerDeviceChangeCallback::RegisterFunc(std::function<void(CDevice
 void CjAudioManagerDeviceChangeCallback::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
+    if (func_ == nullptr) {
+        return;
+    }
     CArrDeviceDescriptor arr;
-    int32_t *errorCode = static_cast<int32_t *>(malloc(sizeof(int32_t)));
-    Convert2CArrDeviceDescriptor(arr, deviceChangeAction.deviceDescriptors, errorCode);
-    if (*errorCode != SUCCESS_CODE) {
-        free(errorCode);
-        errorCode = nullptr;
+    int32_t errorCode = SUCCESS_CODE;
+    Convert2CArrDeviceDescriptor(arr, deviceChangeAction.deviceDescriptors, &errorCode);
+    if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     CDeviceChangeAction action;
@@ -83,8 +85,6 @@ void CjAudioManagerDeviceChangeCallback::OnDeviceChange(const DeviceChangeAction
     action.changeType = deviceChangeAction.type;
     func_(action);
     FreeCArrDeviceDescriptor(arr);
-    free(errorCode);
-    errorCode = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS
