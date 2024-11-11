@@ -1049,8 +1049,10 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
         GET_BUNDLE_TIME_OUT_SECONDS);
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetHapBuildApiVersion");
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(saManager != nullptr, 0, "failed: saManager is nullptr");
+    guard.CheckCurrTimeout();
 
     sptr<IRemoteObject> remoteObject = saManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, 0, "failed: remoteObject is nullptr");
@@ -1058,6 +1060,7 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, 0, "failed: bundleMgrProxy is nullptr");
 
+    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetHapBuildApiVersion");
     bundleMgrProxy->GetNameForUid(callerUid, bundleName);
     bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
@@ -1066,6 +1069,7 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
         bundleInfo,
         AppExecFwk::Constants::ALL_USERID);
+    reguard.CheckCurrTimeout();
     int32_t hapApiVersion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
     AUDIO_INFO_LOG("callerUid %{public}d, version %{public}d", callerUid, hapApiVersion);
     return hapApiVersion;
@@ -1213,8 +1217,10 @@ const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
     AudioXCollie audioXCollie("AudioServer::GetBundleNameFromUid",
         GET_BUNDLE_TIME_OUT_SECONDS);
     std::string bundleName {""};
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
+    guard.CheckCurrTimeout();
 
     sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
@@ -1222,7 +1228,9 @@ const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
 
+    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
     bundleMgrProxy->GetNameForUid(uid, bundleName);
+    reguard.CheckCurrTimeout();
 
     return bundleName;
 }

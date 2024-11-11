@@ -4787,13 +4787,10 @@ std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareH
 
     CHECK_AND_RETURN_RET_LOG(dataSharedServer != nullptr, nullptr, "DataShare server is not started!");
 
-    startTime = ClockTime::GetCurNano();
+    WatchTimeout guard("DataShare::DataShareHelper::Create", CALL_IPC_COST_TIME_MS);
     std::pair<int, std::shared_ptr<DataShare::DataShareHelper>> res = DataShare::DataShareHelper::Create(remoteObject,
         SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
-    cost = ClockTime::GetCurNano() - startTime;
-    if (cost > CALL_IPC_COST_TIME_MS) {
-        AUDIO_WARNING_LOG("DataShareHelper::Create cost too long: %{public}" PRId64"ms.", cost / AUDIO_US_PER_SECOND);
-    }
+    guard.CheckCurrTimeout();
     if (res.first == DataShare::E_DATA_SHARE_NOT_READY) {
         AUDIO_WARNING_LOG("DataShareHelper::Create failed: E_DATA_SHARE_NOT_READY");
         return nullptr;
@@ -4816,12 +4813,14 @@ int32_t AudioPolicyService::GetDefaultDeviceNameFromDataShareHelper(std::string 
     DataShare::DataSharePredicates predicates;
     predicates.EqualTo(SETTINGS_DATA_FIELD_KEYWORD, PREDICATES_STRING);
 
+    WatchTimeout guard("dataShareHelper->Query:DefaultDeviceName");
     auto resultSet = dataShareHelper->Query(*uri, predicates, columns);
     if (resultSet == nullptr) {
         AUDIO_ERR_LOG("Failed to query device name from dataShareHelper!");
         dataShareHelper->Release();
         return ERROR;
     }
+    guard.CheckCurrTimeout();
 
     int32_t numRows = 0;
     resultSet->GetRowCount(numRows);
@@ -4858,12 +4857,14 @@ int32_t AudioPolicyService::GetUserSetDeviceNameFromDataShareHelper(std::string 
     DataShare::DataSharePredicates predicates;
     predicates.EqualTo(SETTINGS_DATA_FIELD_KEYWORD, USER_DEFINED_STRING);
 
+    WatchTimeout guard("dataShareHelper->Query:UserSetDeviceName");
     auto resultSet = dataShareHelper->Query(*uri, predicates, columns);
     if (resultSet == nullptr) {
         AUDIO_ERR_LOG("Failed to query device name from dataShareHelper!");
         dataShareHelper->Release();
         return ERROR;
     }
+    guard.CheckCurrTimeout();
 
     int32_t numRows = 0;
     resultSet->GetRowCount(numRows);
@@ -4907,8 +4908,10 @@ bool AudioPolicyService::IsDataShareReady()
     CHECK_AND_RETURN_RET_LOG(samgr != nullptr, false, "[Policy Service] Get samgr failed.");
     sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "[Policy Service] audio service remote object is NULL.");
+    WatchTimeout guard("DataShare::DataShareHelper::Create:IsDataShareReady", CALL_IPC_COST_TIME_MS);
     std::pair<int, std::shared_ptr<DataShare::DataShareHelper>> res = DataShare::DataShareHelper::Create(remoteObject,
         SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
+    guard.CheckCurrTimeout();
     if (res.first == DataShare::E_OK) {
         AUDIO_INFO_LOG("DataShareHelper is ready.");
         auto helper = res.second;

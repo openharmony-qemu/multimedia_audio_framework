@@ -45,6 +45,7 @@ public:
             [](void *) {
                 AUDIO_ERR_LOG("PowerMgr Lock timeout");
             }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+        WatchTimeout guard("PowerMgr Lock timeout");
         auto ret = runningLock_->Lock(TimeoutMs);
         isLocked_ = true;
         AUDIO_INFO_LOG("Lock runninglock, ret: %{public}d", ret);
