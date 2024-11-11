@@ -417,7 +417,7 @@ public:
 
     void ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
-    DistributedRoutingInfo& GetDistributedRoutingRoleInfo();
+    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
 
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
