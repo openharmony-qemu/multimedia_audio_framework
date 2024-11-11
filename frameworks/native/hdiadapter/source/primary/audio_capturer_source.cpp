@@ -36,6 +36,7 @@
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_log_utils.h"
+#include "audio_schedule.h"
 #include "audio_utils.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
@@ -930,6 +931,7 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
     }
 
     AUDIO_INFO_LOG("non blocking capture thread start, source type: %{public}d", attr_.sourceType);
+    ScheduleThreadInServer(getpid(), gettid());
     while (threadRunning_) {
         Trace trace("CaptureRefInput");
         RingBuffer buffer = ringBuffer_->DequeueInputBuffer();
@@ -947,6 +949,7 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
         }
         ringBuffer_->EnqueueInputBuffer(buffer);
     }
+    UnscheduleThreadInServer(getpid(), gettid());
     AUDIO_INFO_LOG("non blocking capture thread exit, source type: %{public}d", attr_.sourceType);
 }
 
@@ -1712,6 +1715,7 @@ int32_t AudioCapturerSourceInner::UpdateSourceType(SourceType sourceType)
     }
 
     attr_.sourceType = sourceType;
+    AUDIO_INFO_LOG("change source type to %{public}d", attr_.sourceType);
     AudioPortPin inputPortPin = PIN_IN_MIC;
     return DoSetInputRoute(currentActiveDevice_, inputPortPin);
 }
