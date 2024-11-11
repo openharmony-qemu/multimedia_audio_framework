@@ -166,12 +166,14 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 void AudioRouterCenter::DealRingRenderRouters(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
     StreamUsage streamUsage, int32_t clientUID, RouterType &routerType)
 {
-    AudioScene lastAudioScene = AudioPolicyService::GetAudioPolicyService().GetLastAudioScene();
     AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
-    AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, lastAudioScene:%{public}d, audioScene:%{public}d.",
-        streamUsage, lastAudioScene, audioScene);
+    StreamUsage callStreamUsage =
+                AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+    bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
+    AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d, isVoipStream:%{public}d.",
+        streamUsage, audioScene, isVoipStream);
     if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
-        (lastAudioScene == AUDIO_SCENE_PHONE_CHAT && audioScene == AUDIO_SCENE_VOICE_RINGING)) {
+        (audioScene == AUDIO_SCENE_VOICE_RINGING && isVoipStream)) {
         unique_ptr<AudioDeviceDescriptor> desc = make_unique<AudioDeviceDescriptor>();
         auto isPresent = [] (const unique_ptr<RouterBase> &router) {
             return router->name_ == "package_filter_router";
@@ -182,8 +184,6 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::unique_ptr<AudioD
             routerType = (*itr)->GetRouterType();
         }
         if (desc->deviceType_ == DEVICE_TYPE_NONE) {
-            StreamUsage callStreamUsage =
-                AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
             AUDIO_INFO_LOG("Ring follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
                 callStreamUsage);
             desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType);
