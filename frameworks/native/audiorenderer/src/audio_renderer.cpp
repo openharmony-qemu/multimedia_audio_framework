@@ -660,7 +660,8 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     Trace trace("AudioRenderer::Start");
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
-        "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
+        "volume: %{public}f, interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType,
+        GetVolume(), audioInterrupt_.mode);
     CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
     RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
@@ -1098,6 +1099,10 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
     }
     // Notify valid forced event callbacks to app
     InterruptEvent interruptEventForced {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
+    if (interruptEventForced.hintType == INTERRUPT_HINT_RESUME) {
+        // Reusme event should be INTERRUPT_SHARE type. Change the force type before sending the interrupt event.
+        interruptEventForced.forceType = INTERRUPT_SHARE;
+    }
     NotifyEvent(interruptEventForced);
 }
 
@@ -1798,27 +1803,33 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
             AUDIO_INFO_LOG("abort restore");
             break;
         }
+        renderer_->RestoreAudioInLoop(restoreResult, tryCounter);
+    }
+}
 
-        if (renderer_->IsNoStreamRenderer()) {
-            // no stream renderer don't need to restore stream
-            restoreResult = renderer_->audioStream_->RestoreAudioStream(false);
-        } else {
-            restoreResult = renderer_->audioStream_->RestoreAudioStream();
-            if (!restoreResult) {
-                AUDIO_ERR_LOG("restore audio stream failed, %{public}d attempts remaining", tryCounter);
-                continue;
-            }
-            renderer_->abortRestore_ = false;
+void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter)
+{
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    if (IsNoStreamRenderer()) {
+        // no stream renderer don't need to restore stream
+        restoreResult = audioStream_->RestoreAudioStream(false);
+    } else {
+        restoreResult = audioStream_->RestoreAudioStream();
+        if (!restoreResult) {
+            AUDIO_ERR_LOG("restore audio stream failed, %{public}d attempts remaining", tryCounter);
+            return;
         }
+        abortRestore_ = false;
+    }
 
-        if (renderer_->GetStatus() == RENDERER_RUNNING) {
-            renderer_->GetAudioInterrupt(audioInterrupt_);
-            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-            if (ret != SUCCESS) {
-                AUDIO_ERR_LOG("active audio interrupt failed");
-            }
+    if (GetStatus() == RENDERER_RUNNING) {
+        GetAudioInterrupt(audioInterrupt_);
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("active audio interrupt failed");
         }
     }
+    return;
 }
 
 int32_t AudioRendererPrivate::SetSpeed(float speed)

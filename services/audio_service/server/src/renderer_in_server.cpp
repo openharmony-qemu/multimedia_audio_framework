@@ -860,7 +860,6 @@ int32_t RendererInServer::Release()
     AudioXCollie audioXCollie(
         "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ == I_STATUS_RELEASED) {
@@ -876,6 +875,7 @@ int32_t RendererInServer::Release()
 
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
+    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
@@ -1199,6 +1199,7 @@ bool RendererInServer::IsHighResolution() const noexcept
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", on);
     if (silentModeAndMixWithOthers_) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
     } else {
@@ -1228,6 +1229,7 @@ int32_t RendererInServer::SetClientVolume(bool isStreamVolumeChange, bool isMedi
 
 int32_t RendererInServer::SetMute(bool isMute)
 {
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     if (isMute) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
     } else {

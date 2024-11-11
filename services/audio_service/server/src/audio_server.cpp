@@ -1787,6 +1787,7 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
 
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
+    AUDIO_INFO_LOG("Enter the notifyStreamVolumeChanged interface");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("NotifyStreamVolumeChanged refused for %{public}d", callingUid);

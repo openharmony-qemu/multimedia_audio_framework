@@ -848,6 +848,7 @@ fail:
 static void PaHdiCapturerExit(struct Userdata *u)
 {
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
+    CHECK_AND_RETURN_LOG((u->sourceAdapter) != NULL, " u->sourceAdapter is null");
     u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
     u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
     StopAuxCapture(u);

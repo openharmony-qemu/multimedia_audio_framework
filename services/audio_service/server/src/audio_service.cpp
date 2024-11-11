@@ -588,35 +588,63 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 void AudioService::ResetAudioEndpoint()
 {
     std::lock_guard<std::mutex> lock(processListMutex_);
-    AudioProcessConfig config;
-    sptr<AudioProcessInServer> processInServer;
-    auto paired = linkedPairedList_.begin();
-    while (paired != linkedPairedList_.end()) {
-        if ((*paired).second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
-            AUDIO_INFO_LOG("Session id %{public}u", (*paired).first->GetSessionId());
-            linkedPairedList_.erase(paired);
-            config = (*paired).first->processConfig_;
-            int32_t ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unlink process to old endpoint failed");
-            std::string endpointName = (*paired).second->GetEndpointName();
-            if (endpointList_.find(endpointName) != endpointList_.end()) {
-                (*paired).second->Release();
-                AUDIO_INFO_LOG("Erase endpoint %{public}s from endpointList_", endpointName.c_str());
-                endpointList_.erase(endpointName);
-            }
 
+    std::vector<std::string> audioEndpointNames;
+    for (auto paired = linkedPairedList_.begin(); paired != linkedPairedList_.end(); paired++) {
+        if (paired->second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
+            // unlink old link
+            if (UnlinkProcessToEndpoint(paired->first, paired->second) != SUCCESS) {
+                AUDIO_ERR_LOG("Unlink process to old endpoint failed");
+            }
+            audioEndpointNames.push_back(paired->second->GetEndpointName());
+        }
+    }
+    
+    // release old endpoint
+    for (auto &endpointName : audioEndpointNames) {
+        if (endpointList_.count(endpointName) > 0) {
+            endpointList_[endpointName]->Release();
+            AUDIO_INFO_LOG("Erase endpoint %{public}s from endpointList_", endpointName.c_str());
+            endpointList_.erase(endpointName);
+        }
+    }
+
+    ReLinkProcessToEndpoint();
+}
+
+void AudioService::ReLinkProcessToEndpoint()
+{
+    using LinkPair = std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>;
+    std::vector<std::vector<LinkPair>::iterator> errorLinkedPaireds;
+    for (auto paired = linkedPairedList_.begin(); paired != linkedPairedList_.end(); paired++) {
+        if (paired->second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
+            AUDIO_INFO_LOG("Session id %{public}u", paired->first->GetSessionId());
+
+            // get new endpoint
+            const AudioProcessConfig &config = paired->first->processConfig_;
             AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
             std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
                 IsEndpointTypeVoip(config, deviceInfo));
-            CHECK_AND_RETURN_LOG(audioEndpoint != nullptr, "Get new endpoint failed");
-
-            ret = LinkProcessToEndpoint((*paired).first, audioEndpoint);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "LinkProcessToEndpoint failed");
-            linkedPairedList_.push_back(std::make_pair((*paired).first, audioEndpoint));
-
-            CheckInnerCapForProcess((*paired).first, audioEndpoint);
+            if (audioEndpoint == nullptr) {
+                AUDIO_ERR_LOG("Get new endpoint failed");
+                errorLinkedPaireds.push_back(paired);
+                continue;
+            }
+            // link new endpoint
+            if (LinkProcessToEndpoint(paired->first, audioEndpoint) != SUCCESS) {
+                AUDIO_ERR_LOG("LinkProcessToEndpoint failed");
+                errorLinkedPaireds.push_back(paired);
+                continue;
+            }
+            // reset shared_ptr before to new
+            paired->second.reset();
+            paired->second = audioEndpoint;
+            CheckInnerCapForProcess(paired->first, audioEndpoint);
         }
-        paired++;
+    }
+
+    for (auto &paired : errorLinkedPaireds) {
+        linkedPairedList_.erase(paired);
     }
 }
 

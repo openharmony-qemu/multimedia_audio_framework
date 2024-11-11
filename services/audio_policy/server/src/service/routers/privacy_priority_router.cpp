@@ -143,10 +143,10 @@ unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
             if (a2dpInDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
                 desc = move(a2dpInDesc);
             }
+            AUDIO_DEBUG_LOG(" RecongnitionsourceType %{public}d clientUID %{public}d fetch device %{public}d",
+                sourceType, clientUID, desc->deviceType_);
+            return desc;
         }
-        AUDIO_DEBUG_LOG(" RecongnitionsourceType %{public}d clientUID %{public}d fetch device %{public}d",
-            sourceType, clientUID, desc->deviceType_);
-        return desc;
     }
     vector<unique_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();

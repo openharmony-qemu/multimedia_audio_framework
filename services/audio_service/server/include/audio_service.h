@@ -104,6 +104,7 @@ private:
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
     void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
     int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream);
+    void ReLinkProcessToEndpoint();
 
 private:
     std::mutex processListMutex_;

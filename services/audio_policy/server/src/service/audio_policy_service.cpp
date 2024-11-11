@@ -1599,7 +1599,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         FetchDevice(false);
         ReloadSourceForDeviceChange(GetCurrentInputDeviceType(), GetCurrentOutputDeviceType(),
             "SelectInputDevice fast");
-        return true;
+        return SUCCESS;
     }
 
     AudioScene scene = GetAudioScene(true);
@@ -1813,6 +1813,7 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
         audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
         audioModuleInfo.format = "s16le"; // 16bit little endian
         audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
+        audioModuleInfo.renderInIdleState = "1";
     } else if (deviceRole == DeviceRole::INPUT_DEVICE) {
         audioModuleInfo.lib = "libmodule-hdi-source.z.so";
         audioModuleInfo.format = "s16le"; // we assume it is bigger endian
@@ -1835,7 +1836,6 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     audioModuleInfo.channels = "2";
     audioModuleInfo.rate = "48000";
     audioModuleInfo.bufferSize = "3840";
-    audioModuleInfo.renderInIdleState = "1";
 
     return audioModuleInfo;
 }
@@ -3172,7 +3172,7 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Dev
 void AudioPolicyService::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo)
 {
     uint32_t bufferSize = audioStreamInfo.samplingRate * PcmFormatToBytes(audioStreamInfo.format) *
-        audioStreamInfo.channels * BT_BUFFER_ADJUSTMENT_FACTOR;
+        audioStreamInfo.channels / BT_BUFFER_ADJUSTMENT_FACTOR;
     AUDIO_INFO_LOG("a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
         audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
     moduleInfo.channels = to_string(audioStreamInfo.channels);
@@ -4229,7 +4229,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
     uint32_t bufferSize = streamInfo.samplingRate * PcmFormatToBytes(streamInfo.format) *
-        streamInfo.channels * BT_BUFFER_ADJUSTMENT_FACTOR;
+        streamInfo.channels / BT_BUFFER_ADJUSTMENT_FACTOR;
     AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
 
     std::list<AudioModuleInfo> moduleInfoList;
@@ -8520,6 +8520,7 @@ bool AudioPolicyService::IsStreamSupported(AudioStreamType streamType)
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_WAKEUP:
+        case STREAM_SYSTEM:
         case STREAM_CAMCORDER:
             return true;
         default:

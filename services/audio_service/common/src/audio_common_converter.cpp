@@ -104,7 +104,7 @@ inline void CopyFromF32ToS32(const float *buffer, int32_t *dst, float volStep, c
     int32_t frameCount = bufferInfo.frameSize / bufferInfo.channelCount;
     for (int32_t j = 0; j < frameCount; j++) {
         float vol = GetVolume(volStep, j + 1, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             *dst++ = *buffer++ * vol * AUDIO_SAMPLE_32BIT_VALUE;
         }
     }
