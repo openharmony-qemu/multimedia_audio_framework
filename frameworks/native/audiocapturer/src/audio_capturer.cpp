@@ -644,6 +644,7 @@ int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
 
 int32_t AudioCapturerPrivate::GetAudioStreamId(uint32_t &sessionID) const
 {
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_HANDLE, "GetAudioStreamId faied.");
     return audioStream_->GetAudioSessionID(sessionID);
 }
 
