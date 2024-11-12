@@ -228,6 +228,8 @@ private:
         std::vector<SourceType> incomingConcurrentSources);
     bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt);
+    bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
+        &audioFocusInfoList);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

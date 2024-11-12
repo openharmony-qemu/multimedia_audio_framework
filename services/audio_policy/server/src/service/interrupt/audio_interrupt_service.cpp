@@ -1206,7 +1206,8 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
             [&audioInterrupt, &pid](const std::pair<AudioInterrupt, AudioFocuState> &audioFocus) {
             return audioFocus.first.sessionId == audioInterrupt.sessionId ||
                 (audioFocus.first.pid == pid && audioFocus.second == PLACEHOLDER &&
-                audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION);
+                audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION &&
+                audioFocus.first.audioFocusType.streamType != STREAM_VOICE_COMMUNICATION);
         });
 
         if (itZone->second->pids.find(pid) != itZone->second->pids.end()) {
@@ -1413,6 +1414,19 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
     return audioScene;
 }
 
+bool AudioInterruptService::HadVoipStatus(const AudioInterrupt &audioInterrupt,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList)
+{
+    for (const auto &[interrupt, focusState] : audioFocusInfoList) {
+        if (audioInterrupt.pid == interrupt.pid && focusState == PLACEHOLDER &&
+            interrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION &&
+            interrupt.sessionId != audioInterrupt.sessionId) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // LCOV_EXCL_STOP
 void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneId,
     const AudioInterrupt &audioInterrupt, bool isSessionTimeout)
@@ -1426,7 +1440,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         auto audioSession = sessionService_->GetAudioSessionByPid(audioInterrupt.pid);
         if (audioSession != nullptr) {
             audioSession->RemoveAudioInterrptByStreamId(audioInterrupt.sessionId);
-            needPlaceHolder = audioSession->IsAudioSessionEmpty();
+            needPlaceHolder = audioSession->IsAudioSessionEmpty() && !HadVoipStatus(audioInterrupt, audioFocusInfoList);
         }
     }
 
