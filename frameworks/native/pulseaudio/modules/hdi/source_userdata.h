@@ -43,13 +43,16 @@ struct Userdata {
     pa_source *source;
     pa_thread *thread;
     pa_thread_mq threadMq;
+    pa_thread *threadCap;
+    pa_thread_mq threadCapMq;
+    pa_asyncmsgq *CaptureMq;
     pa_rtpoll *rtpoll;
     uint32_t bufferSize;
     uint32_t openMicSpeaker;
     pa_usec_t blockUsec;
     pa_usec_t timestamp;
     SourceAttr attrs;
-    bool isCapturerStarted;
+    pa_atomic_t isCapturerStarted;
     EcType ecType;
     const char *ecAdapaterName;
     uint32_t ecSamplingRate;
