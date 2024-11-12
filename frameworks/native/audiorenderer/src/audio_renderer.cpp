@@ -97,7 +97,11 @@ AudioRendererPrivate::~AudioRendererPrivate()
         outputDeviceChangeCallback->RemoveCallback();
         outputDeviceChangeCallback->UnsetAudioRendererObj();
     }
-
+    std::shared_ptr<AudioRendererConcurrencyCallbackImpl> cb = audioConcurrencyCallback_;
+    if (cb != nullptr) {
+        cb->UnsetAudioRendererObj();
+        AudioPolicyManager::GetInstance().UnsetAudioConcurrencyCallback(sessionID_);
+    }
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
@@ -899,13 +903,6 @@ bool AudioRendererPrivate::Release()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
-
-    std::shared_ptr<AudioRendererConcurrencyCallbackImpl> cb = audioConcurrencyCallback_;
-    if (cb != nullptr) {
-        cb->UnsetAudioRendererObj();
-        AudioPolicyManager::GetInstance().UnsetAudioConcurrencyCallback(sessionID_);
-    }
-
     RemoveRendererPolicyServiceDiedCallback();
 
     return result;
