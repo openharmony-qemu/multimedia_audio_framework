@@ -424,7 +424,7 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     for (size_t index = 0; index < channel; index++) {
         volSums[index] /= static_cast<int64_t>(size);
-        volMaps.volStart[index] =  static_cast<int32_t>(volSums[index]);
+        volMaps.volStart[index] = static_cast<int32_t>(volSums[index]);
     }
     return;
 }
