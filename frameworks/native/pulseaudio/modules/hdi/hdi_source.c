@@ -304,31 +304,31 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
         if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
             u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
         }
-        if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
+        if (newState == PA_SOURCE_RUNNING && (pa_atomic_load(&u->isCapturerStarted) == 0)) {
             if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("HDI capturer start failed");
                 return -PA_ERR_IO;
             }
             StartAuxCapture(u);
-            u->isCapturerStarted = true;
+            pa_atomic_store(&u->isCapturerStarted, 1);
             AUDIO_DEBUG_LOG("Successfully started HDI capturer");
         }
     } else if (s->thread_info.state == PA_SOURCE_IDLE) {
         if (newState == PA_SOURCE_SUSPENDED) {
-            if (u->isCapturerStarted) {
+            if (pa_atomic_load(&u->isCapturerStarted) == 1) {
                 u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
-                u->isCapturerStarted = false;
+                pa_atomic_store(&u->isCapturerStarted, 0);
                 AUDIO_DEBUG_LOG("Stopped HDI capturer");
                 StopAuxCapture(u);
             }
-        } else if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
+        } else if (newState == PA_SOURCE_RUNNING && (pa_atomic_load(&u->isCapturerStarted) == 0)) {
             AUDIO_DEBUG_LOG("Idle to Running starting HDI capturing device");
             if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("Idle to Running HDI capturer start failed");
                 return -PA_ERR_IO;
             }
             StartAuxCapture(u);
-            u->isCapturerStarted = true;
+            pa_atomic_store(&u->isCapturerStarted, 1);
             AUDIO_DEBUG_LOG("Idle to Running: Successfully reinitialized HDI renderer");
         }
     }
@@ -741,7 +741,7 @@ static void CaptureData(void *userdata)
 
         switch (code) {
             case HDI_CAPTURE: {
-                if (u->isCapturerStarted) { GetCapturerFrameFromHdiAndProcess(&chunk, u); }
+                if (pa_atomic_load(&u->isCapturerStarted) == 1) { GetCapturerFrameFromHdiAndProcess(&chunk, u); }
                 break;
             }
             case QUIT: {
@@ -759,8 +759,8 @@ static void CaptureData(void *userdata)
 static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
 {
     bool flag = (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) ?
-        (u->source->thread_info.state == PA_SOURCE_RUNNING && u->isCapturerStarted) :
-        (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->isCapturerStarted);
+        (u->source->thread_info.state == PA_SOURCE_RUNNING && (pa_atomic_load(&u->isCapturerStarted) == 1)) :
+        (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && (pa_atomic_load(&u->isCapturerStarted) == 1));
     if (!flag) {
         pa_rtpoll_set_timer_disabled(u->rtpoll);
         AUDIO_DEBUG_LOG("HDI Source: pa_rtpoll_set_timer_disabled done ");
@@ -879,7 +879,7 @@ static int PaHdiCapturerInit(struct Userdata *u)
             goto fail;
         }
         StartAuxCapture(u);
-        u->isCapturerStarted = true;
+        pa_atomic_store(&u->isCapturerStarted, 1);
     }
     return ret;
 
@@ -1278,7 +1278,7 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 
 fail:
 
-    if (u->isCapturerStarted) {
+    if (pa_atomic_load(&u->isCapturerStarted) == 1) {
         PaHdiCapturerExit(u);
     }
     UserdataFree(u);

@@ -52,7 +52,7 @@ struct Userdata {
     pa_usec_t blockUsec;
     pa_usec_t timestamp;
     SourceAttr attrs;
-    bool isCapturerStarted;
+    pa_atomic_t isCapturerStarted;
     EcType ecType;
     const char *ecAdapaterName;
     uint32_t ecSamplingRate;
