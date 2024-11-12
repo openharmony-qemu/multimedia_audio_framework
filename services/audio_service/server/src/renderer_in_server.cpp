@@ -192,6 +192,11 @@ void RendererInServer::WriterRenderStreamStandbySysEvent()
     bean->Add("STREAMID", static_cast<int32_t>(streamIndex_));
     bean->Add("STANDBY", standByEnable_ ? 1 : 0);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+    payload["sessionId"] = std::to_string(streamIndex_);
+    payload["isStandby"] = std::to_string(standByEnable_ ? 1 : 0);
+    ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_STANDBY);
 }
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
