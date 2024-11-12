@@ -1857,7 +1857,7 @@ int32_t AudioInterruptService::ArchiveToNewAudioInterruptZone(const int32_t &fro
 }
 
 void AudioInterruptService::DispatchInterruptEventWithSessionId(uint32_t sessionId,
-    const InterruptEventInternal &interruptEvent)
+    InterruptEventInternal &interruptEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -1871,7 +1871,7 @@ void AudioInterruptService::DispatchInterruptEventWithSessionId(uint32_t session
 
     if (interruptClients_.find(sessionId) != interruptClients_.end()) {
 #ifdef FEATURE_APPGALLERY
-        if (ShouldCallbackToClient(interruptClients_[sessionId]->GetCallingUid(), sessionId, interruptEvent.hintType)) {
+        if (ShouldCallbackToClient(interruptClients_[sessionId]->GetCallingUid(), sessionId, interruptEvent)) {
             interruptClients_[sessionId]->OnInterrupt(interruptEvent);
         }
 #else
@@ -1897,11 +1897,17 @@ ClientType AudioInterruptService::GetClientTypeBySessionId(int32_t sessionId)
 #endif
 }
 
-bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptHint hintType)
+bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t sessionId,
+    InterruptEventInternal &interruptEvent)
 {
-    AUDIO_INFO_LOG("uid: %{public}u, sessionId: %{public}d, hintType: %{public}d", uid, sessionId, hintType);
+    AUDIO_INFO_LOG("uid: %{public}u, sessionId: %{public}d, hintType: %{public}d", uid, sessionId,
+        interruptEvent.hintType);
     ClientType clientType = ClientTypeManager::GetInstance()->GetClientTypeByUid(uid);
     if (clientType != CLIENT_TYPE_GAME) {
+        return true;
+    }
+    if (interruptEvent.hintType == INTERRUPT_HINT_DUCK || interruptEvent.hintType == INTERRUPT_HINT_UNDUCK) {
+        interruptEvent.callbackToApp = false;
         return true;
     }
 
@@ -1909,7 +1915,7 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t session
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, true, "error for g_adProxy null");
-    switch (hintType) {
+    switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_RESUME:
             muteFlag = false;
             [[fallthrough]];

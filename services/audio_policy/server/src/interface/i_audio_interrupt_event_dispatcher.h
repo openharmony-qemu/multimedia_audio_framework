@@ -25,7 +25,7 @@ namespace AudioStandard {
 class IAudioInterruptEventDispatcher {
 public:
     virtual void DispatchInterruptEventWithSessionId(
-        uint32_t sessionId, const InterruptEventInternal &interruptEvent) = 0;
+        uint32_t sessionId, InterruptEventInternal &interruptEvent) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

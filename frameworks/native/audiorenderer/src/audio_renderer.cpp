@@ -1025,7 +1025,7 @@ void AudioRendererInterruptCallbackImpl::UpdateAudioStream(const std::shared_ptr
 
 void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
-    if (cb_ != nullptr) {
+    if (cb_ != nullptr && interruptEvent.callbackToApp) {
         cb_->OnInterrupt(interruptEvent);
         AUDIO_DEBUG_LOG("Send interruptEvent to app successfully");
     } else {
@@ -1098,7 +1098,13 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
             return;
     }
     // Notify valid forced event callbacks to app
-    InterruptEvent interruptEventForced {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
+    NotifyForcedEvent(interruptEvent);
+}
+
+void AudioRendererInterruptCallbackImpl::NotifyForcedEvent(const InterruptEventInternal &interruptEvent)
+{
+    InterruptEvent interruptEventForced {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType,
+        interruptEvent.callbackToApp};
     if (interruptEventForced.hintType == INTERRUPT_HINT_RESUME) {
         // Reusme event should be INTERRUPT_SHARE type. Change the force type before sending the interrupt event.
         interruptEventForced.forceType = INTERRUPT_SHARE;
@@ -1122,7 +1128,7 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
         AUDIO_DEBUG_LOG("INTERRUPT_SHARE. Let app handle the event");
         InterruptEvent interruptEventShared {interruptEvent.eventType, interruptEvent.forceType,
-            interruptEvent.hintType};
+            interruptEvent.hintType, interruptEvent.callbackToApp};
         NotifyEvent(interruptEventShared);
         return;
     }
