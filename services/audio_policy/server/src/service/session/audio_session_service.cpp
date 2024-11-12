@@ -170,18 +170,18 @@ void AudioSessionService::OnAudioSessionTimeOut(const int32_t callerPid)
 void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    if(sessionMap_.empty()) {
+    if (sessionMap_.empty()) {
         AppendFormat(dumpString, "    - The AudioSessionMap is empty.\n");
         return;
     }
-    for(auto iterAudioSession = sessionMap_.begin(); iterAudioSession != sessionMap_.end(); ++iterAudioSession) {
+    for (auto iterAudioSession = sessionMap_.begin(); iterAudioSession != sessionMap_.end(); ++iterAudioSession) {
         int32_t pid = iterAudioSession.first;
         std::shared_ptr<AudioSession> audioSession = iterAudioSession.second;
-        if(audioSession == nullptr) {
+        if (audioSession == nullptr) {
             AppendFormat(dumpString, "    - pid: %d, AudioSession is null.\n", pid);
             continue;
         }
-        if(audioSession->IsAudioSessionEmpty()) {
+        if (audioSession->IsAudioSessionEmpty()) {
             AppendFormat(dumpString, "    - pid: %d, AudioSession is empty.\n", pid);
         } else {
             AudioSessionState sessionState = audioSession->GetSessionState();

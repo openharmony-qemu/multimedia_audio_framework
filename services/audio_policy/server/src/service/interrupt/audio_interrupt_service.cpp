@@ -2024,7 +2024,7 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
 void AudioInterruptService::AudioSessionInfoDump(std::string &dumpString)
 {
     AppendFormat(dumpString, "    - The AudioSession as follow:\n");
-    if(sessionService_ == nullptr) {
+    if (sessionService_ == nullptr) {
         AppendFormat(dumpString, "    - The AudioSessionService is null.\n");
         return;
     }
