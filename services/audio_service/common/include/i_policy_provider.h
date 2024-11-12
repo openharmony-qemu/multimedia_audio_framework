@@ -96,6 +96,8 @@ public:
 
     virtual int32_t GetMaxRendererInstances() = 0;
 
+    virtual int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) = 0;
+
     virtual ~IPolicyProvider() = default;
 
     static bool GetVolumeIndex(AudioVolumeType streamType, DeviceGroup deviceGroup, size_t &index)

@@ -170,5 +170,20 @@ int32_t PolicyProviderProxy::GetMaxRendererInstances()
 
     return reply.ReadInt32();
 }
+
+int32_t PolicyProviderProxy::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteInt32(incomingPipe);
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::ACTIVATE_CONCURRENCY_FROM_SERVER, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED,
+        "failed, error: %{public}d", ret);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

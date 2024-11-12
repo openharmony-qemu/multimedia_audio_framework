@@ -426,6 +426,8 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
+
     // for hidump
     void DevicesInfoDump(std::string &dumpString);
     void AudioModeDump(std::string &dumpString);

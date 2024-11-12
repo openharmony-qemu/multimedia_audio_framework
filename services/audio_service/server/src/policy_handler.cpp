@@ -213,5 +213,11 @@ int32_t PolicyHandler::GetMaxRendererInstances()
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->GetMaxRendererInstances();
 }
+
+int32_t PolicyHandler::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->ActivateConcurrencyFromServer(incomingPipe);
+}
 } // namespace AudioStandard
 } // namespace OHOS

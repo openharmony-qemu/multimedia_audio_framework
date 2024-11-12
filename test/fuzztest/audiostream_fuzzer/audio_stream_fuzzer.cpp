@@ -93,6 +93,8 @@ public:
 
     int32_t GetMaxRendererInstances() override;
 
+    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 
@@ -154,6 +156,11 @@ int32_t MockPolicyProvider::GetAndSaveClientType(uint32_t uid, const std::string
 }
 
 int32_t MockPolicyProvider::GetMaxRendererInstances()
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
 {
     return SUCCESS;
 }
