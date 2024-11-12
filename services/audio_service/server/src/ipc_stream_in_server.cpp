@@ -278,13 +278,13 @@ int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
+int32_t IpcStreamInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency)
 {
     if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
         AUDIO_ERR_LOG("unsupported mode: %{public}d or renderer obj is nullptr", static_cast<int32_t>(mode_));
         return ERR_OPERATION_FAILED;
     }
-    return rendererInServer_->GetAudioPosition(framePos, timestamp);
+    return rendererInServer_->GetAudioPosition(framePos, timestamp, latency);
 }
 
 int32_t IpcStreamInServer::GetLatency(uint64_t &latency)

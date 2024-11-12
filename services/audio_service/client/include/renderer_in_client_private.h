@@ -385,7 +385,7 @@ private:
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
 
-    uint64_t lastFlushPosition_ = 0;
+    uint64_t lastFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
 
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
