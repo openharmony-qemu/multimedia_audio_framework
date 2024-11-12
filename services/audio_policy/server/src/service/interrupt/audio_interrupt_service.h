@@ -100,6 +100,7 @@ public:
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
     void AudioInterruptZoneDump(std::string &dumpString);
+    void AudioSessionInfoDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeBySessionId(int32_t sessionId);
 
