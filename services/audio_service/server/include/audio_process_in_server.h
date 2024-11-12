@@ -94,6 +94,9 @@ public:
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
+
+    void WriteDumpFile(void *buffer, size_t bufferSize) override final;
+
 public:
     const AudioProcessConfig processConfig_;
 
@@ -126,6 +129,8 @@ private:
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
     BufferDesc convertedBuffer_ = {};
+    std::string dumpFileName_;
+    FILE *dumpFile_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
