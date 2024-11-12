@@ -22,7 +22,7 @@
 #include <thread>
 
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 
 namespace OHOS {

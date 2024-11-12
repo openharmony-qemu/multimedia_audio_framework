@@ -62,19 +62,19 @@ private:
 AudioSharedMemoryImpl::AudioSharedMemoryImpl(size_t size, const std::string &name)
     : base_(nullptr), fd_(INVALID_FD), size_(size), name_(name)
 {
-    AUDIO_INFO_LOG("AudioSharedMemory ctor with size: %{public}zu name: %{public}s", size_, name_.c_str());
+    AUDIO_DEBUG_LOG("AudioSharedMemory ctor with size: %{public}zu name: %{public}s", size_, name_.c_str());
 }
 
 AudioSharedMemoryImpl::AudioSharedMemoryImpl(int fd, size_t size, const std::string &name)
     : base_(nullptr), fd_(dup(fd)), size_(size), name_(name)
 {
-    AUDIO_INFO_LOG("AudioSharedMemory ctor with fd %{public}d size %{public}zu name %{public}s", fd_, size_,
+    AUDIO_DEBUG_LOG("AudioSharedMemory ctor with fd %{public}d size %{public}zu name %{public}s", fd_, size_,
         name_.c_str());
 }
 
 AudioSharedMemoryImpl::~AudioSharedMemoryImpl()
 {
-    AUDIO_INFO_LOG(" %{public}s enter ~AudioSharedMemoryImpl()", name_.c_str());
+    AUDIO_DEBUG_LOG(" %{public}s enter ~AudioSharedMemoryImpl()", name_.c_str());
     Close();
 }
 
@@ -98,7 +98,7 @@ int32_t AudioSharedMemoryImpl::Init()
     CHECK_AND_RETURN_RET_LOG(addr != MAP_FAILED, ERR_OPERATION_FAILED, "Init falied: fd %{public}d size %{public}zu",
         fd_, size_);
     base_ = static_cast<uint8_t *>(addr);
-    AUDIO_INFO_LOG("Init %{public}s <%{public}s> done.", (isFromRemote ? "remote" : "local"),
+    AUDIO_DEBUG_LOG("Init %{public}s <%{public}s> done.", (isFromRemote ? "remote" : "local"),
         name_.c_str());
     return SUCCESS;
 }
@@ -109,13 +109,13 @@ void AudioSharedMemoryImpl::Close()
         (void)munmap(base_, size_);
         base_ = nullptr;
         size_ = 0;
-        AUDIO_INFO_LOG("%{public}s munmap done", name_.c_str());
+        AUDIO_DEBUG_LOG("%{public}s munmap done", name_.c_str());
     }
 
     if (fd_ > 0) {
         (void)close(fd_);
         fd_ = INVALID_FD;
-        AUDIO_INFO_LOG("%{public}s close fd done", name_.c_str());
+        AUDIO_DEBUG_LOG("%{public}s close fd done", name_.c_str());
     }
 }
 
@@ -205,12 +205,12 @@ OHAudioBuffer::OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeI
     spanSizeInFrame_(spanSizeInFrame), byteSizePerFrame_(byteSizePerFrame), audioMode_(AUDIO_MODE_PLAYBACK),
     basicBufferInfo_(nullptr), spanInfoList_(nullptr)
 {
-    AUDIO_INFO_LOG("ctor with holder:%{public}d mode:%{public}d", bufferHolder_, audioMode_);
+    AUDIO_DEBUG_LOG("ctor with holder:%{public}d mode:%{public}d", bufferHolder_, audioMode_);
 }
 
 OHAudioBuffer::~OHAudioBuffer()
 {
-    AUDIO_INFO_LOG("enter ~OHAudioBuffer()");
+    AUDIO_DEBUG_LOG("enter ~OHAudioBuffer()");
     basicBufferInfo_ = nullptr;
     spanInfoList_ = nullptr;
     spanConut_ = 0;
@@ -236,7 +236,7 @@ int32_t OHAudioBuffer::SizeCheck()
 
 int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
 {
-    AUDIO_INFO_LOG("Init with dataFd %{public}d, infoFd %{public}d, bufferSize %{public}d, spanSize %{public}d,"
+    AUDIO_DEBUG_LOG("Init with dataFd %{public}d, infoFd %{public}d, bufferSize %{public}d, spanSize %{public}d,"
         " byteSizePerFrame %{public}d", dataFd, infoFd, totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
 
     int32_t ret = SizeCheck();
@@ -288,14 +288,14 @@ int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
         }
     }
 
-    AUDIO_INFO_LOG("Init done.");
+    AUDIO_DEBUG_LOG("Init done.");
     return SUCCESS;
 }
 
 std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromLocal(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
     uint32_t byteSizePerFrame)
 {
-    AUDIO_INFO_LOG("totalSizeInFrame %{public}d, spanSizeInFrame %{public}d, byteSizePerFrame"
+    AUDIO_DEBUG_LOG("totalSizeInFrame %{public}d, spanSizeInFrame %{public}d, byteSizePerFrame"
         " %{public}d", totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
@@ -309,7 +309,7 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromLocal(uint32_t totalSize
 std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromRemote(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
     uint32_t byteSizePerFrame, AudioBufferHolder bufferHolder, int dataFd, int infoFd)
 {
-    AUDIO_INFO_LOG("dataFd %{public}d, infoFd %{public}d", dataFd, infoFd);
+    AUDIO_DEBUG_LOG("dataFd %{public}d, infoFd %{public}d", dataFd, infoFd);
 
     int minfd = 2; // ignore stdout, stdin and stderr.
     CHECK_AND_RETURN_RET_LOG(dataFd > minfd, nullptr, "invalid dataFd: %{public}d", dataFd);
@@ -328,7 +328,7 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromRemote(uint32_t totalSiz
 
 int32_t OHAudioBuffer::WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffer, MessageParcel &parcel)
 {
-    AUDIO_INFO_LOG("WriteToParcel start.");
+    AUDIO_DEBUG_LOG("WriteToParcel start.");
     AudioBufferHolder bufferHolder = buffer->GetBufferHolder();
     CHECK_AND_RETURN_RET_LOG(bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ||
         bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT,
@@ -342,13 +342,13 @@ int32_t OHAudioBuffer::WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffe
     parcel.WriteFileDescriptor(buffer->dataMem_->GetFd());
     parcel.WriteFileDescriptor(buffer->statusInfoMem_->GetFd());
 
-    AUDIO_INFO_LOG("WriteToParcel done.");
+    AUDIO_DEBUG_LOG("WriteToParcel done.");
     return SUCCESS;
 }
 
 std::shared_ptr<OHAudioBuffer> OHAudioBuffer::ReadFromParcel(MessageParcel &parcel)
 {
-    AUDIO_INFO_LOG("ReadFromParcel start.");
+    AUDIO_DEBUG_LOG("ReadFromParcel start.");
     uint32_t holder = parcel.ReadUint32();
     AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
     if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
@@ -374,11 +374,11 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::ReadFromParcel(MessageParcel &parc
         byteSizePerFrame != buffer->basicBufferInfo_->byteSizePerFrame) {
         AUDIO_WARNING_LOG("data in shared memory diff.");
     } else {
-        AUDIO_INFO_LOG("Read some data done.");
+        AUDIO_DEBUG_LOG("Read some data done.");
     }
     close(dataFd);
     close(infoFd);
-    AUDIO_INFO_LOG("ReadFromParcel done.");
+    AUDIO_DEBUG_LOG("ReadFromParcel done.");
     return buffer;
 }
 
@@ -511,7 +511,7 @@ int32_t OHAudioBuffer::ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFr
     basicBufferInfo_->curWriteFrame.store(writeFrame);
     basicBufferInfo_->curReadFrame.store(readFrame);
 
-    AUDIO_INFO_LOG("Reset position:read%{public}" PRIu64" write%{public}" PRIu64".", readFrame, writeFrame);
+    AUDIO_DEBUG_LOG("Reset position:read%{public}" PRIu64" write%{public}" PRIu64".", readFrame, writeFrame);
     return SUCCESS;
 }
 

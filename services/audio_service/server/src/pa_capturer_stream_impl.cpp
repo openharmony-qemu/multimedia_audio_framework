@@ -20,7 +20,7 @@
 #include "pa_capturer_stream_impl.h"
 #include "pa_adapter_tools.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
 
