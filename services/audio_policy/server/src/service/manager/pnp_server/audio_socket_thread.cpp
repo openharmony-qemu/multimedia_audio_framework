@@ -27,8 +27,10 @@
 #include "osal_time.h"
 #include "audio_errors.h"
 #include "securec.h"
+#include "singleton.h"
 #include "audio_policy_log.h"
 #include "audio_pnp_server.h"
+#include "audio_policy_server_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -441,6 +443,46 @@ bool AudioSocketThread::DeleteAudioUsbDevice(const char *devName)
     return false;
 }
 
+int32_t AudioSocketThread::AudioNnDetectDevice(struct AudioPnpUevent *audioPnpUevent)
+{
+    if (audioPnpUevent == NULL) {
+        return HDF_ERR_INVALID_PARAM;
+    }
+
+    if ((strcmp(audioPnpUevent->action, "change") != 0) ||
+        (strncmp(audioPnpUevent->name, "send_nn_state", strlen("send_nn_state")) != 0)) {
+        return HDF_ERR_INVALID_PARAM;
+    }
+
+    std::string ueventStr = audioPnpUevent->name;
+    auto state = ueventStr.substr(ueventStr.find("send_nn_state") + strlen("send_nn_state") + 1);
+    int32_t nnState;
+    switch (atoi(state.c_str())) {
+        case STATE_NOT_SUPPORTED:
+            nnState = STATE_NOT_SUPPORTED;
+            break;
+        case STATE_NN_OFF:
+            nnState = STATE_NN_OFF;
+            break;
+        case STATE_NN_ON:
+            nnState = STATE_NN_ON;
+            break;
+        default:
+            AUDIO_ERR_LOG("NN state is invalid");
+            return HDF_ERR_INVALID_PARAM;
+    }
+    
+    // callback of bluetooth
+    auto handle = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    if (handle == nullptr) {
+        AUDIO_ERR_LOG("get AudioPolicyServerHandler instance failed");
+        return HDF_ERR_INVALID_PARAM;
+    }
+    bool ret = handle->SendNnStateChangeCallback(nnState);
+    AUDIO_INFO_LOG("NN state change callback ret is [%{public}d]", ret);
+    return ret;
+}
+
 int32_t AudioSocketThread::AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUevent)
 {
     AudioEvent audioEvent = {0};
@@ -582,16 +624,11 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
         msgTmp += strlen(msgTmp) + 1;
     }
 
-    if (AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) {
-        return true;
-    }
-    if (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) {
-        return true;
-    }
-    if (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) {
-        return true;
-    }
-    if (AudioAnahsDetectDevice(&audioPnpUevent) == SUCCESS) {
+    if ((AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioAnahsDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioNnDetectDevice(&audioPnpUevent) == SUCCESS)) {
         return true;
     }
 

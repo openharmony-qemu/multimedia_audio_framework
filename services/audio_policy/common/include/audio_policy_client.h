@@ -50,6 +50,7 @@ enum class AudioPolicyClientCode {
     ON_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE,
     ON_HEAD_TRACKING_ENABLED_CHANGE,
     ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE,
+    ON_NN_STATE_CHANGE,
     ON_AUDIO_SESSION_DEACTIVE,
     ON_MICRO_PHONE_BLOCKED,
     AUDIO_POLICY_CLIENT_CODE_MAX = ON_MICRO_PHONE_BLOCKED,
@@ -83,6 +84,7 @@ public:
     virtual void OnHeadTrackingEnabledChange(const bool &enabled) = 0;
     virtual void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) = 0;
+    virtual void OnNnStateChange(const int32_t &nnState) = 0;
     virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
 
     bool hasBTPermission_ = true;

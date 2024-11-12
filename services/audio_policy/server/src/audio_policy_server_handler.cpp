@@ -477,6 +477,17 @@ bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(int32_t clientId,
         eventContextObj));
 }
 
+bool AudioPolicyServerHandler::SendNnStateChangeCallback(const int32_t &state)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->nnState = state;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::NN_STATE_CHANGE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send NN_STATE_CHANGE event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendHeadTrackingDeviceChangeEvent(
     const std::unordered_map<std::string, bool> &changeInfo)
 {
@@ -1021,6 +1032,25 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     }
 }
 
+void AudioPolicyServerHandler::HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> nnStateChangeCb = it->second;
+        if (nnStateChangeCb == nullptr) {
+            AUDIO_ERR_LOG("nnStateChangeCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_NN_STATE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_NN_STATE_CHANGE]) {
+            nnStateChangeCb->OnNnStateChange(eventContextObj->nnState);
+        }
+    }
+}
+
 void AudioPolicyServerHandler::HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1209,6 +1239,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::MICROPHONE_BLOCKED:
             HandleMicrophoneBlockedCallback(event);
+            break;
+        case EventAudioServerCmd::NN_STATE_CHANGE:
+            HandleNnStateChangeEvent(event);
             break;
         default:
             break;

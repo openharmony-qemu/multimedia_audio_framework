@@ -732,5 +732,33 @@ void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(const sp
         callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     }
 }
+
+int32_t AudioPolicyClientStubImpl::AddNnStateChangeCallback(const std::shared_ptr<AudioNnStateChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    nnStateChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveNnStateChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    nnStateChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetNnStateChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    return nnStateChangeCallbackList_.size();
+}
+
+void AudioPolicyClientStubImpl::OnNnStateChange(const int32_t &nnState)
+{
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    for (const auto &callback : nnStateChangeCallbackList_) {
+        callback->OnNnStateChange(nnState);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
