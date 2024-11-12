@@ -65,6 +65,20 @@ using namespace OHOS::AppExecFwk;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
+const uint64_t AUDIO_US_PER_MS = 1000;
+const uint64_t AUDIO_NS_PER_US = 1000;
+const uint64_t AUDIO_US_PER_S = 1000000;
+const uint64_t AUDIO_MS_PER_S = 1000;
+static constexpr int CB_QUEUE_CAPACITY = 3;
+const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
+static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
+constexpr int32_t MAX_BUFFER_SIZE = 100000;
+const uint64_t MAX_CBBUF_IN_USEC = 100000;
+const uint64_t MIN_CBBUF_IN_USEC = 20000;
+static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
+static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
+static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 300; // ms
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -1346,50 +1360,6 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
 {
     return PA_STREAM;
-}
-
-std::mutex g_serverProxyMutex;
-sptr<IStandardAudioService> gServerProxy_ = nullptr;
-const sptr<IStandardAudioService> RendererInClientInner::GetAudioServerProxy()
-{
-    std::lock_guard<std::mutex> lock(g_serverProxyMutex);
-    if (gServerProxy_ == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        if (samgr == nullptr) {
-            AUDIO_ERR_LOG("GetAudioServerProxy: get sa manager failed");
-            return nullptr;
-        }
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-        if (object == nullptr) {
-            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service remote object failed");
-            return nullptr;
-        }
-        gServerProxy_ = iface_cast<IStandardAudioService>(object);
-        if (gServerProxy_ == nullptr) {
-            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service proxy failed");
-            return nullptr;
-        }
-
-        // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient =
-            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
-        if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioServerDied(pid, uid); });
-            bool result = object->AddDeathRecipient(asDeathRecipient);
-            if (!result) {
-                AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
-            }
-        }
-    }
-    sptr<IStandardAudioService> gasp = gServerProxy_;
-    return gasp;
-}
-
-void RendererInClientInner::AudioServerDied(pid_t pid, pid_t uid)
-{
-    AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
-    std::lock_guard<std::mutex> lock(g_serverProxyMutex);
-    gServerProxy_ = nullptr;
 }
 
 void RendererInClientInner::OnHandle(uint32_t code, int64_t data)
