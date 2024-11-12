@@ -725,7 +725,7 @@ static int32_t GetCapturerFrameFromHdiAndProcess(pa_memchunk *chunk, struct User
     return 0;
 }
 
-static void CaptureData(void *userdata)
+static void ThreadProcessCapData(void *userdata)
 {
     struct Userdata *u = userdata;
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
@@ -735,7 +735,7 @@ static void CaptureData(void *userdata)
     int32_t quit = 0;
 
     do {
-        AUTO_CTRACE("OS_CaptureDataLoop");
+        AUTO_CTRACE("OS_ProcessCapDataLoop");
         int32_t code = 0;
         pa_assert_se(pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, NULL, 1) == 0);
 
@@ -1212,7 +1212,7 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
         return -1;
     }
 
-    if (!(u->threadCap = pa_thread_new("OS_CaptureData", CaptureData, u))) {
+    if (!(u->threadCap = pa_thread_new("OS_ProcessCapData", ThreadProcessCapData, u))) {
         AUDIO_ERR_LOG("Failed to create capture-data thread!");
         return -1;
     }
