@@ -85,6 +85,7 @@ const uint32_t DEVICE_PARAM_MAX_LEN = 40;
 const std::string VOIP_HAL_NAME = "voip";
 const std::string DIRECT_HAL_NAME = "direct";
 const std::string PRIMARY_HAL_NAME = "primary";
+const std::string USB_HAL_NAME = "usb";
 #ifdef FEATURE_POWER_MANAGER
 const std::string PRIMARY_LOCK_NAME_BASE = "AudioBackgroundPlay";
 #endif
@@ -290,6 +291,7 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     int32_t currentDevicesSize_ = 0;
+    std::string usbAddress_;
 };
 
 struct HdfRemoteService *AudioRendererSinkInner::hdfRemoteService_ = nullptr;
@@ -703,7 +705,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     deviceDesc.portId = renderPort.portId;
-    std::string desc = attr_.address;
+    std::string desc = halName_ == USB_HAL_NAME ? usbAddress_ : attr_.address;
     deviceDesc.desc = const_cast<char*>(desc.c_str());
     deviceDesc.pins = PIN_OUT_SPEAKER;
     if (halName_ == "usb") {
@@ -1731,7 +1733,7 @@ int32_t AudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
 
 void AudioRendererSinkInner::SetAddress(const std::string &address)
 {
-    attr_.address = address;
+    usbAddress_ = address;
 }
 
 int32_t AudioRendererSinkInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &outputDevice)
