@@ -175,8 +175,8 @@ void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
         return;
     }
     for (auto iterAudioSession = sessionMap_.begin(); iterAudioSession != sessionMap_.end(); ++iterAudioSession) {
-        int32_t pid = iterAudioSession.first;
-        std::shared_ptr<AudioSession> audioSession = iterAudioSession.second;
+        int32_t pid = iterAudioSession->first;
+        std::shared_ptr<AudioSession> audioSession = iterAudioSession->second;
         if (audioSession == nullptr) {
             AppendFormat(dumpString, "    - pid: %d, AudioSession is null.\n", pid);
             continue;
