@@ -548,7 +548,8 @@ void AudioRendererInServerTest(const uint8_t* rawData, size_t size)
     std::string dumpString = "";
     renderer->Dump(dumpString);
     renderer->SetStreamVolumeInfoForEnhanceChain();
-    renderer->ReportDataToResSched(true);
+    std::unordered_map<std::string, std::string> payload;
+    renderer->ReportDataToResSched(payload, 119); // 119 present AUDIO_RENDERER_STANDBY
     AudioRendererInServerTestFirst(rawData, size, renderer);
     AudioRendererInServerTestSecond(rawData, size, renderer);
 }

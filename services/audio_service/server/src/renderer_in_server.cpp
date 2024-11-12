@@ -389,7 +389,12 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if ((currentTime - startMuteTime_ >= ONE_MINUTE) && silentState_ == 1) { // 1 means unsilent
             silentState_ = 0; // 0 means silent
             AUDIO_WARNING_LOG("write invalid data for some time in server");
-            ReportDataToResSched(true);
+
+            std::unordered_map<std::string, std::string> payload;
+            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+            payload["sessionId"] = std::to_string(streamIndex_);
+            payload["isSilent"] = std::to_string(true);
+            ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
         }
     } else {
         if (startMuteTime_ != 0) {
@@ -398,21 +403,22 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if (silentState_ == 0) { // 0 means silent
             AUDIO_WARNING_LOG("begin write valid data in server");
             silentState_ = 1; // 1 means unsilent
-            ReportDataToResSched(false);
+
+            std::unordered_map<std::string, std::string> payload;
+            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+            payload["sessionId"] = std::to_string(streamIndex_);
+            payload["isSilent"] = std::to_string(false);
+            ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
         }
     }
 }
 
-void RendererInServer::ReportDataToResSched(bool isSilent)
+void RendererInServer::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
 {
-    #ifdef RESSCHE_ENABLE
-    std::unordered_map<std::string, std::string> payload;
-    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
-    payload["sessionId"] = std::to_string(streamIndex_);
-    payload["isSilent"] = std::to_string(isSilent);
-    uint32_t type = ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK;
+#ifdef RESSCHE_ENABLE
+    AUDIO_INFO_LOG("report event to ResSched ,event type : %{public}d", type);
     ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
-    #endif
+#endif
 }
 
 void RendererInServer::VolumeHandle(BufferDesc &desc)
