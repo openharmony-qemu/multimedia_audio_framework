@@ -1785,6 +1785,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     if (lastSpeed_ != speed_ && ipcStream_ != nullptr) {
         Timestamp timestamp;
         GetAudioPosition(timestamp, Timestamp::Timestampbase::MONOTONIC);
+        lastSpeed_ = speed_;
     }
 
     return WriteRingCache(buffer, bufferSize, speedCached, oriBufferSize);
