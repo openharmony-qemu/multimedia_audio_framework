@@ -107,7 +107,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_REMOTE_CAST,
-    SOURCE_TYPE_VOICE_TRANSCRIPTION
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
@@ -308,9 +309,7 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
             break;
         }
     }
-    if (!match) {
-        return ERR_INVALID_PARAM;
-    }
+    if (!match) { return ERR_INVALID_PARAM; }
 
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");

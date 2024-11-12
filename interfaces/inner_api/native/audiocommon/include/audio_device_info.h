@@ -229,6 +229,11 @@ inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole)
     }
 }
 
+enum DeviceBlockStatus {
+    DEVICE_UNBLOCKED = 0,
+    DEVICE_BLOCKED = 1,
+};
+
 enum DeviceChangeType {
     CONNECT = 0,
     DISCONNECT = 1,

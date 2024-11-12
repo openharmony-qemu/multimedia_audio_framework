@@ -84,6 +84,36 @@ const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
     SOURCE_TYPE_REMOTE_CAST
 };
 }
+
+static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
+    {STREAM_VOICE_ASSISTANT, "VOICE_ASSISTANT"},
+    {STREAM_VOICE_CALL, "VOICE_CALL"},
+    {STREAM_SYSTEM, "SYSTEM"},
+    {STREAM_RING, "RING"},
+    {STREAM_MUSIC, "MUSIC"},
+    {STREAM_ALARM, "ALARM"},
+    {STREAM_NOTIFICATION, "NOTIFICATION"},
+    {STREAM_BLUETOOTH_SCO, "BLUETOOTH_SCO"},
+    {STREAM_DTMF, "DTMF"},
+    {STREAM_TTS, "TTS"},
+    {STREAM_ACCESSIBILITY, "ACCESSIBILITY"},
+    {STREAM_ULTRASONIC, "ULTRASONIC"},
+    {STREAM_WAKEUP, "WAKEUP"},
+    {STREAM_CAMCORDER, "CAMCORDER"},
+    {STREAM_ENFORCED_AUDIBLE, "ENFORCED_AUDIBLE"},
+    {STREAM_MOVIE, "MOVIE"},
+    {STREAM_GAME, "GAME"},
+    {STREAM_SPEECH, "SPEECH"},
+    {STREAM_SYSTEM_ENFORCED, "SYSTEM_ENFORCED"},
+    {STREAM_VOICE_MESSAGE, "VOICE_MESSAGE"},
+    {STREAM_NAVIGATION, "NAVIGATION"},
+    {STREAM_INTERNAL_FORCE_STOP, "INTERNAL_FORCE_STOP"},
+    {STREAM_SOURCE_VOICE_CALL, "SOURCE_VOICE_CALL"},
+    {STREAM_VOICE_COMMUNICATION, "VOICE_COMMUNICATION"},
+    {STREAM_VOICE_RING, "VOICE_RING"},
+    {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
+};
+
 int64_t ClockTime::GetCurNano()
 {
     int64_t result = -1; // -1 for bad result.
@@ -1028,96 +1058,12 @@ void LatencyMonitor::ShowBluetoothTimestamp()
 const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
 {
     std::string name;
-    switch (streamType) {
-        case STREAM_VOICE_ASSISTANT:
-            name = "VOICE_ASSISTANT";
-            break;
-        case STREAM_VOICE_CALL:
-            name = "VOICE_CALL";
-            break;
-        case STREAM_SYSTEM:
-            name = "SYSTEM";
-            break;
-        case STREAM_RING:
-            name = "RING";
-            break;
-        case STREAM_MUSIC:
-            name = "MUSIC";
-            break;
-        case STREAM_ALARM:
-            name = "ALARM";
-            break;
-        case STREAM_NOTIFICATION:
-            name = "NOTIFICATION";
-            break;
-        case STREAM_BLUETOOTH_SCO:
-            name = "BLUETOOTH_SCO";
-            break;
-        case STREAM_DTMF:
-            name = "DTMF";
-            break;
-        case STREAM_TTS:
-            name = "TTS";
-            break;
-        case STREAM_ACCESSIBILITY:
-            name = "ACCESSIBILITY";
-            break;
-        case STREAM_ULTRASONIC:
-            name = "ULTRASONIC";
-            break;
-        case STREAM_WAKEUP:
-            name = "WAKEUP";
-            break;
-        default:
-            name = GetStreamNameExt(streamType);
-    }
-
-    const std::string streamName = name;
-    return streamName;
-}
-
-const std::string AudioInfoDumpUtils::GetStreamNameExt(AudioStreamType streamType)
-{
-    std::string name;
-    switch (streamType) {
-        case STREAM_ENFORCED_AUDIBLE:
-            name = "ENFORCED_AUDIBLE";
-            break;
-        case STREAM_MOVIE:
-            name = "MOVIE";
-            break;
-        case STREAM_GAME:
-            name = "GAME";
-            break;
-        case STREAM_SPEECH:
-            name = "SPEECH";
-            break;
-        case STREAM_SYSTEM_ENFORCED:
-            name = "SYSTEM_ENFORCED";
-            break;
-        case STREAM_VOICE_MESSAGE:
-            name = "VOICE_MESSAGE";
-            break;
-        case STREAM_NAVIGATION:
-            name = "NAVIGATION";
-            break;
-        case STREAM_INTERNAL_FORCE_STOP:
-            name = "INTERNAL_FORCE_STOP";
-            break;
-        case STREAM_SOURCE_VOICE_CALL:
-            name = "SOURCE_VOICE_CALL";
-            break;
-        case STREAM_VOICE_COMMUNICATION:
-            name = "VOICE_COMMUNICATION";
-            break;
-        case STREAM_VOICE_RING:
-            name = "VOICE_RING";
-            break;
-        case STREAM_VOICE_CALL_ASSISTANT:
-            name = "VOICE_CALL_ASSISTANT";
-            break;
-        default:
-            name = "UNKNOWN";
+    std::unordered_map<AudioStreamType, std::string> map = STREAM_TYPE_NAME_MAP;
+    auto it = map.find(streamType);
+    if (it != map.end()) {
+        name = it->second;
+    } else {
+        name = "UNKNOWN";
     }
 
     const std::string streamName = name;
@@ -1194,6 +1140,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_MIC:
             name = "MIC";
             break;
+        case SOURCE_TYPE_CAMCORDER:
+            name = "CAMCORDER";
+            break;
         case SOURCE_TYPE_VOICE_RECOGNITION:
             name = "VOICE_RECOGNITION";
             break;
@@ -1254,6 +1203,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_GAME, STREAM_MUSIC},
     {STREAM_SPEECH, STREAM_MUSIC},
     {STREAM_NAVIGATION, STREAM_MUSIC},
+    {STREAM_CAMCORDER, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
     {STREAM_ALARM, STREAM_ALARM},

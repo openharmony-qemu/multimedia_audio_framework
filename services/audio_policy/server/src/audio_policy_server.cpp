@@ -359,6 +359,7 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
         case STREAM_VOICE_RING:
+        case STREAM_CAMCORDER:
             result = true;
             break;
         default:

@@ -136,6 +136,30 @@ void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChan
     reply.ReadInt32();
 }
 
+void AudioPolicyClientProxy::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    size_t size = microphoneBlockedInfo.devices.size();
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_MICRO_PHONE_BLOCKED));
+    data.WriteInt32(microphoneBlockedInfo.blockStatus);
+    data.WriteInt32(static_cast<int32_t>(size));
+    for (size_t i = 0; i < size; i++) {
+        microphoneBlockedInfo.devices[i]->Marshalling(data);
+    }
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending microphoneBlocked info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
 void AudioPolicyClientProxy::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
 {
     MessageParcel data;

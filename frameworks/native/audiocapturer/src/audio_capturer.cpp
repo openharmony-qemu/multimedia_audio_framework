@@ -37,6 +37,7 @@ static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
     {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
+    {AudioStreamType::STREAM_CAMCORDER, SourceType::SOURCE_TYPE_CAMCORDER},
     {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
     {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
     {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP},
@@ -803,6 +804,8 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
             return STREAM_WAKEUP;
         case SOURCE_TYPE_VOICE_CALL:
             return STREAM_SOURCE_VOICE_CALL;
+        case SOURCE_TYPE_CAMCORDER:
+            return STREAM_CAMCORDER;
         default:
             return STREAM_MUSIC;
     }

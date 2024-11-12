@@ -51,7 +51,8 @@ enum class AudioPolicyClientCode {
     ON_HEAD_TRACKING_ENABLED_CHANGE,
     ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE,
     ON_AUDIO_SESSION_DEACTIVE,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_AUDIO_SESSION_DEACTIVE,
+    ON_MICRO_PHONE_BLOCKED,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_MICRO_PHONE_BLOCKED,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -59,7 +60,8 @@ public:
     virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
     virtual void OnAudioFocusRequested(const AudioInterrupt &requestFocus) = 0;
     virtual void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) = 0;
-    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) =0;
+    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
+    virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;

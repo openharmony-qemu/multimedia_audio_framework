@@ -200,6 +200,50 @@ void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
     }
 }
 
+void AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedInfo &blockedInfo)
+{
+    std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
+    MicrophoneBlockedInfo microphoneBlockedInfo;
+    microphoneBlockedInfo.blockStatus = blockedInfo.blockStatus;
+    for (auto it = microphoneBlockedCallbackList_.begin(); it != microphoneBlockedCallbackList_.end(); ++it) {
+        microphoneBlockedInfo.devices= blockedInfo.devices;
+        if (it->second && microphoneBlockedInfo.devices.size() > 0) {
+            it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
+        }
+    }
+}
+
+int32_t AudioPolicyClientStubImpl::AddMicrophoneBlockedCallback(const int32_t clientId,
+    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
+    microphoneBlockedCallbackList_.push_back(std::make_pair(clientId, cb));
+    AUDIO_INFO_LOG("add mic blocked cb clientId:%{public}d", clientId);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveMicrophoneBlockedCallback(const int32_t clientId,
+    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
+    auto iter = microphoneBlockedCallbackList_.begin();
+    while (iter != microphoneBlockedCallbackList_.end()) {
+        if ((iter->first == clientId) && (iter->second == cb || cb == nullptr)) {
+            AUDIO_INFO_LOG("remove mic blocked cb flag:%{public}d", clientId);
+            iter = microphoneBlockedCallbackList_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetMicrophoneBlockedCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
+    return microphoneBlockedCallbackList_.size();
+}
+
 int32_t AudioPolicyClientStubImpl::AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);

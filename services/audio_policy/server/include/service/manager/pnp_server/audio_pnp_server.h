@@ -29,6 +29,7 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+class MicrophoneBlocked;
 
 class AudioPnpServer {
 public:
@@ -43,6 +44,8 @@ public:
     int32_t UnRegisterPnpStatusListener();
     void OnPnpDeviceStatusChanged(const std::string &info);
     void StopPnpServer();
+    friend class MicrophoneBlocked;
+    void OnMicrophoneBlocked(const std::string &info, AudioPnpServer &audioPnpServer);
 
 private:
     std::string eventInfo_;
@@ -57,6 +60,51 @@ private:
     void UpdateUsbHeadset();
 #endif
 };
+
+class MicrophoneBlocked {
+public:
+    static MicrophoneBlocked &GetInstance()
+    {
+        static MicrophoneBlocked instance_;
+        return instance_;
+    }
+    MicrophoneBlocked() {}
+    ~MicrophoneBlocked() {}
+    void OnMicrophoneBlocked(const std::string &info, AudioPnpServer &audioPnpServer);
+};
+
+enum PnpEventType {
+    PNP_EVENT_DEVICE_ADD = 1,
+    PNP_EVENT_DEVICE_REMOVE = 2,
+    PNP_EVENT_LOAD_SUCCESS = 3,
+    PNP_EVENT_LOAD_FAILURE = 4,
+    PNP_EVENT_UNLOAD = 5,
+    PNP_EVENT_SERVICE_VALID = 7,
+    PNP_EVENT_SERVICE_INVALID  = 8,
+    PNP_EVENT_CAPTURE_THRESHOLD = 9,
+    PNP_EVENT_UNKNOWN = 10,
+    PNP_EVENT_MIC_BLOCKED = 11,
+    PNP_EVENT_MIC_UNBLOCKED = 12,
+};
+
+enum PnpDeviceType {
+    PNP_DEVICE_LINEOUT = 1 << 0,
+    PNP_DEVICE_HEADPHONE = 1 << 1,
+    PNP_DEVICE_HEADSET = 1 << 2,
+    PNP_DEVICE_USB_HEADSET = 1 << 3,
+    PNP_DEVICE_USB_HEADPHONE = 1 << 4,
+    PNP_DEVICE_USBA_HEADSET = 1 << 5,
+    PNP_DEVICE_USBA_HEADPHONE = 1 << 6,
+    PNP_DEVICE_PRIMARY_DEVICE = 1 << 7,
+    PNP_DEVICE_USB_DEVICE = 1 << 8,
+    PNP_DEVICE_A2DP_DEVICE = 1 << 9,
+    PNP_DEVICE_HDMI_DEVICE = 1 << 10,
+    PNP_DEVICE_ADAPTER_DEVICE = 1 << 11,
+    PNP_DEVICE_DP_DEVICE = 1 << 12,
+    PNP_DEVICE_MIC = 1 << 13,
+    PNP_DEVICE_UNKNOWN,
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_PNP_SERVER_H

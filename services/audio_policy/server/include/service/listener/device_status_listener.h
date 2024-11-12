@@ -35,6 +35,7 @@ public:
 
     IDeviceStatusObserver &deviceObserver_;
     void OnPnpDeviceStatusChanged(const std::string &info);
+    void OnMicrophoneBlocked(const std::string &info);
 
 private:
     AudioPnpServer *audioPnpServer_;
@@ -50,6 +51,8 @@ public:
     virtual ~AudioPnpStatusCallback();
 
     void OnPnpDeviceStatusChanged(const std::string &info);
+
+    void OnMicrophoneBlocked(const std::string &info);
 
     void SetDeviceStatusListener(DeviceStatusListener *listener);
 private:
