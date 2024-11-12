@@ -456,7 +456,7 @@ int32_t AudioSocketThread::AudioNnDetectDevice(struct AudioPnpUevent *audioPnpUe
     std::string ueventStr = audioPnpUevent->name;
     auto state = ueventStr.substr(ueventStr.find("send_nn_state") + strlen("send_nn_state") + 1);
     int32_t nnState;
-    switch (atoi(state)) {
+    switch (atoi(state.c_str())) {
         case STATE_NOT_SUPPORTED:
             nnState = STATE_NOT_SUPPORTED;
             break;
