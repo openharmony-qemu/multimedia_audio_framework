@@ -1705,6 +1705,28 @@ int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Start to register");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_NN_STATE_CHANGE].mutex);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
+    audioPolicyClientStubCB_->AddNnStateChangeCallback(callback);
+    if (audioPolicyClientStubCB_->GetNnStateChangeCallbackSize() == 1) {
+        callbackChangeInfos_[CALLBACK_NN_STATE_CHANGE].isEnable = true;
+        SetClientCallbacksEnable(CALLBACK_NN_STATE_CHANGE, true);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::UnregisterSpatializationEnabledEventListener()
 {
     AUDIO_DEBUG_LOG("Start to unregister");
@@ -1729,6 +1751,19 @@ int32_t AudioPolicyManager::UnregisterHeadTrackingEnabledEventListener()
             callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, false);
         }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterNnStateEventListener()
+{
+    AUDIO_DEBUG_LOG("Start to unregister");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_NN_STATE_CHANGE].mutex);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
+    audioPolicyClientStubCB_->RemoveNnStateChangeCallback();
+    if (audioPolicyClientStubCB_->GetNnStateChangeCallbackSize() == 0) {
+        callbackChangeInfos_[CALLBACK_NN_STATE_CHANGE].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_NN_STATE_CHANGE, false);
     }
     return SUCCESS;
 }

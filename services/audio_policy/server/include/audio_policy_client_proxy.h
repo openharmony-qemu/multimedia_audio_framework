@@ -56,6 +56,7 @@ public:
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void OnNnStateChange(const int32_t &state) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
 
 private:

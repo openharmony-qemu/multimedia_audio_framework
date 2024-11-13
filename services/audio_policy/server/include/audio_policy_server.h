@@ -497,6 +497,7 @@ public:
     void XmlParsedDataMapDump(std::string &dumpString);
     void EffectManagerInfoDump(std::string &dumpString);
     void MicrophoneMuteInfoDump(std::string &dumpString);
+    void AudioSessionInfoDump(std::string &dumpString);
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

@@ -42,7 +42,7 @@ const int32_t A2DP_PLAYING = 2;
 const int32_t A2DP_STOPPED = 1;
 const int32_t DATA_LINK_CONNECTING = 10;
 const int32_t DATA_LINK_CONNECTED = 11;
-const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
+const int32_t CONNECTION_TIMEOUT_IN_MS = 1000; // 1000ms
 void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
 {
     A2dpOffloadConnectionState state = audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState();

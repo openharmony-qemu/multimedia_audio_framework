@@ -360,6 +360,12 @@ void AudioPolicyClientStub::HandleHeadTrackingEnabledChangeForAnyDevice(MessageP
     OnHeadTrackingEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
 }
 
+void AudioPolicyClientStub::HandleNnStateChange(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t state = data.ReadInt32();
+    OnNnStateChange(state);
+}
+
 void AudioPolicyClientStub::HandleAudioSessionCallback(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_INFO_LOG("HandleAudioSessionCallback");
