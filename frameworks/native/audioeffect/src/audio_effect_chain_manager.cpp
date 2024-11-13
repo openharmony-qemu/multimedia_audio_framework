@@ -890,7 +890,7 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
 
         if (paramUpdated && audioEffectChain->UpdateEffectParam() != SUCCESS) {
             AUDIO_WARNING_LOG("Update effect chain failed for code %{public}d and value %{public}s",
-                             code, value.c_str());
+                              code, value.c_str());
         }
     }
 }
