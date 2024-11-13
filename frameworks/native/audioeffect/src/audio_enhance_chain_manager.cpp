@@ -287,8 +287,10 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     const AudioEnhanceDeviceAttr &deviceAttr)
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
-    CHECK_AND_RETURN_RET_LOG(sceneTypeAndModeToEnhanceChainNameMap_.size() != 0, ERROR,
-        "sceneTypeAndModeToEnhanceChainNameMap_.size() = 0 can not create enhance chain");
+    if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0) {
+        AUDIO_INFO_LOG("no algo on audio_framework");
+        return ERROR;
+    }
 
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
     auto it = sceneTypeToEnhanceChainMap_.find(sceneKeyCode);
@@ -459,6 +461,10 @@ int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(const uint32_t
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
+    if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0) {
+        AUDIO_INFO_LOG("no algo on audio_framework");
+        return ERROR;
+    }
 
     auto chainMapIter = sceneTypeToEnhanceChainMap_.find(sceneKeyCode);
     if (chainMapIter == sceneTypeToEnhanceChainMap_.end() || chainMapIter->second == nullptr) {
