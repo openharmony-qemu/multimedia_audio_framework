@@ -97,6 +97,11 @@ struct InterruptEvent {
      * but in share mode, only provide a hint for application to decide.
      */
     InterruptHint hintType;
+    /**
+     * Should callback to app. Default true;
+     * If false, interruptEvent should not callback to app.
+     */
+    bool callbackToApp = true;
 };
 
 // Used internally only by AudioFramework
@@ -105,6 +110,7 @@ struct InterruptEventInternal {
     InterruptForceType forceType;
     InterruptHint hintType;
     float duckVolume;
+    bool callbackToApp = true;
 };
 
 enum AudioInterruptChangeType {
