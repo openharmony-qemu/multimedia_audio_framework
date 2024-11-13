@@ -1265,7 +1265,7 @@ private:
     AudioPolicyService *audioPolicyService_ = nullptr;
     std::mutex connectionMutex_;
     std::condition_variable connectionCV_;
-    static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
+    static const int32_t CONNECTION_TIMEOUT_IN_MS = 1000; // 1000ms
 };
 } // namespace AudioStandard
 } // namespace OHOS
