@@ -857,7 +857,8 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     return SUCCESS;
 }
 
-void AudioEffectChainManager::SendAudioParamToHDI(HdiSetParamCommandCode code, const std::string &value, DeviceType device)
+void AudioEffectChainManager::SendAudioParamToHDI(
+    HdiSetParamCommandCode code, const std::string &value, DeviceType device)
 {
     effectHdiInput_[0] = code;
     effectHdiInput_[1] = static_cast<int8_t>(std::stoi(value));
@@ -889,13 +890,13 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
 
         if (paramUpdated && audioEffectChain->UpdateEffectParam() != SUCCESS) {
             AUDIO_WARNING_LOG("Update effect chain failed for code %{public}d and value %{public}s",
-                               code, value.c_str());
+                             code, value.c_str());
         }
     }
 }
 
-void AudioEffectChainManager::UpdateParamExtra(const std::string &mainkey, const std::string &subkey,
-    const std::string &value)
+void AudioEffectChainManager::UpdateParamExtra(
+    const std::string &mainkey, const std::string &subkey, const std::string &value)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     auto updateParam = [&](std::string &param, HdiSetParamCommandCode code) {
