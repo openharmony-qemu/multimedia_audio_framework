@@ -32,7 +32,7 @@ const int32_t START_POS = 6;
 const int32_t END_POS = 13;
 
 // LCOV_EXCL_START
-std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptAddr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
         string macHead("card=");

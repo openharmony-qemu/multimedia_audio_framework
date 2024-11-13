@@ -145,7 +145,5 @@ bool AudioSceneManager::IsSameAudioScene()
 {
     return lastAudioScene_ == audioScene_;
 }
-
-
 }
 }

@@ -1493,7 +1493,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
     if (captureInfo.sourceType <= SOURCE_TYPE_INVALID ||
         captureInfo.sourceType > SOURCE_TYPE_MAX) {
-        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(audioActiveDevice_.GetCurrentInputDevice());
+        sptr<AudioDeviceDescriptor> devDesc
+            = new(std::nothrow) AudioDeviceDescriptor(audioActiveDevice_.GetCurrentInputDevice());
         deviceList.push_back(devDesc);
         return deviceList;
     }
@@ -1981,7 +1982,8 @@ bool AudioPolicyService::NotifyRecreateRendererStream(std::unique_ptr<AudioDevic
     bool isOldDeviceLocal = rendererChangeInfo->outputDeviceInfo.networkId_ == "" ||
         rendererChangeInfo->outputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
     bool isNewDeviceLocal = desc->networkId_ == "" || desc->networkId_ == LOCAL_NETWORK_ID;
-    if ((strcmp(oldDevicePortName.c_str(), AudioPolicyUtils::GetInstance().GetSinkPortName(desc->deviceType_).c_str())) ||
+    if ((strcmp(oldDevicePortName.c_str(),
+        AudioPolicyUtils::GetInstance().GetSinkPortName(desc->deviceType_).c_str())) ||
         (isOldDeviceLocal ^ isNewDeviceLocal)) {
         int32_t streamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
             desc->deviceType_, rendererChangeInfo->rendererInfo.originalFlag, desc->networkId_,
@@ -2175,7 +2177,7 @@ void AudioPolicyService::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeI
         if (needUpdateActiveDevice) {
             unique_ptr<AudioDeviceDescriptor> preferredDesc = audioAffinityManager_.GetCapturerDevice(clientUID);
             if (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) &&
-                !IsSameDevice(desc,audioActiveDevice_.GetCurrentInputDevice())
+                !IsSameDevice(desc, audioActiveDevice_.GetCurrentInputDevice())
                 && desc->deviceType_ != preferredDesc->deviceType_)
                 || ((preferredDesc->deviceType_ == DEVICE_TYPE_NONE)
                 && !IsSameDevice(desc, audioActiveDevice_.GetCurrentInputDevice()))) {
@@ -2307,7 +2309,8 @@ bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         "original flag is false");
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = GetSourcePortName(capturerChangeInfo->inputDeviceInfo.deviceType_);
-    if ((strcmp(oldDevicePortName.c_str(), GetSourcePortName(audioActiveDevice_.GetCurrentInputDeviceType()).c_str())) ||
+    if ((strcmp(oldDevicePortName.c_str(),
+        GetSourcePortName(audioActiveDevice_.GetCurrentInputDeviceType()).c_str())) ||
         ((capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID) ^
         (audioActiveDevice_.GetCurrentInputDevice().networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
@@ -3651,8 +3654,8 @@ int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInf
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
     deviceDesc.networkId_ = networkId;
-    audioVolumeManager_.UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId, statusInfo.isConnected,
-        statusInfo.mappingVolumeId);
+    audioVolumeManager_.UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId,
+        statusInfo.isConnected, statusInfo.mappingVolumeId);
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
     if (statusInfo.isConnected) {
@@ -5383,7 +5386,8 @@ void AudioPolicyService::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
         moduleInfo.format.c_str(), moduleInfo.sourceType.c_str());
 
     audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-    audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(), moduleInfo.name, true, INPUT_DEVICES_FLAG);
+    audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(), moduleInfo.name,
+        true, INPUT_DEVICES_FLAG);
 
     normalSourceOpened_ = targetSource;
 }

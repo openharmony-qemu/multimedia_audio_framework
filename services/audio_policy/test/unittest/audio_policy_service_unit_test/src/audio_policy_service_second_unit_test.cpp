@@ -387,7 +387,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, HandleAbsBluetoothVolume_001, TestSize.L
     EXPECT_EQ(safeVolumeLevel, 8);
 
     volumeLevel = 1;
-    safeVolumeLevel 
+    safeVolumeLevel
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
     EXPECT_EQ(safeVolumeLevel, 1);
 }

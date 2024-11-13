@@ -30,7 +30,6 @@ using namespace std;
 constexpr int32_t NEED_TO_FETCH = 1;
 
 typedef function<bool(const std::unique_ptr<AudioDeviceDescriptor> &desc)> IsPresentFunc;
-std::string GetEncryptAddr(const std::string &addr);
 class AudioDeviceManager {
 public:
     static AudioDeviceManager& GetAudioDeviceManager()
