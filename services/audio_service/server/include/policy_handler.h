@@ -65,6 +65,7 @@ public:
 
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
 
+    int32_t GetMaxRendererInstances();
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;
