@@ -100,6 +100,7 @@ public:
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
     void AudioInterruptZoneDump(std::string &dumpString);
+    void AudioSessionInfoDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeBySessionId(int32_t sessionId);
 
@@ -228,6 +229,8 @@ private:
         std::vector<SourceType> incomingConcurrentSources);
     bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt);
+    bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
+        &audioFocusInfoList);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

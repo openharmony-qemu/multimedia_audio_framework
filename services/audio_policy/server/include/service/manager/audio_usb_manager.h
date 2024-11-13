@@ -87,6 +87,7 @@ private:
     bool initialized{false};
 
     mutex mutex_;
+    mutex initLock_;
     IDeviceStatusObserver *observer_{nullptr};
 };
 

@@ -787,7 +787,7 @@ int32_t AudioPolicyService::SetRenderDeviceForUsage(StreamUsage streamUsage, spt
         return (desc->deviceType_ == device->deviceType_) &&
             (desc->macAddress_ == device->macAddress_) &&
             (desc->networkId_ == device->networkId_) &&
-            desc->deviceRole_ == device->deviceRole_;
+            (!IsUsb(desc->deviceType_) || desc->deviceRole_ == device->deviceRole_);
     });
     CHECK_AND_RETURN_RET_LOG(itr != devices.end(), ERR_INVALID_OPERATION,
         "device not available type:%{public}d macAddress:%{public}s id:%{public}d networkId:%{public}s",
@@ -2111,8 +2111,7 @@ void AudioPolicyService::FetchStreamForA2dpOffload(const bool &requireReset)
 bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo)
 {
     if (desc->networkId_ == deviceInfo.networkId_ && desc->deviceType_ == deviceInfo.deviceType_ &&
-        desc->macAddress_ == deviceInfo.macAddress_ && desc->connectState_ == deviceInfo.connectState_ &&
-        desc->deviceRole_ == deviceInfo.deviceRole_) {
+        desc->macAddress_ == deviceInfo.macAddress_ && desc->connectState_ == deviceInfo.connectState_) {
         if (deviceInfo.IsAudioDeviceDescriptor()) {
             return true;
         }
@@ -2122,6 +2121,9 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, A
             // switch to A2dp offload
             (deviceInfo.a2dpOffloadFlag_ != A2DP_OFFLOAD && GetA2dpOffloadFlag() == A2DP_OFFLOAD))) {
             return false;
+        }
+        if (IsUsb(desc->deviceType_)) {
+            return desc->deviceRole_ == deviceInfo.deviceRole_;
         }
         return true;
     } else {
@@ -2133,7 +2135,7 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, c
 {
     if (desc->networkId_ == deviceDesc.networkId_ && desc->deviceType_ == deviceDesc.deviceType_ &&
         desc->macAddress_ == deviceDesc.macAddress_ && desc->connectState_ == deviceDesc.connectState_ &&
-        desc->deviceRole_ == deviceDesc.deviceRole_) {
+        (!IsUsb(desc->deviceType_) || desc->deviceRole_ == deviceDesc.deviceRole_)) {
         return true;
     } else {
         return false;

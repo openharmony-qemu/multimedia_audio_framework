@@ -49,7 +49,8 @@ public:
     std::shared_ptr<AudioSession> GetAudioSessionByPid(const int32_t callerPid);
 
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
-
+    // Dump AudioSession Info
+    void AudioSessionInfoDump(std::string &dumpString);
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
 

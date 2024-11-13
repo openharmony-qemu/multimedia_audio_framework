@@ -180,8 +180,6 @@ public:
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
-    bool RestoreAudioStream(bool needStoreState = true) override;
-
     void GetStreamSwitchInfo(SwitchInfo &info);
 
     bool GetOffloadEnable() override;
@@ -190,6 +188,8 @@ public:
 
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
+
+    bool RestoreAudioStream(bool needStoreState = true) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -374,6 +374,11 @@ private:
     int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
+
+    float lastSpeed_ = 0.0;
+    uint64_t lastLatency_ = 0;
+    uint64_t lastLatencyPosition_ = 0;
+    uint64_t lastReadIdx_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,

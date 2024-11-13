@@ -1628,6 +1628,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-xp"] = &AudioPolicyServer::XmlParsedDataMapDump;
     dumpFuncMap[u"-e"] = &AudioPolicyServer::EffectManagerInfoDump;
     dumpFuncMap[u"-ms"] = &AudioPolicyServer::MicrophoneMuteInfoDump;
+    dumpFuncMap[u"-as"] = &AudioPolicyServer::AudioSessionInfoDump;
 }
 
 void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
@@ -1641,6 +1642,7 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
     XmlParsedDataMapDump(dumpString);
     EffectManagerInfoDump(dumpString);
     MicrophoneMuteInfoDump(dumpString);
+    AudioSessionInfoDump(dumpString);
 }
 
 void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
@@ -1688,6 +1690,11 @@ void AudioPolicyServer::MicrophoneMuteInfoDump(std::string &dumpString)
     audioPolicyService_.MicrophoneMuteInfoDump(dumpString);
 }
 
+void AudioPolicyServer::AudioSessionInfoDump(std::string &dumpString)
+{
+    interruptService_->AudioSessionInfoDump(dumpString);
+}
+
 void AudioPolicyServer::ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue)
 {
     dumpString += "AudioPolicyServer Data Dump:\n\n";
@@ -1725,6 +1732,7 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -s\t\t\t|dump stream info\n");
     AppendFormat(dumpString, "  -xp\t\t\t|dump xml data map\n");
     AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager Info\n");
+    AppendFormat(dumpString, "  -as\t\t\t|dump audio session info\n");
 }
 
 int32_t AudioPolicyServer::GetAudioLatencyFromXml()
