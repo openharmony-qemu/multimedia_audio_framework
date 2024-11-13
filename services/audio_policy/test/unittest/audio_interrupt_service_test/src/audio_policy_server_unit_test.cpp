@@ -109,7 +109,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_003, TestSize.Level1)
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
+
     server->interruptService_ = nullptr;
     int32_t result = server->SetAudioManagerInterruptCallback(0, sptr<RemoteObjectTestStub>::MakeSptr());
     EXPECT_EQ(result, ERR_UNKNOWN);
@@ -126,7 +126,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_004, TestSize.Level1)
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
+
     server->interruptService_ = nullptr;
     int32_t result = server->UnsetAudioManagerInterruptCallback(0);
     EXPECT_EQ(result, ERR_UNKNOWN);
@@ -143,7 +143,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_005, TestSize.Level1)
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
+
     std::string networkId;
     AudioParamKey key = static_cast<AudioParamKey>(100);
     std::string condition;
@@ -163,7 +163,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_006, TestSize.Level1)
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
+
     std::string networkId;
     AudioParamKey key = PARAM_KEY_STATE;
     std::string condition;
@@ -203,7 +203,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_008, TestSize.Level1)
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
+
     std::string dumpString;
     std::queue<std::u16string> argQue;
     argQue.push(u"invalidParam");
@@ -222,7 +222,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
+
     AudioInterrupt audioInterrupt;
     int32_t zoneID = 456;
     int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
@@ -240,7 +240,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_010, TestSize.Level1)
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
+
     std::string networkId;
     AudioParamKey key = VOLUME;
     std::string condition;
@@ -261,7 +261,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_011, TestSize.Level1)
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    
+
     std::string networkId;
     AudioParamKey key = INTERRUPT;
     std::string condition;
@@ -783,25 +783,5 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_040, TestSize.Level1)
 
     EXPECT_EQ(ret, ERR_UNKNOWN);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 }
