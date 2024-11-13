@@ -157,6 +157,7 @@ audio_policy_service_sources_template = [
   "$audio_policy_service_sources_dir_template/server/src/service/service/audio_connected_device.cpp",
   "$audio_policy_service_sources_dir_template/server/src/service/service/audio_iohandle_map.cpp",
   "$audio_policy_service_sources_dir_template/server/src/service/service/audio_microphone_descriptor.cpp",
+  "$audio_policy_service_sources_dir_template/server/src/service/service/audio_offload_stream.cpp",
   "$audio_policy_service_sources_dir_template/server/src/service/service/audio_policy_utils.cpp",
   "$audio_policy_service_sources_dir_template/server/src/service/service/audio_router_map.cpp",
   "$audio_policy_service_sources_dir_template/server/src/service/service/audio_scene_manager.cpp",

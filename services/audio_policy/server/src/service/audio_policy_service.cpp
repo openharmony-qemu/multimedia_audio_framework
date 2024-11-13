@@ -2218,7 +2218,8 @@ void AudioPolicyService::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeI
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
 
-    FetchInputDeviceInner(capturerChangeInfos, reason, needUpdateActiveDevice, isUpdateActiveDevice, runningStreamCount);
+    FetchInputDeviceInner(capturerChangeInfos, reason, needUpdateActiveDevice, isUpdateActiveDevice,
+        runningStreamCount);
 
     if (isUpdateActiveDevice) {
         OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), ""); // networkId is not used.
