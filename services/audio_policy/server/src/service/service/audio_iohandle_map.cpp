@@ -126,6 +126,9 @@ AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_FILE_SOURCE:
             ioHandle = IOHandles_[FILE_SOURCE];
             break;
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
+            ioHandle = IOHandles_[BLUETOOTH_MIC];
+            break;
         default:
             ioHandle = IOHandles_[PRIMARY_MIC];
             break;

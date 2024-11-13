@@ -219,7 +219,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_002, TestSize.Lev
     auto server = GetServerPtr();
 
     std::string dumpString = "666";
-    server->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     server->audioPolicyService_.GetOffloadStatusDump(dumpString);
 }
 
@@ -233,7 +233,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_003, TestSize.Lev
     auto server = GetServerPtr();
 
     std::string dumpString = "666";
-    server->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_HEADSET;
     server->audioPolicyService_.GetOffloadStatusDump(dumpString);
 }
 
@@ -247,7 +247,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_004, TestSize.Lev
     auto server = GetServerPtr();
 
     std::string dumpString = "666";
-    server->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.GetOffloadStatusDump(dumpString);
 }
 
@@ -444,7 +444,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_001, TestSiz
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    server->audioPolicyService_.SetDeviceSafeVolumeStatus();
+    server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
 }
 
 /**
@@ -457,8 +457,8 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_002, TestSiz
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    server->audioPolicyService_.userSelect_ = true;
-    server->audioPolicyService_.SetDeviceSafeVolumeStatus();
+    server->audioPolicyService_.audioVolumeManager_.userSelect_ = true;
+    server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
 }
 
 /**
@@ -471,9 +471,9 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_003, TestSiz
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    server->audioPolicyService_.userSelect_ = true;
-    server->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_DP;
-    server->audioPolicyService_.SetDeviceSafeVolumeStatus();
+    server->audioPolicyService_.audioVolumeManager_.userSelect_ = true;
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_DP;
+    server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
 }
 
 /**
@@ -486,9 +486,9 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_004, TestSiz
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    server->audioPolicyService_.userSelect_ = true;
-    server->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WAKEUP;
-    server->audioPolicyService_.SetDeviceSafeVolumeStatus();
+    server->audioPolicyService_.audioVolumeManager_.userSelect_ = true;
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WAKEUP;
+    server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
 }
 
 /**
