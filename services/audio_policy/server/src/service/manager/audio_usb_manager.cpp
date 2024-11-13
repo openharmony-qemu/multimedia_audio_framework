@@ -112,11 +112,9 @@ static UsbAddr GetUsbAddr(const SoundCard &card)
 
 static bool IsAudioDevice(UsbDevice &usbDevice)
 {
-    if (usbDevice.GetClass() != 0) {
-        return false;
-    }
-    for (auto usbConfig : usbDevice.GetConfigs()) {
-        for (auto usbInterface : usbConfig.GetInterfaces()) {
+    CHECK_AND_RETURN_RET(usbDevice.GetClass() == 0, false);
+    for (auto& usbConfig : usbDevice.GetConfigs()) {
+        for (auto& usbInterface : usbConfig.GetInterfaces()) {
             if (usbInterface.GetClass() == 1 && usbInterface.GetSubClass() == 1) {
                 return true;
             }
@@ -133,6 +131,7 @@ AudioUsbManager& AudioUsbManager::GetInstance()
 
 void AudioUsbManager::Init(IDeviceStatusObserver *observer)
 {
+    lock_guard<mutex> lock(initLock_);
     if (!initialized) {
         AUDIO_INFO_LOG("Entry");
         SetDeviceStatusObserver(observer);
@@ -146,6 +145,7 @@ void AudioUsbManager::Init(IDeviceStatusObserver *observer)
 
 void AudioUsbManager::Deinit()
 {
+    lock_guard<mutex> lock(initLock_);
     if (initialized) {
         SetDeviceStatusObserver(nullptr);
         if (eventSubscriber_) {
@@ -167,6 +167,8 @@ void AudioUsbManager::RefreshUsbAudioDevices()
 
 void AudioUsbManager::SubscribeEvent()
 {
+    lock_guard<mutex> lock(initLock_);
+    CHECK_AND_RETURN_LOG(eventSubscriber_ == nullptr, "feventSubscriber_ already exists");
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_USB_DEVICE_ATTACHED);
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_USB_DEVICE_DETACHED);
@@ -175,6 +177,7 @@ void AudioUsbManager::SubscribeEvent()
     eventSubscriber_ = make_shared<EventSubscriber>(subscribeInfo);
     auto ret = EventFwk::CommonEventManager::NewSubscribeCommonEvent(eventSubscriber_);
     if (ret != ERR_OK) {
+        eventSubscriber_.reset();
         AUDIO_ERR_LOG("SubscribeCommonEvent Failed");
     } else {
         AUDIO_INFO_LOG("Success");
@@ -196,26 +199,25 @@ vector<UsbAudioDevice> AudioUsbManager::GetPlayerDevices()
 
 void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isConnected)
 {
-    if (observer_) {
-        DeviceType devType = DeviceType::DEVICE_TYPE_USB_HEADSET;
-        auto card = soundCardMap_[device.usbAddr_];
-        string macAddress = GetDeviceAddr(card);
-        AudioStreamInfo streamInfo{};
-        string deviceName = device.name_ + "-" + to_string(card.cardNum_);
-        if (card.isPlayer_) {
-            AUDIO_INFO_LOG("Call observer_->OnDeviceStatusUpdated. devType=%{public}d, isConnected=%{public}d, "
-                "macAddress=%{public}s, deviceName=%{public}s, role=%{public}d", devType, isConnected,
-                macAddress.c_str(), deviceName.c_str(), DeviceRole::OUTPUT_DEVICE);
-            observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
-                deviceName, streamInfo, OUTPUT_DEVICE);
-        }
-        if (card.isCapturer_) {
-            AUDIO_INFO_LOG("Call observer_->OnDeviceStatusUpdated. devType=%{public}d, isConnected=%{public}d, "
-                "macAddress=%{public}s, deviceName=%{public}s, role=%{public}d", devType, isConnected,
-                macAddress.c_str(), deviceName.c_str(), DeviceRole::INPUT_DEVICE);
-            observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
-                deviceName, streamInfo, INPUT_DEVICE);
-        }
+    CHECK_AND_RETURN_LOG(observer_ != nullptr, "observer_ is nullptr");
+    DeviceType devType = DeviceType::DEVICE_TYPE_USB_HEADSET;
+    auto card = soundCardMap_[device.usbAddr_];
+    string macAddress = GetDeviceAddr(card);
+    AudioStreamInfo streamInfo{};
+    string deviceName = device.name_ + "-" + to_string(card.cardNum_);
+    if (card.isPlayer_) {
+        AUDIO_INFO_LOG("Call observer_->OnDeviceStatusUpdated. devType=%{public}d, isConnected=%{public}d, "
+            "macAddress=%{public}s, deviceName=%{public}s, role=%{public}d", devType, isConnected,
+            macAddress.c_str(), deviceName.c_str(), DeviceRole::OUTPUT_DEVICE);
+        observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
+            deviceName, streamInfo, OUTPUT_DEVICE);
+    }
+    if (card.isCapturer_) {
+        AUDIO_INFO_LOG("Call observer_->OnDeviceStatusUpdated. devType=%{public}d, isConnected=%{public}d, "
+            "macAddress=%{public}s, deviceName=%{public}s, role=%{public}d", devType, isConnected,
+            macAddress.c_str(), deviceName.c_str(), DeviceRole::INPUT_DEVICE);
+        observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
+            deviceName, streamInfo, INPUT_DEVICE);
     }
 }
 

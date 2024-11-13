@@ -142,7 +142,7 @@ sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::
 {
     auto isPresent = [&networkId, &deviceType, &macAddress, &deviceRole] (const sptr<AudioDeviceDescriptor> &desc) {
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_ && macAddress == desc->macAddress_
-            && deviceRole == desc->deviceRole_) {
+            && (!IsUsb(desc->deviceType_) || deviceRole == desc->deviceRole_)) {
             return true;
         }
         return false;
@@ -160,7 +160,8 @@ void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t dev
     auto isPresent = [&deviceType, &networkId, &macAddress,
         &deviceRole] (const sptr<AudioDeviceDescriptor> &descriptor) {
         return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId
-            && descriptor->macAddress_ == macAddress && descriptor->deviceRole_ == deviceRole;
+            && descriptor->macAddress_ == macAddress &&
+            (!IsUsb(descriptor->deviceType_) || descriptor->deviceRole_ == deviceRole);
     };
 
     connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
