@@ -1280,7 +1280,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = GetExistFlag(sinkIn, sSceneType, sSceneMode, u->actualSpatializationEnabled ? "1" : "0");
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sSceneType, sceneType);
-        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently())) {
+        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             RecordEffectChainStatus(existFlag, sSceneType, sSceneMode, u->actualSpatializationEnabled);
@@ -2281,9 +2281,8 @@ static bool InputIsMultiChannel(pa_sink_input *i)
 static bool InputIsPrimary(pa_sink_input *i)
 {
     const bool isOffload = InputIsOffload(i);
-    const bool isMultiChannel = InputIsMultiChannel(i); // add func is hd
     const bool isRunning = i->thread_info.state == PA_SINK_INPUT_RUNNING;
-    return !isOffload && !isMultiChannel && isRunning;
+    return !isOffload && isRunning;
 }
 
 static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink *s, pa_mix_info *info, unsigned maxinfo)
