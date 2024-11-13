@@ -55,8 +55,7 @@ public:
     size_t DelA2dpInDevice(const std::string& device);
     bool GetA2dpDeviceMute(const std::string& device, bool& isMute);
 private:
-    AudioA2dpDevice() :
-        audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+    AudioA2dpDevice() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioConfigManager_(AudioConfigManager::GetInstance()) {}
     ~AudioA2dpDevice() {}

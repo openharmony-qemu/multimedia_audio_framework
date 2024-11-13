@@ -1,4 +1,17 @@
-
+/*
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioVolumeManager"
 #endif
@@ -25,7 +38,7 @@ namespace AudioStandard {
 
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 
-inline std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -484,7 +497,8 @@ bool AudioVolumeManager::IsBlueTooth(const DeviceType &deviceType)
 
 bool AudioVolumeManager::IsStreamActive(AudioStreamType streamType) const
 {
-    CHECK_AND_RETURN_RET(streamType != STREAM_VOICE_CALL || audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL, true);
+    CHECK_AND_RETURN_RET(streamType != STREAM_VOICE_CALL ||
+        audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL, true);
 
     return streamCollector_.IsStreamActive(streamType);
 }
@@ -873,8 +887,6 @@ void AudioVolumeManager::SetRingerModeMute(bool flag)
 {
     ringerModeMute_.store(flag);
 }
-
-
 
 }
 }

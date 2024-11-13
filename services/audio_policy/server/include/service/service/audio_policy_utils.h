@@ -58,8 +58,7 @@ public:
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
 private:
-    AudioPolicyUtils() :
-        streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+    AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}

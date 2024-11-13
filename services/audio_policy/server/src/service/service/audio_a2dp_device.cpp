@@ -31,7 +31,7 @@ using namespace std;
 
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 
-inline std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -64,7 +64,8 @@ void AudioA2dpDevice::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const Audio
     }
 }
 
-int32_t AudioA2dpDevice::LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo, std::string networkID, std::string sinkName)
+int32_t AudioA2dpDevice::LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
+    std::string networkID, std::string sinkName)
 {
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_A2DP, moduleInfoList);
@@ -245,7 +246,7 @@ bool AudioA2dpDevice::SetA2dpDeviceVolumeLevel(const std::string& device, const 
     if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
         AUDIO_WARNING_LOG("Set VolumeLevel failed for macAddress:[%{public}s]", GetEncryptAddr(device).c_str());
         return false;
-    } 
+    }
     configInfoPos->second.volumeLevel = volumeLevel;
     return true;
 }

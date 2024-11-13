@@ -80,8 +80,7 @@ public:
     std::string GetCurrentOutputDeviceNetworkId();
     std::string GetCurrentOutputDeviceMacAddr();
 private:
-    AudioActiveDevice() :
-        audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+    AudioActiveDevice() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),

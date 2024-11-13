@@ -49,8 +49,7 @@ public:
     AudioScene GetLastAudioScene() const;
     bool IsSameAudioScene();
 private:
-    AudioSceneManager() :
-        audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
+    AudioSceneManager() : audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()) {}
     ~AudioSceneManager() {}
     void DealAudioSceneOutputDevices(const AudioScene &audioScene, std::vector<DeviceType> &activeOutputDevices,

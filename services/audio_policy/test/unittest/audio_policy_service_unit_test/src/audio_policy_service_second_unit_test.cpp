@@ -359,7 +359,8 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     int32_t volumeLevel = 5;
     bool isA2dpDevice = true;
-    int32_t volumeLevelRet = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
+    int32_t volumeLevelRet
+        = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
     EXPECT_EQ(volumeLevelRet, 5);
 
     isA2dpDevice = false;
@@ -381,11 +382,13 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, HandleAbsBluetoothVolume_001, TestSize.L
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     std::string macAddress = "";
     int32_t volumeLevel = 10;
-    int32_t safeVolumeLevel = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
+    int32_t safeVolumeLevel
+        = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
     EXPECT_EQ(safeVolumeLevel, 8);
 
     volumeLevel = 1;
-    safeVolumeLevel = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
+    safeVolumeLevel 
+        = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
     EXPECT_EQ(safeVolumeLevel, 1);
 }
 

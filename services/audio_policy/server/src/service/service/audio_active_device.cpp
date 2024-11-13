@@ -46,7 +46,7 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 #endif
 
-inline std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -338,8 +338,7 @@ bool AudioActiveDevice::IsDeviceActive(DeviceType deviceType)
 
 void AudioActiveDevice::UpdateInputDeviceInfo(DeviceType deviceType)
 {
-    DeviceType curType = GetCurrentInputDeviceType();;
-
+    DeviceType curType = GetCurrentInputDeviceType();
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
@@ -377,7 +376,8 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
         return ((deviceType == desc->deviceType_) || (deviceType == DEVICE_TYPE_FILE_SINK));
     };
 
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> callDevices = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> callDevices
+        = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
     for (auto &desc : callDevices) {
         sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*desc);
@@ -388,7 +388,8 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
     CHECK_AND_RETURN_RET_LOG(itr != deviceList.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
     if (!active) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, new(std::nothrow) AudioDeviceDescriptor());
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            new(std::nothrow) AudioDeviceDescriptor());
 #ifdef BLUETOOTH_ENABLE
         HandleNegtiveBt(deviceType);
 #endif
@@ -411,7 +412,8 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         return ((deviceType == desc->deviceType_) && (address == desc->macAddress_));
     };
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> callDevices = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> callDevices
+        = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
 
     auto itr = std::find_if(callDevices.begin(), callDevices.end(), isPresent);
     CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
@@ -422,19 +424,20 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
             audioDeviceManager_.UpdateDevicesListInfo(new(std::nothrow) AudioDeviceDescriptor(**itr), ENABLE_UPDATE);
             AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(address);
         }
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, new(std::nothrow) AudioDeviceDescriptor(**itr));
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            new(std::nothrow) AudioDeviceDescriptor(**itr));
 #ifdef BLUETOOTH_ENABLE
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     } else {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, new(std::nothrow) AudioDeviceDescriptor());
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            new(std::nothrow) AudioDeviceDescriptor());
 #ifdef BLUETOOTH_ENABLE
         HandleNegtiveBt(deviceType);
 #endif
     }
     return SUCCESS;
 }
-
 
 }
 }
