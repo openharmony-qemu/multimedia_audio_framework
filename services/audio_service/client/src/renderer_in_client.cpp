@@ -78,8 +78,6 @@ static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 
 static AppExecFwk::BundleInfo gBundleInfo_;
 
-
-
 void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
     if (audioStreamTracker_ && audioStreamTracker_.get() && !streamTrackerRegistered_) {
@@ -128,7 +126,6 @@ void RendererInClientInner::InitDirectPipeType()
         }
     }
 }
-
 
 // call this without lock, we should be able to call deinit in any case.
 int32_t RendererInClientInner::DeinitIpcStream()
@@ -299,8 +296,6 @@ int32_t RendererInClientInner::InitIpcStream()
     return SUCCESS;
 }
 
-
-
 int32_t RendererInClientInner::SetInnerVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
@@ -316,7 +311,6 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
     AUDIO_PRERELEASE_LOGI("SetClientVolume success, volume: %{public}f", volume);
     return SUCCESS;
 }
-
 
 void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
 {
