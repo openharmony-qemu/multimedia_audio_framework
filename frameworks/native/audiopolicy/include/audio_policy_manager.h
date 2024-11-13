@@ -167,6 +167,8 @@ public:
 
     AudioStreamType GetStreamInFocus(const int32_t zoneID = 0);
 
+    AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID = 0);
+
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
     int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);

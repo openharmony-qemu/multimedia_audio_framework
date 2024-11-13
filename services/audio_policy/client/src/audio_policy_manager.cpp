@@ -972,6 +972,13 @@ AudioStreamType AudioPolicyManager::GetStreamInFocus(const int32_t zoneID)
     return gsp->GetStreamInFocus(zoneID);
 }
 
+AudioStreamType AudioPolicyManager::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, STREAM_DEFAULT, "audio policy manager proxy is NULL.");
+    return gsp->GetStreamInFocusByUid(uid, zoneID);
+}
+
 int32_t AudioPolicyManager::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

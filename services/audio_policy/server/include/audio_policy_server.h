@@ -232,6 +232,8 @@ public:
 
     AudioStreamType GetStreamInFocus(const int32_t zoneId = 0) override;
 
+    AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId = 0) override;
+
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
     void OnAudioStreamRemoved(const uint64_t sessionID) override;

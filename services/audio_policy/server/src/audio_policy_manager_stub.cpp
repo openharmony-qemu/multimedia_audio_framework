@@ -178,6 +178,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "UNSET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "IS_ALLOWED_PLAYBACK",
     "SET_VOICE_RINGTONE_MUTE",
+    "GET_STREAM_IN_FOCUS_BY_UID",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -656,6 +657,14 @@ void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &data, Messa
 {
     int32_t zoneID = data.ReadInt32();
     AudioStreamType streamInFocus = GetStreamInFocus(zoneID);
+    reply.WriteInt32(static_cast<int32_t>(streamInFocus));
+}
+
+void AudioPolicyManagerStub::GetStreamInFocusByUidInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t zoneID = data.ReadInt32();
+    int32_t uid = data.ReadInt32();
+    AudioStreamType streamInFocus = GetStreamInFocusByUid(uid, zoneID);
     reply.WriteInt32(static_cast<int32_t>(streamInFocus));
 }
 
@@ -1764,6 +1773,9 @@ void AudioPolicyManagerStub::OnMiddleFirRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SELECTED_DEVICE_INFO):
             GetSelectedDeviceInfoInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_IN_FOCUS_BY_UID):
+            GetStreamInFocusByUidInternal(data, reply);
             break;
         default:
             OnMiddleSecRemoteRequest(code, data, reply, option);

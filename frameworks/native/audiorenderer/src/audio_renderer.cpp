@@ -308,6 +308,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
 
     audioInterrupt_.audioFocusType.streamType = audioStreamType;
     audioInterrupt_.pid = appInfo_.appPid;
+    audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.mode = SHARE_MODE;
     audioInterrupt_.parallelPlayFlag = false;
 

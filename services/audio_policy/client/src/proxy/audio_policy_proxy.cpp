@@ -769,6 +769,24 @@ AudioStreamType AudioPolicyProxy::GetStreamInFocus(const int32_t zoneID)
     return static_cast<AudioStreamType>(reply.ReadInt32());
 }
 
+AudioStreamType AudioPolicyProxy::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, STREAM_DEFAULT, "WriteInterfaceToken failed");
+    data.WriteInt32(zoneID);
+    data.WriteInt32(uid);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_IN_FOCUS_BY_UID), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get stream in focus by uid failed, error: %d", error);
+    }
+    return static_cast<AudioStreamType>(reply.ReadInt32());
+}
+
 int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     MessageParcel data;

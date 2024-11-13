@@ -62,6 +62,7 @@ private:
     void RequestAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply);
+    void GetStreamInFocusByUidInternal(MessageParcel &data, MessageParcel &reply);
     void GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void NotifyCapturerAddedInternal(MessageParcel &data, MessageParcel &reply);

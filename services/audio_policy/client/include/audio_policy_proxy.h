@@ -141,6 +141,8 @@ public:
 
     AudioStreamType GetStreamInFocus(const int32_t zoneID = 0) override;
 
+    AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID = 0) override;
+
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
 
     bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
