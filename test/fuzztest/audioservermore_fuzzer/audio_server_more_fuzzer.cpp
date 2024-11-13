@@ -44,6 +44,7 @@ const uint32_t ENUM_LENGTH_1 = 6;
 const uint32_t ENUM_LENGTH_2 = 1;
 const uint32_t APPID_LENGTH = 10;
 const uint64_t COMMON_UINT64_NUM = 2;
+const uint32_t RES_TYPE_AUDIO_RENDERER_STANDBY = 119;
 
 void AudioServerSetSpatializationSceneTypeTest(const uint8_t *rawData, size_t size)
 {
@@ -549,7 +550,7 @@ void AudioRendererInServerTest(const uint8_t* rawData, size_t size)
     renderer->Dump(dumpString);
     renderer->SetStreamVolumeInfoForEnhanceChain();
     std::unordered_map<std::string, std::string> payload;
-    renderer->ReportDataToResSched(payload, 119); // 119 present AUDIO_RENDERER_STANDBY
+    renderer->ReportDataToResSched(payload, RES_TYPE_AUDIO_RENDERER_STANDBY);
     AudioRendererInServerTestFirst(rawData, size, renderer);
     AudioRendererInServerTestSecond(rawData, size, renderer);
 }
