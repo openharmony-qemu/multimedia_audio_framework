@@ -28,7 +28,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 10;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t MAX_UINT_VOLUME = 65535;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
@@ -115,6 +114,11 @@ void AudioEffectChain::SetExtraSceneType(const std::string &extraSceneType)
     extraEffectChainType_ = static_cast<uint32_t>(std::stoi(extraSceneType));
 }
 
+void AudioEffectChain::SetFoldState(const std::string &foldState)
+{
+    foldState_ = static_cast<uint32_t>(std::stoi(foldState));
+}
+
 void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
 {
     currSceneType_ = currSceneType;
@@ -168,7 +172,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
 {
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    std::vector<uint8_t> paramBuffer(sizeof(AudioEffectParam) + NUM_SET_EFFECT_PARAM * sizeof(int32_t));
+    std::vector<uint8_t> paramBuffer(sizeof(AudioEffectParam) + MAX_PARAM_INDEX * sizeof(int32_t));
     // Set param
     AudioEffectParam *effectParam = reinterpret_cast<AudioEffectParam*>(paramBuffer.data());
     effectParam->status = 0;
@@ -194,13 +198,14 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[SPATIALIZATION_SCENE_TYPE_INDEX] = spatializationSceneType_;
     data[SPATIALIZATION_ENABLED_INDEX] = spatializationEnabled_;
     data[STREAM_USAGE_INDEX] = streamUsage_;
+    data[FOLD_STATE_INDEX] = foldState_;
     AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
         "spatializationSceneType: %{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d",
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX]);
-    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
+    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret1 = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret1 == 0, ret1, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
         sceneType_.c_str(), effectMode_.c_str());
