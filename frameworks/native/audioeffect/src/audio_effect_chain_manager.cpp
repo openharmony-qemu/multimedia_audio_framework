@@ -868,7 +868,7 @@ void AudioEffectChainManager::SendAudioParamToHDI(HdiSetParamCommandCode code, c
 
 void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value)
 {
-    for (auto &[scene, audioEffectChain] : sceneTypeToEffectChainMap_) {
+    for (const auto &[scene, audioEffectChain] : sceneTypeToEffectChainMap_) {
         if (audioEffectChain == nullptr) {
             continue;
         }
