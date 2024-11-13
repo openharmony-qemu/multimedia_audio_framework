@@ -37,6 +37,22 @@ namespace AudioStandard {
 constexpr int32_t NS_PER_MS = 1000000;
 constexpr int32_t MS_PER_S = 1000;
 
+static std::string GetEncryptAddr(const std::string &addr)
+{
+    const int32_t START_POS = 6;
+    const int32_t END_POS = 13;
+    const int32_t ADDRESS_STR_LEN = 17;
+    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
+        return std::string("");
+    }
+    std::string tmp = "**:**:**:**:**:**";
+    std::string out = addr;
+    for (int i = START_POS; i <= END_POS; i++) {
+        out[i] = tmp[i];
+    }
+    return out;
+}
+
 std::map<std::string, AudioSampleFormat> AudioPolicyUtils::formatStrToEnum = {
     {"s8", SAMPLE_U8},
     {"s16", SAMPLE_S16LE},

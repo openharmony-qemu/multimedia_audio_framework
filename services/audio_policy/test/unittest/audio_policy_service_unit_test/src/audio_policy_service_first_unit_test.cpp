@@ -471,8 +471,8 @@ void debugPrintMemoryVariable()
     // currentActiveDevice_.deviceType_
     AUDIO_INFO_LOG("debugPrintMemoryVariable() currentActiveDevice_:%{public}d, addr:%{private}p",
         static_cast<std::uint32_t>(GetServerPtr()->
-            audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_),
-            &GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_);
+            audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_), &GetServerPtr()->
+            audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_);
     // connectedA2dpDeviceMap_
     AUDIO_INFO_LOG("debugPrintMemoryVariable() connectedA2dpDeviceMap_ isEmpty:%{public}d, addr:%{private}p",
         GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.empty(), &GetServerPtr()->

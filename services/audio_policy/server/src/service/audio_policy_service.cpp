@@ -230,6 +230,22 @@ static string ParseAudioFormat(string format)
     }
 }
 
+static std::string GetEncryptAddr(const std::string &addr)
+{
+    const int32_t START_POS = 6;
+    const int32_t END_POS = 13;
+    const int32_t ADDRESS_STR_LEN = 17;
+    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
+        return std::string("");
+    }
+    std::string tmp = "**:**:**:**:**:**";
+    std::string out = addr;
+    for (int i = START_POS; i <= END_POS; i++) {
+        out[i] = tmp[i];
+    }
+    return out;
+}
+
 static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
 {
     if (moduleInfo.role == "sink") {
@@ -845,9 +861,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
 
     CHECK_AND_RETURN_RET_LOG((selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE) &&
         (selectedDesc.size() == 1), ERR_INVALID_OPERATION, "DeviceCheck no success");
-    if (audioRendererFilter->uid != -1) {
-        return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
-    }
+    if (audioRendererFilter->uid != -1) { return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc); }
     if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     }
@@ -2146,15 +2160,10 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
     return SUCCESS;
 }
 
-void AudioPolicyService::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
-    const AudioStreamDeviceChangeReasonExt reason)
+void AudioPolicyService::FetchInputDeviceInner(vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+    const AudioStreamDeviceChangeReasonExt reason, bool& needUpdateActiveDevice, bool& isUpdateActiveDevice,
+    int32_t& runningStreamCount)
 {
-    Trace trace("AudioPolicyService::FetchInputDevice");
-    AUDIO_PRERELEASE_LOGI("Start for %{public}zu stream, connected %{public}s",
-        capturerChangeInfos.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
-    bool needUpdateActiveDevice = true;
-    bool isUpdateActiveDevice = false;
-    int32_t runningStreamCount = 0;
     for (auto &capturerChangeInfo : capturerChangeInfos) {
         SourceType sourceType = capturerChangeInfo->capturerInfo.sourceType;
         int32_t clientUID = capturerChangeInfo->clientUID;
@@ -2195,6 +2204,20 @@ void AudioPolicyService::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeI
         audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId,
             desc->deviceType_);
     }
+}
+
+void AudioPolicyService::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+    const AudioStreamDeviceChangeReasonExt reason)
+{
+    Trace trace("AudioPolicyService::FetchInputDevice");
+    AUDIO_PRERELEASE_LOGI("Start for %{public}zu stream, connected %{public}s",
+        capturerChangeInfos.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
+    bool needUpdateActiveDevice = true;
+    bool isUpdateActiveDevice = false;
+    int32_t runningStreamCount = 0;
+
+    FetchInputDeviceInner(capturerChangeInfos, reason, needUpdateActiveDevice, isUpdateActiveDevice, runningStreamCount);
+
     if (isUpdateActiveDevice) {
         OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), ""); // networkId is not used.
     }
@@ -2621,6 +2644,9 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
 void AudioPolicyService::AddEarpiece()
 {
+    if (!audioConfigManager_.GetHasEarpiece()) {
+        return;
+    }
     sptr<AudioDeviceDescriptor> audioDescriptor =
         new (std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
     CHECK_AND_RETURN_LOG(audioDescriptor != nullptr, "Create earpiect device descriptor failed");
@@ -2797,8 +2823,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
         auto it = audioConnectedDevice_.GetConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
             updatedDesc.macAddress_, updatedDesc.deviceRole_);
         if (it == nullptr) {
-            flag = false;
-            continue;
+            break;
         }
         if (it->deviceType_ == DEVICE_TYPE_DP) { hasDpDevice_ = false; }
         if (audioStateManager_.GetPreferredMediaRenderDevice() != nullptr &&
@@ -3784,9 +3809,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         audioVolumeManager_.SetVolumeForSwitchDevice(audioActiveDevice_.GetCurrentOutputDeviceType());
         OnPreferredDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
             audioActiveDevice_.GetCurrentInputDeviceType());
-        if (audioConfigManager_.GetHasEarpiece()) {
-            AddEarpiece();
-        }
+        AddEarpiece();
         for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
             OnPnpDeviceStatusUpdated((*it).first, (*it).second);
         }
