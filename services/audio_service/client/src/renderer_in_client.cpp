@@ -77,6 +77,50 @@ static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
+std::mutex g_serverProxyMutex;
+sptr<IStandardAudioService> gServerProxy_ = nullptr;
+
+const sptr<IStandardAudioService> RendererInClientInner::GetAudioServerProxy()
+{
+    std::lock_guard<std::mutex> lock(g_serverProxyMutex);
+    if (gServerProxy_ == nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (samgr == nullptr) {
+            AUDIO_ERR_LOG("GetAudioServerProxy: get sa manager failed");
+            return nullptr;
+        }
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+        if (object == nullptr) {
+            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service remote object failed");
+            return nullptr;
+        }
+        gServerProxy_ = iface_cast<IStandardAudioService>(object);
+        if (gServerProxy_ == nullptr) {
+            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service proxy failed");
+            return nullptr;
+        }
+
+        // register death recipent to restore proxy
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
+        if (asDeathRecipient != nullptr) {
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioServerDied(pid, uid); });
+            bool result = object->AddDeathRecipient(asDeathRecipient);
+            if (!result) {
+                AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
+            }
+        }
+    }
+    sptr<IStandardAudioService> gasp = gServerProxy_;
+    return gasp;
+}
+
+void RendererInClientInner::AudioServerDied(pid_t pid, pid_t uid)
+{
+    AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
+    std::lock_guard<std::mutex> lock(g_serverProxyMutex);
+    gServerProxy_ = nullptr;
+}
 
 void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
@@ -216,50 +260,6 @@ int32_t RendererInClientInner::InitCacheBuffer(size_t targetSize)
     }
 
     return SUCCESS;
-}
-
-std::mutex g_serverProxyMutex;
-sptr<IStandardAudioService> gServerProxy_ = nullptr;
-const sptr<IStandardAudioService> RendererInClientInner::GetAudioServerProxy()
-{
-    std::lock_guard<std::mutex> lock(g_serverProxyMutex);
-    if (gServerProxy_ == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        if (samgr == nullptr) {
-            AUDIO_ERR_LOG("GetAudioServerProxy: get sa manager failed");
-            return nullptr;
-        }
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-        if (object == nullptr) {
-            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service remote object failed");
-            return nullptr;
-        }
-        gServerProxy_ = iface_cast<IStandardAudioService>(object);
-        if (gServerProxy_ == nullptr) {
-            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service proxy failed");
-            return nullptr;
-        }
-
-        // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient =
-            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
-        if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioServerDied(pid, uid); });
-            bool result = object->AddDeathRecipient(asDeathRecipient);
-            if (!result) {
-                AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
-            }
-        }
-    }
-    sptr<IStandardAudioService> gasp = gServerProxy_;
-    return gasp;
-}
-
-void RendererInClientInner::AudioServerDied(pid_t pid, pid_t uid)
-{
-    AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
-    std::lock_guard<std::mutex> lock(g_serverProxyMutex);
-    gServerProxy_ = nullptr;
 }
 
 int32_t RendererInClientInner::InitIpcStream()
