@@ -39,10 +39,6 @@ constexpr uint32_t SCENE_TYPE_MASK = 0x00FF0000;
 constexpr uint32_t CAPTURER_ID_MASK = 0x0000FF00;
 constexpr uint32_t RENDERER_ID_MASK = 0x000000FF;
 constexpr uint32_t VOLUME_FACTOR = 100;
-const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_SCENE_MODES {
-    {ENHANCE_NONE, "ENHANCE_NONE"},
-    {ENHANCE_DEFAULT, "ENHANCE_DEFAULT"},
-};
 
 static int32_t FindEnhanceLib(const std::string &enhance,
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList,
@@ -287,6 +283,8 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     const AudioEnhanceDeviceAttr &deviceAttr)
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    CHECK_AND_RETURN_RET_LOG(sceneTypeAndModeToEnhanceChainNameMap_.size() != 0, ERROR,
+        "sceneTypeAndModeToEnhanceChainNameMap_.size() = 0 can not create enhance chain");
 
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
     auto it = sceneTypeToEnhanceChainMap_.find(sceneKeyCode);
@@ -382,7 +380,7 @@ int32_t AudioEnhanceChainManager::CreateEnhanceChainInner(std::shared_ptr<AudioE
                 createFlag = false;
                 audioEnhanceChain = captureId2DefaultChain_[captureId];
                 // add sceneType change after integration supported
-                AUDIO_INFO_LOG("captureId %{public}u defaultChainExsist", captureId);
+                AUDIO_INFO_LOG("sceneKey[%{public}u] defaultChainExsist", sceneKeyCode);
             } else {
                 AudioEnhanceParamAdapter algoParam = {(uint32_t)isMute_, (uint32_t)(systemVol_ * VOLUME_FACTOR),
                     capturerDevice, rendererDeivce, defaultScene_, deviceName};
@@ -502,7 +500,10 @@ int32_t AudioEnhanceChainManager::DeleteEnhanceChainInner(std::shared_ptr<AudioE
             if (!defaultChainCount) {
                 captureId2DefaultChain_[captureId] = nullptr;
                 chainNum_--;
-                AUDIO_INFO_LOG("captureId %{public}u defaultScene chain release", captureId);
+                AUDIO_INFO_LOG("sceneKey[%{public}u] defaultScene chain release", sceneKeyCode);
+            } else {
+                AUDIO_INFO_LOG("sceneKey[%{public}u] defaultScene chain count:%{public}u", sceneKeyCode,
+                    defaultChainCount);
             }
         } else {
             captureId2SceneCount_[captureId]--;
@@ -515,7 +516,7 @@ int32_t AudioEnhanceChainManager::DeleteEnhanceChainInner(std::shared_ptr<AudioE
     }
     sceneTypeToEnhanceChainCountMap_.erase(sceneKeyCode);
     sceneTypeToEnhanceChainMap_.erase(sceneKeyCode);
-    AUDIO_INFO_LOG("Now enhanceChain num is:%{public}u scenKey[%{public}u] count: %{public}d", chainNum_,
+    AUDIO_INFO_LOG("Now enhanceChain num is:%{public}u sceneKey[%{public}u] count: %{public}d", chainNum_,
         sceneKeyCode, 0);
     return SUCCESS;
 }
@@ -554,6 +555,9 @@ bool AudioEnhanceChainManager::IsEmptyEnhanceChain()
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
+    if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0) {
+        return true;
+    }
     for (auto &[scode, chain] : sceneTypeToEnhanceChainMap_) {
         if (chain != nullptr && !chain->IsEmptyEnhanceHandles()) {
             return false;
@@ -699,6 +703,9 @@ int32_t AudioEnhanceChainManager::SetVolumeInfo(const AudioVolumeType &volumeTyp
 {
     volumeType_ = volumeType;
     systemVol_ = systemVol;
+    if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0 || sceneTypeToEnhanceChainMap_.size() == 0) {
+        return SUCCESS;
+    }
     AUDIO_INFO_LOG("success, volumeType: %{public}d, systemVol: %{public}f", volumeType_, systemVol_);
     return SUCCESS;
 }
@@ -723,6 +730,9 @@ int32_t AudioEnhanceChainManager::SetStreamVolumeInfo(const uint32_t &sessionId,
 {
     sessionId_ = sessionId;
     streamVol_ = streamVol;
+    if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0 || sceneTypeToEnhanceChainMap_.size() == 0) {
+        return SUCCESS;
+    }
     AUDIO_INFO_LOG("success, sessionId: %{public}d, streamVol: %{public}f", sessionId_, streamVol_);
     return SUCCESS;
 }

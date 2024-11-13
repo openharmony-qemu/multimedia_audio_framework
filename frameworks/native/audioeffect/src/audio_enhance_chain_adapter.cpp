@@ -210,6 +210,8 @@ int32_t GetSceneTypeCode(const char *sceneType, uint32_t *sceneTypeCode)
     std::string sceneTypeString = "";
     if (sceneType) {
         sceneTypeString = sceneType;
+    } else {
+        return ERROR;
     }
     auto item = std::find_if(AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.begin(), AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.end(),
         [&sceneTypeString](const std::pair<AudioEnhanceScene, std::string>& element) -> bool {
