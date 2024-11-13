@@ -24,6 +24,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+inline bool IsUsb(DeviceType type)
+{
+    return type == DEVICE_TYPE_USB_HEADSET || type == DEVICE_TYPE_USB_ARM_HEADSET;
+}
+
 /**
  * @brief The AudioDeviceDescriptor provides
  *         different sets of audio devices and their roles

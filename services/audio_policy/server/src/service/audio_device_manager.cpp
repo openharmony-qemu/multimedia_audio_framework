@@ -250,10 +250,18 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
 {
     auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &descriptor) {
         if (descriptor->deviceType_ == devDesc->deviceType_ &&
-            descriptor->networkId_ == devDesc->networkId_ &&
-            descriptor->deviceRole_ == devDesc->deviceRole_ &&
-            descriptor->macAddress_ == devDesc->macAddress_) {
-            return true;
+            descriptor->networkId_ == devDesc->networkId_) {
+            if (IsUsb(descriptor->deviceType_)) {
+                return descriptor->macAddress_ == devDesc->macAddress_ &&
+                    descriptor->deviceRole_ == devDesc->deviceRole_;
+            }
+            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+                return true;
+            } else {
+                // if the disconnecting device is A2DP, need to compare mac address in addition.
+                return descriptor->macAddress_ == devDesc->macAddress_;
+            }
         }
         return false;
     };
@@ -341,9 +349,17 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
     auto isPresent = [&deviceDescriptor](const shared_ptr<AudioDeviceDescriptor> &descriptor) {
         if (descriptor->deviceType_ == deviceDescriptor->deviceType_ &&
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
-            descriptor->deviceRole_ == deviceDescriptor->deviceRole_ &&
-            descriptor->macAddress_ == deviceDescriptor->macAddress_) {
-            return true;
+            descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
+            if (IsUsb(descriptor->deviceType_)) {
+                return descriptor->macAddress_ == deviceDescriptor->macAddress_;
+            }
+            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+                return true;
+            } else {
+                // if the disconnecting device is A2DP, need to compare mac address in addition.
+                return descriptor->macAddress_ == deviceDescriptor->macAddress_;
+            }
         }
         return false;
     };
@@ -431,7 +447,8 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
     auto isPresent = [&devDesc] (const shared_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         return devDesc.deviceType_ == desc->deviceType_ && devDesc.macAddress_ == desc->macAddress_ &&
-            devDesc.networkId_ == desc->networkId_ && devDesc.deviceRole_ == desc->deviceRole_;
+            devDesc.networkId_ == desc->networkId_ &&
+            (!IsUsb(desc->deviceType_) || devDesc.deviceRole_ == desc->deviceRole_);
     };
 
     auto removeBeginIt = std::remove_if(descArray.begin(), descArray.end(), isPresent);
