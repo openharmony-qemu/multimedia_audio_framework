@@ -1119,6 +1119,8 @@ bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
         return false;
     }
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+        int32_t ret = CheckParam(config);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
         return CheckRendererFormat(config);
     }
 
@@ -1263,8 +1265,6 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
-    int32_t ret = CheckParam(config);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK) {
         errorCode = CheckMaxRendererInstances();
