@@ -761,8 +761,6 @@ private:
 
     void HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo = {});
 
-    bool IsWiredHeadSet(const DeviceType &deviceType);
-
     int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
         std::vector<sptr<AudioDeviceDescriptor>> &preferredDeviceList);
 

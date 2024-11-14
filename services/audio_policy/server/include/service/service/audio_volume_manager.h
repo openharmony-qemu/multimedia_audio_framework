@@ -117,6 +117,7 @@ private:
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
     void UpdateVolumeForLowLatency();
+    bool IsWiredHeadSet(const DeviceType &deviceType);
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;

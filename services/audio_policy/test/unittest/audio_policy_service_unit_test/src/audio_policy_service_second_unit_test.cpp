@@ -246,7 +246,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetAbsVolumeSceneAsync_001, TestSize.Lev
     std::string macAddress = "";
     bool support = false;
     server->audioPolicyService_.audioVolumeManager_.SetAbsVolumeSceneAsync(macAddress, support);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "AA-BB-CC-DD-EE-FF");
+    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.activeBTDevaudio_policy_service_first_unit_test.cppice_, "AA-BB-CC-DD-EE-FF");
 }
 
 /**
@@ -272,11 +272,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, IsWiredHeadSet_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     DeviceType deviceType = DeviceType::DEVICE_TYPE_MAX;
-    bool ret = server->audioPolicyService_.IsWiredHeadSet(deviceType);
+    bool ret = server->audioPolicyService_.audioVolumeManager_.IsWiredHeadSet(deviceType);
     EXPECT_EQ(ret, false);
 
     deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
-    ret = server->audioPolicyService_.IsWiredHeadSet(deviceType);
+    ret = server->audioPolicyService_.audioVolumeManager_.IsWiredHeadSet(deviceType);
     EXPECT_EQ(ret, true);
 }
 

@@ -54,19 +54,6 @@ static std::string GetEncryptAddr(const std::string &addr)
     return out;
 }
 
-inline bool IsWiredHeadSet(const DeviceType &deviceType)
-{
-    switch (deviceType) {
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            return true;
-        default:
-            return false;
-    }
-}
-
 inline void ResetSelectValue(bool &isSelectN1, bool &isSelectN2)
 {
     AUDIO_INFO_LOG("ResetSelectValue enter");
@@ -94,6 +81,19 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL_ASSISTANT,
     STREAM_ALL
 };
+
+bool AudioVolumeManager::IsWiredHeadSet(const DeviceType &deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            return true;
+        default:
+            return false;
+    }
+}
 
 bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler)
 {
