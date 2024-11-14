@@ -166,6 +166,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_AUDIO_SESSION_ACTIVATED",
     "LOAD_SPLIT_MODULE",
     "SET_DEFAULT_OUTPUT_DEVICE",
+    "SET_VOICE_RINGTONE_MUTE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1343,6 +1344,9 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_CLIENT_TYPE_CALLBACK):
             SetQueryClientTypeCallbackInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOICE_RINGTONE_MUTE):
+            SetVoiceRingtoneMuteInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -2013,6 +2017,13 @@ void AudioPolicyManagerStub::LoadSplitModuleInternal(MessageParcel &data, Messag
     std::string splitArgs = data.ReadString();
     std::string netWorkId = data.ReadString();
     int32_t result = LoadSplitModule(splitArgs, netWorkId);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    int32_t result = SetVoiceRingtoneMute(isMute);
     reply.WriteInt32(result);
 }
 

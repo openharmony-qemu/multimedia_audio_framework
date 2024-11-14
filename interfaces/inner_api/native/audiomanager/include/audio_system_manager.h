@@ -1307,6 +1307,15 @@ public:
     */
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
+    /**
+    * @brief Set Custmoized Ring Back Tone mute state.
+    *
+    * @param isMute Specifies whether the Customized Ring Back Tone is muted.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t SetVoiceRingtoneMute(bool isMute);
+
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:
