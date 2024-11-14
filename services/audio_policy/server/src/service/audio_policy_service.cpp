@@ -7332,10 +7332,7 @@ BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
 
 int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
 {
-    std::lock_guard<std::mutex> lock(offloadMutex_);
-    CHECK_AND_RETURN_RET_LOG(!offloadSessionID_.has_value(),
-        ERR_ILLEGAL_STATE, "Offload stream existing, concede incoming lowlatency stream");
-    return SUCCESS;
+    return audioOffloadStream_.ActivateConcurrencyFromServer(incomingPipe);
 }
 
 } // namespace AudioStandard

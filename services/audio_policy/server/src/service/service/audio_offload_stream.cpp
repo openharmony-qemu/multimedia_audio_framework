@@ -533,5 +533,13 @@ void AudioOffloadStream::ResetOffloadModeOnSpatializationChanged(std::vector<int
     }
 }
 
+int32_t AudioOffloadStream::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    std::lock_guard<std::mutex> lock(offloadMutex_);
+    CHECK_AND_RETURN_RET_LOG(!offloadSessionID_.has_value(),
+        ERR_ILLEGAL_STATE, "Offload stream existing, concede incoming lowlatency stream");
+    return SUCCESS;
+}
+
 }
 }
