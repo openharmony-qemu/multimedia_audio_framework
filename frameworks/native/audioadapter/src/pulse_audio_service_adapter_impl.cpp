@@ -885,9 +885,14 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         userData.release();
         pa_operation_unref(operation);
     } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-        uint32_t sessionID = sourceIndexSessionIDMap.ReadVal(idx);
-        AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
-        g_audioServiceAdapterCallback->OnAudioStreamRemoved(sessionID);
+        uint32_t sessionID = 0;
+        if (sourceIndexSessionIDMap.Find(idx, sessionID) == true) {
+            AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
+            g_audioServiceAdapterCallback->OnAudioStreamRemoved(sessionID);
+            sourceIndexSessionIDMap.Erase(idx);
+        } else {
+            AUDIO_ERR_LOG("cannot find sessionID in sourceIndexSessionIDMap");
+        }
     }
 }
 
