@@ -323,7 +323,10 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
             AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
             SetStreamMuteInternal(streamInFocus, false, true);
-            return;
+            if (!VolumeUtils::IsPCVolumeEnable()) {
+                AUDIO_DEBUG_LOG("phone need return");
+                return;
+            }
         }
         int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
         if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
@@ -863,7 +866,8 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
 int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi)
 {
     bool updateRingerMode = false;
-    if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
+    if ((streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == AudioStreamType::STREAM_RING) {
         // Check whether the currentRingerMode is suitable for the ringtone mute state.
         AudioRingerMode currentRingerMode = audioPolicyService_.GetRingerMode();
         if ((currentRingerMode == RINGER_MODE_NORMAL && mute) || (currentRingerMode != RINGER_MODE_NORMAL && !mute)) {
@@ -935,7 +939,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
 int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
     bool updateRingerMode = false;
-    if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
+    if ((streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == AudioStreamType::STREAM_RING) {
         // Check whether the currentRingerMode is suitable for the ringtone volume level.
         AudioRingerMode currentRingerMode = audioPolicyService_.GetRingerMode();
         if ((currentRingerMode == RINGER_MODE_NORMAL && volumeLevel == 0) ||
