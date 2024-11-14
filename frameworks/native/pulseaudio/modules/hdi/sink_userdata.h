@@ -135,6 +135,8 @@ struct Userdata {
         int32_t multiChannelFadingInDone;
         int32_t multiChannelSinkInIndex;
         int32_t multiChannelTmpSinkInIndex;
+        uint32_t sinkChannel;
+        uint64_t sinkChannelLayout;
     } multiChannel;
 };
 

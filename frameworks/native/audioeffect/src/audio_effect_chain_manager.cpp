@@ -815,25 +815,26 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
 int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    uint32_t tmpChannelCount = DEFAULT_NUM_CHANNEL;
+    uint64_t tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    bool channelUpdateFlag = false;
     for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
         std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); ++s) {
             SessionEffectInfo info = sessionIDToEffectInfoMap_[*s];
-            uint32_t tmpChannelCount = DEFAULT_MCH_NUM_CHANNEL;
-            uint64_t tmpChannelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
-            if (info.channels > DEFAULT_NUM_CHANNEL &&
+            if (info.channels > tmpChannelCount &&
                 info.channels <= DSP_MAX_NUM_CHANNEL &&
                 !ExistAudioEffectChain(it->first, info.sceneMode, info.spatializationEnabled) &&
                 IsChannelLayoutSupported(info.channelLayout)) {
-                tmpChannelLayout = info.channelLayout;
                 tmpChannelCount = info.channels;
-            }
-
-            if (tmpChannelCount >= *channels) {
-                *channels = tmpChannelCount;
-                *channelLayout = tmpChannelLayout;
+                tmpChannelLayout = info.channelLayout;
+                channelUpdateFlag = true;
             }
         }
+    }
+    if (channelUpdateFlag) {
+        *channels = tmpChannelCount;
+        *channelLayout = tmpChannelLayout;
     }
     return SUCCESS;
 }
@@ -1125,6 +1126,7 @@ void AudioEffectChainManager::UpdateDefaultAudioEffect()
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     // for default scene type
     uint32_t maxDefaultSessionID = 0;
+    uint32_t maxSessionID = 0;
     for (auto& scenePair : sceneTypeToSessionIDMap_) {
         std::set<std::string> &sessions = scenePair.second;
         if (!sceneTypeToSpecialEffectSet_.count(scenePair.first) &&
@@ -1132,8 +1134,9 @@ void AudioEffectChainManager::UpdateDefaultAudioEffect()
             scenePair.first) == priorSceneList_.end()) {
             FindMaxSessionID(maxDefaultSessionID, maxDefaultSessionIDToSceneType_, scenePair.first, sessions);
         }
-        FindMaxSessionID(maxSessionID_, maxSessionIDToSceneType_, scenePair.first, sessions);
+        FindMaxSessionID(maxSessionID, maxSessionIDToSceneType_, scenePair.first, sessions);
     }
+    maxSessionID_ = maxSessionID;
     AUDIO_INFO_LOG("newest stream, maxDefaultSessionID: %{public}u, sceneType: %{public}s,"
         "maxSessionID: %{public}u, sceneType: %{public}s",
         maxDefaultSessionID, maxDefaultSessionIDToSceneType_.c_str(),
