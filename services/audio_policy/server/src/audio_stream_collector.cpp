@@ -905,10 +905,14 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
                 callback->PausedStreamImpl(streamSetStateEventInternal);
             } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_RESUME) {
                 callback->ResumeStreamImpl(streamSetStateEventInternal);
-            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_MUTE) {
+            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_MUTE &&
+                !changeInfo->backMute) {
                 callback->MuteStreamImpl(streamSetStateEventInternal);
-            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_UNMUTE) {
+                changeInfo->backMute = true;
+            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_UNMUTE &&
+                changeInfo->backMute) {
                 callback->UnmuteStreamImpl(streamSetStateEventInternal);
+                changeInfo->backMute = false;
             }
         }
     }
