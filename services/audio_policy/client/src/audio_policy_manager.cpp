@@ -2164,5 +2164,12 @@ int32_t AudioPolicyManager::LoadSplitModule(const std::string &splitArgs, const 
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->LoadSplitModule(splitArgs, networkId);
 }
+
+int32_t AudioPolicyManager::SetVoiceRingtoneMute(bool isMute)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetVoiceRingtoneMute(isMute);
+}
 } // namespace AudioStandard
 } // namespace OHOS
