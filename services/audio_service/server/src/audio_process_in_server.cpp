@@ -65,7 +65,7 @@ AudioProcessInServer::~AudioProcessInServer()
     if (convertedBuffer_.buffer != nullptr) {
         delete [] convertedBuffer_.buffer;
     }
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         PermissionUtil::NotifyStop(tokenId, sessionId_);
     }
