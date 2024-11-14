@@ -79,7 +79,7 @@ public:
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     int32_t ResumeStreamState();
     bool HasVoipRendererStream();
-    bool HasVoipCapturerStream();
+    bool ChangeVoipCapturerStreamToNormal();
     bool IsCallStreamUsage(StreamUsage usage);
 private:
     std::mutex streamsInfoMutex_;
