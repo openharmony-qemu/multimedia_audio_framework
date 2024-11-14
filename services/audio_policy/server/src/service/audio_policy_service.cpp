@@ -6226,22 +6226,48 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
         capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
 }
 
+int32_t AudioPolicyService::GetPreferredInputStreamTypeFromDeviceInfo(AudioAdapterInfo &adapterInfo,
+    DeviceType deviceType, int32_t flags)
+{
+    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_INVALID, "Device type is not supported");
+    for (auto &supportPipe : deviceInfo->supportPipes_) {
+        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
+        if (pipeInfo == nullptr) {
+            continue;
+        }
+        if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+            return AUDIO_FLAG_MMAP;
+        }
+        if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
+            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+            // Avoid voip stream existing with other
+            if (streamCollector_.ChangeVoipCapturerStreamToNormal()) {
+                AUDIO_WARNING_LOG("Voip Change To Normal By DeviceInfo");
+                return AUDIO_FLAG_NORMAL;
+            }
+            return AUDIO_FLAG_VOIP_FAST;
+        }
+    }
+    return AUDIO_FLAG_NORMAL;
+}
+
 int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType,
     int32_t flags, const std::string &networkId, const AudioSamplingRate &samplingRate)
 {
     AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
         deviceType, sourceType, flags);
 
-    // Avoid two voip stream existing
-    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && streamCollector_.HasVoipCapturerStream()) {
-        AUDIO_WARNING_LOG("Voip Change To Normal");
-        return AUDIO_FLAG_NORMAL;
-    }
     std::string sourcePortName = GetSourcePortName(deviceType);
     AUDIO_INFO_LOG("sourcePortName: %{public}s", sourcePortName.c_str());
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
         (sourcePortName == PRIMARY_MIC && networkId == LOCAL_NETWORK_ID)) {
         if (enableFastVoip_ && (samplingRate == SAMPLE_RATE_16000 || samplingRate == SAMPLE_RATE_48000)) {
+            // Avoid voip stream existing with other
+            if (streamCollector_.ChangeVoipCapturerStreamToNormal()) {
+                AUDIO_WARNING_LOG("Voip Change To Normal");
+                return AUDIO_FLAG_NORMAL;
+            }
             return AUDIO_FLAG_VOIP_FAST;
         }
         return AUDIO_FLAG_NORMAL;
@@ -6260,22 +6286,8 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
         AUDIO_ERR_LOG("Invalid adapter");
         return AUDIO_FLAG_INVALID;
     }
-    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_INVALID, "Device type is not supported");
-    for (auto &supportPipe : deviceInfo->supportPipes_) {
-        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
-        if (pipeInfo == nullptr) {
-            continue;
-        }
-        if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            return AUDIO_FLAG_MMAP;
-        }
-        if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
-            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            return AUDIO_FLAG_VOIP_FAST;
-        }
-    }
-    return AUDIO_FLAG_NORMAL;
+
+    return GetPreferredInputStreamTypeFromDeviceInfo(adapterInfo, deviceType, flags);
 }
 
 void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)

@@ -77,8 +77,8 @@ public:
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
-    bool HasVoipCapturerStream();
     bool HasVoipRendererStream();
+    bool ChangeVoipCapturerStreamToNormal();
     bool IsCallStreamUsage(StreamUsage usage);
 private:
     std::mutex streamsInfoMutex_;

@@ -858,6 +858,9 @@ private:
 
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
         const std::string &networkId, const AudioSamplingRate &samplingRate);
+    
+    int32_t GetPreferredInputStreamTypeFromDeviceInfo(AudioAdapterInfo &adapterInfo,
+        DeviceType deviceType, int32_t flags);
 
     bool NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
