@@ -228,6 +228,21 @@ bool AudioSafeVolumeNotificationImpl::GetPixelMap()
     return true;
 }
 
+static void SetBasicOption(Notification::NotificationRequest &request)
+{
+    request.SetCreatorUid(SAVE_VOLUME_SYS_ABILITY_ID);
+    Notification::NotificationBundleOption bundle(SAVE_VOLUME_SYS_ABILITY_NAME, SAVE_VOLUME_SYS_ABILITY_ID);
+    Notification::NotificationHelper::SetNotificationSlotFlagsAsBundle(bundle, NOTIFICATION_BANNER_FLAG);
+    int32_t userId;
+    AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(SAVE_VOLUME_SYS_ABILITY_ID, userId);
+    request.SetCreatorUserId(userId);
+    request.SetCreatorPid(getpid());
+    request.SetAutoDeletedTime(OHOS::Notification::NotificationConstant::INVALID_AUTO_DELETE_TIME);
+    request.SetTapDismissed(false);
+    request.SetSlotType(OHOS::Notification::NotificationConstant::SlotType::SOCIAL_COMMUNICATION);
+    request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG);
+}
+
 void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t notificationId)
 {
     RefreshResConfig();
@@ -251,22 +266,11 @@ void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t noti
         AUDIO_ERR_LOG("get notification content nullptr");
         return;
     }
-    int32_t AUDIO_UID = IPCSkeleton::GetCallingUid();
+
     Notification::NotificationRequest request;
-    request.SetCreatorUid(AUDIO_UID);
-    request.SetCreatorPid(getpid());
-
-    int32_t userId;
-    AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(AUDIO_UID, userId);
-
-    request.SetCreatorUserId(userId);
-    request.SetAutoDeletedTime(OHOS::Notification::NotificationConstant::INVALID_AUTO_DELETE_TIME);
-    request.SetTapDismissed(false);
-    request.SetSlotType(OHOS::Notification::NotificationConstant::SlotType::SOCIAL_COMMUNICATION);
-    request.SetNotificationId(notificationId);
-    request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG);
+    SetBasicOption(request);
     request.SetContent(content);
-
+    request.SetNotificationId(notificationId);
     GetPixelMap();
     if (iconPixelMap_ != nullptr) {
         request.SetLittleIcon(iconPixelMap_);
