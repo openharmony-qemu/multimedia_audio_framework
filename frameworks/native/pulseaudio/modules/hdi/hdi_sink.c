@@ -4010,6 +4010,8 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSink
     u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
     u->multiChannel.sample_attrs.channel = DEFAULT_MULTICHANNEL_NUM;
     u->multiChannel.sample_attrs.channelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
+    u->multiChannel.sinkChannel = DEFAULT_MULTICHANNEL_NUM;
+    u->multiChannel.sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
     u->multiChannel.sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     u->multiChannel.sample_attrs.filePath = filePath;
     u->multiChannel.sample_attrs.deviceNetworkId = u->deviceNetworkId;
