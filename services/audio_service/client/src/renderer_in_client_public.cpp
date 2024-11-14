@@ -462,7 +462,7 @@ int32_t RendererInClientInner::SetVolume(float volume)
     if (offloadEnable_) {
         SetInnerVolume(MAX_FLOAT_VOLUME); // so volume will not change in RendererInServer
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-        ipcStream_->OffloadSetVolume(duckVolume_ * volume);
+        ipcStream_->OffloadSetVolume(volume);
         return SUCCESS;
     }
 
@@ -485,13 +485,6 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
     }
     duckVolume_ = volume;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
-    if (offloadEnable_) {
-        clientBuffer_->SetDuckFactor(MAX_FLOAT_VOLUME);
-        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-        ipcStream_->OffloadSetVolume(clientVolume_ * volume);
-        return SUCCESS;
-    }
-
     clientBuffer_->SetDuckFactor(volume);
     return SUCCESS;
 }
@@ -510,7 +503,7 @@ int32_t RendererInClientInner::SetMute(bool mute)
         return ERROR;
     }
     if (offloadEnable_) {
-        ipcStream_->OffloadSetVolume(mute ? 0.0f : clientVolume_ * duckVolume_);
+        ipcStream_->OffloadSetVolume(mute ? 0.0f : clientVolume_);
     }
     return SUCCESS;
 }
@@ -1570,7 +1563,7 @@ void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     ipcStream_->SetSilentModeAndMixWithOthers(on);
     if (offloadEnable_) {
-        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_ * duckVolume_);
+        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_);
     }
     return;
 }

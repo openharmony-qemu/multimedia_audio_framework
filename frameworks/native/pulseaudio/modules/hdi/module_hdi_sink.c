@@ -232,7 +232,7 @@ int pa__get_n_used(pa_module *m)
 
     pa_sink *sink = m->userdata;
 
-    CHECK_AND_RETURN_RET_LOG(sink == m->userdata, 0, "sink is not equal to m->userdata");
+    CHECK_AND_RETURN_RET_LOG(sink != NULL, 0, "sink is null");
 
     return pa_sink_linked_by(sink);
 }

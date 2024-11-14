@@ -554,6 +554,10 @@ bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDev
 
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
+    AudioPipeType incomingPipe = config.audioMode == AUDIO_MODE_PLAYBACK ?
+        PIPE_TYPE_LOWLATENCY_OUT : PIPE_TYPE_LOWLATENCY_IN;
+    int32_t ret = PolicyHandler::GetInstance().ActivateConcurrencyFromServer(incomingPipe);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Concede incoming lowlatency stream from server");
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
@@ -574,7 +578,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 
     std::shared_ptr<OHAudioBuffer> buffer = audioEndpoint->GetEndpointType()
          == AudioEndpoint::TYPE_INDEPENDENT ? audioEndpoint->GetBuffer() : nullptr;
-    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, deviceInfo.audioStreamInfo_, buffer);
+    ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, deviceInfo.audioStreamInfo_, buffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);

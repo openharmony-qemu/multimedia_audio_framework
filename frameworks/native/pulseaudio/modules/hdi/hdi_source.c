@@ -45,7 +45,6 @@
 #include "audio_hdiadapter_info.h"
 #include "audio_schedule.h"
 #include "audio_source_type.h"
-#include "audio_hdiadapter_info.h"
 #include "capturer_source_adapter.h"
 #include "v4_0/audio_types.h"
 #include "v4_0/iaudio_manager.h"
