@@ -69,7 +69,7 @@ public:
 
     virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo) = 0;
 
-    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle) = 0;
+    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, bool isSync = false) = 0;
 
     virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name) = 0;
 

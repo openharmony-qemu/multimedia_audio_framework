@@ -49,7 +49,7 @@ public:
     bool CheckIOHandleExist(std::string moduleName);
 
     int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
-    int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
+    int32_t ClosePortAndEraseIOHandle(const std::string &moduleName, bool isSync = false);
 
     void NotifyUnmutePort();
     void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
@@ -58,7 +58,7 @@ public:
 private:
     AudioIOHandleMap() {}
     ~AudioIOHandleMap() {}
-    
+
     void UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
 private:
