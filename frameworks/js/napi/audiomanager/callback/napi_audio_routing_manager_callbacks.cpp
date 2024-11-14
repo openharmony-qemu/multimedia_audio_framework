@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioRoutingMgrCallbacks"
 #endif
-#include <thread>
 
 #include "js_native_api.h"
 #include "napi_audio_routing_manager_callbacks.h"

@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiRendererPeriodPositionCallback"
 #endif
-#include <thread>
 
 #include "js_native_api.h"
 #include "napi_renderer_period_position_callback.h"

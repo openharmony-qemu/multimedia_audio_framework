@@ -1373,7 +1373,9 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
         CHECK_AND_RETURN_RET_LOG(isSupportSate, nullptr, "Do not support satellite");
         IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-        audioRendererSinkInstance->SetAudioParameter(AudioParamKey::NONE, "", SATEMODEM_PARAMETER);
+        if (audioRendererSinkInstance) {
+            audioRendererSinkInstance->SetAudioParameter(AudioParamKey::NONE, "", SATEMODEM_PARAMETER);
+        }
     }
 #ifdef FEATURE_APPGALLERY
     PolicyHandler::GetInstance().GetAndSaveClientType(resetConfig.appInfo.appUid,
