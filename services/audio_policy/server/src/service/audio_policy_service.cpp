@@ -4003,7 +4003,7 @@ void AudioPolicyService::ActivateArmDevice(const string& address, const DeviceRo
         if (!(isEcFeatureEnable_ && role == INPUT_DEVICE) && audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
             audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(),
                 GetSinkPortName(GetCurrentOutputDeviceType()));
-            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name);
+            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name, true);
         }
         UpdateArmModuleInfo(address, role, moduleInfo);
         if (isEcFeatureEnable_) {

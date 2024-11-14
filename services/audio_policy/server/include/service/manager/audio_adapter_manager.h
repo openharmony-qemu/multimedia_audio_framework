@@ -91,7 +91,7 @@ public:
 
     AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioModuleInfo);
 
-    int32_t CloseAudioPort(AudioIOHandle ioHandle);
+    int32_t CloseAudioPort(AudioIOHandle ioHandle, bool isSync = false);
 
     int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
 

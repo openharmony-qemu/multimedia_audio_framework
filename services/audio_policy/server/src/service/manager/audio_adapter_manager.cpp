@@ -824,11 +824,11 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     return ioHandle;
 }
 
-int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
+int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle, bool isSync)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_--;
-    int32_t ret = audioServiceAdapter_->CloseAudioPort(ioHandle);
+    int32_t ret = audioServiceAdapter_->CloseAudioPort(ioHandle, isSync);
     AUDIO_INFO_LOG("Close %{public}d port end.", static_cast<int32_t>(ioHandle));
     return ret;
 }

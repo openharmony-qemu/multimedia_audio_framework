@@ -112,7 +112,6 @@ static UsbAddr GetUsbAddr(const SoundCard &card)
 
 static bool IsAudioDevice(UsbDevice &usbDevice)
 {
-    CHECK_AND_RETURN_RET(usbDevice.GetClass() == 0, false);
     for (auto& usbConfig : usbDevice.GetConfigs()) {
         for (auto& usbInterface : usbConfig.GetInterfaces()) {
             if (usbInterface.GetClass() == 1 && usbInterface.GetSubClass() == 1) {
