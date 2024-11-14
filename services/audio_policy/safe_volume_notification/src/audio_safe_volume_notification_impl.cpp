@@ -168,8 +168,12 @@ void AudioSafeVolumeNotificationImpl::RefreshResConfig()
     if (status != U_ZERO_ERROR) {
         AUDIO_INFO_LOG("forLanguageTag failed, errCode:%{public}d", status);
     }
-    resConfig_->SetLocaleInfo(locale.getLanguage(), locale.getScript(), locale.getCountry());
-    resourceManager_->UpdateResConfig(*resConfig_);
+    if (resConfig_) {
+        resConfig_->SetLocaleInfo(locale.getLanguage(), locale.getScript(), locale.getCountry());
+    }
+    if (resourceManager_) {
+        resourceManager_->UpdateResConfig(*resConfig_);
+    }
 }
 
 void AudioSafeVolumeNotificationImpl::Init()
