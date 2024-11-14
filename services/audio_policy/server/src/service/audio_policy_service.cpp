@@ -5954,16 +5954,16 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
     AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
         deviceType, sourceType, flags);
 
-    // Avoid two voip stream existing
-    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && streamCollector_.HasVoipCapturerStream()) {
-        AUDIO_WARNING_LOG("Voip Change To Normal");
-        return AUDIO_FLAG_NORMAL;
-    }
     std::string sourcePortName = GetSourcePortName(deviceType);
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
         (sourcePortName == PRIMARY_MIC && networkId == LOCAL_NETWORK_ID)) {
         if (audioConfigManager_.GetVoipConfig() && (samplingRate == SAMPLE_RATE_48000
             || samplingRate == SAMPLE_RATE_16000)) {
+            // Avoid voip stream existing with other
+            if (streamCollector_.ChangeVoipCapturerStreamToNormal()) {
+                AUDIO_WARNING_LOG("Voip Change To Normal");
+                return AUDIO_FLAG_NORMAL;
+            }
             return AUDIO_FLAG_VOIP_FAST;
         }
         return AUDIO_FLAG_NORMAL;
@@ -5991,6 +5991,11 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
         }
         if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
             pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+            // Avoid voip stream existing with other
+            if (streamCollector_.ChangeVoipCapturerStreamToNormal()) {
+                AUDIO_WARNING_LOG("Voip Change To Normal By DeviceInfo");
+                return AUDIO_FLAG_NORMAL;
+            }
             return AUDIO_FLAG_VOIP_FAST;
         }
     }
