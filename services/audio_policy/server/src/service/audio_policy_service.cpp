@@ -9152,10 +9152,8 @@ void AudioPolicyService::ResetOffloadAndMchMode(std::shared_ptr<AudioRendererCha
     if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID
         || outputDevices.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
         RemoteOffloadStreamRelease(rendererChangeInfo->sessionId);
-    } else if (outputDevices.front()->deviceType_ == DEVICE_TYPE_SPEAKER) {
-        FetchStreamForSpkMchStream(rendererChangeInfo, outputDevices);
     } else {
-        ResetOffloadMode(rendererChangeInfo->sessionId);
+        FetchStreamForSpkMchStream(rendererChangeInfo, outputDevices);
     }
 }
 
