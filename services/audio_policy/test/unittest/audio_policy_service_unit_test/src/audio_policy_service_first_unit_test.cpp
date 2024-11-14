@@ -483,8 +483,8 @@ void debugPrintMemoryVariable()
     }
     // activeBTDevice_
     AUDIO_INFO_LOG("debugPrintMemoryVariable() activeBTDevice_:%{public}s, addr:%{private}p",
-        GetServerPtr()->audioPolicyService_.activeBTDevice_.c_str(),
-        &GetServerPtr()->audioPolicyService_.activeBTDevice_);
+        GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_.c_str(),
+        &GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_);
 }
 
 /**
@@ -516,7 +516,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetStreamMute_001, TestSize.Level1)
     GetServerPtr()->audioPolicyService_.SetStreamMute(STREAM_MUSIC, true);
 
     // modify activeBTDevice_ and connectedA2dpDeviceMap_
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "activeBTDevice";
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_ = "activeBTDevice";
     AudioStreamInfo audioStreamInfo = {};
     audioStreamInfo.samplingRate =  AudioSamplingRate::SAMPLE_RATE_48000;
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
@@ -558,7 +558,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetActiveA2dpDeviceStreamInfo_001, TestSize
     // clear activeBTDevice_ and connectedA2dpDeviceMap_
     // deviceType use DEVICE_TYPE_BLUETOOTH_A2DP
     GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.clear();
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "";
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_ = "";
     ret = GetServerPtr()->
         audioPolicyService_.audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP,
         streamInfoRet);
@@ -566,7 +566,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetActiveA2dpDeviceStreamInfo_001, TestSize
 
     // modify activeBTDevice_ and connectedA2dpDeviceMap_
     // deviceType use DEVICE_TYPE_BLUETOOTH_A2DP
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "activeBTDevice";
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_ = "activeBTDevice";
     AudioStreamInfo audioStreamInfo = {};
     audioStreamInfo.samplingRate =  AudioSamplingRate::SAMPLE_RATE_48000;
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
@@ -2211,7 +2211,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnDeviceConfigurationChanged_001, TestSize.
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
     // clear activeBTDevice_ and connectedA2dpDeviceMap_
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "";
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_ = "";
     GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.clear();
 
     // modify currentActiveDevice_.deviceType_
@@ -2235,7 +2235,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnDeviceConfigurationChanged_001, TestSize.
     }
 
     // modify activeBTDevice_ and connectedA2dpDeviceMap_
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "AA-BB-CC-DD-EE-FF";
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_ = "AA-BB-CC-DD-EE-FF";
     GetServerPtr()->
         audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.insert({"AA-BB-CC-DD-EE-FF", configInfo});
     GetServerPtr()->
