@@ -849,6 +849,12 @@ int32_t RendererInServer::Release()
             return SUCCESS;
         }
     }
+
+    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        AudioService::GetInstance()->SetDecMaxRendererStreamCnt();
+        AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
+    }
+
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);

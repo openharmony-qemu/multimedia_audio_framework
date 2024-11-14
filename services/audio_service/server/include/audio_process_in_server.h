@@ -73,6 +73,7 @@ public:
     AudioStreamInfo GetStreamInfo() override;
     uint32_t GetAudioSessionId() override;
     AudioStreamType GetAudioStreamType() override;
+    AudioProcessConfig GetAudioProcessConfig() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
     void Dump(std::string &dumpString);

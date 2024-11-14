@@ -46,6 +46,8 @@ public:
 
     virtual bool GetMuteFlag() = 0;
 
+    virtual AudioProcessConfig GetAudioProcessConfig() = 0;
+
     virtual void WriteDumpFile(void *buffer, size_t bufferSize) = 0;
 
     virtual ~IAudioProcessStream() = default;
