@@ -1243,7 +1243,7 @@ void AudioCapturerPrivate::ConcedeStream()
     AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, capturerInfo_.pipeType);
     AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
     audioStream_->GetAudioPipeType(pipeType);
-    if (pipeType == PIPE_TYPE_LOWLATENCY_IN) {
+    if (pipeType == PIPE_TYPE_LOWLATENCY_IN || pipeType == PIPE_TYPE_CALL_IN) {
         SwitchStream(sessionID_, IAudioStream::PA_STREAM, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     }
 }
