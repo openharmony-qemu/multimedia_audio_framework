@@ -1120,7 +1120,7 @@ bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
     }
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         int32_t ret = CheckParam(config);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Check params failed");
         return CheckRendererFormat(config);
     }
 
