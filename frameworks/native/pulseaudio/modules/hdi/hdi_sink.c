@@ -3140,6 +3140,9 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     pa_sink_assert_io_context(si);
     CHECK_AND_RETURN_LOG(chunkIn != NULL, "chunkIn is null");
 
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
     EffectChainManagerReturnMultiChannelInfo(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
 
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
