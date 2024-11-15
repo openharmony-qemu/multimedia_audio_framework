@@ -1061,7 +1061,7 @@ napi_status NapiParamUtils::GetExtraParametersVector(const napi_env &env,
 napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
     const std::vector<std::pair<std::string, std::string>> &extraParameters, napi_value &result)
 {
-    napi_status status = napi_create_array_with_length(env, extraParameters.size(), &result);
+    napi_status status = napi_create_object(env, &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "malloc array buffer failed");
 
     for (auto it = extraParameters.begin(); it != extraParameters.end(); it++) {
