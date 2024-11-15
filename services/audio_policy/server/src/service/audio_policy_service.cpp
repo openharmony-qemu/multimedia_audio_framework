@@ -9166,5 +9166,14 @@ void AudioPolicyService::ResetOffloadAndMchMode(std::unique_ptr<AudioRendererCha
         ResetOffloadMode(rendererChangeInfo->sessionId);
     }
 }
+
+int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    std::lock_guard<std::mutex> lock(offloadMutex_);
+    CHECK_AND_RETURN_RET_LOG(!offloadSessionID_.has_value(),
+        ERR_ILLEGAL_STATE, "Offload stream existing, concede incoming lowlatency stream");
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
