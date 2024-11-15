@@ -2742,13 +2742,13 @@ static void ResetMultiChannelHdiState(struct Userdata *U)
         return;
     }
     if (u->multiChannel.isHDISinkInited) {
-        if (u->multiChannel.sample_attrs.channel != (uint32_t)u->multichannel.sinkChannels) {
+        if (u->multiChannel.sample_attrs.channel != (uint32_t)u->multichannel.sinkChannel) {
             u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkStarted = false;
             u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkInited = false;
             u->multiChannel.sample_attrs.adapterName = "primary";
-            u->multiChannel.sample_attrs.channel = (uint32_t)u->multichannel.sinkChannels;
+            u->multiChannel.sample_attrs.channel = (uint32_t)u->multichannel.sinkChannel;
             u->multiChannel.sample_attrs.channelLayout = u->multiChannel.sinkChannelLayout;
             u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
             u->multiChannel.isHDISinkInited = true;
@@ -2762,7 +2762,7 @@ static void ResetMultiChannelHdiState(struct Userdata *U)
         }
     } else {
         u->multiChannel.sample_attrs.adapterName = "primary";
-        u->multiChannel.sample_attrs.channel = (uint32_t)u->multichannel.sinkChannels;
+        u->multiChannel.sample_attrs.channel = (uint32_t)u->multichannel.sinkChannel;
         u->multiChannel.sample_attrs.channelLayout = u->multiChannel.sinkChannelLayout;
         u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
         u->multiChannel.isHDISinkInited = true;
