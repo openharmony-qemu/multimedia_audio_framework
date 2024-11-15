@@ -1512,7 +1512,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
         if (!result) {
             AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
         }
-        if (streamType == STREAM_RING) {
+        if (streamType == STREAM_RING && VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
             bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
             if (currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
                 continue;
