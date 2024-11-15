@@ -26,8 +26,9 @@ MMAAudioRoutingManagerImpl::MMAAudioRoutingManagerImpl()
 {
     routingMgr_ = AudioRoutingManager::GetInstance();
     audioMgr_ = AudioSystemManager::GetInstance();
-    microphoneBlockedCallback_ = std::make_shared<CjAudioManagerMicrophoneBlockedCallback>();
+    deviceUsageCallback_ = std::make_shared<CjAudioManagerAvailableDeviceChangeCallback>();
     preferredInputDeviceChangeCallBack_ = std::make_shared<CjAudioPreferredInputDeviceChangeCallback>();
+    preferredOutputDeviceChangeCallBack_ = std::make_shared<CjAudioPreferredOutputDeviceChangeCallback>();
     deviceChangeCallBack_ = std::make_shared<CjAudioManagerDeviceChangeCallback>();
 }
 
@@ -87,17 +88,40 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredInputDeviceForCaptu
     return arr;
 }
 
-void MMAAudioRoutingManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredOutputDeviceForRendererInfo(CAudioRendererInfo cInfo,
+    int32_t *errorCode)
 {
-    if (callbackType == AudioRoutingManagerCallbackType::MICROPHONE_BLOCKED) {
-        auto func = CJLambda::Create(reinterpret_cast<void (*)(CArrDeviceDescriptor)>(callback));
+    std::vector<sptr<AudioDeviceDescriptor>> outDeviceDescriptors;
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = static_cast<StreamUsage>(cInfo.usage);
+    rendererInfo.rendererFlags = cInfo.rendererFlags;
+    routingMgr_->GetPreferredOutputDeviceForRendererInfo(rendererInfo, outDeviceDescriptors);
+    if (outDeviceDescriptors.empty()) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrDeviceDescriptor();
+    }
+    CArrDeviceDescriptor arr;
+    Convert2CArrDeviceDescriptor(arr, outDeviceDescriptors, errorCode);
+    if (*errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
+        return CArrDeviceDescriptor();
+    }
+    return arr;
+}
+
+void MMAAudioRoutingManagerImpl::RegisterCallback(int32_t callbackType, uint32_t deviceUsage,
+    void (*callback)(), int32_t *errorCode)
+{
+    if (callbackType == AudioRoutingManagerCallbackType::AVAILABLE_DEVICE_CHANGE) {
+        auto func = CJLambda::Create(reinterpret_cast<void (*)(CDeviceChangeAction)>(callback));
         if (func == nullptr) {
-            AUDIO_ERR_LOG("Register microphoneBlocked event failure!");
+            AUDIO_ERR_LOG("Register avaibleDeviceChange event failure!");
             *errorCode = CJ_ERR_SYSTEM;
             return;
         }
-        microphoneBlockedCallback_->RegisterFunc(func);
-        audioMgr_->SetMicrophoneBlockedCallback(microphoneBlockedCallback_);
+        deviceUsageCallback_->RegisterFunc(deviceUsage, func);
+        AudioDeviceUsage audioDeviceUsage = static_cast<AudioDeviceUsage>(deviceUsage);
+        audioMgr_->SetAvailableDeviceChangeCallback(audioDeviceUsage, deviceUsageCallback_);
     }
 }
 
@@ -114,6 +138,24 @@ void MMAAudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(int3
         AudioCapturerInfo capturerInfo(static_cast<SourceType>(info.source), info.capturerFlags);
         preferredInputDeviceChangeCallBack_->RegisterFunc(func);
         routingMgr_->SetPreferredInputDeviceChangeCallback(capturerInfo, preferredInputDeviceChangeCallBack_);
+    }
+}
+
+void MMAAudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(int32_t callbackType, void (*callback)(),
+    CAudioRendererInfo info, int32_t *errorCode)
+{
+    if (callbackType == AudioRoutingManagerCallbackType::OUTPUT_DEVICE_CHANGE_FOR_RENDERER_INFO) {
+        auto func = CJLambda::Create(reinterpret_cast<void (*)(CArrDeviceDescriptor)>(callback));
+        if (func == nullptr) {
+            AUDIO_ERR_LOG("Register preferredOutputDeviceChangeForRendererInfo event failure!");
+            *errorCode = CJ_ERR_SYSTEM;
+            return;
+        }
+        AudioRendererInfo rendererInfo;
+        rendererInfo.streamUsage = static_cast<StreamUsage>(info.usage);
+        rendererInfo.rendererFlags = info.rendererFlags;
+        preferredOutputDeviceChangeCallBack_->RegisterFunc(func);
+        routingMgr_->SetPreferredOutputDeviceChangeCallback(rendererInfo, preferredOutputDeviceChangeCallBack_);
     }
 }
 

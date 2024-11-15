@@ -20,6 +20,7 @@
 #include "audio_group_manager.h"
 #include "audio_system_manager.h"
 #include "multimedia_audio_ffi.h"
+#include "multimedia_audio_volume_group_manager_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,10 +40,15 @@ public:
     bool IsMicrophoneMute();
     bool IsMute(int32_t volumeType);
     bool IsVolumeUnadjustable();
-
+    float GetMaxAmplitudeForOutputDevice(const int32_t deviceId);
+    float GetMaxAmplitudeForInputDevice(const int32_t deviceId);
+    void RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode);
 private:
     AudioSystemManager *audioMngr_ = nullptr;
+    int32_t cachedClientId_ = -1;
     std::shared_ptr<AudioGroupManager> audioGroupMngr_ = nullptr;
+    std::shared_ptr<CjAudioRingerModeCallback> audioRingerModeCallback_ = nullptr;
+    std::shared_ptr<CjAudioManagerMicStateChangeCallback> micStateChangeCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

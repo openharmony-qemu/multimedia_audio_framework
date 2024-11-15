@@ -34,6 +34,8 @@ public:
 
     CArrI32 GetAudioEffectInfoArray(int32_t usage, int32_t *errorCode);
 
+    CArrAudioRendererChangeInfo GetCurrentRendererChangeInfos(int32_t *errorCode);
+    
     CArrAudioCapturerChangeInfo GetAudioCapturerInfoArray(int32_t *errorCode);
 
     void RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode);
@@ -42,6 +44,7 @@ private:
     int32_t cachedClientId_{};
     AudioStreamManager *streamMgr_{};
     std::shared_ptr<CjAudioCapturerStateChangeCallback> callback_{};
+    std::shared_ptr<CjAudioRendererStateChangeCallback> callbackRenderer_{};
 };
 } // namespace AudioStandard
 } // namespace OHOS
