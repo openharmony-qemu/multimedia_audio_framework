@@ -54,6 +54,7 @@
             "drivers_interface_distributed_audio",
             "drivers_peripheral_bluetooth",
             "eventhandler",
+            "ffrt",
             "hdf_core",
             "hicollie",
             "hisysevent",

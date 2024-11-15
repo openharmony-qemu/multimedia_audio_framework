@@ -34,7 +34,7 @@ static std::string GeneratePidsStrForPrinting(
 }
 
 AudioPolicyServerHandler::AudioPolicyServerHandler() : AppExecFwk::EventHandler(
-    AppExecFwk::EventRunner::Create("OS_APAsyncRunner"))
+    AppExecFwk::EventRunner::Create("OS_APAsyncRunner", AppExecFwk::ThreadMode::FFRT))
 {
     AUDIO_DEBUG_LOG("ctor");
 }

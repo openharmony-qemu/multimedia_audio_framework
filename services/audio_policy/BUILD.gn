@@ -271,6 +271,7 @@ ohos_shared_library("audio_policy_service") {
     "data_share:datashare_consumer",
     "drivers_interface_audio:libaudio_proxy_4.0",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
     "hdf_core:libhdf_utils",
