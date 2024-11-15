@@ -86,6 +86,10 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailab
 int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     const sptr<AudioDeviceDescriptor> &desc)
 {
+    if (desc == nullptr) {
+        AUDIO_ERR_LOG("desc is null");
+        return ERR_INVALID_PARAM;
+    }
     int32_t ret = SUCCESS;
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
@@ -110,7 +114,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             ret = ERR_INVALID_PARAM;
             break;
     }
-    if (desc == nullptr || desc->deviceType_ == DEVICE_TYPE_NONE) {
+    if (desc->deviceType_ == DEVICE_TYPE_NONE) {
         ErasePreferredDeviceByType(preferredType);
     }
     if (ret != SUCCESS) {

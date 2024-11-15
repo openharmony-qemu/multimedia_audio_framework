@@ -235,7 +235,8 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     fuzzAudioDeviceDescriptorSptrVector.push_back(fuzzAudioDeviceDescriptorSptr);
     sptr<AudioRendererFilter> fuzzAudioRendererFilter = new AudioRendererFilter();
 
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.isOffloadAvailable_ = true; // set offload support on for covery
+    // set offload support on for covery
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.isOffloadAvailable_ = true;
 
     GetServerPtr()->audioPolicyService_.HandleRecoveryPreferredDevices(fuzzInt32One, fuzzInt32Two, fuzzInt32Three);
     GetServerPtr()->audioPolicyService_.GetVolumeGroupType(fuzzDeviceType);

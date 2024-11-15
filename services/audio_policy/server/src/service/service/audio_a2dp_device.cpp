@@ -232,7 +232,7 @@ bool AudioA2dpDevice::SetA2dpDeviceAbsVolumeSupport(const std::string& device, c
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(device);
-    if (configInfoPos == connectedA2dpDeviceMap_.end()) {
+    if (configInfoPos != connectedA2dpDeviceMap_.end()) {
         configInfoPos->second.absVolumeSupport = support;
         return true;
     }
