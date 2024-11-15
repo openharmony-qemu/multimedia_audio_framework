@@ -1167,6 +1167,22 @@ int32_t AudioPolicyServer::SetClientCallbacksEnable(const CallbackChange &callba
     return audioPolicyService_.SetClientCallbacksEnable(callbackchange, enable);
 }
 
+int32_t AudioPolicyServer::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo)
+{
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SetCallbackRendererInfo(rendererInfo);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo)
+{
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SetCallbackCapturerInfo(capturerInfo);
+    }
+    return SUCCESS;
+}
+
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 {
     return audioPolicyService_.IsStreamActive(streamType);

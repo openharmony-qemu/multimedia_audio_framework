@@ -409,11 +409,12 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_019, TestSize.Le
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
     auto cb = std::make_shared<ConcreteAudioPreferredOutputDeviceChangeCallback>();
-    int32_t result = audioPolicyClient_->AddPreferredOutputDeviceChangeCallback(cb);
+    AudioRendererInfo rendererInfo;
+    int32_t result = audioPolicyClient_->AddPreferredOutputDeviceChangeCallback(rendererInfo, cb);
     EXPECT_EQ(result, SUCCESS);
 
     std::vector<sptr<AudioDeviceDescriptor>> desc;
-    audioPolicyClient_->OnPreferredOutputDeviceUpdated(desc);
+    audioPolicyClient_->OnPreferredOutputDeviceUpdated(rendererInfo, desc);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
 
@@ -426,11 +427,12 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_020, TestSize.Le
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
     auto cb = std::make_shared<ConcreteAudioPreferredInputDeviceChangeCallback>();
-    int32_t result = audioPolicyClient_->AddPreferredInputDeviceChangeCallback(cb);
+    AudioCapturerInfo capturerInfo;
+    int32_t result = audioPolicyClient_->AddPreferredInputDeviceChangeCallback(capturerInfo, cb);
     EXPECT_EQ(result, SUCCESS);
 
     std::vector<sptr<AudioDeviceDescriptor>> desc;
-    audioPolicyClient_->OnPreferredInputDeviceUpdated(desc);
+    audioPolicyClient_->OnPreferredInputDeviceUpdated(capturerInfo, desc);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
 

@@ -258,6 +258,40 @@ int32_t AudioPolicyProxy::SetClientCallbacksEnable(const CallbackChange &callbac
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    rendererInfo.Marshalling(data);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK_RENDERER_INFO), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Set renderer info failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    capturerInfo.Marshalling(data);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK_CAPTURER_INFO), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Set capturer info failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneID)
 {
     MessageParcel data;

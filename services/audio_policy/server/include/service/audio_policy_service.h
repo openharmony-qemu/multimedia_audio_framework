@@ -246,16 +246,6 @@ public:
 
     void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
 
-    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
-
-    int32_t SetPreferredInputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
-
-    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
-
-    int32_t UnsetPreferredInputDeviceChangeCallback(const int32_t clientId);
-
     int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
 

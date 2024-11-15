@@ -245,15 +245,17 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo);
 
-    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
+    int32_t SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
 
-    int32_t SetPreferredInputDeviceChangeCallback(
+    int32_t SetPreferredInputDeviceChangeCallback(const AudioCapturerInfo &capturerInfo,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
 
-    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
+    int32_t UnsetPreferredOutputDeviceChangeCallback(
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr);
 
-    int32_t UnsetPreferredInputDeviceChangeCallback();
+    int32_t UnsetPreferredInputDeviceChangeCallback(
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback = nullptr);
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0);
@@ -459,6 +461,8 @@ private:
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
+    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;

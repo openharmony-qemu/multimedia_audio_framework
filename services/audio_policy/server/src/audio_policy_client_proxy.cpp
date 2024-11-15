@@ -198,7 +198,8 @@ void AudioPolicyClientProxy::OnMicStateUpdated(const MicStateChangeEvent &micSta
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -209,6 +210,7 @@ void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const std::vector<sp
     }
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_ACTIVE_OUTPUT_DEVICE_UPDATED));
+    rendererInfo.Marshalling(data);
     int32_t size = static_cast<int32_t>(desc.size());
     data.WriteInt32(size);
     for (int i = 0; i < size; i++) {
@@ -222,7 +224,8 @@ void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const std::vector<sp
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -233,6 +236,7 @@ void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const std::vector<spt
     }
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_ACTIVE_INPUT_DEVICE_UPDATED));
+    capturerInfo.Marshalling(data);
     int32_t size = static_cast<int32_t>(desc.size());
     data.WriteInt32(size);
     for (int i = 0; i < size; i++) {

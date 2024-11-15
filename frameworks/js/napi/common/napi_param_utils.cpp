@@ -1219,5 +1219,16 @@ napi_status NapiParamUtils::SetAudioSessionDeactiveEvent(
     SetValueInt32(env, "reason", static_cast<int32_t>(deactiveEvent.deactiveReason), result);
     return napi_ok;
 }
+
+bool NapiParamUtils::CheckArgType(napi_env env, napi_value arg, napi_valuetype expectedType)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, arg, &valueType);
+    if (valueType != expectedType) {
+        AUDIO_ERR_LOG("the type of parameter is invalid");
+        return false;
+    }
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS
