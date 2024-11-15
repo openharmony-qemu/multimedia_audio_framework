@@ -44,6 +44,7 @@ constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
+constexpr int32_t RSS_UID = 1096;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
