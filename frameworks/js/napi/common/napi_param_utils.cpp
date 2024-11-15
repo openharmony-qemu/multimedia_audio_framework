@@ -205,8 +205,8 @@ napi_status NapiParamUtils::SetValueBoolean(const napi_env &env, const std::stri
     napi_value value = nullptr;
     napi_status status = SetValueBoolean(env, boolValue, value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean SetValueBoolean failed");
-    napi_set_named_property(env, result, fieldStr.c_str(), value);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean napi_get_boolean failed");
+    status = napi_set_named_property(env, result, fieldStr.c_str(), value);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_set_named_property failed");
     return status;
 }
 
