@@ -9180,5 +9180,12 @@ int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incoming
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
+    audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, false);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -47,6 +47,8 @@ public:
 
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
 
+    int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
+
 private:
     static inline BrokerDelegator<PolicyProviderProxy> delegator_;
 };
