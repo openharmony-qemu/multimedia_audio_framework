@@ -161,7 +161,8 @@ void AudioPolicyServiceEnhanceTwoFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.WriteInputRouteChangeEvent(desc, reason);
 
     AudioStreamInfo audioStreamInfo;
-    GetServerPtr()->audioPolicyService_.audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, "", "");
+    GetServerPtr()->audioPolicyService_.audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
+        audioStreamInfo, "", "");
     GetServerPtr()->audioPolicyService_.HandleActiveDevice(DEVICE_TYPE_INVALID);
 
     std::string networkId = "LocalDevice";

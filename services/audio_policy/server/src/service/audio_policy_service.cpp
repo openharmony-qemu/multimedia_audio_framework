@@ -2570,7 +2570,8 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
-    audioActiveDevice_.SetDeviceActive(deviceType, active);
+    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
     FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDeviceType(),
@@ -4491,10 +4492,11 @@ void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDes
 void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     AUDIO_INFO_LOG("Start");
-
+    
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     for (sptr<AudioDeviceDescriptor> deviceDesc : desc) {
         if (deviceDesc->deviceRole_ == OUTPUT_DEVICE) {
-            DeviceType type = audioActiveDevice_.GetCurrentOutputDeviceType();
+            DeviceType type = curOutputDeviceType;
             std::string macAddress = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
             auto itr = audioConnectedDevice_.CheckExistOutputDevice(type, macAddress);
             if (itr != nullptr) {

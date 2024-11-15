@@ -106,7 +106,7 @@ sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(int32
     return nullptr;
 }
 
-sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType)
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, DeviceType deviceType)
 {
     auto isPresent = [&networkId, &deviceType] (const sptr<AudioDeviceDescriptor> &desc) {
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_) {
@@ -121,7 +121,7 @@ sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::
     return nullptr;
 }
 
-sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
     std::string macAddress)
 {
     auto isPresent = [&networkId, &deviceType, &macAddress] (const sptr<AudioDeviceDescriptor> &desc) {
@@ -137,7 +137,7 @@ sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::
     return nullptr;
 }
 
-sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
     std::string macAddress, DeviceRole deviceRole)
 {
     auto isPresent = [&networkId, &deviceType, &macAddress, &deviceRole] (const sptr<AudioDeviceDescriptor> &desc) {
@@ -154,7 +154,7 @@ sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::
     return nullptr;
 }
 
-void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress,
+void AudioConnectedDevice::DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress,
     DeviceRole deviceRole)
 {
     auto isPresent = [&deviceType, &networkId, &macAddress,
@@ -169,7 +169,7 @@ void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t dev
     return;
 }
 
-void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress)
+void AudioConnectedDevice::DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress)
 {
     auto isPresent = [&deviceType, &networkId, &macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
         return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId
@@ -181,7 +181,7 @@ void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t dev
     return;
 }
 
-void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t deviceType)
+void AudioConnectedDevice::DelConnectedDevice(std::string networkId, DeviceType deviceType)
 {
     auto isPresent = [&deviceType, &networkId] (const sptr<AudioDeviceDescriptor> &descriptor) {
         return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId;
