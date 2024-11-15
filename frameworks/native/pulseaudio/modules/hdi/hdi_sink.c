@@ -2940,7 +2940,7 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u)
     }
 }
 
-static void ResetMultiChannelHdiState(struct Userdata *U)
+static void ResetMultiChannelHdiState(struct Userdata *u)
 {
     if (u->multiChannel.sinkAdapter == NULL) {
         return;
