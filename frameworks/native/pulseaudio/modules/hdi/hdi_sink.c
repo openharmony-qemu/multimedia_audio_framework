@@ -322,7 +322,9 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
     uint32_t processChannels = DEFAULT_NUM_CHANNEL;
     uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
     if (mchFlag) {
-        EffectChainManagerReturnMultiChannelInfo(&processChannels, &processChannelLayout);
+        struct Userdata *u = sinkIn->sink->userdata;
+        processChannels = u->multiChannel.sinkChannel;
+        processChannelLayout = u->multiChannel.sinkChannelLayout;
     } else {
         EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
     }
@@ -2783,8 +2785,6 @@ static void ResetMultiChannelHdiState(struct Userdata *U)
 
 static void StartMultiChannelHdiIfRunning(struct Userdata *u)
 {
-    EffectChainManagerReturnMultiChannelInfo(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
-
     ResetMultiChannelHdiState(u);
 }
 
@@ -2935,12 +2935,10 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
-    uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
-    EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
+    EffectChainManagerReturnMultiChannelInfo(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
 
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
-    size_t tmpLength = length * sinkChannel / DEFAULT_IN_CHANNEL_NUM;
+    size_t tmpLength = length * u->multiChannel.sinkChannel / DEFAULT_IN_CHANNEL_NUM;
     chunkIn->index = 0;
     chunkIn->length = tmpLength;
     SinkRenderMultiChannelGetData(si, chunkIn);
