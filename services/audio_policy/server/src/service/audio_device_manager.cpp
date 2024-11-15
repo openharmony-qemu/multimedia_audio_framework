@@ -37,8 +37,10 @@ std::string GetEncryptAddr(const std::string &addr)
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
         string macHead("card=");
         if (addr.find(macHead, 0) == 0) {
-            auto n = addr.substr(macHead.length(), addr.find(';'));
-            return string("c**=") + n + "**";
+            auto pos = macHead.length();
+            auto end = addr.find(';', macHead.length());
+            auto num = end == string::npos ? addr.substr(pos) : addr.substr(pos, end - pos);
+            return string("c**=") + num + "**";
         }
         return "";
     }
