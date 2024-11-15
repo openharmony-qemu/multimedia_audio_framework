@@ -484,6 +484,9 @@ public:
     int32_t UnsetAudioDeviceAnahsCallback();
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
+    void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
+    bool DeviceIsSupportSafeVolume();
+    int32_t DealWithEventVolume(const int32_t notificationId);
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
 
@@ -1222,7 +1225,7 @@ private:
     std::mutex safeVolumeMutex_;
 
     std::mutex notifyMutex_;
-    int32_t streamMusicVol_;
+    int32_t streamMusicVol_ = 0;
     bool isSelectRestoreVol_ = false;
     bool isSelectIncreaseVol_ = false;
     bool restoreNIsShowing_ = false;

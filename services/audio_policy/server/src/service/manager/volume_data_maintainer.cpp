@@ -27,6 +27,8 @@ const std::string AUDIO_SAFE_VOLUME_STATE = "audio_safe_volume_state";
 const std::string AUDIO_SAFE_VOLUME_STATE_BT = "audio_safe_volume_state_bt";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS = "unsafe_volume_music_active_ms";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_BT = "unsafe_volume_music_active_ms_bt";
+const std::string UNSAFE_VOLUME_LEVEL = "unsafe_volume_level";
+const std::string UNSAFE_VOLUME_LEVEL_BT = "unsafe_volume_level_bt";
 const std::string SETTINGS_CLONED = "settingsCloneStatus";
 const int32_t INVALIAD_SETTINGS_CLONE_STATUS = -1;
 const int32_t SETTINGS_CLONING_STATUS = 1;
@@ -477,6 +479,61 @@ bool VolumeDataMaintainer::GetSafeVolumeTime(DeviceType deviceType, int64_t &tim
         AUDIO_ERR_LOG("device:%{public}d, get safe active time failed", deviceType);
         return false;
     }
+    return true;
+}
+
+bool VolumeDataMaintainer::SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume)
+{
+    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = SUCCESS;
+    switch (deviceType) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            ret = settingProvider.PutIntValue(UNSAFE_VOLUME_LEVEL_BT, volume);
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
+            ret = settingProvider.PutIntValue(UNSAFE_VOLUME_LEVEL, volume);
+            break;
+        default:
+            AUDIO_WARNING_LOG("the device type not support safe volume");
+            return false;
+    }
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("device:%{public}d, insert failed", deviceType);
+        return false;
+    }
+
+    return true;
+}
+
+bool VolumeDataMaintainer::GetRestoreVolumeLevel(DeviceType deviceType, int32_t &volume)
+{
+    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = SUCCESS;
+    int32_t value = 0;
+    switch (deviceType) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            ret = settingProvider.GetIntValue(UNSAFE_VOLUME_LEVEL_BT, value);
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
+            ret = settingProvider.GetIntValue(UNSAFE_VOLUME_LEVEL, value);
+            break;
+        default:
+            AUDIO_WARNING_LOG("the device type not support safe volume");
+            return false;
+    }
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("device:%{public}d, insert failed", deviceType);
+        return false;
+    }
+    volume = value;
     return true;
 }
 

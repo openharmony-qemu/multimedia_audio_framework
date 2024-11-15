@@ -83,6 +83,8 @@ public:
     bool GetSafeVolumeTime(DeviceType deviceType, int64_t &time);
     bool SaveSystemSoundUrl(const std::string &key, const std::string &value);
     bool GetSystemSoundUrl(const std::string &key, std::string &value);
+    bool SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume);
+    bool GetRestoreVolumeLevel(DeviceType deviceType, int32_t &volume);
     void RegisterCloned();
     bool SaveMicMuteState(bool isMute);
     bool GetMicMuteState(bool &isMute);
