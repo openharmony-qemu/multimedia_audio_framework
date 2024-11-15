@@ -467,6 +467,7 @@ ohos_shared_library("audio_policy_client") {
     "client/src/audio_policy_client_stub.cpp",
     "client/src/audio_policy_client_stub_impl.cpp",
     "client/src/audio_policy_manager.cpp",
+    "client/src/audio_policy_manager_device.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
     "client/src/audio_spatialization_state_change_listener_stub.cpp",

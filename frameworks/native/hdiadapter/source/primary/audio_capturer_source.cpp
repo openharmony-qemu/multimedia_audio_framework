@@ -909,6 +909,7 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
 
 void AudioCapturerSourceInner::CaptureFrameEcInternal(const RingBuffer &ringBuf)
 {
+    CHECK_AND_RETURN_LOG(audioCapture_, "audioCapture_ is nullptr");
     // mic frame just used for check, ec frame must be right
     struct AudioFrameLen frameLen = {};
     frameLen.frameLen = static_cast<uint64_t>(ringBuf.length);
@@ -939,6 +940,7 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
         uint32_t requestBytes = static_cast<uint32_t>(buffer.length);
         int32_t ret = 0;
         if (attr_.sourceType == SOURCE_TYPE_MIC_REF) {
+            CHECK_AND_RETURN_LOG(audioCapture_, "audioCapture_ is nullptr");
             ret = audioCapture_->CaptureFrame(
                 audioCapture_, reinterpret_cast<int8_t *>(buffer.data), &requestBytes, &replyBytes);
         } else {
@@ -981,6 +983,7 @@ float AudioCapturerSourceInner::GetMaxAmplitude()
 
 int32_t AudioCapturerSourceInner::StartNonblockingCapture()
 {
+    CHECK_AND_RETURN_RET_LOG(audioCapture_, ERR_INVALID_HANDLE, "audioCapture_ is nullptr");
     if (!started_) {
         int32_t ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
@@ -1049,7 +1052,7 @@ int32_t AudioCapturerSourceInner::Start(void)
         if (audioCapturerSourceCallback_ != nullptr) {
             audioCapturerSourceCallback_->OnCapturerState(true);
         }
-
+        CHECK_AND_RETURN_RET_LOG(audioCapture_, ERR_INVALID_HANDLE, "audioCapture_ is nullptr");
         int32_t ret = audioCapture_->Start(audioCapture_);
         CHECK_AND_RETURN_RET(ret >= 0, ERR_NOT_STARTED);
         started_ = true;
@@ -1081,6 +1084,7 @@ int32_t AudioCapturerSourceInner::SetVolume(float left, float right)
 
 int32_t AudioCapturerSourceInner::GetVolume(float &left, float &right)
 {
+    CHECK_AND_RETURN_RET_LOG(audioCapture_, ERR_INVALID_HANDLE, "audioCapture_ is nullptr");
     float val = 0.0;
     audioCapture_->GetVolume(audioCapture_, &val);
     left = val;

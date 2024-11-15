@@ -49,6 +49,7 @@ struct CallbackChangeInfo {
 class AudioPolicyManager {
 public:
     static AudioPolicyManager& GetInstance();
+    static const sptr<IAudioPolicy> GetAudioPolicyManagerProxy();
 
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
 

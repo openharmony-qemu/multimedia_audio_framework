@@ -215,6 +215,7 @@ audio_policy_client_sources_template = [
   "$audio_policy_service_sources_dir_template/client/src/audio_policy_client_stub.cpp",
   "$audio_policy_service_sources_dir_template/client/src/audio_policy_client_stub_impl.cpp",
   "$audio_policy_service_sources_dir_template/client/src/audio_policy_manager.cpp",
+  "$audio_policy_service_sources_dir_template/client/src/audio_policy_manager_device.cpp",
   "$audio_policy_service_sources_dir_template/client/src/audio_policy_manager_listener_stub.cpp",
   "$audio_policy_service_sources_dir_template/client/src/audio_routing_manager_listener_stub.cpp",
   "$audio_policy_service_sources_dir_template/client/src/audio_spatialization_state_change_listener_stub.cpp",

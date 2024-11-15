@@ -210,7 +210,7 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
     return userData->idx;
 }
 
-int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
+int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, bool isSync)
 {
     lock_guard<mutex> lock(lock_);
 
@@ -220,10 +220,18 @@ int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
         return ERROR;
     }
 
-    pa_operation *operation = pa_context_unload_module(mContext, audioHandleIndex, nullptr, nullptr);
-    if (operation == nullptr) {
-        AUDIO_ERR_LOG("pa_context_unload_module returned nullptr!");
-        return ERROR;
+    pa_operation *operation;
+    if (isSync) {
+        operation = pa_context_unload_module(mContext, audioHandleIndex, PaUnloadModuleCb,
+            reinterpret_cast<void*>(this));
+        CHECK_AND_RETURN_RET_LOG(operation, ERROR, "pa_context_unload_module sync returned nullptr!");
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mMainLoop);
+            if (pa_operation_get_state(operation) != PA_OPERATION_RUNNING) {break;}
+        }
+    } else {
+        operation = pa_context_unload_module(mContext, audioHandleIndex, nullptr, nullptr);
+        CHECK_AND_RETURN_RET_LOG(operation, ERROR, "pa_context_unload_module returned nullptr!");
     }
 
     pa_operation_unref(operation);
@@ -728,6 +736,13 @@ void PulseAudioServiceAdapterImpl::PaModuleLoadCb(pa_context *c, uint32_t idx, v
     return;
 }
 
+void PulseAudioServiceAdapterImpl::PaUnloadModuleCb(pa_context *c, int success, void *userdata)
+{
+    AUDIO_INFO_LOG("Entry. unload module result=%{public}d", success);
+    auto thiz = reinterpret_cast<PulseAudioServiceAdapterImpl *>(userdata);
+    pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
+}
+
 template <typename T>
 inline void CastValue(T &a, const char *raw)
 {
@@ -885,9 +900,14 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         userData.release();
         pa_operation_unref(operation);
     } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-        uint32_t sessionID = sourceIndexSessionIDMap.ReadVal(idx);
-        AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
-        g_audioServiceAdapterCallback->OnAudioStreamRemoved(sessionID);
+        uint32_t sessionID = 0;
+        if (sourceIndexSessionIDMap.Find(idx, sessionID) == true) {
+            AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
+            g_audioServiceAdapterCallback->OnAudioStreamRemoved(sessionID);
+            sourceIndexSessionIDMap.Erase(idx);
+        } else {
+            AUDIO_ERR_LOG("cannot find sessionID in sourceIndexSessionIDMap");
+        }
     }
 }
 

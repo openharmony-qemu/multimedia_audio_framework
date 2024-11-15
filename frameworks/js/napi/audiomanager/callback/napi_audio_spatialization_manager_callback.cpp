@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioSpatializationMgrCallback"
 #endif
-#include <thread>
 
 #include "js_native_api.h"
 #include "napi_audio_spatialization_manager_callback.h"
