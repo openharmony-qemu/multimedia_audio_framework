@@ -351,6 +351,14 @@ static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSourc
     return NORMAL_SOURCE_PRIORITY[newSource] > NORMAL_SOURCE_PRIORITY[currentSource];
 }
 
+static std::string GetField(const std::string &src, const char* field, const char sep)
+{
+    auto str = std::string(field) + '=';
+    auto pos = src.find(str) + str.length();
+    auto end = src.find(sep, pos);
+    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
+}
+
 AudioPolicyService::~AudioPolicyService()
 {
     AUDIO_INFO_LOG("~AudioPolicyService()");
@@ -2681,10 +2689,10 @@ void AudioPolicyService::FetchOutputDevice(vector<shared_ptr<AudioRendererChange
         if (NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason)) { continue; }
         MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs, reason);
     }
-    FetchEnd(isUpdateActiveDevice, runningStreamCount);
+    FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
 }
 
-void AudioPolicyService::FetchEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount)
+void AudioPolicyService::FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount)
 {
     if (isUpdateActiveDevice) {
         OnPreferredOutputDeviceUpdated(GetCurrentOutputDevice());
@@ -2964,6 +2972,11 @@ void AudioPolicyService::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeI
         audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId,
             desc->deviceType_);
     }
+    FetchInputEnd(isUpdateActiveDevice, runningStreamCount);
+}
+
+void AudioPolicyService::FetchInputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount)
+{
     if (isUpdateActiveDevice) {
         OnPreferredInputDeviceUpdated(GetCurrentInputDeviceType(), ""); // networkId is not used.
     }
@@ -3925,22 +3938,6 @@ void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::stri
     }
 }
 
-static std::string GetField(const std::string &src, const char* field, const char sep)
-{
-    auto str = std::string(field) + '=';
-    auto pos = src.find(str) + str.length();
-    auto end = src.find(sep, pos);
-    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
-}
-
-bool AudioPolicyService::NoNeedChangeUsbDevice(const string &address)
-{
-    auto key = string("need_change_usb_device#C") + GetField(address, "card", ';') + "D0";
-    auto ret = AudioServerProxy::GetInstance().GetAudioParameterProxy(key);
-    AUDIO_INFO_LOG("key=%{public}s, ret=%{public}s", key.c_str(), ret.c_str());
-    return ret == "false";
-}
-
 int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &isConnected,
     const std::string &address, DeviceRole role)
 {
@@ -3971,6 +3968,14 @@ int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &i
     }
 
     return SUCCESS;
+}
+
+bool AudioPolicyService::NoNeedChangeUsbDevice(const string &address)
+{
+    auto key = string("need_change_usb_device#C") + GetField(address, "card", ';') + "D0";
+    auto ret = AudioServerProxy::GetInstance().GetAudioParameterProxy(key);
+    AUDIO_INFO_LOG("key=%{public}s, ret=%{public}s", key.c_str(), ret.c_str());
+    return ret == "false";
 }
 
 void AudioPolicyService::ResetToSpeaker(DeviceType devType)
