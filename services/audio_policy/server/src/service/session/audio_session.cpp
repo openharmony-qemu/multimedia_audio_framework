@@ -131,5 +131,16 @@ bool AudioSession::IsAudioSessionEmpty()
     std::lock_guard<std::mutex> lock(sessionMutex_);
     return interruptMap_.size() == 0;
 }
+
+bool AudioSession::IsAudioRendererEmpty()
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    for (const auto &iter : interruptMap_) {
+        if (iter.second.first.audioFocusType.streamType != STREAM_DEFAULT) {
+            return false;
+        }
+    }
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS
