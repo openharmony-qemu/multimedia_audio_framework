@@ -76,6 +76,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest/audio_manager_stub_unit_test:audio_manager_stub_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
     "../services/audio_service/test/unittest/audio_server_unit_test:audio_server_unit_test",
+    "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
     "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_unit_test",
   ]
 
