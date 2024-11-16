@@ -2287,6 +2287,7 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(shared_ptr<AudioRendererCha
 {
     Trace trace("AudioPolicyService::MuteSinkPortForSwtichDevice");
     if (outputDevices.size() != 1) {
+        // mute primary when play music and ring
         if (IsStreamActive(STREAM_MUSIC)) {
             audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
         }
@@ -3479,6 +3480,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     std::vector<DeviceType> activeOutputDevices;
     bool haveArmUsbDevice = false;
     DealAudioSceneOutputDevices(audioScene, activeOutputDevices, haveArmUsbDevice);
+    // mute primary when play music and ring
     if (activeOutputDevices.size() > 1 && IsStreamActive(STREAM_MUSIC)) {
         audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
     }
