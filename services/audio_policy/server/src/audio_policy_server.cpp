@@ -184,6 +184,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
             SubscribeAccessibilityConfigObserver();
             InitKVStore();
+            RegisterDataObserver();
             break;
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
@@ -259,6 +260,7 @@ void AudioPolicyServer::HandleKvDataShareEvent()
         InitMicrophoneMute();
     }
     InitKVStore();
+    RegisterDataObserver();
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -554,13 +556,11 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
     if (action == "usual.event.DATA_SHARE_READY") {
-        RegisterDataObserver();
-        std::string deviceName = audioPolicyService_.GetDeviceNameFromDataShare();
-        audioPolicyService_.SetDisplayName(deviceName, true);
         if (isInitMuteState_ == false) {
             AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
             InitMicrophoneMute();
         }
+        audioPolicyService_.SetDataShareReady(true);
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
@@ -924,9 +924,9 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
     if (streamType == STREAM_ALL) {
         const std::vector<AudioStreamType> &streamTypeArray =
             (VolumeUtils::IsPCVolumeEnable())? GET_PC_STREAM_ALL_VOLUME_TYPES : GET_STREAM_ALL_VOLUME_TYPES;
-        for (auto audioSteamType : streamTypeArray) {
-            AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d ", audioSteamType);
-            int32_t setResult = SetSingleStreamVolume(audioSteamType, volumeLevel, isUpdateUi);
+        for (auto audioStreamType : streamTypeArray) {
+            AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d ", audioStreamType);
+            int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi);
             if (setResult != SUCCESS) {
                 return setResult;
             }
@@ -3009,8 +3009,6 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     audioPolicyService_.NotifyAccountsChanged(id);
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
-    std::string deviceName = audioPolicyService_.GetDeviceNameFromDataShare();
-    audioPolicyService_.SetDisplayName(deviceName, true);
 }
 
 int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)

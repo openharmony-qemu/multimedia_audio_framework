@@ -65,6 +65,7 @@ public:
     ErrCode PutLongValue(const std::string &key, int64_t value, std::string tableType = "", bool needNotify = true);
     ErrCode PutBoolValue(const std::string &key, bool value, std::string tableType = "", bool needNotify = true);
     bool IsValidKey(const std::string &key);
+    void SetDataShareReady(std::atomic<bool> isDataShareReady);
     sptr<AudioSettingObserver> CreateObserver(const std::string &key, AudioSettingObserver::UpdateFunc &func);
     static void ExecRegisterCb(const sptr<AudioSettingObserver> &observer);
     ErrCode RegisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
@@ -74,6 +75,7 @@ protected:
     ~AudioSettingProvider() override;
 
 private:
+    static bool isDataShareReady_;
     static void Initialize(int32_t systemAbilityId);
     static std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelper(std::string tableType = "");
     static bool ReleaseDataShareHelper(std::shared_ptr<DataShare::DataShareHelper> &helper);
