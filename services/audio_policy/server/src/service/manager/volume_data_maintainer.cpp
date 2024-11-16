@@ -119,6 +119,12 @@ bool VolumeDataMaintainer::GetFirstBoot(bool &firstBoot)
     return true;
 }
 
+void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    audioSettingProvider.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
 bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
 {
     std::lock_guard<std::mutex> lock(volumeForDbMutex_);

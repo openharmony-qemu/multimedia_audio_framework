@@ -308,6 +308,11 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
     }
 }
 
+void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",

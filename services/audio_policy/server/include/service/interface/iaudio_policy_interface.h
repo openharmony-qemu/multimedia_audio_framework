@@ -113,6 +113,8 @@ public:
 
     virtual void SetAbsVolumeMute(bool mute) = 0;
 
+    virtual void SetDataShareReady(std::atomic<bool> isDataShareReady) = 0;
+
     virtual bool IsAbsVolumeMute() const = 0;
 
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;

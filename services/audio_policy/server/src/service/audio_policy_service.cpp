@@ -4330,11 +4330,10 @@ std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareH
     return dataShareHelper;
 }
 
-int32_t AudioPolicyService::GetDefaultDeviceNameFromDataShareHelper(std::string &deviceName)
+int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &deviceName)
 {
-    lock_guard<mutex> lock(g_dataShareHelperMutex);
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
-    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "dataShareHelper is NULL");
+    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "GetDeviceNameFromDataShareHelper NULL");
 
     std::shared_ptr<Uri> uri = std::make_shared<Uri>(SETTINGS_DATA_BASE_URI);
     std::vector<std::string> columns;
@@ -4364,71 +4363,11 @@ int32_t AudioPolicyService::GetDefaultDeviceNameFromDataShareHelper(std::string 
     resultSet->GoToFirstRow();
     resultSet->GetColumnIndex(SETTINGS_DATA_FIELD_VALUE, columnIndex);
     resultSet->GetString(columnIndex, deviceName);
-    AUDIO_INFO_LOG("deviceName[%{public}s]", deviceName.c_str());
+    AUDIO_INFO_LOG("GetDeviceNameFromDataShareHelper deviceName[%{public}s]", deviceName.c_str());
 
     resultSet->Close();
     dataShareHelper->Release();
     return SUCCESS;
-}
-
-int32_t AudioPolicyService::GetUserSetDeviceNameFromDataShareHelper(std::string &deviceName)
-{
-    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
-    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "dataShareHelper is NULL");
-
-    int32_t osAccountId = AudioSettingProvider::GetCurrentUserId();
-    std::string accountIdStr = std::to_string(osAccountId);
-    std::shared_ptr<Uri> uri = std::make_shared<Uri>(std::string(SETTINGS_DATA_SECURE_URI) + accountIdStr +
-        "?Proxy=true&key=" + std::string(USER_DEFINED_STRING));
-
-    std::vector<std::string> columns;
-    columns.emplace_back(SETTINGS_DATA_FIELD_VALUE);
-    DataShare::DataSharePredicates predicates;
-    predicates.EqualTo(SETTINGS_DATA_FIELD_KEYWORD, USER_DEFINED_STRING);
-
-    WatchTimeout guard("dataShareHelper->Query:UserSetDeviceName");
-    auto resultSet = dataShareHelper->Query(*uri, predicates, columns);
-    if (resultSet == nullptr) {
-        AUDIO_ERR_LOG("Failed to query device name from dataShareHelper!");
-        dataShareHelper->Release();
-        return ERROR;
-    }
-    guard.CheckCurrTimeout();
-
-    int32_t numRows = 0;
-    resultSet->GetRowCount(numRows);
-    if (numRows <= 0) {
-        AUDIO_ERR_LOG("The result of querying is zero row!");
-        resultSet->Close();
-        dataShareHelper->Release();
-        return ERROR;
-    }
-
-    int columnIndex;
-    resultSet->GoToFirstRow();
-    resultSet->GetColumnIndex(SETTINGS_DATA_FIELD_VALUE, columnIndex);
-    resultSet->GetString(columnIndex, deviceName);
-    AUDIO_INFO_LOG("deviceName[%{public}s]", deviceName.c_str());
-
-    resultSet->Close();
-    dataShareHelper->Release();
-    return SUCCESS;
-}
-
-std::string AudioPolicyService::GetDeviceNameFromDataShare()
-{
-    std::string deviceName = "";
-    int32_t ret = GetUserSetDeviceNameFromDataShareHelper(deviceName);
-    if (ret == SUCCESS) {
-        return deviceName;
-    }
-
-    ret = GetDefaultDeviceNameFromDataShareHelper(deviceName);
-    if (ret == SUCCESS) {
-        return deviceName;
-    }
-    AUDIO_ERR_LOG("Get DeviceName From DataShare fail");
-    return deviceName;
 }
 
 bool AudioPolicyService::IsDataShareReady()
@@ -4452,6 +4391,23 @@ bool AudioPolicyService::IsDataShareReady()
         AUDIO_WARNING_LOG("DataShareHelper::Create failed: E_DATA_SHARE_NOT_READY");
         return false;
     }
+}
+
+void AudioPolicyService::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    audioPolicyManager_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
+void AudioPolicyService::RegisterNameMonitorHelper()
+{
+    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
+    CHECK_AND_RETURN_LOG(dataShareHelper != nullptr, "dataShareHelper is NULL");
+
+    auto uri = std::make_shared<Uri>(std::string(SETTINGS_DATA_BASE_URI) + "&key=" + PREDICATES_STRING);
+    sptr<AAFwk::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
+    dataShareHelper->RegisterObserver(*uri, settingDataObserver);
+
+    dataShareHelper->Release();
 }
 
 void AudioPolicyService::RegisterAccessibilityMonitorHelper()
@@ -4502,21 +4458,21 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
 {
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
         std::string devicesName = "";
-        devicesName = GetDeviceNameFromDataShare();
-        CHECK_AND_RETURN_LOG(devicesName != "", "Local init device failed");
+        int32_t ret  = GetDeviceNameFromDataShareHelper(devicesName);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
         deviceDescriptor->displayName_ = devicesName;
     } else {
 #ifdef FEATURE_DEVICE_MANAGER
         std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
         int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "init device failed");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UpdateDisplayName init device failed");
         std::vector<DistributedHardware::DmDeviceInfo> deviceList;
         if (DistributedHardware::DeviceManager::GetInstance()
             .GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
             for (auto deviceInfo : deviceList) {
                 std::string strNetworkId(deviceInfo.networkId);
                 if (strNetworkId == deviceDescriptor->networkId_) {
-                    AUDIO_INFO_LOG("remote name [%{public}s]", deviceInfo.deviceName);
+                    AUDIO_INFO_LOG("UpdateDisplayName remote name [%{public}s]", deviceInfo.deviceName);
                     deviceDescriptor->displayName_ = deviceInfo.deviceName;
                     break;
                 }
@@ -6755,17 +6711,11 @@ int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& s
 
 void AudioPolicyService::RegisterDataObserver()
 {
-    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
-    CHECK_AND_RETURN_LOG(dataShareHelper != nullptr, "dataShareHelper is NULL");
-
-    int32_t osAccountId = AudioSettingProvider::GetCurrentUserId();
-    std::string accountIdStr = std::to_string(osAccountId);
-    std::shared_ptr<Uri> uri = std::make_shared<Uri>(std::string(SETTINGS_DATA_SECURE_URI) + accountIdStr +
-        "?Proxy=true&key=" + std::string(USER_DEFINED_STRING));
-    sptr<AAFwk::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
-    dataShareHelper->RegisterObserver(*uri, settingDataObserver);
-
-    dataShareHelper->Release();
+    std::string devicesName = "";
+    int32_t ret = GetDeviceNameFromDataShareHelper(devicesName);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterDataObserver get devicesName failed");
+    SetDisplayName(devicesName, true);
+    RegisterNameMonitorHelper();
 }
 
 int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
