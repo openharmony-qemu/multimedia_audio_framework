@@ -678,7 +678,7 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
-    AUDIO_INFO_LOG("state:[%{public}d] reason:[%{public}d] device:[%{public}s]",
+    AUDIO_WARNING_LOG("state:[%{public}d] reason:[%{public}d] device:[%{public}s]",
         state, reason, GetEncryptAddr(device.GetDeviceAddr()).c_str());
     // SCO_DISCONNECTED = 3, SCO_CONNECTING = 4, SCO_DISCONNECTING = 5, SCO_CONNECTED = 6
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
@@ -730,7 +730,11 @@ void AudioHfpListener::OnHfpStackChanged(const BluetoothRemoteDevice &device, in
 
 void AudioHfpListener::OnVirtualDeviceChanged(int32_t action, std::string macAddress)
 {
+<<<<<<< HEAD
     AUDIO_WARNING_LOG("action: %{public}d device: %{public}s", action, GetEncryptAddr(macAddress).c_str());
+=======
+    AUDIO_WARNING_LOG("action: %{public}d device: %{public}s", action, GetEncryptAddr(device.GetDeviceAddr()).c_str());
+>>>>>>> 0e42ee3b758eacf9d6c1640dd24c8ff216f568ad
     if (action == static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_ADD)) {
         HfpBluetoothDeviceManager::SetHfpStack(BluetoothRemoteDevice(macAddress),
             BluetoothDeviceAction::VIRTUAL_DEVICE_ADD_ACTION);
