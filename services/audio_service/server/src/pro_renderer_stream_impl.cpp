@@ -160,7 +160,7 @@ int32_t ProRendererStreamImpl::InitParams()
             return ret;
         }
     }
-    uint32_t bufferSize = GetSamplePerFrame(desFormat_) * desSpanSize * desChannels;
+    uint32_t bufferSize = Util::GetSamplePerFrame(desFormat_) * desSpanSize * desChannels;
     sinkBuffer_.resize(DEFAULT_TOTAL_SPAN_COUNT, std::vector<char>(bufferSize, 0));
     for (int32_t i = 0; i < DEFAULT_TOTAL_SPAN_COUNT; i++) {
         writeQueue_.emplace(i);
@@ -624,29 +624,6 @@ void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_
     }
 }
 
-uint32_t ProRendererStreamImpl::GetSamplePerFrame(AudioSampleFormat format) const noexcept
-{
-    uint32_t audioPerSampleLength = 2; // 2 byte
-    switch (format) {
-        case AudioSampleFormat::SAMPLE_U8:
-            audioPerSampleLength = 1;
-            break;
-        case AudioSampleFormat::SAMPLE_S16LE:
-            audioPerSampleLength = 2; // 2 byte
-            break;
-        case AudioSampleFormat::SAMPLE_S24LE:
-            audioPerSampleLength = 3; // 3 byte
-            break;
-        case AudioSampleFormat::SAMPLE_S32LE:
-        case AudioSampleFormat::SAMPLE_F32LE:
-            audioPerSampleLength = 4; // 4 byte
-            break;
-        default:
-            break;
-    }
-    return audioPerSampleLength;
-}
-
 void ProRendererStreamImpl::SetOffloadDisable()
 {
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
@@ -672,7 +649,7 @@ void ProRendererStreamImpl::ConvertSrcToFloat(const BufferDesc &bufferDesc)
 
 void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 {
-    uint32_t samplePerFrame = GetSamplePerFrame(desFormat_);
+    uint32_t samplePerFrame = Util::GetSamplePerFrame(desFormat_);
     if (desFormat_ == AudioSampleFormat::SAMPLE_F32LE) {
         auto error = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), resampleDesBuffer.data(),
             resampleDesBuffer.size() * samplePerFrame);
@@ -703,12 +680,12 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     desSamplingRate_ = GetDirectSampleRate(streamInfo.samplingRate);
     desFormat_ = GetDirectFormat(streamInfo.format);
     spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
-    byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
+    byteSizePerFrame_ = Util::GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     handleTimeModel_.ConfigSampleRate(currentRate_);
     bufferInfo_.channelCount = streamInfo.channels;
     bufferInfo_.format = streamInfo.format;
-    bufferInfo_.samplePerFrame = GetSamplePerFrame(streamInfo.format);
+    bufferInfo_.samplePerFrame = Util::GetSamplePerFrame(streamInfo.format);
     bufferInfo_.frameSize = spanSizeInFrame_;
 }
 
