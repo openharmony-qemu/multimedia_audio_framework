@@ -240,7 +240,7 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
     auto resultSet = helper->Query(uri, predicates, columns);
     ReleaseDataShareHelper(helper);
     if (resultSet == nullptr) {
-        AUDIO_ERR_LOG("get resultset failed, key=%{public}s, uri=%{public}s", key.c_str(), uri.c_str());
+        AUDIO_ERR_LOG("helper->Query return nullptr");
         IPCSkeleton::SetCallingIdentity(callingIdentity);
         return ERR_INVALID_OPERATION;
     }
