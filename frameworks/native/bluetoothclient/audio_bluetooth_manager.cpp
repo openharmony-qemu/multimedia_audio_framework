@@ -545,6 +545,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     AUDIO_INFO_LOG("new sco category is %{public}d, last sco category is %{public}d", newScoCategory, lastScoCategory);
 
     if (lastScoCategory == newScoCategory) {
+        AUDIO_INFO_LOG("sco category %{public}d not change", newScoCategory);
         return SUCCESS;
     }
     std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
