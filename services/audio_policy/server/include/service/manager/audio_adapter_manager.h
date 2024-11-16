@@ -146,6 +146,8 @@ public:
 
     void SetAbsVolumeMute(bool mute);
 
+    void SetDataShareReady(std::atomic<bool> isDataShareReady);
+
     bool IsAbsVolumeMute() const;
 
     void SetVgsVolumeSupported(bool isVgsSupported);

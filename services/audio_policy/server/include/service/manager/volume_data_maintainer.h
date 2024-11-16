@@ -59,6 +59,7 @@ public:
     bool SetFirstBoot(bool fristBoot);
     bool GetFirstBoot(bool &firstBoot);
 
+    void SetDataShareReady(std::atomic<bool> isDataShareReady);
     bool SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
     bool GetVolume(DeviceType deviceType, AudioStreamType streamType);
     void SetStreamVolume(AudioStreamType streamType, int32_t volumeLevel);

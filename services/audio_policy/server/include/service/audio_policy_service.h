@@ -222,6 +222,10 @@ public:
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
 
     bool IsDataShareReady();
+
+    void SetDataShareReady(std::atomic<bool> isDataShareReady);
+
+    int32_t ResumeStreamState();
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
