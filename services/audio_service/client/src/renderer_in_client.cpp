@@ -583,6 +583,18 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
     Trace::CountVolume(traceTag_, *buffer);
+
+    if (gServerProxy_ == nullptr && getuid() == MEDIA_SERVICE_UID) {
+        uint32_t samplingRate = clientConfig_.streamInfo.samplingRate;
+        uint32_t channels = clientConfig_.streamInfo.channels;
+        uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
+        // calculate wait time by buffer size, 10e6 is converting seconds to microseconds 
+        uint32_t waitTimeUs = bufferSize * 10e6 / (samplingRate * channels * samplePerFrame);
+        AUDIO_ERR_LOG("server is died! wait %{public}d us", waitTimeUs);
+        usleep(waitTimeUs);
+        return ERR_WRITE_BUFFER;
+    }
+
     CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
     if (clientBuffer_->GetStreamStatus() == nullptr) {
         AUDIO_ERR_LOG("The stream status is null!");
