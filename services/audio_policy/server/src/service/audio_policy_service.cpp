@@ -9027,9 +9027,13 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     return openRet;
 }
 
-bool  AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
+bool AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
 {
 #ifdef AVSESSION_ENABLE
+    // Temporary solution to avoid performance issues
+    if (uid == BOOTUP_MUSIC_UID) {
+        return true;
+    }
     return OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
 #endif
     return true;

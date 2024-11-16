@@ -3155,6 +3155,11 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
 
 bool AudioPolicyServer::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
 {
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != MEDIA_SERVICE_UID) {
+        auto callerPid = IPCSkeleton::GetCallingPid();
+        return audioPolicyService_.IsAllowedPlayback(callerUid, callerPid);
+    }
     return audioPolicyService_.IsAllowedPlayback(uid, pid);
 }
 
