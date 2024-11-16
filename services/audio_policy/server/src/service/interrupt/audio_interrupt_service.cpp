@@ -1558,7 +1558,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
             if (EvaluateWhetherContinue(incoming, inprocessing, focusEntry, bConcurrency)) { continue; }
             auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
             if (pos == HINT_STATE_MAP.end()) { continue; }
-            if (focusEntry.actionOn == CURRENT) {
+            if (focusEntry.actionOn == CURRENT && pos->second > iter->second) {
                 iter->second = pos->second;
             } else {
                 AudioFocuState newState = pos->second;
