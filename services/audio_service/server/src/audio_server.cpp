@@ -95,6 +95,7 @@ const int32_t API_VERSION_REMAINDER = 1000;
 static constexpr int32_t VM_MANAGER_UID = 7700;
 static const int32_t FAST_DUMPINFO_LEN = 2;
 static const int32_t BUNDLENAME_LENGTH_LIMIT = 1024;
+static const size_t PARAMETER_SET_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
 constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 40;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
@@ -441,6 +442,8 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "A2dp offload modify audio settings permission denied");
     }
 
+    CHECK_AND_RETURN_LOG(audioParameters.size() < PARAMETER_SET_LIMIT,
+        "SetAudioParameter failed! audioParameters_map is too large!");
     AudioServer::audioParameters[key] = value;
 
     // send it to hal
