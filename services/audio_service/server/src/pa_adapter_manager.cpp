@@ -662,9 +662,8 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
 
     const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK :
         (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
-    uint32_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
-        PA_STREAM_VARIABLE_RATE;
-    if (source == SOURCE_TYPE_PLAYBACK_CAPTURE){
+    uint32_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED | PA_STREAM_VARIABLE_RATE;
+    if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         flags |= PA_STREAM_DONT_MOVE; //inner cap source-output,should not be moved!
     }
 
