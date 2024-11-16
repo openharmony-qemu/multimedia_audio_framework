@@ -73,43 +73,13 @@ static constexpr unsigned int AUDIO_XCOLLIE_FLAG_RECOVERY = (1 << 1); // die whe
 
 class Util {
 public:
-    static bool IsDualToneStreamType(const AudioStreamType streamType)
-    {
-        return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
-    }
+    static bool IsDualToneStreamType(const AudioStreamType streamType);
 
-    static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
-    {
-        return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE;
-    }
+    static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
 
-    static bool IsRingerAudioScene(const AudioScene &audioScene)
-    {
-        return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
-    }
+    static bool IsRingerAudioScene(const AudioScene &audioScene);
 
-    static uint32_t GetSamplePerFrame(const AudioSampleFormat &format)
-    {
-        uint32_t audioPerSampleLength = 2; // 2 byte
-        switch (format) {
-            case AudioSampleFormat::SAMPLE_U8:
-                audioPerSampleLength = 1;
-                break;
-            case AudioSampleFormat::SAMPLE_S16LE:
-                audioPerSampleLength = 2; // 2 byte
-                break;
-            case AudioSampleFormat::SAMPLE_S24LE:
-                audioPerSampleLength = 3; // 3 byte
-                break;
-            case AudioSampleFormat::SAMPLE_S32LE:
-            case AudioSampleFormat::SAMPLE_F32LE:
-                audioPerSampleLength = 4; // 4 byte
-                break;
-            default:
-                break;
-        }
-        return audioPerSampleLength;
-    }
+    static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);
 };
 
 class Trace {
