@@ -198,6 +198,7 @@ const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 const uint32_t REHANDLE_DEVICE_RETRY_INTERVAL_IN_MICROSECONDS = 30000;
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
+const int32_t DUAL_TONE_RING_VOLUME = 0;
 #ifdef BLUETOOTH_ENABLE
 const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
@@ -881,6 +882,10 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
 
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
 {
+    if (streamType == STREAM_RING && !IsRingerModeMute()) {
+        AUDIO_PRERELEASE_LOGW("return 0 when dual tone ring");
+        return DUAL_TONE_RING_VOLUME;
+    }
     {
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
         DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
@@ -8865,8 +8870,8 @@ int32_t AudioPolicyService::ResetRingerModeMute()
             std::chrono::milliseconds(WAIT_RINGER_MODE_MUTE_RESET_TIME_MS),
             [this] { return !ringerModeMute_.load(); }
         );
-        if (!resetWaiting) {
-            AUDIO_INFO_LOG("reset ringer mode mute after time out.");
+        if (!resetWaiting || audioScene_ == AUDIO_SCENE_DEFAULT) {
+            AUDIO_INFO_LOG("reset ringer mode mute");
             if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
                 ringerModeMute_.store(true);
             }

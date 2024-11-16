@@ -478,7 +478,7 @@ int32_t AudioStreamCollector::UpdateRendererStreamInternal(AudioStreamChangeInfo
     }
 
     AUDIO_ERR_LOG("Not found clientUid:%{public}d sessionId:%{public}d",
-        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.clientUID);
+        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
     return ERROR;
 }
 
