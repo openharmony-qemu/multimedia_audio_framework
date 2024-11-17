@@ -54,7 +54,8 @@ AudioDownMixStereo::AudioDownMixStereo() : handle_(nullptr), mixer_(nullptr)
 AudioDownMixStereo::~AudioDownMixStereo()
 {
     if (mixer_) {
-        delete(mixer_);
+        free(mixer_);
+        mixer_ = nullptr;
     }
     if (handle_) {
 #ifndef TEST_COVERAGE
