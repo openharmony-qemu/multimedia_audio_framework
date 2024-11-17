@@ -386,7 +386,10 @@ void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void
 
 void PaCapturerStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
 {
-     CHECK_AND_RETURN_LOG(userdata, "PAStreamMovedCb: userdata is null");
+    if (!userdata) {
+        AUDIO_ERR_LOG("PAStreamMovedCb: userdata is null");
+        return;
+    }
 
     // get stream informations.
     uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
