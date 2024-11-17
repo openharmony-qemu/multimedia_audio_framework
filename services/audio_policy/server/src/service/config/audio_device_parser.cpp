@@ -148,12 +148,11 @@ void AudioDeviceParser::ParserDevicePrivacyInfoList(xmlNode *node, std::list<Dev
 void AudioDeviceParser::ParseAudioDevicePrivacyType(xmlNode *node, AudioDevicePrivacyType &deviceType)
 {
     xmlNode *currNode = node;
-    std::string adapterName = ExtractPropertyValue("name", currNode);
-
     while (currNode != nullptr) {
         //read deviceType
         if (currNode->type == XML_ELEMENT_NODE &&
             (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("adapter")))) {
+            std::string adapterName = ExtractPropertyValue("name", currNode);
             if (adapterName.empty()) {
                 AUDIO_ERR_LOG("AudioDeviceParser: No name provided for the adapter %{public}s", node->name);
                 return;
