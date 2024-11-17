@@ -1200,13 +1200,14 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
     }
     int32_t pid = audioInterrupt.pid;
     if (!audioFocusInfoList.empty() && (itZone->second != nullptr)) {
-        // If the session is present in audioFocusInfoList and not Capturer, remove and treat it as a new request
-        AUDIO_DEBUG_LOG("audioFocusInfoList is not empty, check whether the session is present");
+        // If the session is present in audioFocusInfoList and the placeholder's stream type is not VoIP communication,
+        // and the incoming stream type is not Capturer, remove and treat it as a new request
+        AUDIO_DEBUG_LOG("audioFocusInfoList is not empty, check if the session meets the removal criteria");
         audioFocusInfoList.remove_if(
             [&audioInterrupt, &pid](const std::pair<AudioInterrupt, AudioFocuState> &audioFocus) {
             return audioFocus.first.sessionId == audioInterrupt.sessionId ||
                 (audioFocus.first.pid == pid && audioFocus.second == PLACEHOLDER &&
-                audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
+                audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID &&
                 audioFocus.first.audioFocusType.streamType != STREAM_VOICE_COMMUNICATION);
         });
 
