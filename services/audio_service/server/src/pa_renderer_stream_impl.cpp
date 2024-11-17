@@ -753,7 +753,7 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
     // Return 1 if the sink or source this stream is connected to has been suspended.
     // This will return 0 if not, and a negative value on error.
     int res = pa_stream_is_suspended(stream);
-    AUDIO_DEBUG_LOG("PAstream:[%{public}d] moved to index:[%{public}d] suspended:[%{public}d]",
+    AUDIO_WARNING_LOG("PAstream:[%{public}d] moved to index:[%{public}d] suspended:[%{public}d]",
         streamIndex, deviceIndex, res);
 }
 
