@@ -651,8 +651,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     uint32_t tlength = 4; // 4 is tlength of playback
     uint32_t maxlength = 4; // 4 is max buffer length of playback
     uint32_t prebuf = 1; // 1 is prebuf of playback
- 
-    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
+     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         maxlength = 20; // 20 for cover offload
         prebuf = 2; // 2 is double of normal, use more prebuf for dup stream
     }
@@ -665,7 +664,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
-    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK :
+    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK.c_str() :
         (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
     uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;
