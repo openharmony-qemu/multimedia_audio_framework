@@ -70,6 +70,7 @@ static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
+static const int32_t WAIT_FOR_NEXT_CB = 5; //ms
 static const int32_t HALF_FACTOR = 2;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
@@ -364,8 +365,17 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
     }
-    if (curStreamParams_.encoding == ENCODING_PCM && bufferDesc.dataLength != 0) {
-        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
+    if (curStreamParams_.encoding == ENCODING_PCM) {
+        if (bufferDesc.dataLength != 0) {
+            result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
+            sleepCount_ = LOG_COUNT_LIMIT;
+        } else {
+            if (sleepCount_++ == LOG_COUNT_LIMIT) {
+                sleepCount_ = 0;
+                AUDIO_WARNING_LOG("OnWriteData Process 1st or 500 times INVALID buffer");
+            }
+            sleep(WAIT_FOR_NEXT_CB);
+        }
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
