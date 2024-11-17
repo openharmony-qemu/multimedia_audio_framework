@@ -225,6 +225,9 @@ private:
     bool ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptEventInternal &interruptEvent);
 
     bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt);
+    bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
+        &audioFocusInfoList);
+
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;
