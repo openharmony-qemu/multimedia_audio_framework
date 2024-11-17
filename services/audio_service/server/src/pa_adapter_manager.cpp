@@ -662,12 +662,13 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
 
     const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK :
         (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
-    uint32_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED | PA_STREAM_VARIABLE_RATE;
-    if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        flags |= PA_STREAM_DONT_MOVE; //inner cap source-output,should not be moved!
+    uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
+        PA_STREAM_VARIABLE_RATE;
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
+        flags |= PA_STREAM_DONT_MOVE; // should not move dup streams
     }
-
-    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr, static_cast<pa_stream_flags_t>(flags));
+    int32_t result = pa_stream_connect_playback(paStream, sinkName, &bufferAttr, static_cast<pa_stream_flags_t>(flags),
+        nullptr, nullptr);
     if (result < 0) {
         int32_t error = pa_context_errno(context_);
         AUDIO_ERR_LOG("connection to stream error: %{public}d -- %{public}s,result:%{public}d", error,
@@ -689,9 +690,12 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
         bufferAttr.maxlength, bufferAttr.fragsize);
 
     const char *cDeviceName = (deviceName == "") ? nullptr : deviceName.c_str();
-    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr,
-        (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
-        PA_STREAM_VARIABLE_RATE));
+
+    uint32_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED | PA_STREAM_VARIABLE_RATE;
+    if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        flags |= PA_STREAM_DONT_MOVE; //inner cap source-output,should not be moved!
+    }
+    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr, static_cast<pa_stream_flags_t>(flags));
     // PA_STREAM_ADJUST_LATENCY exist, return peek length from server;
     if (result < 0) {
         int32_t error = pa_context_errno(context_);
