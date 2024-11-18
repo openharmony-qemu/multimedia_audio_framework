@@ -248,7 +248,7 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
     resultSet->GetRowCount(count);
     if (count == 0) {
         AUDIO_WARNING_LOG("not found value, key=%{public}s, uri=%{public}s, count=%{public}d", key.c_str(),
-            uri.c_str(), count);
+            uri.ToString().c_str(), count);
         IPCSkeleton::SetCallingIdentity(callingIdentity);
         resultSet->Close();
         return ERR_NAME_NOT_FOUND;
@@ -263,7 +263,7 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
         return ERR_INVALID_VALUE;
     } else {
         AUDIO_INFO_LOG("Read audio_info_database with key: %{public}s value: %{public}s in uri=%{public}s ",
-            key.c_str(), value.c_str(), uri.c_str());
+            key.c_str(), value.c_str(), uri.ToString().c_str());
     }
     resultSet->Close();
     IPCSkeleton::SetCallingIdentity(callingIdentity);
