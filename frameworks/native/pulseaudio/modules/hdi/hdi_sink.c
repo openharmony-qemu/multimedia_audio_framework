@@ -1330,7 +1330,6 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
 
     uint32_t streamIndex = sinkIn->index;
     uint32_t sinkFadeoutPause = GetFadoutState(streamIndex);
-
     if (sinkFadeoutPause == 2) { // 2 fading done
         silenceData(infoIn, si);
         AUDIO_PRERELEASE_LOGI("silenceData.");
