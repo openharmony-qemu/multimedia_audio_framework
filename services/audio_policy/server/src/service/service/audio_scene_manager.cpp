@@ -61,13 +61,21 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene)
     }
 }
 
+bool AudioSceneManager::IsStreamActive(AudioStreamType streamType) const
+{
+    CHECK_AND_RETURN_RET(streamType != STREAM_VOICE_CALL ||
+        GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL, true);
+
+    return streamCollector_.IsStreamActive(streamType);
+}
+
 int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOffloadState state)
 {
     std::vector<DeviceType> activeOutputDevices;
     bool haveArmUsbDevice = false;
     DealAudioSceneOutputDevices(audioScene, activeOutputDevices, haveArmUsbDevice);
     // mute primary when play music and ring
-    if (activeOutputDevices.size() > 1 && audioVolumeManager_.IsStreamActive(STREAM_MUSIC)) {
+    if (activeOutputDevices.size() > 1 && IsStreamActive(STREAM_MUSIC)) {
         audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
     }
     int32_t result = SUCCESS;

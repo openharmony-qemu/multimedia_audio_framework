@@ -479,8 +479,6 @@ public:
     int32_t UnsetAudioDeviceAnahsCallback();
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
-    int32_t DealWithEventVolume(const int32_t notificationId);
-
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
 
 private:

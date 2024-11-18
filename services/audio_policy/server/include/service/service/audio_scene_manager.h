@@ -30,7 +30,9 @@
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_router_center.h"
+#include "audio_stream_collector.h"
 
+#include "audio_iohandle_map.h"
 #include "audio_active_device.h"
 
 namespace OHOS {
@@ -48,9 +50,12 @@ public:
     AudioScene GetAudioScene(bool hasSystemPermission = true) const;
     AudioScene GetLastAudioScene() const;
     bool IsSameAudioScene();
+    bool IsStreamActive(AudioStreamType streamType) const;
 private:
     AudioSceneManager() : audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
-        audioActiveDevice_(AudioActiveDevice::GetInstance()) {}
+        streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+        audioActiveDevice_(AudioActiveDevice::GetInstance()),
+        audioIOHandleMap_(AudioIOHandleMap::GetInstance()) {}
     ~AudioSceneManager() {}
     void DealAudioSceneOutputDevices(const AudioScene &audioScene, std::vector<DeviceType> &activeOutputDevices,
         bool &haveArmUsbDevice);
@@ -59,7 +64,9 @@ private:
     AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;
 
     AudioRouterCenter& audioRouterCenter_;
+    AudioStreamCollector& streamCollector_;
     AudioActiveDevice& audioActiveDevice_;
+    AudioIOHandleMap& audioIOHandleMap_;
 };
 
 }

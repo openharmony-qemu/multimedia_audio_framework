@@ -561,44 +561,6 @@ void AudioPolicyService::SubscribeSafeVolumeEvent()
     EventFwk::CommonEventManager::SubscribeCommonEvent(commonSubscribePtr);
 }
 
-int32_t AudioPolicyService::DealWithEventVolume(const int32_t notificationId)
-{
-    DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
-    int32_t restoreVolume = 0;
-    const int32_t ONE_VOLUME_LEVEL = 1;
-    int32_t currentVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
-    int32_t ret = 0;
-    if (IsBlueTooth(curOutputDeviceType)) {
-        switch (notificationId) {
-            case RESTORE_VOLUME_NOTIFICATION_ID:
-                restoreVolume = audioPolicyManager_.GetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP);
-                ret = SetSystemVolumeLevel(STREAM_MUSIC, restoreVolume);
-                break;
-            case INCREASE_VOLUME_NOTIFICATION_ID:
-                ret = SetSystemVolumeLevel(STREAM_MUSIC, currentVolumeLevel + ONE_VOLUME_LEVEL);
-                break;
-            default:
-                AUDIO_ERR_LOG("current state unsupport safe volume");
-        }
-    } else if (IsWiredHeadSet(curOutputDeviceType)) {
-        switch (notificationId) {
-            case RESTORE_VOLUME_NOTIFICATION_ID:
-                restoreVolume = audioPolicyManager_.GetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET);
-                ret = SetSystemVolumeLevel(STREAM_MUSIC, restoreVolume);
-                break;
-            case INCREASE_VOLUME_NOTIFICATION_ID:
-                ret = SetSystemVolumeLevel(STREAM_MUSIC, currentVolumeLevel + ONE_VOLUME_LEVEL);
-                break;
-            default:
-                AUDIO_ERR_LOG("current state unsupport safe volume");
-        }
-    } else {
-        AUDIO_ERR_LOG("current output device unsupport safe volume");
-        ret = ERROR;
-    }
-    return ret;
-}
-
 void AudioPolicyService::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
 {
     audioVolumeManager_.OnReceiveEvent(eventData);
@@ -1253,7 +1215,7 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<SourceOutput> so
 
 bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
 {
-    return audioVolumeManager_.IsStreamActive(streamType);
+    return audioSceneManager_.IsStreamActive(streamType);
 }
 
 void AudioPolicyService::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
@@ -1928,7 +1890,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
         !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED &&
         audioSceneManager_.IsSameAudioScene() && !shouldUpdateDeviceDueToDualTone_)) {
         AUDIO_WARNING_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
-        AudioDeviceDescriptor tmpOutputDeviceDesc = GetCurrentOutputDevice();
+        AudioDeviceDescriptor tmpOutputDeviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
         unique_ptr<AudioDeviceDescriptor> preferredDesc =
             audioAffinityManager_.GetRendererDevice(rendererChangeInfo->clientUID);
         if (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) && !IsSameDevice(desc, tmpOutputDeviceDesc)

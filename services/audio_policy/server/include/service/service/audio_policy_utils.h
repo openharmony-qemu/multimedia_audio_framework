@@ -39,6 +39,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
+
 class AudioPolicyUtils {
 public:
     static AudioPolicyUtils& GetInstance()

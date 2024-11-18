@@ -69,7 +69,7 @@ public:
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType) const;
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
     int32_t DisableSafeMediaVolume();
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
@@ -87,13 +87,11 @@ public:
     bool IsRingerModeMute();
     void SetRingerModeMute(bool flag);
     int32_t ResetRingerModeMute();
-    bool IsStreamActive(AudioStreamType streamType) const;
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     int32_t SetVoiceRingtoneMute(bool isMute);
     void SetVoiceCallVolume(int32_t volume);
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioSceneManager_(AudioSceneManager::GetInstance()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
@@ -120,6 +118,7 @@ private:
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
+    int32_t DealWithEventVolume(const int32_t notificationId);
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
@@ -164,7 +163,6 @@ private:
     bool increaseNIsShowing_ = false;
 
     IAudioPolicyInterface& audioPolicyManager_;
-    AudioStreamCollector& streamCollector_;
     AudioA2dpDevice& audioA2dpDevice_;
     AudioSceneManager& audioSceneManager_;
     AudioActiveDevice& audioActiveDevice_;
