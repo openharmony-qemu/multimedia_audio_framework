@@ -402,6 +402,27 @@ void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
 }
+
+void AudioVolume::SetFadoutState(uint32_t streamIndex, uint32_t fadeoutState)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    fadeoutState_.insert_or_assign(streamIndex, fadeoutState);
+}
+
+uint32_t AudioVolume::GetFadoutState(uint32_t streamIndex)
+{
+    std::shared_lock<std::shared_mutex> lock(fadoutMutex_);
+    auto it = fadeoutState_.find(streamIndex);
+    if (it != fadeoutState_.end()) { return it->second; }
+    AUDIO_WARNING_LOG("No such streamIndex in map!");
+    return 3; // 3 invalid
+}
+
+void AudioVolume::RemoveFadoutState(uint32_t streamIndex)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    fadeoutState_.erase(streamIndex);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -449,6 +470,16 @@ bool IsSameVolume(float x, float y)
 void MonitorVolume(uint32_t sessionId, bool isOutput)
 {
     AudioVolume::GetInstance()->Monitor(sessionId, isOutput);
+}
+
+void SetFadoutState(uint32_t streamIndex, uint32_t fadoutState)
+{
+    AudioVolume::GetInstance()->SetFadoutState(streamIndex, fadoutState);
+}
+
+uint32_t GetFadoutState(uint32_t streamIndex)
+{
+    return AudioVolume::GetInstance()->GetFadoutState(streamIndex);
 }
 #ifdef __cplusplus
 }

@@ -32,6 +32,7 @@
 #include "audio_utils.h"
 #include "i_audio_renderer_sink.h"
 #include "policy_handler.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -144,6 +145,8 @@ int32_t PaRendererStreamImpl::InitParams()
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
 
     lock.Unlock();
+
+    AudioVolume::GetInstance()->SetFadoutState(sinkInputIndex_, 0);
     // In plan: Get data from xml
     effectSceneName_ = processConfig_.rendererInfo.sceneType;
 
@@ -196,7 +199,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     }
     pa_proplist *propList = pa_proplist_new();
     if (propList != nullptr) {
-        pa_proplist_sets(propList, "fadeoutPause", "1");
+        AudioVolume::GetInstance()->SetFadoutState(sinkInputIndex_, 1); // 1 start fadout
         pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
             nullptr, nullptr);
         pa_proplist_free(propList);
@@ -301,7 +304,7 @@ int32_t PaRendererStreamImpl::Stop()
 
     pa_proplist *propList = pa_proplist_new();
     if (propList != nullptr) {
-        pa_proplist_sets(propList, "fadeoutPause", "1");
+        AudioVolume::GetInstance()->SetFadoutState(sinkInputIndex_, 1); // 1 start fadout
         pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
             nullptr, nullptr);
         pa_proplist_free(propList);
@@ -373,6 +376,8 @@ int32_t PaRendererStreamImpl::Release()
         audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
     }
 
+    AudioVolume::GetInstance()->RemoveFadoutState(sinkInputIndex_);
+
     PaLockGuard lock(mainloop_);
     if (paStream_) {
         pa_stream_set_state_callback(paStream_, nullptr, nullptr);
@@ -385,7 +390,7 @@ int32_t PaRendererStreamImpl::Release()
         pa_stream_disconnect(paStream_);
         releasedFlag_ = true;
     }
-    
+
     return SUCCESS;
 }
 

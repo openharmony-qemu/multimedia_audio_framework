@@ -56,6 +56,10 @@ public:
     void Dump(std::string &dumpString);
     void Monitor(uint32_t sessionId, bool isOutput);
 
+    void SetFadoutState(uint32_t streamIndex, uint32_t fadoutState);
+    uint32_t GetFadoutState(uint32_t streamIndex);
+    void RemoveFadoutState(uint32_t streamIndex);
+
 private:
     AudioVolume();
 
@@ -66,6 +70,9 @@ private:
     std::unordered_map<uint32_t, std::pair<float, int32_t>> monitorVolume_ {};
     std::shared_mutex volumeMutex_ {};
     std::shared_mutex systemMutex_ {};
+
+    std::shared_mutex fadoutMutex_ {};
+    std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
 };
 
 class StreamVolume {

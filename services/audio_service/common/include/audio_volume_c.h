@@ -36,6 +36,10 @@ bool IsSameVolume(float volumeA, float volumeB);
 
 void MonitorVolume(uint32_t sessionId, bool isOutput);
 
+void SetFadoutState(uint32_t streamIndex, uint32_t fadoutState);
+
+uint32_t GetFadoutState(uint32_t streamIndex);
+
 #ifdef __cplusplus
 }
 #endif
