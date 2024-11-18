@@ -51,11 +51,6 @@ namespace AudioStandard {
 using namespace std;
 namespace {
 static const char* INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
-static const char* PIPE_PRIMARY_OUTPUT = "primary_output";
-static const char* PIPE_PRIMARY_INPUT = "primary_input";
-static const char* PIPE_USB_ARM_OUTPUT = "usb_arm_output";
-static const char* PIPE_USB_ARM_INPUT = "usb_arm_input";
-static const char* PIPE_DP_OUTPUT = "dp_output";
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const char* PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
@@ -67,7 +62,6 @@ static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 400000; // 400ms
 static const int64_t NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS = 1000000; // 1s
 static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
-static const unsigned int BUFFER_CALC_20MS = 20;
 static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const std::vector<std::string> SourceNames = {
@@ -97,66 +91,17 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALL
 };
 
-static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
-    {"s16le", SAMPLE_S16LE},
-    {"s24le", SAMPLE_S24LE},
-    {"s32le", SAMPLE_S32LE},
+static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
+    // from high to low
+    {SOURCE_TYPE_VOICE_CALL, 5},
+    {SOURCE_TYPE_VOICE_COMMUNICATION, 4},
+    {SOURCE_TYPE_VOICE_TRANSCRIPTION, 3},
+    {SOURCE_TYPE_MIC, 2},
+    {SOURCE_TYPE_VOICE_RECOGNITION, 1},
+    {SOURCE_TYPE_INVALID, 0},
 };
 
-static const std::vector<DeviceType> MIC_REF_DEVICES = {
-    DEVICE_TYPE_WIRED_HEADSET,
-    DEVICE_TYPE_USB_HEADSET,
-    DEVICE_TYPE_BLUETOOTH_SCO,
-    DEVICE_TYPE_USB_ARM_HEADSET
-};
-
-static const std::map<std::pair<DeviceType, DeviceType>, EcType> DEVICE_TO_EC_TYPE = {
-    {{DEVICE_TYPE_MIC, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_MIC, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_MIC, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_MIC, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_MIC, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
-
-    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
-
-    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
-
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
-
-    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
-};
-
-std::map<std::string, AudioSampleFormat> AudioPolicyService::formatStrToEnum = {
-    {"s16", SAMPLE_S16LE},
-    {"s24", SAMPLE_S24LE},
-    {"s32", SAMPLE_S32LE},
-    {"s16le", SAMPLE_S16LE},
-    {"s24le", SAMPLE_S24LE},
-    {"s32le", SAMPLE_S32LE},
-};
-
-std::map<std::string, ClassType> AudioPolicyService::portStrToEnum = {
+static std::map<std::string, ClassType> portStrToEnum = {
     {PRIMARY_SPEAKER, TYPE_PRIMARY},
     {PRIMARY_MIC, TYPE_PRIMARY},
     {PRIMARY_WAKEUP_MIC, TYPE_PRIMARY},
@@ -168,16 +113,6 @@ std::map<std::string, ClassType> AudioPolicyService::portStrToEnum = {
     {FILE_SINK, TYPE_FILE_IO},
     {FILE_SOURCE, TYPE_FILE_IO},
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
-};
-
-static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
-    // from high to low
-    {SOURCE_TYPE_VOICE_CALL, 5},
-    {SOURCE_TYPE_VOICE_COMMUNICATION, 4},
-    {SOURCE_TYPE_VOICE_TRANSCRIPTION, 3},
-    {SOURCE_TYPE_MIC, 2},
-    {SOURCE_TYPE_VOICE_RECOGNITION, 1},
-    {SOURCE_TYPE_INVALID, 0},
 };
 
 static const char* SETTINGS_DATA_BASE_URI =
@@ -200,10 +135,7 @@ const int MEDIA_RENDER_ID = 0;
 const int CALL_RENDER_ID = 1;
 const int CALL_CAPTURE_ID = 2;
 const int RECORD_CAPTURE_ID = 3;
-constexpr int32_t MS_PER_S = 1000;
 const int32_t DATA_LINK_CONNECTED = 11;
-const uint32_t PC_MIC_CHANNEL_NUM = 4;
-const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
 #ifdef BLUETOOTH_ENABLE
 static sptr<IStandardAudioService> g_btProxy = nullptr;
@@ -215,19 +147,6 @@ const unsigned int BLUETOOTH_TIME_OUT_SECONDS = 8;
 mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
-
-static string ParseAudioFormat(string format)
-{
-    if (format == "AUDIO_FORMAT_PCM_16_BIT") {
-        return "s16le";
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT" || format == "AUDIO_FORMAT_PCM_24_BIT_PACKED") {
-        return "s24le";
-    } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
-        return "s32le";
-    } else {
-        return "s16le";
-    }
-}
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -243,39 +162,6 @@ static std::string GetEncryptAddr(const std::string &addr)
         out[i] = tmp[i];
     }
     return out;
-}
-
-static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
-{
-    if (moduleInfo.role == "sink") {
-        auto sinkRate_begin = deviceInfo.find("sink_rate:");
-        auto sinkRate_end = deviceInfo.find_first_of(";", sinkRate_begin);
-        moduleInfo.rate = deviceInfo.substr(sinkRate_begin + std::strlen("sink_rate:"),
-            sinkRate_end - sinkRate_begin - std::strlen("sink_rate:"));
-        auto sinkFormat_begin = deviceInfo.find("sink_format:");
-        auto sinkFormat_end = deviceInfo.find_first_of(";", sinkFormat_begin);
-        string format = deviceInfo.substr(sinkFormat_begin + std::strlen("sink_format:"),
-            sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
-        moduleInfo.format = ParseAudioFormat(format);
-    } else {
-        auto sourceRate_begin = deviceInfo.find("source_rate:");
-        auto sourceRate_end = deviceInfo.find_first_of(";", sourceRate_begin);
-        moduleInfo.rate = deviceInfo.substr(sourceRate_begin + std::strlen("source_rate:"),
-            sourceRate_end - sourceRate_begin - std::strlen("source_rate:"));
-        auto sourceFormat_begin = deviceInfo.find("source_format:");
-        auto sourceFormat_end = deviceInfo.find_first_of(";", sourceFormat_begin);
-        string format = deviceInfo.substr(sourceFormat_begin + std::strlen("source_format:"),
-            sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
-        moduleInfo.format = ParseAudioFormat(format);
-    }
-
-    if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
-        uint32_t bufferSize = static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
-            static_cast<uint32_t>(std::stoi(moduleInfo.channels)) *
-            AudioPolicyUtils::GetInstance().PcmFormatToBytes(static_cast<AudioSampleFormat>(
-                formatFromParserStrToEnum[moduleInfo.format])) * BUFFER_CALC_20MS / static_cast<uint32_t>(MS_PER_S);
-        moduleInfo.bufferSize = std::to_string(bufferSize);
-    }
 }
 
 static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
@@ -382,8 +268,8 @@ bool AudioPolicyService::Init(void)
 
     int32_t ecEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
     int32_t micRefEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
-    isEcFeatureEnable_ = ecEnableState != 0;
-    isMicRefFeatureEnable_ = micRefEnableState != 0;
+
+    audioEcManager_.Init(ecEnableState, micRefEnableState);
     return true;
 }
 
@@ -1157,7 +1043,7 @@ int32_t AudioPolicyService::MoveToLocalInputDevice(std::vector<SourceOutput> sou
         "failed: not a local device.");
     // start move.
     uint32_t sourceId = -1; // invalid source id, use source name instead.
-    std::string sourceName = GetSourcePortName(localDeviceDescriptor->deviceType_);
+    std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(localDeviceDescriptor->deviceType_);
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         int32_t ret = audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId,
             sourceId, sourceName);
@@ -1235,33 +1121,6 @@ void AudioPolicyService::StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceD
 DistributedRoutingInfo AudioPolicyService::GetDistributedRoutingRoleInfo()
 {
     return distributedRoutingInfo_;
-}
-
-std::string AudioPolicyService::GetSourcePortName(InternalDeviceType deviceType)
-{
-    std::string portName = PORT_NONE;
-    switch (deviceType) {
-        case InternalDeviceType::DEVICE_TYPE_MIC:
-            portName = PRIMARY_MIC;
-            break;
-        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
-            portName = USB_MIC;
-            break;
-        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
-            portName = PRIMARY_WAKEUP;
-            break;
-        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
-            portName = FILE_SOURCE;
-            break;
-        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
-            portName = BLUETOOTH_MIC;
-            break;
-        default:
-            portName = PORT_NONE;
-            break;
-    }
-
-    return portName;
 }
 
 // private method
@@ -1583,34 +1442,6 @@ int32_t AudioPolicyService::SetClientCallbacksEnable(const CallbackChange &callb
     }
 }
 
-void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
-    const std::string &deviceName)
-{
-    Trace trace("AudioPolicyService::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
-    AUDIO_INFO_LOG("Active route with type[%{public}d] name[%{public}s]", deviceType, deviceName.c_str());
-    std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
-    activeDevices.push_back(make_pair(deviceType, deviceFlag));
-    UpdateActiveDevicesRoute(activeDevices, deviceName);
-}
-
-void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>>
-    &activeDevices, const std::string &deviceName)
-{
-    CHECK_AND_RETURN_LOG(!activeDevices.empty(), "activeDevices is empty.");
-    auto ret = SUCCESS;
-    std::string deviceTypesInfo = "";
-    for (size_t i = 0; i < activeDevices.size(); i++) {
-        deviceTypesInfo = deviceTypesInfo + " " + std::to_string(activeDevices[i].first);
-        AUDIO_INFO_LOG("update active devices, device type info:[%{public}s]",
-            std::to_string(activeDevices[i].first).c_str());
-    }
-
-    Trace trace("AudioPolicyService::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
-    ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices, GetA2dpOffloadFlag(),
-        deviceName);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
-}
-
 void AudioPolicyService::UpdateDualToneState(const bool &enable, const int32_t &sessionId)
 {
     AUDIO_INFO_LOG("update dual tone state, enable:%{public}d, sessionId:%{public}d", enable, sessionId);
@@ -1735,7 +1566,7 @@ void AudioPolicyService::MoveToNewInputDevice(shared_ptr<AudioCapturerChangeInfo
         inputDevice->deviceType_, GetEncryptAddr(inputDevice->macAddress_).c_str());
 
     if (audioConfigManager_.GetUpdateRouteSupport() && inputDevice->networkId_ == LOCAL_NETWORK_ID) {
-        UpdateActiveDeviceRoute(inputDevice->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG, inputDevice->deviceName_);
+        audioActiveDevice_.UpdateActiveDeviceRoute(inputDevice->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG, inputDevice->deviceName_);
     }
     UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, new AudioDeviceDescriptor(*inputDevice), true, true);
     streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
@@ -1779,7 +1610,7 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
     }
     audioActiveDevice_.SetCurrentInputDevice(*desc);
     if (desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        PresetArmIdleInput(desc->macAddress_);
+        audioEcManager_.PresetArmIdleInput(desc->macAddress_);
     }
     DeviceType deviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     AUDIO_DEBUG_LOG("currentActiveInputDevice update %{public}d", deviceType);
@@ -1899,7 +1730,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
             audioActiveDevice_.SetCurrentOutputDevice(*desc);
             DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
             audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDeviceType);
-            UpdateActiveDeviceRoute(curOutputDeviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            audioActiveDevice_.UpdateActiveDeviceRoute(curOutputDeviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
             OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
         }
         return ERR_NEED_NOT_SWITCH_DEVICE;
@@ -1943,7 +1774,7 @@ void AudioPolicyService::FetchOutputDevice(vector<shared_ptr<AudioRendererChange
             int32_t ret = HandleScoOutputDeviceFetched(descs.front(), rendererChangeInfos, reason);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
         } else if (descs.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            ActivateArmDevice(descs.front()->macAddress_, descs.front()->deviceRole_);
+            audioEcManager_.ActivateArmDevice(descs.front()->macAddress_, descs.front()->deviceRole_);
         }
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = audioActiveDevice_.UpdateDevice(descs.front(), reason, rendererChangeInfo);
@@ -2073,7 +1904,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRender
 {
     if (audioOffloadStream_.CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
         JudgeIfLoadMchModule();
-        UpdateActiveDeviceRoute(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG);
         std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(descs.front()->deviceType_,
             PIPE_TYPE_MULTICHANNEL);
         int32_t ret  = audioOffloadStream_.MoveToOutputDevice(rendererChangeInfo->sessionId, portName);
@@ -2201,7 +2032,7 @@ void AudioPolicyService::FetchInputDeviceInner(vector<shared_ptr<AudioCapturerCh
         }
         HandleBluetoothInputDeviceFetched(desc, capturerChangeInfos, sourceType);
         if (desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            ActivateArmDevice(desc->macAddress_, desc->deviceRole_);
+            audioEcManager_.ActivateArmDevice(desc->macAddress_, desc->deviceRole_);
         }
         if (needUpdateActiveDevice) {
             unique_ptr<AudioDeviceDescriptor> preferredDesc = audioAffinityManager_.GetCapturerDevice(clientUID);
@@ -2266,7 +2097,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchInputDevice(unique_ptr<Aud
             audioActiveDevice_.SetCurrentInputDevice(*desc);
             // networkId is not used.
             OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), "");
-            UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG,
+            audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG,
                 audioActiveDevice_.GetCurrentInputDevice().deviceName_);
         }
         return ERR_NEED_NOT_SWITCH_DEVICE;
@@ -2357,9 +2188,9 @@ bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
     CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
         "original flag is false");
     // Switch between old and new stream as they have different hals
-    std::string oldDevicePortName = GetSourcePortName(capturerChangeInfo->inputDeviceInfo.deviceType_);
+    std::string oldDevicePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(capturerChangeInfo->inputDeviceInfo.deviceType_);
     if ((strcmp(oldDevicePortName.c_str(),
-        GetSourcePortName(audioActiveDevice_.GetCurrentInputDeviceType()).c_str())) ||
+        AudioPolicyUtils::GetInstance().GetSourcePortName(audioActiveDevice_.GetCurrentInputDeviceType()).c_str())) ||
         ((capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID) ^
         (audioActiveDevice_.GetCurrentInputDevice().networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
@@ -2451,7 +2282,7 @@ int32_t AudioPolicyService::LoadDpModule(string deviceInfo)
             GetDPModuleInfo(moduleInfo, deviceInfo);
             if (moduleInfo.role == ROLE_SINK) {
                 AUDIO_INFO_LOG("save dp sink module info for cust param");
-                dpSinkModuleInfo_ = moduleInfo;
+                audioEcManager_.SetDpSinkModuleInfo(moduleInfo);
             }
             return audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         }
@@ -2467,10 +2298,10 @@ int32_t AudioPolicyService::HandleActiveDevice(DeviceType deviceType)
         audioVolumeManager_.SetVolumeForSwitchDevice(deviceType);
     }
     if (audioConfigManager_.GetUpdateRouteSupport()) {
-        UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
     std::string sinkPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
-    std::string sourcePortName = GetSourcePortName(deviceType);
+    std::string sourcePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     if (sinkPortName == PORT_NONE && sourcePortName == PORT_NONE) {
         AUDIO_ERR_LOG("failed for sinkPortName and sourcePortName are none");
         return ERR_OPERATION_FAILED;
@@ -3040,7 +2871,7 @@ void AudioPolicyService::ResetToSpeaker(DeviceType devType)
     }
     if (devType == DEVICE_TYPE_BLUETOOTH_SCO || devType == DEVICE_TYPE_USB_HEADSET ||
         devType == DEVICE_TYPE_WIRED_HEADSET || devType == DEVICE_TYPE_WIRED_HEADPHONES) {
-        UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
 }
 
@@ -3104,73 +2935,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     UpdateA2dpOffloadFlagForAllStream();
     ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDeviceType(),
         audioActiveDevice_.GetCurrentOutputDeviceType(), "OnDeviceStatusUpdated 5 param");
-}
-
-void AudioPolicyService::PresetArmIdleInput(const string& address)
-{
-    AUDIO_INFO_LOG("Entry. address=%{public}s", address.c_str());
-    std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
-    CHECK_AND_RETURN_RET(ret,);
-    for (auto &moduleInfo : moduleInfoList) {
-        DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
-        if (configRole != INPUT_DEVICE) {continue;}
-        UpdateArmModuleInfo(address, INPUT_DEVICE, moduleInfo);
-        if (isEcFeatureEnable_) {
-            usbSourceModuleInfo_ = moduleInfo;
-        }
-    }
-}
-
-void AudioPolicyService::ActivateArmDevice(const string& address, const DeviceRole role)
-{
-    AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d", address.c_str(), role);
-    std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
-    CHECK_AND_RETURN_RET(ret,);
-    for (auto &moduleInfo : moduleInfoList) {
-        DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
-        if (configRole != role) {continue;}
-        AUDIO_INFO_LOG("[module_reload]: module[%{public}s], role[%{public}d]", moduleInfo.name.c_str(), role);
-        if (!(isEcFeatureEnable_ && role == INPUT_DEVICE) && audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
-            audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
-                AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
-            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name, true);
-        }
-        UpdateArmModuleInfo(address, role, moduleInfo);
-        if (isEcFeatureEnable_) {
-            if (role == OUTPUT_DEVICE) {
-                int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-                CHECK_AND_RETURN_LOG(ret == SUCCESS,
-                    "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
-                usbSinkModuleInfo_ = moduleInfo;
-            } else {
-                AUDIO_INFO_LOG("just save arm usb source module info, rate=%{public}s", moduleInfo.rate.c_str());
-                usbSourceModuleInfo_ = moduleInfo;
-            }
-        } else {
-            int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS,
-                "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
-        }
-    }
-}
-
-void AudioPolicyService::UpdateArmModuleInfo(const string& address, const DeviceRole role, AudioModuleInfo& moduleInfo)
-{
-    string condition = string("address=") + address + " role=" + to_string(role);
-    string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
-    AUDIO_INFO_LOG("device info from usb hal is %{public}s", deviceInfo.c_str());
-    if (!deviceInfo.empty()) {
-        GetUsbModuleInfo(deviceInfo, moduleInfo);
-        if (isEcFeatureEnable_) {
-            uint32_t bufferSize = (std::stoi(moduleInfo.rate) *
-                AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
-                std::stoi(moduleInfo.channels)) * RENDER_FRAME_INTERVAL_IN_SECONDS;
-            moduleInfo.bufferSize = std::to_string(bufferSize);
-            AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
-        }
-    }
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, bool isConnected)
@@ -3728,7 +3492,7 @@ bool AudioPolicyService::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo 
     }
 
     if (devType == DEVICE_TYPE_MIC) {
-        primaryMicModuleInfo_ = moduleInfo;
+        audioEcManager_.SetPrimaryMicModuleInfo(moduleInfo);
     }
 
     if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
@@ -4708,7 +4472,7 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
     AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
         deviceType, sourceType, flags);
 
-    std::string sourcePortName = GetSourcePortName(deviceType);
+    std::string sourcePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
         (sourcePortName == PRIMARY_MIC && networkId == LOCAL_NETWORK_ID)) {
         if (audioConfigManager_.GetVoipConfig() && (samplingRate == SAMPLE_RATE_48000
@@ -5191,86 +4955,6 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyService::GetAvailableMicrophones()
     return audioMicrophoneDescriptor_.GetAvailableMicrophones();
 }
 
-void AudioPolicyService::GetTargetSourceTypeAndMatchingFlag(SourceType source,
-    SourceType &targetSource, bool &useMatchingPropInfo)
-{
-    switch (source) {
-        case SOURCE_TYPE_VOICE_RECOGNITION:
-            targetSource = SOURCE_TYPE_VOICE_RECOGNITION;
-            useMatchingPropInfo = true;
-            break;
-        case SOURCE_TYPE_VOICE_COMMUNICATION:
-        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
-            targetSource = SOURCE_TYPE_VOICE_COMMUNICATION;
-            useMatchingPropInfo = isEcFeatureEnable_ ? false : true;
-            break;
-        case SOURCE_TYPE_VOICE_CALL:
-            targetSource = SOURCE_TYPE_VOICE_CALL;
-            break;
-        default:
-            targetSource = SOURCE_TYPE_MIC;
-            break;
-    }
-}
-
-int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
-    SourceType &targetSourceType)
-{
-    const PipeInfo *pipeInfoPtr = nullptr;
-    AudioAdapterInfo adapterInfo;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(AdaptersType::TYPE_PRIMARY, adapterInfo);
-    if (ret) {
-        pipeInfoPtr = adapterInfo.GetPipeByName(PIPE_PRIMARY_INPUT);
-    }
-    CHECK_AND_RETURN_RET_LOG(pipeInfoPtr != nullptr, ERROR, "pipeInfoPtr is null");
-
-    const auto &streamPropInfoList = pipeInfoPtr->streamPropInfos_;
-
-    if (streamPropInfoList.empty()) {
-        AUDIO_ERR_LOG("supportedRate or supportedChannels is empty");
-        return ERROR;
-    }
-
-    // use first profile as default
-    StreamPropInfo targetStreamPropInfo = *streamPropInfoList.begin();
-    bool useMatchingPropInfo = false;
-    GetTargetSourceTypeAndMatchingFlag(sessionInfo.sourceType, targetSourceType, useMatchingPropInfo);
-
-    if (useMatchingPropInfo) {
-        for (const auto &streamPropInfo : streamPropInfoList) {
-            if (sessionInfo.channels == streamPropInfo.channelLayout_
-                && sessionInfo.rate == streamPropInfo.sampleRate_) {
-                targetStreamPropInfo = streamPropInfo;
-                break;
-            }
-        }
-    }
-    targetInfo = targetStreamPropInfo;
-
-    if (isEcFeatureEnable_) {
-        SourceType tmpSourceType = targetSourceType;
-        if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-            tmpSourceType = SOURCE_TYPE_MIC;
-        }
-        unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(tmpSourceType, -1);
-        if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
-            targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
-            // only built-in mic can use 4 channel, update later by using xml to describe
-            targetInfo.channelLayout_ = HEADPHONE_CHANNEL_NUM;
-        }
-    }
-
-    // need change to use profile for all devices later
-    if (primaryMicModuleInfo_.OpenMicSpeaker == "1") {
-        uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(
-            static_cast<AudioSampleFormat>(formatFromParserStrToEnum[targetInfo.format_]));
-        targetInfo.bufferSize_ = BUFFER_CALC_20MS * targetInfo.sampleRate_ / static_cast<uint32_t>(MS_PER_S)
-            * targetInfo.channelLayout_ * sampleFormatBits;
-    }
-
-    return SUCCESS;
-}
-
 void AudioPolicyService::HandleRemainingSource()
 {
     SourceType highestSource = SOURCE_TYPE_INVALID;
@@ -5286,13 +4970,13 @@ void AudioPolicyService::HandleRemainingSource()
     // Convert highestSource to highestSourceInHdi
     SourceType highestSourceInHdi = SOURCE_TYPE_INVALID;
     bool useMatchingPropInfo = false;
-    GetTargetSourceTypeAndMatchingFlag(highestSource, highestSourceInHdi, useMatchingPropInfo);
+    audioEcManager_.GetTargetSourceTypeAndMatchingFlag(highestSource, highestSourceInHdi, useMatchingPropInfo);
 
     // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
-    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(normalSourceOpened_, highestSourceInHdi)) {
-        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened_：%{public}d, "
-            "highestSourceInHdi：%{public}d ", highestSource, normalSourceOpened_, highestSourceInHdi);
-        ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
+    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(audioEcManager_.GetSourceOpened(), highestSourceInHdi)) {
+        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened：%{public}d, "
+            "highestSourceInHdi：%{public}d ", highestSource, audioEcManager_.GetSourceOpened(), highestSourceInHdi);
+        audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
         sessionIdUsedToOpenSource_ = highestSession;
     }
 }
@@ -5313,7 +4997,7 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
             BluetoothScoDisconectForRecongnition();
         }
         if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-            ResetAudioEcInfo();
+            audioEcManager_.ResetAudioEcInfo();
         }
         sessionWithNormalSourceType_.erase(sessionID);
         if (!sessionWithNormalSourceType_.empty()) {
@@ -5321,7 +5005,7 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
             return;
         }
         // close source when all capturer sessions removed
-        CloseNormalSource();
+        audioEcManager_.CloseNormalSource();
         return;
     }
 
@@ -5345,18 +5029,18 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
         // normal source types, dynamic open
         StreamPropInfo targetInfo;
         SourceType targetSource;
-        int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
+        int32_t res = audioEcManager_.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
             "fetch target source info error");
 
-        if (normalSourceOpened_ == SOURCE_TYPE_INVALID) {
+        if (audioEcManager_.GetSourceOpened() == SOURCE_TYPE_INVALID) {
             // normal source is not opened before
-            PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
+            audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
-        } else if (IsHigherPrioritySource(targetSource, normalSourceOpened_)) {
+        } else if (IsHigherPrioritySource(targetSource, audioEcManager_.GetSourceOpened())) {
             // reload if higher source come
-            CloseNormalSource();
-            PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
+            audioEcManager_.CloseNormalSource();
+            audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
         }
         sessionWithNormalSourceType_[sessionID] = sessionInfo;
@@ -5369,194 +5053,14 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
     return SUCCESS;
 }
 
-void AudioPolicyService::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
-    StreamPropInfo &targetInfo, SourceType targetSource)
-{
-    AudioModuleInfo moduleInfo;
-    UpdateEnhanceEffectState(targetSource);
-    UpdateStreamCommonInfo(moduleInfo, targetInfo, targetSource);
-    UpdateStreamEcInfo(moduleInfo, targetSource);
-    UpdateStreamMicRefInfo(moduleInfo, targetSource);
-
-    AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s format:%{public}s, "
-        "sourceType: %{public}s",
-        moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
-        moduleInfo.format.c_str(), moduleInfo.sourceType.c_str());
-
-    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-    audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(), moduleInfo.name,
-        true, INPUT_DEVICES_FLAG);
-
-    normalSourceOpened_ = targetSource;
-}
-
-void AudioPolicyService::CloseNormalSource()
-{
-    AUDIO_INFO_LOG("close all sources");
-    audioIOHandleMap_.ClosePortAndEraseIOHandle(PRIMARY_MIC);
-    if (isEcFeatureEnable_) {
-        audioIOHandleMap_.ClosePortAndEraseIOHandle(USB_MIC);
-    }
-    normalSourceOpened_ = SOURCE_TYPE_INVALID;
-}
-
-void AudioPolicyService::UpdateEnhanceEffectState(SourceType source)
-{
-    AudioEnhancePropertyArray enhancePropertyArray = {};
-    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
-    int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray,
-        inputDesc->deviceType_);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
-        return;
-    }
-    std::string recordProp = "";
-    std::string voipUpProp = "";
-    for (const AudioEnhanceProperty &prop : enhancePropertyArray.property) {
-        if (prop.enhanceClass == "record") {
-            recordProp = prop.enhanceProp;
-        }
-        if (prop.enhanceClass == "voip_up") {
-            voipUpProp = prop.enhanceProp;
-        }
-    }
-    isMicRefRecordOn_ = (recordProp == "NRON");
-    isMicRefVoipUpOn_ = (voipUpProp == "PNR");
-
-    AUDIO_INFO_LOG("ecEnableState: %{public}d, micRefEnableState: %{public}d, "
-        "isMicRefRecordOn_: %{public}d, isMicRefVoipUp: %{public}d",
-        isEcFeatureEnable_, isMicRefFeatureEnable_, isMicRefRecordOn_, isMicRefVoipUpOn_);
-}
-
-EcType AudioPolicyService::GetEcType(const DeviceType inputDevice, const DeviceType outputDevice)
-{
-    EcType ecType = EC_TYPE_NONE;
-    auto element = DEVICE_TO_EC_TYPE.find(std::make_pair(inputDevice, outputDevice));
-    if (element != DEVICE_TO_EC_TYPE.end()) {
-        ecType = element->second;
-    }
-    AUDIO_INFO_LOG("GetEcType ecType: %{public}d", ecType);
-    return ecType;
-}
-
-std::string AudioPolicyService::GetHalNameForDevice(const std::string &role, const DeviceType deviceType)
-{
-    std::string halName = "";
-    std::string portName;
-    if (role == ROLE_SOURCE) {
-        portName = GetSourcePortName(deviceType);
-    } else {
-        portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
-    }
-    AudioAdapterInfo info;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(portStrToEnum[portName]), info);
-    if (ret) {
-        halName = info.adapterName_;
-    }
-    AUDIO_INFO_LOG("role: %{public}s, device: %{public}d, halName: %{public}s",
-        role.c_str(), deviceType, halName.c_str());
-    return halName;
-}
-
-std::string AudioPolicyService::ShouldOpenMicRef(SourceType source)
-{
-    std::string shouldOpen = "0";
-    if (!isMicRefFeatureEnable_) {
-        AUDIO_INFO_LOG("isMicRefFeatureEnable_ is off");
-        return shouldOpen;
-    }
-
-    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
-    auto iter = std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), inputDesc->deviceType_);
-    if ((source == SOURCE_TYPE_VOICE_COMMUNICATION && isMicRefVoipUpOn_ && iter != MIC_REF_DEVICES.end()) ||
-        (source == SOURCE_TYPE_MIC && isMicRefRecordOn_ && iter != MIC_REF_DEVICES.end())) {
-        shouldOpen = "1";
-    }
-
-    AUDIO_INFO_LOG("source: %{public}d, voipUpMicOn: %{public}d, recordMicOn: %{public}d, device: %{public}d",
-        source, isMicRefVoipUpOn_, isMicRefRecordOn_, inputDesc->deviceType_);
-    return shouldOpen;
-}
-
-std::string AudioPolicyService::GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType)
-{
-    switch (deviceType) {
-        case DEVICE_TYPE_SPEAKER:
-            return PIPE_PRIMARY_OUTPUT;
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-            if (role == ROLE_SOURCE) {
-                return PIPE_PRIMARY_INPUT;
-            }
-            return PIPE_PRIMARY_OUTPUT;
-        case DEVICE_TYPE_MIC:
-            return PIPE_PRIMARY_INPUT;
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            if (role == ROLE_SOURCE) {
-                return PIPE_USB_ARM_INPUT;
-            }
-            return PIPE_USB_ARM_OUTPUT;
-        case DEVICE_TYPE_DP:
-            return PIPE_DP_OUTPUT;
-        default:
-            AUDIO_ERR_LOG("invalid device type %{public}d for role %{public}s", deviceType, role.c_str());
-            return PIPE_PRIMARY_OUTPUT;
-    }
-}
-
-int32_t AudioPolicyService::GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType,
-    PipeInfo &pipeInfo)
-{
-    std::string portName;
-    if (role == ROLE_SOURCE) {
-        portName = GetSourcePortName(deviceType);
-    } else {
-        portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
-    }
-    AudioAdapterInfo info;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(portStrToEnum[portName]), info);
-    if (!ret) {
-        AUDIO_ERR_LOG("no adapter found for deviceType: %{public}d, portName: %{public}s",
-            deviceType, portName.c_str());
-        return ERROR;
-    }
-    std::string pipeName = GetPipeNameByDeviceForEc(role, deviceType);
-    auto pipe = info.GetPipeByName(pipeName);
-    if (pipe == nullptr) {
-        AUDIO_ERR_LOG("no pipe info found for pipeName: %{public}s, deviceType: %{public}d, portName: %{public}s",
-            pipeName.c_str(), deviceType, portName.c_str());
-        return ERROR;
-    }
-    pipeInfo = *pipe;
-    AUDIO_INFO_LOG("pipe name: %{public}s, moduleName: %{public}s found for device: %{public}d",
-        pipeInfo.name_.c_str(), pipeInfo.moduleName_.c_str(), deviceType);
-    return SUCCESS;
-}
-
-void AudioPolicyService::ReloadSourceForSession(SessionInfo sessionInfo)
-{
-    AUDIO_INFO_LOG("reload source for session");
-
-    StreamPropInfo targetInfo;
-    SourceType targetSource = sessionInfo.sourceType;
-    int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
-    CHECK_AND_RETURN_LOG(res == SUCCESS, "fetch target source info error");
-
-    CloseNormalSource();
-    PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
-
-    UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG);
-}
-
 void AudioPolicyService::ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
     const AudioEnhancePropertyArray &newPropertyArray)
 {
-    if (!isMicRefFeatureEnable_) {
+    if (!audioEcManager_.GetMicRefFeatureEnable()) {
         AUDIO_INFO_LOG("reload ignore for feature not enable");
         return;
     }
-    if (normalSourceOpened_ != SOURCE_TYPE_VOICE_COMMUNICATION) {
+    if (audioEcManager_.GetSourceOpened() != SOURCE_TYPE_VOICE_COMMUNICATION) {
         AUDIO_INFO_LOG("reload ignore for source not voip");
         return;
     }
@@ -5574,7 +5078,7 @@ void AudioPolicyService::ReloadSourceForEffect(const AudioEnhancePropertyArray &
         }
     }
     if ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR")) {
-        ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
+        audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
     }
 }
 
@@ -5592,7 +5096,7 @@ bool AudioPolicyService::IsVoipDeviceChanged(const DeviceType inputDevice, const
     if (outputDesc.size() > 0 && outputDesc.front() != nullptr) {
         realOutputDevice = outputDesc.front()->deviceType_;
     }
-    AudioEcInfo lastEcInfo = GetAudioEcInfo();
+    AudioEcInfo lastEcInfo = audioEcManager_.GetAudioEcInfo();
     if (lastEcInfo.inputDevice != realInputDevice || lastEcInfo.outputDevice != realOutputDevice) {
         return true;
     }
@@ -5616,16 +5120,17 @@ void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevic
     const std::string &caller)
 {
     AUDIO_INFO_LOG("form caller: %{public}s", caller.c_str());
-    if (!isEcFeatureEnable_) {
+    if (!audioEcManager_.GetEcFeatureEnable()) {
         AUDIO_INFO_LOG("reload ignore for feature not enable");
         return;
     }
-    if (normalSourceOpened_ != SOURCE_TYPE_VOICE_COMMUNICATION && normalSourceOpened_ != SOURCE_TYPE_MIC) {
+    SourceType normalSourceOpened = audioEcManager_.GetSourceOpened();
+    if (normalSourceOpened != SOURCE_TYPE_VOICE_COMMUNICATION && normalSourceOpened != SOURCE_TYPE_MIC) {
         AUDIO_INFO_LOG("reload ignore for source not voip or mic");
         return;
     }
 
-    if (normalSourceOpened_ == SOURCE_TYPE_VOICE_COMMUNICATION) {
+    if (normalSourceOpened == SOURCE_TYPE_VOICE_COMMUNICATION) {
         if (!IsVoipDeviceChanged(inputDevice, outputDevice)) {
             return;
         }
@@ -5642,188 +5147,7 @@ void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevic
         return;
     }
     SetInputDeviceTypeForReload(inputDevice);
-    ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
-}
-
-std::string AudioPolicyService::GetEcSamplingRate(const std::string &halName, StreamPropInfo &outModuleInfo)
-{
-    if (halName == DP_CLASS) {
-        if (!dpSinkModuleInfo_.rate.empty()) {
-            AUDIO_INFO_LOG("use dp cust param");
-            return dpSinkModuleInfo_.rate;
-        }
-        return std::to_string(outModuleInfo.sampleRate_);
-    } else if (halName == USB_CLASS) {
-        if (!usbSinkModuleInfo_.rate.empty()) {
-            AUDIO_INFO_LOG("use arm usb cust param");
-            return usbSinkModuleInfo_.rate;
-        }
-        return std::to_string(outModuleInfo.sampleRate_);
-    } else {
-        return primaryMicModuleInfo_.rate;
-    }
-}
-
-std::string AudioPolicyService::GetEcFormat(const std::string &halName, StreamPropInfo &outModuleInfo)
-{
-    if (halName == DP_CLASS) {
-        if (!dpSinkModuleInfo_.format.empty()) {
-            AUDIO_INFO_LOG("use dp cust param");
-            return dpSinkModuleInfo_.format;
-        }
-        return outModuleInfo.format_;
-    } else if (halName == USB_CLASS) {
-        if (!usbSinkModuleInfo_.format.empty()) {
-            AUDIO_INFO_LOG("use arm usb cust param");
-            return usbSinkModuleInfo_.format;
-        }
-        return outModuleInfo.format_;
-    } else {
-        return primaryMicModuleInfo_.format;
-    }
-}
-
-std::string AudioPolicyService::GetEcChannels(const std::string &halName, StreamPropInfo &outModuleInfo)
-{
-    if (halName == DP_CLASS) {
-        if (!dpSinkModuleInfo_.channels.empty()) {
-            AUDIO_INFO_LOG("use dp cust param");
-            return dpSinkModuleInfo_.channels;
-        }
-        return std::to_string(outModuleInfo.channelLayout_);
-    } else if (halName == USB_CLASS) {
-        if (!usbSinkModuleInfo_.channels.empty()) {
-            AUDIO_INFO_LOG("use arm usb cust param");
-            return usbSinkModuleInfo_.channels;
-        }
-        return std::to_string(outModuleInfo.channelLayout_);
-    } else {
-        if (audioEcInfo_.inputDevice == DEVICE_TYPE_MIC) {
-            return "4";
-        } else {
-            return std::to_string(HEADPHONE_CHANNEL_NUM);
-        }
-    }
-}
-
-AudioEcInfo AudioPolicyService::GetAudioEcInfo()
-{
-    std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
-    return audioEcInfo_;
-}
-
-void AudioPolicyService::ResetAudioEcInfo()
-{
-    std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
-    audioEcInfo_.inputDevice = DEVICE_TYPE_NONE;
-    audioEcInfo_.outputDevice = DEVICE_TYPE_NONE;
-}
-
-void AudioPolicyService::UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice)
-{
-    if (!isEcFeatureEnable_) {
-        AUDIO_INFO_LOG("UpdateModuleForEc ignore for feature not enable");
-        return;
-    }
-    std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
-    if (audioEcInfo_.inputDevice == inputDevice && audioEcInfo_.outputDevice == outputDevice) {
-        AUDIO_INFO_LOG("UpdateModuleForEc abort, no device changed");
-        return;
-    }
-    audioEcInfo_.inputDevice = inputDevice;
-    audioEcInfo_.outputDevice = outputDevice;
-    audioEcInfo_.ecType = GetEcType(inputDevice, outputDevice);
-    audioEcInfo_.ecInputAdapter = GetHalNameForDevice(ROLE_SOURCE, inputDevice);
-    audioEcInfo_.ecOutputAdapter = GetHalNameForDevice(ROLE_SINK, outputDevice);
-    PipeInfo pipeInfo;
-    int32_t result = GetPipeInfoByDeviceTypeForEc(ROLE_SINK, outputDevice, pipeInfo);
-    CHECK_AND_RETURN_LOG(result == SUCCESS, "Ec stream not update for no pipe found");
-    audioEcInfo_.pipeInfo = pipeInfo;
-    audioEcInfo_.samplingRate = GetEcSamplingRate(audioEcInfo_.ecOutputAdapter, pipeInfo.streamPropInfos_.front());
-    audioEcInfo_.format = GetEcFormat(audioEcInfo_.ecOutputAdapter, pipeInfo.streamPropInfos_.front());
-    audioEcInfo_.channels = GetEcChannels(audioEcInfo_.ecOutputAdapter, pipeInfo.streamPropInfos_.front());
-    AUDIO_INFO_LOG("inputDevice: %{public}d, outputDevice: %{public}d, ecType: %{public}d, ecInputAdapter: %{public}s"
-        "ecOutputAdapter: %{public}s, samplingRate: %{public}s, format: %{public}s, channels: %{public}s",
-        audioEcInfo_.inputDevice, audioEcInfo_.outputDevice, audioEcInfo_.ecType, audioEcInfo_.ecInputAdapter.c_str(),
-        audioEcInfo_.ecOutputAdapter.c_str(), audioEcInfo_.samplingRate.c_str(), audioEcInfo_.format.c_str(),
-        audioEcInfo_.channels.c_str());
-}
-
-void AudioPolicyService::UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo)
-{
-    std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
-    moduleInfo.ecType = std::to_string(audioEcInfo_.ecType);
-    moduleInfo.ecAdapter = audioEcInfo_.ecOutputAdapter;
-    moduleInfo.ecSamplingRate = audioEcInfo_.samplingRate;
-    moduleInfo.ecFormat = audioEcInfo_.format;
-    moduleInfo.ecChannels = audioEcInfo_.channels;
-}
-
-void AudioPolicyService::UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType source)
-{
-    moduleInfo.openMicRef = ShouldOpenMicRef(source);
-    moduleInfo.micRefRate = "48000";
-    moduleInfo.micRefFormat = "s16le";
-    moduleInfo.micRefChannels = "4";
-}
-
-void AudioPolicyService::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo,
-    SourceType sourceType)
-{
-    if (!isEcFeatureEnable_) {
-        moduleInfo = primaryMicModuleInfo_;
-        // current layout represents the number of channel. This will need to be modify in the future.
-        moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
-        moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
-        moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
-        moduleInfo.format = targetInfo.format_;
-        moduleInfo.sourceType = std::to_string(sourceType);
-    } else {
-        unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
-        if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            moduleInfo = usbSourceModuleInfo_;
-            moduleInfo.sourceType = std::to_string(sourceType);
-        } else {
-            moduleInfo = primaryMicModuleInfo_;
-            // current layout represents the number of channel. This will need to be modify in the future.
-            moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
-            moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
-            moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
-            moduleInfo.format = targetInfo.format_;
-            moduleInfo.sourceType = std::to_string(sourceType);
-            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
-            // update primary info for ec config to get later
-            primaryMicModuleInfo_.channels = std::to_string(targetInfo.channelLayout_);
-            primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
-            primaryMicModuleInfo_.format = targetInfo.format_;
-        }
-    }
-}
-
-void AudioPolicyService::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
-{
-    if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-        AUDIO_INFO_LOG("sourceType: %{public}d not need ec data", sourceType);
-        return;
-    }
-
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDesc =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
-    unique_ptr<AudioDeviceDescriptor> inputDesc =
-        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
-
-    UpdateAudioEcInfo(inputDesc->deviceType_, outputDesc.front()->deviceType_);
-    UpdateModuleInfoForEc(moduleInfo);
-}
-
-void AudioPolicyService::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
-{
-    if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_MIC) {
-        AUDIO_INFO_LOG("sourceType: %{public}d not need micref data", sourceType);
-        return;
-    }
-
-    UpdateModuleInfoForMicRef(moduleInfo, sourceType);
+    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsageInner(AudioDeviceUsage usage,
@@ -6932,7 +6256,7 @@ void AudioPolicyService::UpdateRoute(shared_ptr<AudioRendererChangeInfo> &render
     AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType)) {
         if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
-            UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
 
         AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
@@ -6950,7 +6274,7 @@ void AudioPolicyService::UpdateRoute(shared_ptr<AudioRendererChangeInfo> &render
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
         audioVolumeManager_.SetRingerModeMute(true);
-        UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         shouldUpdateDeviceDueToDualTone_ = false;
     }
 }
@@ -7008,7 +6332,7 @@ bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr
             AudioPolicyUtils::GetInstance().GetSinkName(*descs.front(), sessionId) !=
             AudioPolicyUtils::GetInstance().GetSinkName(*descs.back(), sessionId)) {
             AUDIO_INFO_LOG("set dual hal tone, reset primary sink to default before.");
-            UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
             if (enableDualHalToneState_ && enableDualHalToneSessionId_ != sessionId) {
                 AUDIO_INFO_LOG("sesion changed, disable old dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
@@ -7020,7 +6344,7 @@ bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr
             }
             UpdateDualToneState(true, sessionId);
         } else {
-            UpdateActiveDevicesRoute(activeDevices);
+            audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
         return true;
     }

@@ -59,6 +59,7 @@ public:
     string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
+    std::string GetSourcePortName(DeviceType deviceType);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
@@ -68,8 +69,6 @@ private:
     int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
 private:
     bool isBTReconnecting_ = false;
-    static std::map<std::string, AudioSampleFormat> formatStrToEnum;
-
     AudioStreamCollector& streamCollector_;
     AudioStateManager &audioStateManager_;
     AudioDeviceManager &audioDeviceManager_;

@@ -53,13 +53,6 @@ static std::string GetEncryptAddr(const std::string &addr)
     return out;
 }
 
-std::map<std::string, AudioSampleFormat> AudioPolicyUtils::formatStrToEnum = {
-    {"s8", SAMPLE_U8},
-    {"s16", SAMPLE_S16LE},
-    {"s24", SAMPLE_S24LE},
-    {"s32", SAMPLE_S32LE},
-};
-
 void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -255,6 +248,33 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
     } else {
         return GetRemoteModuleName(desc.networkId_, desc.deviceRole_);
     }
+}
+
+std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
+{
+    std::string portName = PORT_NONE;
+    switch (deviceType) {
+        case InternalDeviceType::DEVICE_TYPE_MIC:
+            portName = PRIMARY_MIC;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            portName = USB_MIC;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
+            portName = PRIMARY_WAKEUP;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
+            portName = FILE_SOURCE;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
+            portName = BLUETOOTH_MIC;
+            break;
+        default:
+            portName = PORT_NONE;
+            break;
+    }
+
+    return portName;
 }
 
 }

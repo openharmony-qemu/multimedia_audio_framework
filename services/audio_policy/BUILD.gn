@@ -204,6 +204,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/service/audio_active_device.cpp",
     "server/src/service/service/audio_config_manager.cpp",
     "server/src/service/service/audio_connected_device.cpp",
+    "server/src/service/service/audio_ec_manager.cpp",
     "server/src/service/service/audio_iohandle_map.cpp",
     "server/src/service/service/audio_microphone_descriptor.cpp",
     "server/src/service/service/audio_offload_stream.cpp",
