@@ -175,8 +175,8 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
         return false;
     } else {
         volumeLevelMap_[streamType] = volumeValue;
-        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d, deviceType {public}d, Volume FromDataBase volumeMap from datashare %{public}d.",
-            streamType, deviceType, volumeValue);
+        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d, deviceType {public}d,
+            Volume FromDataBase volumeMap from datashare %{public}d.", streamType, deviceType, volumeValue);
     }
 
     return true;
