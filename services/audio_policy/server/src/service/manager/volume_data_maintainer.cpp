@@ -170,12 +170,12 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     int32_t volumeValue = 0;
     ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeValue, "system");
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Get streamType %{public}d, deviceType {public}d, Volume FromDataBase volumeMap failed.",
+        AUDIO_ERR_LOG("Get streamType %{public}d, deviceType %{public}d, Volume FromDataBase volumeMap failed.",
             streamType, deviceType);
         return false;
     } else {
         volumeLevelMap_[streamType] = volumeValue;
-        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d, deviceType {public}d,
+        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d, deviceType %{public}d,
             Volume FromDataBase volumeMap from datashare %{public}d.", streamType, deviceType, volumeValue);
     }
 
