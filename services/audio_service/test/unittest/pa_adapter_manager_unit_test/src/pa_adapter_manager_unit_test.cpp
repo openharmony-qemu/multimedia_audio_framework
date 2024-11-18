@@ -978,5 +978,108 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_045, TestSize.Level1)
     adapterManager->SetRecordProplist(propList, config);
     EXPECT_NE(nullptr, adapterManager);
 }
+
+/**
+* @tc.name   : Test CreateRendererStream API
+* @tc.number : PaAdapterManager_046
+* @tc.desc   : Test CreateRendererStream interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_046, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    uint32_t sessionId = SESSIONID;
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    adapterManager->CreateRendererStream(processConfig, stream);
+    EXPECT_NE(nullptr, adapterManager);
+}
+
+/**
+* @tc.name   : Test CreateCapturerStream API
+* @tc.number : PaAdapterManager_047
+* @tc.desc   : Test CreateCapturerStream interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_047, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    uint32_t sessionId = SESSIONID;
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    adapterManager->CreateCapturerStream(processConfig, stream);
+    EXPECT_NE(nullptr, adapterManager);
+}
+
+/**
+* @tc.name   : Test SetStreamAudioEnhanceMode API
+* @tc.number : PaAdapterManager_048
+* @tc.desc   : Test SetStreamAudioEnhanceMode interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_048, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    uint32_t sessionId = SESSIONID;
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    int result = adapterManager->SetStreamAudioEnhanceMode(stream, ENHANCE_NONE);
+    EXPECT_NE(ERROR, result);
+}
+
+/**
+* @tc.name   : Test PAStreamStateCb API
+* @tc.number : PaAdapterManager_049
+* @tc.desc   : Test PAStreamStateCb interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_049, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    uint32_t sessionId = SESSIONID;
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    void *userdata = nullptr;
+    adapterManager->PAStreamStateCb(stream, userdata);
+    EXPECT_NE(nullptr, adapterManager);
+}
+
+/**
+* @tc.name   : Test ConvertChLayoutToPaChMap API
+* @tc.number : PaAdapterManager_050
+* @tc.desc   : Test ConvertChLayoutToPaChMap interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_050, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    const uint64_t channelLayout = CH_LAYOUT_HOA_ORDER1_ACN_N3D;
+    pa_channel_map processCm;
+    adapterManager->ConvertChLayoutToPaChMap(channelLayout, processCm);
+    EXPECT_NE(nullptr, adapterManager);
+}
+
+/**
+* @tc.name   : Test GetEnhanceSceneName API
+* @tc.number : PaAdapterManager_051
+* @tc.desc   : Test GetEnhanceSceneName interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_051, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->GetEnhanceSceneName(SOURCE_TYPE_VOICE_TRANSCRIPTION);
+    EXPECT_NE(nullptr, adapterManager);
+}
+
+/**
+* @tc.name   : Test GetEnhanceSceneName API
+* @tc.number : PaAdapterManager_052
+* @tc.desc   : Test GetEnhanceSceneName interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_052, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->GetEnhanceSceneName(SOURCE_TYPE_VOICE_MESSAGE);
+    EXPECT_NE(nullptr, adapterManager);
+}
 } // namespace AudioStandard
 } // namespace OHOS
