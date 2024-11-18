@@ -690,9 +690,12 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
         bufferAttr.maxlength, bufferAttr.fragsize);
 
     const char *cDeviceName = (deviceName == "") ? nullptr : deviceName.c_str();
-    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr,
-        (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
-        PA_STREAM_VARIABLE_RATE));
+
+    uint32_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED | PA_STREAM_VARIABLE_RATE;
+    if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        flags |= PA_STREAM_DONT_MOVE; //inner cap source-output,should not be moved!
+    }
+    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr, static_cast<pa_stream_flags_t>(flags));
     // PA_STREAM_ADJUST_LATENCY exist, return peek length from server;
     if (result < 0) {
         int32_t error = pa_context_errno(context_);
