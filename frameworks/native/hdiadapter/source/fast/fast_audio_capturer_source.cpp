@@ -516,6 +516,19 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
             return SUCCESS;
         }
     }
+#ifdef FEATURE_POWER_MANAGER
+    if (runningLockManager_ != nullptr) {
+        AUDIO_INFO_LOG("keepRunningLock unLock");
+        runningLockManager_->UnLock();
+    } else {
+        AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
+    }
+#endif
+    AUDIO_ERR_LOG("Stop hdi fast capturer when GetMmapPosition failed");
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE,
+        "audioCapturer_ is nullptr when trying to stop");
+    int32_t ret = audioCapture_->Stop(audioCapture_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop failed! ret: %{public}d.", ret);
     return ERROR;
 }
 
