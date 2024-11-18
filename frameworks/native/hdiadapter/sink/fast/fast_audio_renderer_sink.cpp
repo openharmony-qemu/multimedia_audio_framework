@@ -630,6 +630,14 @@ int32_t FastAudioRendererSinkInner::CheckPositionTime()
             return SUCCESS;
         }
     }
+#ifdef FEATURE_POWER_MANAGER
+    KeepRunningUnlock();
+#endif
+    AUDIO_ERR_LOG("Stop hdi fast renderer when GetMmapPosition failed");
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "audioRenderer_ is nullptr when trying to stop");
+    int32_t ret = audioRender_->Stop(audioRender_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop failed! ret: %{public}d.", ret);
     return ERROR;
 }
 
