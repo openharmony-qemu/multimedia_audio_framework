@@ -735,6 +735,7 @@ bool AudioPolicyService::DeviceIsSupportSafeVolume()
                 curOutputDeviceCategory != BT_CAR) {
                 return true;
             }
+            [[fallthrough]];
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
