@@ -24,6 +24,13 @@ namespace OHOS {
 namespace AudioStandard {
 class StreamVolume;
 class SystemVolume;
+enum FadePauseState {
+    NO_FADE,
+    DO_FADE,
+    DONE_FADE,
+    INVALID_STATE
+};
+
 class AudioVolume {
 public:
     static AudioVolume *GetInstance();
@@ -56,9 +63,9 @@ public:
     void Dump(std::string &dumpString);
     void Monitor(uint32_t sessionId, bool isOutput);
 
-    void SetFadoutState(uint32_t streamIndex, uint32_t fadoutState);
-    uint32_t GetFadoutState(uint32_t streamIndex);
-    void RemoveFadoutState(uint32_t streamIndex);
+    void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState);
+    uint32_t GetFadeoutState(uint32_t streamIndex);
+    void RemoveFadeoutState(uint32_t streamIndex);
 
 private:
     AudioVolume();

@@ -146,7 +146,7 @@ int32_t PaRendererStreamImpl::InitParams()
 
     lock.Unlock();
 
-    AudioVolume::GetInstance()->SetFadoutState(sinkInputIndex_, 0);
+    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, NO_FADE);
     // In plan: Get data from xml
     effectSceneName_ = processConfig_.rendererInfo.sceneType;
 
@@ -199,13 +199,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     }
     pa_proplist *propList = pa_proplist_new();
     if (propList != nullptr) {
-        AudioVolume::GetInstance()->SetFadoutState(sinkInputIndex_, 1); // 1 start fadout
-        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
-            nullptr, nullptr);
-        pa_proplist_free(propList);
-        CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
-        pa_operation_unref(updatePropOperation);
-        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
         if (!offloadEnable_) {
             palock.Unlock();
             {
@@ -304,13 +298,7 @@ int32_t PaRendererStreamImpl::Stop()
 
     pa_proplist *propList = pa_proplist_new();
     if (propList != nullptr) {
-        AudioVolume::GetInstance()->SetFadoutState(sinkInputIndex_, 1); // 1 start fadout
-        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
-            nullptr, nullptr);
-        pa_proplist_free(propList);
-        CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
-        pa_operation_unref(updatePropOperation);
-        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
         if (!offloadEnable_) {
             palock.Unlock();
             {
@@ -376,7 +364,7 @@ int32_t PaRendererStreamImpl::Release()
         audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
     }
 
-    AudioVolume::GetInstance()->RemoveFadoutState(sinkInputIndex_);
+    AudioVolume::GetInstance()->RemoveFadeoutState(sinkInputIndex_);
 
     PaLockGuard lock(mainloop_);
     if (paStream_) {

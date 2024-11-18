@@ -1104,8 +1104,8 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
     }
 
     uint32_t streamIndex = sinkIn->index;
-    uint32_t sinkFadeoutPause = GetFadoutState(streamIndex);
-    if (sinkFadeoutPause == 2 && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) { // 2 fading done
+    uint32_t sinkFadeoutPause = GetFadeoutState(streamIndex);
+    if (sinkFadeoutPause == DONE_FADE && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
         silenceData(infoIn, si);
         AUDIO_PRERELEASE_LOGI("after pause fadeout done, silenceData");
         return;
@@ -1124,12 +1124,12 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         u->primary.primaryFadingInDone = 1;
         pa_memblock_release(infoIn->chunk.memblock);
     }
-    if (sinkFadeoutPause == 1) { // 1 do fading
+    if (sinkFadeoutPause == DO_FADE) {
         //do fading out
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, format, (uint32_t)u->ss.channels, 1);
-        SetFadoutState(streamIndex, 2); // 2 fading done
+        SetFadeoutState(streamIndex, DONE_FADE);
         pa_memblock_release(infoIn->chunk.memblock);
     }
 }
@@ -1251,7 +1251,7 @@ static void HandleFading(pa_sink *si, size_t length, pa_sink_input *sinkIn, pa_m
     PreparePrimaryFading(sinkIn, infoIn, si);
     CheckPrimaryFadeinIsDone(si, sinkIn);
 
-    uint32_t sinkFadeoutPause = GetFadoutState(sinkIn->index);
+    uint32_t sinkFadeoutPause = GetFadeoutState(sinkIn->index);
     if (!sinkFadeoutPause && (length <= infoIn->chunk.length)) {
         u->streamAvailable++;
     }
@@ -1329,8 +1329,8 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
     CHECK_AND_RETURN_LOG(u != NULL, "u is NULL");
 
     uint32_t streamIndex = sinkIn->index;
-    uint32_t sinkFadeoutPause = GetFadoutState(streamIndex);
-    if (sinkFadeoutPause == 2) { // 2 fading done
+    uint32_t sinkFadeoutPause = GetFadeoutState(streamIndex);
+    if (sinkFadeoutPause == DONE_FADE) {
         silenceData(infoIn, si);
         AUDIO_PRERELEASE_LOGI("silenceData.");
         return;
@@ -1350,12 +1350,12 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
         u->multiChannel.multiChannelFadingInDone = 1;
         pa_memblock_release(infoIn->chunk.memblock);
     }
-    if (sinkFadeoutPause == 1) { // 1 do fading
+    if (sinkFadeoutPause == DO_FADE) {
         //do fading out
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, format, (uint32_t)u->ss.channels, 1);
-        SetFadoutState(streamIndex, 2); // 2 fading done
+        SetFadeoutState(streamIndex, DONE_FADE);
         pa_memblock_release(infoIn->chunk.memblock);
     }
 }
@@ -2661,8 +2661,7 @@ static int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int
     }
 
     pa_sink_input *i = infoInputs[0].userdata;
-    uint32_t fadingFlag = GetFadoutState(i->index);
-    if ((fadingFlag != 3) && fadingFlag == 1) { // 3 invalid fadestate
+    if (GetFadeoutState(i->index) != NO_FADE) {
         AUDIO_WARNING_LOG("stream is croked, do not need peek");
         return 0;
     }
@@ -2882,7 +2881,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     uint32_t streamIndex = i->index;
     if (corking) {
-        SetFadoutState(streamIndex, 0); // 0 reset fading
+        SetFadeoutState(streamIndex, NO_FADE);
     }
 
     if (starting) {
@@ -2890,7 +2889,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
         if (pa_atomic_load(&u->primary.isHDISinkStarted) == 1) {
             pa_atomic_store(&u->primary.fadingFlagForPrimary, 1);
             AUDIO_INFO_LOG("store fadingFlagForPrimary for 1");
-            SetFadoutState(streamIndex, 0); // 0 reset fading
+            SetFadeoutState(streamIndex, NO_FADE);
             u->primary.primaryFadingInDone = 0;
             u->primary.primarySinkInIndex = (int32_t)(i->index);
             AUDIO_INFO_LOG("PaInputStateChangeCb, HDI renderer already started");
@@ -2907,7 +2906,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             u->renderCount = 0;
             pa_atomic_store(&u->primary.fadingFlagForPrimary, 1);
             AUDIO_INFO_LOG("store fadingFlagForPrimary for 1");
-            SetFadoutState(streamIndex, 0); // 0 reset fading
+            SetFadeoutState(streamIndex, NO_FADE);
             u->primary.primaryFadingInDone = 0;
             u->primary.primarySinkInIndex = (int32_t)(i->index);
             AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
@@ -3001,7 +3000,7 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
     if (corking) {
-        SetFadoutState(i->index, 0); // 0 reset fading
+        SetFadeoutState(i->index, NO_FADE);
     }
     if (starting) {
         u->multiChannel.timestamp = pa_rtclock_now();
@@ -3024,7 +3023,7 @@ static void ResetFadeoutPause(pa_sink_input *i, pa_sink_input_state_t state)
     bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     if (corking || starting) {
         AUDIO_INFO_LOG("set fadeoutPause to 0");
-        SetFadoutState(i->index, 0); // 0 reset fading
+        SetFadeoutState(i->index, NO_FADE);
     }
 }
 
