@@ -690,7 +690,9 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
     data.WriteBool(isUpdatedAudioStrategy);
-    AudioInterrupt::Marshalling(data, audioInterrupt);
+    ret = AudioInterrupt::Marshalling(data, audioInterrupt);
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
+    
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate interrupt failed, error: %{public}d", error);
@@ -707,7 +709,9 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
-    AudioInterrupt::Marshalling(data, audioInterrupt);
+    ret = AudioInterrupt::Marshalling(data, audioInterrupt);
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
+
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
@@ -725,7 +729,8 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioI
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(clientId);
-    AudioInterrupt::Marshalling(data, audioInterrupt);
+    ret = AudioInterrupt::Marshalling(data, audioInterrupt);
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REQUEST_AUDIO_FOCUS), data, reply, option);
@@ -743,7 +748,8 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(clientId);
-    AudioInterrupt::Marshalling(data, audioInterrupt);
+    ret = AudioInterrupt::Marshalling(data, audioInterrupt);
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS), data, reply, option);
