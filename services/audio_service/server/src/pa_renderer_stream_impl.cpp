@@ -84,7 +84,6 @@ PaRendererStreamImpl::~PaRendererStreamImpl()
             pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
             pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
             pa_stream_set_started_callback(paStream_, nullptr, nullptr);
-
             pa_stream_disconnect(paStream_);
         }
         pa_stream_unref(paStream_);
@@ -96,9 +95,7 @@ int32_t PaRendererStreamImpl::InitParams()
 {
     PaLockGuard lock(mainloop_);
     rendererStreamInstanceMap_.Insert(this, weak_from_this());
-    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
-        return ERR_ILLEGAL_STATE;
-    }
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) { return ERR_ILLEGAL_STATE; }
 
     sinkInputIndex_ = pa_stream_get_index(paStream_);
     pa_stream_set_moved_callback(paStream_, PAStreamMovedCb,
