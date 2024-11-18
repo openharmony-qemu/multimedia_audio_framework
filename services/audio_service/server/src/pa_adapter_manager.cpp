@@ -28,7 +28,6 @@
 #include "audio_utils.h"
 #include "audio_info.h"
 #include "policy_handler.h"
-#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
