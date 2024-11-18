@@ -250,6 +250,7 @@ config("audio_service_config") {
   visibility += [
     "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
     "../../services/audio_service/test/unittest/audio_server_unit_test",
+    "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
     "../../test/fuzztest/*",
   ]
 
