@@ -170,7 +170,8 @@ void AudioEffectChain::ReleaseEffectChain()
 
 int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData)
 {
-    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
+    AudioEffectConfig tmpIoBufferConfig_ = ioBufferConfig_;
+    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     std::vector<uint8_t> paramBuffer(sizeof(AudioEffectParam) + MAX_PARAM_INDEX * sizeof(int32_t));
     // Set param
@@ -210,11 +211,13 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     CHECK_AND_RETURN_RET_LOG(ret1 == 0, ret1, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
         sceneType_.c_str(), effectMode_.c_str());
 
-    cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
+    cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig_};
     int32_t ret2 = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
     if (ret2 != 0) {
         AUDIO_WARNING_LOG("EFFECT_CMD_GET_CONFIG fail, ret is %{public}d", ret2);
     }
+    ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig_.outputCfg.channels;
+    ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig_.outputCfg.channelLayout;
     return ret1;
 }
 
@@ -487,13 +490,12 @@ void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDevice
 int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 {
     int32_t replyData = 0;
-    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
+    AudioEffectConfig tmpIoBufferConfig_ = ioBufferConfig_;
+    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     AudioEffectHandle preHandle = nullptr;
-    uint32_t channels = ioBufferConfig_.inputCfg.channels;
-    uint64_t channelLayout = ioBufferConfig_.inputCfg.channelLayout;
-    ioBufferConfig_.outputCfg.channels = 0;
-    ioBufferConfig_.outputCfg.channelLayout = 0;
+    tmpIoBufferConfig_.outputCfg.channels = 0;
+    tmpIoBufferConfig_.outputCfg.channelLayout = 0;
     for (AudioEffectHandle handle : standByEffectHandles_) {
         if (preHandle != nullptr) {
             int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
@@ -501,12 +503,12 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 
             ret = (*preHandle)->command(preHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_GET_CONFIG fail");
-            ioBufferConfig_.inputCfg = ioBufferConfig_.outputCfg;
+            tmpIoBufferConfig_.inputCfg = tmpIoBufferConfig_.outputCfg;
         }
         preHandle = handle;
     }
-    ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
-    ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    tmpIoBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
+    tmpIoBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     if (preHandle == nullptr) {
         AUDIO_ERR_LOG("The preHandle is nullptr!");
         return ERROR;
@@ -516,9 +518,9 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 
     ret = (*preHandle)->command(preHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "last effect update EFFECT_CMD_GET_CONFIG fail");
-    // recover bufferconfig
-    ioBufferConfig_.inputCfg.channels = channels;
-    ioBufferConfig_.inputCfg.channelLayout = channelLayout;
+
+    ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig_.outputCfg.channels;
+    ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig_.outputCfg.channelLayout;
     dumpNameIn_ = "dump_effect_in_" + sceneType_ + "_"
         + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
