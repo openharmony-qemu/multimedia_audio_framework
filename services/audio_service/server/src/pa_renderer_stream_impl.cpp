@@ -32,6 +32,7 @@
 #include "audio_utils.h"
 #include "i_audio_renderer_sink.h"
 #include "policy_handler.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -83,7 +84,6 @@ PaRendererStreamImpl::~PaRendererStreamImpl()
             pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
             pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
             pa_stream_set_started_callback(paStream_, nullptr, nullptr);
-
             pa_stream_disconnect(paStream_);
         }
         pa_stream_unref(paStream_);
@@ -95,9 +95,7 @@ int32_t PaRendererStreamImpl::InitParams()
 {
     PaLockGuard lock(mainloop_);
     rendererStreamInstanceMap_.Insert(this, weak_from_this());
-    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
-        return ERR_ILLEGAL_STATE;
-    }
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) { return ERR_ILLEGAL_STATE; }
 
     sinkInputIndex_ = pa_stream_get_index(paStream_);
     pa_stream_set_moved_callback(paStream_, PAStreamMovedCb,
@@ -144,6 +142,8 @@ int32_t PaRendererStreamImpl::InitParams()
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
 
     lock.Unlock();
+
+    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, NO_FADE);
     // In plan: Get data from xml
     effectSceneName_ = processConfig_.rendererInfo.sceneType;
 
@@ -196,13 +196,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     }
     pa_proplist *propList = pa_proplist_new();
     if (propList != nullptr) {
-        pa_proplist_sets(propList, "fadeoutPause", "1");
-        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
-            nullptr, nullptr);
-        pa_proplist_free(propList);
-        CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
-        pa_operation_unref(updatePropOperation);
-        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
         if (!offloadEnable_) {
             palock.Unlock();
             {
@@ -301,13 +295,7 @@ int32_t PaRendererStreamImpl::Stop()
 
     pa_proplist *propList = pa_proplist_new();
     if (propList != nullptr) {
-        pa_proplist_sets(propList, "fadeoutPause", "1");
-        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
-            nullptr, nullptr);
-        pa_proplist_free(propList);
-        CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
-        pa_operation_unref(updatePropOperation);
-        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
         if (!offloadEnable_) {
             palock.Unlock();
             {
@@ -373,6 +361,8 @@ int32_t PaRendererStreamImpl::Release()
         audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
     }
 
+    AudioVolume::GetInstance()->RemoveFadeoutState(sinkInputIndex_);
+
     PaLockGuard lock(mainloop_);
     if (paStream_) {
         pa_stream_set_state_callback(paStream_, nullptr, nullptr);
@@ -385,7 +375,7 @@ int32_t PaRendererStreamImpl::Release()
         pa_stream_disconnect(paStream_);
         releasedFlag_ = true;
     }
-    
+
     return SUCCESS;
 }
 
