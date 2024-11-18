@@ -47,14 +47,14 @@ public:
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
     sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(int32_t deviceType);
-    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType);
-    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
+    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType);
+    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress);
-    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
+    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole);
-    void DelConnectedDevice(std::string networkId, int32_t deviceType);
-    void DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress);
-    void DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress,
+    void DelConnectedDevice(std::string networkId, DeviceType deviceType);
+    void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress);
+    void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress,
         DeviceRole deviceRole);
     void AddConnectedDevice(sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     DeviceType FindConnectedHeadset();
