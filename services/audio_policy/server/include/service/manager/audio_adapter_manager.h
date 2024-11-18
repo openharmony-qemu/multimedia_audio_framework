@@ -146,6 +146,8 @@ public:
 
     void SetAbsVolumeMute(bool mute);
 
+    void SetDataShareReady(std::atomic<bool> isDataShareReady);
+
     bool IsAbsVolumeMute() const;
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
@@ -166,6 +168,10 @@ public:
     int32_t SetDeviceSafeStatus(DeviceType deviceType, SafeStatus status);
 
     int32_t SetDeviceSafeTime(DeviceType deviceType, int64_t time);
+
+    int32_t SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume);
+
+    int32_t GetRestoreVolumeLevel(DeviceType deviceType);
 
     int32_t GetSafeVolumeLevel() const;
 
@@ -284,6 +290,8 @@ private:
     int64_t safeActiveTime_ = 0;
     int64_t safeActiveBtTime_ = 0;
     int32_t safeVolumeTimeout_ = DEFAULT_SAFE_VOLUME_TIMEOUT;
+    int32_t safeActiveVolume_ = 0;
+    int32_t safeActiveBtVolume_ = 0;
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
     int32_t curActiveCount_ = 0;

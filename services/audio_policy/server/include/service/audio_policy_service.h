@@ -202,15 +202,13 @@ public:
 
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
-    int32_t GetUserSetDeviceNameFromDataShareHelper(std::string &deviceName);
-
-    int32_t GetDefaultDeviceNameFromDataShareHelper(std::string &deviceName);
-
-    std::string GetDeviceNameFromDataShare();
+    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
 
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
 
     bool IsDataShareReady();
+
+    void SetDataShareReady(std::atomic<bool> isDataShareReady);
 
     int32_t ResumeStreamState();
 #ifdef FEATURE_DTMF_TONE
@@ -246,16 +244,6 @@ public:
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
 
     void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
-
-    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
-
-    int32_t SetPreferredInputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
-
-    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
-
-    int32_t UnsetPreferredInputDeviceChangeCallback(const int32_t clientId);
 
     int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
@@ -491,6 +479,9 @@ public:
     int32_t UnsetAudioDeviceAnahsCallback();
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
+    int32_t DealWithEventVolume(const int32_t notificationId);
+
+    int32_t NotifyCapturerRemoved(uint64_t sessionId);
 
 private:
     AudioPolicyService()
@@ -595,7 +586,7 @@ private:
     void FetchOutputDevice(vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
-    void FetchEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
+    void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
 
     bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -611,6 +602,8 @@ private:
     void FetchInputDeviceInner(vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason, bool& needUpdateActiveDevice, bool& isUpdateActiveDevice,
         int32_t& runningStreamCount);
+
+    void FetchInputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
 
     int32_t HandleDeviceChangeForFetchInputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);

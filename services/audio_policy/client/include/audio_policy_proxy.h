@@ -191,6 +191,10 @@ public:
 
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
 
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo) override;
+
+    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
+
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0) override;
 

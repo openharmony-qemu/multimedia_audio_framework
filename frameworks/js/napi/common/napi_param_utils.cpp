@@ -205,8 +205,8 @@ napi_status NapiParamUtils::SetValueBoolean(const napi_env &env, const std::stri
     napi_value value = nullptr;
     napi_status status = SetValueBoolean(env, boolValue, value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean SetValueBoolean failed");
-    napi_set_named_property(env, result, fieldStr.c_str(), value);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean napi_get_boolean failed");
+    status = napi_set_named_property(env, result, fieldStr.c_str(), value);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_set_named_property failed");
     return status;
 }
 
@@ -1218,6 +1218,17 @@ napi_status NapiParamUtils::SetAudioSessionDeactiveEvent(
     napi_create_object(env, &result);
     SetValueInt32(env, "reason", static_cast<int32_t>(deactiveEvent.deactiveReason), result);
     return napi_ok;
+}
+
+bool NapiParamUtils::CheckArgType(napi_env env, napi_value arg, napi_valuetype expectedType)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, arg, &valueType);
+    if (valueType != expectedType) {
+        AUDIO_ERR_LOG("the type of parameter is invalid");
+        return false;
+    }
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

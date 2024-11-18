@@ -79,12 +79,12 @@ class CjAudioRendererWriteCallback : public AudioRendererWriteCallback {
 public:
     CjAudioRendererWriteCallback() = default;
     virtual ~CjAudioRendererWriteCallback() = default;
-    void RegisterFunc(std::function<void(CArrUI8)> cjCallback, std::shared_ptr<AudioRenderer> audioRenderer);
+    void RegisterFunc(std::function<int32_t(CArrUI8)> cjCallback, std::shared_ptr<AudioRenderer> audioRenderer);
 
     void OnWriteData(size_t length) override;
 
 private:
-    std::function<void(CArrUI8)> func_{};
+    std::function<int32_t(CArrUI8)> func_{};
     std::shared_ptr<AudioRenderer> audioRenderer_{};
     std::mutex cbMutex_;
 };

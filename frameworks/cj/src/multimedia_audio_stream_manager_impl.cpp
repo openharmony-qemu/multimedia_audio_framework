@@ -27,6 +27,7 @@ MMAAudioStreamManagerImpl::MMAAudioStreamManagerImpl()
     streamMgr_ = AudioStreamManager::GetInstance();
     cachedClientId_ = getpid();
     callback_ = std::make_shared<CjAudioCapturerStateChangeCallback>();
+    callbackRenderer_ = std::make_shared<CjAudioRendererStateChangeCallback>();
 }
 
 MMAAudioStreamManagerImpl::~MMAAudioStreamManagerImpl()
@@ -68,6 +69,40 @@ CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_
     return arr;
 }
 
+CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeInfos(int32_t *errorCode)
+{
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    int32_t ret = streamMgr_->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    if (ret != AUDIO_OK) {
+        AUDIO_ERR_LOG("GetCurrentRendererChangeInfos failure!");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrAudioRendererChangeInfo();
+    }
+    CArrAudioRendererChangeInfo arrInfo;
+    arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
+    auto head = static_cast<CAudioRendererChangeInfo *>(
+        malloc(sizeof(CAudioRendererChangeInfo) * audioRendererChangeInfos.size()));
+    if (head == nullptr) {
+        *errorCode = CJ_ERR_NO_MEMORY;
+        return CArrAudioRendererChangeInfo();
+    }
+    arrInfo.head = head;
+    if (memset_s(head, arrInfo.size, 0, arrInfo.size) != EOK) {
+        free(arrInfo.head);
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrAudioRendererChangeInfo();
+    }
+    for (int32_t i = 0; i < static_cast<int32_t>(audioRendererChangeInfos.size()); i++) {
+        Convert2CAudioRendererChangeInfo(head[i], *(audioRendererChangeInfos[i]), errorCode);
+    }
+    if (*errorCode != SUCCESS_CODE) {
+        free(arrInfo.head);
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrAudioRendererChangeInfo();
+    }
+    return arrInfo;
+}
+
 CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray(int32_t *errorCode)
 {
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
@@ -106,12 +141,31 @@ void MMAAudioStreamManagerImpl::RegisterCallback(int32_t callbackType, void (*ca
     if (callbackType == AudioStreamManagerCallbackType::CAPTURER_CHANGE) {
         auto func = CJLambda::Create(reinterpret_cast<void (*)(CArrAudioCapturerChangeInfo)>(callback));
         if (func == nullptr) {
-            AUDIO_ERR_LOG("Register AudioCapturerChangeInfo event failure!");
+            AUDIO_ERR_LOG("AudioCapturerChangeInfo event created failure!");
             *errorCode = CJ_ERR_SYSTEM;
             return;
         }
         callback_->RegisterFunc(func);
-        streamMgr_->RegisterAudioCapturerEventListener(cachedClientId_, callback_);
+        int32_t ret = streamMgr_->RegisterAudioCapturerEventListener(cachedClientId_, callback_);
+        if (ret != SUCCESS_CODE) {
+            AUDIO_ERR_LOG("Register AudioCapturerChangeInfo event failure!");
+            *errorCode = CJ_ERR_SYSTEM;
+            return;
+        }
+    }
+    if (callbackType == AudioStreamManagerCallbackType::RENDERER_CHANGE) {
+        auto func = CJLambda::Create(reinterpret_cast<void (*)(CArrAudioRendererChangeInfo)>(callback));
+        if (func == nullptr) {
+            AUDIO_ERR_LOG("AudioRendererChangeInfo event created failure!");
+            *errorCode = CJ_ERR_SYSTEM;
+            return;
+        }
+        callbackRenderer_->RegisterFunc(func);
+        int32_t ret = streamMgr_->RegisterAudioRendererEventListener(cachedClientId_, callbackRenderer_);
+        if (ret != SUCCESS_CODE) {
+            AUDIO_ERR_LOG("Register AudioRendererChangeInfo event failure!");
+            *errorCode = CJ_ERR_SYSTEM;
+        }
     }
 }
 }

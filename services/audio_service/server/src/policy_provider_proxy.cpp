@@ -185,5 +185,20 @@ int32_t PolicyProviderProxy::ActivateConcurrencyFromServer(AudioPipeType incomin
         "failed, error: %{public}d", ret);
     return reply.ReadInt32();
 }
+
+int32_t PolicyProviderProxy::NotifyCapturerRemoved(uint64_t sessionId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteUint64(sessionId);
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::REMOVE_AUDIO_CAPTURER, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

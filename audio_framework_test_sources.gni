@@ -102,6 +102,7 @@ audio_policy_service_sources_template = [
   "$audio_policy_service_sources_dir_template/server/src/audio_concurrency_state_listener_proxy.cpp",
   "$audio_policy_service_sources_dir_template/server/src/audio_group_handle.cpp",
   "$audio_policy_service_sources_dir_template/server/src/audio_policy_client_proxy.cpp",
+  "$audio_policy_service_sources_dir_template/server/src/audio_policy_manager_device_stub.cpp",
   "$audio_policy_service_sources_dir_template/server/src/audio_policy_manager_listener_proxy.cpp",
   "$audio_policy_service_sources_dir_template/server/src/audio_policy_manager_stub.cpp",
   "$audio_policy_service_sources_dir_template/server/src/audio_policy_server.cpp",

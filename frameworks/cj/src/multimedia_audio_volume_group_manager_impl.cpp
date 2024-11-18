@@ -14,6 +14,7 @@
  */
 
 #include "multimedia_audio_volume_group_manager_impl.h"
+#include "cj_lambda.h"
 #include "audio_info.h"
 #include "audio_log.h"
 #include "multimedia_audio_common.h"
@@ -26,6 +27,9 @@ MMAAudioVolumeGroupManagerImpl::MMAAudioVolumeGroupManagerImpl(int32_t groupId)
 {
     audioMngr_ = AudioSystemManager::GetInstance();
     audioGroupMngr_ = audioMngr_->GetGroupManager(groupId);
+    audioRingerModeCallback_ = std::make_shared<CjAudioRingerModeCallback>();
+    micStateChangeCallback_ = std::make_shared<CjAudioManagerMicStateChangeCallback>();
+    cachedClientId_ = getpid();
 }
 int32_t MMAAudioVolumeGroupManagerImpl::GetMaxVolume(int32_t volumeType)
 {
@@ -78,6 +82,54 @@ bool MMAAudioVolumeGroupManagerImpl::IsVolumeUnadjustable()
 {
     auto ret = audioGroupMngr_->IsVolumeUnadjustable();
     return ret;
+}
+
+float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForOutputDevice(const int32_t deviceId)
+{
+    auto ret = audioGroupMngr_->GetMaxAmplitude(deviceId);
+    if (ret < 0) {
+        AUDIO_ERR_LOG("failed to get MaxAmplitude.");
+    }
+    return ret;
+}
+
+float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDevice(const int32_t deviceId)
+{
+    auto ret = audioGroupMngr_->GetMaxAmplitude(deviceId);
+    if (ret < 0) {
+        AUDIO_ERR_LOG("failed to get MaxAmplitude.");
+    }
+    return ret;
+}
+
+void MMAAudioVolumeGroupManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+{
+    switch (callbackType) {
+        case AudioVolumeGroupManagerCallbackType::RING_MODE_CHANGE: {
+            auto func = CJLambda::Create(reinterpret_cast<void (*)(int32_t)>(callback));
+            if (func == nullptr) {
+                AUDIO_ERR_LOG("Register RING_MODE_CHANGE event failure!");
+                *errorCode = CJ_ERR_SYSTEM;
+                return;
+            }
+            audioRingerModeCallback_->RegisterFunc(func);
+            audioGroupMngr_->SetRingerModeCallback(cachedClientId_, audioRingerModeCallback_);
+            break;
+        }
+        case AudioVolumeGroupManagerCallbackType::MICSTATE_CHANGE: {
+            auto func = CJLambda::Create(reinterpret_cast<void (*)(CMicStateChangeEvent)>(callback));
+            if (func == nullptr) {
+                AUDIO_ERR_LOG("Register MICSTATE_CHANGE event failure!");
+                *errorCode = CJ_ERR_SYSTEM;
+                return;
+            }
+            micStateChangeCallback_->RegisterFunc(func);
+            audioGroupMngr_->SetMicStateChangeCallback(micStateChangeCallback_);
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("No such callback supported");
+    }
 }
 }
 } // namespace AudioStandard

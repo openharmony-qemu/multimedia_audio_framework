@@ -13,30 +13,44 @@
  * limitations under the License.
  */
 #include "multimedia_audio_routing_manager_callback.h"
+#include "audio_log.h"
 #include "multimedia_audio_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
-void CjAudioManagerMicrophoneBlockedCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
+void CjAudioManagerAvailableDeviceChangeCallback::RegisterFunc(const uint32_t usage,
+    std::function<void(CDeviceChangeAction)> cjCallback)
 {
-    func_ = cjCallback;
+    callbackList_.push_back({usage, cjCallback});
 }
 
-void CjAudioManagerMicrophoneBlockedCallback::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)
+void CjAudioManagerAvailableDeviceChangeCallback::OnAvailableDeviceChange(const AudioDeviceUsage usage,
+    const DeviceChangeAction &deviceChangeAction)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
-    if (func_ == nullptr) {
+    std::function<void(CDeviceChangeAction)> func;
+    bool isFind{false};
+    for (auto it = callbackList_.begin(); it != callbackList_.end(); ++it) {
+        if (usage == it->first) {
+            func = it->second;
+            isFind = true;
+            break;
+        }
+    }
+    if (!isFind) {
+        AUDIO_ERR_LOG("[OnAvailableDeviceChange] Registered func is not found.");
         return;
     }
-    CArrDeviceDescriptor arr;
+    CDeviceChangeAction cDeviceChangeAct;
+    cDeviceChangeAct.changeType = deviceChangeAction.type;
     int32_t errorCode = SUCCESS_CODE;
-    Convert2CArrDeviceDescriptor(arr, microphoneBlockedInfo.devices, &errorCode);
+    Convert2CArrDeviceDescriptor(cDeviceChangeAct.deviceDescriptors, deviceChangeAction.deviceDescriptors, &errorCode);
     if (errorCode != SUCCESS_CODE) {
-        FreeCArrDeviceDescriptor(arr);
         return;
     }
-    func_(arr);
-    FreeCArrDeviceDescriptor(arr);
+    func(cDeviceChangeAct);
+    free(cDeviceChangeAct.deviceDescriptors.head);
+    cDeviceChangeAct.deviceDescriptors.head = nullptr;
 }
 
 void CjAudioPreferredInputDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
@@ -51,6 +65,26 @@ void CjAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
     if (func_ == nullptr) {
         return;
     }
+    CArrDeviceDescriptor arr;
+    int32_t errorCode = SUCCESS_CODE;
+    Convert2CArrDeviceDescriptor(arr, desc, &errorCode);
+    if (errorCode != SUCCESS_CODE) {
+        return;
+    }
+    func_(arr);
+    free(arr.head);
+    arr.head = nullptr;
+}
+
+void CjAudioPreferredOutputDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
+{
+    func_ = cjCallback;
+}
+
+void CjAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(
+    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+{
+    std::lock_guard<std::mutex> lock(cbMutex_);
     CArrDeviceDescriptor arr;
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptor(arr, desc, &errorCode);

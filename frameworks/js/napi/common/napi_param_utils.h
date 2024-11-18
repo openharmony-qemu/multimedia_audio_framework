@@ -220,6 +220,8 @@ public:
         AudioSessionStrategy &audioSessionStrategy, napi_value in);
     static napi_status SetAudioSessionDeactiveEvent(const napi_env &env,
         const AudioSessionDeactiveEvent &deactiveEvent, napi_value &result);
+
+    static bool CheckArgType(napi_env env, napi_value arg, napi_valuetype expectedType);
 };
 } // namespace AudioStandard
 } // namespace OHOS

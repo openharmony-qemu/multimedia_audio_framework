@@ -213,6 +213,7 @@ private:
     int32_t StopNonblockingCapture();
 
     int32_t DoStop();
+    int32_t StartCapture();
 
     CaptureAttr *hdiAttr_ = nullptr;
     IAudioSourceAttr attr_ = {};
@@ -1048,6 +1049,11 @@ int32_t AudioCapturerSourceInner::Start(void)
         + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
+    return StartCapture();
+}
+
+int32_t AudioCapturerSourceInner::StartCapture()
+{
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {
             audioCapturerSourceCallback_->OnCapturerState(true);

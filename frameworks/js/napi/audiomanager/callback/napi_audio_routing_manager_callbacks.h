@@ -32,12 +32,11 @@ class NapiAudioPreferredOutputDeviceChangeCallback : public AudioPreferredOutput
 public:
     explicit NapiAudioPreferredOutputDeviceChangeCallback(napi_env env);
     virtual ~NapiAudioPreferredOutputDeviceChangeCallback();
-    void SaveCallbackReference(AudioStreamType streamType, napi_value callback);
+    void SaveCallbackReference(napi_value callback);
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void RemoveCallbackReference(napi_env env, napi_value callback);
-    void RemoveAllCallbacks();
     void CreatePreferredOutTsfn(napi_env env);
     bool GetPreferredOutTsfnFlag();
+    bool ContainSameJsCallback(napi_value args);
 
 private:
     struct AudioActiveOutputDeviceChangeJsCallback {
@@ -50,10 +49,8 @@ private:
     static void SafeJsCallbackActiveOutputDeviceChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void ActiveOutputDeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
-    std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> preferredOutputDeviceCallback_ = nullptr;
-    std::list<std::pair<std::shared_ptr<AutoRef>, AudioStreamType>> preferredOutputDeviceCbList_;
+    std::shared_ptr<AutoRef> callback_ = nullptr;
     bool regAmOutputDevChgTsfn_ = false;
     napi_threadsafe_function amOutputDevChgTsfn_ = nullptr;
 };
@@ -62,12 +59,11 @@ class NapiAudioPreferredInputDeviceChangeCallback : public AudioPreferredInputDe
 public:
     explicit NapiAudioPreferredInputDeviceChangeCallback(napi_env env);
     virtual ~NapiAudioPreferredInputDeviceChangeCallback();
-    void SaveCallbackReference(SourceType sourceType, napi_value callback);
+    void SaveCallbackReference(napi_value callback);
     void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void RemoveCallbackReference(napi_env env, napi_value callback);
-    void RemoveAllCallbacks();
-    void CreatePerferredInTsfn(napi_env env);
-    bool GetPerferredInTsfnFlag();
+    void CreatePreferredInTsfn(napi_env env);
+    bool GetPreferredInTsfnFlag();
+    bool ContainSameJsCallback(napi_value args);
 
 private:
     struct AudioActiveInputDeviceChangeJsCallback {
@@ -80,10 +76,8 @@ private:
     static void SafeJsCallbackActiveInputDeviceChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void ActiveInputDeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
-    std::mutex preferredInputListMutex_;
     napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> preferredInputDeviceCallback_ = nullptr;
-    std::list<std::pair<std::shared_ptr<AutoRef>, SourceType>> preferredInputDeviceCbList_;
+    std::shared_ptr<AutoRef> callback_ = nullptr;
     bool regAmInputDevChgTsfn_ = false;
     napi_threadsafe_function amInputDevChgTsfn_ = nullptr;
 };

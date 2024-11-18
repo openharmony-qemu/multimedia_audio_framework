@@ -33,7 +33,7 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
         AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
         return;
     }
-    audioEffectChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+    audioEffectChainManager->UpdateParamExtra(mainkey, subkey, extraSceneType);
 }
 
 bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,

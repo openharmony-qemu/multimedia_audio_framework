@@ -497,21 +497,21 @@ HWTEST(AudioPolicyExtUnitTest, RegisterFocusInfoChangeCallback_001, TestSize.Lev
 HWTEST(AudioPolicyExtUnitTest, SetPreferredOutputDeviceChangeCallback_001, TestSize.Level3)
 {
     int32_t ret = -1;
-    int32_t clientId = getpid();
-    ret = AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(clientId, nullptr);
+    AudioRendererInfo rendererInfo;
+    ret = AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(rendererInfo, nullptr);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
     std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> callback =
         std::make_shared<AudioPreferredOutputDeviceChangeCallbackTest>();
 
     AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
-    ret = AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(clientId, callback);
+    ret = AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(rendererInfo, callback);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(clientId, callback);
+    ret = AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(rendererInfo, callback);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = AudioPolicyManager::GetInstance().UnsetPreferredOutputDeviceChangeCallback(clientId);
+    ret = AudioPolicyManager::GetInstance().UnsetPreferredOutputDeviceChangeCallback(callback);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -523,20 +523,21 @@ HWTEST(AudioPolicyExtUnitTest, SetPreferredOutputDeviceChangeCallback_001, TestS
  */
 HWTEST(AudioPolicyExtUnitTest, SetPreferredInputDeviceChangeCallback_001, TestSize.Level3)
 {
-    int32_t ret = AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(nullptr);
+    AudioCapturerInfo capturerInfo;
+    int32_t ret = AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, nullptr);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
     std::shared_ptr<AudioPreferredInputDeviceChangeCallbackTest> callback =
         std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
 
     AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
-    ret = AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(callback);
+    ret = AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, callback);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(callback);
+    ret = AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, callback);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = AudioPolicyManager::GetInstance().UnsetPreferredInputDeviceChangeCallback();
+    ret = AudioPolicyManager::GetInstance().UnsetPreferredInputDeviceChangeCallback(callback);
     EXPECT_EQ(SUCCESS, ret);
 }
 

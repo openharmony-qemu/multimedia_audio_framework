@@ -87,7 +87,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
 int32_t AudioActiveDevice::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     CHECK_AND_RETURN_RET_LOG(audioA2dpDevice_.CheckA2dpDeviceExist(deviceDescriptor->macAddress_),
-        ERR_INVALID_PARAM, "SelectNewDevice: the target A2DP device doesn't exist.");
+        ERR_INVALID_PARAM, "the target A2DP device doesn't exist.");
     int32_t result = ERROR;
 #ifdef BLUETOOTH_ENABLE
     AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
@@ -98,7 +98,7 @@ int32_t AudioActiveDevice::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescript
 
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
         audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
-        AUDIO_INFO_LOG("a2dp device [%{public}s] is already active",
+        AUDIO_WARNING_LOG("a2dp device [%{public}s] is already active",
             GetEncryptAddr(deviceDescriptor->macAddress_).c_str());
         return SUCCESS;
     }
@@ -367,7 +367,7 @@ void AudioActiveDevice::UpdateInputDeviceInfo(DeviceType deviceType)
 
 int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
 {
-    AUDIO_INFO_LOG("Device type[%{public}d] flag[%{public}d]", deviceType, active);
+    AUDIO_WARNING_LOG("Device type[%{public}d] flag[%{public}d]", deviceType, active);
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     // Activate new device if its already connected
@@ -403,10 +403,6 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
 }
 int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool active, std::string address)
 {
-    AUDIO_INFO_LOG("Device type[%{public}d] flag[%{public}d] address[%{public}s]",
-        deviceType, active, GetEncryptAddr(address).c_str());
-    CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
-
     // Activate new device if its already connected
     auto isPresent = [&deviceType, &address] (const std::unique_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");

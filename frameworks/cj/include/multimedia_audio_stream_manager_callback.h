@@ -32,6 +32,22 @@ public:
 
 private:
     std::function<void(CArrAudioCapturerChangeInfo)> func_{};
+    std::mutex cbMutex_;
+};
+
+class CjAudioRendererStateChangeCallback : public AudioRendererStateChangeCallback {
+public:
+    CjAudioRendererStateChangeCallback() = default;
+    virtual ~CjAudioRendererStateChangeCallback() = default;
+
+    void RegisterFunc(std::function<void(CArrAudioRendererChangeInfo)> cjCallback);
+
+    void OnRendererStateChange(
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+
+private:
+    std::function<void(CArrAudioRendererChangeInfo)> func_{};
+    std::mutex cbMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

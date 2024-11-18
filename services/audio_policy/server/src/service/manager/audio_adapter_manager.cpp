@@ -308,6 +308,11 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
     }
 }
 
+void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
@@ -1512,7 +1517,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
         if (!result) {
             AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
         }
-        if (streamType == STREAM_RING) {
+        if (streamType == STREAM_RING && VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
             bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
             if (currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
                 continue;
@@ -1631,6 +1636,27 @@ int64_t AudioAdapterManager::GetCurentDeviceSafeTime(DeviceType deviceType)
     return -1;
 }
 
+int32_t AudioAdapterManager::GetRestoreVolumeLevel(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            volumeDataMaintainer_.GetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, safeActiveVolume_);
+            return safeActiveVolume_;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            volumeDataMaintainer_.GetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtVolume_);
+            return safeActiveBtVolume_;
+        default:
+            AUDIO_ERR_LOG("current device : %{public}d is not support", deviceType);
+            break;
+    }
+
+    return SAFE_UNKNOWN;
+}
+
 int32_t AudioAdapterManager::SetDeviceSafeStatus(DeviceType deviceType, SafeStatus status)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -1652,6 +1678,18 @@ int32_t AudioAdapterManager::SetDeviceSafeTime(DeviceType deviceType, int64_t ti
     }
     bool ret = volumeDataMaintainer_.SaveSafeVolumeTime(deviceType, time);
     CHECK_AND_RETURN_RET(ret, ERROR, "SetDeviceSafeTime failed");
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume)
+{
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        safeActiveBtVolume_ = volume;
+    } else if (deviceType == DEVICE_TYPE_WIRED_HEADSET) {
+        safeActiveVolume_ = volume;
+    }
+    bool ret = volumeDataMaintainer_.SetRestoreVolumeLevel(deviceType, volume);
+    CHECK_AND_RETURN_RET(ret, ERROR, "SetRestoreVolumeLevel failed");
     return SUCCESS;
 }
 

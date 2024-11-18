@@ -603,8 +603,10 @@ int32_t RendererInServer::UpdateWriteIndex()
     if (needForceWrite_ < 3 && stream_->GetWritableSize() >= spanSizeInByte_) { // 3 is maxlength - 1
         if (writeLock_.try_lock()) {
             AUDIO_DEBUG_LOG("Start force write data");
-            WriteData();
-            needForceWrite_++;
+            int32_t ret = WriteData();
+            if (ret == SUCCESS) {
+                needForceWrite_++;
+            }
             writeLock_.unlock();
         }
     }

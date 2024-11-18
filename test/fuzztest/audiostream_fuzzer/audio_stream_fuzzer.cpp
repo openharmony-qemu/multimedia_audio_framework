@@ -95,6 +95,8 @@ public:
 
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
 
+    int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 
@@ -161,6 +163,11 @@ int32_t MockPolicyProvider::GetMaxRendererInstances()
 }
 
 int32_t MockPolicyProvider::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::NotifyCapturerRemoved(uint64_t sessionId)
 {
     return SUCCESS;
 }

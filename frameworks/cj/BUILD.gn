@@ -44,7 +44,9 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
     "src/multimedia_audio_routing_manager_impl.cpp",
     "src/multimedia_audio_stream_manager_callback.cpp",
     "src/multimedia_audio_stream_manager_impl.cpp",
+    "src/multimedia_audio_volume_group_manager_callback.cpp",
     "src/multimedia_audio_volume_group_manager_impl.cpp",
+    "src/multimedia_audio_volume_manager_callback.cpp",
     "src/multimedia_audio_volume_manager_impl.cpp",
   ]
 

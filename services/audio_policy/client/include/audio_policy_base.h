@@ -195,6 +195,10 @@ public:
 
     virtual int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) = 0;
 
+    virtual int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
+
+    virtual int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;
+
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 

@@ -87,6 +87,29 @@ public:
     {
         return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
     }
+
+    static uint32_t GetSamplePerFrame(const AudioSampleFormat &format)
+    {
+        uint32_t audioPerSampleLength = 2; // 2 byte
+        switch (format) {
+            case AudioSampleFormat::SAMPLE_U8:
+                audioPerSampleLength = 1;
+                break;
+            case AudioSampleFormat::SAMPLE_S16LE:
+                audioPerSampleLength = 2; // 2 byte
+                break;
+            case AudioSampleFormat::SAMPLE_S24LE:
+                audioPerSampleLength = 3; // 3 byte
+                break;
+            case AudioSampleFormat::SAMPLE_S32LE:
+            case AudioSampleFormat::SAMPLE_F32LE:
+                audioPerSampleLength = 4; // 4 byte
+                break;
+            default:
+                break;
+        }
+        return audioPerSampleLength;
+    }
 };
 
 class Trace {
@@ -644,7 +667,6 @@ enum HdiRenderOffset : uint32_t {
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

@@ -80,7 +80,7 @@ public:
                  captureDesc->connectState_ != SUSPEND_CONNECTED)) {
                 return std::move(captureDesc);
             }
-            AUDIO_INFO_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] isEnable[%{public}d]" \
+            AUDIO_WARNING_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] isEnable[%{public}d]" \
                 "exceptionFlag[%{public}d]", captureDesc->deviceType_, captureDesc->connectState_,
                 captureDesc->isEnable_, captureDesc->exceptionFlag_);
         }

@@ -14,6 +14,7 @@
  */
 #include "multimedia_audio_stream_manager_callback.h"
 #include "multimedia_audio_common.h"
+#include "multimedia_audio_error.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -51,6 +52,41 @@ void CjAudioCapturerStateChangeCallback::OnCapturerStateChange(
     }
     func_(arrInfo);
     FreeCArrAudioCapturerChangeInfo(arrInfo);
+}
+
+void CjAudioRendererStateChangeCallback::RegisterFunc(std::function<void(CArrAudioRendererChangeInfo)> cjCallback)
+{
+    func_ = cjCallback;
+}
+
+void CjAudioRendererStateChangeCallback::OnRendererStateChange(
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    std::lock_guard<std::mutex> lock(cbMutex_);
+    CArrAudioRendererChangeInfo arrInfo;
+    arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
+    auto head = static_cast<CAudioRendererChangeInfo *>(
+        malloc(sizeof(CAudioRendererChangeInfo) * audioRendererChangeInfos.size()));
+    if (head == nullptr) {
+        return;
+    }
+    int32_t errorCode = SUCCESS_CODE;
+    arrInfo.head = head;
+    if (memset_s(head, arrInfo.size, 0, arrInfo.size) != EOK) {
+        FreeCArrAudioRendererChangeInfo(arrInfo);
+        errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    for (int32_t i = 0; i < static_cast<int32_t>(audioRendererChangeInfos.size()); i++) {
+        Convert2CAudioRendererChangeInfo(head[i], *(audioRendererChangeInfos[i]), &errorCode);
+    }
+    if (errorCode != SUCCESS_CODE) {
+        FreeCArrAudioRendererChangeInfo(arrInfo);
+        errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    func_(arrInfo);
+    FreeCArrAudioRendererChangeInfo(arrInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

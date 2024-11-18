@@ -233,7 +233,7 @@ void MediaBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevic
             AddDeviceInConfigVector(device, negativeDevices_);
             break;
         default:
-            AUDIO_INFO_LOG("Unknow BT category, regard as bluetooth headset.");
+            AUDIO_WARNING_LOG("Unknow BT category, regard as bluetooth headset.");
             AddDeviceInConfigVector(device, privacyDevices_);
             desc.deviceCategory_ = BT_HEADPHONE;
             break;
@@ -405,7 +405,7 @@ void MediaBluetoothDeviceManager::HandleVirtualConnectDevice(const BluetoothRemo
 void MediaBluetoothDeviceManager::HandleRemoveVirtualConnectDevice(const BluetoothRemoteDevice &device)
 {
     if (IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        AUDIO_INFO_LOG("The device is already removed as virtual Devices, ignore remove action.");
+        AUDIO_WARNING_LOG("The device is already removed as virtual Devices, ignore remove action.");
         return;
     }
     RemoveDeviceInConfigVector(device, virtualDevices_);
@@ -449,7 +449,7 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::CONNECTED;
-    AUDIO_INFO_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
+    AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
         category is %{public}d, device name is %{public}s", deviceStatus,
         GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
     {
@@ -603,7 +603,7 @@ void A2dpInBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteD
     const AudioStreamInfo &streamInfo)
 {
     if (!IsA2dpInBluetoothDeviceExist(device.GetDeviceAddr())) {
-        AUDIO_INFO_LOG("The device is already disconnected, ignore disconnect action.");
+        AUDIO_WARNING_LOG("The device is already disconnected, ignore disconnect action.");
         return;
     }
     AudioDeviceDescriptor desc;
@@ -943,7 +943,7 @@ void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice 
         auto deviceIter = std::find_if(privacyDevices_.rbegin(), privacyDevices_.rend(), isPresent);
         if (deviceIter != privacyDevices_.rend()) {
             deviceAddr = deviceIter->GetDeviceAddr();
-            AUDIO_INFO_LOG("Change user select device from watch %{public}s to wear headphone %{public}s",
+            AUDIO_WARNING_LOG("Change user select device from watch %{public}s to wear headphone %{public}s",
                 device.GetDeviceAddr().c_str(), deviceAddr.c_str());
         }
     }
@@ -1024,7 +1024,7 @@ void HfpBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemoteD
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::DEACTIVE_CONNECTED;
-    AUDIO_INFO_LOG("hfpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
+    AUDIO_WARNING_LOG("hfpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
         category is %{public}d, device name is %{public}s", deviceStatus,
         GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
     {
@@ -1106,7 +1106,7 @@ std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::GetAllHfpBluetooth
 
 void HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice()
 {
-    AUDIO_INFO_LOG("Bluetooth service crashed and enter the ClearAllhfpBluetoothDevice.");
+    AUDIO_WARNING_LOG("Bluetooth service crashed and enter the ClearAllhfpBluetoothDevice.");
     {
         std::lock_guard<std::mutex> hfpDeviceLock(g_hfpDeviceLock);
         privacyDevices_.clear();
@@ -1133,7 +1133,7 @@ void HfpBluetoothDeviceManager::OnScoStateChanged(const BluetoothRemoteDevice &d
             std::lock_guard<std::mutex> handleLock(stopVirtualCallHandleLock_);
             if (device.GetDeviceAddr() == stopVirtualCallHandle_.device.GetDeviceAddr() &&
                 stopVirtualCallHandle_.isWaitingForStoppingVirtualCall) {
-                AUDIO_INFO_LOG("reason change to %{public}d", HFP_AG_SCO_REMOTE_USER_TERMINATED);
+                AUDIO_WARNING_LOG("reason change to %{public}d", HFP_AG_SCO_REMOTE_USER_TERMINATED);
                 reason = HFP_AG_SCO_REMOTE_USER_TERMINATED;
                 stopVirtualCallHandle_.device = BluetoothRemoteDevice();
                 stopVirtualCallHandle_.isWaitingForStoppingVirtualCall = false;

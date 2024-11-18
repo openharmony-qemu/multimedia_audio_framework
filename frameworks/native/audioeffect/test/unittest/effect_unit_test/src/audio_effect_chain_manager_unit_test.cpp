@@ -1314,17 +1314,17 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnMultiChannelInfo_003, TestSize.Lev
 }
 
 /**
-* @tc.name   : Test UpdateExtraSceneType API
-* @tc.number : UpdateExtraSceneType_001
-* @tc.desc   : Test UpdateExtraSceneType interface.
+* @tc.name   : Test UpdateParamExtra API
+* @tc.number : UpdateParamExtra_001
+* @tc.desc   : Test UpdateParamExtra interface.
 */
-HWTEST(AudioEffectChainManagerUnitTest, UpdateExtraSceneType_001, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_001, TestSize.Level1)
 {
     const std::string mainkey = "audio_effect";
     const std::string subkey = "update_audio_effect_type";
     const std::string extraSceneType = "0";
 
-    AudioEffectChainManager::GetInstance()->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkey, extraSceneType);
     const char *sceneType = "SCENE_MUSIC";
     std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
     std::shared_ptr<AudioEffectChain> audioEffectChain =
@@ -1334,7 +1334,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateExtraSceneType_001, TestSize.Level
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(ERROR, result);
 
-    AudioEffectChainManager::GetInstance()->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkey, extraSceneType);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
