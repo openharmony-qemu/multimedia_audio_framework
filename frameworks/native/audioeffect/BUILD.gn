@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
 import("../../../sensor.gni")
 import("../../../window_manager.gni")
@@ -47,7 +48,7 @@ config("audio_effect_integration_config") {
   include_dirs = [ "../../../interfaces/inner_api/native/audiocommon/include" ]
 }
 
-ohos_shared_library("audio_effect") {
+audio_ohos_library("audio_effect") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -57,7 +58,7 @@ ohos_shared_library("audio_effect") {
   }
   install_enable = true
 
-  public_configs = [ ":audio_effect_config" ]
+  configs = [ ":audio_effect_config" ]
 
   sources = [
     "src/audio_effect_chain.cpp",
@@ -72,12 +73,12 @@ ohos_shared_library("audio_effect") {
     "src/audio_head_tracker.cpp",
   ]
 
-  public_deps = [
+  deps = [
     "../../../services/audio_policy:audio_setting_provider",
     "../audioutils:audio_utils",
   ]
 
-  public_external_deps = [
+  external_deps = [
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
@@ -92,7 +93,7 @@ ohos_shared_library("audio_effect") {
   ]
 
   if (sensor_enable == true) {
-    public_external_deps += [ "sensor:sensor_interface_native" ]
+    external_deps += [ "sensor:sensor_interface_native" ]
   }
 
   cflags = [ "-Os" ]

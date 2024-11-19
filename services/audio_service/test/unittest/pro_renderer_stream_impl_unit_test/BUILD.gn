@@ -13,11 +13,6 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
-import("../../../../../audio_framework_test_sources.gni")
-
-audio_service_sources_dir = "../../../../../services/audio_service"
-audio_process_service_sources =
-    [ "$audio_service_sources_dir/server/src/pro_renderer_stream_impl.cpp" ]
 
 module_output_path = "multimedia_audio_framework/pro_renderer_stream_impl"
 
@@ -28,7 +23,6 @@ ohos_unittest("pro_renderer_stream_impl_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   sources = [ "./src/pro_renderer_stream_impl_unit_test.cpp" ]
-  sources += audio_process_service_sources
 
   include_dirs = [
     "../../../server/include",
@@ -39,7 +33,7 @@ ohos_unittest("pro_renderer_stream_impl_unit_test") {
 
   configs = [ "../../../../../services/audio_service:audio_service_config" ]
 
-  deps = [ "../../../../audio_service:audio_process_service" ]
+  deps = [ "../../../../audio_service:audio_process_service_static" ]
 
   external_deps = [
     "c_utils:utils",
