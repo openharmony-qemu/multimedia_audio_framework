@@ -383,7 +383,7 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     RemoveVirtualConnectedDevice(devDesc);
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
-        AUDIO_INFO_LOG("The device has been added and will not be added again.");
+        AUDIO_WARNING_LOG("The device has been added and will not be added again.");
         return;
     }
     AddConnectedDevices(devDesc);

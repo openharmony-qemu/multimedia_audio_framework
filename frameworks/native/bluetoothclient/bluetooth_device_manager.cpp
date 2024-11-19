@@ -448,8 +448,9 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::CONNECTED;
-    AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
-        category is %{public}d", deviceStatus, GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_);
+    AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, \
+        device address is %{public}s, category is %{public}d", deviceStatus,
+        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_);
     {
         std::lock_guard<std::mutex> deviceMapLock(g_a2dpDeviceMapLock);
         if (deviceStatus == DeviceStatus::ADD) {
@@ -644,7 +645,7 @@ void HfpBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevice 
             AddDeviceInConfigVector(device, negativeDevices_);
             break;
         default:
-            AUDIO_WARNING_LOG("Unknow BT category, regard as bluetooth headset.");
+            AUDIO_INFO_LOG("Unknow BT category, regard as bluetooth headset.");
             AddDeviceInConfigVector(device, privacyDevices_);
             desc.deviceCategory_ = BT_HEADPHONE;
             break;
