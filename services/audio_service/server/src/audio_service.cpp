@@ -670,6 +670,7 @@ void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, s
 
 int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
+    std::lock_guard<std::mutex> lock(processListMutex_);
     int32_t ret = SUCCESS;
     for (auto item : endpointList_) {
         std::string endpointName = item.second->GetEndpointName();

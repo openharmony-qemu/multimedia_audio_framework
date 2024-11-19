@@ -44,6 +44,7 @@ void AudioConcurrencyParser::ParseInternal(xmlNode *node, std::map<std::pair<Aud
                 reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
             std::string existingStream = nodeName;
             AUDIO_DEBUG_LOG("existingStream: %{public}s", existingStream.c_str());
+            xmlFree(nodeName);
             ParseIncoming(existingStream, curNode->children, concurrencyMap);
         } else {
             ParseInternal((curNode->children), concurrencyMap);

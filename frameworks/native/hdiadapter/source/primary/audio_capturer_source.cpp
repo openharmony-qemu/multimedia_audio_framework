@@ -466,6 +466,7 @@ AudioCapturerSourceInner::~AudioCapturerSourceInner()
     threadRunning_ = false;
     if (hdiAttr_ != nullptr) {
         free(hdiAttr_);
+        hdiAttr_ = nullptr;
     }
 }
 

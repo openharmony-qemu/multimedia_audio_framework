@@ -598,7 +598,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         uint32_t samplingRate = clientConfig_.streamInfo.samplingRate;
         uint32_t channels = clientConfig_.streamInfo.channels;
         uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
-        // calculate wait time by buffer size, 10e6 is converting seconds to microseconds 
+        // calculate wait time by buffer size, 10e6 is converting seconds to microseconds
         uint32_t waitTimeUs = bufferSize * 10e6 / (samplingRate * channels * samplePerFrame);
         AUDIO_ERR_LOG("server is died! wait %{public}d us", waitTimeUs);
         usleep(waitTimeUs);
@@ -731,7 +731,7 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
         CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
             "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
-        if (futexRes == FUTEX_SUCCESS) { break; }
+        if (futexRes == FUTEX_SUCCESS && sizeInFrame > 0) { break; }
     }
 
     if (sizeInFrame < 0 || static_cast<uint32_t>(clientBuffer_->GetAvailableDataFrames()) < spanSizeInFrame_) {
