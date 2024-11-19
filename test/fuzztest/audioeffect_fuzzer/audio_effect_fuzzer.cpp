@@ -58,13 +58,11 @@ void InitAudioEffectChainManagerFuzzTest(const uint8_t *rawData, size_t size)
     }
     string effectMode = "EFFECT_DEFAULT";
     string sceneType = "SCENE_MOVIE";
-    string spatializationEnabled = "0";
     AudioEffectScene currSceneType = SCENE_MUSIC;
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
-        spatializationEnabled);
+    AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode);
     AudioEffectChainManager::GetInstance()->SetHdiParam(currSceneType);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

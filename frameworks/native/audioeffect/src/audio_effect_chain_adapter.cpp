@@ -77,7 +77,7 @@ int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
     return SUCCESS;
 }
 
-bool EffectChainManagerExist(const char *sceneType, const char *effectMode, const char *spatializationEnabled)
+bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
@@ -89,12 +89,7 @@ bool EffectChainManagerExist(const char *sceneType, const char *effectMode, cons
     if (effectMode) {
         effectModeString = effectMode;
     }
-    std::string spatializationEnabledString = "";
-    if (spatializationEnabled) {
-        spatializationEnabledString = spatializationEnabled;
-    }
-    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString,
-        spatializationEnabledString);
+    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString);
 }
 
 int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)

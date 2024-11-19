@@ -115,8 +115,7 @@ public:
     int32_t CreateAudioEffectChainDynamic(const std::string &sceneType);
     bool CheckAndRemoveSessionID(const std::string &sessionID);
     int32_t ReleaseAudioEffectChainDynamic(const std::string &sceneType);
-    bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode,
-        const std::string &spatializationEnabled);
+    bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode);
     int32_t ApplyAudioEffectChain(const std::string &sceneType, std::unique_ptr<EffectBufferAttr> &bufferAttr);
     void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
     bool GetOffloadEnabled();
@@ -180,8 +179,7 @@ private:
 #endif
     int32_t CreateAudioEffectChainDynamicInner(const std::string &sceneType);
     int32_t ReleaseAudioEffectChainDynamicInner(const std::string &sceneType);
-    bool ExistAudioEffectChainInner(const std::string &sceneType, const std::string &effectMode,
-        const std::string &spatializationEnabled);
+    bool ExistAudioEffectChainInner(const std::string &sceneType, const std::string &effectMode);
     int32_t UpdateMultichannelConfigInner(const std::string &sceneType);
     int32_t UpdateSpatializationStateInner(AudioSpatializationState spatializationState);
     int32_t SetHdiParam(const AudioEffectScene &sceneType);
