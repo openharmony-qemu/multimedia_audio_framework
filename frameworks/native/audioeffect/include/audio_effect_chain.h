@@ -109,6 +109,7 @@ private:
     std::vector<std::string> effectNames_;
     std::vector<AudioEffectLibrary *> libHandles_;
     AudioEffectConfig ioBufferConfig_ = {};
+    AudioEffectConfig preIoBufferConfig_ = {};
     AudioBuffer audioBufIn_ = {};
     AudioBuffer audioBufOut_ = {};
     FILE *dumpFileInput_ = nullptr;

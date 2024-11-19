@@ -34,14 +34,6 @@ const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 constexpr int32_t CROSS_FADE_FRAME_COUNT = 5;
 
-template <typename T>
-static void Swap(T &a, T &b)
-{
-    T temp = a;
-    a = b;
-    b = temp;
-}
-
 #ifdef SENSOR_ENABLE
 AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
 {
@@ -271,8 +263,10 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
             "[%{public}s] with mode [%{public}s], %{public}s effect EFFECT_CMD_SET_PROPERTY fail",
             sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
     }
-
-    cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
+    if (preIoBufferConfig_.inputCfg.channels == 0 && preIoBufferConfig_.inputCfg.channelLayout == 0) {
+        preIoBufferConfig_ = ioBufferConfig_;
+    }
+    cmdInfo = {sizeof(AudioEffectConfig), &preIoBufferConfig_};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{public}s effect EFFECT_CMD_SET_CONFIG fail",
         sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
@@ -280,8 +274,9 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{public}s effect EFFECT_CMD_GET_CONFIG fail",
         sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
-
-    Swap(ioBufferConfig_.inputCfg, ioBufferConfig_.outputCfg); // pass outputCfg to next algo as inputCfg
+    preIoBufferConfig_.inputCfg = preIoBufferConfig_.outputCfg;
+    ioBufferConfig_.outputCfg.channels = preIoBufferConfig_.outputCfg.channels;
+    ioBufferConfig_.outputCfg.channelLayout = preIoBufferConfig_.outputCfg.channelLayout;
 
     standByEffectHandles_.emplace_back(handle);
     effectNames_.emplace_back(effectName);
