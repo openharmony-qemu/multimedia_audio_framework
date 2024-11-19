@@ -741,13 +741,6 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
-    if (!isLoaded_) {
-        AUDIO_ERR_LOG("The data base is not loaded. Can not load new volume for new device!");
-        // The ring volume is also saved in audio_config.para.
-        // So the boot animation can still play with right volume.
-        return;
-    }
-
     // The same device does not set the volume
     // Except for A2dp, because the currentActiveDevice_ has already been set in Activea2dpdevice.
     bool isRingerModeMute = AudioPolicyService::GetAudioPolicyService().IsRingerModeMute();
