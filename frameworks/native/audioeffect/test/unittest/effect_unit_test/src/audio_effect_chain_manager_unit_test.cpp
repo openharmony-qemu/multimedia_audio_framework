@@ -362,7 +362,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_003, TestSize.Leve
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,);
+    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode);
     EXPECT_EQ(false, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

@@ -908,8 +908,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerExist_001, TestSize.Le
     EXPECT_EQ(SUCCESS, result);
 
     const char *effectMode = "EFFECT_DEFAULT";
-    const char *spatializationEnabled = "0";
-    result = EffectChainManagerExist(sceneType, effectMode, spatializationEnabled);
+    result = EffectChainManagerExist(sceneType, effectMode);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -928,8 +927,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerExist_002, TestSize.Le
     EXPECT_EQ(ERROR, result);
 
     const char *effectMode = "";
-    const char *spatializationEnabled = "";
-    result = EffectChainManagerExist(sceneType, effectMode, spatializationEnabled);
+    result = EffectChainManagerExist(sceneType, effectMode);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -948,8 +946,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerExist_003, TestSize.Le
     EXPECT_EQ(ERROR, result);
 
     const char *effectMode = nullptr;
-    const char *spatializationEnabled = nullptr;
-    result = EffectChainManagerExist(sceneType, effectMode, spatializationEnabled);
+    result = EffectChainManagerExist(sceneType, effectMode);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
