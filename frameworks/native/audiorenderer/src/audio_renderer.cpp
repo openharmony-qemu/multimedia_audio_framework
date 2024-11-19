@@ -1025,8 +1025,10 @@ void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &inter
     if (cb_ != nullptr && interruptEvent.callbackToApp) {
         cb_->OnInterrupt(interruptEvent);
         AUDIO_DEBUG_LOG("Send interruptEvent to app successfully");
-    } else {
+    } else if (cb_ == nullptr) {
         AUDIO_WARNING_LOG("cb_==nullptr, failed to send interruptEvent");
+    } else {
+        AUDIO_INFO_LOG("callbackToApp is %{public}d", interruptEvent.callbackToApp);
     }
 }
 
