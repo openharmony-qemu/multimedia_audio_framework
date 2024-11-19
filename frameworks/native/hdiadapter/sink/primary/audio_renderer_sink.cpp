@@ -252,6 +252,8 @@ private:
 
     // for device switch
     std::mutex switchDeviceMutex_;
+    // for adapter_
+    std::mutex sinkMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
 
@@ -580,6 +582,7 @@ void AudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callb
 
 void AudioRendererSinkInner::DeInit()
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     sinkInited_ = false;
@@ -735,6 +738,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 
 int32_t AudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
     AUDIO_INFO_LOG("adapterNameCase_ :%{public}s", adapterNameCase_.c_str());
