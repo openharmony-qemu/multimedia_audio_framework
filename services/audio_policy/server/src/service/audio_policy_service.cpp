@@ -3484,7 +3484,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     bool haveArmUsbDevice = false;
     DealAudioSceneOutputDevices(audioScene, activeOutputDevices, haveArmUsbDevice);
     // mute primary when play music and ring
-    if (activeOutputDevices.size() > 1 && IsStreamActive(SREAM_MUSIC)) {
+    if (activeOutputDevices.size() > 1 && IsStreamActive(STREAM_MUSIC)) {
         MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
     }
     int32_t result = SUCCESS;
