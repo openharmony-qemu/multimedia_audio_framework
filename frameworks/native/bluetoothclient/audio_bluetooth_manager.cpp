@@ -351,7 +351,7 @@ void AudioA2dpListener::OnMediaStackChanged(const BluetoothRemoteDevice &device,
 void AudioA2dpListener::OnVirtualDeviceChanged(int32_t action, std::string address)
 {
     AUDIO_WARNING_LOG("action: %{public}d, macAddress: %{public}s", action,
-        GetEncryptAddr(macAddress).c_str());
+        GetEncryptAddr(address).c_str());
     if (action == static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_ADD)) {
         MediaBluetoothDeviceManager::SetMediaStack(BluetoothRemoteDevice(address),
             BluetoothDeviceAction::VIRTUAL_DEVICE_ADD_ACTION);
@@ -676,7 +676,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
 
 void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
-    AUDIO_WARNING_LOG("state: %{public}d device: %{public}s", state, 
+    AUDIO_WARNING_LOG("state: %{public}d device: %{public}s", state,
         GetEncryptAddr(device.GetDeviceAddr()).c_str());
     if (state == static_cast<int>(BTConnectState::CONNECTING)) {
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::CONNECTING_ACTION);

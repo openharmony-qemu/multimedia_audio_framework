@@ -82,7 +82,7 @@ public:
             }
             AUDIO_WARNING_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] " \
                 "isEnable[%{public}d] exceptionFlag[%{public}d]", captureDesc->deviceType_,
-                captureDesc->connectState_,captureDesc->isEnable_, captureDesc->exceptionFlag_);
+                captureDesc->connectState_, captureDesc->isEnable_, captureDesc->exceptionFlag_);
         }
         return std::make_unique<AudioDeviceDescriptor>();
     }
