@@ -55,6 +55,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE):
             HandleHeadTrackingEnabledChangeForAnyDevice(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_NN_STATE_CHANGE):
+            HandleNnStateChange(data, reply);
+            break;    
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE):
             HandleAudioSessionCallback(data, reply);
             break;
