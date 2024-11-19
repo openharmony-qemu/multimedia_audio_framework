@@ -24,6 +24,8 @@
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_asr.h"
+#include "audio_utils.h"
+#include "policy_handler.h"
 #include "i_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
 
@@ -80,20 +82,26 @@ static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE = {
     {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "audiomix2voicetxex"},
 };
 
+static const std::string TTS_2_DEVICE_STRING = "TTS_2_DEVICE";
+static const std::string TTS_2_MODEM_STRING = "TTS_2_MODEM";
+
 static const std::map<AsrVoiceControlMode, std::vector<std::string>> VOICE_CALL_ASSISTANT_SUPPRESSION = {
-    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {"TTS_2_DEVICE", "TTS_2_MODEM"}},
-    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {"TTS_2_DEVICE", "TTS_2_MODEM"}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {TTS_2_DEVICE_STRING, TTS_2_MODEM_STRING}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {TTS_2_DEVICE_STRING, TTS_2_MODEM_STRING}},
     {AsrVoiceControlMode::VOICE_TXRX_DECREASE, {"MIC_2_MODEM", "MODEM_2_DEVICE"}},
 };
 
 static const std::map<AsrVoiceControlMode, std::set<std::string>> VOICE_CALL_ASSISTANT_NEED_SUPPRESSION = {
-    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {"TTS_2_MODEM"}},
-    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {"TTS_2_DEVICE"}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {TTS_2_MODEM_STRING}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {TTS_2_DEVICE_STRING}},
     {AsrVoiceControlMode::VOICE_TXRX_DECREASE, {"MIC_2_MODEM", "MODEM_2_DEVICE"}},
 };
 
-static const std::string VOICE_CALL_SUPPRESSION_VOLUME = "3";
+static const std::string VOICE_CALL_SUPPRESSION_VOLUME = "2";
 static const std::string VOICE_CALL_FULL_VOLUME = "32";
+
+static const int32_t VOICE_CALL_MIN_VOLUME = 2;
+static const int32_t VOICE_CALL_MAX_VOLUME = 32;
 
 static const std::map<std::string, AsrVoiceMuteMode> VM_MODE_MAP = {
     {"output_mute", AsrVoiceMuteMode::OUTPUT_MUTE},
@@ -365,6 +373,13 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
         audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
         return 0;
     }
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    Volume vol = {false, 0.0f, 0};
+    PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol);
+    float systemVol = vol.isMute ? 0.0f : vol.volumeFloat;
+    AUDIO_INFO_LOG("STREAM_VOICE_CALL = [%{public}f]", systemVol);
+    int32_t modifyVolume = std::floor(systemVol * VOICE_CALL_MAX_VOLUME);
+    modifyVolume = modifyVolume < VOICE_CALL_MIN_VOLUME ? VOICE_CALL_MIN_VOLUME : modifyVolume;
     if ((itCallAssistant != VOICE_CALL_ASSISTANT_SUPPRESSION.end()) && (res != RES_MAP_VERSE.end())) {
         std::vector<std::string> modes = VOICE_CALL_ASSISTANT_SUPPRESSION.at(asrVoiceControlMode);
         std::set<std::string> needSuppression = VOICE_CALL_ASSISTANT_NEED_SUPPRESSION.at(asrVoiceControlMode);
@@ -374,8 +389,13 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
                     modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
                 continue;
             }
-            audioRendererSinkInstance->SetAudioParameter(parmKey, "",
-                modes[i] + "=" + VOICE_CALL_FULL_VOLUME);
+            if (modes[i] == TTS_2_MODEM_STRING) {
+                audioRendererSinkInstance->SetAudioParameter(parmKey, "",
+                    modes[i] + "=" + VOICE_CALL_FULL_VOLUME);
+            } else {
+                audioRendererSinkInstance->SetAudioParameter(parmKey, "",
+                    modes[i] + "=" + std::to_string(modifyVolume));
+            }
         }
     }
     
