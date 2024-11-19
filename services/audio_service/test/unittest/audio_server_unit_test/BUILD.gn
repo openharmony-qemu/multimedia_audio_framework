@@ -13,14 +13,8 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
-import("../../../../../audio_framework_test_sources.gni")
 
 module_output_path = "multimedia_audio_framework/audio_server"
-audio_service_sources = []
-cur_path = "../../../../../"
-foreach(source, audio_service_sources_template) {
-  audio_service_sources += [ "$cur_path$source" ]
-}
 
 ohos_unittest("audio_server_unit_test") {
   testonly = true
@@ -29,8 +23,6 @@ ohos_unittest("audio_server_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   sources = [ "./src/audio_server_unit_test.cpp" ]
-  sources += audio_service_sources
-  defines = audio_service_defines
 
   include_dirs = [
     "../../../server/include",
@@ -51,7 +43,7 @@ ohos_unittest("audio_server_unit_test") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
-    "../../../../../services/audio_service:audio_service",
+    "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service",
   ]
 

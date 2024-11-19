@@ -12,9 +12,10 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
 
-ohos_shared_library("audio_bluetooth_client") {
+audio_ohos_library("audio_bluetooth_client") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -39,7 +40,7 @@ ohos_shared_library("audio_bluetooth_client") {
     "../audioutils:audio_utils",
   ]
 
-  public_external_deps = [
+  external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
     "hdf_core:libhdf_ipc_adapter",

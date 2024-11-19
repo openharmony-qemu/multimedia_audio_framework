@@ -13,17 +13,7 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../audio_framework_test_sources.gni")
-
-audio_service_sources = []
-cur_path = "../../../"
-foreach(source, audio_service_sources_template) {
-  audio_service_sources += [ "$cur_path$source" ]
-}
-audio_process_service_sources = []
-foreach(source, audio_process_service_sources_template) {
-  audio_process_service_sources += [ "$cur_path$source" ]
-}
+import("../../../config.gni")
 
 ohos_fuzztest("AudioStreamFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -45,10 +35,6 @@ ohos_fuzztest("AudioStreamFuzzTest") {
   ]
 
   sources = [ "audio_stream_fuzzer.cpp" ]
-  sources += audio_process_service_sources
-  sources += audio_service_sources
-  defines = audio_service_defines
-  defines += audio_process_service_defines
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
   cflags_cc = [ "-std=c++20" ]
@@ -58,8 +44,8 @@ ohos_fuzztest("AudioStreamFuzzTest") {
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
     "../../../services/audio_service:audio_common",
-    "../../../services/audio_service:audio_process_service",
-    "../../../services/audio_service:audio_service",
+    "../../../services/audio_service:audio_process_service_static",
+    "../../../services/audio_service:audio_service_static",
   ]
   external_deps = [
     "ability_runtime:extension_manager",
