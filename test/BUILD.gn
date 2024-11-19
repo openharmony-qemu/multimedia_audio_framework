@@ -30,6 +30,7 @@ group("audio_unit_test") {
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_fast_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:inner_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/multiple_capturer_test:multiple_audio_capturer_unit_test",
+    "../frameworks/native/audioeffect/test/unittest/audio_enhance_chain_unit_test:audio_enhance_chain_unit_test",
     "../frameworks/native/audioeffect/test/unittest/effect_unit_test:audio_effect_chain_manager_unit_test",
     "../frameworks/native/audioeffect/test/unittest/enhance_unit_test:audio_enhance_chain_adapter_unit_test",
     "../frameworks/native/audioeffect/test/unittest/enhance_unit_test:audio_enhance_chain_manager_unit_test",
