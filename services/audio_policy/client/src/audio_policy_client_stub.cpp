@@ -57,7 +57,7 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
             break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_NN_STATE_CHANGE):
             HandleNnStateChange(data, reply);
-            break;    
+            break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE):
             HandleAudioSessionCallback(data, reply);
             break;
