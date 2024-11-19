@@ -80,6 +80,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
 
     powerStateCallbackRegister_ = false;
+    supportVibrator_ = system::GetBoolParameter("const.vibrator.support_vibrator", true);
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
     if (volumeApplyToAll_) {
         audioPolicyService_.SetNormalVoipFlag(true);
@@ -889,7 +890,11 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     }
 
     if (updateRingerMode) {
-        AudioRingerMode ringerMode = mute ? RINGER_MODE_VIBRATE : RINGER_MODE_NORMAL;
+        AudioRingerMode ringerMode = mute ? (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT) :
+            RINGER_MODE_NORMAL;
+        if (!supportVibrator_) {
+            AUDIO_INFO_LOG("The device does not support vibration");
+        }
         AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring mute state", ringerMode);
         // Update ringer mode but no need to update mute state again.
         SetRingerModeInternal(ringerMode, true);
@@ -966,7 +971,11 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
     if (updateRingerMode) {
         int32_t curRingVolumeLevel = GetSystemVolumeLevelInternal(STREAM_RING);
-        AudioRingerMode ringerMode = (curRingVolumeLevel > 0) ? RINGER_MODE_NORMAL : RINGER_MODE_VIBRATE;
+        AudioRingerMode ringerMode = (curRingVolumeLevel > 0) ? RINGER_MODE_NORMAL :
+            (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT);
+        if (!supportVibrator_) {
+            AUDIO_INFO_LOG("The device does not support vibration");
+        }
         AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
         // Update ringer mode but no need to update volume again.
         SetRingerModeInternal(ringerMode, true);
