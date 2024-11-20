@@ -40,22 +40,6 @@ static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 
-inline bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType)
-{
-    switch (deviceType) {
-        case DEVICE_TYPE_SPEAKER:
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            return true;
-        default:
-            return false;
-    }
-}
-
 static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
@@ -96,6 +80,22 @@ static const std::vector<std::string> SourceNames = {
 void AudioDeviceCommon::Init(std::shared_ptr<AudioPolicyServerHandler> handler)
 {
     audioPolicyServerHandler_ = handler;
+}
+
+bool AudioDeviceCommon::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            return true;
+        default:
+            return false;
+    }
 }
 
 void AudioDeviceCommon::OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor)

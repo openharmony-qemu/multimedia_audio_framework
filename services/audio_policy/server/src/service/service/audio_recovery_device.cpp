@@ -21,6 +21,7 @@
 #include "parameters.h"
 #include "audio_utils.h"
 #include "audio_log.h"
+#include "media_monitor_manager.h"
 
 #include "audio_policy_service.h"
 #include "audio_server_proxy.h"
@@ -43,6 +44,11 @@ static std::string GetEncryptAddr(const std::string &addr)
         out[i] = tmp[i];
     }
     return out;
+}
+
+void AudioRecoveryDevice::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager)
+{
+    audioA2dpOffloadManager_ = audioA2dpOffloadManager;
 }
 
 void AudioRecoveryDevice::RecoveryPreferredDevices()
@@ -147,7 +153,8 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0]);
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     audioDeviceCommon_.FetchDevice(false);
-    ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDeviceType(),
+    AudioPolicyService::GetAudioPolicyService().ReloadSourceForDeviceChange(
+        audioActiveDevice_.GetCurrentInputDeviceType(),
         audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectOutputDevice");
     if ((selectedDesc[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (selectedDesc[0]->networkId_ != LOCAL_NETWORK_ID)) {
@@ -228,7 +235,7 @@ void AudioRecoveryDevice::WriteSelectOutputSysEvents(const std::vector<sptr<Audi
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+int32_t AudioRecoveryDevice::SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     AUDIO_INFO_LOG("Start for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
@@ -238,6 +245,29 @@ int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> aud
 
     // otherwises, keep router info in the map
     audioRouteMap_.AddFastRouteMapInfo(audioRendererFilter->uid, deviceDescriptor->networkId_, OUTPUT_DEVICE);
+    return SUCCESS;
+}
+
+int32_t AudioRecoveryDevice::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
+{
+    if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        selectedDesc[0]->isEnable_ = true;
+        audioDeviceManager_.UpdateDevicesListInfo(selectedDesc[0], ENABLE_UPDATE);
+        bool isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
+        if (isVirtualDevice == true) {
+            selectedDesc[0]->connectState_ = VIRTUAL_CONNECTED;
+        }
+    }
+    audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, selectedDesc[0]);
+    vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
+    for (auto &changeInfo : rendererChangeInfos) {
+        if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
+            AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, true);
+        }
+    }
     return SUCCESS;
 }
 

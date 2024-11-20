@@ -162,6 +162,7 @@ private:
     void WriteInputRouteChangeEvent(unique_ptr<AudioDeviceDescriptor> &desc,
         const AudioStreamDeviceChangeReason reason);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
+    bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
     int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputIds,
         sptr<AudioDeviceDescriptor> localDeviceDescriptor);

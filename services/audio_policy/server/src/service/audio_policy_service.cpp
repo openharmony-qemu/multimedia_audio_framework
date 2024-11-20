@@ -49,7 +49,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-using namespace std;s
+using namespace std;
 namespace {
 static const char* INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";

@@ -323,7 +323,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
         GetServerPtr()->audioPolicyService_.UpdateSessionConnectionState(TEST_SESSIONID, CONNECTING_NUMBER);
         GetServerPtr()->audioPolicyService_.UpdateSessionConnectionState(TEST_SESSIONID, (CONNECTING_NUMBER + 1));
         GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
-        GetServerPtr()->audioPolicyService_.GetA2dpOffloadCodecAndSendToDsp();
+        GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
         GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.UpdateAudioCapturerMicrophoneDescriptor(
             deviceType);
         for (const auto& flag : flags) {
@@ -1038,31 +1038,31 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSourcePortName_001, TestSize.Level1)
     string retPortName = "";
 
     deviceType = DEVICE_TYPE_MIC;
-    retPortName = GetServerPtr()->audioPolicyService_.GetSourcePortName(deviceType);
+    retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     EXPECT_EQ(PRIMARY_MIC, retPortName);
 
     deviceType = DEVICE_TYPE_USB_HEADSET;
-    retPortName = GetServerPtr()->audioPolicyService_.GetSourcePortName(deviceType);
+    retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     EXPECT_EQ(PRIMARY_MIC, retPortName);
 
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    retPortName = GetServerPtr()->audioPolicyService_.GetSourcePortName(deviceType);
+    retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     EXPECT_EQ(PRIMARY_MIC, retPortName);
 
     deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
-    retPortName = GetServerPtr()->audioPolicyService_.GetSourcePortName(deviceType);
+    retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     EXPECT_EQ(USB_MIC, retPortName);
 
     deviceType = DEVICE_TYPE_WAKEUP;
-    retPortName = GetServerPtr()->audioPolicyService_.GetSourcePortName(deviceType);
+    retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     EXPECT_EQ(PRIMARY_WAKEUP, retPortName);
 
     deviceType = DEVICE_TYPE_FILE_SOURCE;
-    retPortName = GetServerPtr()->audioPolicyService_.GetSourcePortName(deviceType);
+    retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     EXPECT_EQ(FILE_SOURCE, retPortName);
 
     deviceType = DEVICE_TYPE_MAX;
-    retPortName = GetServerPtr()->audioPolicyService_.GetSourcePortName(deviceType);
+    retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     EXPECT_EQ(PORT_NONE, retPortName);
 }
 
@@ -1393,8 +1393,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, UpdateEffectDefaultSink_001, TestSize.Level
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest UpdateEffectDefaultSink_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
     EXPECT_NO_THROW(
-        GetServerPtr()->audioPolicyService_.audioDeviceCommon_.UpdateEffectDefaultSink(DEVICE_TYPE_EARPIECE);
-        GetServerPtr()->audioPolicyService_.audioDeviceCommon_.UpdateEffectDefaultSink(DEVICE_TYPE_NONE);
+        AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(DEVICE_TYPE_EARPIECE);
+        AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(DEVICE_TYPE_NONE);
     );
 }
 
@@ -1869,7 +1869,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     sessionInfo.rate = RATE;
     sessionInfo.channels = CHANNELS;
 
-    GetServerPtr()->audioPolicyService_.normalSourceOpened_ = SOURCE_TYPE_INVALID;
+    GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_INVALID;
     GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
 
     // dummy data
@@ -1888,7 +1888,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
         adapterInfo});
 
     int32_t ret = SUCCESS;
-    GetServerPtr()->audioPolicyService_.normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
+    GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
     ret = GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
     EXPECT_EQ(ERROR, ret);
 
