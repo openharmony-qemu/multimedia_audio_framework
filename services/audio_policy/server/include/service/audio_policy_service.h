@@ -472,6 +472,8 @@ public:
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
 
+    bool IsCurrentActiveDeviceA2dp();
+
     int32_t SetVoiceRingtoneMute(bool isMute);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,

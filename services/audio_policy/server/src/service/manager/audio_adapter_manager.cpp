@@ -1991,7 +1991,11 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     isAbsVolumeMute_ = mute;
     float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
-    SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+    } else {
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
+    }
 }
 
 

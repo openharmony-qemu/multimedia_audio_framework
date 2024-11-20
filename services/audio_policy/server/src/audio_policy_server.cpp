@@ -2387,7 +2387,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
 
-    if (ret == SUCCESS && audioPolicyServerHandler_!= nullptr) {
+    if (ret == SUCCESS && audioPolicyServerHandler_!= nullptr && audioPolicyService_.IsCurrentActiveDeviceA2dp()) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
     }
     return ret;
