@@ -1043,7 +1043,7 @@ void AudioPolicyServerHandler::HandleNnStateChangeEvent(const AppExecFwk::InnerE
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(runnerMutex_);
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         sptr<IAudioPolicyClient> nnStateChangeCb = it->second;
         if (nnStateChangeCb == nullptr) {
@@ -1315,7 +1315,7 @@ int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange 
     }
 
     int32_t clientId = IPCSkeleton::GetCallingPid();
-    lock_guard<mutex> runnerlock(runnerMutex_);
+    lock_guard<mutex> runnerlock(handleMapMutex_);
     clientCallbacksMap_[clientId][callbackchange] = enable;
     string str = (enable ? "true" : "false");
     AUDIO_INFO_LOG("Set clientId:%{public}d, callbacks:%{public}d, enable:%{public}s",
