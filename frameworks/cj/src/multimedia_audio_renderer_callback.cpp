@@ -112,11 +112,12 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
         return;
     }
     arr.size = std::min(length, buf.bufLength);
-    arr.head = static_cast<uint8_t *>(malloc(sizeof(uint8_t) * arr.size));
+    int32_t mallocSize = sizeof(uint8_t) * arr.size;
+    arr.head = static_cast<uint8_t *>(malloc(mallocSize));
     if (arr.head == nullptr) {
         return;
     }
-    if (memset_s(arr.head, arr.size, 0, arr.size) != EOK) {
+    if (memset_s(arr.head, mallocSize, 0, mallocSize) != EOK) {
         free(arr.head);
         arr.head = nullptr;
         return;
