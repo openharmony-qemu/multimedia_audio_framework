@@ -630,6 +630,7 @@ private:
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
+    bool supportVibrator_ = false;
 
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;

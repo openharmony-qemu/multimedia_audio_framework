@@ -13,13 +13,6 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
-import("../../../../../audio_framework_test_sources.gni")
-
-audio_process_service_sources = []
-cur_path = "../../../../../"
-foreach(source, audio_process_service_sources_template) {
-  audio_process_service_sources += [ "$cur_path$source" ]
-}
 
 module_output_path = "multimedia_audio_framework/pa_adapter_manager"
 
@@ -54,15 +47,13 @@ ohos_unittest("pa_adapter_manager_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
   sources = [ "src/pa_adapter_manager_unit_test.cpp" ]
-  sources += audio_process_service_sources
-  defines = audio_process_service_defines
 
   deps = [
     "../../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../../frameworks/native/audioutils:audio_utils",
     "../../../../audio_service:audio_client",
     "../../../../audio_service:audio_common",
-    "../../../../audio_service:audio_process_service",
+    "../../../../audio_service:audio_process_service_static",
   ]
 
   external_deps = [
