@@ -13,13 +13,7 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../../../../audio_framework_test_sources.gni")
-
-audio_device_manager_sources = []
-cur_path = "../../../../../../"
-foreach(source, audio_device_manager_sources_template) {
-  audio_device_manager_sources += [ "$cur_path$source" ]
-}
+import("../../../../../../config.gni")
 
 module_output_path = "audio_framework/audio_device_manager_impl"
 
@@ -39,11 +33,10 @@ ohos_unittest("audio_device_manager_impl_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
   sources = [ "src/audio_device_manager_impl_unit_test.cpp" ]
-  sources += audio_device_manager_sources
 
   deps = [
     "../../../../audioutils:audio_utils",
-    "../../../devicemanager:audio_device_manager",
+    "../../../devicemanager:audio_device_manager_static",
   ]
 
   defines = []

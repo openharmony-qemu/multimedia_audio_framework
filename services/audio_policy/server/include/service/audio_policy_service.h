@@ -736,7 +736,6 @@ private:
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     AudioPnpServer &audioPnpServer_;
 
-
     std::mutex defaultDeviceLoadMutex_;
     std::condition_variable loadDefaultDeviceCV_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
@@ -763,7 +762,6 @@ private:
 
     std::mutex inputDeviceReloadMutex_;
     DeviceType inputDeviceForReload_ = DEVICE_TYPE_DEFAULT;
-
 
     DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
     DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;

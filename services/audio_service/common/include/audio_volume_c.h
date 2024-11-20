@@ -22,6 +22,13 @@
 extern "C" {
 #endif
 
+enum FadePauseState {
+    NO_FADE,
+    DO_FADE,
+    DONE_FADE,
+    INVALID_STATE
+};
+
 float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass);
 
 float GetPreVolume(uint32_t sessionId);
@@ -35,6 +42,10 @@ void SetStreamVolumeFade(uint32_t sessionId, float fadeBegin, float fadeEnd);
 bool IsSameVolume(float volumeA, float volumeB);
 
 void MonitorVolume(uint32_t sessionId, bool isOutput);
+
+void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState);
+
+uint32_t GetFadeoutState(uint32_t streamIndex);
 
 #ifdef __cplusplus
 }

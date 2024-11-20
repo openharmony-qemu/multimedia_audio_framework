@@ -348,7 +348,8 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
         capturerChangeInfo->capturerState = CAPTURER_PREPARED;
     }
     GetServerPtr()->
-        audioPolicyService_.audioDeviceCommon_.FetchInputDevice(audioCapturerChangeInfos, AudioStreamDeviceChangeReason::UNKNOWN);
+        audioPolicyService_.audioDeviceCommon_.FetchInputDevice(audioCapturerChangeInfos,
+        AudioStreamDeviceChangeReason::UNKNOWN);
     GetServerPtr()->audioPolicyService_.OnReceiveBluetoothEvent(
         GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "deviceName");
     GetServerPtr()->audioPolicyService_.GetAudioEffectOffloadFlag();

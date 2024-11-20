@@ -36,6 +36,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
+<<<<<<< HEAD
 static constexpr int32_t NS_PER_MS = 1000000;
 static constexpr int32_t MS_PER_S = 1000;
 static const char* SETTINGS_DATA_FIELD_VALUE = "VALUE";
@@ -59,6 +60,10 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {FILE_SOURCE, TYPE_FILE_IO},
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
 };
+=======
+constexpr int32_t NS_PER_MS = 1000000;
+constexpr int32_t MS_PER_S = 1000;
+>>>>>>> 6ccf7108cf0f99519632f6e02dc9ea09332f2f60
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -76,7 +81,16 @@ static std::string GetEncryptAddr(const std::string &addr)
     return out;
 }
 
+<<<<<<< HEAD
 int32_t AudioPolicyUtils::startDeviceId = 1;
+=======
+std::map<std::string, AudioSampleFormat> AudioPolicyUtils::formatStrToEnum = {
+    {"s8", SAMPLE_U8},
+    {"s16", SAMPLE_S16LE},
+    {"s24", SAMPLE_S24LE},
+    {"s32", SAMPLE_S32LE},
+};
+>>>>>>> 6ccf7108cf0f99519632f6e02dc9ea09332f2f60
 
 void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
 {

@@ -12,9 +12,10 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../../audio_framework_test_sources.gni")
 import("../../../../config.gni")
 
-ohos_shared_library("audio_device_manager") {
+audio_ohos_library("audio_device_manager") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true

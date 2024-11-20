@@ -92,7 +92,8 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = 0;
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK ||
+        processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
     } else {
         sessionId = processConfig.originalSessionId;
@@ -546,7 +547,6 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
         pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
         pa_proplist_sets(propList, "stream.flush", "false");
-        pa_proplist_sets(propList, "fadeoutPause", "0");
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
         pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());

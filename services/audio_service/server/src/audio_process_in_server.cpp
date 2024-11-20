@@ -488,11 +488,6 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
     DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
-
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            buffer, bufferSize);
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

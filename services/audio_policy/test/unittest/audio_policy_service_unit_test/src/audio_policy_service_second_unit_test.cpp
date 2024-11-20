@@ -1242,8 +1242,12 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, Tes
         = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
 
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+        = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    server->audioPolicyService_.audioA2dpOffloadManager_.GetA2dpOffloadCodecAndSendToDsp();
+
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    server->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
+    server->audioPolicyService_.audioA2dpOffloadManager_.GetA2dpOffloadCodecAndSendToDsp();
     EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_,
         DeviceType::DEVICE_TYPE_SPEAKER);
 }

@@ -13,13 +13,8 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../audio_framework_test_sources.gni")
-
-audio_policy_service_sources = []
-cur_path = "../../../"
-foreach(source, audio_policy_service_sources_template) {
-  audio_policy_service_sources += [ "$cur_path$source" ]
-}
+import("../../../accessibility.gni")
+import("../../../config.gni")
 
 ohos_fuzztest("AudioPolicyServiceFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -42,13 +37,15 @@ ohos_fuzztest("AudioPolicyServiceFuzzTest") {
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
-  sources = [ "audio_policy_service_fuzzer.cpp" ]
-  sources += audio_policy_service_sources
+  defines = []
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
 
-  defines = audio_policy_service_defines
+  sources = [ "audio_policy_service_fuzzer.cpp" ]
 
   deps = [
-    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
   ]
 
