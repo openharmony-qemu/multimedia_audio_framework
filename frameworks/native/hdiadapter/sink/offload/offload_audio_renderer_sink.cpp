@@ -67,6 +67,7 @@ const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 const unsigned int TIME_OUT_SECONDS = 10;
 const std::string LOG_UTILS_TAG = "Offload";
 constexpr size_t OFFLOAD_DFX_SPLIT = 2;
+const size_t FRAMELEN = 7680;
 }
 
 struct AudioCallbackService {
@@ -702,13 +703,17 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
     AudioChannel channel) const
 {
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel, OFFLOAD_DFX_SPLIT);
-    if (channel == MONO) {
-        Trace::Count(LOG_UTILS_TAG, vols.volStart[0]);
-    } else {
-        Trace::Count(LOG_UTILS_TAG, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    for(size_t index = 0; index < (buffer.bufLength + FRAMELEN - 1) / FRAMELEN; index++){
+        BufferDesc temp = {buffer.buffer + FRAMELEN * index,
+            min(buffer.bufLength - FRAMELEN, FRAMELEN), min(buffer.dataLength - FRAMELEN, FRAMELEN)};
+        ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel, OFFLOAD_DFX_SPLIT);
+        if (channel == MONO) {
+            Trace::Count(LOG_UTILS_TAG, vols.volStart[0]);
+        } else {
+            Trace::Count(LOG_UTILS_TAG, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+        }
+        AudioLogUtils::ProcessVolumeData(LOG_UTILS_TAG, vols, volumeDataCount_);
     }
-    AudioLogUtils::ProcessVolumeData(LOG_UTILS_TAG, vols, volumeDataCount_);
 }
 
 void OffloadAudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
