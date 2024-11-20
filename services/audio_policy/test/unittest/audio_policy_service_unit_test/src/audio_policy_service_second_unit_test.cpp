@@ -182,7 +182,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, HandleA2dpDeviceInOffload_001, TestSize.
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    int32_t ret = server->audioPolicyService_.HandleA2dpDeviceInOffload(a2dpOffloadFlag);
+    int32_t ret = server->audioPolicyService_.audioA2dpOffloadManager_->HandleA2dpDeviceInOffload(a2dpOffloadFlag);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1238,13 +1238,12 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.L
 HWTEST_F(AudioPolicyServiceExtUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    server->audioPolicyService_.GetA2dpOffloadCodecAndSendToDsp();
+    server->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
 
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    server->audioPolicyService_.GetA2dpOffloadCodecAndSendToDsp();
+    server->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
     EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_,
         DeviceType::DEVICE_TYPE_SPEAKER);
 }

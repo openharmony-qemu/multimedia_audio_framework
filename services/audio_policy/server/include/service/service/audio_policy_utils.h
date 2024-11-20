@@ -40,6 +40,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
+const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 
 class AudioPolicyUtils {
 public:
@@ -60,6 +61,12 @@ public:
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
     std::string GetSourcePortName(DeviceType deviceType);
+    void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
+    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
+    void UpdateEffectDefaultSink(DeviceType deviceType);
+    std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
+    AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
+        DeviceRole deviceRole, DeviceType deviceType);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
@@ -67,8 +74,12 @@ private:
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
     ~AudioPolicyUtils() {}
     int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
+public:
+    static int32_t startDeviceId;
+    static std::map<std::string, ClassType> portStrToEnum;
 private:
     bool isBTReconnecting_ = false;
+    DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioStreamCollector& streamCollector_;
     AudioStateManager &audioStateManager_;
     AudioDeviceManager &audioDeviceManager_;

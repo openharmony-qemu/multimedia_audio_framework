@@ -98,20 +98,6 @@ static const std::map<std::pair<DeviceType, DeviceType>, EcType> DEVICE_TO_EC_TY
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
 };
 
-static std::map<std::string, ClassType> portStrToEnum = {
-    {PRIMARY_SPEAKER, TYPE_PRIMARY},
-    {PRIMARY_MIC, TYPE_PRIMARY},
-    {PRIMARY_WAKEUP_MIC, TYPE_PRIMARY},
-    {BLUETOOTH_SPEAKER, TYPE_A2DP},
-    {BLUETOOTH_MIC, TYPE_A2DP},
-    {USB_SPEAKER, TYPE_USB},
-    {USB_MIC, TYPE_USB},
-    {DP_SINK, TYPE_DP},
-    {FILE_SINK, TYPE_FILE_IO},
-    {FILE_SOURCE, TYPE_FILE_IO},
-    {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
-};
-
 static string ParseAudioFormat(string format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
@@ -380,7 +366,7 @@ int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, co
         portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     }
     AudioAdapterInfo info;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(portStrToEnum[portName]), info);
+    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(AudioPolicyUtils::portStrToEnum[portName]), info);
     if (!ret) {
         AUDIO_ERR_LOG("no adapter found for deviceType: %{public}d, portName: %{public}s",
             deviceType, portName.c_str());
@@ -688,7 +674,7 @@ std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const D
         portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     }
     AudioAdapterInfo info;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(portStrToEnum[portName]), info);
+    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(AudioPolicyUtils::portStrToEnum[portName]), info);
     if (ret) {
         halName = info.adapterName_;
     }
