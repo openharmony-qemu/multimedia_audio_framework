@@ -703,7 +703,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
     AudioChannel channel) const
 {
-    for(size_t index = 0; index < (buffer.bufLength + FRAMELEN - 1) / FRAMELEN; index++){
+    for (size_t index = 0; index < (buffer.bufLength + FRAMELEN - 1) / FRAMELEN; index++) {
         BufferDesc temp = {buffer.buffer + FRAMELEN * index,
             min(buffer.bufLength - FRAMELEN, FRAMELEN), min(buffer.dataLength - FRAMELEN, FRAMELEN)};
         ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel, OFFLOAD_DFX_SPLIT);
