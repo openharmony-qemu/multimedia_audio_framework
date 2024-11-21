@@ -98,7 +98,9 @@ static void IncreaseScenekeyCount(pa_hashmap *sceneMap, const char *key)
         if (sceneKey != NULL) {
             num = pa_xnew0(uint32_t, 1);
             *num = 1;
-            pa_hashmap_put(sceneMap, sceneKey, num);
+            if (pa_hashmap_put(sceneMap, sceneKey, num) != 0) {
+                free(sceneKey);
+            }
         }
     }
 }

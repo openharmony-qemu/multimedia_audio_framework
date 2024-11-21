@@ -54,6 +54,12 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
+const size_t AUDIO_FORMAT_TYPE_8_BIT =1;
+const size_t AUDIO_FORMAT_TYPE_16_BIT =2;
+const size_t AUDIO_FORMAT_TYPE_24_BIT =3;
+const size_t AUDIO_FORMAT_TYPE_32_BIT =4;
+const size_t AUDIO_FORMAT_TYPE_FLOAT =4;
+
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
@@ -170,6 +176,7 @@ private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
     AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
+    size_t ConverToByteSizePerData(AudioSampleFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
     void CheckUpdateState(char *frame, uint64_t replyBytes);
@@ -571,6 +578,33 @@ AudioFormat OffloadAudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat fo
     return hdiFormat;
 }
 
+size_t OffloadAudioRendererSinkInner::ConverToByteSizePerData(AudioSampleFormat format)
+{
+    size_t byteSizePerData;
+    switch (format) {
+        case SAMPLE_U8:
+            byteSizePerData = AUDIO_FORMAT_TYPE_8_BIT;
+            break;
+        case SAMPLE_S16:
+            byteSizePerData = AUDIO_FORMAT_TYPE_16_BIT;
+            break;
+        case SAMPLE_S24:
+            byteSizePerData = AUDIO_FORMAT_TYPE_24_BIT;
+            break;
+        case SAMPLE_S32:
+            byteSizePerData = AUDIO_FORMAT_TYPE_32_BIT;
+            break;
+        case SAMPLE_F32:
+            byteSizePerData = AUDIO_FORMAT_TYPE_FLOAT;
+            break;
+        default:
+            byteSizePerData = AUDIO_FORMAT_TYPE_16_BIT;
+            break;
+    }
+
+    return byteSizePerData;
+}
+
 int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
     Trace trace("OffloadSink::CreateRender");
@@ -703,15 +737,9 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
     AudioChannel channel, AudioSamplingRate rate) const
 {
-    size_t frameLen =  static_cast<size_t>(channel) * static_cast<size_t>(rate) * 0.02; // 20ms
-    if (format == SAMPLE_U8 || format == SAMPLE_S16LE || format == SAMPLE_S24LE || format == SAMPLE_S32LE) {
-        frameLen *= static_cast<size_t>(format) + 1;
-    } else if (format == SAMPLE_F32LE) {
-        frameLen *= static_cast<size_t>(format);
-    } else {
-        AUDIO_WARNING_LOG("INVALID_WIDTH");
-        return;
-    }
+    size_t byteSizePerData = ConverToByteSizePerData(format);
+    size_t frameLen =  byteSizePerData * static_cast<size_t>(channel) * static_cast<size_t>(rate) * 0.02; // 20ms
+    
     int32_t minVolume = INT_32_MAX;
     for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
         BufferDesc temp = {buffer.buffer + frameLen * index,
