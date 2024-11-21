@@ -904,6 +904,7 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
                 frameInfo.replyBytesEc : fdescEc->frameLen;
         }
     }
+    CheckUpdateState(fdesc->frame, replyBytes);
     AudioCaptureFrameInfoFree(&frameInfo, false);
 
     return SUCCESS;
