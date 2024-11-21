@@ -67,7 +67,6 @@ const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 const unsigned int TIME_OUT_SECONDS = 10;
 const std::string LOG_UTILS_TAG = "Offload";
 constexpr size_t OFFLOAD_DFX_SPLIT = 2;
-const size_t FRAMELEN = 7680;
 }
 
 struct AudioCallbackService {
@@ -677,7 +676,8 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     if (ret == 0 && writeLen != 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
         BufferDesc buffer = {reinterpret_cast<uint8_t *>(&data), len, len};
-        DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+        DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel),
+            static_cast<AudioSamplingRate>(attr_.sampleRate));
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
                 static_cast<void *>(&data), writeLen);
@@ -701,12 +701,13 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 }
 
 void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
-    AudioChannel channel) const
+    AudioChannel channel, AudioSamplingRate rate) const
 {
+    size_t frameLen = format * channel * rate * 0.02; // 20ms
     int32_t minVolume = INT_32_MAX;
-    for (size_t index = 0; index < (buffer.bufLength + FRAMELEN - 1) / FRAMELEN; index++) {
-        BufferDesc temp = {buffer.buffer + FRAMELEN * index,
-            min(buffer.bufLength - FRAMELEN * index, FRAMELEN), min(buffer.dataLength - FRAMELEN * index, FRAMELEN)};
+    for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
+        BufferDesc temp = {buffer.buffer + frameLen * index,
+            min(buffer.bufLength - frameLen * index, frameLen), min(buffer.dataLength - frameLen * index, frameLen)};
         ChannelVolumes vols = VolumeTools::CountVolumeLevel(temp, format, channel, OFFLOAD_DFX_SPLIT);
         if (channel == MONO) {
             minVolume = min(minVolume, vols.volStart[0]);
