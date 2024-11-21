@@ -32,7 +32,6 @@
 #include <pulse/volume.h>
 #include <pulsecore/protocol-native.h>
 #include <pulsecore/memblockq.h>
-#include <pulseaudio/channelmap.c>
 
 #include <stddef.h>
 #include <stdint.h>
