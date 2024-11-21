@@ -333,10 +333,11 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
     pa_sample_spec ss = sinkIn->thread_info.resampler->o_ss;
     pa_channel_map processCm;
     ConvertChLayoutToPaChMap(processChannelLayout, &processCm);
+    processCm.channels = processChannels;
     if (processChannels == sinkIn->thread_info.resampler->i_ss.channels) {
         ss.channels = sinkIn->thread_info.resampler->i_ss.channels;
         pa_channel_map cm = sinkIn->thread_info.resampler->i_cm;
-        if (ss.channels == sinkIn->thread_info.resampler->o_ss.channels) {
+        if (pa_channel_map_equal(&sinkIn->thread_info.resampler->i_cm, &processCm)) {
             return;
         }
         r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
