@@ -431,6 +431,7 @@ std::string AudioRendererSinkInner::GetDPDeviceAttrInfo(const std::string &condi
 
 std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s, halName: %{public}s",
         key, condition.c_str(), halName_.c_str());
     if (condition.starts_with("get_usb_info#C")) {
