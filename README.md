@@ -197,9 +197,9 @@ You can use the APIs provided in the [**audio_system_manager.h**](https://gitee.
 7. Call **GetDevices**, **deviceType_**, and **deviceRole_** to obtain information about the audio input and output devices. For details, see the enumerated values of **DeviceFlag**, **DeviceType**, and **DeviceRole** defined in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
     ```
     DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
-    vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors
+    vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors
         = audioSystemMgr->GetDevices(deviceFlag);
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = audioDeviceDescriptors[0];
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = audioDeviceDescriptors[0];
     cout << audioDeviceDescriptor->deviceType_;
     cout << audioDeviceDescriptor->deviceRole_;
     ```

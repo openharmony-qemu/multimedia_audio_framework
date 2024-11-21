@@ -75,16 +75,16 @@ std::string AudioPolicyUtils::GetRemoteModuleName(std::string networkId, DeviceR
     return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
 }
 
-std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailableDevicesInner(AudioDeviceUsage usage)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailableDevicesInner(AudioDeviceUsage usage)
 {
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
     audioDeviceDescriptors = audioDeviceManager_.GetAvailableDevicesByUsage(usage);
     return audioDeviceDescriptors;
 }
 
 int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
-    const sptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (desc == nullptr) {
         AUDIO_ERR_LOG("desc is null");

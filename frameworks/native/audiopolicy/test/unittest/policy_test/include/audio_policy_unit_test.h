@@ -71,9 +71,9 @@ public:
     /**
      * Called when the prefer output device changes
      *
-     * @param vector<sptr<AudioDeviceDescriptor>> deviceDescriptor.
+     * @param vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor.
      */
-    virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {}
+    virtual void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {}
 };
 
 class AudioPreferredInputDeviceChangeCallbackTest : public AudioPreferredInputDeviceChangeCallback {
@@ -82,9 +82,9 @@ public:
     /**
      * Called when the prefer input device changes
      *
-     * @param vector<sptr<AudioDeviceDescriptor>> deviceDescriptor.
+     * @param vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor.
      */
-    virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+    virtual void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {};
 };
 
 class AudioFocusInfoChangeCallbackTest : public AudioFocusInfoChangeCallback {
@@ -114,8 +114,8 @@ public:
      * @since 11
      */
     virtual void OnSpatializationEnabledChange(const bool &enabled) {};
-    virtual void OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const bool &enabled) {};
+    virtual void OnSpatializationEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) {};
 };
 
 class AudioHeadTrackingEnabledChangeCallbackTest : public AudioHeadTrackingEnabledChangeCallback {
@@ -128,8 +128,8 @@ public:
      * @since 11
      */
     virtual void OnHeadTrackingEnabledChange(const bool &enabled){};
-    virtual void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const bool &enabled) {};
+    virtual void OnHeadTrackingEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) {};
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {

@@ -72,11 +72,11 @@ class ConcreteAudioManagerMicrophoneBlockedCallback : public AudioManagerMicroph
 };
 
 class ConcreteAudioPreferredOutputDeviceChangeCallback : public AudioPreferredOutputDeviceChangeCallback {
-    void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override {}
+    void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override {}
 };
 
 class ConcreteAudioPreferredInputDeviceChangeCallback : public AudioPreferredInputDeviceChangeCallback {
-    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override {}
+    void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override {}
 };
 
 class ConcreteAudioRendererStateChangeCallback : public AudioRendererStateChangeCallback {
@@ -102,13 +102,13 @@ class ConcreteHeadTrackingDataRequestedChangeCallback : public HeadTrackingDataR
 
 class ConcreteAudioSpatializationEnabledChangeCallback : public AudioSpatializationEnabledChangeCallback {
     void OnSpatializationEnabledChange(const bool &enabled) override {}
-    void OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    void OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override {}
 };
 
 class ConcreteAudioHeadTrackingEnabledChangeCallback : public AudioHeadTrackingEnabledChangeCallback {
     void OnHeadTrackingEnabledChange(const bool &enabled) override {}
-    void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override {}
 };
 } // namespace AudioStandard

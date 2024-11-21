@@ -1847,11 +1847,11 @@ HWTEST(AudioUtilsUnitTest, testMutilthreadConcurrentGetAndPopInfullqueue001, Tes
 }
 
 /**
-* @tc.name  : Test AudioBlend  API
-* @tc.type  : FUNC
-* @tc.number: AudioBlend_001
-* @tc.desc  : Test AudioBlend Process API
-*/
+ * @tc.name  : Test AudioBlend  API
+ * @tc.type  : FUNC
+ * @tc.number: AudioBlend_001
+ * @tc.desc  : Test AudioBlend Process API
+ */
 HWTEST(AudioUtilsUnitTest, AudioBlend_001, TestSize.Level1)
 {
     shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(MODE_DEFAULT, SAMPLE_U8, MONO);
@@ -1862,12 +1862,12 @@ HWTEST(AudioUtilsUnitTest, AudioBlend_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Process  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_001
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is channel 0
-*/
+ * @tc.name  : Test Process API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_001
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is channel 0
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_001, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -1879,12 +1879,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_002
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_BLEND_LR,channel 8
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_002
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_BLEND_LR,channel 8
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_002, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -1899,12 +1899,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_003
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_BLEND_LR,channel 6
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_003
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_BLEND_LR,channel 6
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_003, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -1918,12 +1918,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_004
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_BLEND_LR,channel 4
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_004
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_BLEND_LR,channel 4
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_004, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -1937,12 +1937,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_005
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_BLEND_LR,STEREO
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_005
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_BLEND_LR,STEREO
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_005, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -1955,12 +1955,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_006
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_ALL_LEFT,channel 8
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_006
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_ALL_LEFT,channel 8
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_006, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -1975,12 +1975,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_006, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_007
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_ALL_LEFT,channel 6
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_007
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_ALL_LEFT,channel 6
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_007, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -1994,12 +1994,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_007, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_008
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_ALL_LEFT,channel 4
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_008
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_ALL_LEFT,channel 4
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_008, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -2013,12 +2013,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_008, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_009
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_ALL_LEFT,STEREO
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_009
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_ALL_LEFT,STEREO
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_009, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -2031,12 +2031,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_009, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_010
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_ALL_RIGHT,channel 8
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_010
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_ALL_RIGHT,channel 8
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_010, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -2049,12 +2049,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_010, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_011
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_ALL_RIGHT,channel 6
-*/
+ * @tc.name  : Test audio_channel_blend  API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_011
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_ALL_RIGHT,channel 6
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_011, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -2067,12 +2067,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_011, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_012
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_ALL_RIGHT,STEREO
-*/
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_012
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_ALL_RIGHT,STEREO
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_012, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -2086,12 +2086,12 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_012, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test audio_channel_blend  API
-* @tc.type  : FUNC
-* @tc.number: audio_channel_blend_013
-* @tc.desc  : Test AudioBlend Process API,Return buffer
-*             when blendMode is MODE_ALL_RIGHT,STEREO
-*/
+ * @tc.name  : Test audio_channel_blend  API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_013
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when blendMode is MODE_ALL_RIGHT,STEREO
+ */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_013, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
@@ -2101,6 +2101,317 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_013, TestSize.Level1)
     shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[0], 2);
+}
+
+/**
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_014
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when channel is 0 or blendMode is MODE_DEFAULT
+ */
+HWTEST(AudioUtilsUnitTest, audio_channel_blend_014, TestSize.Level1)
+{
+    uint8_t buffer1[8] = {2, 4, 6, 8, 10, 12, 14, 16};
+    uint8_t buffer2[16] = {0, 2, 0, 4, 0, 6, 0, 8, 0, 10, 0, 12, 0, 14, 0, 16};
+    uint8_t buffer3[24] = {0, 0, 2, 0, 0, 4, 0, 0, 6, 0, 0, 8, 0, 0, 10, 0, 0, 12, 0, 0, 14, 0, 0, 16};
+    uint8_t buffer4[32] =
+        {0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 10, 0, 0, 0, 12, 0, 0, 0, 14, 0, 0, 0, 16};
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(MODE_DEFAULT, SAMPLE_S24LE, 0);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 2);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 2);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 2);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 2);
+
+    audioBlend->SetParams(MODE_DEFAULT, SAMPLE_S24LE, 1);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 2);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 2);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 2);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 2);
+}
+
+/**
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_015
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when channel is 1, blendMode is MODE_BLEND_LR, MODE_ALL_LEFT or MODE_ALL_RIGHT.
+ */
+HWTEST(AudioUtilsUnitTest, audio_channel_blend_015, TestSize.Level1)
+{
+    uint8_t buffer1[8] = {2, 4, 6, 8, 10, 12, 14, 16};
+    uint8_t buffer2[16] = {0, 2, 0, 4, 0, 6, 0, 8, 0, 10, 0, 12, 0, 14, 0, 16};
+    uint8_t buffer3[24] = {0, 0, 2, 0, 0, 4, 0, 0, 6, 0, 0, 8, 0, 0, 10, 0, 0, 12, 0, 0, 14, 0, 0, 16};
+    uint8_t buffer4[32] =
+        {0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 10, 0, 0, 0, 12, 0, 0, 0, 14, 0, 0, 0, 16};
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(MODE_BLEND_LR, SAMPLE_U8, 1);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 2);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 2);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 2);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 2);
+
+    audioBlend->SetParams(MODE_ALL_LEFT, SAMPLE_U8, 1);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 2);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 2);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 2);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 2);
+
+    audioBlend->SetParams(MODE_ALL_RIGHT, SAMPLE_U8, 1);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 2);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 2);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 2);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 2);
+}
+
+/**
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_016
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when channel is STEREO, blendMode is MODE_BLEND_LR, MODE_ALL_LEFT or MODE_ALL_RIGHT.
+ */
+HWTEST(AudioUtilsUnitTest, audio_channel_blend_016, TestSize.Level1)
+{
+    uint8_t buffer1[8] = {2, 4, 6, 8, 10, 12, 14, 16};
+    uint8_t buffer2[16] = {0, 2, 0, 4, 0, 6, 0, 8, 0, 10, 0, 12, 0, 14, 0, 16};
+    uint8_t buffer3[24] = {0, 0, 2, 0, 0, 4, 0, 0, 6, 0, 0, 8, 0, 0, 10, 0, 0, 12, 0, 0, 14, 0, 0, 16};
+    uint8_t buffer4[32] =
+        {0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 10, 0, 0, 0, 12, 0, 0, 0, 14, 0, 0, 0, 16};
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(MODE_BLEND_LR, 3, STEREO);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 3);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 3);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 3);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 3);
+
+    audioBlend->SetParams(MODE_ALL_LEFT, 3, STEREO);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 3);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 3);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 3);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 3);
+
+    audioBlend->SetParams(MODE_ALL_RIGHT, 3, STEREO);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 3);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 3);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 3);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 3);
+}
+
+/**
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_017
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when channel is CHANNEL_5, blendMode is MODE_BLEND_LR, MODE_ALL_LEFT or MODE_ALL_RIGHT.
+ */
+HWTEST(AudioUtilsUnitTest, audio_channel_blend_017, TestSize.Level1)
+{
+    uint8_t buffer1[8] = {2, 4, 6, 8, 10, 12, 14, 16};
+    uint8_t buffer2[16] = {0, 2, 0, 4, 0, 6, 0, 8, 0, 10, 0, 12, 0, 14, 0, 16};
+    uint8_t buffer3[24] = {0, 0, 2, 0, 0, 4, 0, 0, 6, 0, 0, 8, 0, 0, 10, 0, 0, 12, 0, 0, 14, 0, 0, 16};
+    uint8_t buffer4[32] =
+        {0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 10, 0, 0, 0, 12, 0, 0, 0, 14, 0, 0, 0, 16};
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(MODE_BLEND_LR, 0, CHANNEL_5);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[2], 7);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[5], 7);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[8], 7);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[11], 7);
+
+    audioBlend->SetParams(MODE_ALL_LEFT, 0, CHANNEL_5);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[2], 7);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[5], 7);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[8], 7);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[11], 7);
+
+    audioBlend->SetParams(MODE_ALL_RIGHT, 0, CHANNEL_5);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[2], 7);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[5], 7);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[8], 7);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[11], 7);
+}
+
+/**
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_017
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when channel is CHANNEL_7, blendMode is MODE_BLEND_LR, MODE_ALL_LEFT or MODE_ALL_RIGHT.
+ */
+HWTEST(AudioUtilsUnitTest, audio_channel_blend_018, TestSize.Level1)
+{
+    uint8_t buffer1[8] = {2, 4, 6, 8, 10, 12, 14, 16};
+    uint8_t buffer2[16] = {0, 2, 0, 4, 0, 6, 0, 8, 0, 10, 0, 12, 0, 14, 0, 16};
+    uint8_t buffer3[24] = {0, 0, 2, 0, 0, 4, 0, 0, 6, 0, 0, 8, 0, 0, 10, 0, 0, 12, 0, 0, 14, 0, 0, 16};
+    uint8_t buffer4[32] =
+        {0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 10, 0, 0, 0, 12, 0, 0, 0, 14, 0, 0, 0, 16};
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(MODE_BLEND_LR, 0, CHANNEL_7);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 3);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 3);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 3);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 3);
+
+    audioBlend->SetParams(MODE_ALL_LEFT, 0, CHANNEL_7);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 3);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 3);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 3);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 3);
+
+    audioBlend->SetParams(MODE_ALL_RIGHT, 0, CHANNEL_7);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 3);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 3);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 3);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 3);
+}
+
+/**
+ * @tc.name  : Test audio_channel_blend API
+ * @tc.type  : FUNC
+ * @tc.number: audio_channel_blend_017
+ * @tc.desc  : Test AudioBlend Process API,Return buffer
+ *             when channel is CHANNEL_8, blendMode is MODE_BLEND_LR, MODE_ALL_LEFT or MODE_ALL_RIGHT.
+ */
+HWTEST(AudioUtilsUnitTest, audio_channel_blend_019, TestSize.Level1)
+{
+    uint8_t buffer1[8] = {2, 4, 6, 8, 10, 12, 14, 16};
+    uint8_t buffer2[16] = {0, 2, 0, 4, 0, 6, 0, 8, 0, 10, 0, 12, 0, 14, 0, 16};
+    uint8_t buffer3[24] = {0, 0, 2, 0, 0, 4, 0, 0, 6, 0, 0, 8, 0, 0, 10, 0, 0, 12, 0, 0, 14, 0, 0, 16};
+    uint8_t buffer4[32] =
+        {0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 10, 0, 0, 0, 12, 0, 0, 0, 14, 0, 0, 0, 16};
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(MODE_BLEND_LR, 0, CHANNEL_8);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 3);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 3);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 3);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 3);
+
+    audioBlend->SetParams(MODE_ALL_LEFT, 0, CHANNEL_8);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 3);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 3);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 3);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 3);
+
+    audioBlend->SetParams(MODE_ALL_RIGHT, 0, CHANNEL_8);
+    audioBlend->ProcessWithBlendMode<uint8_t>(reinterpret_cast<uint8_t*>(buffer1), 8);
+    EXPECT_EQ(buffer1[0], 3);
+
+    audioBlend->ProcessWithBlendMode<int16_t>(reinterpret_cast<int16_t*>(buffer2), 8);
+    EXPECT_EQ(buffer2[1], 3);
+
+    audioBlend->ProcessWithBlendMode<int24_t>(reinterpret_cast<int24_t*>(buffer3), 8);
+    EXPECT_EQ(buffer3[2], 3);
+
+    audioBlend->ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer4), 8);
+    EXPECT_EQ(buffer4[3], 3);
 }
 
 /**

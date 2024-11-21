@@ -69,7 +69,7 @@ void NapiAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(napi_va
 }
 
 void NapiAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> cb =
         std::make_unique<AudioActiveOutputDeviceChangeJsCallback>();
@@ -198,7 +198,7 @@ bool NapiAudioPreferredInputDeviceChangeCallback::GetPreferredInTsfnFlag()
 }
 
 void NapiAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> cb =
         std::make_unique<AudioActiveInputDeviceChangeJsCallback>();

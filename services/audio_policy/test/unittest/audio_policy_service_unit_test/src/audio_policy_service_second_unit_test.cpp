@@ -205,19 +205,19 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, ReconfigureAudioChannel_001, TestSize.Le
 }
 
 /**
- * @tc.name  : Test WriteDeviceChangedSysEvents.
- * @tc.number: WriteDeviceChangedSysEvents_001
- * @tc.desc  : Test WriteDeviceChangedSysEvents interfaces.
+ * @tc.name  : Test WriteAllDeviceSysEvents.
+ * @tc.number: WriteAllDeviceSysEvents_001
+ * @tc.desc  : Test WriteAllDeviceSysEvents interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, WriteDeviceChangedSysEvents_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, WriteAllDeviceSysEvents_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     bool isConnected;
 
     isConnected = false;
     desc = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::ALL_DEVICES_FLAG);
-    server->audioPolicyService_.WriteDeviceChangedSysEvents(desc, isConnected);
+    server->audioPolicyService_.WriteAllDeviceSysEvents(desc, isConnected);
     EXPECT_EQ(isConnected, false);
 }
 
@@ -229,7 +229,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, WriteDeviceChangedSysEvents_001, TestSiz
 HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateTrackerDeviceChange_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    std::vector<sptr<AudioDeviceDescriptor>> desc =
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc =
         AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::ALL_DEVICES_FLAG);
     server->audioPolicyService_.UpdateTrackerDeviceChange(desc);
     EXPECT_TRUE(desc.size() >= 0);
@@ -415,7 +415,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetA2dpDeviceVolume_001, TestSize.Level1
 HWTEST_F(AudioPolicyServiceExtUnitTest, TriggerDeviceChangedCallback_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    vector<sptr<AudioDeviceDescriptor>> desc =
+    vector<std::shared_ptr<AudioDeviceDescriptor>> desc =
         AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::ALL_DEVICES_FLAG);
     bool isConnected = false;
     server->audioPolicyService_.TriggerDeviceChangedCallback(desc, isConnected);
@@ -688,7 +688,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipDeviceInfo_001, TestSize.Level1)
     AudioProcessConfig config;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList =
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
         AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
     int32_t type;
     int32_t ret;
@@ -738,7 +738,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateAudioCapturerMicrophoneDescriptor_
     DeviceType devType = DeviceType::DEVICE_TYPE_NONE;
     int32_t sessionId = 0;
     vector<sptr<MicrophoneDescriptor>> AudioCapturerMicrophoneDescriptors;
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
 
     server->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(sessionId, devType);
     server->audioPolicyService_.audioMicrophoneDescriptor_.AddMicrophoneDescriptor(deviceDescriptor);
@@ -1127,7 +1127,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RectifyModuleInfo_001, TestSize.Level1)
 HWTEST_F(AudioPolicyServiceExtUnitTest, TriggerAvailableDeviceChangedCallback_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    vector<sptr<AudioDeviceDescriptor>> desc;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     bool isConnected;
 
     isConnected = true;

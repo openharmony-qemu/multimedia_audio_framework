@@ -131,7 +131,8 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->SetMicrophoneMutePersistent(mute, PolicyType::PRIVACY_POLCIY_TYPE);
     GetServerPtr()->GetPersistentMicMuteState();
 
-    const sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
+    const std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
+        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     CastType type = *reinterpret_cast<const CastType *>(rawData);
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     GetServerPtr()->ConfigDistributedRoutingRole(deviceDescriptor, type);
@@ -234,7 +235,8 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     AudioPipeType type = *reinterpret_cast<const AudioPipeType *>(rawData);
     GetServerPtr()->MoveToNewPipe(sessionId, type);
 
-    sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
+    std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
+        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(rawData);
     deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(rawData);
     GetServerPtr()->GetHardwareOutputSamplingRate(deviceDescriptor);

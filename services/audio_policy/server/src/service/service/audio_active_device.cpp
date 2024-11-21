@@ -84,7 +84,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
     return false;
 }
 
-int32_t AudioActiveDevice::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+int32_t AudioActiveDevice::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     CHECK_AND_RETURN_RET_LOG(audioA2dpDevice_.CheckA2dpDeviceExist(deviceDescriptor->macAddress_),
         ERR_INVALID_PARAM, "the target A2DP device doesn't exist.");
@@ -248,7 +248,7 @@ float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId)
     return 0;
 }
 
-void AudioActiveDevice::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
 {
     Trace trace("AudioActiveDevice::NotifyUserSelectionEventToBt");
     if (audioDeviceDescriptor == nullptr) {
@@ -272,7 +272,7 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor>
 #endif
 }
 
-void AudioActiveDevice::WriteOutputRouteChangeEvent(std::unique_ptr<AudioDeviceDescriptor> &desc,
+void AudioActiveDevice::WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const AudioStreamDeviceChangeReason reason)
 {
     int64_t timeStamp = AudioPolicyUtils::GetInstance().GetCurrentTimeMS();
@@ -287,10 +287,10 @@ void AudioActiveDevice::WriteOutputRouteChangeEvent(std::unique_ptr<AudioDeviceD
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-bool AudioActiveDevice::UpdateDevice(std::unique_ptr<AudioDeviceDescriptor> &desc,
+bool AudioActiveDevice::UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const AudioStreamDeviceChangeReasonExt reason, const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
-    std::unique_ptr<AudioDeviceDescriptor> preferredDesc =
+    std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
         audioAffinityManager_.GetRendererDevice(rendererChangeInfo->clientUID);
     AudioDeviceDescriptor tmpOutputDeviceDesc = GetCurrentOutputDevice();
     if (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) && !desc->IsSameDeviceInfo(tmpOutputDeviceDesc)
@@ -371,16 +371,16 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     // Activate new device if its already connected
-    auto isPresent = [&deviceType] (const sptr<AudioDeviceDescriptor> &desc) {
+    auto isPresent = [&deviceType] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "SetDeviceActive::Invalid device descriptor");
         return ((deviceType == desc->deviceType_) || (deviceType == DEVICE_TYPE_FILE_SINK));
     };
 
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> callDevices
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> callDevices
         = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
     for (auto &desc : callDevices) {
-        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*desc);
+        std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
         deviceList.push_back(devDesc);
     }
 
@@ -404,11 +404,11 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
 int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool active, std::string address)
 {
     // Activate new device if its already connected
-    auto isPresent = [&deviceType, &address] (const std::unique_ptr<AudioDeviceDescriptor> &desc) {
+    auto isPresent = [&deviceType, &address] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         return ((deviceType == desc->deviceType_) && (address == desc->macAddress_));
     };
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> callDevices
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> callDevices
         = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
 
     auto itr = std::find_if(callDevices.begin(), callDevices.end(), isPresent);
@@ -417,7 +417,7 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             (*itr)->isEnable_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(new(std::nothrow) AudioDeviceDescriptor(**itr), ENABLE_UPDATE);
+            audioDeviceManager_.UpdateDevicesListInfo(std::make_shared<AudioDeviceDescriptor>(**itr), ENABLE_UPDATE);
             AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(address);
         }
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
@@ -427,7 +427,7 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
 #endif
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            new(std::nothrow) AudioDeviceDescriptor());
+            std::make_shared<AudioDeviceDescriptor>());
 #ifdef BLUETOOTH_ENABLE
         HandleNegtiveBt(deviceType);
 #endif

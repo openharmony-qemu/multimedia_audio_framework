@@ -232,7 +232,7 @@ void AudioPolicyClientStub::HandlePreferredOutputDeviceUpdated(MessageParcel &da
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.Unmarshalling(data);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
 
@@ -246,7 +246,7 @@ void AudioPolicyClientStub::HandlePreferredInputDeviceUpdated(MessageParcel &dat
 {
     AudioCapturerInfo capturerInfo;
     capturerInfo.Unmarshalling(data);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
 
@@ -347,7 +347,7 @@ void AudioPolicyClientStub::HandleSpatializationEnabledChange(MessageParcel &dat
 
 void AudioPolicyClientStub::HandleSpatializationEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnSpatializationEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
@@ -361,7 +361,7 @@ void AudioPolicyClientStub::HandleHeadTrackingEnabledChange(MessageParcel &data,
 
 void AudioPolicyClientStub::HandleHeadTrackingEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnHeadTrackingEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);

@@ -267,7 +267,8 @@ OHAudioRoutingManager::~OHAudioRoutingManager()
     AUDIO_INFO_LOG("OHAudioRoutingManager destroyed!");
 }
 
-OH_AudioDeviceDescriptorArray *OHAudioRoutingManager::ConvertDesc(std::vector<sptr<AudioDeviceDescriptor>> &desc)
+OH_AudioDeviceDescriptorArray *OHAudioRoutingManager::ConvertDesc(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     size_t size = desc.size();
     if (size == 0 || size >= MAX_VALID_SIZE) {
@@ -310,7 +311,8 @@ OH_AudioDeviceDescriptorArray* OHAudioRoutingManager::GetDevices(DeviceFlag devi
 {
     CHECK_AND_RETURN_RET_LOG(audioSystemManager_ != nullptr,
         nullptr, "failed, audioSystemManager is null");
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = audioSystemManager_->GetDevices(deviceFlag);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
+        audioSystemManager_->GetDevices(deviceFlag);
     uint32_t size = audioDeviceDescriptors.size();
     if (size <= 0) {
         AUDIO_ERR_LOG("audioDeviceDescriptors is null");
@@ -321,15 +323,15 @@ OH_AudioDeviceDescriptorArray* OHAudioRoutingManager::GetDevices(DeviceFlag devi
 
 OH_AudioDeviceDescriptorArray *OHAudioRoutingManager::GetAvailableDevices(AudioDeviceUsage deviceUsage)
 {
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> tempDesc =
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempDesc =
         AudioRoutingManager::GetInstance()->GetAvailableDevices(deviceUsage);
     if (tempDesc.size() == 0) {
         AUDIO_ERR_LOG("get no device");
         return nullptr;
     }
-    std::vector<sptr<AudioDeviceDescriptor>> altaDesc = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> altaDesc = {};
     for (const auto &availableDesc : tempDesc) {
-        sptr<AudioDeviceDescriptor> dec = new(std::nothrow) AudioDeviceDescriptor(*availableDesc);
+        std::shared_ptr<AudioDeviceDescriptor> dec = std::make_shared<AudioDeviceDescriptor>(*availableDesc);
         altaDesc.push_back(dec);
     }
     return ConvertDesc(altaDesc);
@@ -339,7 +341,7 @@ OH_AudioDeviceDescriptorArray *OHAudioRoutingManager::GetPreferredOutputDevice(S
 {
     AudioRendererInfo rendererInfo = {};
     rendererInfo.streamUsage = streamUsage;
-    std::vector<sptr<AudioDeviceDescriptor>> desc = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = {};
 
     int32_t ret = AudioRoutingManager::GetInstance()->GetPreferredOutputDeviceForRendererInfo(rendererInfo, desc);
     if (ret != SUCCESS) {
@@ -353,7 +355,7 @@ OH_AudioDeviceDescriptorArray *OHAudioRoutingManager::GetPreferredInputDevice(So
 {
     AudioCapturerInfo capturerInfo = {};
     capturerInfo.sourceType = sourceType;
-    std::vector<sptr<AudioDeviceDescriptor>> desc = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = {};
 
     int32_t ret = AudioRoutingManager::GetInstance()->GetPreferredInputDeviceForCapturerInfo(capturerInfo, desc);
     if (ret != SUCCESS) {

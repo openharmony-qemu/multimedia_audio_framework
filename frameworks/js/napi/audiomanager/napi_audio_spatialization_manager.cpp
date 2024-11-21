@@ -208,7 +208,7 @@ napi_value NapiAudioSpatializationManager::IsSpatializationEnabled(napi_env env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of deviceDescriptor must be object"),
             "invalid valueType");
 
-        sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+        std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
         NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
         CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
@@ -329,7 +329,7 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingEnabled(napi_env env, n
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of deviceDescriptor must be object"),
             "invalid valueType");
 
-        sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+        std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
         NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
         CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
@@ -466,7 +466,7 @@ napi_value NapiAudioSpatializationManager::IsSpatializationSupportedForDevice(na
     CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of deviceDescriptor must be object"), "invalid valueType");
 
-    sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
@@ -521,7 +521,7 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupportedForDevice(napi
     CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of deviceDescriptor must be object"), "invalid valueType");
 
-    sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),

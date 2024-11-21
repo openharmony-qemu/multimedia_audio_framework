@@ -26,7 +26,8 @@ namespace AudioStandard {
 class IStandardAudioRoutingManagerListener : public IRemoteBroker, public AudioDeviceRefiner {
 public:
     virtual ~IStandardAudioRoutingManagerListener() = default;
-    virtual void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type) = 0;
+    virtual void OnDistributedRoutingRoleChange(
+        const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type) = 0;
     
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;

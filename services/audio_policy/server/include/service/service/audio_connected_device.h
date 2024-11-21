@@ -42,27 +42,27 @@ public:
     }
     void UpdateConnectDevice(DeviceType deviceType, const std::string &macAddress,
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
-    bool IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc);
+    bool IsConnectedOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool CheckDeviceConnected(std::string selectedDevice);
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
-    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
-    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(int32_t deviceType);
-    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType);
-    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
+    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(int32_t deviceType);
+    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType);
+    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress);
-    sptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
+    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress,
         DeviceRole deviceRole);
-    void AddConnectedDevice(sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+    void AddConnectedDevice(std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     DeviceType FindConnectedHeadset();
     void SetDisplayName(const std::string macAddress, const std::string deviceName);
-    sptr<AudioDeviceDescriptor> CheckExistInputDevice(DeviceType activeDevice);
-    sptr<AudioDeviceDescriptor> CheckExistOutputDevice(DeviceType activeDevice, std::string macAddress);
-    std::vector<sptr<AudioDeviceDescriptor>> GetCopy();
-    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
+    std::shared_ptr<AudioDeviceDescriptor> CheckExistInputDevice(DeviceType activeDevice);
+    std::shared_ptr<AudioDeviceDescriptor> CheckExistOutputDevice(DeviceType activeDevice, std::string macAddress);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCopy();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
     bool HasArm(const DeviceRole role);
     bool HasHifi(const DeviceRole role);
     bool IsArmDevice(const std::string &address, const DeviceRole role);
@@ -70,7 +70,7 @@ private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}
 private:
-    std::vector<sptr<AudioDeviceDescriptor>> connectedDevices_;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
 };
 
 }

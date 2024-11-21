@@ -94,7 +94,8 @@ static void PrintUsage(void)
     cout << "\tWritten by OpenHarmony AudioFramework Team." << endl << endl;
 }
 
-static void ShowAudioDeviceDescriptorsVector(std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
+static void ShowAudioDeviceDescriptorsVector(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
 {
     int vectorLen = audioDeviceDescriptorsVector.size();
     for (int i = 0; i < vectorLen; i ++) {
@@ -126,13 +127,14 @@ static void HandleGetDevices(int argc, char *argv[], char option)
     cout << "GetDevices() flag: " << argv[AudioPolicyTest::SECOND_ARG] << endl;
     int32_t intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
     DeviceFlag deviceFlag = static_cast<DeviceFlag>(intValue);
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
     audioDeviceDescriptorsVector = audioSystemMgr->GetDevices(deviceFlag);
     cout << "GetDevices(Output Devices) Result: " << endl;
     ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
 }
 
-static void CallSelectOutputDevice(char option, std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
+static void CallSelectOutputDevice(char option,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
     sptr<AudioRendererFilter> audioRendererFilter)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -146,9 +148,9 @@ static void CallSelectOutputDevice(char option, std::vector<sptr<AudioDeviceDesc
 }
 
 static void CreateAudioDeviceDescriptorVector(char *argv[],
-    std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     int32_t intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
     audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(intValue);
     intValue = atoi(argv[AudioPolicyTest::THIRD_ARG]);
@@ -165,12 +167,12 @@ static void CreateAudioDeviceDescriptorVector(char *argv[],
 static void HandleSelectOutputDevice(int argc, char* argv[], char opt)
 {
     if (argc == AudioPolicyTest::SEVENTH_ARG) {
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
         CreateAudioDeviceDescriptorVector(argv, audioDeviceDescriptorsVector);
 
         CallSelectOutputDevice(opt, audioDeviceDescriptorsVector, nullptr);
     } else if (argc == AudioPolicyTest::TWELFTH_ARG) {
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
         CreateAudioDeviceDescriptorVector(argv, audioDeviceDescriptorsVector);
 
         sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
@@ -194,7 +196,8 @@ static void HandleSelectOutputDevice(int argc, char* argv[], char opt)
     }
 }
 
-static void CallSelectInputDevice(char option, std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
+static void CallSelectInputDevice(char option,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -211,12 +214,12 @@ static void CallSelectInputDevice(char option, std::vector<sptr<AudioDeviceDescr
 static void HandleSelectInputDevice(int argc, char* argv[], char opt)
 {
     if (argc == AudioPolicyTest::SEVENTH_ARG) {
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
         CreateAudioDeviceDescriptorVector(argv, audioDeviceDescriptorsVector);
 
         CallSelectInputDevice(opt, audioDeviceDescriptorsVector, nullptr);
     } else if (argc == AudioPolicyTest::EIGHTH_ARG) {
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
         CreateAudioDeviceDescriptorVector(argv, audioDeviceDescriptorsVector);
 
         sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();

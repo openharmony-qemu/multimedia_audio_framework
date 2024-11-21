@@ -50,7 +50,7 @@ int32_t AudioRoutingManager::SetMicStateChangeCallback(
 }
 
 int32_t AudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
-    std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     desc = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
 
@@ -58,7 +58,7 @@ int32_t AudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(AudioRender
 }
 
 int32_t AudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
-    std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     desc = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(captureInfo);
 
@@ -102,12 +102,12 @@ vector<sptr<MicrophoneDescriptor>> AudioRoutingManager::GetAvailableMicrophones(
     return AudioPolicyManager::GetInstance().GetAvailableMicrophones();
 }
 
-std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRoutingManager::GetAvailableDevices(AudioDeviceUsage usage)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRoutingManager::GetAvailableDevices(AudioDeviceUsage usage)
 {
     return AudioPolicyManager::GetInstance().GetAvailableDevices(usage);
 }
 
-std::unique_ptr<AudioDeviceDescriptor> AudioRoutingManager::GetActiveBluetoothDevice()
+std::shared_ptr<AudioDeviceDescriptor> AudioRoutingManager::GetActiveBluetoothDevice()
 {
     return AudioPolicyManager::GetInstance().GetActiveBluetoothDevice();
 }

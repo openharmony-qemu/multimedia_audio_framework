@@ -363,7 +363,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_002, TestSize.Level1
     // clear data
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     // dummy data
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -436,8 +436,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_004, TestSize.Level1
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest AudioPolicyServiceTest_004 start");
     ASSERT_NE(nullptr, GetServerPtr());
     AudioDeviceDescriptor audioDeviceDescriptor;
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new AudioDeviceDescriptor();
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
     // set offload support on for covery
@@ -597,7 +597,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSelectedDeviceInfo_001, TestSize.Level1)
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
 
     // dummy data
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -702,11 +702,11 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_001, TestSize.Level1)
     audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     deviceDescriptorVector.push_back(audioDeviceDescriptor);
 
     int32_t result = GetServerPtr()->audioPolicyService_.SelectOutputDevice(
@@ -729,11 +729,11 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_002, TestSize.Level1)
     audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     deviceDescriptorVector.push_back(audioDeviceDescriptor);
 
     int32_t result = GetServerPtr()->audioPolicyService_.SelectOutputDevice(
@@ -756,12 +756,12 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_003, TestSize.Level1)
     audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     audioDeviceDescriptor->connectState_ = VIRTUAL_CONNECTED;
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     deviceDescriptorVector.push_back(audioDeviceDescriptor);
 
     int32_t result = GetServerPtr()->audioPolicyService_.SelectOutputDevice(
@@ -786,7 +786,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, MoveToRemoteOutputDevice_001, TestSize.Leve
     vector<SinkInput> sinkInputs;
     sinkInputs.push_back(sinkInput);
 
-    sptr<AudioDeviceDescriptor> remoteDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, remoteDeviceDescriptor) << "remoteDeviceDescriptor is nullptr.";
     remoteDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     remoteDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -814,7 +814,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, MoveToRemoteOutputDevice_002, TestSize.Leve
     vector<SinkInput> sinkInputs;
     sinkInputs.push_back(sinkInput);
 
-    sptr<AudioDeviceDescriptor> remoteDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, remoteDeviceDescriptor) << "remoteDeviceDescriptor is nullptr.";
     remoteDeviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
     remoteDeviceDescriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -836,7 +836,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetCaptureDeviceForUsage_001, TestSize.Leve
     ASSERT_NE(nullptr, GetServerPtr());
     AudioScene scene = AUDIO_SCENE_PHONE_CALL;
     SourceType srcType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    sptr<AudioDeviceDescriptor> descriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, descriptor) << "descriptor is nullptr.";
     descriptor->deviceType_ = DEVICE_TYPE_MIC;
     descriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -857,7 +857,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetCaptureDeviceForUsage_002, TestSize.Leve
     ASSERT_NE(nullptr, GetServerPtr());
     AudioScene scene = AUDIO_SCENE_PHONE_CHAT;
     SourceType srcType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    sptr<AudioDeviceDescriptor> descriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, descriptor) << "descriptor is nullptr.";
     descriptor->deviceType_ = DEVICE_TYPE_MIC;
     descriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -878,7 +878,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetCaptureDeviceForUsage_003, TestSize.Leve
     ASSERT_NE(nullptr, GetServerPtr());
     AudioScene scene = AUDIO_SCENE_VOICE_RINGING;
     SourceType srcType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    sptr<AudioDeviceDescriptor> descriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, descriptor) << "descriptor is nullptr.";
     descriptor->deviceType_ = DEVICE_TYPE_MIC;
     descriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -899,7 +899,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetCaptureDeviceForUsage_004, TestSize.Leve
     ASSERT_NE(nullptr, GetServerPtr());
     AudioScene scene = AUDIO_SCENE_VOICE_RINGING;
     SourceType srcType = SOURCE_TYPE_VOICE_MESSAGE;
-    sptr<AudioDeviceDescriptor> descriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, descriptor) << "descriptor is nullptr.";
     descriptor->deviceType_ = DEVICE_TYPE_MIC;
     descriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -1167,13 +1167,12 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDevices_001, TestSize.Level1)
 
     // case nullptr
     DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
-    sptr ptr(new AudioDeviceDescriptor());
-    ptr = nullptr;
+    std::shared_ptr<AudioDeviceDescriptor> ptr = nullptr;
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(ptr);
     GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
 
     // case deviceType_ is DEVICE_TYPE_REMOTE_CAST
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
     std::vector<DeviceFlag> deviceFlagsTmp = {ALL_DEVICES_FLAG, OUTPUT_DEVICES_FLAG, INPUT_DEVICES_FLAG,
@@ -2085,7 +2084,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, NotifyUserSelectionEventToBt_001, TestSize.
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.NotifyUserSelectionEventToBt(nullptr);
 
     // dummy data
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     std::vector<DeviceType> deviceTypesTmp = {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_A2DP,
         DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_EARPIECE};
@@ -2117,12 +2116,12 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_001, TestSi
     std::vector<DeviceType> deviceTypesTmp = {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_TYPE_BLUETOOTH_SCO,
         DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_SPEAKER};
     for (const auto& deviceType : deviceTypesTmp) {
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
         ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
         audioDeviceDescriptor->deviceType_ = deviceType;
         audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
         audioDeviceDescriptor->connectState_ = VIRTUAL_CONNECTED;
-        vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+        vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
         deviceDescriptorVector.push_back(audioDeviceDescriptor);
         int32_t result = GetServerPtr()->audioPolicyService_.SelectOutputDeviceByFilterInner(
             audioRendererFilter, deviceDescriptorVector);
@@ -2153,11 +2152,11 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_002, TestSi
     audioRendererFilter->uid = getuid();
     audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     deviceDescriptorVector.push_back(audioDeviceDescriptor);
 
     // dummy audioRendererChangeInfos_
@@ -2303,7 +2302,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetDisplayName_001, TestSize.Level1)
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
 
     // dummy data
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -2311,7 +2310,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetDisplayName_001, TestSize.Level1)
     audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor2) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor2->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor2->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -2319,7 +2318,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetDisplayName_001, TestSize.Level1)
     audioDeviceDescriptor2->networkId_ = REMOTE_NETWORK_ID;
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor2);
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor3 = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor3 = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor3) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor3->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor3->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -2344,7 +2343,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, UpdateDisplayName_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest UpdateDisplayName_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -2369,7 +2368,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleOfflineDistributedDevice_001, TestSiz
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
 
     // dummy data
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -2416,7 +2415,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnForcedDeviceSelected_001, TestSize.Level1
     std::string macAddress = "";
     GetServerPtr()->audioPolicyService_.OnForcedDeviceSelected(DEVICE_TYPE_SPEAKER, macAddress);
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -2424,7 +2423,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnForcedDeviceSelected_001, TestSize.Level1
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
     GetServerPtr()->audioPolicyService_.audioDeviceManager_.AddConnectedDevices(devDesc);
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor2) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor2->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioDeviceDescriptor2->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -2432,7 +2431,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnForcedDeviceSelected_001, TestSize.Level1
     shared_ptr<AudioDeviceDescriptor> devDesc2 = make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor2);
     GetServerPtr()->audioPolicyService_.audioDeviceManager_.AddConnectedDevices(devDesc2);
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor3 = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor3 = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor3) << "audioDeviceDescriptor is nullptr.";
     audioDeviceDescriptor3->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptor3->deviceRole_ = DeviceRole::OUTPUT_DEVICE;

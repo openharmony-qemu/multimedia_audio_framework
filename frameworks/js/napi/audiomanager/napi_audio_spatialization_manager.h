@@ -37,7 +37,7 @@ public:
 
 private:
 struct AudioSpatializationManagerAsyncContext : public ContextBase {
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     bool spatializationEnable;
     bool headTrackingEnable;
     int32_t intValue;

@@ -50,9 +50,9 @@ public:
     }
     void WriteServiceStartupError(std::string reason);
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
     void SetBtConnecting(bool flag);
-    int32_t SetPreferredDevice(const PreferredType preferredType, const sptr<AudioDeviceDescriptor> &desc);
+    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void ClearScoDeviceSuspendState(std::string macAddress = "");
     int64_t GetCurrentTimeMS();
     std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);

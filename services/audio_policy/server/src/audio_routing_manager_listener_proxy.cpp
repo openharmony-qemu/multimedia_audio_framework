@@ -34,8 +34,8 @@ AudioRoutingManagerListenerProxy::~AudioRoutingManagerListenerProxy()
     AUDIO_DEBUG_LOG("~AudioRoutingManagerListenerProxy: Instance destroy");
 }
 
-void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> desciptor,
-    const CastType type)
+void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(
+    const std::shared_ptr<AudioDeviceDescriptor> desciptor, const CastType type)
 {
     AUDIO_DEBUG_LOG("AudioRoutingManagerListenerProxy: OnDistributedRoutingRoleChange as listener proxy");
     MessageParcel data;
@@ -53,7 +53,7 @@ void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(const sptr
 }
 
 int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
     int32_t clientUid, AudioPipeType audioPipeType)
 {
     MessageParcel data;
@@ -83,13 +83,13 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
     int32_t size = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(size < DEVICE_SIZE_LIMIT, ERROR, "reply size reach limit");
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply)));
+        descs.push_back(std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply)));
     }
     return SUCCESS;
 }
 
 int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
     int32_t clientUid, AudioPipeType audioPipeType)
 {
     MessageParcel data;
@@ -119,7 +119,7 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
     int32_t size = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(size < DEVICE_SIZE_LIMIT, ERROR, "reply size reach limit");
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply)));
+        descs.push_back(std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply)));
     }
     return SUCCESS;
 }

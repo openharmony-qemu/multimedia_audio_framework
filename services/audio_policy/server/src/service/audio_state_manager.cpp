@@ -21,71 +21,71 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-void AudioStateManager::SetPreferredMediaRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     preferredMediaRenderDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPreferredCallRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     preferredCallRenderDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPreferredCallCaptureDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     preferredCallCaptureDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPreferredRingRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPreferredRingRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     preferredRingRenderDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPreferredRecordCaptureDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPreferredRecordCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     preferredRecordCaptureDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPreferredToneRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     preferredToneRenderDevice_ = deviceDescriptor;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevice()
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(preferredMediaRenderDevice_);
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredMediaRenderDevice_);
     return devDesc;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(preferredCallRenderDevice_);
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredCallRenderDevice_);
     return devDesc;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevice()
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevice()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(preferredCallCaptureDevice_);
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredCallCaptureDevice_);
     return devDesc;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRingRenderDevice()
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRingRenderDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(preferredRingRenderDevice_);
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRingRenderDevice_);
     return devDesc;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecordCaptureDevice()
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecordCaptureDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(preferredRecordCaptureDevice_);
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRecordCaptureDevice_);
     return devDesc;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredToneRenderDevice()
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredToneRenderDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(preferredToneRenderDevice_);
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredToneRenderDevice_);
     return devDesc;
 }
 

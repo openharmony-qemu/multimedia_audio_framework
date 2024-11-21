@@ -46,7 +46,7 @@ void AudioPolicyManagerListenerStub::ReadInterruptEventParams(MessageParcel &dat
 
 void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDesc = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceChangeDesc = {};
 
     int32_t type = data.ReadInt32();
     int32_t flag = data.ReadInt32();
