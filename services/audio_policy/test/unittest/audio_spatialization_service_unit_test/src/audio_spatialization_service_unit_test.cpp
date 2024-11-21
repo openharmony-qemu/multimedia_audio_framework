@@ -531,13 +531,12 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_020, Tes
 
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
-    const sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     const bool enable = true;
 
     auto result = ptrAudioSpatializationService->SetSpatializationEnabled(selectedAudioDevice, enable);
 
     EXPECT_EQ(result, SPATIALIZATION_SERVICE_OK);
-    delete selectedAudioDevice;
 }
 
 /**
@@ -603,13 +602,12 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_024, Tes
 
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
-    const sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     const bool enable = true;
 
     auto result = ptrAudioSpatializationService->SetHeadTrackingEnabled(selectedAudioDevice, enable);
 
     EXPECT_EQ(result, SPATIALIZATION_SERVICE_OK);
-    delete selectedAudioDevice;
 }
 
 /**
@@ -660,11 +658,10 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_027, Tes
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
     const bool enable = true;
-    const sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     ptrAudioSpatializationService->audioPolicyServerHandler_ = nullptr;
 
     ptrAudioSpatializationService->HandleSpatializationEnabledChange(selectedAudioDevice, enable);
-    delete selectedAudioDevice;
 }
 
 /**
@@ -679,13 +676,12 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_028, Tes
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
     const bool enable = true;
-    const sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
 
     EXPECT_NE(ptrAudioSpatializationService->audioPolicyServerHandler_, nullptr);
 
     ptrAudioSpatializationService->HandleSpatializationEnabledChange(selectedAudioDevice, enable);
-    delete selectedAudioDevice;
 }
 
 /**
@@ -717,13 +713,12 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_030, Tes
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
     const bool enable = true;
-    const sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
 
     EXPECT_NE(ptrAudioSpatializationService->audioPolicyServerHandler_, nullptr);
 
     ptrAudioSpatializationService->HandleHeadTrackingEnabledChange(selectedAudioDevice, enable);
-    delete selectedAudioDevice;
 }
 
 /**
@@ -738,11 +733,10 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_031, Tes
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
     const bool enable = true;
-    const sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     ptrAudioSpatializationService->audioPolicyServerHandler_ = nullptr;
 
     ptrAudioSpatializationService->HandleHeadTrackingEnabledChange(selectedAudioDevice, enable);
-    delete selectedAudioDevice;
 }
 
 /**

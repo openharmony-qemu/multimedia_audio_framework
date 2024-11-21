@@ -93,16 +93,16 @@ std::string AudioPolicyUtils::GetRemoteModuleName(std::string networkId, DeviceR
     return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
 }
 
-std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailableDevicesInner(AudioDeviceUsage usage)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailableDevicesInner(AudioDeviceUsage usage)
 {
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
     audioDeviceDescriptors = audioDeviceManager_.GetAvailableDevicesByUsage(usage);
     return audioDeviceDescriptors;
 }
 
 int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
-    const sptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (desc == nullptr) {
         AUDIO_ERR_LOG("desc is null");
@@ -374,7 +374,7 @@ int32_t AudioPolicyUtils::GetDeviceNameFromDataShareHelper(std::string &deviceNa
 }
 
 
-void AudioPolicyUtils::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
+void AudioPolicyUtils::UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
         std::string devicesName = "";
@@ -400,6 +400,27 @@ void AudioPolicyUtils::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescr
         };
 #endif
     }
+}
+
+void AudioPolicyUtils::UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+#ifdef FEATURE_DEVICE_MANAGER
+    std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
+    int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "init device failed");
+    std::vector<DistributedHardware::DmDeviceInfo> deviceList;
+    if (DistributedHardware::DeviceManager::GetInstance()
+        .GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
+        for (auto deviceInfo : deviceList) {
+            std::string strNetworkId(deviceInfo.networkId);
+            if (strNetworkId == desc->networkId_) {
+                AUDIO_INFO_LOG("remote name [%{public}s]", deviceInfo.deviceName);
+                desc->displayName_ = deviceInfo.deviceName;
+                break;
+            }
+        }
+    };
+#endif
 }
 
 void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)

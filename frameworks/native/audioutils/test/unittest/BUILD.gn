@@ -28,7 +28,10 @@ ohos_unittest("audio_utils_unit_test") {
     "-fno-access-control",
   ]
 
-  external_deps = [ "init:libbegetutil" ]
+  external_deps = [
+    "hilog:libhilog",
+    "init:libbegetutil",
+  ]
 
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
@@ -38,7 +41,10 @@ ohos_unittest("audio_utils_unit_test") {
     external_deps += [ "pulseaudio:sonic" ]
   }
 
-  sources = [ "audio_utils_unit_test.cpp" ]
+  sources = [
+    "../../../audioutils/src/audio_channel_blend.cpp",
+    "audio_utils_unit_test.cpp",
+  ]
 
   deps = [ "../../../audioutils:audio_utils" ]
 }

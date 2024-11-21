@@ -475,7 +475,7 @@ void AudioA2dpOffloadManager::FetchStreamForA2dpOffload(const bool &requireReset
         if (!audioDeviceCommon_.IsRendererStreamRunning(rendererChangeInfo)) {
             continue;
         }
-        vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
+        vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
             rendererChangeInfo->clientUID);
 
@@ -496,7 +496,7 @@ void AudioA2dpOffloadManager::FetchStreamForA2dpOffload(const bool &requireReset
 void AudioA2dpOffloadManager::GetAllRunningStreamSession(std::vector<int32_t> &allSessions, bool doStop)
 {
 #ifdef BLUETOOTH_ENABLE
-    vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     std::vector<int32_t> stopPlayingStream(0);
     for (auto &changeInfo : rendererChangeInfos) {

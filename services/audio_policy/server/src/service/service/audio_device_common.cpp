@@ -128,26 +128,26 @@ void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std
 std::vector<sptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredOutputDeviceDescInner(
     AudioRendererInfo &rendererInfo, std::string networkId)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
     if (rendererInfo.streamUsage <= STREAM_USAGE_UNKNOWN ||
         rendererInfo.streamUsage > STREAM_USAGE_MAX) {
         AUDIO_WARNING_LOG("Invalid usage[%{public}d], return current device.", rendererInfo.streamUsage);
-        sptr<AudioDeviceDescriptor> devDesc
-            = new(std::nothrow) AudioDeviceDescriptor(audioActiveDevice_.GetCurrentOutputDevice());
+        std::shared_ptr<AudioDeviceDescriptor> devDesc =
+            std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
         deviceList.push_back(devDesc);
         return deviceList;
     }
     if (networkId == LOCAL_NETWORK_ID) {
-        vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
+        vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage, -1);
         for (size_t i = 0; i < descs.size(); i++) {
-            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*descs[i]);
+            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
             deviceList.push_back(devDesc);
         }
     } else {
-        vector<unique_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
+        vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
         for (auto &desc : descs) {
-            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*desc);
+            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
             deviceList.push_back(devDesc);
         }
     }
@@ -158,35 +158,36 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredOutputDe
 std::vector<sptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredInputDeviceDescInner(
     AudioCapturerInfo &captureInfo, std::string networkId)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
     if (captureInfo.sourceType <= SOURCE_TYPE_INVALID ||
         captureInfo.sourceType > SOURCE_TYPE_MAX) {
-        sptr<AudioDeviceDescriptor> devDesc
-            = new(std::nothrow) AudioDeviceDescriptor(audioActiveDevice_.GetCurrentInputDevice());
+        std::shared_ptr<AudioDeviceDescriptor> devDesc =
+            std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentInputDevice());
         deviceList.push_back(devDesc);
         return deviceList;
     }
 
     if (captureInfo.sourceType == SOURCE_TYPE_WAKEUP) {
-        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE);
+        std::shared_ptr<AudioDeviceDescriptor> devDesc =
+            std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
         devDesc->networkId_ = LOCAL_NETWORK_ID;
         deviceList.push_back(devDesc);
         return deviceList;
     }
 
     if (networkId == LOCAL_NETWORK_ID) {
-        unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
+        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
             desc->deviceType_ = DEVICE_TYPE_INVALID;
             desc->deviceRole_ = INPUT_DEVICE;
         }
-        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*desc);
+        std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
         deviceList.push_back(devDesc);
     } else {
-        vector<unique_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteCaptureDevices();
+        vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteCaptureDevices();
         for (auto &desc : descs) {
-            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*desc);
+            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
             deviceList.push_back(devDesc);
         }
     }
@@ -296,7 +297,8 @@ int32_t AudioDeviceCommon::GetPreferredInputStreamTypeInner(SourceType sourceTyp
     return AUDIO_FLAG_NORMAL;
 }
 
-void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo, const sptr<AudioDeviceDescriptor> &desc,
+void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc,
     bool hasBTPermission, bool hasSystemPermission)
 {
     deviceInfo.deviceType_ = desc->deviceType_;
@@ -340,7 +342,7 @@ void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo, cons
 }
 
 int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,
-    std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const
 {
     size_t targetSize = audioDeviceDescriptors.size();
     CHECK_AND_RETURN_RET_LOG(targetSize == 1, ERR_INVALID_OPERATION,
@@ -362,7 +364,7 @@ int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor &updatedDesc,
-    std::vector<sptr<AudioDeviceDescriptor>> &descForCb)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
     AUDIO_INFO_LOG("UpdateConnectedDevicesWhenConnecting In, deviceType: %{public}d", updatedDesc.deviceType_);
     if (IsOutputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
@@ -384,7 +386,7 @@ void AudioDeviceCommon::RemoveOfflineDevice(const AudioDeviceDescriptor& updated
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
-    std::vector<sptr<AudioDeviceDescriptor>> &descForCb)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
     RemoveOfflineDevice(updatedDesc);
     AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
@@ -401,22 +403,22 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         if (audioStateManager_.GetPreferredMediaRenderDevice() != nullptr &&
             it->IsSameDeviceDesc(*audioStateManager_.GetPreferredMediaRenderDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
-                new(std::nothrow) AudioDeviceDescriptor());
+                std::make_shared<AudioDeviceDescriptor>());
         }
         if (audioStateManager_.GetPreferredCallRenderDevice() != nullptr &&
             it->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallRenderDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                new(std::nothrow) AudioDeviceDescriptor());
+                std::make_shared<AudioDeviceDescriptor>());
         }
         if (audioStateManager_.GetPreferredCallCaptureDevice() != nullptr &&
             it->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallCaptureDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
-                new(std::nothrow) AudioDeviceDescriptor());
+                std::make_shared<AudioDeviceDescriptor>());
         }
         if (audioStateManager_.GetPreferredRecordCaptureDevice() != nullptr &&
             it->IsSameDeviceDesc(*audioStateManager_.GetPreferredRecordCaptureDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE,
-                new(std::nothrow) AudioDeviceDescriptor());
+                std::make_shared<AudioDeviceDescriptor>());
         }
         descForCb.push_back(it);
         audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
@@ -431,7 +433,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         streamCollector_.ResetCapturerStreamDeviceInfo(updatedDesc);
     }
 
-    sptr<AudioDeviceDescriptor> devDesc = new (std::nothrow) AudioDeviceDescriptor(updatedDesc);
+    std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Create device descriptor failed");
     audioDeviceManager_.RemoveNewDevice(devDesc);
     audioMicrophoneDescriptor_.RemoveMicrophoneDescriptor(devDesc);
@@ -442,9 +444,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
-    const AudioDeviceDescriptor &updatedDesc, std::vector<sptr<AudioDeviceDescriptor>> &descForCb)
+    const AudioDeviceDescriptor &updatedDesc, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
-    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(updatedDesc);
+    std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
     // Use speaker streaminfo for all output devices cap
     auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_SPEAKER);
@@ -472,20 +474,20 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
         ROUTER_TYPE_USER_SELECT).front()->deviceType_ && (usage == MEDIA || usage == ALL_USAGE)) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
-            new(std::nothrow) AudioDeviceDescriptor());
+            std::make_shared<AudioDeviceDescriptor>());
     }
     if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->deviceType_ ==
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
         ROUTER_TYPE_USER_SELECT).front()->deviceType_ && (usage == VOICE || usage == ALL_USAGE)) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            new(std::nothrow) AudioDeviceDescriptor());
+            std::make_shared<AudioDeviceDescriptor>());
     }
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
-    const AudioDeviceDescriptor &updatedDesc, std::vector<sptr<AudioDeviceDescriptor>> &descForCb)
+    const AudioDeviceDescriptor &updatedDesc, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
-    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(updatedDesc);
+    std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     audioDescriptor->deviceRole_ = INPUT_DEVICE;
     // Use mic streaminfo for all input devices cap
     auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_MIC);
@@ -508,9 +510,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
     }
     if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && audioDescriptor->deviceCategory_ != BT_WATCH) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
-            new(std::nothrow) AudioDeviceDescriptor());
+            std::make_shared<AudioDeviceDescriptor>());
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE,
-            new(std::nothrow) AudioDeviceDescriptor());
+            std::make_shared<AudioDeviceDescriptor>());
     }
 }
 
@@ -542,7 +544,7 @@ void AudioDeviceCommon::FetchDevice(bool isOutputDevice, const AudioStreamDevice
     }
 }
 
-bool AudioDeviceCommon::IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
+bool AudioDeviceCommon::IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDescriptor> &desc,
     const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (rendererChangeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
@@ -584,7 +586,7 @@ bool AudioDeviceCommon::NotifyRecreateDirectStream(std::shared_ptr<AudioRenderer
     return false;
 }
 
-void AudioDeviceCommon::FetchOutputDevice(vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::FetchOutputDevice");
@@ -603,7 +605,7 @@ void AudioDeviceCommon::FetchOutputDevice(vector<shared_ptr<AudioRendererChangeI
             continue;
         }
         runningStreamCount++;
-        vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
+        vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
             rendererChangeInfo->clientUID);
         if (HandleDeviceChangeForFetchOutputDevice(descs.front(), rendererChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE &&
@@ -648,7 +650,7 @@ void AudioDeviceCommon::FetchOutputEnd(const bool isUpdateActiveDevice, const in
 
 void AudioDeviceCommon::FetchOutputDeviceWhenNoRunningStream()
 {
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
     CHECK_AND_RETURN_LOG(!descs.empty(), "descs is empty");
     AudioDeviceDescriptor tmpOutputDeviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
@@ -660,20 +662,20 @@ void AudioDeviceCommon::FetchOutputDeviceWhenNoRunningStream()
     AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
     audioVolumeManager_.SetVolumeForSwitchDevice(descs.front()->deviceType_);
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        audioActiveDevice_.SwitchActiveA2dpDevice(new AudioDeviceDescriptor(*descs.front()));
+        audioActiveDevice_.SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
     }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
 }
 
-int32_t AudioDeviceCommon::HandleDeviceChangeForFetchOutputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-    shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+int32_t AudioDeviceCommon::HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
+    std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
         !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED &&
         audioSceneManager_.IsSameAudioScene() && !shouldUpdateDeviceDueToDualTone_)) {
         AUDIO_WARNING_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
         AudioDeviceDescriptor tmpOutputDeviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
-        unique_ptr<AudioDeviceDescriptor> preferredDesc =
+        std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
             audioAffinityManager_.GetRendererDevice(rendererChangeInfo->clientUID);
         if (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) && !IsSameDevice(desc, tmpOutputDeviceDesc)
             && desc->deviceType_ != preferredDesc->deviceType_)
@@ -689,8 +691,8 @@ int32_t AudioDeviceCommon::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Aud
     return SUCCESS;
 }
 
-void AudioDeviceCommon::MuteSinkPortForSwtichDevice(shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
-    vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
+void AudioDeviceCommon::MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::MuteSinkPortForSwtichDevice");
     if (outputDevices.size() != 1) {
@@ -727,7 +729,7 @@ void AudioDeviceCommon::SetVoiceCallMuteForSwitchDevice()
     // Unmute in SetVolumeForSwitchDevice after update route.
 }
 
-bool AudioDeviceCommon::IsRendererStreamRunning(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+bool AudioDeviceCommon::IsRendererStreamRunning(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     StreamUsage usage = rendererChangeInfo->rendererInfo.streamUsage;
     RendererState rendererState = rendererChangeInfo->rendererState;
@@ -740,8 +742,9 @@ bool AudioDeviceCommon::IsRendererStreamRunning(shared_ptr<AudioRendererChangeIn
     return true;
 }
 
-int32_t AudioDeviceCommon::ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, const AudioStreamDeviceChangeReasonExt reason)
+int32_t AudioDeviceCommon::ActivateA2dpDeviceWhenDescEnabled(std::shared_ptr<AudioDeviceDescriptor> &desc,
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     if (desc->isEnable_) {
         AUDIO_INFO_LOG("descs front is enabled");
@@ -750,11 +753,12 @@ int32_t AudioDeviceCommon::ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDev
     return SUCCESS;
 }
 
-int32_t AudioDeviceCommon::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, const AudioStreamDeviceChangeReasonExt reason)
+int32_t AudioDeviceCommon::ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::ActivateA2dpDevice");
-    sptr<AudioDeviceDescriptor> deviceDesc = new AudioDeviceDescriptor(*desc);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
     int32_t ret = audioActiveDevice_.SwitchActiveA2dpDevice(deviceDesc);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
@@ -766,8 +770,8 @@ int32_t AudioDeviceCommon::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> 
     return SUCCESS;
 }
 
-int32_t AudioDeviceCommon::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+int32_t AudioDeviceCommon::HandleScoOutputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::HandleScoOutputDeviceFetched");
@@ -776,7 +780,8 @@ int32_t AudioDeviceCommon::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDe
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
             desc->exceptionFlag_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
+            audioDeviceManager_.UpdateDevicesListInfo(
+                std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
             FetchOutputDevice(rendererChangeInfos, reason);
             return ERROR;
         }
@@ -788,7 +793,7 @@ int32_t AudioDeviceCommon::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDe
     return SUCCESS;
 }
 
-bool AudioDeviceCommon::NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
+bool AudioDeviceCommon::NotifyRecreateRendererStream(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("New device type: %{public}d, current rendererFlag: %{public}d, origianl flag: %{public}d",
@@ -822,7 +827,7 @@ bool AudioDeviceCommon::NotifyRecreateRendererStream(std::unique_ptr<AudioDevice
     return false;
 }
 
-bool AudioDeviceCommon::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor> &desc)
+bool AudioDeviceCommon::NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
         && audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER) == false) {
@@ -832,8 +837,8 @@ bool AudioDeviceCommon::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor>
     return false;
 }
 
-void AudioDeviceCommon::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices, std::vector<SinkInput> sinkInputs,
+void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices, std::vector<SinkInput> sinkInputs,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::MoveToNewOutputDevice");
@@ -854,7 +859,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInfo
     DeviceType oldDevice = rendererChangeInfo->outputDeviceInfo.deviceType_;
 
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo,
-        new AudioDeviceDescriptor(*outputDevices.front()), true, true);
+        std::make_shared<AudioDeviceDescriptor>(*outputDevices.front()), true, true);
 
     if (needTriggerCallback) {
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
@@ -864,8 +869,8 @@ void AudioDeviceCommon::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInfo
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevices.front()->networkId_ == LOCAL_NETWORK_ID)
-                ? MoveToLocalOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevices.front()))
-                : MoveToRemoteOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevices.front()));
+        ? MoveToLocalOutputDevice(targetSinkInputs, std::make_shared<AudioDeviceDescriptor>(*outputDevices.front()))
+        : MoveToRemoteOutputDevice(targetSinkInputs, std::make_shared<AudioDeviceDescriptor>(*outputDevices.front()));
     if (ret != SUCCESS) {
         AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(oldDevice);
         AUDIO_ERR_LOG("Move sink input %{public}d to device %{public}d failed!",
@@ -938,8 +943,8 @@ void AudioDeviceCommon::TriggerRecreateRendererStreamCallback(int32_t callerPid,
     }
 }
 
-void AudioDeviceCommon::UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices)
+void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices)
 {
     StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
     InternalDeviceType deviceType = outputDevices.front()->deviceType_;
@@ -970,7 +975,7 @@ void AudioDeviceCommon::UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendere
 }
 
 void AudioDeviceCommon::ResetOffloadAndMchMode(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices)
+    vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices)
 {
     if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID
         || outputDevices.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
@@ -994,7 +999,7 @@ void AudioDeviceCommon::JudgeIfLoadMchModule()
 }
 
 void AudioDeviceCommon::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
+    vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (audioOffloadStream_.CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
         JudgeIfLoadMchModule();
@@ -1058,8 +1063,8 @@ void AudioDeviceCommon::FetchStreamForSpkMchStream(std::shared_ptr<AudioRenderer
     }
 }
 
-bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-    const shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+    const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     CHECK_AND_RETURN_RET_LOG(descs.size() > 0 && descs.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, false,
         "audio devices not in range for ringer or alarmer.");
@@ -1102,13 +1107,13 @@ bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::unique_ptr<
     return false;
 }
 
-int32_t AudioDeviceCommon::HandleDeviceChangeForFetchInputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-    shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
+int32_t AudioDeviceCommon::HandleDeviceChangeForFetchInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
+    std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
 {
     if (desc->deviceType_ == DEVICE_TYPE_NONE ||
         (IsSameDevice(desc, capturerChangeInfo->inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED)) {
         AUDIO_WARNING_LOG("stream %{public}d device not change, no need move device", capturerChangeInfo->sessionId);
-        unique_ptr<AudioDeviceDescriptor> preferredDesc =
+        std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
             audioAffinityManager_.GetCapturerDevice(capturerChangeInfo->clientUID);
         if (!IsSameDevice(desc, audioActiveDevice_.GetCurrentInputDevice()) &&
             (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) && desc->deviceType_ != preferredDesc->deviceType_) ||
@@ -1124,7 +1129,7 @@ int32_t AudioDeviceCommon::HandleDeviceChangeForFetchInputDevice(unique_ptr<Audi
     return SUCCESS;
 }
 
-void AudioDeviceCommon::FetchInputDeviceInner(vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+void AudioDeviceCommon::FetchInputDeviceInner(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
     const AudioStreamDeviceChangeReasonExt reason, bool& needUpdateActiveDevice, bool& isUpdateActiveDevice,
     int32_t& runningStreamCount)
 {
@@ -1138,7 +1143,7 @@ void AudioDeviceCommon::FetchInputDeviceInner(vector<shared_ptr<AudioCapturerCha
             continue;
         }
         runningStreamCount++;
-        unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType, clientUID);
+        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType, clientUID);
         AudioDeviceDescriptor inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
         if (HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE) {
             continue;
@@ -1148,7 +1153,7 @@ void AudioDeviceCommon::FetchInputDeviceInner(vector<shared_ptr<AudioCapturerCha
             audioEcManager_.ActivateArmDevice(desc->macAddress_, desc->deviceRole_);
         }
         if (needUpdateActiveDevice) {
-            unique_ptr<AudioDeviceDescriptor> preferredDesc = audioAffinityManager_.GetCapturerDevice(clientUID);
+            std::shared_ptr<AudioDeviceDescriptor> preferredDesc = audioAffinityManager_.GetCapturerDevice(clientUID);
             if (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) &&
                 !IsSameDevice(desc, audioActiveDevice_.GetCurrentInputDevice())
                 && desc->deviceType_ != preferredDesc->deviceType_)
@@ -1170,7 +1175,7 @@ void AudioDeviceCommon::FetchInputDeviceInner(vector<shared_ptr<AudioCapturerCha
     }
 }
 
-void AudioDeviceCommon::FetchInputDevice(vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+void AudioDeviceCommon::FetchInputDevice(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::FetchInputDevice");
@@ -1196,8 +1201,8 @@ void AudioDeviceCommon::FetchInputEnd(const bool isUpdateActiveDevice, const int
     }
 }
 
-void AudioDeviceCommon::HandleBluetoothInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
+void AudioDeviceCommon::HandleBluetoothInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
 {
     if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         BluetoothScoFetch(desc, capturerChangeInfos, sourceType);
@@ -1206,7 +1211,7 @@ void AudioDeviceCommon::HandleBluetoothInputDeviceFetched(unique_ptr<AudioDevice
     }
 }
 
-void AudioDeviceCommon::WriteInputRouteChangeEvent(std::unique_ptr<AudioDeviceDescriptor> &desc,
+void AudioDeviceCommon::WriteInputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const AudioStreamDeviceChangeReason reason)
 {
     int64_t timeStamp = AudioPolicyUtils::GetInstance().GetCurrentTimeMS();
@@ -1246,15 +1251,15 @@ bool AudioDeviceCommon::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
     return false;
 }
 
-void AudioDeviceCommon::MoveToNewInputDevice(shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
-    unique_ptr<AudioDeviceDescriptor> &inputDevice)
+void AudioDeviceCommon::MoveToNewInputDevice(std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
+    std::shared_ptr<AudioDeviceDescriptor> &inputDevice)
 {
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(capturerChangeInfo->sessionId);
 
     // MoveSourceOuputByIndexName
     auto ret = (inputDevice->networkId_ == LOCAL_NETWORK_ID)
-                ? MoveToLocalInputDevice(targetSourceOutputs, new AudioDeviceDescriptor(*inputDevice))
-                : MoveToRemoteInputDevice(targetSourceOutputs, new AudioDeviceDescriptor(*inputDevice));
+        ? MoveToLocalInputDevice(targetSourceOutputs, std::make_shared<AudioDeviceDescriptor>(*inputDevice))
+        : MoveToRemoteInputDevice(targetSourceOutputs, std::make_shared<AudioDeviceDescriptor>(*inputDevice));
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         capturerChangeInfo->sessionId, inputDevice->deviceType_);
     AUDIO_WARNING_LOG("move session %{public}d [%{public}d][%{public}s]-->[%{public}d][%{public}s]",
@@ -1265,14 +1270,15 @@ void AudioDeviceCommon::MoveToNewInputDevice(shared_ptr<AudioCapturerChangeInfo>
     if (audioConfigManager_.GetUpdateRouteSupport() && inputDevice->networkId_ == LOCAL_NETWORK_ID) {
         audioActiveDevice_.UpdateActiveDeviceRoute(inputDevice->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG, inputDevice->deviceName_);
     }
-    UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, new AudioDeviceDescriptor(*inputDevice), true, true);
+    UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, std::make_shared<AudioDeviceDescriptor>(*inputDevice),
+        true, true);
     streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
         capturerChangeInfo->inputDeviceInfo);
 }
 
 void AudioDeviceCommon::FetchInputDeviceWhenNoRunningStream()
 {
-    unique_ptr<AudioDeviceDescriptor> desc;
+    std::shared_ptr<AudioDeviceDescriptor> desc;
     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
@@ -1295,8 +1301,8 @@ void AudioDeviceCommon::FetchInputDeviceWhenNoRunningStream()
     OnPreferredInputDeviceUpdated(deviceType, ""); // networkId is not used
 }
 
-void AudioDeviceCommon::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
+void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor> &desc,
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
 {
     Trace trace("AudioDeviceCommon::BluetoothScoFetch");
     int32_t ret;
@@ -1305,7 +1311,8 @@ void AudioDeviceCommon::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &des
         if (activeRet != SUCCESS) {
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
             desc->exceptionFlag_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
+            audioDeviceManager_.UpdateDevicesListInfo(
+                std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
             FetchInputDevice(capturerChangeInfos);
         }
         ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
@@ -1358,7 +1365,7 @@ void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(int32_t callerPid,
 }
 
 int32_t AudioDeviceCommon::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
-    sptr<AudioDeviceDescriptor> localDeviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor)
 {
     AUDIO_DEBUG_LOG("Start");
     // check
@@ -1378,7 +1385,7 @@ int32_t AudioDeviceCommon::MoveToLocalInputDevice(std::vector<SourceOutput> sour
 }
 
 int32_t AudioDeviceCommon::MoveToRemoteInputDevice(std::vector<SourceOutput> sourceOutputs,
-    sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
     AUDIO_INFO_LOG("Start");
 
@@ -1432,15 +1439,16 @@ int32_t AudioDeviceCommon::ScoInputDeviceFetchedForRecongnition(bool handleFlag,
     return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag, device);
 }
 
-int32_t AudioDeviceCommon::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
+int32_t AudioDeviceCommon::HandleScoInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
 #ifdef BLUETOOTH_ENABLE
     int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
         desc->exceptionFlag_ = true;
-        audioDeviceManager_.UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
+        audioDeviceManager_.UpdateDevicesListInfo(
+            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
         FetchInputDevice(capturerChangeInfos);
         return ERROR;
     }
@@ -1453,7 +1461,7 @@ int32_t AudioDeviceCommon::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDes
 }
 
 int32_t AudioDeviceCommon::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
-    sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
     AUDIO_INFO_LOG("Start for [%{public}zu] sink-inputs", sinkInputIds.size());
 
@@ -1497,7 +1505,7 @@ int32_t AudioDeviceCommon::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkI
 }
 
 int32_t AudioDeviceCommon::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
-    sptr<AudioDeviceDescriptor> localDeviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor)
 {
     AUDIO_INFO_LOG("Start for [%{public}zu] sink-inputs", sinkInputIds.size());
     // check
@@ -1528,7 +1536,7 @@ int32_t AudioDeviceCommon::MoveToLocalOutputDevice(std::vector<SinkInput> sinkIn
 }
 
 int32_t AudioDeviceCommon::OpenRemoteAudioDevice(std::string networkId, DeviceRole deviceRole, DeviceType deviceType,
-    sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
     // open the test device. We should open it when device is online.
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
@@ -1544,7 +1552,7 @@ int32_t AudioDeviceCommon::OpenRemoteAudioDevice(std::string networkId, DeviceRo
     return SUCCESS;
 }
 
-void AudioDeviceCommon::CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioDeviceCommon::CheckAndNotifyUserSelectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     unique_ptr<AudioDeviceDescriptor> userSelectedMediaDevice = audioStateManager_.GetPreferredMediaRenderDevice();
     unique_ptr<AudioDeviceDescriptor> userSelectedCallDevice = audioStateManager_.GetPreferredCallRenderDevice();
@@ -1634,22 +1642,12 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
     }
 }
 
-bool AudioDeviceCommon::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const
+bool AudioDeviceCommon::IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const
 {
     return audioDeviceManager_.IsDeviceConnected(audioDeviceDescriptors);
 }
 
-
-
-
-
-
-
-
-
-
-
-bool AudioDeviceCommon::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo)
+bool AudioDeviceCommon::IsSameDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo)
 {
     if (desc->networkId_ == deviceInfo.networkId_ && desc->deviceType_ == deviceInfo.deviceType_ &&
         desc->macAddress_ == deviceInfo.macAddress_ && desc->connectState_ == deviceInfo.connectState_) {
@@ -1672,7 +1670,7 @@ bool AudioDeviceCommon::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, Au
     }
 }
 
-bool AudioDeviceCommon::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc)
+bool AudioDeviceCommon::IsSameDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc)
 {
     if (desc->networkId_ == deviceDesc.networkId_ && desc->deviceType_ == deviceDesc.deviceType_ &&
         desc->macAddress_ == deviceDesc.macAddress_ && desc->connectState_ == deviceDesc.connectState_ &&

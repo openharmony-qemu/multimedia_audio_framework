@@ -278,8 +278,8 @@ napi_status NapiParamUtils::CreateArrayBuffer(const napi_env &env, const size_t 
     return status;
 }
 
-void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor,
-    const AudioDeviceDescriptor &deviceInfo)
+void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor, const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
     audioDeviceDescriptor->deviceRole_ = deviceInfo.deviceRole_;
@@ -484,7 +484,7 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
 }
 
 napi_status NapiParamUtils::SetDeviceDescriptors(const napi_env &env,
-    const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result)
 {
     napi_status status = napi_create_array_with_length(env, deviceDescriptors.size(), &result);
     for (size_t i = 0; i < deviceDescriptors.size(); i++) {
@@ -511,8 +511,8 @@ napi_status NapiParamUtils::SetAudioSpatialEnabledStateForDevice(const napi_env 
 napi_status NapiParamUtils::SetValueDeviceInfo(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
     napi_value &result)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor != nullptr, napi_generic_failure,
         "audioDeviceDescriptor malloc failed");
     ConvertDeviceInfoToAudioDeviceDescriptor(audioDeviceDescriptor, deviceInfo);
@@ -736,7 +736,7 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
 }
 
 napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
-    sptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in)
+    std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in)
 {
     int32_t intValue = {0};
     argTransFlag = true;
@@ -792,7 +792,7 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
 }
 
 napi_status NapiParamUtils::GetAudioDeviceDescriptorVector(const napi_env &env,
-    std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptorsVector, bool &argTransFlag, napi_value in)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptorsVector, bool &argTransFlag, napi_value in)
 {
     uint32_t arrayLen = 0;
     napi_get_array_length(env, in, &arrayLen);
@@ -804,7 +804,7 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptorVector(const napi_env &env,
     for (size_t i = 0; i < arrayLen; i++) {
         napi_value element;
         napi_get_element(env, in, i, &element);
-        sptr<AudioDeviceDescriptor> selectedAudioDevice = new(std::nothrow) AudioDeviceDescriptor();
+        std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
         GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, element);
         if (!argTransFlag) {
             return napi_ok;

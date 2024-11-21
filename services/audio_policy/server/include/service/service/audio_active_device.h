@@ -54,14 +54,14 @@ public:
     void SetCurrenInputDevice(const AudioDeviceDescriptor &desc);
     void SetCurrenOutputDevice(const AudioDeviceDescriptor &desc);
     bool IsDirectSupportedDevice();
-    void NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
-    bool UpdateDevice(std::unique_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,
+    void NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+    bool UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsDeviceActive(DeviceType deviceType);
     float GetMaxAmplitude(const int32_t deviceId);
     void UpdateInputDeviceInfo(DeviceType deviceType);
     std::string GetActiveBtDeviceMac();
-    int32_t SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     void SetActiveBtDeviceMac(std::string macAddress);
     int32_t SetDeviceActive(DeviceType deviceType, bool active);
     int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address);
@@ -91,7 +91,7 @@ private:
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
     ~AudioActiveDevice() {}
-    void WriteOutputRouteChangeEvent(std::unique_ptr<AudioDeviceDescriptor> &desc,
+    void WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
         const AudioStreamDeviceChangeReason reason);
     void HandleActiveBt(DeviceType deviceType, std::string macAddress);
     void HandleNegtiveBt(DeviceType deviceType);

@@ -229,8 +229,8 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     StreamUsage fuzzStreamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
 
     AudioDeviceDescriptor fuzzAudioDeviceDescriptor;
-    sptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = new AudioDeviceDescriptor();
-    std::vector<sptr<AudioDeviceDescriptor>> fuzzAudioDeviceDescriptorSptrVector;
+    std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> fuzzAudioDeviceDescriptorSptrVector;
     fuzzAudioDeviceDescriptorSptrVector.push_back(fuzzAudioDeviceDescriptorSptr);
     sptr<AudioRendererFilter> fuzzAudioRendererFilter = new AudioRendererFilter();
 

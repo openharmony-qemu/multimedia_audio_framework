@@ -29,7 +29,7 @@ namespace AudioStandard {
 
 class OHAudioDeviceDescriptor {
 public:
-    explicit OHAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+    explicit OHAudioDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     ~OHAudioDeviceDescriptor();
 
     OH_AudioCommon_Result GetDeviceRole(OH_AudioDevice_Role *deviceRole);
@@ -43,7 +43,7 @@ public:
     OH_AudioCommon_Result GetDeviceEncodingTypes(OH_AudioStream_EncodingType **encodingTypes, uint32_t *size);
 
 private:
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor_;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor_;
     uint32_t *audioSamplingRate_ = nullptr;
     uint32_t *audioChannel_ = nullptr;
     OH_AudioStream_EncodingType *encodingType_ = nullptr;

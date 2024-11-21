@@ -68,21 +68,21 @@ private:
 
     // selectoutputdevice
     int32_t SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<sptr<AudioDeviceDescriptor>> selectedDesc);
-    int32_t SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc);
-    int32_t ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &desc);
-    void WriteSelectOutputSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &selectedDesc,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+    int32_t SetRenderDeviceForUsage(StreamUsage streamUsage, std::shared_ptr<AudioDeviceDescriptor> desc);
+    int32_t ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void WriteSelectOutputSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
         StreamUsage strUsage);
     int32_t SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        sptr<AudioDeviceDescriptor> deviceDescriptor);
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<sptr<AudioDeviceDescriptor>> selectedDesc);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
 
     // selectinputdevice
-    void SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType, sptr<AudioDeviceDescriptor> desc);
+    void SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType, std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t SelectFastInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-        sptr<AudioDeviceDescriptor> deviceDescriptor);
-    void WriteSelectInputSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &selectedDesc,
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    void WriteSelectInputSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
         SourceType srcType, AudioScene scene);
 private:
     AudioStreamCollector& streamCollector_;

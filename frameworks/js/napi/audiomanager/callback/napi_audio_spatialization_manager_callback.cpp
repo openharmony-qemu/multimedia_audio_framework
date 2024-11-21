@@ -163,7 +163,7 @@ void NapiAudioSpatializationEnabledChangeCallback::OnSpatializationEnabledChange
 }
 
 void NapiAudioSpatializationEnabledChangeCallback::OnSpatializationEnabledChangeForAnyDevice(
-    const sptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
 {
     AUDIO_INFO_LOG("OnSpatializationEnabledChange by the speified device entered");
     std::lock_guard<std::mutex> lock(mutex_);
@@ -390,7 +390,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::OnHeadTrackingEnabledChange(con
 }
 
 void NapiAudioHeadTrackingEnabledChangeCallback::OnHeadTrackingEnabledChangeForAnyDevice(
-    const sptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
 {
     AUDIO_INFO_LOG("OnHeadTrackingEnabledChange by the specified device entered");
     std::lock_guard<std::mutex> lock(mutex_);

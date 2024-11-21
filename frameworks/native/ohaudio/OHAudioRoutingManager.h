@@ -88,7 +88,7 @@ public:
     }
     OH_AudioDeviceDescriptorArray* GetDevices(DeviceFlag deviceFlag);
 
-    OH_AudioDeviceDescriptorArray *ConvertDesc(std::vector<sptr<AudioDeviceDescriptor>> &desc);
+    OH_AudioDeviceDescriptorArray *ConvertDesc(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     OH_AudioDeviceDescriptorArray *GetAvailableDevices(AudioDeviceUsage deviceUsage);
     OH_AudioDeviceDescriptorArray *GetPreferredOutputDevice(StreamUsage streamUsage);
     OH_AudioDeviceDescriptorArray *GetPreferredInputDevice(SourceType sourceType);

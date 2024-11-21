@@ -184,7 +184,7 @@ void AudioEcManager::CloseNormalSource()
 void AudioEcManager::UpdateEnhanceEffectState(SourceType source)
 {
     AudioEnhancePropertyArray enhancePropertyArray = {};
-    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
+    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
     int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray,
         inputDesc->deviceType_);
     if (ret != SUCCESS) {
@@ -221,7 +221,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamP
         moduleInfo.format = targetInfo.format_;
         moduleInfo.sourceType = std::to_string(sourceType);
     } else {
-        unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
+        shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
             moduleInfo = usbSourceModuleInfo_;
             moduleInfo.sourceType = std::to_string(sourceType);
@@ -249,9 +249,9 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
         return;
     }
 
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDesc =
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
-    unique_ptr<AudioDeviceDescriptor> inputDesc =
+    std::shared_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
 
     UpdateAudioEcInfo(inputDesc->deviceType_, outputDesc.front()->deviceType_);
@@ -444,7 +444,7 @@ std::string AudioEcManager::ShouldOpenMicRef(SourceType source)
         return shouldOpen;
     }
 
-    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
+    std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
     auto iter = std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), inputDesc->deviceType_);
     if ((source == SOURCE_TYPE_VOICE_COMMUNICATION && isMicRefVoipUpOn_ && iter != MIC_REF_DEVICES.end()) ||
         (source == SOURCE_TYPE_MIC && isMicRefRecordOn_ && iter != MIC_REF_DEVICES.end())) {
@@ -620,7 +620,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
         if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
             tmpSourceType = SOURCE_TYPE_MIC;
         }
-        unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(tmpSourceType, -1);
+        std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(tmpSourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
             targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe

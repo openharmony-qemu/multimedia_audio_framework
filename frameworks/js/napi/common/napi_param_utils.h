@@ -137,7 +137,7 @@ public:
     static napi_value GetUndefinedValue(napi_env env);
 
     /* NapiAudioRenderer Get&&Set object */
-    static void ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor,
+    static void ConvertDeviceInfoToAudioDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         const AudioDeviceDescriptor &deviceInfo);
     static napi_status GetRendererOptions(const napi_env &env, AudioRendererOptions *opts, napi_value in);
     static napi_status GetRendererInfo(const napi_env &env, AudioRendererInfo *rendererInfo, napi_value in);
@@ -149,7 +149,7 @@ public:
     static napi_status SetDeviceDescriptor(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
         napi_value &result);
     static napi_status SetDeviceDescriptors(const napi_env &env,
-        const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result);
     static napi_status SetAudioSpatialEnabledStateForDevice(const napi_env &env,
     const AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice, napi_value &result);
     static napi_status SetValueDeviceInfo(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
@@ -181,10 +181,11 @@ public:
         const std::vector<sptr<VolumeGroupInfo>> &volumeGroupInfos, napi_value &result);
     static napi_status SetValueVolumeEvent(const napi_env& env, const VolumeEvent &volumeEvent,
         napi_value &result);
-    static napi_status GetAudioDeviceDescriptor(const napi_env &env, sptr<AudioDeviceDescriptor> &selectedAudioDevice,
-        bool &argTransFlag, napi_value in);
+    static napi_status GetAudioDeviceDescriptor(const napi_env &env,
+        std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in);
     static napi_status GetAudioDeviceDescriptorVector(const napi_env &env,
-        std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptorsVector, bool &argTransFlag, napi_value in);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptorsVector,
+        bool &argTransFlag, napi_value in);
     static napi_status GetAudioCapturerFilter(const napi_env &env, sptr<AudioCapturerFilter> &audioCapturerFilter,
         napi_value in);
     static napi_status GetAudioCapturerInfo(const napi_env &env, AudioCapturerInfo *capturerInfo, napi_value in);

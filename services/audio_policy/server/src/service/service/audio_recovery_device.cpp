@@ -89,7 +89,7 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
     int32_t result = -1;
     auto it = audioConnectedDevice_.GetConnectedDeviceByType(deviceType);
     if (it != nullptr) {
-        vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
         deviceDescriptorVector.push_back(it);
         if (preferredType == Media::MediaMonitor::MEDIA_RENDER ||
             preferredType == Media::MediaMonitor::CALL_RENDER ||
@@ -168,7 +168,7 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
 }
 
 int32_t AudioRecoveryDevice::SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
     int32_t res = SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "SetRenderDeviceForUsage fail");
@@ -178,7 +178,8 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceForFastInner(sptr<AudioRendererFi
     return true;
 }
 
-int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc)
+int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage,
+    std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     // get deviceUsage and perferedType
     auto deviceUsage = MEDIA_OUTPUT_DEVICES;
@@ -202,13 +203,13 @@ int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage, sp
         desc->deviceType_, GetEncryptAddr(desc->macAddress_).c_str(),
         tempId, GetEncryptStr(desc->networkId_).c_str());
     // set preferred device
-    sptr<AudioDeviceDescriptor> descriptor = new AudioDeviceDescriptor(**itr);
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>(**itr);
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
     AudioPolicyUtils::GetInstance().SetPreferredDevice(perferedType, descriptor);
     return SUCCESS;
 }
 
-int32_t AudioRecoveryDevice::ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &selectedDesc)
+int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &selectedDesc)
 {
     int32_t ret = Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
@@ -218,7 +219,7 @@ int32_t AudioRecoveryDevice::ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &s
     return SUCCESS;
 }
 
-void AudioRecoveryDevice::WriteSelectOutputSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &selectedDesc,
+void AudioRecoveryDevice::WriteSelectOutputSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
     StreamUsage strUsage)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -236,7 +237,7 @@ void AudioRecoveryDevice::WriteSelectOutputSysEvents(const std::vector<sptr<Audi
 }
 
 int32_t AudioRecoveryDevice::SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    sptr<AudioDeviceDescriptor> deviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     AUDIO_INFO_LOG("Start for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
         GetEncryptStr(deviceDescriptor->networkId_).c_str());
@@ -249,7 +250,7 @@ int32_t AudioRecoveryDevice::SelectFastOutputDevice(sptr<AudioRendererFilter> au
 }
 
 int32_t AudioRecoveryDevice::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -261,7 +262,7 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceByFilterInner(sptr<AudioRendererF
         }
     }
     audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, selectedDesc[0]);
-    vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     for (auto &changeInfo : rendererChangeInfos) {
         if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
@@ -321,7 +322,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
 }
 
 void AudioRecoveryDevice::SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType,
-    sptr<AudioDeviceDescriptor> desc)
+    std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     AUDIO_INFO_LOG("Scene: %{public}d, srcType: %{public}d", scene, srcType);
     if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
@@ -333,7 +334,7 @@ void AudioRecoveryDevice::SetCaptureDeviceForUsage(AudioScene scene, SourceType 
 }
 
 int32_t AudioRecoveryDevice::SelectFastInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-    sptr<AudioDeviceDescriptor> deviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     // note: check if stream is already running
     // if is running, call moveProcessToEndpoint.
@@ -345,7 +346,7 @@ int32_t AudioRecoveryDevice::SelectFastInputDevice(sptr<AudioCapturerFilter> aud
     return SUCCESS;
 }
 
-void AudioRecoveryDevice::WriteSelectInputSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &selectedDesc,
+void AudioRecoveryDevice::WriteSelectInputSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
     SourceType srcType, AudioScene scene)
 {
     auto uid = IPCSkeleton::GetCallingUid();
@@ -362,8 +363,6 @@ void AudioRecoveryDevice::WriteSelectInputSysEvents(const std::vector<sptr<Audio
     bean->Add("IS_PLAYBACK", 0);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
-
-
 
 }
 }

@@ -90,7 +90,7 @@ public:
         InterruptEventInternal interruptEvent;
         uint32_t sessionId;
         int32_t clientId;
-        sptr<AudioDeviceDescriptor> descriptor;
+        std::shared_ptr<AudioDeviceDescriptor> descriptor;
         CastType type;
         bool spatializationEnabled;
         bool headTrackingEnabled;
@@ -141,9 +141,9 @@ public:
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
     void AddConcurrencyEventDispatcher(std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher);
-    bool SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
-    bool SendAvailableDeviceChange(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
-    bool SendMicrophoneBlockedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
+    bool SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
         DeviceBlockStatus status);
     void HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent);
@@ -159,7 +159,7 @@ public:
         const int32_t &clientId);
     bool SendPreferredOutputDeviceUpdated();
     bool SendPreferredInputDeviceUpdated();
-    bool SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
+    bool SendDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor,
         const CastType &type);
     bool SendRendererInfoEvent(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
     bool SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
@@ -177,11 +177,11 @@ public:
     void AddAudioDeviceRefinerCb(const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveAudioDeviceRefinerCb();
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
-    bool SendSpatializatonEnabledChangeForAnyDeviceEvent(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
-        const bool &enabled);
+    bool SendSpatializatonEnabledChangeForAnyDeviceEvent(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
-    bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
-    const bool &enabled);
+    bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     bool SendPipeStreamCleanEvent(AudioPipeType pipeType);
     bool SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);

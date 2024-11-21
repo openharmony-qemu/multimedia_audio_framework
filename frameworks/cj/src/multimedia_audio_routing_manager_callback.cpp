@@ -59,7 +59,7 @@ void CjAudioPreferredInputDeviceChangeCallback::RegisterFunc(std::function<void(
 }
 
 void CjAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ == nullptr) {
@@ -82,7 +82,7 @@ void CjAudioPreferredOutputDeviceChangeCallback::RegisterFunc(std::function<void
 }
 
 void CjAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     CArrDeviceDescriptor arr;

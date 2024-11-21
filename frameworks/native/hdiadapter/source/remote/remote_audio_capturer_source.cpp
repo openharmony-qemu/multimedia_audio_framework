@@ -437,6 +437,18 @@ int32_t RemoteAudioCapturerSourceInner::Stop(void)
     int32_t ret = audioCapture_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop fail, ret %{public}d.", ret);
     started_.store(false);
+    std::shared_ptr<IAudioDeviceAdapter> audioAdapter = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(audioAdapterMutex_);
+        audioAdapter = audioAdapter_;
+    }
+    if (isCapturerCreated_.load() && audioAdapter != nullptr) {
+        audioAdapter->DestroyCapture(audioCapture_, captureId_);
+        AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::destroy capture end");
+        audioCapture_ = nullptr;
+        captureId_ = 0;
+        isCapturerCreated_.store(false);
+    }
     return SUCCESS;
 }
 

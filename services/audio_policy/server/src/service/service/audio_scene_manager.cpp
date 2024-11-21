@@ -49,9 +49,9 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene)
     Bluetooth::AudioHfpManager::SetAudioSceneFromPolicy(audioScene_);
     if (lastAudioScene_ != AUDIO_SCENE_DEFAULT && audioScene_ == AUDIO_SCENE_DEFAULT) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            new(std::nothrow) AudioDeviceDescriptor());
+            std::make_shared<AudioDeviceDescriptor>());
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
-            new(std::nothrow) AudioDeviceDescriptor());
+            std::make_shared<AudioDeviceDescriptor>());
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
 #endif
@@ -92,7 +92,7 @@ int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOf
 void AudioSceneManager::DealAudioSceneOutputDevices(const AudioScene &audioScene,
     std::vector<DeviceType> &activeOutputDevices, bool &haveArmUsbDevice)
 {
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs {};
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs {};
     switch (audioScene) {
         case AUDIO_SCENE_RINGING:
             descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_RINGTONE, -1);

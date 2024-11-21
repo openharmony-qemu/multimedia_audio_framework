@@ -251,7 +251,7 @@ napi_value NapiAudioRoutingManager::GetDevicesSync(napi_env env, napi_callback_i
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr, result, "napiAudioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager->audioMngr_ != nullptr, result, "audioMngr_ nullptr");
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptors = napiAudioRoutingManager->audioMngr_->GetDevices(
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors = napiAudioRoutingManager->audioMngr_->GetDevices(
         static_cast<DeviceFlag>(deviceFlag));
 
     NapiParamUtils::SetDeviceDescriptors(env, deviceDescriptors, result);
@@ -627,7 +627,7 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfoSync(
         return result;
     }
 
-    vector<sptr<AudioDeviceDescriptor>> outDeviceDescriptors;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors;
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr, result, "napiAudioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager->audioRoutingMngr_ != nullptr, result,
         "audioRoutingMngr_ nullptr");
@@ -743,7 +743,7 @@ napi_value NapiAudioRoutingManager::GetPreferredInputDeviceForCapturerInfoSync(n
         "parameter verification failed: The param of capturerInfo must be interface AudioCapturerInfo"),
         "sourceType invalid");
 
-    vector<sptr<AudioDeviceDescriptor>> outDeviceDescriptors;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors;
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr, result, "napiAudioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager->audioRoutingMngr_ != nullptr, result,
         "audioRoutingMngr_ nullptr");
@@ -834,12 +834,12 @@ napi_value NapiAudioRoutingManager::GetAvailableDevices(napi_env env, napi_callb
         "audioRoutingMngr_ is nullptr");
     AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(intValue);
 
-    vector<std::unique_ptr<AudioDeviceDescriptor>> availableDescs =
+    vector<std::shared_ptr<AudioDeviceDescriptor>> availableDescs =
         napiAudioRoutingManager->audioRoutingMngr_->GetAvailableDevices(usage);
 
-    vector<sptr<AudioDeviceDescriptor>> availableSptrDescs;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> availableSptrDescs;
     for (const auto &availableDesc : availableDescs) {
-        sptr<AudioDeviceDescriptor> dec = new(std::nothrow) AudioDeviceDescriptor(*availableDesc);
+        std::shared_ptr<AudioDeviceDescriptor> dec = std::make_shared<AudioDeviceDescriptor>(*availableDesc);
         CHECK_AND_BREAK_LOG(dec != nullptr, "dec mallac failed,no memery.");
         availableSptrDescs.push_back(dec);
     }

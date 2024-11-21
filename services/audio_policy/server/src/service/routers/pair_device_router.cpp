@@ -25,45 +25,45 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc =
+    shared_ptr<AudioDeviceDescriptor> desc =
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;
     if (pairDevice != nullptr && pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&
         pairDevice->isEnable_) {
         AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
             pairDevice->deviceType_);
-        return make_unique<AudioDeviceDescriptor>(*pairDevice);
+        return make_shared<AudioDeviceDescriptor>(*pairDevice);
     }
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-vector<std::unique_ptr<AudioDeviceDescriptor>> PairDeviceRouter::GetRingRenderDevices(StreamUsage streamUsage,
+vector<std::shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
     return descs;
 }
 
-unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
 } // namespace AudioStandard

@@ -51,9 +51,9 @@ public:
     }
     void WriteServiceStartupError(std::string reason);
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
     void SetBtConnecting(bool flag);
-    int32_t SetPreferredDevice(const PreferredType preferredType, const sptr<AudioDeviceDescriptor> &desc);
+    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void ClearScoDeviceSuspendState(std::string macAddress = "");
     int64_t GetCurrentTimeMS();
     std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
@@ -61,7 +61,8 @@ public:
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
     std::string GetSourcePortName(DeviceType deviceType);
-    void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
+    void UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    void UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
     void UpdateEffectDefaultSink(DeviceType deviceType);
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();

@@ -116,7 +116,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SelectInputDevice_001, TestSize.Level1)
     int32_t ret;
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
     audioDeviceDescriptorsVector = audioSystemMgr->GetDevices(deviceFlag);
 
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
@@ -309,7 +309,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_001
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_INVALID;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
     EXPECT_GT(deviceInfo.size(), 0);
 }
@@ -323,7 +323,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_002
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = static_cast<StreamUsage>(-1000);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
     EXPECT_GT(deviceInfo.size(), 0);
 }
@@ -337,7 +337,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_003
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = static_cast<StreamUsage>(1000);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
     EXPECT_GT(deviceInfo.size(), 0);
 }
@@ -351,7 +351,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_004
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
     EXPECT_GT(deviceInfo.size(), 0);
 }
@@ -365,7 +365,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_001,
 {
     AudioCapturerInfo capturerInfo;
     capturerInfo.sourceType = SOURCE_TYPE_INVALID;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
     EXPECT_GT(deviceInfo.size(), 0);
 }
@@ -379,7 +379,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_002,
 {
     AudioCapturerInfo capturerInfo;
     capturerInfo.sourceType = static_cast<SourceType>(-1000);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
     EXPECT_GT(deviceInfo.size(), 0);
 }
@@ -393,7 +393,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_003,
 {
     AudioCapturerInfo capturerInfo;
     capturerInfo.sourceType = static_cast<SourceType>(1000);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
     EXPECT_GT(deviceInfo.size(), 0);
 }
@@ -407,7 +407,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_004,
 {
     AudioCapturerInfo capturerInfo;
     capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
     EXPECT_GT(deviceInfo.size(), 0);
 }

@@ -43,7 +43,7 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
         -1, "AudioRingerModeUpdateListenerStub: ReadInterfaceToken failed");
     switch (code) {
         case ON_DISTRIBUTED_ROUTING_ROLE_CHANGE: {
-            sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+            std::shared_ptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
             CastType type = static_cast<CastType>(data.ReadInt32());
             OnDistributedRoutingRoleChange(descriptor, type);
             return AUDIO_OK;
@@ -63,8 +63,8 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
     }
 }
 
-void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
-    const CastType type)
+void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type)
 {
     std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback =
         audioDistributedRoutingRoleCallback_.lock();
@@ -90,11 +90,11 @@ void AudioRoutingManagerListenerStub::SetAudioDeviceRefinerCallback(const std::w
 
 void AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply)
 {
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(data)));
+        descs.push_back(make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(data)));
     }
     RouterType routerType = static_cast<RouterType>(data.ReadInt32());
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
@@ -115,11 +115,11 @@ void AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefinedInternal(Message
 
 void AudioRoutingManagerListenerStub::OnAudioInputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply)
 {
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(data)));
+        descs.push_back(make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(data)));
     }
     RouterType routerType = static_cast<RouterType>(data.ReadInt32());
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
@@ -139,7 +139,7 @@ void AudioRoutingManagerListenerStub::OnAudioInputDeviceRefinedInternal(MessageP
 }
 
 int32_t AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefined(
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
     int32_t clientUid, AudioPipeType audioPipeType)
 {
     std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
@@ -151,7 +151,7 @@ int32_t AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefined(
 }
 
 int32_t AudioRoutingManagerListenerStub::OnAudioInputDeviceRefined(
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
     int32_t clientUid, AudioPipeType audioPipeType)
 {
     std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
