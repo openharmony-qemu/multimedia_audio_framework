@@ -47,14 +47,14 @@ public:
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(int32_t deviceType);
-    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType);
-    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
+    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType);
+    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress);
-    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, int32_t deviceType,
+    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole);
-    void DelConnectedDevice(std::string networkId, int32_t deviceType);
-    void DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress);
-    void DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress,
+    void DelConnectedDevice(std::string networkId, DeviceType deviceType);
+    void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress);
+    void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress,
         DeviceRole deviceRole);
     void AddConnectedDevice(std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     DeviceType FindConnectedHeadset();

@@ -27,6 +27,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "access_token.h"
+#include "audio_policy_utils.h"
 using namespace std;
 
 namespace OHOS {
@@ -140,12 +141,14 @@ void InitGetServerService(const uint8_t *rawData, size_t size, DeviceRole device
     audioStreamInfo.format = *reinterpret_cast<const AudioSampleFormat *>(rawData);
     audioStreamInfo.channels = *reinterpret_cast<const AudioChannel *>(rawData);
 
-    GetServerPtr()->audioPolicyService_.activeBTDevice_ = "activeBTDevice";
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_ = "activeBTDevice";
     A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
-    GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.insert({"activeBTDevice", configInfo});
-    GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.insert({"A2dpDeviceCommon", {}});
-    GetServerPtr()->audioPolicyService_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
-    GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.insert({"activeBTDevice",
+        configInfo});
+    GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.insert({"A2dpDeviceCommon", {}});
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+        = DEVICE_TYPE_BLUETOOTH_A2DP;
 
     AudioModuleInfo audioModuleInfo = GetServerPtr()->
         audioPolicyService_.ConstructRemoteAudioModuleInfo(LOCAL_NETWORK_ID, deviceRole, DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -234,24 +237,27 @@ void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = make_shared<AudioDeviceDescriptor>();
-    GetServerPtr()->audioPolicyService_.MoveToNewInputDevice(*audioCapturerChangeInfos.begin(), remoteDeviceDescriptor);
+    GetServerPtr()->audioPolicyService_.MoveToNewInputDevice(*audioCapturerChangeInfos.begin(),
+        remoteDeviceDescriptor);
     remoteDeviceDescriptor->networkId_ = REMOTE_NETWORK_ID;
-    GetServerPtr()->audioPolicyService_.MoveToNewInputDevice(*audioCapturerChangeInfos.begin(), remoteDeviceDescriptor);
+    GetServerPtr()->audioPolicyService_.MoveToNewInputDevice(*audioCapturerChangeInfos.begin(),
+        remoteDeviceDescriptor);
     GetServerPtr()->audioPolicyService_.RegisterRemoteDevStatusCallback();
-    GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+        = DEVICE_TYPE_BLUETOOTH_A2DP;
     uint32_t channelcount = *reinterpret_cast<const uint32_t*>(rawData);
     GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelcount, DEVICE_TYPE_FILE_SINK);
-    GetServerPtr()->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
     GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelcount, DEVICE_TYPE_FILE_SINK);
     GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelcount, DEVICE_TYPE_FILE_SOURCE);
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    GetServerPtr()->audioPolicyService_.IsBlueTooth(deviceType);
-    GetServerPtr()->audioPolicyService_.activeSafeTimeBt_ = ACTIVEBTTIME;
-    GetServerPtr()->audioPolicyService_.CheckBlueToothActiveMusicTime(1);
-    GetServerPtr()->audioPolicyService_.CheckWiredActiveMusicTime(1);
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.IsBlueTooth(deviceType);
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.activeSafeTimeBt_ = ACTIVEBTTIME;
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.CheckBlueToothActiveMusicTime(1);
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.CheckWiredActiveMusicTime(1);
     int32_t safeVolume = *reinterpret_cast<const int32_t*>(rawData);
-    GetServerPtr()->audioPolicyService_.CheckBlueToothActiveMusicTime(safeVolume);
-    GetServerPtr()->audioPolicyService_.CheckWiredActiveMusicTime(safeVolume);
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.CheckBlueToothActiveMusicTime(safeVolume);
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.CheckWiredActiveMusicTime(safeVolume);
 }
 
 void MakeAdapterInfoMap()
@@ -299,18 +305,18 @@ void AudioPolicyServiceTest(const uint8_t *rawData, size_t size)
     audioStreamInfo.channels = AudioChannel::STEREO;
     InitGetServerService(rawData, size, deviceRole, audioStreamInfo);
     GetServerPtr()->audioPolicyService_.OnDeviceConfigurationChanged(DEVICE_TYPE_BLUETOOTH_A2DP,
-        GetServerPtr()->audioPolicyService_.activeBTDevice_, "DeviceName", audioStreamInfo);
+        GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "DeviceName", audioStreamInfo);
     shared_ptr<AudioDeviceDescriptor> dis = make_shared<AudioDeviceDescriptor>();
     dis->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    dis->macAddress_ = GetServerPtr()->audioPolicyService_.activeBTDevice_;
+    dis->macAddress_ = GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_;
     dis->deviceRole_ = OUTPUT_DEVICE;
     GetServerPtr()->audioPolicyService_.audioDeviceManager_.connectedDevices_.push_back(dis);
     GetServerPtr()->
         audioPolicyService_.OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_A2DP,
-        GetServerPtr()->audioPolicyService_.activeBTDevice_);
+        GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_);
     GetServerPtr()->
         audioPolicyService_.OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO,
-        GetServerPtr()->audioPolicyService_.activeBTDevice_);
+        GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_);
     AudioPolicyServiceSecondTest(rawData, size, audioStreamInfo, remoteDeviceDescriptor);
     AudioPolicyServiceThirdTest(rawData, size);
 }
@@ -321,8 +327,8 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
         return;
     }
     int32_t volumeLevel = *reinterpret_cast<const int32_t*>(rawData);
-    GetServerPtr()->audioPolicyService_.DealWithSafeVolume(volumeLevel, true);
-    GetServerPtr()->audioPolicyService_.DealWithSafeVolume(volumeLevel, false);
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, true);
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, false);
     AudioStreamInfo audioStreamInfo = {};
     audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
@@ -330,7 +336,8 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
     audioStreamInfo.channels = AudioChannel::STEREO;
     A2dpDeviceConfigInfo configInfo = {audioStreamInfo, true};
     volumeLevel = GetServerPtr()->audioPolicyService_.audioPolicyManager_.GetSafeVolumeLevel() + MOD_NUM_TWO;
-    GetServerPtr()->audioPolicyService_.connectedA2dpDeviceMap_.insert({"activeBTDevice_1", configInfo});
+    GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.insert({"activeBTDevice_1",
+        configInfo});
     GetServerPtr()->audioPolicyService_.SetA2dpDeviceVolume("activeBTDevice_1", volumeLevel, true);
     GetServerPtr()->audioPolicyService_.SetA2dpDeviceVolume("activeBTDevice_1", volumeLevel, false);
     GetServerPtr()->audioPolicyService_.OnMicrophoneBlockedUpdate(DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_UNBLOCKED);
@@ -342,10 +349,10 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
     }
     GetServerPtr()->
         audioPolicyService_.FetchInputDevice(audioCapturerChangeInfos, AudioStreamDeviceChangeReason::UNKNOWN);
-    GetServerPtr()->
-        audioPolicyService_.OnReceiveBluetoothEvent(GetServerPtr()->audioPolicyService_.activeBTDevice_, "deviceName");
+    GetServerPtr()->audioPolicyService_.OnReceiveBluetoothEvent(
+        GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "deviceName");
     GetServerPtr()->audioPolicyService_.GetAudioEffectOffloadFlag();
-    GetServerPtr()->audioPolicyService_.CheckSpatializationAndEffectState();
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.CheckSpatializationAndEffectState();
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->IsA2dpOffloadConnecting(MOD_NUM_TWO);
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->a2dpOffloadDeviceAddress_ = "A2dpMacAddress";
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->audioA2dpOffloadFlag_.currentOffloadConnectionState_
@@ -355,7 +362,7 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddressS", A2DP_PLAYING);
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->audioA2dpOffloadFlag_.currentOffloadConnectionState_
-            = CONNECTION_STATUS_CONNECTING;
+        = CONNECTION_STATUS_CONNECTING;
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddress", A2DP_PLAYING);
     GetServerPtr()->
@@ -389,7 +396,7 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.AudioStreamDump(dumpString);
     GetServerPtr()->audioPolicyService_.ScoInputDeviceFetchedForRecongnition(true, NETWORKID, SUSPEND_CONNECTED);
     GetServerPtr()->audioPolicyService_.ScoInputDeviceFetchedForRecongnition(false, NETWORKID, SUSPEND_CONNECTED);
-    GetServerPtr()->audioPolicyService_.ringerModeMute_ = true;
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.ringerModeMute_ = true;
     GetServerPtr()->audioPolicyService_.ResetRingerModeMute();
     InternalDeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     GetServerPtr()->audioPolicyService_.IsA2dpOrArmUsbDevice(deviceType);
@@ -400,10 +407,10 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioStreamInfo.channels = AudioChannel::STEREO;
     GetServerPtr()->audioPolicyService_.ReloadA2dpOffloadOnDeviceChanged(DEVICE_TYPE_BLUETOOTH_A2DP,
-        GetServerPtr()->audioPolicyService_.activeBTDevice_, "DeviceName", audioStreamInfo);
+        GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "DeviceName", audioStreamInfo);
     std::shared_ptr<AudioDeviceDescriptor> dis = std::make_shared<AudioDeviceDescriptor>();
     dis->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    dis->macAddress_ = GetServerPtr()->audioPolicyService_.activeBTDevice_;
+    dis->macAddress_ = GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_;
     dis->deviceRole_ = OUTPUT_DEVICE;
     GetServerPtr()->audioPolicyService_.ConnectVirtualDevice(dis);
     GetServerPtr()->audioPolicyService_.
@@ -426,7 +433,7 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     vector<SinkInput> sinkInputs;
     std::shared_ptr<AudioDeviceDescriptor> dis = std::make_shared<AudioDeviceDescriptor>();
     dis->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    dis->macAddress_ = GetServerPtr()->audioPolicyService_.activeBTDevice_;
+    dis->macAddress_ = GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_;
     dis->deviceRole_ = OUTPUT_DEVICE;
     dis->networkId_ = "RemoteDevice";
     std::string moduleName = dis->networkId_ + (dis->deviceRole_ == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
@@ -441,12 +448,12 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.CloseWakeUpAudioCapturer();
     AudioDeviceDescriptor newDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     newDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    newDeviceInfo.macAddress_ = GetServerPtr()->audioPolicyService_.activeBTDevice_;
-    GetServerPtr()->audioPolicyService_.GetSinkName(newDeviceInfo, SESSIONID_32);
+    newDeviceInfo.macAddress_ = GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_;
+    AudioPolicyUtils::GetInstance().GetSinkName(newDeviceInfo, SESSIONID_32);
     AudioDeviceDescriptor ads;
     ads.networkId_ = LOCAL_NETWORK_ID;
     ads.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    GetServerPtr()->audioPolicyService_.GetSinkName(ads, SESSIONID_32);
+    AudioPolicyUtils::GetInstance().GetSinkName(ads, SESSIONID_32);
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->sessionId = SESSIONID_32;
     rendererChangeInfo->outputDeviceInfo = newDeviceInfo;
