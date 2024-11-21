@@ -706,7 +706,7 @@ void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSample
     int32_t minVolume = INT_32_MAX;
     for (size_t index = 0; index < (buffer.bufLength + FRAMELEN - 1) / FRAMELEN; index++) {
         BufferDesc temp = {buffer.buffer + FRAMELEN * index,
-            min(buffer.bufLength - FRAMELEN * index, FRAMELEN), min(buffer.dataLength - FRAMELEN  * index, FRAMELEN)};
+            min(buffer.bufLength - FRAMELEN * index, FRAMELEN), min(buffer.dataLength - FRAMELEN * index, FRAMELEN)};
         ChannelVolumes vols = VolumeTools::CountVolumeLevel(temp, format, channel, OFFLOAD_DFX_SPLIT);
         if (channel == MONO) {
             minVolume = min(minVolume, vols.volStart[0]);
