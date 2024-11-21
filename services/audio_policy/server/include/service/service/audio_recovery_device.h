@@ -49,9 +49,9 @@ public:
     void RecoveryPreferredDevices();
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 private:
     AudioRecoveryDevice() :
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

@@ -64,9 +64,9 @@ public:
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
-    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(AudioRendererInfo &rendererInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(AudioRendererInfo &rendererInfo,
         std::string networkId = LOCAL_NETWORK_ID);
-    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(AudioCapturerInfo &captureInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
         std::string &networkId, AudioSamplingRate &samplingRate);
@@ -147,7 +147,7 @@ private:
     void UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices);
     void FetchStreamForSpkMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
+        vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     void ResetOffloadAndMchMode(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices);
     bool SelectRingerOrAlarmDevices(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,

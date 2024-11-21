@@ -125,7 +125,7 @@ void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std
     }
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredOutputDeviceDescInner(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredOutputDeviceDescInner(
     AudioRendererInfo &rendererInfo, std::string networkId)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
@@ -155,7 +155,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredOutputDe
     return deviceList;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredInputDeviceDescInner(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredInputDeviceDescInner(
     AudioCapturerInfo &captureInfo, std::string networkId)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
@@ -1030,7 +1030,7 @@ void AudioDeviceCommon::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRendere
 }
 
 void AudioDeviceCommon::FetchStreamForSpkMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
+    vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (audioOffloadStream_.CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
         JudgeIfLoadMchModule();
@@ -1554,8 +1554,8 @@ int32_t AudioDeviceCommon::OpenRemoteAudioDevice(std::string networkId, DeviceRo
 
 void AudioDeviceCommon::CheckAndNotifyUserSelectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
-    unique_ptr<AudioDeviceDescriptor> userSelectedMediaDevice = audioStateManager_.GetPreferredMediaRenderDevice();
-    unique_ptr<AudioDeviceDescriptor> userSelectedCallDevice = audioStateManager_.GetPreferredCallRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> userSelectedMediaDevice = audioStateManager_.GetPreferredMediaRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> userSelectedCallDevice = audioStateManager_.GetPreferredCallRenderDevice();
     if (userSelectedMediaDevice != nullptr
         && userSelectedMediaDevice->connectState_ == VIRTUAL_CONNECTED
         && deviceDescriptor->IsSameDeviceDesc(*userSelectedMediaDevice)) {

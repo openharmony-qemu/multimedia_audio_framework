@@ -2253,15 +2253,7 @@ void AudioPolicyService::WriteDeviceChangeSysEvents(const std::shared_ptr<AudioD
             WriteOutputDeviceChangedSysEvents(desc, sinkInput);
         }
     } else if (desc->deviceRole_ == INPUT_DEVICE) {
-        vector<SourceOutput> sourceOutputs;
-        {
-            std::unordered_map<std::string, AudioIOHandle> mapCopy = audioIOHandleMap_.GetCopy();
-            if (std::any_of(mapCopy.cbegin(), mapCopy.cend(), [](const auto &pair) {
-                    return std::find(SourceNames.cbegin(), SourceNames.cend(), pair.first) != SourceNames.end();
-                })) {
-                sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
-            }
-        }
+        std::vector<SourceOutput> sourceOutputs = audioDeviceCommon_.GetSourceOutputs();
         for (SourceOutput sourceOutput : sourceOutputs) {
             WriteInputDeviceChangedSysEvents(desc, sourceOutput);
         }
