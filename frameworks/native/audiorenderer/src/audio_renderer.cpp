@@ -1902,7 +1902,7 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
     } else if (streamClass == IAudioStream::FAST_STREAM) {
         rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
     } else {
-        std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors =
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
             AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo_);
         if (!deviceDescriptors.empty() && deviceDescriptors[0] != nullptr) {
             if ((deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_USB_HEADSET ||

@@ -48,9 +48,9 @@ private:
         AudioCapturerInfo captureInfo;
         sptr<AudioRendererFilter> audioRendererFilter;
         sptr<AudioCapturerFilter> audioCapturerFilter;
-        std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
-        std::vector<sptr<AudioDeviceDescriptor>> outDeviceDescriptors;
-        std::vector<sptr<AudioDeviceDescriptor>> inputDeviceDescriptors;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDeviceDescriptors;
     };
 
 #if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)

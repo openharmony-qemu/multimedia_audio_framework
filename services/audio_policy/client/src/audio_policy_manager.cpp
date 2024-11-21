@@ -1147,7 +1147,7 @@ int32_t AudioPolicyManager::SetCaptureSilentState(bool state)
     return gsp->SetCaptureSilentState(state);
 }
 
-int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
+int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -1198,7 +1198,8 @@ int32_t AudioPolicyManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     return gsp->SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
 
-int32_t AudioPolicyManager::ConfigDistributedRoutingRole(sptr<AudioDeviceDescriptor> descriptor, CastType type)
+int32_t AudioPolicyManager::ConfigDistributedRoutingRole(
+    std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
@@ -1259,8 +1260,8 @@ int32_t AudioPolicyManager::SetSpatializationEnabled(const bool enable)
     return gsp->SetSpatializationEnabled(enable);
 }
 
-int32_t AudioPolicyManager::SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
-    const bool enable)
+int32_t AudioPolicyManager::SetSpatializationEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -1288,8 +1289,8 @@ int32_t AudioPolicyManager::SetHeadTrackingEnabled(const bool enable)
     return gsp->SetHeadTrackingEnabled(enable);
 }
 
-int32_t AudioPolicyManager::SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
-    const bool enable)
+int32_t AudioPolicyManager::SetHeadTrackingEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -1646,7 +1647,8 @@ int32_t AudioPolicyManager::UnsetAudioSessionCallback()
     return result;
 }
 
-int32_t AudioPolicyManager::UnsetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
+int32_t AudioPolicyManager::UnsetAudioSessionCallback(
+    const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
     if (audioPolicyClientStubCB_ == nullptr) {
         AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");

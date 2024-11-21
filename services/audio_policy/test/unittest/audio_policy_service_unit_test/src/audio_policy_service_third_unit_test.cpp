@@ -47,7 +47,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceInfoUpdated_001, TestSize.Leve
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     // dummy data
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc->isEnable_ = true;
@@ -66,7 +66,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceInfoUpdated_002, TestSize.Leve
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     // dummy data
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     desc->isEnable_ = true;
@@ -85,7 +85,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceInfoUpdated_003, TestSize.Leve
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     // dummy data
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc->isEnable_ = false;
@@ -103,7 +103,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     // dummy data
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     desc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
@@ -122,7 +122,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     // dummy data
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
 
@@ -143,7 +143,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     // dummy data
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
 
@@ -164,7 +164,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     // dummy data
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
@@ -185,7 +185,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     // dummy data
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
@@ -500,7 +500,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckForA2dpSuspend_001, TestSize.Leve
 {
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
@@ -516,7 +516,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckForA2dpSuspend_002, TestSize.Leve
 {
     ASSERT_NE(nullptr, GetServerPtr());
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     GetServerPtr()->audioPolicyService_.CheckForA2dpSuspend(*desc);

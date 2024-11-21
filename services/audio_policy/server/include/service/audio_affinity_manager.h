@@ -27,7 +27,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 using AFFINITYDEVINFOMAP = std::unordered_map<std::string, std::unordered_map<int32_t, AffinityDeviceInfo>>;
-using AFFINITYDEVMAP = std::unordered_map<int32_t, sptr<AudioDeviceDescriptor>>;
+using AFFINITYDEVMAP = std::unordered_map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>;
 
 class AudioAffinityManager {
 public:
@@ -41,14 +41,14 @@ public:
 
     void OnXmlParsingCompleted(std::vector<AffinityDeviceInfo> &xmlData);
 
-    std::unique_ptr<AudioDeviceDescriptor> GetRendererDevice(int32_t clientUID);
-    std::unique_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t clientUID);
+    std::shared_ptr<AudioDeviceDescriptor> GetRendererDevice(int32_t clientUID);
+    std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t clientUID);
 
-    void AddSelectRendererDevice(int32_t clientUID, const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void AddSelectRendererDevice(int32_t clientUID, const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     void RemoveOfflineRendererDevice(const AudioDeviceDescriptor &updatedDesc);
     void DelSelectRendererDevice(int32_t clientUID);
 
-    void AddSelectCapturerDevice(int32_t clientUID, const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void AddSelectCapturerDevice(int32_t clientUID, const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     void RemoveOfflineCapturerDevice(const AudioDeviceDescriptor &updatedDesc);
     void DelSelectCapturerDevice(int32_t clientUID);
 

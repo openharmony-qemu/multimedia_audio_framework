@@ -60,14 +60,14 @@ public:
 
     virtual bool IsStreamActive(AudioVolumeType volumeType) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
+    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) = 0;
+    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetOutputDevice(
+    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(
         sptr<AudioRendererFilter> audioRendererFilter) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetInputDevice(
+    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter) = 0;
 
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
@@ -174,12 +174,12 @@ public:
                                             StreamUsage streamUsage) = 0;
 
     virtual int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 
     virtual std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) = 0;
 
     virtual int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 
     virtual int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) = 0;
 
@@ -187,10 +187,10 @@ public:
 
     virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
+    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
+    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) = 0;
 
     virtual int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) = 0;
@@ -226,7 +226,7 @@ public:
 
     virtual int32_t SetCaptureSilentState(bool state) = 0;
 
-    virtual int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) = 0;
+    virtual int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc) = 0;
 
     virtual std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) = 0;
 
@@ -238,14 +238,15 @@ public:
 
     virtual int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool updateUi) = 0;
 
-    virtual std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage) = 0;
+    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage) = 0;
 
     virtual int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
         const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) = 0;
 
-    virtual int32_t ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type) = 0;
+    virtual int32_t ConfigDistributedRoutingRole(
+        const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type) = 0;
 
     virtual int32_t SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object) = 0;
 
@@ -257,7 +258,7 @@ public:
 
     virtual int32_t SetSpatializationEnabled(const bool enable) = 0;
 
-    virtual int32_t SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+    virtual int32_t SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
         const bool enable) = 0;
 
     virtual bool IsHeadTrackingEnabled() = 0;
@@ -266,7 +267,7 @@ public:
 
     virtual int32_t SetHeadTrackingEnabled(const bool enable) = 0;
 
-    virtual int32_t SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+    virtual int32_t SetHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
         const bool enable) = 0;
 
     virtual AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) = 0;
@@ -302,7 +303,7 @@ public:
 
     virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) = 0;
 
-    virtual std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() = 0;
 
     virtual ConverterConfig GetConverterConfig() = 0;
 

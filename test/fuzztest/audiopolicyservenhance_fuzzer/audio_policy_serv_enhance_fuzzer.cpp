@@ -69,7 +69,7 @@ void AudioSendCallbackFuzzTest(const uint8_t *rawData, size_t size)
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler =
         DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
-    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     audioPolicyServerHandler->SendDeviceChangedCallback(desc, true);
     audioPolicyServerHandler->SendDeviceChangedCallback(desc, false);
 
@@ -117,7 +117,7 @@ void AudioPolicyServSendFuzzTest(const uint8_t *rawData, size_t size)
     audioPolicyServerHandler->SendPreferredOutputDeviceUpdated();
     audioPolicyServerHandler->SendPreferredInputDeviceUpdated();
 
-    sptr<AudioDeviceDescriptor> descriptor;
+    std::shared_ptr<AudioDeviceDescriptor> descriptor;
     CastType type = CAST_TYPE_ALL;
     audioPolicyServerHandler->SendDistributedRoutingRoleChange(descriptor, type);
 
@@ -153,7 +153,7 @@ void AudioPolicyServSendFuzzTest(const uint8_t *rawData, size_t size)
     audioPolicyServerHandler->SendSpatializatonEnabledChangeEvent(true);
     audioPolicyServerHandler->SendSpatializatonEnabledChangeEvent(false);
 
-    sptr<AudioDeviceDescriptor> selectedAudioDevice;
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice;
     audioPolicyServerHandler->SendSpatializatonEnabledChangeForAnyDeviceEvent(selectedAudioDevice, true);
     audioPolicyServerHandler->SendSpatializatonEnabledChangeForAnyDeviceEvent(selectedAudioDevice, false);
     audioPolicyServerHandler->SendHeadTrackingEnabledChangeEvent(true);

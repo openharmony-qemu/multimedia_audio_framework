@@ -23,54 +23,54 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-vector<unique_ptr<AudioDeviceDescriptor>> GetBTCarDevices(const vector<unique_ptr<AudioDeviceDescriptor>> &descs)
+vector<shared_ptr<AudioDeviceDescriptor>> GetBTCarDevices(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> carDescs;
+    vector<shared_ptr<AudioDeviceDescriptor>> carDescs;
     for (const auto &desc : descs) {
         if (desc == nullptr || desc->deviceCategory_ != BT_CAR) {
             continue;
         }
-        carDescs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+        carDescs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
     }
     return carDescs;
 }
 
-unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs =
+    vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
-    unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(carDescs);
+    vector<shared_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
+    shared_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(carDescs);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
         clientUID, desc->deviceType_);
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs =
+    vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePublicDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
-    unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(carDescs);
+    vector<shared_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
+    shared_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(carDescs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
     return desc;
 }
 
-vector<std::unique_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRenderDevices(StreamUsage streamUsage,
+vector<std::shared_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
     AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
-    vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    vector<unique_ptr<AudioDeviceDescriptor>> curDescs =
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    vector<shared_ptr<AudioDeviceDescriptor>> curDescs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
-    unique_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestConnectDeivce(carDescs);
+    vector<shared_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
+    shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestConnectDeivce(carDescs);
     if (!latestConnDesc.get()) {
         AUDIO_INFO_LOG("Have no latest connecte desc, dont add the other device.");
         return descs;
@@ -111,14 +111,14 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRender
     return descs;
 }
 
-unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
 } // namespace AudioStandard

@@ -53,7 +53,7 @@ struct AudioManagerAsyncContext : public ContextBase {
     std::string key;
     std::string valueStr;
     std::string networkId;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
     std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos;
     std::vector<std::pair<std::string, std::string>> subKvpairs;
     std::vector<std::string> subKeys;

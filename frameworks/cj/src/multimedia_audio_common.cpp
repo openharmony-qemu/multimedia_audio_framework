@@ -183,7 +183,7 @@ void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const AudioDeviceDescr
 }
 
 void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor &devices,
-    const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, int32_t *errorCode)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, int32_t *errorCode)
 {
     if (deviceDescriptors.empty()) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -212,7 +212,7 @@ void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor &devices,
 }
 
 void ConvertAudioDeviceDescriptor2DeviceInfo(AudioDeviceDescriptor &deviceInfo,
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
 {
     deviceInfo.deviceRole_ = audioDeviceDescriptor->deviceRole_;
     deviceInfo.deviceType_ = audioDeviceDescriptor->deviceType_;

@@ -42,7 +42,7 @@ public:
 
     void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
 
-    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
 
 private:
     std::function<void(CArrDeviceDescriptor)> func_{};
@@ -56,7 +56,7 @@ public:
 
     void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
 
-    void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
 
 private:
     std::function<void(CArrDeviceDescriptor)> func_{};
