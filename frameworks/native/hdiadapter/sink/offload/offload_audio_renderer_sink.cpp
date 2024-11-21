@@ -706,7 +706,7 @@ void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSample
     size_t frameLen =  static_cast<size_t>(channel) * static_cast<size_t>(rate) * 0.02; // 20ms
     if (format == SAMPLE_U8 || format == SAMPLE_S16LE || format == SAMPLE_S24LE || format == SAMPLE_S32LE) {
         frameLen *= static_cast<size_t>(format) + 1;
-    } else if(format == SAMPLE_F32LE) {
+    } else if (format == SAMPLE_F32LE) {
         frameLen *= static_cast<size_t>(format);
     } else {
         AUDIO_WARNING_LOG("INVALID_WIDTH");
