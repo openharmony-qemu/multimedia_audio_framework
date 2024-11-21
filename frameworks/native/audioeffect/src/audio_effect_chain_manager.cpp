@@ -943,20 +943,6 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
     }
 }
 
-bool AudioEffectChainManager::GetCurSpatializationEnabled()
-{
-    return spatializationEnabled_;
-}
-
-void AudioEffectChainManager::ResetEffectBuffer()
-{
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    for (const auto &[sceneType, effectChain] : sceneTypeToEffectChainMap_) {
-        if (effectChain == nullptr) continue;
-        effectChain->InitEffectChain();
-    }
-}
-
 void AudioEffectChainManager::ResetInfo()
 {
     effectToLibraryEntryMap_.clear();

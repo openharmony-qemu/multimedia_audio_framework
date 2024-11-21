@@ -284,23 +284,6 @@ void SetSpatializationSceneTypeFuzzTest(const uint8_t *rawData, size_t size)
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void GetCurSpatializationEnabledFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioEffectChainManager::GetInstance()->GetCurSpatializationEnabled();
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-void ResetEffectBufferFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioEffectChainManager::GetInstance()->ResetEffectBuffer();
-}
-
 void UpdateSpkOffloadEnabledFuzzTest(const uint8_t* rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -418,8 +401,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
     OHOS::AudioStandard::EffectRotationUpdateFuzzTest(rawData, size);
     OHOS::AudioStandard::GetLatencyFuzzTest(rawData, size);
     OHOS::AudioStandard::SetSpatializationSceneTypeFuzzTest(rawData, size);
-    OHOS::AudioStandard::GetCurSpatializationEnabledFuzzTest(rawData, size);
-    OHOS::AudioStandard::ResetEffectBufferFuzzTest(rawData, size);
     OHOS::AudioStandard::UpdateSpkOffloadEnabledFuzzTest(rawData, size);
     OHOS::AudioStandard::UpdateDeviceInfoFuzzTest(rawData, size);
     OHOS::AudioStandard::CheckAndReleaseCommonEffectChainFuzzTest(rawData, size);

@@ -58,8 +58,6 @@ int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *s
 int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_t *channels, uint64_t *channelLayout);
 int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
 int32_t EffectChainManagerVolumeUpdate(const char *sessionID);
-bool EffectChainManagerGetSpatializationEnabled();
-void EffectChainManagerFlush(void);
 void EffectChainManagerEffectUpdate(void);
 bool EffectChainManagerSceneCheck(const char *sinkSceneType, const char *sceneType);
 uint32_t EffectChainManagerGetSceneCount(const char *sceneType);
