@@ -289,7 +289,8 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance unavailable");
     BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     if (MediaBluetoothDeviceManager::IsA2dpBluetoothDeviceConnecting(macAddress)) {
-        AUDIO_WARNING_LOG("A2dp device %{public}s is connecting, ignore connect request", macAddress.c_str());
+        AUDIO_WARNING_LOG("A2dp device %{public}s is connecting, ignore connect request",
+            GetEncryptAddr(macAddress).c_str());
         virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
         return SUCCESS;
     }
@@ -297,7 +298,7 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
     a2dpInstance_->GetVirtualDeviceList(virtualDevices);
     if (std::find(virtualDevices.begin(), virtualDevices.end(), macAddress) == virtualDevices.end()) {
         AUDIO_WARNING_LOG("A2dp device %{public}s is not virtual device, ignore connect request",
-            macAddress.c_str());
+            GetEncryptAddr(macAddress).c_str());
         return SUCCESS;
     }
     int32_t ret = a2dpInstance_->Connect(virtualDevice);
