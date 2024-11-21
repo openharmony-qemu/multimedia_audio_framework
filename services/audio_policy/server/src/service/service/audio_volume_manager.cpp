@@ -846,8 +846,8 @@ void AudioVolumeManager::UpdateGroupInfo(GroupType type, std::string groupName, 
         if (iter != volumeGroups_.end()) {
             groupId = (*iter)->volumeGroupId_;
             // if status is disconnected, remove the group that has none audio device
-            std::vector<sptr<AudioDeviceDescriptor>> devsInGroup = audioConnectedDevice_.GetDevicesForGroup(type,
-                groupId);
+            std::vector<std::shared_ptr<AudioDeviceDescriptor>> devsInGroup =
+                audioConnectedDevice_.GetDevicesForGroup(type, groupId);
             if (!connected && devsInGroup.size() == 0) {
                 volumeGroups_.erase(iter);
             }
@@ -868,8 +868,8 @@ void AudioVolumeManager::UpdateGroupInfo(GroupType type, std::string groupName, 
         if (iter != interruptGroups_.end()) {
             groupId = (*iter)->interruptGroupId_;
             // if status is disconnected, remove the group that has none audio device
-            std::vector<sptr<AudioDeviceDescriptor>> devsInGroup = audioConnectedDevice_.GetDevicesForGroup(type,
-                groupId);
+            std::vector<std::shared_ptr<AudioDeviceDescriptor>> devsInGroup =
+                audioConnectedDevice_.GetDevicesForGroup(type, groupId);
             if (!connected && devsInGroup.size() == 0) {
                 interruptGroups_.erase(iter);
             }
