@@ -73,7 +73,7 @@ AudioPolicyServer *GetServerPtr()
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_001, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_NULL;
@@ -96,7 +96,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_001, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_002, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_ALL;
@@ -117,7 +117,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_002, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_003, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_PROJECTION;
@@ -142,7 +142,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_003, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_004, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_COOPERATION;
@@ -163,7 +163,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_004, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_005, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = static_cast<CastType>(99);
@@ -184,7 +184,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_005, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_006, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_NULL;
@@ -205,7 +205,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_006, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_007, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_ALL;
@@ -226,7 +226,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_007, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_008, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_PROJECTION;
@@ -251,7 +251,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_008, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_009, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_COOPERATION;
@@ -272,7 +272,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_009, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_010, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = static_cast<CastType>(99);
@@ -293,7 +293,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_010, TestSize.Level1)
 HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_011, TestSize.Level1)
 {
     auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    sptr<AudioDeviceDescriptor> deviceDescriptor = nullptr;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = nullptr;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;

@@ -501,7 +501,7 @@ int32_t AudioProcessTest::SelectDevice(DeviceRole deviceRole)
         return ERR_INVALID_OPERATION;
     }
 
-    std::vector<sptr<AudioDeviceDescriptor>> devices;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (deviceRole == OUTPUT_DEVICE) {
         devices = manager->GetDevices(DISTRIBUTED_OUTPUT_DEVICES_FLAG);
     } else {

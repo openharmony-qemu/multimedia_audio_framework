@@ -199,7 +199,7 @@ void AudioPolicyClientProxy::OnMicStateUpdated(const MicStateChangeEvent &micSta
 }
 
 void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -225,7 +225,7 @@ void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const AudioRendererI
 }
 
 void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -428,7 +428,7 @@ void AudioPolicyClientProxy::OnSpatializationEnabledChange(const bool &enabled)
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
+void AudioPolicyClientProxy::OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor>
     &deviceDescriptor, const bool &enabled)
 {
     MessageParcel data;
@@ -480,7 +480,7 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChange(const bool &enabled)
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
+void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor>
     &deviceDescriptor, const bool &enabled)
 {
     MessageParcel data;

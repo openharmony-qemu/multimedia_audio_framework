@@ -48,8 +48,8 @@ public:
      * @param enabled the spatialization enabled state.
      * @since 12
      */
-    virtual void OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const bool &enabled) = 0;
+    virtual void OnSpatializationEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
 };
 
 class AudioHeadTrackingEnabledChangeCallback {
@@ -70,8 +70,8 @@ public:
      * @param enabled the head tracking enabled state.
      * @since 12
      */
-    virtual void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const bool &enabled) = 0;
+    virtual void OnHeadTrackingEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
 };
 
 class AudioSpatializationStateChangeCallback {
@@ -122,7 +122,7 @@ public:
      * @return Returns <b>true</b> if the spatialization is successfully enabled; returns <b>false</b> otherwise.
      * @since 12
      */
-    bool IsSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    bool IsSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 
     /**
      * @brief Set the spatialization enabled or disabled
@@ -138,7 +138,8 @@ public:
      * @return Returns success or not
      * @since 12
      */
-    int32_t SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    int32_t SetSpatializationEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
     /**
      * @brief Check whether the head tracking is enabled
@@ -154,7 +155,7 @@ public:
      * @return Returns <b>true</b> if the head tracking is successfully enabled; returns <b>false</b> otherwise.
      * @since 12
      */
-    bool IsHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    bool IsHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 
     /**
      * @brief Set the head tracking enabled or disabled
@@ -170,7 +171,8 @@ public:
      * @return Returns success or not
      * @since 12
      */
-    int32_t SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    int32_t SetHeadTrackingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
     /**
      * @brief Register the spatialization enabled change callback listener
@@ -224,7 +226,7 @@ public:
      * @return Returns <b>true</b> if the spatialization is supported; returns <b>false</b> otherwise.
      * @since 11
      */
-    bool IsSpatializationSupportedForDevice(const sptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    bool IsSpatializationSupportedForDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 
     /**
      * @brief Check whether the Head Tracking is supported
@@ -240,7 +242,7 @@ public:
      * @return Returns <b>true</b> if the head tracking is supported; returns <b>false</b> otherwise.
      * @since 11
      */
-    bool IsHeadTrackingSupportedForDevice(const sptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    bool IsHeadTrackingSupportedForDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 
     /**
      * @brief Update the state of the spatial Device

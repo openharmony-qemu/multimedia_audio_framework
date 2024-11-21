@@ -146,14 +146,14 @@ int32_t AudioPolicyServerHandler::RemoveDistributedRoutingRoleChangeCbsMap(int32
     return SUCCESS;
 }
 
-void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(std::shared_ptr<IAudioConcurrencyEventDispatcher>
-    dispatcher)
+void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(
+    std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher)
 {
     concurrencyEventDispatcher_ = dispatcher;
 }
 
-bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
-    bool isConnected)
+bool AudioPolicyServerHandler::SendDeviceChangedCallback(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
     Trace trace("AudioPolicyServerHandler::SendDeviceChangedCallback");
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -167,8 +167,8 @@ bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
-    DeviceBlockStatus status)
+bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, DeviceBlockStatus status)
 {
     Trace trace("AudioPolicyServerHandler::SendMicrophoneBlockedCallback");
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -182,8 +182,8 @@ bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(const std::vector<s
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendAvailableDeviceChange(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
-    bool isConnected)
+bool AudioPolicyServerHandler::SendAvailableDeviceChange(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
@@ -336,8 +336,8 @@ bool AudioPolicyServerHandler::SendPreferredInputDeviceUpdated()
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
-    const CastType &type)
+bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType &type)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
@@ -451,7 +451,8 @@ bool AudioPolicyServerHandler::SendWakeupCloseEvent(bool isSync)
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag,
+bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(
+    int32_t clientId, uint32_t sessionID, int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -464,7 +465,8 @@ bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(int32_t clientId,
         eventContextObj));
 }
 
-bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag,
+bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(
+    int32_t clientId, uint32_t sessionID, int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -513,8 +515,8 @@ bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeEvent(const bool &e
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForAnyDeviceEvent(const sptr<AudioDeviceDescriptor>
-    &selectedAudioDevice, const bool &enabled)
+bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForAnyDeviceEvent(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
@@ -539,9 +541,8 @@ bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &en
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeForAnyDeviceEvent(const sptr<AudioDeviceDescriptor>
-    &selectedAudioDevice,
-    const bool &enabled)
+bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeForAnyDeviceEvent(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");

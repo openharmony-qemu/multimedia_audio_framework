@@ -36,13 +36,13 @@ public:
 class AudioPreferredOutputDeviceChangeCallbackTest : public AudioPreferredOutputDeviceChangeCallback {
 public:
     virtual ~AudioPreferredOutputDeviceChangeCallbackTest() = default;
-    virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+    virtual void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {};
 };
 
 class AudioPreferredInputDeviceChangeCallbackTest : public AudioPreferredInputDeviceChangeCallback {
 public:
     virtual ~AudioPreferredInputDeviceChangeCallbackTest() = default;
-    virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+    virtual void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {};
 };
 
 class AudioRoutingManagerUnitTest : public testing::Test {

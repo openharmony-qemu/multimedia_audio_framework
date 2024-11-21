@@ -22,44 +22,44 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> device =
+    shared_ptr<AudioDeviceDescriptor> device =
         AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(clientUID);
     return device;
 }
 
-unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> device =
+    shared_ptr<AudioDeviceDescriptor> device =
         AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(clientUID);
     return device;
 }
 
-unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> device =
+    shared_ptr<AudioDeviceDescriptor> device =
         AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
     return device;
 }
 
-vector<std::unique_ptr<AudioDeviceDescriptor>> AppSelectRouter::GetRingRenderDevices(StreamUsage streamUsage,
+vector<std::shared_ptr<AudioDeviceDescriptor>> AppSelectRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
     return descs;
 }
 
-unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> device =
+    shared_ptr<AudioDeviceDescriptor> device =
         AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
     return device;
 }
 
-unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> device =
+    shared_ptr<AudioDeviceDescriptor> device =
         AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(clientUID);
     return device;
 }

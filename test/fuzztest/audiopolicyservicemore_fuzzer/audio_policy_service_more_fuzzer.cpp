@@ -163,7 +163,7 @@ void ThreadFunctionTest()
 }
 
 void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStreamInfo audioStreamInfo,
-    sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -203,8 +203,8 @@ void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStre
     GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSourceIOHandle(DEVICE_TYPE_DP);
     SinkInput sinkInput = {};
     SourceOutput sourceOutput = {};
-    GetServerPtr()->audioPolicyService_.WriteOutDeviceChangedSysEvents(remoteDeviceDescriptor, sinkInput);
-    GetServerPtr()->audioPolicyService_.WriteInDeviceChangedSysEvents(remoteDeviceDescriptor, sourceOutput);
+    GetServerPtr()->audioPolicyService_.WriteOutputDeviceChangedSysEvents(remoteDeviceDescriptor, sinkInput);
+    GetServerPtr()->audioPolicyService_.WriteInputDeviceChangedSysEvents(remoteDeviceDescriptor, sourceOutput);
 }
 
 void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)
@@ -233,7 +233,7 @@ void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)
 
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
-    unique_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = make_unique<AudioDeviceDescriptor>();
+    shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = make_shared<AudioDeviceDescriptor>();
     GetServerPtr()->audioPolicyService_.MoveToNewInputDevice(*audioCapturerChangeInfos.begin(), remoteDeviceDescriptor);
     remoteDeviceDescriptor->networkId_ = REMOTE_NETWORK_ID;
     GetServerPtr()->audioPolicyService_.MoveToNewInputDevice(*audioCapturerChangeInfos.begin(), remoteDeviceDescriptor);
@@ -289,7 +289,7 @@ void AudioPolicyServiceTest(const uint8_t *rawData, size_t size)
     uint32_t deviceRole_int = *reinterpret_cast<const uint32_t*>(rawData);
     deviceRole_int = (deviceRole_int % ENUM_NUM) - 1;
     DeviceRole deviceRole = static_cast<DeviceRole>(deviceRole_int);
-    sptr<AudioDeviceDescriptor> remoteDeviceDescriptor = new AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     GetServerPtr()->audioPolicyService_.OpenRemoteAudioDevice(REMOTE_NETWORK_ID,
         deviceRole, DEVICE_TYPE_EARPIECE, remoteDeviceDescriptor);
     AudioStreamInfo audioStreamInfo = {};
@@ -401,7 +401,7 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     audioStreamInfo.channels = AudioChannel::STEREO;
     GetServerPtr()->audioPolicyService_.ReloadA2dpOffloadOnDeviceChanged(DEVICE_TYPE_BLUETOOTH_A2DP,
         GetServerPtr()->audioPolicyService_.activeBTDevice_, "DeviceName", audioStreamInfo);
-    sptr<AudioDeviceDescriptor> dis = new AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> dis = std::make_shared<AudioDeviceDescriptor>();
     dis->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     dis->macAddress_ = GetServerPtr()->audioPolicyService_.activeBTDevice_;
     dis->deviceRole_ = OUTPUT_DEVICE;
@@ -419,12 +419,12 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     audioRendererFilter->uid = getuid();
     audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     AudioRoutingManager::GetInstance()->
         GetPreferredOutputDeviceForRendererInfo(audioRendererFilter->rendererInfo, desc);
     GetServerPtr()->audioPolicyService_.SelectOutputDeviceByFilterInner(audioRendererFilter, desc);
     vector<SinkInput> sinkInputs;
-    sptr<AudioDeviceDescriptor> dis = new AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> dis = std::make_shared<AudioDeviceDescriptor>();
     dis->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     dis->macAddress_ = GetServerPtr()->audioPolicyService_.activeBTDevice_;
     dis->deviceRole_ = OUTPUT_DEVICE;
@@ -450,12 +450,12 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->sessionId = SESSIONID_32;
     rendererChangeInfo->outputDeviceInfo = newDeviceInfo;
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices =
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices =
         GetServerPtr()->audioPolicyService_.audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
     GetServerPtr()->audioPolicyService_.
         MoveToNewOutputDevice(rendererChangeInfo, outputDevices, sinkInputs,
         AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    std::unique_ptr<AudioDeviceDescriptor> adc = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> adc = std::make_shared<AudioDeviceDescriptor>();
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     GetServerPtr()->audioPolicyService_.

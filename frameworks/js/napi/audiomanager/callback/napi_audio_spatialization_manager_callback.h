@@ -40,7 +40,7 @@ public:
     void RemoveAllSpatializationEnabledChangeCallbackReference(const std::string &cbName);
     int32_t GetSpatializationEnabledChangeCbListSize(const std::string &cbName);
     void OnSpatializationEnabledChange(const bool &enabled) override;
-    void OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    void OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
     void CreateSpatEnableTsfn(napi_env env);
     bool GetSpatEnableTsfnFlag();
@@ -48,7 +48,7 @@ public:
 private:
     struct AudioSpatializationEnabledJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
-        sptr<AudioDeviceDescriptor> deviceDescriptor;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
         std::string callbackName = "unknown";
         bool enabled;
     };
@@ -75,7 +75,7 @@ public:
     void RemoveAllHeadTrackingEnabledChangeCallbackReference(const std::string &cbName);
     int32_t GetHeadTrackingEnabledChangeCbListSize(const std::string &cbName);
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
-    void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
     void CreateHeadTrackingTsfn(napi_env env);
     bool GetHeadTrackingTsfnFlag();
@@ -83,7 +83,7 @@ public:
 private:
     struct AudioHeadTrackingEnabledJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
-        sptr<AudioDeviceDescriptor> deviceDescriptor;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
         std::string callbackName = "unknown";
         bool enabled;
     };
