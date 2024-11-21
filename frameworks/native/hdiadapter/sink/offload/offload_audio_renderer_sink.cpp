@@ -703,7 +703,15 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
     AudioChannel channel, AudioSamplingRate rate) const
 {
-    size_t frameLen = format * channel * rate * 0.02; // 20ms
+    size_t frameLen =  channel * rate * 0.02; // 20ms
+    if (format == SAMPLE_U8 || format == SAMPLE_S16LE || format == SAMPLE_S24LE || format == SAMPLE_S32LE) {
+        frameLen *= format + 1;
+    } else if(format == AMPLE_F32LE) {
+        frameLen *= format;
+    } else {
+        AUDIO_WARNING_LOG("INVALID_WIDTH");
+        return;
+    }
     int32_t minVolume = INT_32_MAX;
     for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
         BufferDesc temp = {buffer.buffer + frameLen * index,
