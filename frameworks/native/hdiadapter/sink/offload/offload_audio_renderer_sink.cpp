@@ -703,17 +703,19 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
     AudioChannel channel) const
 {
+    int32_t minVolume = INT_32_MAX;
     for (size_t index = 0; index < (buffer.bufLength + FRAMELEN - 1) / FRAMELEN; index++) {
         BufferDesc temp = {buffer.buffer + FRAMELEN * index,
             min(buffer.bufLength - FRAMELEN * index, FRAMELEN), min(buffer.dataLength - FRAMELEN  * index, FRAMELEN)};
         ChannelVolumes vols = VolumeTools::CountVolumeLevel(temp, format, channel, OFFLOAD_DFX_SPLIT);
         if (channel == MONO) {
-            Trace::Count(LOG_UTILS_TAG, vols.volStart[0]);
+            minVolume = min(minVolume, vols.volStart[0]);
         } else {
-            Trace::Count(LOG_UTILS_TAG, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+            minVolume = min(minVolume, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
         }
         AudioLogUtils::ProcessVolumeData(LOG_UTILS_TAG, vols, volumeDataCount_);
     }
+    Trace::Count(LOG_UTILS_TAG, minVolume);
 }
 
 void OffloadAudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
