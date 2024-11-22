@@ -366,7 +366,8 @@ int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, co
         portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     }
     AudioAdapterInfo info;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(AudioPolicyUtils::portStrToEnum[portName]), info);
+    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(
+        AudioPolicyUtils::portStrToEnum[portName]), info);
     if (!ret) {
         AUDIO_ERR_LOG("no adapter found for deviceType: %{public}d, portName: %{public}s",
             deviceType, portName.c_str());
@@ -530,7 +531,8 @@ void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole r
 void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole role, AudioModuleInfo& moduleInfo)
 {
     string condition = string("address=") + address + " role=" + to_string(role);
-    string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
+    string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE,
+        condition);
     AUDIO_INFO_LOG("device info from usb hal is %{public}s", deviceInfo.c_str());
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);
@@ -578,7 +580,8 @@ void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
     CloseNormalSource();
     PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
 
-    audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG);
+    audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(),
+        DeviceFlag::INPUT_DEVICES_FLAG);
 }
 
 int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
@@ -674,7 +677,8 @@ std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const D
         portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     }
     AudioAdapterInfo info;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(AudioPolicyUtils::portStrToEnum[portName]), info);
+    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(
+        AudioPolicyUtils::portStrToEnum[portName]), info);
     if (ret) {
         halName = info.adapterName_;
     }
@@ -682,8 +686,6 @@ std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const D
         role.c_str(), deviceType, halName.c_str());
     return halName;
 }
-
-
 
 }
 }

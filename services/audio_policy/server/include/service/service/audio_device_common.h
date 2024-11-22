@@ -64,10 +64,10 @@ public:
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(AudioRendererInfo &rendererInfo,
-        std::string networkId = LOCAL_NETWORK_ID);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(AudioCapturerInfo &captureInfo,
-        std::string networkId = LOCAL_NETWORK_ID);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
+        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
+        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
         std::string &networkId, AudioSamplingRate &samplingRate);
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
@@ -136,10 +136,8 @@ private:
 
     void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
-
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
-
 
     void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);

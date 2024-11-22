@@ -382,23 +382,7 @@ void AudioPolicyUtils::UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> 
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
         deviceDescriptor->displayName_ = devicesName;
     } else {
-#ifdef FEATURE_DEVICE_MANAGER
-        std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
-        int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UpdateDisplayName init device failed");
-        std::vector<DistributedHardware::DmDeviceInfo> deviceList;
-        if (DistributedHardware::DeviceManager::GetInstance()
-            .GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
-            for (auto deviceInfo : deviceList) {
-                std::string strNetworkId(deviceInfo.networkId);
-                if (strNetworkId == deviceDescriptor->networkId_) {
-                    AUDIO_INFO_LOG("UpdateDisplayName remote name [%{public}s]", deviceInfo.deviceName);
-                    deviceDescriptor->displayName_ = deviceInfo.deviceName;
-                    break;
-                }
-            }
-        };
-#endif
+        UpdateDisplayNameForRemote(deviceDescriptor);
     }
 }
 
@@ -480,7 +464,6 @@ AudioModuleInfo AudioPolicyUtils::ConstructRemoteAudioModuleInfo(std::string net
 
     return audioModuleInfo;
 }
-
 
 }
 }

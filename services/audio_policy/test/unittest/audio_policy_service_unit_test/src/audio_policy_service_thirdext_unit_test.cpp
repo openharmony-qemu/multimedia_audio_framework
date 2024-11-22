@@ -894,9 +894,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs1;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo1 = std::make_shared<AudioRendererChangeInfo>();
-    bool result =
-        AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(
-        descs1, rendererChangeInfo1);
+    bool result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs1, rendererChangeInfo1);
     EXPECT_EQ(false, result);
 
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs2;
@@ -906,9 +905,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo2 = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo2->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
     rendererChangeInfo2->sessionId = TEST_SESSIONID;
-    result =
-        AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(
-        descs2, rendererChangeInfo2);
+    result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs2, rendererChangeInfo2);
     EXPECT_EQ(true, result);
 
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs3;
@@ -921,9 +919,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
     AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioPolicyManager_.SetRingerMode(
         RINGER_MODE_VIBRATE);
-    result =
-        AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(
-        descs3, rendererChangeInfo3);
+    result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs3, rendererChangeInfo3);
     EXPECT_EQ(true, result);
 
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs4;
@@ -934,9 +931,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     rendererChangeInfo4->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
     rendererChangeInfo4->sessionId = TEST_SESSIONID;
     AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
-    result =
-        AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(
-        descs4, rendererChangeInfo4);
+    result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs4, rendererChangeInfo4);
     EXPECT_EQ(false, result);
 
     rendererChangeInfo1.reset();

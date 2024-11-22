@@ -484,7 +484,8 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     if (localDevice->deviceType_ != curOutputDeviceDesc.deviceType_) {
         AUDIO_WARNING_LOG("device[%{public}d] not active, use device[%{public}d] instead.",
             static_cast<int32_t>(localDevice->deviceType_), static_cast<int32_t>(curOutputDeviceDesc.deviceType_));
-        ret = audioDeviceCommon_.MoveToLocalOutputDevice(targetSinkInputs, std::make_shared<AudioDeviceDescriptor>(curOutputDeviceDesc));
+        ret = audioDeviceCommon_.MoveToLocalOutputDevice(targetSinkInputs,
+            std::make_shared<AudioDeviceDescriptor>(curOutputDeviceDesc));
     } else {
         ret = audioDeviceCommon_.MoveToLocalOutputDevice(targetSinkInputs, localDevice);
     }
@@ -759,7 +760,8 @@ void AudioPolicyService::BluetoothScoDisconectForRecongnition()
         Bluetooth::AudioHfpManager::GetScoCategory(), tempDesc.deviceType_,
         audioDeviceManager_.GetScoState());
     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        int32_t ret = audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(false, tempDesc.macAddress_, tempDesc.connectState_);
+        int32_t ret = audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(false, tempDesc.macAddress_,
+            tempDesc.connectState_);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
             GetEncryptAddr(tempDesc.macAddress_).c_str());
     }
@@ -1121,7 +1123,8 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(AudioDeviceDescriptor &up
         A2dpDeviceConfigInfo configInfo = {updatedDesc.audioStreamInfo_, false};
         audioA2dpDevice_.AddA2dpInDevice(updatedDesc.macAddress_, configInfo);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {               // DP device only for output.
-        CHECK_AND_RETURN_RET_LOG(!audioDeviceCommon_.GetHasDpFlag(), ERROR, "DP device already exists, ignore this one.");
+        CHECK_AND_RETURN_RET_LOG(!audioDeviceCommon_.GetHasDpFlag(), ERROR,
+            "DP device already exists, ignore this one.");
         int32_t result = HandleDpDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         if (result != SUCCESS) {
             result = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE, updatedDesc.macAddress_);
@@ -2460,7 +2463,8 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
         return AUDIO_FLAG_NORMAL;
     }
 
-    int32_t flag = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
+    int32_t flag = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
+        preferredDeviceList[0]->deviceType_,
         rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_, rendererInfo.samplingRate);
     if (isFastControlled_ && (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
         std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
@@ -2486,7 +2490,8 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
     if (preferredDeviceList.size() == 0) {
         return AUDIO_FLAG_NORMAL;
     }
-    return audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
+    return audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
+        preferredDeviceList[0]->deviceType_,
         capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
 }
 
@@ -2943,7 +2948,8 @@ void AudioPolicyService::HandleRemainingSource()
     audioEcManager_.GetTargetSourceTypeAndMatchingFlag(highestSource, highestSourceInHdi, useMatchingPropInfo);
 
     // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
-    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(audioEcManager_.GetSourceOpened(), highestSourceInHdi)) {
+    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(audioEcManager_.GetSourceOpened(),
+        highestSourceInHdi)) {
         AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened：%{public}d, "
             "highestSourceInHdi：%{public}d ", highestSource, audioEcManager_.GetSourceOpened(), highestSourceInHdi);
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
@@ -3212,7 +3218,8 @@ int32_t AudioPolicyService::GetAndSaveClientType(uint32_t uid, const std::string
     return SUCCESS;
 }
 
-void AudioPolicyService::UpdateAllUserSelectDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
+void AudioPolicyService::UpdateAllUserSelectDevice(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
     AudioDeviceDescriptor &desc, const std::shared_ptr<AudioDeviceDescriptor> &selectDesc)
 {
     if (userSelectDeviceMap[MEDIA_RENDER_ID]->deviceType_ == desc.deviceType_ &&

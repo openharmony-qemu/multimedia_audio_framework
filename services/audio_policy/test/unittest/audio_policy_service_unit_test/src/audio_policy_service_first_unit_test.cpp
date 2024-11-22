@@ -1416,22 +1416,27 @@ HWTEST_F(AudioPolicyServiceUnitTest, HasLowLatencyCapability_001, TestSize.Level
     ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_SPEAKER, false);
     EXPECT_EQ(true, ret);
 
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_WIRED_HEADSET, false);
+    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_WIRED_HEADSET,
+        false);
     EXPECT_EQ(true, ret);
 
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_WIRED_HEADPHONES, false);
+    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_WIRED_HEADPHONES,
+        false);
     EXPECT_EQ(true, ret);
 
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_USB_HEADSET, false);
+    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_USB_HEADSET,
+        false);
     EXPECT_EQ(true, ret);
 
     ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_DP, false);
     EXPECT_EQ(true, ret);
 
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_BLUETOOTH_SCO, false);
+    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_BLUETOOTH_SCO,
+        false);
     EXPECT_EQ(false, ret);
 
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_BLUETOOTH_A2DP, false);
+    ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_BLUETOOTH_A2DP,
+        false);
     EXPECT_EQ(false, ret);
 
     ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_INVALID, false);
@@ -1463,7 +1468,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleActiveDevice_001, TestSize.Level1)
     ret = GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleActiveDevice(DEVICE_TYPE_WIRED_HEADSET);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleActiveDevice(DEVICE_TYPE_WIRED_HEADPHONES);
+    ret = GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleActiveDevice(
+        DEVICE_TYPE_WIRED_HEADPHONES);
     EXPECT_EQ(SUCCESS, ret);
 
     ret = GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_SCO);

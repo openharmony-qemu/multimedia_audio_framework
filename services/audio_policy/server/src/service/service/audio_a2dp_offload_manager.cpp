@@ -256,7 +256,8 @@ int32_t AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForAllStream(DeviceType de
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     {
-        AudioXCollie audioXCollie("AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForAllStream", BLUETOOTH_TIME_OUT_SECONDS);
+        AudioXCollie audioXCollie("AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForAllStream",
+            BLUETOOTH_TIME_OUT_SECONDS);
         std::vector<int32_t> stopPlayingStream(0);
         for (auto &changeInfo : audioRendererChangeInfos) {
             if (changeInfo->rendererState != RENDERER_RUNNING) {

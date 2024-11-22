@@ -219,7 +219,8 @@ int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDes
     return SUCCESS;
 }
 
-void AudioRecoveryDevice::WriteSelectOutputSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
+void AudioRecoveryDevice::WriteSelectOutputSysEvents(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
     StreamUsage strUsage)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -346,7 +347,8 @@ int32_t AudioRecoveryDevice::SelectFastInputDevice(sptr<AudioCapturerFilter> aud
     return SUCCESS;
 }
 
-void AudioRecoveryDevice::WriteSelectInputSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
+void AudioRecoveryDevice::WriteSelectInputSysEvents(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
     SourceType srcType, AudioScene scene)
 {
     auto uid = IPCSkeleton::GetCallingUid();

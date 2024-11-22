@@ -53,8 +53,7 @@ public:
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 private:
-    AudioRecoveryDevice() :
-        streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+    AudioRecoveryDevice() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
