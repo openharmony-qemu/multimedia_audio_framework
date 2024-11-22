@@ -104,7 +104,7 @@ private:
     FILE *dumpFileOutput_ = nullptr;
     float finalVolume_ = 1.0f;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
-    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     bool spatializationEnabled_ = false;
     std::string dumpNameIn_ = "";
     std::string dumpNameOut_ = "";

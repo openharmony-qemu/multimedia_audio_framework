@@ -117,7 +117,7 @@ private:
     bool isLoadedfromDb_ = false;
     AudioSpatializationState spatializationStateFlag_ = {false};
     std::unordered_map<std::string, AudioSpatializationState> addressToSpatialEnabledMap_;
-    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     AudioSpatialDeviceType currSpatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     std::vector<AudioRendererInfoForSpatialization> spatializationRendererInfoList_;
     std::mutex spatializationServiceMutex_;
