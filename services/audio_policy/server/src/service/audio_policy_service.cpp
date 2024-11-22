@@ -2111,8 +2111,8 @@ int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<shared_ptr<Audi
             size_t rendererInfosSize = audioRendererChangeInfos.size();
             for (size_t i = 0; i < rendererInfosSize; i++) {
                 UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
-                audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, desc, hasBTPermission,
-                    hasSystemPermission);
+                audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, desc,
+                    hasBTPermission, hasSystemPermission);
             }
             break;
         }

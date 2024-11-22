@@ -182,7 +182,8 @@ private:
     int32_t HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
+        const AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);

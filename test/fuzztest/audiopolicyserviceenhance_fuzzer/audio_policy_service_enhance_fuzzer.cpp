@@ -381,11 +381,15 @@ void AudioPolicyServiceEnhanceSixFuzzTest(const uint8_t *rawData, size_t size)
     AudioModuleInfo moduleInfo;
     StreamPropInfo targetInfo;
     GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateModuleInfoForEc(moduleInfo);
-    GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateModuleInfoForMicRef(moduleInfo, SOURCE_TYPE_VOICE_COMMUNICATION);
-    GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateStreamEcInfo(moduleInfo, SOURCE_TYPE_VOICE_COMMUNICATION);
-    GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateStreamCommonInfo(moduleInfo, targetInfo, SOURCE_TYPE_VOICE_COMMUNICATION);
+    GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateModuleInfoForMicRef(moduleInfo,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
+    GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateStreamEcInfo(moduleInfo,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
+    GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateStreamCommonInfo(moduleInfo, targetInfo,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
     GetServerPtr()->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = true;
-    GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateStreamCommonInfo(moduleInfo, targetInfo, SOURCE_TYPE_VOICE_COMMUNICATION);
+    GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateStreamCommonInfo(moduleInfo, targetInfo,
+        SOURCE_TYPE_VOICE_COMMUNICATION);
 
     std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
