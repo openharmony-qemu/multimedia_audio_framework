@@ -54,11 +54,11 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const size_t AUDIO_FORMAT_TYPE_8_BIT =1;
-const size_t AUDIO_FORMAT_TYPE_16_BIT =2;
-const size_t AUDIO_FORMAT_TYPE_24_BIT =3;
-const size_t AUDIO_FORMAT_TYPE_32_BIT =4;
-const size_t AUDIO_FORMAT_TYPE_FLOAT =4;
+const size_t AUDIO_FORMAT_TYPE_8_BIT = 1;
+const size_t AUDIO_FORMAT_TYPE_16_BIT = 2;
+const size_t AUDIO_FORMAT_TYPE_24_BIT = 3;
+const size_t AUDIO_FORMAT_TYPE_32_BIT = 4;
+const size_t AUDIO_FORMAT_TYPE_FLOAT = 4;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
@@ -175,7 +175,7 @@ private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
     AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
-    size_t ConverToByteSizePerData(AudioSampleFormat format);
+    size_t ConverToByteSizePerData(AudioSampleFormat format) const;
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
     void CheckUpdateState(char *frame, uint64_t replyBytes);
@@ -577,7 +577,7 @@ AudioFormat OffloadAudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat fo
     return hdiFormat;
 }
 
-size_t OffloadAudioRendererSinkInner::ConverToByteSizePerData(AudioSampleFormat format)
+size_t OffloadAudioRendererSinkInner::ConverToByteSizePerData(AudioSampleFormat format) const
 {
     size_t byteSizePerData;
     switch (format) {

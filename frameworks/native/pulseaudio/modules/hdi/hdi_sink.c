@@ -4253,7 +4253,7 @@ static void InitStreamAvailable(struct Userdata *u)
         uint32_t *num = NULL;
         num = pa_xnew0(uint32_t, 1);
         *num = 1;
-        if(pa_hashmap_put(u->sceneToCountMap, sceneType, num) != 0) {
+        if (pa_hashmap_put(u->sceneToCountMap, sceneType, num) != 0) {
             free(sceneType);
         }
     }
