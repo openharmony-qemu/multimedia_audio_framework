@@ -101,7 +101,7 @@ ChannelVolumes VolumeTools::GetChannelVolumes(AudioChannel channel, float volSta
     return vols;
 }
 
-size_t GetByteSize(AudioSampleFormat format)
+size_t VolumeTools::GetByteSize(AudioSampleFormat format)
 {
     size_t bitWidthSize = 0;
     switch (format) {
