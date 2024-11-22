@@ -3360,8 +3360,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
         audioActiveDevice_.GetCurrentOutputDeviceType(),
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
     // only for the active a2dp device.
-    if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)
-        && audioActiveDevice_.IsDeviceActive(deviceType)) {
+    if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
         auto activeSessionsSize = UpdateA2dpOffloadFlagForAllStream();
         AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag: %{public}d",
             streamInfo.samplingRate, GetA2dpOffloadFlag());
