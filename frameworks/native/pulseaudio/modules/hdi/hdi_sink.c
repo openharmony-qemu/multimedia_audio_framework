@@ -1868,7 +1868,9 @@ static void UpdateStreamAvailableMap(struct Userdata *u, const char *sceneType)
         if (scene != NULL) {
             (*num) = u->streamAvailable;
             if (pa_hashmap_put(u->streamAvailableMap, scene, num) != 0) {
+                AUDIO_ERR_LOG("pa_hashmap_put failed");
                 free(scene);
+                free(num);
             }
         }
     }
@@ -1977,7 +1979,9 @@ static void GetHashMap(struct Userdata *u, const char *sceneType)
                 ret = pa_hashmap_put(u->sceneToCountMap, scene, num);
             }
             if (ret != 0) {
+                AUDIO_ERR_LOG("pa_hashmap_put failed");
                 free(scene);
+                free(num);
             }
         }
     } else if (num) {
@@ -4254,7 +4258,9 @@ static void InitStreamAvailable(struct Userdata *u)
         num = pa_xnew0(uint32_t, 1);
         *num = 1;
         if (pa_hashmap_put(u->sceneToCountMap, sceneType, num) != 0) {
+            AUDIO_ERR_LOG("pa_hashmap_put failed");
             free(sceneType);
+            free(num);
         }
     }
     u->sceneToResamplerMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
