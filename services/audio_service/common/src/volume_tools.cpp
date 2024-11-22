@@ -256,7 +256,7 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    size_t byteSizePerData = GetByteSize(format);
+    size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -299,7 +299,7 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    size_t byteSizePerData = GetByteSize(format);
+    size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -342,7 +342,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    const size_t byteSizePerData = GetByteSize(format);
+    const size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t offset = 8; // convert a 24-bit number to a 16-bit number
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
@@ -388,7 +388,7 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    const size_t byteSizePerData = GetByteSize(format);
+    const size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t offset = 16; // convert a 32-bit number to a 16-bit number
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
@@ -435,7 +435,7 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    size_t byteSizePerData = GetByteSize(format);
+    size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
