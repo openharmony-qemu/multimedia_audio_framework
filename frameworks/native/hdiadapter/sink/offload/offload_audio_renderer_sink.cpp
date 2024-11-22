@@ -170,7 +170,6 @@ private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
     AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
-    size_t ConverToByteSizePerData(AudioSampleFormat format) const;
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
     void CheckUpdateState(char *frame, uint64_t replyBytes);
