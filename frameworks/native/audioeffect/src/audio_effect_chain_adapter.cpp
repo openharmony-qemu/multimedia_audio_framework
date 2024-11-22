@@ -77,7 +77,7 @@ int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
     return SUCCESS;
 }
 
-bool EffectChainManagerExist(const char *sceneType, const char *effectMode, const char *spatializationEnabled)
+bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
@@ -89,12 +89,7 @@ bool EffectChainManagerExist(const char *sceneType, const char *effectMode, cons
     if (effectMode) {
         effectModeString = effectMode;
     }
-    std::string spatializationEnabledString = "";
-    if (spatializationEnabled) {
-        spatializationEnabledString = spatializationEnabled;
-    }
-    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString,
-        spatializationEnabledString);
+    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString);
 }
 
 int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
@@ -305,20 +300,6 @@ int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *c
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     return audioEffectChainManager->ReturnMultiChannelInfo(channels, channelLayout);
-}
-
-bool EffectChainManagerGetSpatializationEnabled()
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
-    return audioEffectChainManager->GetCurSpatializationEnabled();
-}
-
-void EffectChainManagerFlush(void)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
-    return audioEffectChainManager->ResetEffectBuffer();
 }
 
 void EffectChainManagerEffectUpdate()
