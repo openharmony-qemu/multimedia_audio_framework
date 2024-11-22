@@ -250,7 +250,8 @@ double VolumeTools::GetVolDb(AudioSampleFormat format, int32_t vol)
     return std::log10(volume);
 }
 
-static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split, AudioSampleFormat format)
+static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split == 0) {
         AUDIO_ERR_LOG("invalid split");
@@ -293,7 +294,8 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
     return;
 }
 
-static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split, AudioSampleFormat format)
+static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split == 0) {
         AUDIO_ERR_LOG("invalid split");
@@ -336,7 +338,8 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     return;
 }
 
-static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split, AudioSampleFormat format)
+static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split == 0) {
         AUDIO_ERR_LOG("invalid split");
@@ -382,7 +385,8 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     return;
 }
 
-static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split, AudioSampleFormat format)
+static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split == 0) {
         AUDIO_ERR_LOG("invalid split");
@@ -429,7 +433,8 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     return;
 }
 
-static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split, AudioSampleFormat format)
+static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split == 0) {
         AUDIO_ERR_LOG("invalid split");
