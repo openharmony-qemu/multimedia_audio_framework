@@ -495,7 +495,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_001, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0)
 {
-    int32_t frame[4] ={0XBFFFFFFF, 0X8FFFFFFF, 0XAFFFFFFF, 0XFFFFFFFF};
+    int32_t frame[4] = {0XBFFFFFFF, 0X8FFFFFFF, 0XAFFFFFFF, 0XFFFFFFFF};
     uint64_t nSamples = 4;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_NEAR(result, 0.875, 0.1);
@@ -509,8 +509,8 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_003, TestSize.Level0)
 {
-    int32_t frame[4] ={0X3FFFFFF, 0X7FFFFFF, 0X1FFFFFFF, 0X3FFFFFFF};
-    uint64_t nSamples =4;
+    int32_t frame[4] = {0X3FFFFFF, 0X7FFFFFF, 0X1FFFFFFF, 0X3FFFFFFF};
+    uint64_t nSamples = 4;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_NEAR(result, 0.5, 0.1);
 }
@@ -538,7 +538,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_004, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_005, TestSize.Level0)
 {
-    int32_t frame[5] ={0XBFFFFFFF, 0X8FFFFFFF, 0, 0X1FFFFFFF, 0X3FFFFFFF};
+    int32_t frame[5] = {0XBFFFFFFF, 0X8FFFFFFF, 0, 0X1FFFFFFF, 0X3FFFFFFF};
     uint64_t nSamples = 5;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_NEAR(result, 0.875, 0.1);
@@ -619,7 +619,7 @@ HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_001, TestSize.Leve
 HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_002, TestSize.Level0)
 {
     int32_t buffer[10] = {2, 3, 2, 3, 2, 3, 2, 3, 2, 3};
-    size_t bufferLen = 10*sizeof(int32_t);
+    size_t bufferLen = 10 * sizeof(int32_t);
 
     struct SignalDetectAgent signalDetectAgent;
     bool ret = signalDetectAgent.DetectSignalData(buffer, bufferLen);
@@ -635,7 +635,7 @@ HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_002, TestSize.Leve
 HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_003, TestSize.Level0)
 {
     int32_t buffer[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    size_t bufferLen = 10*sizeof(int32_t);
+    size_t bufferLen = 10 * sizeof(int32_t);
 
     struct SignalDetectAgent signalDetectAgent;
     signalDetectAgent.ResetDetectResult();
@@ -653,7 +653,7 @@ HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_003, TestSize.Leve
 HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_004, TestSize.Level0)
 {
     int32_t buffer[10] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
-    size_t bufferLen = 10*sizeof(int32_t);
+    size_t bufferLen = 10 * sizeof(int32_t);
 
     struct SignalDetectAgent signalDetectAgent;
     signalDetectAgent.ResetDetectResult();

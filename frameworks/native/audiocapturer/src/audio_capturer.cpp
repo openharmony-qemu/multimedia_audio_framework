@@ -928,7 +928,7 @@ std::vector<sptr<MicrophoneDescriptor>> AudioCapturerPrivate::GetCurrentMicropho
 {
     uint32_t sessionId = static_cast<uint32_t>(-1);
     GetAudioStreamId(sessionId);
-    return AudioPolicyManager::GetInstance().GetAudioCapturerMicrophoneDescriptors(sessionId);
+    return AudioPolicyManager::GetInstance().GetAudioCapturerMicrophoneDescriptors(static_cast<int32_t>(sessionId));
 }
 
 int32_t AudioCapturerPrivate::SetAudioCapturerDeviceChangeCallback(
