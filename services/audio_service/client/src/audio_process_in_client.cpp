@@ -526,8 +526,8 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     audioBuffer_->GetSizeParameter(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
     spanSizeInMs_ = spanSizeInFrame_ * MILLISECOND_PER_SECOND / processConfig_.streamInfo.samplingRate;
+    clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
 
-    clientSpanSizeInFrame_ = spanSizeInFrame_;
     if ((processConfig_.audioMode != AUDIO_MODE_PLAYBACK) && (!isVoipMmap_)) {
         clientSpanSizeInByte_ = spanSizeInByte_;
     }
