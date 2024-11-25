@@ -657,6 +657,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
     string address = GetField(condition, "address", ' ');
     DeviceRole role = static_cast<DeviceRole>(stoi(GetField(condition, "role", ' ')));
     IAudioRendererSink *rendererSink = IAudioRendererSink::GetInstance("usb", "");
+    CHECK_AND_RETURN_RET_LOG(rendererSink, "", "rendererSink is nullptr");
     std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
     std::string usbInfoStr;
     if (role == OUTPUT_DEVICE) {
@@ -667,6 +668,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
         rendererSink->Preload(usbInfoStr);
     } else if (role == INPUT_DEVICE) {
         IAudioCapturerSource *capturerSource = IAudioCapturerSource::GetInstance("usb", "");
+        CHECK_AND_RETURN_RET_LOG(capturerSource, "", "capturerSource is nullptr");
         capturerSource->SetAddress(address);
         if (usbInfoMap_.count(address) != 0) {
             usbInfoStr = usbInfoMap_[address];
