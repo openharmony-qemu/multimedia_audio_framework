@@ -426,7 +426,7 @@ int32_t AudioStreamCollector::UpdateRendererStreamInternal(AudioStreamChangeInfo
     }
 
     AUDIO_ERR_LOG("Not found clientUid:%{public}d sessionId:%{public}d",
-        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.clientUID);
+        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
     return ERROR;
 }
 
@@ -1211,16 +1211,17 @@ std::vector<uint32_t> AudioStreamCollector::GetAllRendererSessionIDForUID(int32_
     return sessionIDSet;
 }
 
-bool AudioStreamCollector::HasVoipCapturerStream()
+bool AudioStreamCollector::ChangeVoipCapturerStreamToNormal()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    int count = 0;
-    for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        if (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-            ++count;
-        }
-    }
+    int count = std::count_if(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            const auto &sourceType = changeInfo->capturerInfo.sourceType;
+            return sourceType == SOURCE_TYPE_VOICE_COMMUNICATION || sourceType == SOURCE_TYPE_MIC ||
+                sourceType == SOURCE_TYPE_VOICE_MESSAGE || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
+        });
 
+    AUDIO_INFO_LOG("Has capture stream count: %{public}d", count);
     // becasue self has been added
     return count > 1;
 }
@@ -1228,14 +1229,14 @@ bool AudioStreamCollector::HasVoipCapturerStream()
 bool AudioStreamCollector::HasVoipRendererStream()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (const auto &changeInfo : audioRendererChangeInfos_) {
-        // judge stream original flage is AUDIO_FLAG_VOIP_FAST
-        if (changeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST) {
-            AUDIO_INFO_LOG("Has Fast Voip stream");
-            return true;
-        }
-    }
-    return false;
+    // judge stream original flage is AUDIO_FLAG_VOIP_FAST
+    bool hasVoip = std::any_of(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            return changeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST;
+        });
+
+    AUDIO_INFO_LOG("Has Fast Voip stream : %{public}d", hasVoip);
+    return hasVoip;
 }
 } // namespace AudioStandard
 } // namespace OHOS

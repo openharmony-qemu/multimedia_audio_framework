@@ -22,7 +22,7 @@
 
 #include "ipc_skeleton.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
@@ -37,6 +37,9 @@ static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10ms
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3ms
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
+static const int32_t INVALID_APP_UID = -1;
+static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
+static const int32_t MEDIA_SERVICE_UID = 1013;
 
 AudioService *AudioService::GetInstance()
 {
@@ -67,6 +70,11 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             AUDIO_INFO_LOG("SessionId %{public}u", (*paired).first->GetSessionId());
+            auto processConfig = process->GetAudioProcessConfig();
+            if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+                SetDecMaxRendererStreamCnt();
+                CleanAppUseNumMap(processConfig.appInfo.appUid);
+            }
             if (!isSwitchStream) {
                 AUDIO_INFO_LOG("is not switch stream, remove from mutedSessions_");
                 RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
@@ -540,6 +548,10 @@ bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, DeviceIn
 
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
+    AudioPipeType incomingPipe = config.audioMode == AUDIO_MODE_PLAYBACK ?
+        PIPE_TYPE_LOWLATENCY_OUT : PIPE_TYPE_LOWLATENCY_IN;
+    int32_t ret = PolicyHandler::GetInstance().ActivateConcurrencyFromServer(incomingPipe);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Concede incoming lowlatency stream from server");
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
@@ -560,7 +572,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 
     std::shared_ptr<OHAudioBuffer> buffer = audioEndpoint->GetEndpointType()
          == AudioEndpoint::TYPE_INDEPENDENT ? audioEndpoint->GetBuffer() : nullptr;
-    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, deviceInfo.audioStreamInfo, buffer);
+    ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, deviceInfo.audioStreamInfo, buffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
@@ -833,6 +845,16 @@ void AudioService::Dump(std::string &dumpString)
             }
         }
     }
+
+    // dump appUseNumMap_ and currentRendererStreamCnt_
+    {
+        std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+        AppendFormat(dumpString, " - currentRendererStreamCnt is %d\n", currentRendererStreamCnt_);
+        for (auto it : appUseNumMap_) {
+            AppendFormat(dumpString, "  - appUseNumMap_ appUid: %d\n", it.first);
+            AppendFormat(dumpString, "  - appUseNumMap_ appUid created stream: %d\n", it.second);
+        }
+    }
     PolicyHandler::GetInstance().Dump(dumpString);
     AudioVolume::GetInstance()->Dump(dumpString);
 }
@@ -933,6 +955,67 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
     CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr, ERROR, "source is null");
 
     return audioCapturerSourceInstance->UpdateSourceType(sourceType);
+}
+
+void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
+{
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentRendererStreamCnt_++;
+    }
+}
+ 
+void AudioService::SetDecMaxRendererStreamCnt()
+{
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    currentRendererStreamCnt_--;
+}
+ 
+void AudioService::CleanAppUseNumMap(int32_t appUid)
+{
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    auto appUseNum = appUseNumMap_.find(appUid);
+    if (appUseNum != appUseNumMap_.end()) {
+        appUseNumMap_[appUid] = --appUseNum->second;
+    }
+}
+ 
+int32_t AudioService::GetCurrentRendererStreamCnt()
+{
+    return currentRendererStreamCnt_;
+}
+ 
+// need call with streamLifeCycleMutex_ lock
+bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid,
+    int32_t maxStreamCntPerUid)
+{
+    if (callingUid != MEDIA_SERVICE_UID) {
+        appUid = callingUid;
+    }
+ 
+    auto appUseNum = appUseNumMap_.find(appUid);
+    if (appUseNum != appUseNumMap_.end()) {
+        ++appUseNum->second;
+    } else {
+        int32_t initValue = 1;
+        appUseNumMap_.emplace(appUid, initValue);
+    }
+ 
+    if (appUseNumMap_[appUid] > maxStreamCntPerUid) {
+        --appUseNumMap_[appUid]; // actual created stream num is stream num decrease one
+        return true;
+    }
+    return false;
+}
+ 
+int32_t AudioService::GetCreatedAudioStreamMostUid()
+{
+    int32_t mostAppUid = INVALID_APP_UID;
+    int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
+    for (auto it = appUseNumMap_.begin(); it != appUseNumMap_.end(); it++) {
+        mostAppNum = it->second > mostAppNum ? it->second : mostAppNum;
+        mostAppUid = it->first;
+    }
+    return mostAppUid;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -20,7 +20,7 @@
 #include <cinttypes>
 #include "securec.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_renderer_log.h"
 #include "audio_utils.h"
 #include "audio_service.h"
 #include "futex_tool.h"
@@ -460,6 +460,13 @@ int32_t RendererInServer::WriteData()
     Trace trace1(traceTag_ + " WriteData"); // RendererInServer::sessionid:100001 WriteData
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
+        if (!offloadEnable_) {
+            CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+                "invalid write and read position.");
+            uint64_t dataSize = currentWriteFrame - currentReadFrame;
+            AUDIO_INFO_LOG("sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
+                streamIndex_, dataSize);
+        }
         FutexTool::FutexWake(audioServerBuffer_->GetFutex());
         return ERR_OPERATION_FAILED;
     }
@@ -580,8 +587,10 @@ int32_t RendererInServer::UpdateWriteIndex()
     if (needForceWrite_ < 3 && stream_->GetWritableSize() >= spanSizeInByte_) { // 3 is maxlength - 1
         if (writeLock_.try_lock()) {
             AUDIO_DEBUG_LOG("Start force write data");
-            WriteData();
-            needForceWrite_++;
+            int32_t ret = WriteData();
+            if (ret == SUCCESS) {
+                needForceWrite_++;
+            }
             writeLock_.unlock();
         }
     }
@@ -849,6 +858,12 @@ int32_t RendererInServer::Release()
             return SUCCESS;
         }
     }
+
+    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        AudioService::GetInstance()->SetDecMaxRendererStreamCnt();
+        AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
+    }
+
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);

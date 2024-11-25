@@ -19,7 +19,7 @@
 #include "pa_adapter_manager.h"
 #include <sstream>
 #include <atomic>
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_errors.h"
 #include "audio_schedule.h"
 #include "pa_adapter_tools.h"
@@ -101,7 +101,8 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = 0;
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK ||
+        processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
     } else {
         sessionId = processConfig.originalSessionId;
@@ -695,9 +696,13 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
         bufferAttr.maxlength, bufferAttr.fragsize);
 
     const char *cDeviceName = (deviceName == "") ? nullptr : deviceName.c_str();
+
+    uint32_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED | PA_STREAM_VARIABLE_RATE;
+    if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        flags |= PA_STREAM_DONT_MOVE; //inner cap source-output,should not be moved!
+    }
     int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr,
-        (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
-        PA_STREAM_VARIABLE_RATE));
+        static_cast<pa_stream_flags_t>(flags));
     // PA_STREAM_ADJUST_LATENCY exist, return peek length from server;
     if (result < 0) {
         int32_t error = pa_context_errno(context_);

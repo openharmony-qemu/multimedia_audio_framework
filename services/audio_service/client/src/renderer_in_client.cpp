@@ -26,7 +26,7 @@
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_manager_base.h"
-#include "audio_service_log.h"
+#include "audio_renderer_log.h"
 #include "audio_ring_cache.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
@@ -69,10 +69,12 @@ static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static const int32_t HALF_FACTOR = 2;
-static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 300; // ms
+static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
+static constexpr int32_t MEDIA_SERVICE_UID = 1013;
+static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -408,6 +410,7 @@ void RendererInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t da
 
 void RendererInClientInner::InitCallbackHandler()
 {
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     if (callbackHandler_ == nullptr) {
         callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
     }
@@ -511,7 +514,8 @@ int32_t RendererInClientInner::InitIpcStream()
     bool resetSilentMode = (gServerProxy_ == nullptr) ? true : false;
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config); // in plan next: add ret
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
@@ -649,7 +653,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         lastFramePosition_ = framePosition;
         lastFrameTimestamp_ = timestampVal;
     } else {
-        AUDIO_WARNING_LOG("The frame position should be continuously increasing");
+        AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
         framePosition = lastFramePosition_;
         timestampVal = lastFrameTimestamp_;
     }
@@ -738,7 +742,7 @@ int32_t RendererInClientInner::SetVolume(float volume)
     if (offloadEnable_) {
         SetInnerVolume(MAX_FLOAT_VOLUME); // so volume will not change in RendererInServer
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-        ipcStream_->OffloadSetVolume(duckVolume_ * volume);
+        ipcStream_->OffloadSetVolume(volume);
         return SUCCESS;
     }
 
@@ -761,13 +765,6 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
     }
     duckVolume_ = volume;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
-    if (offloadEnable_) {
-        clientBuffer_->SetDuckFactor(MAX_FLOAT_VOLUME);
-        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-        ipcStream_->OffloadSetVolume(clientVolume_ * volume);
-        return SUCCESS;
-    }
-
     clientBuffer_->SetDuckFactor(volume);
     return SUCCESS;
 }
@@ -1263,6 +1260,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
+    preWriteEndTime_ = 0;
     return true;
 }
 
@@ -1589,6 +1587,14 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
     return true;
 }
 
+void RendererInClientInner::DfxWriteInterval()
+{
+    if (preWriteEndTime_ != 0 &&
+        ((ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_) > MAX_WRITE_INTERVAL_MS) {
+        AUDIO_WARNING_LOG("[%{public}s] write interval too long cost %{public}" PRId64,
+            logUtilsTag_.c_str(), (ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_);
+    }
+}
 int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
@@ -1663,16 +1669,29 @@ int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize
             "Status changed while write");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
     }
+    preWriteEndTime_ = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
     return speedCached ? oriBufferSize : bufferSize - targetSize;
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
     // eg: RendererInClient::sessionId:100001 WriteSize:3840
+    DfxWriteInterval();
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
     Trace::CountVolume(traceTag_, *buffer);
+    if (gServerProxy_ == nullptr && getuid() == MEDIA_SERVICE_UID) {
+        uint32_t samplingRate = clientConfig_.streamInfo.samplingRate;
+        uint32_t channels = clientConfig_.streamInfo.channels;
+        uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
+        // calculate wait time by buffer size, 10e6 is converting seconds to microseconds
+        uint32_t waitTimeUs = bufferSize * 10e6 / (samplingRate * channels * samplePerFrame);
+        AUDIO_ERR_LOG("server is died! wait %{public}d us", waitTimeUs);
+        usleep(waitTimeUs);
+        return ERR_WRITE_BUFFER;
+    }
+
     CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
     if (clientBuffer_->GetStreamStatus() == nullptr) {
         AUDIO_ERR_LOG("The stream status is null!");
@@ -2212,9 +2231,10 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
 void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     ipcStream_->SetSilentModeAndMixWithOthers(on);
     if (offloadEnable_) {
-        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_ * duckVolume_);
+        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_);
     }
     return;
 }

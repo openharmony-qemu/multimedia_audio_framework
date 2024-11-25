@@ -413,7 +413,7 @@ public:
 
     void ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
-    DistributedRoutingInfo& GetDistributedRoutingRoleInfo();
+    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
 
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
@@ -445,6 +445,8 @@ public:
     int32_t SafeVolumeDialogDisapper();
 
     void NotifyAccountsChanged(const int &id);
+
+    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
 
     // for hidump
     void DevicesInfoDump(std::string &dumpString);
@@ -490,6 +492,8 @@ public:
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     bool getFastControlParam();
 
+    int32_t SetVoiceRingtoneMute(bool isMute);
+    
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
@@ -858,6 +862,9 @@ private:
 
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
         const std::string &networkId, const AudioSamplingRate &samplingRate);
+    
+    int32_t GetPreferredInputStreamTypeFromDeviceInfo(AudioAdapterInfo &adapterInfo,
+        DeviceType deviceType, int32_t flags);
 
     bool NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -1081,6 +1088,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = false;
+    bool isVoiceRingtoneMute_ = false;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
@@ -1239,7 +1247,9 @@ private:
     std::atomic<bool> isOffloadOpened_ = false;
     std::condition_variable offloadCloseCondition_;
 
-    bool ringerModeMute_ = true;
+    std::mutex ringerModeMuteMutex_;
+    std::atomic<bool> ringerModeMute_ = true;
+    std::condition_variable ringerModeMuteCondition_;
     std::atomic<bool> isPolicyConfigParsered_ = false;
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 
@@ -1265,7 +1275,7 @@ private:
     AudioPolicyService *audioPolicyService_ = nullptr;
     std::mutex connectionMutex_;
     std::condition_variable connectionCV_;
-    static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
+    static const int32_t CONNECTION_TIMEOUT_IN_MS = 1000; // 1000ms
 };
 } // namespace AudioStandard
 } // namespace OHOS

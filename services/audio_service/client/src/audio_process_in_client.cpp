@@ -30,7 +30,7 @@
 #include "system_ability_definition.h"
 
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 #include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "securec.h"
@@ -319,7 +319,10 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     } else {
         isVoipMmap = true;
     }
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig);
+ 
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig, errorCode);
+    CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(iProcessProxy != nullptr, nullptr, "Create failed when iface_cast.");

@@ -23,7 +23,7 @@
 #include "system_ability_definition.h"
 #include "bundle_mgr_interface.h"
 
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_errors.h"
 #include "audio_manager_base.h"
 #include "audio_manager_proxy.h"
@@ -653,6 +653,12 @@ int32_t AudioSystemManager::SetMicrophoneMute(bool isMute)
     return AudioPolicyManager::GetInstance().SetMicrophoneMute(isMute);
 }
 
+int32_t AudioSystemManager::SetVoiceRingtoneMute(bool isMute)
+{
+    AUDIO_INFO_LOG("Set Voice Ringtone is %{public}d", isMute);
+    return AudioPolicyManager::GetInstance().SetVoiceRingtoneMute(isMute);
+}
+
 bool AudioSystemManager::IsMicrophoneMute()
 {
     std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
@@ -737,7 +743,8 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     // operation chack
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::INPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an input device");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter->uid >= 0, ERR_INVALID_PARAM, "invalid uid.");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter->uid >= 0 || (audioCapturerFilter->uid == -1),
+        ERR_INVALID_PARAM, "invalid uid.");
     AUDIO_DEBUG_LOG("[%{public}d] SelectInputDevice: uid<%{public}d> device<type:%{public}d>",
         getpid(), audioCapturerFilter->uid, static_cast<int32_t>(audioDeviceDescriptors[0]->deviceType_));
 

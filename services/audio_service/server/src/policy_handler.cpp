@@ -22,7 +22,7 @@
 #include <thread>
 
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -205,6 +205,18 @@ int32_t PolicyHandler::GetAndSaveClientType(uint32_t uid, const std::string &bun
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->GetAndSaveClientType(uid, bundleName);
+}
+
+int32_t PolicyHandler::GetMaxRendererInstances()
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->GetMaxRendererInstances();
+}
+
+int32_t PolicyHandler::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->ActivateConcurrencyFromServer(incomingPipe);
 }
 } // namespace AudioStandard
 } // namespace OHOS

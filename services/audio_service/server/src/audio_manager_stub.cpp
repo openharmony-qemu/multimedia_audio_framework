@@ -401,10 +401,12 @@ int AudioManagerStub::HandleCreateAudioProcess(MessageParcel &data, MessageParce
 {
     AudioProcessConfig config;
     ProcessConfig::ReadConfigFromParcel(config, data);
-    sptr<IRemoteObject> process = CreateAudioProcess(config);
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> process = CreateAudioProcess(config, errorCode);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
         "CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
     reply.WriteRemoteObject(process);
+    reply.WriteInt32(errorCode);
     return AUDIO_OK;
 }
 

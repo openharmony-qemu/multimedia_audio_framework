@@ -324,6 +324,8 @@ public:
         const StreamUsage streamUsage, bool isRunning) override;
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
+
+    int32_t SetVoiceRingtoneMute(bool isMute) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

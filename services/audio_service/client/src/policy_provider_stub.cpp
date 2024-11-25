@@ -56,6 +56,10 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
             return HandleOffloadGetRenderPosition(data, reply);
         case GET_AND_SAVE_CLIENT_TYPE:
             return HandleGetAndSaveClientType(data, reply);
+        case GET_MAX_RENDERER_INSTANCES:
+            return HandleGetMaxRendererInstances(data, reply);
+        case ACTIVATE_CONCURRENCY_FROM_SERVER:
+            return HandleConcurrencyFromServer(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -148,6 +152,21 @@ int32_t PolicyProviderStub::HandleGetAndSaveClientType(MessageParcel &data, Mess
     return AUDIO_OK;
 }
 
+int32_t PolicyProviderStub::HandleGetMaxRendererInstances(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t ret = GetMaxRendererInstances();
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int32_t PolicyProviderStub::HandleConcurrencyFromServer(MessageParcel &data, MessageParcel &reply)
+{
+    AudioPipeType incomingPipe = static_cast<AudioPipeType>(data.ReadInt32());
+    int32_t ret = ActivateConcurrencyFromServer(incomingPipe);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -206,6 +225,18 @@ int32_t PolicyProviderWrapper::GetAndSaveClientType(uint32_t uid, const std::str
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->GetAndSaveClientType(uid, bundleName);
+}
+
+int32_t PolicyProviderWrapper::GetMaxRendererInstances()
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->GetMaxRendererInstances();
+}
+
+int32_t PolicyProviderWrapper::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->ActivateConcurrencyFromServer(incomingPipe);
 }
 } // namespace AudioStandard
 } // namespace OHOS

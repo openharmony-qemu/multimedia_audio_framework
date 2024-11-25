@@ -278,7 +278,8 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
 
     ModifyProcessConfig(config);
 
-    auto remoteObj = GetServerPtr()->CreateAudioProcess(config);
+    int32_t errorCode = 0;
+    auto remoteObj = GetServerPtr()->CreateAudioProcess(config, errorCode);
     if (remoteObj != nullptr) {
         DoStreamFuzzTest(config, rawData, size);
     }

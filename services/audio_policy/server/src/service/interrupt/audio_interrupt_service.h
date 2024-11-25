@@ -55,7 +55,7 @@ public:
     
     // callback run in handler thread
     void DispatchInterruptEventWithSessionId(
-        uint32_t sessionId, const InterruptEventInternal &interruptEvent) override;
+        uint32_t sessionId, InterruptEventInternal &interruptEvent) override;
 
     void Init(sptr<AudioPolicyServer> server);
     void AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> &audioInterruptZonesMapDump);
@@ -222,9 +222,12 @@ private:
     void HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
-    bool ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptHint hintType);
+    bool ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptEventInternal &interruptEvent);
 
     bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt);
+    bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
+        &audioFocusInfoList);
+
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;

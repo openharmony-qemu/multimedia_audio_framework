@@ -36,7 +36,7 @@
 #include "audio_capturer_source.h"
 #include "fast_audio_capturer_source.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_common_log.h"
 #include "audio_asr.h"
 #include "audio_manager_listener_proxy.h"
 #include "audio_service.h"
@@ -84,7 +84,10 @@ const int32_t API_VERSION_REMAINDER = 1000;
 static constexpr int32_t VM_MANAGER_UID = 7700;
 static const int32_t FAST_DUMPINFO_LEN = 2;
 static const int32_t BUNDLENAME_LENGTH_LIMIT = 1024;
+static const size_t PARAMETER_SET_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
+constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 128;
+const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -112,6 +115,16 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+
+static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
+{
+    for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
+        if (streamUsage == item) {
+            return true;
+        }
+    }
+    return false;
+}
 
 class CapturerStateOb final : public ICapturerStateCallback {
 public:
@@ -186,9 +199,18 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
+void AudioServer::InitMaxRendererStreamCntPerUid()
+{
+    bool result = GetSysPara("const.multimedia.audio.stream_cnt_uid", maxRendererStreamCntPerUid_);
+    if (!result || maxRendererStreamCntPerUid_ <= 0) {
+        maxRendererStreamCntPerUid_ = MAX_RENDERER_STREAM_CNT_PER_UID;
+    }
+}
+
 void AudioServer::OnStart()
 {
     AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
+    InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
     bool res = Publish(this);
     if (!res) {
@@ -329,6 +351,8 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "A2dp offload modify audio settings permission denied");
     }
 
+    CHECK_AND_RETURN_LOG(audioParameters.size() < PARAMETER_SET_LIMIT,
+        "SetAudioParameter failed! audioParameters_map is too large!");
     AudioServer::audioParameters[key] = value;
 
     // send it to hal
@@ -1102,6 +1126,8 @@ bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
         return false;
     }
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+        int32_t ret = CheckParam(config);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Check params failed");
         return CheckRendererFormat(config);
     }
 
@@ -1143,7 +1169,105 @@ bool AudioServer::IsFastBlocked(int32_t uid)
     return result == "true";
 }
 
-sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
+void AudioServer::SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
+    const int32_t &errorCode)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_STREAM_CREATE_ERROR_STATS,
+        Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
+    bean->Add("IS_PLAYBACK", 1);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+    bean->Add("STREAM_TYPE", sreamUsage);
+    bean->Add("ERROR_CODE", errorCode);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+ 
+int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
+{
+    ContentType contentType = config.rendererInfo.contentType;
+    if (contentType < CONTENT_TYPE_UNKNOWN || contentType > CONTENT_TYPE_ULTRASONIC) {
+        SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid content type");
+        return ERR_INVALID_PARAM;
+    }
+ 
+    StreamUsage streamUsage = config.rendererInfo.streamUsage;
+    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_MAX) {
+        SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid stream usage");
+        return ERR_INVALID_PARAM;
+    }
+ 
+    if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
+                ERR_PERMISSION_DENIED);
+            AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
+                "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
+    }
+    return SUCCESS;
+}
+ 
+int32_t AudioServer::CheckMaxRendererInstances()
+{
+    int32_t maxRendererInstances = PolicyHandler::GetInstance().GetMaxRendererInstances();
+    if (maxRendererInstances <= 0) {
+        maxRendererInstances = DEFAULT_MAX_RENDERER_INSTANCES;
+    }
+ 
+    if (AudioService::GetInstance()->GetCurrentRendererStreamCnt() >= maxRendererInstances) {
+        int32_t mostAppUid = AudioService::GetInstance()->GetCreatedAudioStreamMostUid();
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
+            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+        bean->Add("CLIENT_UID", mostAppUid);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
+        return ERR_EXCEED_MAX_STREAM_CNT;
+    }
+    return SUCCESS;
+}
+ 
+sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid)
+{
+    int32_t appUid = config.appInfo.appUid;
+    if (callingUid != MEDIA_SERVICE_UID) {
+        appUid = callingUid;
+    }
+    if (IsNormalIpcStream(config) || (isFastControlled_ && IsFastBlocked(config.appInfo.appUid))) {
+        AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
+        int32_t ret = 0;
+        sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
+        if (ipcStream == nullptr) {
+            if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+                AudioService::GetInstance()->CleanAppUseNumMap(appUid);
+            }
+            AUDIO_ERR_LOG("GetIpcStream failed.");
+            return nullptr;
+        }
+        AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+        sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
+        return remoteObject;
+    }
+ 
+    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(config);
+    if (process == nullptr) {
+        if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+            AudioService::GetInstance()->CleanAppUseNumMap(appUid);
+        }
+        AUDIO_ERR_LOG("GetAudioProcess failed.");
+        return nullptr;
+    }
+    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+    sptr<IRemoteObject> remoteObject= process->AsObject();
+    return remoteObject;
+}
+
+sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
 {
     Trace trace("AudioServer::CreateAudioProcess");
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
@@ -1151,23 +1275,25 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        errorCode = CheckMaxRendererInstances();
+        if (errorCode != SUCCESS) {
+            return nullptr;
+        }
+        if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
+            maxRendererStreamCntPerUid_)) {
+            errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
+            AUDIO_ERR_LOG("Current audio renderer stream num exceeds maxRendererStreamCntPerUid");
+            return nullptr;
+        }
+    }
 #ifdef FEATURE_APPGALLERY
     PolicyHandler::GetInstance().GetAndSaveClientType(resetConfig.appInfo.appUid,
         GetBundleNameFromUid(resetConfig.appInfo.appUid));
 #endif
-    if (IsNormalIpcStream(resetConfig) || (isFastControlled_ && IsFastBlocked(resetConfig.appInfo.appUid))) {
-        AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
-        int32_t ret = 0;
-        sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);
-        CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, nullptr, "GetIpcStream failed.");
-        sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
-        return remoteObject;
-    }
-
-    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(resetConfig);
-    CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "GetAudioProcess failed.");
-    sptr<IRemoteObject> remoteObject= process->AsObject();
-    return remoteObject;
+    return CreateAudioStream(resetConfig, callingUid);
 }
 
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const

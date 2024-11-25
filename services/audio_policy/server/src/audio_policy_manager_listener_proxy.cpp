@@ -39,6 +39,7 @@ void AudioPolicyManagerListenerProxy::WriteInterruptEventParams(MessageParcel &d
     data.WriteInt32(static_cast<int32_t>(interruptEvent.forceType));
     data.WriteInt32(static_cast<int32_t>(interruptEvent.hintType));
     data.WriteFloat(interruptEvent.duckVolume);
+    data.WriteBool(interruptEvent.callbackToApp);
 }
 
 void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptEventInternal &interruptEvent)

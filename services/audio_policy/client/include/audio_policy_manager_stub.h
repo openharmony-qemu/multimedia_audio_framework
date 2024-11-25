@@ -170,6 +170,7 @@ private:
     void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
+    void SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEigRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

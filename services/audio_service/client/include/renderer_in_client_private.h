@@ -237,6 +237,7 @@ private:
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
+    void DfxWriteInterval();
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -385,6 +386,7 @@ private:
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
 
+    int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
 

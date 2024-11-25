@@ -725,12 +725,13 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
 
     // get stream informations.
     uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
+    uint32_t streamIndex = pa_stream_get_index(stream); // get pa_stream index
 
     // Return 1 if the sink or source this stream is connected to has been suspended.
     // This will return 0 if not, and a negative value on error.
     int res = pa_stream_is_suspended(stream);
-    AUDIO_DEBUG_LOG("PAstream moved to index:[%{public}d] suspended:[%{public}d]",
-        deviceIndex, res);
+    AUDIO_WARNING_LOG("PAstream:[%{public}d] moved to index:[%{public}d] suspended:[%{public}d]",
+        streamIndex, deviceIndex, res);
 }
 
 void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)

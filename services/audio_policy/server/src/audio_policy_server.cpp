@@ -2896,6 +2896,17 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
     return audioPolicyService_.LoadSplitModule(splitArgs, networkId);
 }
 
+int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
+{
+    constexpr int32_t foundationUid = 5523; // "uid" : "foundation"
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by foundation
+    CHECK_AND_RETURN_RET_LOG(callerUid == foundationUid, ERROR,
+        "SetVoiceRingtoneMute callerUid is error: not foundation");
+    AUDIO_INFO_LOG("Set VoiceRingtone is %{public}d", isMute);
+    return audioPolicyService_.SetVoiceRingtoneMute(isMute);
+}
+
 int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {

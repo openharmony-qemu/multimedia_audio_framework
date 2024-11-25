@@ -97,7 +97,7 @@ public:
 
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
 
-    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
+    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
 
     // ISinkParameterCallback
     void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
@@ -191,7 +191,12 @@ private:
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     const std::string GetBundleNameFromUid(int32_t uid);
     bool IsFastBlocked(int32_t uid);
-
+    void InitMaxRendererStreamCntPerUid();
+    int32_t CheckParam(const AudioProcessConfig &config);
+    void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
+        const int32_t &errorCode);
+    int32_t CheckMaxRendererInstances();
+    sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -218,6 +223,8 @@ private:
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
     bool isFastControlled_ = false;
+    int32_t maxRendererStreamCntPerUid_ = 0;
+    std::mutex streamLifeCycleMutex_ {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

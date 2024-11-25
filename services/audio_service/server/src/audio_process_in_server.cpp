@@ -22,7 +22,7 @@
 #include "securec.h"
 
 #include "audio_errors.h"
-#include "audio_service_log.h"
+#include "audio_capturer_log.h"
 #include "audio_service.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
@@ -64,6 +64,10 @@ AudioProcessInServer::~AudioProcessInServer()
     AUDIO_INFO_LOG("~AudioProcessInServer()");
     if (convertedBuffer_.buffer != nullptr) {
         delete [] convertedBuffer_.buffer;
+    }
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyStop(tokenId, sessionId_);
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -323,6 +327,11 @@ uint32_t AudioProcessInServer::GetAudioSessionId()
 AudioStreamType AudioProcessInServer::GetAudioStreamType()
 {
     return processConfig_.streamType;
+}
+
+AudioProcessConfig AudioProcessInServer::GetAudioProcessConfig()
+{
+    return processConfig_;
 }
 
 inline uint32_t PcmFormatToBits(AudioSampleFormat format)
