@@ -861,7 +861,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo,
         std::make_shared<AudioDeviceDescriptor>(*outputDevices.front()), true, true);
 
-    if (needTriggerCallback) {
+    if (needTriggerCallback && audioPolicyServerHandler_) {
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }

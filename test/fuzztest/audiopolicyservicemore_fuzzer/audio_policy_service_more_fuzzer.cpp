@@ -431,6 +431,7 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     AudioRoutingManager::GetInstance()->
         GetPreferredOutputDeviceForRendererInfo(audioRendererFilter->rendererInfo, desc);
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.Init(GetServerPtr()->audioPolicyService_.audioPolicyServerHandler_);
     GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDeviceByFilterInner(audioRendererFilter, desc);
     vector<SinkInput> sinkInputs;
     std::shared_ptr<AudioDeviceDescriptor> dis = std::make_shared<AudioDeviceDescriptor>();

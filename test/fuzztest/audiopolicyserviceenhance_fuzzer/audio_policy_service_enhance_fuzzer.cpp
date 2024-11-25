@@ -147,7 +147,7 @@ void AudioPolicyServiceEnhanceTwoFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.Init(GetServerPtr()->audioPolicyService_.audioPolicyServerHandler_);
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
         GetServerPtr()->audioPolicyService_.audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
