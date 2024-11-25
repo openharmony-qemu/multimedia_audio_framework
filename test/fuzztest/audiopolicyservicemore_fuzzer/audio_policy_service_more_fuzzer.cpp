@@ -420,19 +420,8 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.RestoreSession(SESSIONID_32, true);
 }
 
-void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
+void AudioPolicyServiceTestIV_last()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {return;}
-    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-    if (audioRendererFilter == nullptr) {return;}
-    audioRendererFilter->uid = getuid();
-    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
-    audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
-    AudioRoutingManager::GetInstance()->
-        GetPreferredOutputDeviceForRendererInfo(audioRendererFilter->rendererInfo, desc);
-    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.Init(GetServerPtr()->audioPolicyService_.audioPolicyServerHandler_);
-    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDeviceByFilterInner(audioRendererFilter, desc);
     vector<SinkInput> sinkInputs;
     std::shared_ptr<AudioDeviceDescriptor> dis = std::make_shared<AudioDeviceDescriptor>();
     dis->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
@@ -463,14 +452,31 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
     rendererChangeInfo->outputDeviceInfo = newDeviceInfo;
     vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices =
         GetServerPtr()->audioPolicyService_.audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
-    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.
-        MoveToNewOutputDevice(rendererChangeInfo, outputDevices, sinkInputs,
-        AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.MoveToNewOutputDevice(rendererChangeInfo, outputDevices,
+        sinkInputs, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     std::shared_ptr<AudioDeviceDescriptor> adc = std::make_shared<AudioDeviceDescriptor>();
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.
-        ActivateA2dpDevice(adc, audioRendererChangeInfos,  AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+        ActivateA2dpDevice(adc, audioRendererChangeInfos, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+}
+
+void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {return;}
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.Init(
+        GetServerPtr()->audioPolicyService_.audioPolicyServerHandler_);
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    if (audioRendererFilter == nullptr) {return;}
+    audioRendererFilter->uid = getuid();
+    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+    audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+    AudioRoutingManager::GetInstance()->GetPreferredOutputDeviceForRendererInfo(audioRendererFilter->rendererInfo,
+        desc);
+    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDeviceByFilterInner(audioRendererFilter,
+        desc);
+    AudioPolicyServiceTestIV_last();
 }
 
 } // namespace AudioStandard
