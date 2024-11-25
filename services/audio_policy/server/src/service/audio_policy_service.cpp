@@ -2299,7 +2299,7 @@ void AudioPolicyService::HandleA2dpInputDeviceFetched()
     std::string networkId = audioActiveDevice_.GetCurrentOutputDeviceNetworkId();
     std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(
         audioActiveDevice_.GetCurrentOutputDeviceType());
-        
+
     int32_t ret = audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo, networkId, sinkName);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "load a2dp input module failed");
 }
@@ -3008,7 +3008,8 @@ int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &i
     if (devType == DEVICE_TYPE_USB_HEADSET || devType == DEVICE_TYPE_USB_ARM_HEADSET) {
         CHECK_AND_RETURN_RET(!address.empty() && role != DEVICE_ROLE_NONE, ERROR);
         AUDIO_INFO_LOG("Entry. Addr:%{public}s, Role:%{public}d, HasHifi:%{public}d, HasArm:%{public}d",
-            address.c_str(), role, audioConnectedDevice_.HasHifi(role), audioConnectedDevice_.HasArm(role));
+            GetEncryptAddr(address).c_str(), role,
+            audioConnectedDevice_.HasHifi(role), audioConnectedDevice_.HasArm(role));
         if (isConnected) {
             if (audioConnectedDevice_.HasHifi(role) || NoNeedChangeUsbDevice(address)) {
                 devType = DEVICE_TYPE_USB_ARM_HEADSET;
@@ -3118,7 +3119,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
 void AudioPolicyService::PresetArmIdleInput(const string& address)
 {
-    AUDIO_INFO_LOG("Entry. address=%{public}s", address.c_str());
+    AUDIO_INFO_LOG("Entry. address=%{public}s", GetEncryptAddr(address).c_str());
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_RET(ret,);
@@ -3134,7 +3135,7 @@ void AudioPolicyService::PresetArmIdleInput(const string& address)
 
 void AudioPolicyService::ActivateArmDevice(const string& address, const DeviceRole role)
 {
-    AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d", address.c_str(), role);
+    AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d", GetEncryptAddr(address).c_str(), role);
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_RET(ret,);
@@ -3174,9 +3175,9 @@ void AudioPolicyService::UpdateArmModuleInfo(const string& address, const Device
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         if (isEcFeatureEnable_) {
-            uint32_t bufferSize = (std::stoi(moduleInfo.rate) *
+            uint32_t bufferSize = (static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
                 AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
-                std::stoi(moduleInfo.channels)) * RENDER_FRAME_INTERVAL_IN_SECONDS;
+                static_cast<uint32_t>(std::stoi(moduleInfo.channels))) * RENDER_FRAME_INTERVAL_IN_SECONDS;
             moduleInfo.bufferSize = std::to_string(bufferSize);
             AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
         }

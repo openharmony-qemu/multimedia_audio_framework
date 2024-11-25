@@ -26,6 +26,8 @@ namespace AudioStandard {
 
 using namespace std;
 
+string EncUsbAddr(const string &src);
+
 struct UsbAddr {
     uint8_t busNum_{0};
     uint8_t devAddr_{0};
@@ -84,7 +86,7 @@ private:
     vector<UsbAudioDevice> audioDevices_;
     map<UsbAddr, SoundCard> soundCardMap_;
     shared_ptr<EventSubscriber> eventSubscriber_{nullptr};
-    bool initialized{false};
+    bool initialized_{false};
 
     mutex mutex_;
     mutex initLock_;
