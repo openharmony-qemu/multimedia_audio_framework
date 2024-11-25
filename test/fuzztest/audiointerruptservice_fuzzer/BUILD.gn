@@ -42,7 +42,7 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
 
   sources = [ "audio_interrupt_service_fuzzer.cpp" ]
 
-  deps = [ "../../../services/audio_policy:audio_policy_service" ]
+  deps = [ "../../../services/audio_policy:audio_policy_service_static" ]
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",

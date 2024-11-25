@@ -35,19 +35,19 @@ public:
         return ROUTER_TYPE_STREAM_FILTER;
     }
 
-    std::unique_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
-    std::unique_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
-    std::unique_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) override;
-    vector<std::unique_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage streamUsage,
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
+    std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) override;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage streamUsage,
         int32_t clientUID) override;
-    std::unique_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID) override;
-    std::unique_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
+    std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID) override;
+    std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
 
 private:
-    bool IsIncomingDeviceInRemoteDevice(vector<unique_ptr<AudioDeviceDescriptor>> &descriptors,
-        sptr<AudioDeviceDescriptor> incomingDevice);
-    std::unique_ptr<AudioDeviceDescriptor> SelectRemoteCaptureDevice(
-        vector<unique_ptr<AudioDeviceDescriptor>> &descriptors, sptr<AudioDeviceDescriptor> incomingDevice,
+    bool IsIncomingDeviceInRemoteDevice(vector<shared_ptr<AudioDeviceDescriptor>> &descriptors,
+        std::shared_ptr<AudioDeviceDescriptor> incomingDevice);
+    std::shared_ptr<AudioDeviceDescriptor> SelectRemoteCaptureDevice(
+        vector<shared_ptr<AudioDeviceDescriptor>> &descriptors, std::shared_ptr<AudioDeviceDescriptor> incomingDevice,
         bool &hasDescriptor);
 };
 } // namespace AudioStandard

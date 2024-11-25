@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiRendererPositionCallback"
 #endif
-#include <thread>
 
 #include "napi_renderer_position_callback.h"
 

@@ -54,7 +54,7 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredOutputDevi
 {
     int32_t ret = -1;
     AudioRendererInfo rendererInfo;
-    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     ret = AudioRoutingManager::GetInstance()->GetPreferredOutputDeviceForRendererInfo(rendererInfo, desc);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -70,11 +70,11 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredOutputDevi
     AudioRendererInfo rendererInfo;
     rendererInfo.contentType = CONTENT_TYPE_UNKNOWN;
     rendererInfo.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     ret = AudioRoutingManager::GetInstance()->GetPreferredOutputDeviceForRendererInfo(rendererInfo, desc);
     EXPECT_EQ(SUCCESS, ret);
     for (auto &device : desc) {
-        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+        std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*device);
         EXPECT_EQ(devDesc->deviceType_, DEVICE_TYPE_SPEAKER);
     }
 }
@@ -106,7 +106,7 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredInputDevic
 {
     int32_t ret = -1;
     AudioCapturerInfo capturerInfo;
-    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     ret = AudioRoutingManager::GetInstance()->GetPreferredInputDeviceForCapturerInfo(capturerInfo, desc);
     EXPECT_EQ(SUCCESS, ret);
 }

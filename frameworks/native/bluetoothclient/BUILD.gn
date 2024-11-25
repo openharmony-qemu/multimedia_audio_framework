@@ -12,9 +12,10 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
 
-ohos_shared_library("audio_bluetooth_client") {
+audio_ohos_library("audio_bluetooth_client") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -49,6 +50,10 @@ ohos_shared_library("audio_bluetooth_client") {
     "ipc:ipc_single",
   ]
 
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
   part_name = "audio_framework"
   subsystem_name = "multimedia"
+  version_script = "libaudio_bluetooth_client.versionscript"
 }

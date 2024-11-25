@@ -44,30 +44,6 @@ namespace {
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
 }
 
-static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
-{
-    enum HdiAdapterFormat adapterFormat;
-    switch (format) {
-        case AudioSampleFormat::SAMPLE_U8:
-            adapterFormat = HdiAdapterFormat::SAMPLE_U8;
-            break;
-        case AudioSampleFormat::SAMPLE_S16LE:
-            adapterFormat = HdiAdapterFormat::SAMPLE_S16;
-            break;
-        case AudioSampleFormat::SAMPLE_S24LE:
-            adapterFormat = HdiAdapterFormat::SAMPLE_S24;
-            break;
-        case AudioSampleFormat::SAMPLE_S32LE:
-            adapterFormat = HdiAdapterFormat::SAMPLE_S32;
-            break;
-        default:
-            adapterFormat = HdiAdapterFormat::INVALID_WIDTH;
-            break;
-    }
-
-    return adapterFormat;
-}
-
 AudioEndpointSeparate::AudioEndpointSeparate(EndpointType type, uint64_t id,
     AudioStreamType streamType) : endpointType_(type), id_(id), streamType_(streamType)
 {

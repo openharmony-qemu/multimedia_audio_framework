@@ -19,6 +19,7 @@
 #include <string>
 
 #include "audio_device_info.h"
+#include "audio_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,14 +35,14 @@ public:
     AudioEcInfo() = default;
     virtual ~AudioEcInfo() = default;
 
-    DeviceType inputDevice;
-    DeviceType outputDevice;
-    EcType ecType;
-    std::string ecInputAdapter;
-    std::string ecOutputAdapter;
-    std::string samplingRate;
-    std::string format;
-    std::string channels;
+    DeviceType inputDevice = DEVICE_TYPE_DEFAULT;
+    DeviceType outputDevice = DEVICE_TYPE_DEFAULT;
+    EcType ecType = EC_TYPE_NONE;
+    std::string ecInputAdapter = "";
+    std::string ecOutputAdapter = "";
+    std::string samplingRate = "";
+    std::string format = "";
+    std::string channels = "";
     PipeInfo pipeInfo;
 };
 

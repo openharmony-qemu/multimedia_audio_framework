@@ -66,6 +66,10 @@ public:
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
 
     int32_t GetMaxRendererInstances();
+
+    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
+
+    int32_t NotifyCapturerRemoved(uint64_t sessionId);
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;

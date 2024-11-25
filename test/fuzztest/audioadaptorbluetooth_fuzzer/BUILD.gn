@@ -42,7 +42,7 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
-    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_policy:audio_policy_service_static",
   ]
 
   external_deps = [

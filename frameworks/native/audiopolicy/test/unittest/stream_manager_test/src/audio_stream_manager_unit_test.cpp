@@ -1545,7 +1545,8 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySuppo
 HWTEST_F(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
 {
     int32_t ret = VALUE_NEGATIVE;
-    sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
+    std::shared_ptr<AudioStandard::AudioDeviceDescriptor> desc =
+        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     auto outputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     if (outputDeviceDescriptors.size() > 0) {
         for (auto outputDescriptor : outputDeviceDescriptors) {
@@ -1567,7 +1568,8 @@ HWTEST_F(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize
  */
 HWTEST_F(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_002, TestSize.Level1)
 {
-    sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
+    std::shared_ptr<AudioStandard::AudioDeviceDescriptor> desc =
+        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     int32_t ret = AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
     EXPECT_EQ(VALUE_NEGATIVE, ret);
 }
@@ -1581,7 +1583,8 @@ HWTEST_F(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_002, TestSize
 HWTEST_F(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_003, TestSize.Level1)
 {
     int32_t ret = VALUE_NEGATIVE;
-    sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
+    std::shared_ptr<AudioStandard::AudioDeviceDescriptor> desc =
+        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     auto outputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     if (outputDeviceDescriptors.size() > 0) {
         for (auto outputDescriptor : outputDeviceDescriptors) {

@@ -58,6 +58,10 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
             return HandleGetAndSaveClientType(data, reply);
         case GET_MAX_RENDERER_INSTANCES:
             return HandleGetMaxRendererInstances(data, reply);
+        case ACTIVATE_CONCURRENCY_FROM_SERVER:
+            return HandleConcurrencyFromServer(data, reply);
+        case REMOVE_AUDIO_CAPTURER:
+            return HandleNotifyCapturerRemoved(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -157,6 +161,22 @@ int32_t PolicyProviderStub::HandleGetMaxRendererInstances(MessageParcel &data, M
     return AUDIO_OK;
 }
 
+int32_t PolicyProviderStub::HandleConcurrencyFromServer(MessageParcel &data, MessageParcel &reply)
+{
+    AudioPipeType incomingPipe = static_cast<AudioPipeType>(data.ReadInt32());
+    int32_t ret = ActivateConcurrencyFromServer(incomingPipe);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int32_t PolicyProviderStub::HandleNotifyCapturerRemoved(MessageParcel &data, MessageParcel &reply)
+{
+    uint64_t sessionId = data.ReadUint64();
+    int32_t ret = NotifyCapturerRemoved(sessionId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -221,6 +241,18 @@ int32_t PolicyProviderWrapper::GetMaxRendererInstances()
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->GetMaxRendererInstances();
+}
+
+int32_t PolicyProviderWrapper::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->ActivateConcurrencyFromServer(incomingPipe);
+}
+
+int32_t PolicyProviderWrapper::NotifyCapturerRemoved(uint64_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->NotifyCapturerRemoved(sessionId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

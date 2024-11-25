@@ -24,6 +24,7 @@
 #include <thread>
 #include <vector>
 #include <mutex>
+#include <numeric>
 
 #include "securec.h"
 
@@ -64,7 +65,7 @@ namespace {
     static const int32_t HALF_FACTOR = 2;
 }
 
-static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
+enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
 {
     enum HdiAdapterFormat adapterFormat;
     switch (format) {
@@ -327,7 +328,6 @@ private:
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
     FILE *dumpHdi_ = nullptr;
-    std::string dumpDcpName_ = "";
     std::string dumpHdiName_ = "";
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
@@ -665,9 +665,12 @@ bool AudioEndpointInner::ConfigInputPoint(const AudioDeviceDescriptor &deviceInf
     updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
     pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
 
-    dumpHdiName_ = "endpoint_hdi_audio_" + std::to_string(attr.sampleRate) + "_"
-        + std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
+    // eg: input_endpoint_hdi_audio_8_0_20240527202236189_48000_2_1.pcm
+    dumpHdiName_ = "input_endpoint_hdi_audio_" + std::to_string(attr.deviceType) + '_' +
+        std::to_string(endpointType_) + '_' + GetTime() +
+        '_' + std::to_string(attr.sampleRate) + "_" +
+        std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpHdiName_, &dumpHdi_);
     return true;
 }
 
@@ -705,12 +708,12 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
     updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
     pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
 
-    dumpHdiName_ = "endpoint_hdi_audio_" + std::to_string(attr.sampleRate) + "_"
-        + std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
-    dumpDcpName_ = "endpoint_dcp_audio_" + std::to_string(attr.sampleRate) + "_"
-        + std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
-
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
+    // eg: endpoint_hdi_audio_8_0_20240527202236189_48000_2_1.pcm
+    dumpHdiName_ = "endpoint_hdi_audio_" + std::to_string(attr.deviceType) + '_' + std::to_string(endpointType_) +
+        '_' + GetTime() + '_' +
+        std::to_string(attr.sampleRate) + "_" +
+        std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpHdiName_, &dumpHdi_);
 }
 
 bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
@@ -1418,11 +1421,15 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
             int32_t vol = srcDataList[i].volumeStart; // change to modify volume of each channel
             int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset;
             sum += (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER; // 1/65536
-            ZeroVolumeCheck(vol);
         }
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
+
+    ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(
+        dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
+    ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart + channelVolumes.channel, 0) /
+        channelVolumes.channel);
     HandleZeroVolumeCheckEvent();
 }
 

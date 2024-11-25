@@ -55,7 +55,7 @@ public:
 
     // callback run in handler thread
     void DispatchInterruptEventWithSessionId(
-        uint32_t sessionId, const InterruptEventInternal &interruptEvent) override;
+        uint32_t sessionId, InterruptEventInternal &interruptEvent) override;
 
     void Init(sptr<AudioPolicyServer> server);
     void AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> &audioInterruptZonesMapDump);
@@ -100,6 +100,7 @@ public:
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
     void AudioInterruptZoneDump(std::string &dumpString);
+    void AudioSessionInfoDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeBySessionId(int32_t sessionId);
 
@@ -220,7 +221,7 @@ private:
     void HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
-    bool ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptHint hintType);
+    bool ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptEventInternal &interruptEvent);
 
     bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
@@ -228,6 +229,8 @@ private:
         std::vector<SourceType> incomingConcurrentSources);
     bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt);
+    bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
+        &audioFocusInfoList);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

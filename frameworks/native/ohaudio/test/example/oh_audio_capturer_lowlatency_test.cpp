@@ -340,7 +340,7 @@ void AudioNdkTest::SelectDevice(DeviceRole deviceRole)
         return;
     }
 
-    vector<sptr<AudioDeviceDescriptor>> devices;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (deviceRole == OUTPUT_DEVICE) {
         devices = manager->GetDevices(DISTRIBUTED_OUTPUT_DEVICES_FLAG);
     } else {

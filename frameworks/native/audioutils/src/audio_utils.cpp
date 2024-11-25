@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -120,6 +120,65 @@ static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
     {STREAM_VOICE_RING, "VOICE_RING"},
     {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
 };
+
+uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
+{
+    uint32_t audioPerSampleLength = 2; // 2 byte
+    switch (format) {
+        case AudioSampleFormat::SAMPLE_U8:
+            audioPerSampleLength = 1;
+            break;
+        case AudioSampleFormat::SAMPLE_S16LE:
+            audioPerSampleLength = 2; // 2 byte
+            break;
+        case AudioSampleFormat::SAMPLE_S24LE:
+            audioPerSampleLength = 3; // 3 byte
+            break;
+        case AudioSampleFormat::SAMPLE_S32LE:
+        case AudioSampleFormat::SAMPLE_F32LE:
+            audioPerSampleLength = 4; // 4 byte
+            break;
+        default:
+            break;
+    }
+    return audioPerSampleLength;
+}
+
+bool Util::IsDualToneStreamType(const AudioStreamType streamType)
+{
+    return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
+}
+
+bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
+{
+    return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE;
+}
+
+bool Util::IsRingerAudioScene(const AudioScene &audioScene)
+{
+    return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
+}
+
+WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
+{
+    startTimeNs_ = ClockTime::GetCurNano();
+}
+
+WatchTimeout::~WatchTimeout()
+{
+    if (!isChecked_) {
+        CheckCurrTimeout();
+    }
+}
+
+void WatchTimeout::CheckCurrTimeout()
+{
+    int64_t cost = ClockTime::GetCurNano() - startTimeNs_;
+    if (cost > timeoutNs_) {
+        AUDIO_WARNING_LOG("[%{public}s] cost %{public}" PRId64"ms!", funcName_.c_str(), cost / AUDIO_US_PER_SECOND);
+    }
+    isChecked_ = true;
+}
 
 int64_t ClockTime::GetCurNano()
 {
@@ -358,13 +417,17 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
         Trace trace("PrivacyKit::StartUsingPermission");
         AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId: %{public}d sessionId:%{public}d",
             targetTokenId, sessionId);
+        WatchTimeout guard("Security::AccessToken::PrivacyKit::StartUsingPermission:NotifyPrivacy");
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        guard.CheckCurrTimeout();
         if (res != 0) {
             AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
                 targetTokenId, res);
             return false;
         }
+        WatchTimeout reguard("Security::AccessToken::PrivacyKit::AddPermissionUsedRecord:NotifyPrivacy");
         res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
+        reguard.CheckCurrTimeout();
         if (res != 0) {
             AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is %{public}d",
                 targetTokenId, res);
@@ -390,16 +453,19 @@ bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
     AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
         g_tokenIdRecordMap[targetTokenId].size());
     if (g_tokenIdRecordMap[targetTokenId].empty()) {
+        g_tokenIdRecordMap.erase(targetTokenId);
+
         Trace trace("PrivacyKit::StopUsingPermission");
         AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d sessionId:%{public}d",
             targetTokenId, sessionId);
-        int res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        WatchTimeout guard("Security::AccessToken::PrivacyKit::StopUsingPermission:NotifyStop");
+        int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        guard.CheckCurrTimeout();
         if (res != 0) {
             AUDIO_ERR_LOG("StopUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
                 targetTokenId, res);
             return false;
         }
-        g_tokenIdRecordMap.erase(targetTokenId);
     }
     return true;
 }
@@ -1266,7 +1332,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_MUSIC},
-    {STREAM_VOICE_CALL_ASSISTANT, STREAM_MUSIC},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
     {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
     {STREAM_VOICE_ASSISTANT, STREAM_MUSIC},
     {STREAM_VOICE_COMMUNICATION, STREAM_MUSIC},
@@ -1281,12 +1347,13 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_ACCESSIBILITY, STREAM_MUSIC},
     {STREAM_ALL, STREAM_ALL},
 
-    {STREAM_RING, STREAM_RING},
-    {STREAM_VOICE_RING, STREAM_RING},
-    {STREAM_SYSTEM, STREAM_RING},
-    {STREAM_NOTIFICATION, STREAM_RING},
-    {STREAM_SYSTEM_ENFORCED, STREAM_RING},
-    {STREAM_ALARM, STREAM_RING},
+    {STREAM_RING, STREAM_MUSIC},
+    {STREAM_VOICE_RING, STREAM_MUSIC},
+    {STREAM_ALARM, STREAM_MUSIC},
+
+    {STREAM_SYSTEM, STREAM_SYSTEM},
+    {STREAM_NOTIFICATION, STREAM_SYSTEM},
+    {STREAM_SYSTEM_ENFORCED, STREAM_SYSTEM},
 
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
 };

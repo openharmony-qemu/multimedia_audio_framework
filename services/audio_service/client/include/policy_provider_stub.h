@@ -36,6 +36,8 @@ private:
     int32_t HandleOffloadGetRenderPosition(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetAndSaveClientType(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetMaxRendererInstances(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleConcurrencyFromServer(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleNotifyCapturerRemoved(MessageParcel &data, MessageParcel &reply);
 };
 
 class PolicyProviderWrapper : public PolicyProviderStub {
@@ -54,6 +56,8 @@ public:
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) override;
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
     int32_t GetMaxRendererInstances() override;
+    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
+    int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 private:
     IPolicyProvider *policyWorker_;
 };

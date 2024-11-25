@@ -463,7 +463,7 @@ napi_value NapiAudioStreamMgr::GetEffectInfoArraySync(napi_env env, napi_callbac
 napi_value NapiAudioStreamMgr::GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
-    sptr<AudioDeviceDescriptor> deviceDescriptor = nullptr;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
@@ -477,7 +477,7 @@ napi_value NapiAudioStreamMgr::GetHardwareOutputSamplingRate(napi_env env, napi_
         return result;
     }
 
-    deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, result, "AudioDeviceDescriptor alloc failed!");
 
     bool argTransFlag = false;

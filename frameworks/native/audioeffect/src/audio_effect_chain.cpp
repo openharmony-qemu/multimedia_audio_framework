@@ -28,19 +28,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 10;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t MAX_UINT_VOLUME = 65535;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
-
-template <typename T>
-static void Swap(T &a, T &b)
-{
-    T temp = a;
-    a = b;
-    b = temp;
-}
+constexpr int32_t CROSS_FADE_FRAME_COUNT = 5;
 
 #ifdef SENSOR_ENABLE
 AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
@@ -104,15 +96,6 @@ AudioEffectChain::~AudioEffectChain()
     DumpFileUtil::CloseDumpFile(&dumpFileOutput_);
 }
 
-void AudioEffectChain::Dump()
-{
-    std::lock_guard<std::mutex> lock(reloadMutex_);
-    for (AudioEffectHandle handle : standByEffectHandles_) {
-        AUDIO_INFO_LOG("standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType_.c_str(),
-            handle);
-    }
-}
-
 void AudioEffectChain::SetEffectMode(const std::string &mode)
 {
     effectMode_ = mode;
@@ -121,6 +104,11 @@ void AudioEffectChain::SetEffectMode(const std::string &mode)
 void AudioEffectChain::SetExtraSceneType(const std::string &extraSceneType)
 {
     extraEffectChainType_ = static_cast<uint32_t>(std::stoi(extraSceneType));
+}
+
+void AudioEffectChain::SetFoldState(const std::string &foldState)
+{
+    foldState_ = static_cast<uint32_t>(std::stoi(foldState));
 }
 
 void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
@@ -136,6 +124,16 @@ void AudioEffectChain::SetSpatializationSceneType(AudioSpatializationSceneType s
 void AudioEffectChain::SetSpatializationEnabled(bool enabled)
 {
     spatializationEnabled_ = enabled;
+    spatializationEnabledFading_ = enabled;
+}
+
+void AudioEffectChain::SetSpatializationEnabledForFading(bool enabled)
+{
+    std::lock_guard<std::mutex> lock(reloadMutex_);
+    CHECK_AND_RETURN_LOG(spatializationEnabledFading_ != enabled,
+        "no need to update spatialization enabled for fading: %{public}d", enabled);
+    spatializationEnabledFading_ = enabled;
+    fadingCounts = CROSS_FADE_FRAME_COUNT;
 }
 
 void AudioEffectChain::SetStreamUsage(const int32_t streamUsage)
@@ -164,9 +162,10 @@ void AudioEffectChain::ReleaseEffectChain()
 
 int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData)
 {
-    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
+    AudioEffectConfig tmpIoBufferConfig = ioBufferConfig_;
+    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    std::vector<uint8_t> paramBuffer(sizeof(AudioEffectParam) + NUM_SET_EFFECT_PARAM * sizeof(int32_t));
+    std::vector<uint8_t> paramBuffer(sizeof(AudioEffectParam) + MAX_PARAM_INDEX * sizeof(int32_t));
     // Set param
     AudioEffectParam *effectParam = reinterpret_cast<AudioEffectParam*>(paramBuffer.data());
     effectParam->status = 0;
@@ -192,15 +191,26 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[SPATIALIZATION_SCENE_TYPE_INDEX] = spatializationSceneType_;
     data[SPATIALIZATION_ENABLED_INDEX] = spatializationEnabled_;
     data[STREAM_USAGE_INDEX] = streamUsage_;
+    data[FOLD_STATE_INDEX] = foldState_;
     AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
         "spatializationSceneType: %{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d",
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX]);
-    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
-    int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-    return ret;
+    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
+    int32_t ret1 = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_RET_LOG(ret1 == 0, ret1, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
+        sceneType_.c_str(), effectMode_.c_str());
+
+    cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
+    int32_t ret2 = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+    if (ret2 != 0) {
+        AUDIO_WARNING_LOG("EFFECT_CMD_GET_CONFIG fail, ret is %{public}d", ret2);
+    }
+    ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
+    ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
+    return ret1;
 }
 
 int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std::string &property)
@@ -253,8 +263,10 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
             "[%{public}s] with mode [%{public}s], %{public}s effect EFFECT_CMD_SET_PROPERTY fail",
             sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
     }
-
-    cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
+    if (preIoBufferConfig_.inputCfg.channels == 0 && preIoBufferConfig_.inputCfg.channelLayout == 0) {
+        preIoBufferConfig_ = ioBufferConfig_;
+    }
+    cmdInfo = {sizeof(AudioEffectConfig), &preIoBufferConfig_};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{public}s effect EFFECT_CMD_SET_CONFIG fail",
         sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
@@ -262,8 +274,9 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{public}s effect EFFECT_CMD_GET_CONFIG fail",
         sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
-
-    Swap(ioBufferConfig_.inputCfg, ioBufferConfig_.outputCfg); // pass outputCfg to next algo as inputCfg
+    preIoBufferConfig_.inputCfg = preIoBufferConfig_.outputCfg;
+    ioBufferConfig_.outputCfg.channels = preIoBufferConfig_.outputCfg.channels;
+    ioBufferConfig_.outputCfg.channelLayout = preIoBufferConfig_.outputCfg.channelLayout;
 
     standByEffectHandles_.emplace_back(handle);
     effectNames_.emplace_back(effectName);
@@ -274,16 +287,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
 int32_t AudioEffectChain::UpdateEffectParam()
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
-    latency_ = 0;
-    for (AudioEffectHandle handle : standByEffectHandles_) {
-        int32_t replyData;
-        int32_t ret = SetEffectParamToHandle(handle, replyData);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_PARAM fail");
-        AUDIO_DEBUG_LOG("Set Effect Param Scene Type: %{public}d Success", currSceneType_);
-        latency_ += static_cast<uint32_t>(replyData);
-    }
-    UpdateMultichannelIoBufferConfigInner();
-    return SUCCESS;
+    return UpdateEffectParamInner();
 }
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo)
@@ -333,8 +337,16 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error when last copy");
     }
 
+    CrossFadeProcess(bufOut, frameLen);
+
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
     DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
+}
+
+void AudioEffectChain::UpdateBufferConfig(uint32_t &channels, uint64_t &channelLayout)
+{
+    channels = ioBufferConfig_.outputCfg.channels;
+    channelLayout = ioBufferConfig_.outputCfg.channelLayout;
 }
 
 bool AudioEffectChain::IsEmptyEffectHandles()
@@ -443,6 +455,26 @@ float AudioEffectChain::GetFinalVolume()
     return finalVolume_;
 }
 
+void AudioEffectChain::SetCurrVolume(const float volume)
+{
+    currVolume_ = volume;
+}
+
+float AudioEffectChain::GetCurrVolume()
+{
+    return currVolume_;
+}
+
+void AudioEffectChain::SetFinalVolumeState(const bool state)
+{
+    sendFinalVolumeState_ = state;
+}
+
+bool AudioEffectChain::GetFinalVolumeState()
+{
+    return sendFinalVolumeState_;
+}
+
 void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
 {
     spatialDeviceType_ = spatialDeviceType;
@@ -453,13 +485,12 @@ void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDevice
 int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 {
     int32_t replyData = 0;
-    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
+    AudioEffectConfig tmpIoBufferConfig = ioBufferConfig_;
+    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     AudioEffectHandle preHandle = nullptr;
-    uint32_t channels = ioBufferConfig_.inputCfg.channels;
-    uint64_t channelLayout = ioBufferConfig_.inputCfg.channelLayout;
-    ioBufferConfig_.outputCfg.channels = 0;
-    ioBufferConfig_.outputCfg.channelLayout = 0;
+    tmpIoBufferConfig.outputCfg.channels = 0;
+    tmpIoBufferConfig.outputCfg.channelLayout = 0;
     for (AudioEffectHandle handle : standByEffectHandles_) {
         if (preHandle != nullptr) {
             int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
@@ -467,21 +498,24 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 
             ret = (*preHandle)->command(preHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_GET_CONFIG fail");
-            Swap(ioBufferConfig_.inputCfg, ioBufferConfig_.outputCfg); // pass outputCfg to next algo as inputCfg
+            tmpIoBufferConfig.inputCfg = tmpIoBufferConfig.outputCfg;
         }
         preHandle = handle;
     }
-    ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
-    ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    tmpIoBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
+    tmpIoBufferConfig.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     if (preHandle == nullptr) {
         AUDIO_ERR_LOG("The preHandle is nullptr!");
         return ERROR;
     }
     int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "last effect update EFFECT_CMD_SET_CONFIG fail");
-    // recover bufferconfig
-    ioBufferConfig_.inputCfg.channels = channels;
-    ioBufferConfig_.inputCfg.channelLayout = channelLayout;
+
+    ret = (*preHandle)->command(preHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "last effect update EFFECT_CMD_GET_CONFIG fail");
+
+    ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
+    ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
     dumpNameIn_ = "dump_effect_in_" + sceneType_ + "_"
         + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
@@ -489,6 +523,65 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
         + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
     return SUCCESS;
+}
+
+int32_t AudioEffectChain::UpdateEffectParamInner()
+{
+    latency_ = 0;
+    for (AudioEffectHandle handle : standByEffectHandles_) {
+        int32_t replyData;
+        int32_t ret = SetEffectParamToHandle(handle, replyData);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_PARAM fail");
+        AUDIO_DEBUG_LOG("Set Effect Param Scene Type: %{public}d Success", currSceneType_);
+        latency_ += static_cast<uint32_t>(replyData);
+    }
+    UpdateMultichannelIoBufferConfigInner();
+    return SUCCESS;
+}
+
+void AudioEffectChain::CrossFadeProcess(float *bufOut, uint32_t frameLen)
+{
+    if (fadingCounts == 0) {
+        return;
+    }
+
+    int32_t channelNum = static_cast<int32_t>(ioBufferConfig_.outputCfg.channels);
+    int32_t frameLength = static_cast<int32_t>(frameLen);
+
+    // fading out to zero
+    if (fadingCounts > 0) {
+        for (int32_t i = 0; i < frameLength; ++i) {
+            for (int32_t j = 0; j < channelNum; ++j) {
+                bufOut[i * channelNum + j] *=
+                    (fadingCounts * frameLength - i) / static_cast<float>(frameLength * CROSS_FADE_FRAME_COUNT);
+            }
+        }
+        fadingCounts--;
+        // fading out finish, update spatialization enabled and start fading in
+        if (fadingCounts == 0) {
+            fadingCounts = -CROSS_FADE_FRAME_COUNT;
+            spatializationEnabled_ = spatializationEnabledFading_;
+            UpdateEffectParamInner();
+            AUDIO_INFO_LOG("fading out finish, switch to %{public}d and start fading in", spatializationEnabled_);
+        }
+        return;
+    }
+
+    // fading in to one
+    if (fadingCounts < 0) {
+        for (int32_t i = 0; i < frameLength; ++i) {
+            for (int32_t j = 0; j < channelNum; ++j) {
+                bufOut[i * channelNum + j] *=
+                    (1 - (fadingCounts * frameLength + i) / static_cast<float>(frameLength * CROSS_FADE_FRAME_COUNT));
+            }
+        }
+        fadingCounts++;
+        // fading in finish, start normally processing
+        if (fadingCounts == 0) {
+            AUDIO_INFO_LOG("fading in finish, start normally processing for %{public}d", spatializationEnabled_);
+        }
+        return;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

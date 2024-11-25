@@ -69,9 +69,9 @@ public:
 
     virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo) = 0;
 
-    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle) = 0;
+    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, bool isSync = false) = 0;
 
-    virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
+    virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name) = 0;
 
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType,
                                     std::string name, bool active, DeviceFlag flag = ALL_DEVICES_FLAG) = 0;
@@ -105,7 +105,7 @@ public:
 
     virtual bool IsVolumeUnadjustable() = 0;
 
-    virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
+    virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos) = 0;
 
     virtual void SetAbsVolumeScene(bool isAbsVolumeScene) = 0;
 
@@ -113,13 +113,15 @@ public:
 
     virtual void SetAbsVolumeMute(bool mute) = 0;
 
+    virtual void SetDataShareReady(std::atomic<bool> isDataShareReady) = 0;
+
     virtual bool IsAbsVolumeMute() const = 0;
 
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
 
     virtual std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const = 0;
 
-    virtual void ResetRemoteCastDeviceVolume();
+    virtual void ResetRemoteCastDeviceVolume() = 0;
 
     virtual int32_t DoRestoreData() = 0;
 
@@ -130,6 +132,10 @@ public:
     virtual int32_t SetDeviceSafeStatus(DeviceType deviceType, SafeStatus status) = 0;
 
     virtual int32_t SetDeviceSafeTime(DeviceType deviceType, int64_t time) = 0;
+
+    virtual int32_t SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume) = 0;
+
+    virtual int32_t GetRestoreVolumeLevel(DeviceType deviceType) = 0;
 
     virtual int32_t GetSafeVolumeLevel() const = 0;
 

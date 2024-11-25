@@ -109,7 +109,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     descriptorType_ = deviceDescriptor.descriptorType_;
 }
 
-AudioDeviceDescriptor::AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "Error input parameter");
     deviceId_ = deviceDescriptor->deviceId_;
@@ -265,9 +265,9 @@ void AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
     return UnmarshallingToDeviceInfo(parcel);
 }
 
-sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::UnmarshallingPtr(Parcel &parcel)
+std::shared_ptr<AudioDeviceDescriptor> AudioDeviceDescriptor::UnmarshallingPtr(Parcel &parcel)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     if (audioDeviceDescriptor == nullptr) {
         return nullptr;
     }
@@ -333,7 +333,8 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
 {
     return deviceDescriptor.deviceType_ == deviceType_ &&
         deviceDescriptor.macAddress_ == macAddress_ &&
-        deviceDescriptor.networkId_ == networkId_;
+        deviceDescriptor.networkId_ == networkId_ &&
+        (!IsUsb(deviceType_) || deviceDescriptor.deviceRole_ == deviceRole_);
 }
 
 bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const

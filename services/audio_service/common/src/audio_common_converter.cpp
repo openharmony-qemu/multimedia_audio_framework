@@ -52,7 +52,7 @@ inline void CopyFromU8ToS32(const uint8_t *buffer, int32_t *dst, float volStep, 
     buffer += bufferInfo.frameSize;
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             *--dst = (((int32_t)(*--buffer) - 0x80) << AUDIO_SAMPLE_24BIT_LENGTH) * vol;
         }
     }
@@ -65,7 +65,7 @@ inline void CopyFromS16ToS32(const int16_t *buffer, int32_t *dst, float volStep,
     buffer += bufferInfo.frameSize;
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             *--dst = (((int32_t) * --buffer) << AUDIO_SAMPLE_16BIT_LENGTH) * vol;
         }
     }
@@ -78,7 +78,7 @@ static void CopyFrom24ToS32(const uint8_t *buffer, int32_t *dst, float volStep, 
     buffer += bufferInfo.frameSize * AUDIO_24BIT_LENGTH;
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             buffer -= AUDIO_24BIT_LENGTH;
             *--dst = ((buffer[0] << BYTES_ALIGNMENT_SIZE) | (buffer[1] << AUDIO_SAMPLE_16BIT_LENGTH) |
                 (buffer[AUDIO_NUMBER_2] << AUDIO_SAMPLE_24BIT_LENGTH)) * vol;
@@ -93,7 +93,7 @@ inline void CopyFromS32ToS32(const int32_t *buffer, int32_t *dst, float volStep,
     buffer += bufferInfo.frameSize;
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             *--dst = (*--buffer * vol);
         }
     }
@@ -104,7 +104,7 @@ inline void CopyFromF32ToS32(const float *buffer, int32_t *dst, float volStep, c
     int32_t frameCount = bufferInfo.frameSize / bufferInfo.channelCount;
     for (int32_t j = 0; j < frameCount; j++) {
         float vol = GetVolume(volStep, j + 1, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             *dst++ = *buffer++ * vol * AUDIO_SAMPLE_32BIT_VALUE;
         }
     }
@@ -152,7 +152,7 @@ inline void CopyFromU8ToS16(const uint8_t *buffer, int16_t *dst, float volStep, 
     buffer += bufferInfo.frameSize;
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             *--dst = (((int16_t)(*--buffer) - 0x80) << BYTES_ALIGNMENT_SIZE) * vol;
         }
     }
@@ -165,7 +165,7 @@ inline void CopyFromS16ToS16(const int16_t *buffer, int16_t *dst, float volStep,
     buffer += bufferInfo.frameSize;
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             *--dst = (*--buffer * vol);
         }
     }
@@ -178,7 +178,7 @@ inline void CopyFrom24ToS16(const uint8_t *buffer, int16_t *dst, float volStep, 
     buffer += bufferInfo.frameSize * AUDIO_24BIT_LENGTH;
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             buffer -= AUDIO_24BIT_LENGTH;
             *--dst = ((buffer[1]) | (buffer[AUDIO_NUMBER_2] << BYTES_ALIGNMENT_SIZE)) * vol;
         }
@@ -192,7 +192,7 @@ inline void CopyFromS32ToS16(const int32_t *buffer, int16_t *dst, float volStep,
     buffer += bufferInfo.frameSize;
     for (; frameCount > 0; --frameCount) {
         float vol = GetVolume(volStep, frameCount, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             *--dst = ((*--buffer >> AUDIO_SAMPLE_16BIT_LENGTH) * vol);
         }
     }
@@ -203,7 +203,7 @@ inline void CopyFromF32ToS16(const float *buffer, int16_t *dst, float volStep, c
     int32_t frameCount = bufferInfo.frameSize / bufferInfo.channelCount;
     for (int32_t j = 0; j < frameCount; j++) {
         float vol = GetVolume(volStep, j + 1, bufferInfo.volumeBg);
-        for (int32_t i = 0; i < bufferInfo.channelCount; i++) {
+        for (uint32_t i = 0; i < bufferInfo.channelCount; i++) {
             *dst++ = *buffer++ * SCALE * vol;
         }
     }
@@ -261,11 +261,11 @@ void AudioCommonConverter::ConvertFloatToFloatWithVolume(const BufferBaseInfo &s
     }
     float *buffer = reinterpret_cast<float *>(srcBuffer.buffer);
     float volumeStep = GetVolumeStep(srcBuffer);
-    int32_t frameCount = floatBuffer.size() / srcBuffer.channelCount;
+    uint32_t frameCount = floatBuffer.size() / srcBuffer.channelCount;
     for (uint32_t i = 0; i < frameCount; i++) {
         float volume = GetVolume(volumeStep, i + 1, srcBuffer.volumeBg);
-        for (int32_t j = 0; j < srcBuffer.channelCount; j++) {
-            int32_t index = i * srcBuffer.channelCount + j;
+        for (uint32_t j = 0; j < srcBuffer.channelCount; j++) {
+            uint32_t index = i * srcBuffer.channelCount + j;
             floatBuffer[index] = buffer[index] * volume;
         }
     }
@@ -279,18 +279,18 @@ void AudioCommonConverter::ConvertBufferToFloat(const BufferBaseInfo &srcBuffer,
     uint8_t *buffer = srcBuffer.buffer;
     float volumeStep = GetVolumeStep(srcBuffer);
     uint32_t convertValue = srcBuffer.samplePerFrame * BYTES_ALIGNMENT_SIZE - 1;
-    int32_t frameCount = floatBuffer.size() / srcBuffer.channelCount;
-    for (int32_t i = 0; i < frameCount; i++) {
+    uint32_t frameCount = floatBuffer.size() / srcBuffer.channelCount;
+    for (uint32_t i = 0; i < frameCount; i++) {
         float volume = GetVolume(volumeStep, i + 1, srcBuffer.volumeBg);
-        for (int32_t j = 0; j < srcBuffer.channelCount; j++) {
+        for (uint32_t j = 0; j < srcBuffer.channelCount; j++) {
             int32_t sampleValue = 0;
-            int32_t index = i * srcBuffer.channelCount + j;
+            uint32_t index = i * srcBuffer.channelCount + j;
             if (srcBuffer.samplePerFrame == AUDIO_24BIT_LENGTH) {
-                sampleValue = ConvertS24ToFloat(buffer, index, srcBuffer.samplePerFrame);
+                sampleValue = ConvertS24ToFloat(buffer, static_cast<int32_t>(index), srcBuffer.samplePerFrame);
                 floatBuffer[index] = sampleValue * volume * (1.0f / AUDIO_SAMPLE_32BIT_VALUE);
                 continue;
             }
-            for (int32_t k = 0; k < srcBuffer.samplePerFrame; k++) {
+            for (uint32_t k = 0; k < srcBuffer.samplePerFrame; k++) {
                 sampleValue |= (buffer[index * srcBuffer.samplePerFrame + k] & 0xff) << (k * BYTES_ALIGNMENT_SIZE);
             }
             floatBuffer[index] = sampleValue * volume * (1.0f / (1U << convertValue));

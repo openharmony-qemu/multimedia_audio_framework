@@ -34,6 +34,7 @@ public:
     RendererState rendererState;
     AudioDeviceDescriptor outputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     bool prerunningState = false;
+    bool backMute = false;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {
@@ -50,6 +51,7 @@ public:
             && parcel.WriteInt32(clientPid)
             && parcel.WriteInt32(tokenId)
             && parcel.WriteInt32(channelCount)
+            && parcel.WriteBool(backMute)
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
             && parcel.WriteInt32(rendererInfo.rendererFlags)
@@ -69,6 +71,7 @@ public:
             && parcel.WriteInt32(clientPid)
             && parcel.WriteInt32(tokenId)
             && parcel.WriteInt32(channelCount)
+            && parcel.WriteBool(backMute)
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
             && parcel.WriteInt32(rendererInfo.rendererFlags)
@@ -89,6 +92,7 @@ public:
         clientPid = parcel.ReadInt32();
         tokenId = parcel.ReadInt32();
         channelCount = parcel.ReadInt32();
+        backMute = parcel.ReadBool();
 
         rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
         rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());

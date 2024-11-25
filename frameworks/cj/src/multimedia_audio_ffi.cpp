@@ -19,6 +19,8 @@
 #include "multimedia_audio_capturer_impl.h"
 #include "multimedia_audio_error.h"
 #include "multimedia_audio_manager_impl.h"
+#include "multimedia_audio_renderer_callback.h"
+#include "multimedia_audio_renderer_impl.h"
 #include "multimedia_audio_routing_manager_callback.h"
 #include "multimedia_audio_routing_manager_impl.h"
 #include "multimedia_audio_stream_manager_callback.h"
@@ -111,6 +113,7 @@ void FfiMMAAudioCapturerStart(int64_t id, int32_t *errorCode)
     if (!capturer) {
         AUDIO_ERR_LOG("AudioCapturer start failed, invalid id of AudioCapturer");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
     auto isSuccess = capturer->Start();
     if (isSuccess != SUCCESS_CODE) {
@@ -124,6 +127,7 @@ void FfiMMAAudioCapturerStop(int64_t id, int32_t *errorCode)
     if (!capturer) {
         AUDIO_ERR_LOG("AudioCapturer stop failed, invalid id of AudioCapturer");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
     auto isSuccess = capturer->Stop();
     if (isSuccess != SUCCESS_CODE) {
@@ -137,6 +141,7 @@ void FfiMMAAudioCapturerRelease(int64_t id, int32_t *errorCode)
     if (!capturer) {
         AUDIO_ERR_LOG("AudioCapturer release failed, invalid id of AudioCapturer");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
     auto isSuccess = capturer->Release();
     if (isSuccess != SUCCESS_CODE) {
@@ -198,6 +203,7 @@ void FfiMMAAudioCapturerOn(int64_t id, int32_t callbackType, void (*callback)(),
     if (!capturer) {
         AUDIO_ERR_LOG("register failed, invalid id of AudioCapturer");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
     capturer->RegisterCallback(callbackType, callback, errorCode);
 }
@@ -209,6 +215,7 @@ void FfiMMAAudioCapturerOnWithFrame(int64_t id, int32_t callbackType, void (*cal
     if (!capturer) {
         AUDIO_ERR_LOG("register failed, invalid id of AudioCapturer");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
     capturer->RegisterCallbackWithFrame(callbackType, callback, frame, errorCode);
 }
@@ -283,6 +290,17 @@ bool FfiMMAASMIsActive(int64_t id, int32_t volumeType, int32_t *errorCode)
     return mgr->IsActive(volumeType);
 }
 
+CArrAudioRendererChangeInfo FfiMMAASMGetCurrentAudioRendererInfoArray(int64_t id, int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioStreamManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("Get CurrentAudioRendererInfoArray failed, invalid id of AudioStreamManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrAudioRendererChangeInfo();
+    }
+    return mgr->GetCurrentRendererChangeInfos(errorCode);
+}
+
 CArrAudioCapturerChangeInfo FfiMMAASMGetCurrentAudioCapturerInfoArray(int64_t id, int32_t *errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioStreamManagerImpl>(id);
@@ -311,6 +329,7 @@ void FfiMMAASMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *
     if (!mgr) {
         AUDIO_ERR_LOG("register failed, invalid id of AudioStreamManager");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
     mgr->RegisterCallback(callbackType, callback, errorCode);
 }
@@ -322,6 +341,7 @@ void FfiMMAARMSetCommunicationDevice(int64_t id, int32_t deviceType, bool active
     if (!mgr) {
         AUDIO_ERR_LOG("SetCommunicationDevice failed, invalid id of AudioRoutingManager");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
     *errorCode = mgr->SetCommunicationDevice(deviceType, active);
 }
@@ -360,14 +380,27 @@ CArrDeviceDescriptor FfiMMAARMGetPreferredInputDeviceForCapturerInfo(int64_t id,
     return mgr->GetPreferredInputDeviceForCapturerInfo(capturerInfo, errorCode);
 }
 
-void FfiMMAARMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode)
+CArrDeviceDescriptor FfiMMAARMGetPreferredOutputDeviceForRendererInfo(int64_t id,
+    CAudioRendererInfo rendererInfo, int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("GetPreferredOutputDeviceForRendererInfo failed, invalid id of AudioRoutingManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrDeviceDescriptor();
+    }
+    return mgr->GetPreferredOutputDeviceForRendererInfo(rendererInfo, errorCode);
+}
+
+void FfiMMAARMOn(int64_t id, int32_t callbackType, uint32_t deviceUsage, void (*callback)(), int32_t *errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
         AUDIO_ERR_LOG("register failed, invalid id of AudioRoutingManager");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
-    mgr->RegisterCallback(callbackType, callback, errorCode);
+    mgr->RegisterCallback(callbackType, deviceUsage, callback, errorCode);
 }
 
 void FfiMMAARMOnWithFlags(int64_t id, int32_t callbackType, void (*callback)(), int32_t flags, int32_t *errorCode)
@@ -376,10 +409,12 @@ void FfiMMAARMOnWithFlags(int64_t id, int32_t callbackType, void (*callback)(), 
     if (!mgr) {
         AUDIO_ERR_LOG("register failed, invalid id of AudioRoutingManager");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
     mgr->RegisterDeviceChangeCallback(callbackType, callback, flags, errorCode);
 }
 
+// this func spells errors will be removed
 void FfiMMAARMWOnithCapturerInfo(int64_t id, int32_t callbackType, void (*callback)(), CAudioCapturerInfo capturerInfo,
     int32_t *errorCode)
 {
@@ -387,8 +422,33 @@ void FfiMMAARMWOnithCapturerInfo(int64_t id, int32_t callbackType, void (*callba
     if (!mgr) {
         AUDIO_ERR_LOG("register failed, invalid id of AudioRoutingManager");
         *errorCode = CJ_ERR_SYSTEM;
+        return;
     }
     mgr->RegisterPreferredInputDeviceChangeCallback(callbackType, callback, capturerInfo, errorCode);
+}
+
+void FfiMMAARMOnWithCapturerInfo(int64_t id, int32_t callbackType, void (*callback)(), CAudioCapturerInfo capturerInfo,
+    int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioRoutingManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    mgr->RegisterPreferredInputDeviceChangeCallback(callbackType, callback, capturerInfo, errorCode);
+}
+
+void FfiMMAARMOnWithRendererInfo(int64_t id, int32_t callbackType, void (*callback)(), CAudioRendererInfo rendererInfo,
+    int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioRoutingManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    mgr->RegisterPreferredOutputDeviceChangeCallback(callbackType, callback, rendererInfo, errorCode);
 }
 
 /* Audio Volume Manager */
@@ -402,6 +462,17 @@ int64_t FfiMMAAVMGetVolumeGroupManager(int64_t id, int32_t groupId, int32_t *err
     }
     *errorCode = SUCCESS_CODE;
     return mgr->GetVolumeGroupManager(groupId, errorCode);
+}
+
+void FfiMMAAVMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioVolumeManagerImpl>(id);
+    if (mgr == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("FfiMMAAVMOn failed.");
+        return;
+    }
+    return mgr->RegisterCallback(callbackType, callback, errorCode);
 }
 
 /* Audio Volumne Group Manager */
@@ -624,6 +695,389 @@ bool FfiMMAIsVolumeUnadjustable(int64_t id, int32_t *errorCode)
     }
     *errorCode = SUCCESS_CODE;
     return inst->IsVolumeUnadjustable();
+}
+
+float FfiMMAAVGMGetMaxAmplitudeForOutputDevice(int64_t id, CDeviceDescriptor desc, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->GetMaxAmplitudeForOutputDevice(desc.id);
+}
+
+float FfiMMAAVGMGetMaxAmplitudeForInputDevice(int64_t id, CDeviceDescriptor desc, int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->GetMaxAmplitudeForInputDevice(desc.id);
+}
+
+void FfiMMAAVGMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode)
+{
+    auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
+    if (inst == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
+        return;
+    }
+    *errorCode = SUCCESS_CODE;
+    inst->RegisterCallback(callbackType, callback, errorCode);
+}
+
+/* Audio Renderer */
+int64_t FfiMMACreateAudioRenderer(CAudioRendererOptions options, int32_t *errorCode)
+{
+    auto renderer = FFIData::Create<MMAAudioRendererImpl>();
+    if (renderer == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Create MMAAudioRendererImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    auto ret = renderer->CreateAudioRenderer(options);
+    if (ret != SUCCESS_CODE) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("CreateAudioRenderer error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return renderer->GetID();
+}
+
+int32_t FfiMMAARGetState(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("GetState failed, invalid id of AudioRenderer");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    return renderer->GetState();
+}
+
+int64_t FfiMMAARGetAudioTime(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("GetAudioTime failed, invalid id of AudioRenderer");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    return renderer->GetAudioTime(errorCode);
+}
+
+uint32_t FfiMMAARGetBufferSize(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("GetBufferSize failed, invalid id of AudioRenderer");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    return renderer->GetBufferSize(errorCode);
+}
+
+void FfiMMAARFlush(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Flush failed, invalid id of AudioRenderer");
+        return;
+    }
+    auto isSuccess = renderer->Flush();
+    if (isSuccess != SUCCESS_CODE) {
+        *errorCode = isSuccess;
+    }
+}
+
+void FfiMMAARPause(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Pause failed, invalid id of AudioRenderer");
+        return;
+    }
+    auto isSuccess = renderer->Pause();
+    if (isSuccess != SUCCESS_CODE) {
+        *errorCode = isSuccess;
+    }
+}
+
+void FfiMMAARDrain(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Drain failed, invalid id of AudioRenderer");
+        return;
+    }
+    auto isSuccess = renderer->Drain();
+    if (isSuccess != SUCCESS_CODE) {
+        *errorCode = isSuccess;
+    }
+}
+
+CArrDeviceDescriptor FfiMMAARGetCurrentOutputDevices(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("GetCurrentOutputDevices failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrDeviceDescriptor();
+    }
+    return renderer->GetCurrentOutputDevices(errorCode);
+}
+
+double FfiMMAARGetSpeed(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("GetSpeed failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_DOUBLE_VALUE;
+    }
+    return renderer->GetSpeed(errorCode);
+}
+
+bool FfiMMAARGetSilentModeAndMixWithOthers(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("GetSilentModeAndMixWithOthers failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return false;
+    }
+    return renderer->GetSilentModeAndMixWithOthers(errorCode);
+}
+
+double FfiMMAARGetVolume(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("GetVolume failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_DOUBLE_VALUE;
+    }
+    return renderer->GetVolume(errorCode);
+}
+
+uint32_t FfiMMAARGetUnderflowCount(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("GetUnderflowCount failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    return renderer->GetUnderflowCount(errorCode);
+}
+
+void FfiMMAARSetVolumeWithRamp(int64_t id, double volume, int32_t duration, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("SetVolumeWithRamp failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->SetVolumeWithRamp(volume, duration, errorCode);
+}
+
+void FfiMMAARSetSpeed(int64_t id, double speed, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("SetSpeed failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->SetSpeed(speed, errorCode);
+}
+
+void FfiMMAARSetVolume(int64_t id, double volume, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("SetVolume failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->SetVolume(volume, errorCode);
+}
+
+void FfiMMAARSetSilentModeAndMixWithOthers(int64_t id, bool on, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("SetSilentModeAndMixWithOthers failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->SetSilentModeAndMixWithOthers(on, errorCode);
+}
+
+void FfiMMAARSetInterruptMode(int64_t id, int32_t mode, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("SetInterruptMode failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->SetInterruptMode(mode, errorCode);
+}
+
+void FfiMMAARSetChannelBlendMode(int64_t id, int32_t mode, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("SetInterruptMode failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->SetChannelBlendMode(mode, errorCode);
+}
+
+void FfiMMAAROnWithFrame(int64_t id, int32_t callbackType, void (*callback)(), int64_t frame, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->RegisterCallbackWithFrame(callbackType, callback, frame, errorCode);
+}
+
+int32_t FfiMMAARGetAudioEffectMode(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("GetAudioEffectMode failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    return renderer->GetAudioEffectMode(errorCode);
+}
+
+void FfiMMAARSetAudioEffectMode(int64_t id, int32_t mode, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("SetAudioEffectMode failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    return renderer->SetAudioEffectMode(mode, errorCode);
+}
+
+double FfiMMAARGetMinStreamVolume(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("GetMinStreamVolume failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_DOUBLE_VALUE;
+    }
+    return renderer->GetMinStreamVolume(errorCode);
+}
+
+double FfiMMAARGetMaxStreamVolume(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("GetMaxStreamVolume failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_DOUBLE_VALUE;
+    }
+    return renderer->GetMaxStreamVolume(errorCode);
+}
+
+void FfiMMAARRelease(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("Release failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    return renderer->Release(errorCode);
+}
+
+uint32_t FfiMMAARGetStreamId(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("GetStreamId failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    return renderer->GetStreamId(errorCode);
+}
+
+void FfiMMAARStop(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("Stop failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    return renderer->Stop(errorCode);
+}
+
+void FfiMMAARStart(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("Start failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    return renderer->Start(errorCode);
+}
+
+CAudioStreamInfo FfiMMAARGetStreamInfo(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("GetStreamInfo failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CAudioStreamInfo();
+    }
+    return renderer->GetStreamInfo(errorCode);
+}
+
+CAudioRendererInfo FfiMMAARGetRendererInfo(int64_t id, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (!renderer) {
+        AUDIO_ERR_LOG("GetRendererInfo failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CAudioRendererInfo();
+    }
+    return renderer->GetRendererInfo(errorCode);
+}
+
+void FfiMMAAROn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->RegisterCallback(callbackType, callback, errorCode);
 }
 }
 } // namespace AudioStandard

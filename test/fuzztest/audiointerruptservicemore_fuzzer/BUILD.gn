@@ -29,6 +29,7 @@ ohos_fuzztest("AudioInterruptServiceMoreFuzzTest") {
     "../../../services/audio_policy/server/src/service/interrupt",
     "../../../utils/system/safwk/native/include",
     "../../../../communication/bluetooth/interfaces/inner_api/include",
+    "../../../services/audio_policy/server/include/service/interface",
   ]
 
   cflags = [
@@ -42,7 +43,7 @@ ohos_fuzztest("AudioInterruptServiceMoreFuzzTest") {
 
   sources = [ "audio_interrupt_service_more_fuzzer.cpp" ]
 
-  deps = [ "../../../services/audio_policy:audio_policy_service" ]
+  deps = [ "../../../services/audio_policy:audio_policy_service_static" ]
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",

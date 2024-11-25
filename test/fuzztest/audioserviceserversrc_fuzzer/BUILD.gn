@@ -38,13 +38,14 @@ ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
   sources = [ "audio_service_server_src_fuzzer.cpp" ]
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
+  cflags_cc = [ "-std=c++20" ]
 
   deps = [
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
     "../../../services/audio_service:audio_common",
-    "../../../services/audio_service:audio_process_service",
-    "../../../services/audio_service:audio_service",
+    "../../../services/audio_service:audio_process_service_static",
+    "../../../services/audio_service:audio_service_static",
   ]
   external_deps = [
     "ability_base:want",

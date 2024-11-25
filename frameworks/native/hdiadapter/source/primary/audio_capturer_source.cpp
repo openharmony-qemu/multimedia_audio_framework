@@ -36,6 +36,7 @@
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_log_utils.h"
+#include "audio_schedule.h"
 #include "audio_utils.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
@@ -173,6 +174,8 @@ public:
 
     int32_t UpdateSourceType(SourceType sourceType) final;
 
+    void SetAddress(const std::string &address) override;
+
     explicit AudioCapturerSourceInner(const std::string &halName = "primary");
     explicit AudioCapturerSourceInner(CaptureAttr *attr);
     ~AudioCapturerSourceInner();
@@ -186,6 +189,7 @@ private:
 
     int32_t CreateCapture(struct AudioPort &capturePort);
     int32_t InitAudioManager();
+    void SetEcSampleAttributes(struct AudioSampleAttributes &attrs);
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
 
@@ -209,6 +213,7 @@ private:
     int32_t StopNonblockingCapture();
 
     int32_t DoStop();
+    int32_t StartCapture();
 
     CaptureAttr *hdiAttr_ = nullptr;
     IAudioSourceAttr attr_ = {};
@@ -264,6 +269,8 @@ private:
     std::unique_ptr<std::thread> captureThread_ = nullptr;
     bool threadRunning_ = false;
     std::shared_ptr<HdiRingBuffer> ringBuffer_ = nullptr;
+
+    std::string address_;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -459,6 +466,7 @@ AudioCapturerSourceInner::~AudioCapturerSourceInner()
     threadRunning_ = false;
     if (hdiAttr_ != nullptr) {
         free(hdiAttr_);
+        hdiAttr_ = nullptr;
     }
 }
 
@@ -682,6 +690,26 @@ AudioFormat AudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat format
     return hdiFormat;
 }
 
+void AudioCapturerSourceInner::SetEcSampleAttributes(struct AudioSampleAttributes &attrs)
+{
+    attrs.ecSampleAttributes.ecInterleaved = true;
+    attrs.ecSampleAttributes.ecFormat = ConvertToHdiFormat(attr_.formatEc);
+    attrs.ecSampleAttributes.ecSampleRate = attr_.sampleRateEc;
+    attrs.ecSampleAttributes.ecChannelCount = attr_.channelEc;
+    attrs.ecSampleAttributes.ecChannelLayout = GetChannelLayoutByCount(attr_.channelEc);
+    attrs.ecSampleAttributes.ecPeriod = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
+    attrs.ecSampleAttributes.ecFrameSize = PCM_16_BIT * attrs.ecSampleAttributes.ecChannelCount / PCM_8_BIT;
+    attrs.ecSampleAttributes.ecIsBigEndian = false;
+    attrs.ecSampleAttributes.ecIsSignedData = true;
+    attrs.ecSampleAttributes.ecStartThreshold =
+        DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (attrs.ecSampleAttributes.ecFrameSize);
+    attrs.ecSampleAttributes.ecStopThreshold = INT_32_MAX;
+    attrs.ecSampleAttributes.ecSilenceThreshold = AUDIO_BUFF_SIZE;
+    AUDIO_INFO_LOG("Ec config ecSampleRate: %{public}d ecChannel: %{public}u ecFormat: %{public}u",
+        attrs.ecSampleAttributes.ecSampleRate, attrs.ecSampleAttributes.ecChannelCount,
+        attrs.ecSampleAttributes.ecFormat);
+}
+
 int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
 {
     Trace trace("AudioCapturerSourceInner:CreateCapture");
@@ -700,22 +728,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
 
     if (attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) {
-        param.ecSampleAttributes.ecInterleaved = true;
-        param.ecSampleAttributes.ecFormat = ConvertToHdiFormat(attr_.formatEc);
-        param.ecSampleAttributes.ecSampleRate = attr_.sampleRateEc;
-        param.ecSampleAttributes.ecChannelCount = attr_.channelEc;
-        param.ecSampleAttributes.ecChannelLayout = GetChannelLayoutByCount(attr_.channelEc);
-        param.ecSampleAttributes.ecPeriod = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
-        param.ecSampleAttributes.ecFrameSize = PCM_16_BIT * param.ecSampleAttributes.ecChannelCount / PCM_8_BIT;
-        param.ecSampleAttributes.ecIsBigEndian = false;
-        param.ecSampleAttributes.ecIsSignedData = true;
-        param.ecSampleAttributes.ecStartThreshold =
-            DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.ecSampleAttributes.ecFrameSize);
-        param.ecSampleAttributes.ecStopThreshold = INT_32_MAX;
-        param.ecSampleAttributes.ecSilenceThreshold = AUDIO_BUFF_SIZE;
-        AUDIO_INFO_LOG("Ec config ecSampleRate: %{public}d ecChannel: %{public}u ecFormat: %{public}u",
-            param.ecSampleAttributes.ecSampleRate, param.ecSampleAttributes.ecChannelCount,
-            param.ecSampleAttributes.ecFormat);
+        SetEcSampleAttributes(param);
     }
 
     struct AudioDeviceDescriptor deviceDesc;
@@ -724,11 +737,13 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     if (halName_ == "usb") {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
     }
-    deviceDesc.desc = (char *)"";
+    std::string desc = address_;
+    deviceDesc.desc = const_cast<char*>(desc.c_str());
 
     AUDIO_INFO_LOG("Create capture sourceName:%{public}s, hdisource:%{public}d, " \
-        "rate:%{public}u channel:%{public}u format:%{public}u, devicePin:%{public}u",
-        halName_.c_str(), param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
+        "rate:%{public}u channel:%{public}u format:%{public}u, devicePin:%{public}u desc:%{public}s",
+        halName_.c_str(), param.sourceType, param.sampleRate, param.channelCount,
+        param.format, deviceDesc.pins, deviceDesc.desc);
     int32_t ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
     if (ret < 0 || audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("Create capture failed");
@@ -772,7 +787,11 @@ int32_t AudioCapturerSourceInner::InitWithoutAttr()
     attr.deviceNetworkId = "LocalDevice";
     attr.deviceType = hdiAttr_->deviceType;
     attr.sourceType = hdiAttr_->sourceType;
-
+    if (attr.sourceType == SOURCE_TYPE_EC) {
+        attr.formatEc = hdiAttr_->format;
+        attr.sampleRateEc = hdiAttr_->sampleRate;
+        attr.channelEc = hdiAttr_->channelCount;
+    }
     Init(attr);
 
     if (IsNonblockingSource(attr.sourceType, attr.adapterName)) {
@@ -885,6 +904,7 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
                 frameInfo.replyBytesEc : fdescEc->frameLen;
         }
     }
+    CheckUpdateState(fdesc->frame, replyBytes);
     AudioCaptureFrameInfoFree(&frameInfo, false);
 
     return SUCCESS;
@@ -892,6 +912,7 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
 
 void AudioCapturerSourceInner::CaptureFrameEcInternal(const RingBuffer &ringBuf)
 {
+    CHECK_AND_RETURN_LOG(audioCapture_, "audioCapture_ is nullptr");
     // mic frame just used for check, ec frame must be right
     struct AudioFrameLen frameLen = {};
     frameLen.frameLen = static_cast<uint64_t>(ringBuf.length);
@@ -908,13 +929,13 @@ void AudioCapturerSourceInner::CaptureFrameEcInternal(const RingBuffer &ringBuf)
 
 void AudioCapturerSourceInner::CaptureThreadLoop()
 {
-    AUDIO_INFO_LOG("non blocking capture thread start");
-
     if (ringBuffer_ == nullptr) {
         AUDIO_ERR_LOG("ring buffer not init");
         return;
     }
 
+    AUDIO_INFO_LOG("non blocking capture thread start, source type: %{public}d", attr_.sourceType);
+    ScheduleThreadInServer(getpid(), gettid());
     while (threadRunning_) {
         Trace trace("CaptureRefInput");
         RingBuffer buffer = ringBuffer_->DequeueInputBuffer();
@@ -922,6 +943,7 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
         uint32_t requestBytes = static_cast<uint32_t>(buffer.length);
         int32_t ret = 0;
         if (attr_.sourceType == SOURCE_TYPE_MIC_REF) {
+            CHECK_AND_RETURN_LOG(audioCapture_, "audioCapture_ is nullptr");
             ret = audioCapture_->CaptureFrame(
                 audioCapture_, reinterpret_cast<int8_t *>(buffer.data), &requestBytes, &replyBytes);
         } else {
@@ -932,6 +954,8 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
         }
         ringBuffer_->EnqueueInputBuffer(buffer);
     }
+    UnscheduleThreadInServer(getpid(), gettid());
+    AUDIO_INFO_LOG("non blocking capture thread exit, source type: %{public}d", attr_.sourceType);
 }
 
 void AudioCapturerSourceInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -962,6 +986,7 @@ float AudioCapturerSourceInner::GetMaxAmplitude()
 
 int32_t AudioCapturerSourceInner::StartNonblockingCapture()
 {
+    CHECK_AND_RETURN_RET_LOG(audioCapture_, ERR_INVALID_HANDLE, "audioCapture_ is nullptr");
     if (!started_) {
         int32_t ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
@@ -996,6 +1021,7 @@ int32_t AudioCapturerSourceInner::Start(void)
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (runningLockManager_ == nullptr) {
+        WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:Start");
         switch (attr_.sourceType) {
             case SOURCE_TYPE_WAKEUP:
                 keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",
@@ -1007,6 +1033,7 @@ int32_t AudioCapturerSourceInner::Start(void)
                 keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
         }
+        guard.CheckCurrTimeout();
         if (keepRunningLock) {
             runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
         }
@@ -1024,15 +1051,18 @@ int32_t AudioCapturerSourceInner::Start(void)
         + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
+    return StartCapture();
+}
+
+int32_t AudioCapturerSourceInner::StartCapture()
+{
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {
             audioCapturerSourceCallback_->OnCapturerState(true);
         }
-
+        CHECK_AND_RETURN_RET_LOG(audioCapture_, ERR_INVALID_HANDLE, "audioCapture_ is nullptr");
         int32_t ret = audioCapture_->Start(audioCapture_);
-        if (ret < 0) {
-            return ERR_NOT_STARTED;
-        }
+        CHECK_AND_RETURN_RET(ret >= 0, ERR_NOT_STARTED);
         started_ = true;
     }
 
@@ -1062,6 +1092,7 @@ int32_t AudioCapturerSourceInner::SetVolume(float left, float right)
 
 int32_t AudioCapturerSourceInner::GetVolume(float &left, float &right)
 {
+    CHECK_AND_RETURN_RET_LOG(audioCapture_, ERR_INVALID_HANDLE, "audioCapture_ is nullptr");
     float val = 0.0;
     audioCapture_->GetVolume(audioCapture_, &val);
     left = val;
@@ -1189,15 +1220,8 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
     const std::string &deviceName)
 {
     if (inputDevice == currentActiveDevice_) {
-        if (inputDevice == DEVICE_TYPE_MIC) {
-            int32_t ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_, deviceName);
-            if (ret != SUCCESS) {
-                AUDIO_WARNING_LOG("SetAudioRouteInfoForEnhanceChain failed.");
-            }
-        }
         AUDIO_INFO_LOG("input device not change. currentActiveDevice %{public}d sourceType %{public}d",
             currentActiveDevice_, attr_.sourceType);
-
         return SUCCESS;
     }
 
@@ -1243,10 +1267,6 @@ int32_t AudioCapturerSourceInner::DoSetInputRoute(DeviceType inputDevice,
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     currentActiveDevice_ = inputDevice;
-    ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_, deviceName);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("SetAudioRouteInfoForEnhanceChain failed.");
-    }
     return SUCCESS;
 }
 
@@ -1566,10 +1586,15 @@ int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
         if (halName_ == "usb") {
             ret = SetInputRoute(DEVICE_TYPE_USB_ARM_HEADSET, inputPortPin);
         } else {
-            ret = SetInputRoute(DEVICE_TYPE_MIC, inputPortPin);
+            DeviceType deviceType = static_cast<DeviceType>(attr_.deviceType);
+            ret = SetInputRoute(deviceType, inputPortPin);
         }
         if (ret < 0) {
             AUDIO_WARNING_LOG("update route FAILED: %{public}d", ret);
+        }
+        ret = SetAudioRouteInfoForEnhanceChain(currentActiveDevice_, "");
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("set device %{public}d failed", currentActiveDevice_);
         }
     }
 
@@ -1673,6 +1698,10 @@ int32_t AudioCapturerSourceInner::GetCaptureId(uint32_t &captureId) const
 int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice,
     const std::string &deviceName)
 {
+    if (IsNonblockingSource(attr_.sourceType, attr_.adapterName)) {
+        AUDIO_ERR_LOG("non blocking source not support SetAudioRouteInfoForEnhanceChain");
+        return SUCCESS;
+    }
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     uint32_t captureId = 0;
@@ -1698,8 +1727,14 @@ int32_t AudioCapturerSourceInner::UpdateSourceType(SourceType sourceType)
     }
 
     attr_.sourceType = sourceType;
+    AUDIO_INFO_LOG("change source type to %{public}d", attr_.sourceType);
     AudioPortPin inputPortPin = PIN_IN_MIC;
     return DoSetInputRoute(currentActiveDevice_, inputPortPin);
+}
+
+void AudioCapturerSourceInner::SetAddress(const std::string &address)
+{
+    address_ = address;
 }
 
 int32_t AudioCapturerSourceWakeup::Init(const IAudioSourceAttr &attr)

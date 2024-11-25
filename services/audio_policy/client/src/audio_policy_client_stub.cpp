@@ -55,6 +55,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE):
             HandleHeadTrackingEnabledChangeForAnyDevice(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_NN_STATE_CHANGE):
+            HandleNnStateChange(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE):
             HandleAudioSessionCallback(data, reply);
             break;
@@ -227,26 +230,30 @@ void AudioPolicyClientStub::HandleMicStateChange(MessageParcel &data, MessagePar
 
 void AudioPolicyClientStub::HandlePreferredOutputDeviceUpdated(MessageParcel &data, MessageParcel &reply)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
+    AudioRendererInfo rendererInfo;
+    rendererInfo.Unmarshalling(data);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
         deviceDescriptor.push_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
     }
-    OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    OnPreferredOutputDeviceUpdated(rendererInfo, deviceDescriptor);
 }
 
 void AudioPolicyClientStub::HandlePreferredInputDeviceUpdated(MessageParcel &data, MessageParcel &reply)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.Unmarshalling(data);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
         deviceDescriptor.push_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
     }
-    OnPreferredInputDeviceUpdated(deviceDescriptor);
+    OnPreferredInputDeviceUpdated(capturerInfo, deviceDescriptor);
 }
 
 void AudioPolicyClientStub::HandleRendererStateChange(MessageParcel &data, MessageParcel &reply)
@@ -340,7 +347,7 @@ void AudioPolicyClientStub::HandleSpatializationEnabledChange(MessageParcel &dat
 
 void AudioPolicyClientStub::HandleSpatializationEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnSpatializationEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
@@ -354,10 +361,16 @@ void AudioPolicyClientStub::HandleHeadTrackingEnabledChange(MessageParcel &data,
 
 void AudioPolicyClientStub::HandleHeadTrackingEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnHeadTrackingEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
+}
+
+void AudioPolicyClientStub::HandleNnStateChange(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t state = data.ReadInt32();
+    OnNnStateChange(state);
 }
 
 void AudioPolicyClientStub::HandleAudioSessionCallback(MessageParcel &data, MessageParcel &reply)

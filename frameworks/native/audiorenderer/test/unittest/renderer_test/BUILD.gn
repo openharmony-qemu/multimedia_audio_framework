@@ -20,12 +20,15 @@ ohos_unittest("audio_renderer_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
+    "../../../src",
     "../../../../audiorenderer/include",
     "../../../../audiostream/include",
     "../../../../common/include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
+    "../../../../../../../../media_foundation/services/media_monitor/client/include",
+    "../../../../../audio_utils/include",
   ]
   cflags = [
     "-Wall",
@@ -39,11 +42,14 @@ ohos_unittest("audio_renderer_unit_test") {
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiorenderer:audio_renderer",
+    "../../../../audioutils:audio_utils",
   ]
 
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
   ]
 

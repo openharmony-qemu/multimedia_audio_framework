@@ -170,7 +170,7 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_001, TestSize.Level1)
 {
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
 
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto outputDevice =  audioDeviceDescriptors[0];
@@ -189,7 +189,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_002, TestSize.Level1)
 {
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
 
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto outputDevice =  audioDeviceDescriptors[0];
@@ -215,7 +215,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_003, TestSize.Level1)
     audioRendererFilter->rendererInfo.rendererFlags = 0;
     audioRendererFilter->streamId = 0;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
 
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto outputDevice =  audioDeviceDescriptors[0];
@@ -241,7 +241,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level1)
     audioRendererFilter->rendererInfo.rendererFlags = 0;
     audioRendererFilter->streamId = 0;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
 
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto outputDevice =  audioDeviceDescriptors[0];
@@ -260,7 +260,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_005, TestSize.Level1)
 {
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
     EXPECT_LT(ret, SUCCESS);
 }
@@ -273,7 +273,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_005, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_006, TestSize.Level1)
 {
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
 
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto outputDevice =  audioDeviceDescriptors[0];
@@ -293,7 +293,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_006, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_007, TestSize.Level1)
 {
     sptr<AudioRendererFilter> audioRendererFilter = nullptr;
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
 
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto outputDevice =  audioDeviceDescriptors[0];
@@ -319,7 +319,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_008, TestSize.Level1)
     audioRendererFilter->rendererInfo.rendererFlags = 0;
     audioRendererFilter->streamId = 0;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     deviceDescriptorVector.push_back(nullptr);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
     EXPECT_LT(ret, SUCCESS);
@@ -340,7 +340,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_009, TestSize.Level1)
     audioRendererFilter->rendererInfo.rendererFlags = 0;
     audioRendererFilter->streamId = 0;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto outputDevice =  audioDeviceDescriptors[0];
     outputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -365,7 +365,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level1)
     audioRendererFilter->rendererInfo.rendererFlags = 0;
     audioRendererFilter->streamId = 0;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto outputDevice =  audioDeviceDescriptors[0];
     outputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -382,7 +382,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_001, TestSize.Level1)
 {
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
 
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     auto inputDevice =  audioDeviceDescriptors[0];
@@ -400,7 +400,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_002, TestSize.Level1)
 {
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
 
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     auto inputDevice =  audioDeviceDescriptors[0];
@@ -418,7 +418,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_002, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_003, TestSize.Level1)
 {
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(deviceDescriptorVector);
     EXPECT_LT(ret, SUCCESS);
 }
@@ -433,7 +433,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_004, TestSize.Level1)
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = 20010041;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     auto inputDevice =  audioDeviceDescriptors[0];
     inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -452,7 +452,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_005, TestSize.Level1)
 {
     sptr<AudioCapturerFilter> audioCapturerFilter = nullptr;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     auto inputDevice =  audioDeviceDescriptors[0];
     inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -472,7 +472,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_006, TestSize.Level1)
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = 20010041;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
     EXPECT_LT(ret, SUCCESS);
 }
@@ -487,7 +487,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_007, TestSize.Level1)
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = 20010041;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     deviceDescriptorVector.push_back(nullptr);
     auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
     EXPECT_LT(ret, SUCCESS);
@@ -503,7 +503,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_008, TestSize.Level1)
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = 20010041;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     deviceDescriptorVector.push_back(nullptr);
     auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
     EXPECT_LT(ret, SUCCESS);
@@ -519,7 +519,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_009, TestSize.Level1)
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = 20010041;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     auto inputDevice =  audioDeviceDescriptors[0];
     inputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -539,7 +539,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_010, TestSize.Level1)
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = -1;
 
-    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     auto inputDevice =  audioDeviceDescriptors[0];
     inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -1111,7 +1111,7 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level1)
 {
     auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_NONE);
-    EXPECT_FALSE(isActive);
+    EXPECT_EQ(false, isActive);
 }
 
 /**

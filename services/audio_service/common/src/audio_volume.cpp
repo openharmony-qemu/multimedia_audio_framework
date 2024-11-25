@@ -402,6 +402,27 @@ void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
 }
+
+void AudioVolume::SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    fadeoutState_.insert_or_assign(streamIndex, fadeoutState);
+}
+
+uint32_t AudioVolume::GetFadeoutState(uint32_t streamIndex)
+{
+    std::shared_lock<std::shared_mutex> lock(fadoutMutex_);
+    auto it = fadeoutState_.find(streamIndex);
+    if (it != fadeoutState_.end()) { return it->second; }
+    AUDIO_WARNING_LOG("No such streamIndex in map!");
+    return INVALID_STATE;
+}
+
+void AudioVolume::RemoveFadeoutState(uint32_t streamIndex)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    fadeoutState_.erase(streamIndex);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -414,11 +435,6 @@ float GetCurVolume(uint32_t sessionId, const char *streamType, const char *devic
 {
     CHECK_AND_RETURN_RET_LOG(streamType != nullptr, 1.0f, "streamType is nullptr");
     CHECK_AND_RETURN_RET_LOG(deviceClass != nullptr, 1.0f, "deviceClass is nullptr");
-    std::string tmpStreamType = streamType;
-    // Set voice call assistant stream type to full volume
-    if (tmpStreamType == "voice_call_assistant") {
-        return 1.0f;
-    }
     int32_t stream = AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(stream));
     return AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
@@ -454,6 +470,16 @@ bool IsSameVolume(float x, float y)
 void MonitorVolume(uint32_t sessionId, bool isOutput)
 {
     AudioVolume::GetInstance()->Monitor(sessionId, isOutput);
+}
+
+void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
+{
+    AudioVolume::GetInstance()->SetFadeoutState(streamIndex, fadeoutState);
+}
+
+uint32_t GetFadeoutState(uint32_t streamIndex)
+{
+    return AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
 }
 #ifdef __cplusplus
 }

@@ -114,6 +114,11 @@ public:
     }
 
     virtual int32_t GetRenderId(uint32_t &renderId) const = 0;
+
+    virtual void SetAddress(const std::string &address)
+    {
+        return;
+    }
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {

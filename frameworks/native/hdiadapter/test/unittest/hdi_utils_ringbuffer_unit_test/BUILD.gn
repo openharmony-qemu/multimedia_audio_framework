@@ -1,0 +1,58 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("../../../../../../audio_framework_test_sources.gni")
+
+module_output_path = "multimedia_audio_framework/hdi_utils_ringbuffer"
+
+ohos_unittest("hdi_utils_ringbuffer_unit_test") {
+  testonly = true
+
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../../devicemanager/include",
+    "../../../devicemanager/interface",
+    "./include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../manager/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  sources = [ "src/hdi_utils_ringbuffer_unit_test.cpp" ]
+
+  deps = [
+    "../../../../audioutils:audio_utils",
+    "../../../devicemanager:audio_device_manager",
+    "../../../manager:hdiadapter_utils",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hdf_core:libhdf_utils",
+    "hilog:libhilog",
+  ]
+}

@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
 import("../../../sensor.gni")
 import("../../../window_manager.gni")
@@ -47,7 +48,7 @@ config("audio_effect_integration_config") {
   include_dirs = [ "../../../interfaces/inner_api/native/audiocommon/include" ]
 }
 
-ohos_shared_library("audio_effect") {
+audio_ohos_library("audio_effect") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -95,10 +96,12 @@ ohos_shared_library("audio_effect") {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
 
-  version_script = "../../../audio_framework.versionscript"
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
+  version_script = "libaudio_effect.versionscript"
 }
 
 ohos_static_library("audio_effect_integration") {

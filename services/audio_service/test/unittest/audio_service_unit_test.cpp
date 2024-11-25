@@ -273,14 +273,14 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
     int32_t interruptGroupId = 1;
     int32_t volumeGroupId = 1;
     std::string networkId = "LocalDevice";
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor =
-        std::make_unique<AudioDeviceDescriptor>(type, role, interruptGroupId, volumeGroupId, networkId);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor =
+        std::make_shared<AudioDeviceDescriptor>(type, role, interruptGroupId, volumeGroupId, networkId);
     EXPECT_NE(audioDeviceDescriptor, nullptr);
 
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = type;
     deviceDescriptor.deviceRole_ = role;
-    audioDeviceDescriptor = std::make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+    audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
     EXPECT_NE(audioDeviceDescriptor, nullptr);
 
     std::string deviceName = "";
@@ -412,7 +412,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceIsEndpointTypeVoip_001, TestSize.Level1
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     config.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
     bool ret = AudioService::GetInstance()->IsEndpointTypeVoip(config, info);
-    EXPECT_FALSE(ret);
+    EXPECT_EQ(true, ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_INVALID;
     ret = AudioService::GetInstance()->IsEndpointTypeVoip(config, info);

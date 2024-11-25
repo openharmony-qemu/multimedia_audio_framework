@@ -32,6 +32,7 @@
 #include "audio_utils.h"
 #include "i_audio_renderer_sink.h"
 #include "policy_handler.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -83,7 +84,6 @@ PaRendererStreamImpl::~PaRendererStreamImpl()
             pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
             pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
             pa_stream_set_started_callback(paStream_, nullptr, nullptr);
-
             pa_stream_disconnect(paStream_);
         }
         pa_stream_unref(paStream_);
@@ -95,9 +95,7 @@ int32_t PaRendererStreamImpl::InitParams()
 {
     PaLockGuard lock(mainloop_);
     rendererStreamInstanceMap_.Insert(this, weak_from_this());
-    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
-        return ERR_ILLEGAL_STATE;
-    }
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) { return ERR_ILLEGAL_STATE; }
 
     sinkInputIndex_ = pa_stream_get_index(paStream_);
     pa_stream_set_moved_callback(paStream_, PAStreamMovedCb,
@@ -144,6 +142,8 @@ int32_t PaRendererStreamImpl::InitParams()
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
 
     lock.Unlock();
+
+    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, NO_FADE);
     // In plan: Get data from xml
     effectSceneName_ = processConfig_.rendererInfo.sceneType;
 
@@ -196,13 +196,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     }
     pa_proplist *propList = pa_proplist_new();
     if (propList != nullptr) {
-        pa_proplist_sets(propList, "fadeoutPause", "1");
-        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
-            nullptr, nullptr);
-        pa_proplist_free(propList);
-        CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
-        pa_operation_unref(updatePropOperation);
-        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
         if (!offloadEnable_) {
             palock.Unlock();
             {
@@ -301,13 +295,7 @@ int32_t PaRendererStreamImpl::Stop()
 
     pa_proplist *propList = pa_proplist_new();
     if (propList != nullptr) {
-        pa_proplist_sets(propList, "fadeoutPause", "1");
-        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
-            nullptr, nullptr);
-        pa_proplist_free(propList);
-        CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOp is nullptr");
-        pa_operation_unref(updatePropOperation);
-        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
         if (!offloadEnable_) {
             palock.Unlock();
             {
@@ -373,6 +361,8 @@ int32_t PaRendererStreamImpl::Release()
         audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
     }
 
+    AudioVolume::GetInstance()->RemoveFadeoutState(sinkInputIndex_);
+
     PaLockGuard lock(mainloop_);
     if (paStream_) {
         pa_stream_set_state_callback(paStream_, nullptr, nullptr);
@@ -385,7 +375,7 @@ int32_t PaRendererStreamImpl::Release()
         pa_stream_disconnect(paStream_);
         releasedFlag_ = true;
     }
-    
+
     return SUCCESS;
 }
 
@@ -438,21 +428,10 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
         preTimeGetPaLatency_ = curTimeGetLatency;
     }
 
-    pa_usec_t paLatency {0};
-    int32_t negative {0};
-    if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0 && negative) {
-        return ERR_OPERATION_FAILED;
-    }
-
     const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
     CHECK_AND_RETURN_RET_LOG(info != nullptr, ERR_OPERATION_FAILED, "pa_stream_get_timing_info failed");
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
     uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
-    uint64_t writeIndex = pa_bytes_to_usec(info->write_index, sampleSpec);
-    if (writeIndex <= paLatency || sampleSpec == nullptr) {
-        AUDIO_ERR_LOG("error data!");
-        return ERR_OPERATION_FAILED;
-    }
     framePosition = readIndex * sampleSpec->rate / AUDIO_US_PER_S;
     latency = info->sink_usec * sampleSpec->rate / AUDIO_US_PER_S;
     lock.Unlock();
@@ -500,28 +479,25 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
         return ERR_ILLEGAL_STATE;
     }
     pa_usec_t paLatency {0};
-    pa_usec_t cacheLatency {0};
-    int32_t negative {0};
 
     UpdatePaTimingInfo();
-
-    if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
-        if (negative) {
-            AUDIO_WARNING_LOG("pa_stream_get_latency failed");
-            return ERR_OPERATION_FAILED;
-        }
-    }
-
+    const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
+    CHECK_AND_RETURN_RET_LOG(info != nullptr, ERR_OPERATION_FAILED, "pa_stream_get_timing_info failed");
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    uint64_t readIndex = pa_bytes_to_usec(info->read_index < 0 ? 0 : info->read_index, sampleSpec);
+    uint64_t writeIndex = pa_bytes_to_usec(info->write_index < 0 ? 0 : info->write_index, sampleSpec);
+    pa_usec_t usec = readIndex >= info->sink_usec ? readIndex - info->sink_usec : 0;
+    paLatency = writeIndex >= usec ? writeIndex - usec : 0;
     lock.Unlock();
 
-    latency = paLatency + cacheLatency;
+    latency = paLatency;
     uint32_t algorithmLatency = GetEffectChainLatency();
     latency += offloadEnable_ ? 0 : algorithmLatency * AUDIO_US_PER_MS;
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     latency += a2dpOffloadLatency * AUDIO_US_PER_MS;
-    AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", cache latency: %{public}"
-        PRIu64 ", algo latency: %{public}u ms, a2dp offload latency: %{public}u ms",
-        latency, paLatency, cacheLatency, algorithmLatency, a2dpOffloadLatency);
+    AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", algo latency: %{public}u ms"
+        ", a2dp offload latency: %{public}u ms, write: %{public}" PRIu64 ", read: %{public}" PRIu64 ", sink:%{public}"
+        PRIu64, latency, paLatency, algorithmLatency, a2dpOffloadLatency, writeIndex, readIndex, info->sink_usec);
 
     preLatency_ = latency;
     preTimeGetLatency_ = curTimeGetLatency;
@@ -762,12 +738,13 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
 
     // get stream informations.
     uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
+    uint32_t streamIndex = pa_stream_get_index(stream); // get pa_stream index
 
     // Return 1 if the sink or source this stream is connected to has been suspended.
     // This will return 0 if not, and a negative value on error.
     int res = pa_stream_is_suspended(stream);
-    AUDIO_DEBUG_LOG("PAstream moved to index:[%{public}d] suspended:[%{public}d]",
-        deviceIndex, res);
+    AUDIO_WARNING_LOG("PAstream:[%{public}d] moved to index:[%{public}d] suspended:[%{public}d]",
+        streamIndex, deviceIndex, res);
 }
 
 void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
@@ -1278,11 +1255,6 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     audioEffectChainManager->StreamVolumeUpdate(std::to_string(streamIndex_), clientVolume);
 
-    if (clientVolume == MIN_VOLUME) {
-        pa_proplist_sets(propList, "clientVolumeIsZero", "true");
-    } else {
-        pa_proplist_sets(propList, "clientVolumeIsZero", "false");
-    }
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);

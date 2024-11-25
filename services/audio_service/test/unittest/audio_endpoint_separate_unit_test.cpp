@@ -26,7 +26,7 @@
 #include "fast_audio_renderer_sink.h"
 #include "audio_process_in_server.h"
 #include "fast_audio_renderer_sink.h"
-#include "audio_endpoint_separate.cpp"
+#include "audio_endpoint.h"
 #include "audio_service.h"
 
 using namespace testing::ext;
@@ -233,9 +233,6 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_008, TestSize.Level1
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
     ptr->isInited_ = true;
-    ptr->~AudioEndpointSeparate();
-    ptr->isInited_ = false;
-    ptr->~AudioEndpointSeparate();
 }
 
 /**

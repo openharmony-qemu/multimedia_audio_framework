@@ -1132,6 +1132,12 @@ void pa__done(pa_module*m)
         pa_thread_free(u->thread);
     }
 
+    if (u->sinkAdapter) {
+        u->sinkAdapter->RendererSinkStop(u->sinkAdapter);
+        u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter);
+        UnLoadSinkAdapter(u->sinkAdapter);
+    }
+
     pa_thread_mq_done(&u->thread_mq);
 
     if (u->sink) {

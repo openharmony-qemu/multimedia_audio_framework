@@ -24,6 +24,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+inline bool IsUsb(DeviceType type)
+{
+    return type == DEVICE_TYPE_USB_HEADSET || type == DEVICE_TYPE_USB_ARM_HEADSET;
+}
+
 /**
  * @brief The AudioDeviceDescriptor provides
  *         different sets of audio devices and their roles
@@ -71,7 +77,7 @@ public:
 
     AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
 
-    AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     virtual ~AudioDeviceDescriptor();
 
@@ -94,7 +100,7 @@ public:
 
     void Unmarshalling(Parcel &parcel);
 
-    static sptr<AudioDeviceDescriptor> UnmarshallingPtr(Parcel &parcel);
+    static std::shared_ptr<AudioDeviceDescriptor> UnmarshallingPtr(Parcel &parcel);
 
     void UnmarshallingToDeviceDescriptor(Parcel &parcel);
 

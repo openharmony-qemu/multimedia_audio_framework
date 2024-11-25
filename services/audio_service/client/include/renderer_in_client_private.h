@@ -39,6 +39,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace{
+const int32_t LOG_COUNT_LIMIT = 500;
+} // namespace
 class SpatializationStateChangeCallbackImpl;
 
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
@@ -180,8 +183,6 @@ public:
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
-    bool RestoreAudioStream(bool needStoreState = true) override;
-
     void GetStreamSwitchInfo(SwitchInfo &info);
 
     bool GetOffloadEnable() override;
@@ -190,6 +191,8 @@ public:
 
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
+
+    bool RestoreAudioStream(bool needStoreState = true) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -220,6 +223,7 @@ private:
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
+    void DfxWriteInterval();
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -370,9 +374,14 @@ private:
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
-
+    int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
+
+    float lastSpeed_ = 0.0;
+    uint64_t lastLatency_ = 0;
+    uint64_t lastLatencyPosition_ = 0;
+    uint64_t lastReadIdx_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -398,6 +407,8 @@ private:
 
     std::mutex setPreferredFrameSizeMutex_;
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
+
+    int32_t sleepCount_ = LOG_COUNT_LIMIT;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

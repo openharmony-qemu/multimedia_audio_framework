@@ -25,7 +25,7 @@ class IDeviceStatusObserver {
 public:
     virtual void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo) = 0;
+        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE) = 0;
     virtual void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status) = 0;
     virtual void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) = 0;
     virtual void OnDeviceConfigurationChanged(DeviceType deviceType,

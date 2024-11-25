@@ -39,8 +39,10 @@ static constexpr int32_t INDEX_POSTPROCESS = 4;
 static constexpr int32_t INDEX_EXCEPTION = 5;
 static constexpr int32_t NODE_SIZE = 6;
 static constexpr int32_t MODULE_SIZE = 5;
+#ifdef USE_CONFIG_POLICY
 static constexpr uint32_t XML_PARSE_NOERROR = 1 << 5;
 static constexpr uint32_t XML_PARSE_NOWARNING = 1 << 6;
+#endif
 
 AudioEffectConfigParser::AudioEffectConfigParser()
 {

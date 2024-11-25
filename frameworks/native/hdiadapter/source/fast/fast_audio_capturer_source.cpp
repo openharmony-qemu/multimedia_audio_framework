@@ -516,6 +516,19 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
             return SUCCESS;
         }
     }
+#ifdef FEATURE_POWER_MANAGER
+    if (runningLockManager_ != nullptr) {
+        AUDIO_INFO_LOG("keepRunningLock unLock");
+        runningLockManager_->UnLock();
+    } else {
+        AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
+    }
+#endif
+    AUDIO_ERR_LOG("Stop hdi fast capturer when GetMmapPosition failed");
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE,
+        "audioCapturer_ is nullptr when trying to stop");
+    int32_t ret = audioCapture_->Stop(audioCapture_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop failed! ret: %{public}d.", ret);
     return ERROR;
 }
 
@@ -525,8 +538,10 @@ int32_t FastAudioCapturerSourceInner::Start(void)
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (runningLockManager_ == nullptr) {
+        WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:Start");
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastCapturer",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        guard.CheckCurrTimeout();
         if (keepRunningLock) {
             runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
         }
@@ -544,6 +559,7 @@ int32_t FastAudioCapturerSourceInner::Start(void)
             audioCapturerSourceCallback_->OnCapturerState(true);
         }
 
+        CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
         int32_t ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
             if (audioCapturerSourceCallback_ != nullptr) {

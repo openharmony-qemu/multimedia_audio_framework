@@ -34,7 +34,7 @@ ohos_fuzztest("AudioPolicyServerConfigFuzzTest") {
 
   sources = [ "audio_policy_server_config_fuzzer.cpp" ]
 
-  deps = [ "../../../services/audio_policy:audio_policy_service" ]
+  deps = [ "../../../services/audio_policy:audio_policy_service_static" ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:extension_manager",

@@ -97,6 +97,11 @@ struct InterruptEvent {
      * but in share mode, only provide a hint for application to decide.
      */
     InterruptHint hintType;
+    /**
+     * Should callback to app. Default true;
+     * If false, interruptEvent should not callback to app.
+     */
+    bool callbackToApp = true;
 };
 
 // Used internally only by AudioFramework
@@ -105,6 +110,7 @@ struct InterruptEventInternal {
     InterruptForceType forceType;
     InterruptHint hintType;
     float duckVolume;
+    bool callbackToApp = true;
 };
 
 enum AudioInterruptChangeType {
@@ -138,9 +144,9 @@ struct AudioFocusConcurrency {
 };
 
 struct AudioFocusType {
-    AudioStreamType streamType;
-    SourceType sourceType;
-    bool isPlay;
+    AudioStreamType streamType = STREAM_DEFAULT;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    bool isPlay = true;
     bool operator==(const AudioFocusType &value) const
     {
         return streamType == value.streamType && sourceType == value.sourceType && isPlay == value.isPlay;
@@ -159,10 +165,10 @@ struct AudioFocusType {
 
 class AudioInterrupt {
 public:
-    StreamUsage streamUsage;
-    ContentType contentType;
+    StreamUsage streamUsage = STREAM_USAGE_INVALID;
+    ContentType contentType = CONTENT_TYPE_UNKNOWN;
     AudioFocusType audioFocusType;
-    uint32_t sessionId;
+    uint32_t sessionId = 0;
     bool pauseWhenDucked = false;
     int32_t pid { -1 };
     InterruptMode mode { SHARE_MODE };

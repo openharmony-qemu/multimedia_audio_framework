@@ -168,8 +168,12 @@ void AudioSafeVolumeNotificationImpl::RefreshResConfig()
     if (status != U_ZERO_ERROR) {
         AUDIO_INFO_LOG("forLanguageTag failed, errCode:%{public}d", status);
     }
-    resConfig_->SetLocaleInfo(locale.getLanguage(), locale.getScript(), locale.getCountry());
-    resourceManager_->UpdateResConfig(*resConfig_);
+    if (resConfig_) {
+        resConfig_->SetLocaleInfo(locale.getLanguage(), locale.getScript(), locale.getCountry());
+    }
+    if (resourceManager_) {
+        resourceManager_->UpdateResConfig(*resConfig_);
+    }
 }
 
 void AudioSafeVolumeNotificationImpl::Init()
@@ -214,6 +218,7 @@ bool AudioSafeVolumeNotificationImpl::GetPixelMap()
     std::unique_ptr<Media::ImageSource> imageSource =
         Media::ImageSource::CreateImageSource(resourceData.get(), resourceDataLength, opts, errorCode);
     Media::DecodeOptions decodeOpts;
+    decodeOpts.desiredSize = {ICON_WIDTH, ICON_HEIGHT};
     decodeOpts.desiredPixelFormat = Media::PixelFormat::BGRA_8888;
     if (imageSource) {
         AUDIO_INFO_LOG("GetPixelMap SUCCESS.");
@@ -225,6 +230,21 @@ bool AudioSafeVolumeNotificationImpl::GetPixelMap()
         return false;
     }
     return true;
+}
+
+static void SetBasicOption(Notification::NotificationRequest &request)
+{
+    request.SetCreatorUid(SAVE_VOLUME_SYS_ABILITY_ID);
+    Notification::NotificationBundleOption bundle(SAVE_VOLUME_SYS_ABILITY_NAME, SAVE_VOLUME_SYS_ABILITY_ID);
+    Notification::NotificationHelper::SetNotificationSlotFlagsAsBundle(bundle, NOTIFICATION_BANNER_FLAG);
+    int32_t userId;
+    AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(SAVE_VOLUME_SYS_ABILITY_ID, userId);
+    request.SetCreatorUserId(userId);
+    request.SetCreatorPid(getpid());
+    request.SetAutoDeletedTime(OHOS::Notification::NotificationConstant::INVALID_AUTO_DELETE_TIME);
+    request.SetTapDismissed(false);
+    request.SetSlotType(OHOS::Notification::NotificationConstant::SlotType::SOCIAL_COMMUNICATION);
+    request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG);
 }
 
 void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t notificationId)
@@ -250,22 +270,11 @@ void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t noti
         AUDIO_ERR_LOG("get notification content nullptr");
         return;
     }
-    int32_t AUDIO_UID = IPCSkeleton::GetCallingUid();
+
     Notification::NotificationRequest request;
-    request.SetCreatorUid(AUDIO_UID);
-    request.SetCreatorPid(getpid());
-
-    int32_t userId;
-    AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(AUDIO_UID, userId);
-
-    request.SetCreatorUserId(userId);
-    request.SetAutoDeletedTime(OHOS::Notification::NotificationConstant::INVALID_AUTO_DELETE_TIME);
-    request.SetTapDismissed(false);
-    request.SetSlotType(OHOS::Notification::NotificationConstant::SlotType::SOCIAL_COMMUNICATION);
-    request.SetNotificationId(notificationId);
-    request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG);
+    SetBasicOption(request);
     request.SetContent(content);
-
+    request.SetNotificationId(notificationId);
     GetPixelMap();
     if (iconPixelMap_ != nullptr) {
         request.SetLittleIcon(iconPixelMap_);

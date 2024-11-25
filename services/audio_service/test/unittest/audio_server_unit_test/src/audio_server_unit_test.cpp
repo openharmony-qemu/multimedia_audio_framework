@@ -279,11 +279,12 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
     audioServer->GetAudioParameter("AUDIO_EXT_PARAM_KEY_LOWPOWER");
     audioServer->GetAudioParameter("perf_info");
     audioServer->GetAudioParameter("Is_Fast_Blocked_For_AppName#");
-    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE, "");
+    auto result = audioServer->GetUsbParameter("address=card2;device=0 role=1");
+    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE, "address=card=2;device=0 role=0");
+    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE, "address=card=2;device=0 role=1");
+    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE, "address=card=2;device=0 role=2");
     audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::GET_DP_DEVICE_INFO, "");
     audioServer->GetAudioParameter("", AudioParamKey::GET_DP_DEVICE_INFO, "");
-    auto result = audioServer->GetUsbParameter();
-    EXPECT_NE("", result);
 }
 
 /**

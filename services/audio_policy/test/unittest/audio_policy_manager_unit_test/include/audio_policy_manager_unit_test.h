@@ -55,10 +55,10 @@ public:
 
 class ConcreteAudioDeviceRefiner : public AudioDeviceRefiner {
 public:
-    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType)
         override { return 0; }
-    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType)
         override {return 0;}
 };

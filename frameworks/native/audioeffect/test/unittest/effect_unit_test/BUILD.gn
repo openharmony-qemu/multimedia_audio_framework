@@ -13,6 +13,7 @@
 
 import("//build/test.gni")
 import("../../../../../../config.gni")
+import("../../../../../../sensor.gni")
 
 module_output_path = "multimedia_audio_framework/audio_effect_chain_manager"
 
@@ -41,7 +42,7 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
   ]
 
   deps = [
-    "../../../../audioeffect:audio_effect",
+    "../../../../audioeffect:audio_effect_static",
     "../../../../audioutils:audio_utils",
   ]
 
@@ -83,6 +84,11 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (sensor_enable == true) {
+    cflags += [ "-DSENSOR_ENABLE" ]
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
