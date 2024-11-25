@@ -893,7 +893,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusByUid(const int32_t uid, 
     return GetStreamInFocusInternal(uid, zoneId);
 }
 
-AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId) 
+AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId)
 {
     AUDIO_INFO_LOG("GetStreamInFocusInternal, uid:%{public}d", uid);
     AudioStreamType streamInFocus = STREAM_DEFAULT;
