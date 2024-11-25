@@ -41,6 +41,7 @@ public:
     static bool IsVolumeValid(float volFloat); // 0.0 <= volFloat <= 1.0
     static bool IsVolumeValid(int32_t volInt); // 0 <= volInt <= 65536
     static bool IsVolumeValid(ChannelVolumes vols);
+    static size_t GetByteSize(AudioSampleFormat format);
     static int32_t GetInt32Vol(float volFloat);
     static ChannelVolumes GetChannelVolumes(AudioChannel channel, int32_t volStart, int32_t volEnd);
     static ChannelVolumes GetChannelVolumes(AudioChannel channel, float volStart, float volEnd);
