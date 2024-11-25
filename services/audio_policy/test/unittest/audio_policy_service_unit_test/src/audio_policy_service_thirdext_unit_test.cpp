@@ -376,7 +376,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetDefaultOutputDevice_001, TestSize.
         AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
             deviceType, sessionID, streamUsage, isRunning);
     EXPECT_EQ(SUCCESS, result);
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.hasEarpiece_ = true;
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
     result =
         AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
             deviceType, sessionID, streamUsage, isRunning);

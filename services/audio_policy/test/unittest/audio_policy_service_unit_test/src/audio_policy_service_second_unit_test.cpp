@@ -1054,24 +1054,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateStreamMicRefInfo_001, TestSize.Lev
     EXPECT_NE(moduleInfo.micRefChannels, "999");
 }
 
-#ifdef BLUE_YELLOW_DIFF
-/**
- * @tc.name  : Test RectifyModuleInfo.
- * @tc.number: RectifyModuleInfo_001
- * @tc.desc  : Test RectifyModuleInfo interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, RectifyModuleInfo_001, TestSize.Level1)
-{
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    AudioModuleInfo moduleInfo;
-    std::list<AudioModuleInfo> moduleInfoList;
-    SourceInfo targetInfo;
-
-    server->audioPolicyService_.RectifyModuleInfo(moduleInfo, moduleInfoList, targetInfo);
-    EXPECT_EQ(moduleInfo.sourceType, "0");
-}
-#endif
-
 /**
  * @tc.name  : Test TriggerAvailableDeviceChangedCallback.
  * @tc.number: TriggerAvailableDeviceChangedCallback_001
@@ -1191,10 +1173,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.L
 HWTEST_F(AudioPolicyServiceExtUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
-        = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    server->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
-
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();

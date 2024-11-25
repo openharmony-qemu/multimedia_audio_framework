@@ -1364,20 +1364,20 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetAudioScene_001, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     bool hasSystemPermission = true;
     AudioScene ret = AUDIO_SCENE_INVALID;
-    GetServerPtr()->audioPolicyService_.audioScene_ = AUDIO_SCENE_RINGING;
+    GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = AUDIO_SCENE_RINGING;
     ret = GetServerPtr()->audioPolicyService_.GetAudioScene(hasSystemPermission);
     EXPECT_EQ(AUDIO_SCENE_RINGING, ret);
 
     hasSystemPermission = false;
-    GetServerPtr()->audioPolicyService_.audioScene_ = AUDIO_SCENE_CALL_START;
+    GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = AUDIO_SCENE_CALL_START;
     ret = GetServerPtr()->audioPolicyService_.GetAudioScene(hasSystemPermission);
     EXPECT_EQ(AUDIO_SCENE_DEFAULT, ret);
 
-    GetServerPtr()->audioPolicyService_.audioScene_ = AUDIO_SCENE_CALL_END;
+    GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = AUDIO_SCENE_CALL_END;
     ret = GetServerPtr()->audioPolicyService_.GetAudioScene(hasSystemPermission);
     EXPECT_EQ(AUDIO_SCENE_DEFAULT, ret);
 
-    GetServerPtr()->audioPolicyService_.audioScene_ = AUDIO_SCENE_PHONE_CHAT;
+    GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CHAT;
     ret = GetServerPtr()->audioPolicyService_.GetAudioScene(hasSystemPermission);
     EXPECT_EQ(AUDIO_SCENE_PHONE_CHAT, ret);
 }
@@ -2041,7 +2041,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetCallStatusDump_001, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     std::string dumpString = "";
     for (const auto& audioScene : audioScenes) {
-        GetServerPtr()->audioPolicyService_.audioScene_ = audioScene;
+        GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = audioScene;
         GetServerPtr()->audioPolicyService_.GetCallStatusDump(dumpString);
     }
 }

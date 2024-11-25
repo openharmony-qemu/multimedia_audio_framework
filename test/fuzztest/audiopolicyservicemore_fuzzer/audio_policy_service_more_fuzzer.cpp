@@ -389,7 +389,7 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
     audioRendererChangeInfo.rendererInfo = rendererInfo;
-    GetServerPtr()->audioPolicyService_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     GetServerPtr()->audioPolicyService_.streamCollector_.audioRendererChangeInfos_.
         push_back(make_shared<AudioRendererChangeInfo>(audioRendererChangeInfo));
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->WaitForConnectionCompleted();
