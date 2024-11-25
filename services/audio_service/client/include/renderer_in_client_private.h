@@ -39,7 +39,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-namespace{
+namespace {
 const int32_t LOG_COUNT_LIMIT = 500;
 } // namespace
 class SpatializationStateChangeCallbackImpl;
