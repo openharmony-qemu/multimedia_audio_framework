@@ -420,7 +420,7 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.RestoreSession(SESSIONID_32, true);
 }
 
-void AudioPolicyServiceTestIV_last()
+void AudioPolicyServiceTestIVLast()
 {
     vector<SinkInput> sinkInputs;
     std::shared_ptr<AudioDeviceDescriptor> dis = std::make_shared<AudioDeviceDescriptor>();
@@ -476,7 +476,7 @@ void AudioPolicyServiceTestIV(const uint8_t* rawData, size_t size)
         desc);
     GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDeviceByFilterInner(audioRendererFilter,
         desc);
-    AudioPolicyServiceTestIV_last();
+    AudioPolicyServiceTestIVLast();
 }
 
 } // namespace AudioStandard
