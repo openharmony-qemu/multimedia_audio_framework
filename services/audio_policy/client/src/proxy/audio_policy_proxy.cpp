@@ -248,12 +248,12 @@ bool AudioPolicyProxy::IsStreamActive(AudioVolumeType volumeType)
     return reply.ReadBool();
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag deviceFlag)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag deviceFlag)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
@@ -270,12 +270,12 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
     return deviceInfo;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevicesInner(DeviceFlag deviceFlag)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevicesInner(DeviceFlag deviceFlag)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
@@ -292,13 +292,13 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevicesInner(Devic
     return deviceInfo;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDeviceDescriptors(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
@@ -318,13 +318,13 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDev
     return deviceInfo;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDeviceDescriptors(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDeviceDescriptors(
     AudioCapturerInfo &captureInfo)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
@@ -344,13 +344,13 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDevi
     return deviceInfo;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetOutputDevice(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
@@ -370,13 +370,13 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetOutputDevice(
     return deviceInfo;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetInputDevice(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
@@ -509,7 +509,7 @@ DeviceType AudioPolicyProxy::GetActiveInputDevice()
 }
 
 int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -553,7 +553,7 @@ std::string AudioPolicyProxy::GetSelectedDeviceInfo(int32_t uid, int32_t pid, Au
 }
 
 int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -579,7 +579,8 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
+int32_t AudioPolicyProxy::ConfigDistributedRoutingRole(
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -690,7 +691,9 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
     data.WriteBool(isUpdatedAudioStrategy);
-    AudioInterrupt::Marshalling(data, audioInterrupt);
+    ret = AudioInterrupt::Marshalling(data, audioInterrupt);
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
+    
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate interrupt failed, error: %{public}d", error);
@@ -707,7 +710,9 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
-    AudioInterrupt::Marshalling(data, audioInterrupt);
+    ret = AudioInterrupt::Marshalling(data, audioInterrupt);
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
+
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
@@ -725,7 +730,8 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioI
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(clientId);
-    AudioInterrupt::Marshalling(data, audioInterrupt);
+    ret = AudioInterrupt::Marshalling(data, audioInterrupt);
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REQUEST_AUDIO_FOCUS), data, reply, option);
@@ -743,7 +749,8 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(clientId);
-    AudioInterrupt::Marshalling(data, audioInterrupt);
+    ret = AudioInterrupt::Marshalling(data, audioInterrupt);
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS), data, reply, option);
@@ -1339,7 +1346,7 @@ int32_t AudioPolicyProxy::SetCaptureSilentState(bool state)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
+int32_t AudioPolicyProxy::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1358,12 +1365,12 @@ int32_t AudioPolicyProxy::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDe
     return reply.ReadInt32();
 }
 
-std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailableDevices(AudioDeviceUsage usage)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailableDevices(AudioDeviceUsage usage)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()),
         audioDeviceDescriptors, "WriteInterfaceToken failed");
@@ -1377,8 +1384,8 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailab
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        std::unique_ptr<AudioDeviceDescriptor> desc =
-            std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply));
+        std::shared_ptr<AudioDeviceDescriptor> desc =
+            std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply));
         audioDeviceDescriptors.push_back(move(desc));
     }
     return audioDeviceDescriptors;
@@ -1432,7 +1439,7 @@ int32_t AudioPolicyProxy::SetSpatializationEnabled(const bool enable)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+int32_t AudioPolicyProxy::SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
     const bool enable)
 {
     MessageParcel data;
@@ -1502,7 +1509,7 @@ int32_t AudioPolicyProxy::SetHeadTrackingEnabled(const bool enable)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+int32_t AudioPolicyProxy::SetHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
     const bool enable)
 {
     MessageParcel data;
@@ -1725,12 +1732,12 @@ int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, boo
     return reply.ReadInt32();
 }
 
-std::unique_ptr<AudioDeviceDescriptor> AudioPolicyProxy::GetActiveBluetoothDevice()
+std::shared_ptr<AudioDeviceDescriptor> AudioPolicyProxy::GetActiveBluetoothDevice()
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()),
         audioDeviceDescriptor, "WriteInterfaceToken failed");
@@ -1740,8 +1747,8 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyProxy::GetActiveBluetoothDevic
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, audioDeviceDescriptor,
         "GetActiveBluetoothDevice failed, error: %d", error);
 
-    std::unique_ptr<AudioDeviceDescriptor> desc =
-        std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply));
+    std::shared_ptr<AudioDeviceDescriptor> desc =
+        std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     return desc;
 }
 

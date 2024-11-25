@@ -316,7 +316,7 @@ public:
      * @return The sampling rate for output.
      * @since 11
      */
-    int32_t GetHardwareOutputSamplingRate(sptr<AudioDeviceDescriptor> &desc);
+    int32_t GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
 private:
     std::mutex rendererStateChangeCallbacksMutex_;

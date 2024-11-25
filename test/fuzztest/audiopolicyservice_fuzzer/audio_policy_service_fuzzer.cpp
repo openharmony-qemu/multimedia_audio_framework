@@ -176,13 +176,13 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
     uint32_t sessionId = static_cast<uint32_t>(num);
     // the max value of AudioPipeType is PIPE_TYPE_DIRECT_VOIP.
     AudioPipeType pipeType = static_cast<AudioPipeType>(num % (PIPE_TYPE_DIRECT_VOIP + 1));
-    GetServerPtr()->audioPolicyService_.MoveToNewPipeInner(sessionId, pipeType);
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.MoveToNewPipeInner(sessionId, pipeType);
 
-    GetServerPtr()->audioPolicyService_.LoadMchModule();
-    GetServerPtr()->audioPolicyService_.ConstructMchAudioModuleInfo(deviceType);
-    GetServerPtr()->audioPolicyService_.LoadOffloadModule();
-    GetServerPtr()->audioPolicyService_.UnloadOffloadModule();
-    GetServerPtr()->audioPolicyService_.ConstructOffloadAudioModuleInfo(deviceType);
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.LoadMchModule();
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.ConstructMchAudioModuleInfo(deviceType);
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.LoadOffloadModule();
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.UnloadOffloadModule();
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.ConstructOffloadAudioModuleInfo(deviceType);
 }
 
 void AudioPolicyServiceAccountTest(const uint8_t *rawData, size_t size)
@@ -206,9 +206,8 @@ void AudioPolicyServiceSafeVolumeTest(const uint8_t *rawData, size_t size)
     rawData = rawData + OFFSET;
     size = size - OFFSET;
 
-    GetServerPtr()->audioPolicyService_.SetDeviceSafeVolumeStatus();
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
     GetServerPtr()->audioPolicyService_.DisableSafeMediaVolume();
-    GetServerPtr()->audioPolicyService_.SafeVolumeDialogDisapper();
 }
 
 void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
@@ -231,29 +230,30 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     StreamUsage fuzzStreamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
 
     AudioDeviceDescriptor fuzzAudioDeviceDescriptor;
-    sptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = new AudioDeviceDescriptor();
-    std::vector<sptr<AudioDeviceDescriptor>> fuzzAudioDeviceDescriptorSptrVector;
+    std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> fuzzAudioDeviceDescriptorSptrVector;
     fuzzAudioDeviceDescriptorSptrVector.push_back(fuzzAudioDeviceDescriptorSptr);
     sptr<AudioRendererFilter> fuzzAudioRendererFilter = new AudioRendererFilter();
 
-    GetServerPtr()->audioPolicyService_.isOffloadAvailable_ = true; // set offload support on for covery
+    // set offload support on for covery
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.isOffloadAvailable_ = true;
 
     GetServerPtr()->audioPolicyService_.HandleRecoveryPreferredDevices(fuzzInt32One, fuzzInt32Two, fuzzInt32Three);
     GetServerPtr()->audioPolicyService_.GetVolumeGroupType(fuzzDeviceType);
     GetServerPtr()->audioPolicyService_.GetSystemVolumeDb(fuzzAudioStreamType);
     GetServerPtr()->audioPolicyService_.SetLowPowerVolume(fuzzInt32One, fuzzFloat);
-    GetServerPtr()->audioPolicyService_.SetOffloadMode();
-    GetServerPtr()->audioPolicyService_.ResetOffloadMode(fuzzInt32One);
-    GetServerPtr()->audioPolicyService_.OffloadStreamReleaseCheck(fuzzInt32One);
-    GetServerPtr()->audioPolicyService_.RemoteOffloadStreamRelease(fuzzInt32One);
-    GetServerPtr()->audioPolicyService_.CheckActiveOutputDeviceSupportOffload();
-    GetServerPtr()->audioPolicyService_.GetOffloadAvailableFromXml();
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.SetOffloadMode();
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.ResetOffloadMode(fuzzInt32One);
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.OffloadStreamReleaseCheck(fuzzInt32One);
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.RemoteOffloadStreamRelease(fuzzInt32One);
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.CheckActiveOutputDeviceSupportOffload();
+    GetServerPtr()->audioPolicyService_.audioOffloadStream_.GetOffloadAvailableFromXml();
     GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(fuzzInt32One, fuzzBool);
     GetServerPtr()->audioPolicyService_.NotifyRemoteRenderState(fuzzNetworkId, fuzzString, fuzzString);
     GetServerPtr()->audioPolicyService_.IsArmUsbDevice(fuzzAudioDeviceDescriptor);
     GetServerPtr()->audioPolicyService_.IsDeviceConnected(fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.DeviceParamsCheck(fuzzDeviceRole, fuzzAudioDeviceDescriptorSptrVector);
-    GetServerPtr()->audioPolicyService_.NotifyUserSelectionEventToBt(fuzzAudioDeviceDescriptorSptr);
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.NotifyUserSelectionEventToBt(fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.SetRenderDeviceForUsage(fuzzStreamUsage, fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.SelectOutputDevice(
         fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptrVector);
@@ -261,7 +261,6 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
         fuzzAudioDeviceDescriptorSptrVector, fuzzStreamUsage);
     GetServerPtr()->audioPolicyService_.SelectFastOutputDevice(
         fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.FilterSinkInputs(fuzzInt32One);
     GetServerPtr()->audioPolicyService_.FilterSourceOutputs(fuzzInt32One);
     GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzAudioDeviceDescriptor, fuzzBool);
 }
@@ -318,7 +317,7 @@ void AudioDeviceConnectTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-extern "C" int LLVMFuzzerInitialize(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::AudioStandard::AudioFuzzTestGetPermission();
     return 0;

@@ -43,6 +43,8 @@ enum AudioEffectChainSetParamIndex {
     SPATIALIZATION_SCENE_TYPE_INDEX = 7,
     SPATIALIZATION_ENABLED_INDEX = 8,
     STREAM_USAGE_INDEX = 9,
+    FOLD_STATE_INDEX = 10,
+    MAX_PARAM_INDEX,
 };
 
 struct AudioEffectProcInfo {
@@ -60,6 +62,7 @@ public:
     ~AudioEffectChain();
     void SetEffectMode(const std::string &mode);
     void SetExtraSceneType(const std::string &extraSceneType);
+    void SetFoldState(const std::string &foldState);
     void SetEffectCurrSceneType(AudioEffectScene currSceneType);
     void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     void SetSpatializationEnabled(bool enabled);
@@ -99,12 +102,14 @@ private:
     std::string effectMode_ = "";
     uint32_t latency_ = 0;
     uint32_t extraEffectChainType_ = 0;
+    uint32_t foldState_ = 0;
     StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
     AudioEffectScene currSceneType_ = SCENE_MUSIC;
     std::vector<AudioEffectHandle> standByEffectHandles_;
     std::vector<std::string> effectNames_;
     std::vector<AudioEffectLibrary *> libHandles_;
     AudioEffectConfig ioBufferConfig_ = {};
+    AudioEffectConfig preIoBufferConfig_ = {};
     AudioBuffer audioBufIn_ = {};
     AudioBuffer audioBufOut_ = {};
     FILE *dumpFileInput_ = nullptr;

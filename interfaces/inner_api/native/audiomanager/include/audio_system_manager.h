@@ -35,12 +35,12 @@ namespace OHOS {
 namespace AudioStandard {
 
 struct AudioSpatialEnabledStateForDevice {
-    sptr<AudioDeviceDescriptor> deviceDescriptor;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
     bool enabled;
 };
 
 struct DistributedRoutingInfo {
-    sptr<AudioDeviceDescriptor> descriptor;
+    std::shared_ptr<AudioDeviceDescriptor> descriptor;
     CastType type;
 };
 
@@ -117,7 +117,7 @@ public:
 struct DeviceChangeAction {
     DeviceChangeType type;
     DeviceFlag flag;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
 };
 
 /**
@@ -127,7 +127,7 @@ struct DeviceChangeAction {
  */
 struct MicrophoneBlockedInfo {
     DeviceBlockStatus blockStatus;
-    std::vector<sptr<AudioDeviceDescriptor>> devices;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
 };
 
 /**
@@ -354,7 +354,8 @@ public:
      * For details, refer AudioDeviceDescriptor in audio_system_manager.h
      * @since 9
      */
-    virtual void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type) = 0;
+    virtual void OnDistributedRoutingRoleChange(
+        std::shared_ptr<AudioDeviceDescriptor>descriptor, const CastType type) = 0;
     std::mutex cbMutex_;
 };
 
@@ -370,7 +371,8 @@ public:
      * For details, refer AudioDeviceDescriptor in audio_system_manager.h
      * @since 9
      */
-    void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type) override;
+    void OnDistributedRoutingRoleChange(
+        std::shared_ptr<AudioDeviceDescriptor>descriptor, const CastType type) override;
     void SaveCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
     void RemoveCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
 private:
@@ -383,9 +385,9 @@ class AudioDeviceRefiner {
 public:
     virtual ~AudioDeviceRefiner() = default;
 
-    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) = 0;
-    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
 };
 
@@ -545,7 +547,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectOutputDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
 
     /**
      * @brief Select input device.
@@ -555,7 +557,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t SelectInputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectInputDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
 
     /**
      * @brief get selected device info.
@@ -578,7 +580,7 @@ public:
      * @since 9
      */
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
 
     /**
      * @brief Select the audio input device according to the filter conditions.
@@ -590,7 +592,7 @@ public:
      * @since 9
      */
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
 
     /**
      * @brief Get the list of audio devices.
@@ -600,7 +602,7 @@ public:
      * @return Returns the device list is obtained.
      * @since 9
      */
-    std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     /**
      * @brief Get the list of audio devices (inner).
@@ -609,7 +611,7 @@ public:
      * @return Returns the device list is obtained.
      * @since 12
      */
-    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
 
     /**
      * @brief Get the audio output device according to the filter conditions.
@@ -618,7 +620,7 @@ public:
      * @return Returns the device list is obtained.
      * @since 12
      */
-    std::vector<sptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
     /**
      * @brief Get the audio input device according to the filter conditions.
@@ -627,7 +629,7 @@ public:
      * @return Returns the device list is obtained.
      * @since 12
      */
-    std::vector<sptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
 
     /**
      * @brief Get audio parameter.
@@ -1116,7 +1118,7 @@ public:
      * @return Returns AudioDeviceDescriptor
      * @since 8
      */
-    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
 
     /**
      * @brief Get preferred input device deviceDescriptors
@@ -1203,7 +1205,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 11
      */
-    int32_t ConfigDistributedRoutingRole(AudioDeviceDescriptor *desciptor, CastType type);
+    int32_t ConfigDistributedRoutingRole(std::shared_ptr<AudioDeviceDescriptor> desciptor, CastType type);
 
     /**
      * @brief Registers the descriptor Change callback listener.

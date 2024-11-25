@@ -70,6 +70,7 @@ static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
+static const int32_t WAIT_FOR_NEXT_CB = 5; //ms
 static const int32_t HALF_FACTOR = 2;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
@@ -364,8 +365,17 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
     }
-    if (curStreamParams_.encoding == ENCODING_PCM && bufferDesc.dataLength != 0) {
-        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
+    if (curStreamParams_.encoding == ENCODING_PCM) {
+        if (bufferDesc.dataLength != 0) {
+            result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
+            sleepCount_ = LOG_COUNT_LIMIT;
+        } else {
+            if (sleepCount_++ == LOG_COUNT_LIMIT) {
+                sleepCount_ = 0;
+                AUDIO_WARNING_LOG("OnWriteData Process 1st or 500 times INVALID buffer");
+            }
+            sleep(WAIT_FOR_NEXT_CB);
+        }
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
@@ -583,6 +593,18 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
     Trace::CountVolume(traceTag_, *buffer);
+
+    if (gServerProxy_ == nullptr && getuid() == MEDIA_SERVICE_UID) {
+        uint32_t samplingRate = clientConfig_.streamInfo.samplingRate;
+        uint32_t channels = clientConfig_.streamInfo.channels;
+        uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
+        // calculate wait time by buffer size, 10e6 is converting seconds to microseconds
+        uint32_t waitTimeUs = bufferSize * 10e6 / (samplingRate * channels * samplePerFrame);
+        AUDIO_ERR_LOG("server is died! wait %{public}d us", waitTimeUs);
+        usleep(waitTimeUs);
+        return ERR_WRITE_BUFFER;
+    }
+
     CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
     if (clientBuffer_->GetStreamStatus() == nullptr) {
         AUDIO_ERR_LOG("The stream status is null!");
@@ -709,7 +731,7 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
         CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
             "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
-        if (futexRes == FUTEX_SUCCESS) { break; }
+        if (futexRes == FUTEX_SUCCESS && sizeInFrame > 0) { break; }
     }
 
     if (sizeInFrame < 0 || static_cast<uint32_t>(clientBuffer_->GetAvailableDataFrames()) < spanSizeInFrame_) {

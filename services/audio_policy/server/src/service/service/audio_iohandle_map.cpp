@@ -126,6 +126,9 @@ AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_FILE_SOURCE:
             ioHandle = IOHandles_[FILE_SOURCE];
             break;
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
+            ioHandle = IOHandles_[BLUETOOTH_MIC];
+            break;
         default:
             ioHandle = IOHandles_[PRIMARY_MIC];
             break;
@@ -144,7 +147,7 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     return SUCCESS;
 }
 
-int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleName)
+int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleName, bool isSync)
 {
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), ERROR,
@@ -152,7 +155,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     DelIOHandleInfo(moduleName);
 
     AUDIO_INFO_LOG("[close-module] %{public}s,id:%{public}d", moduleName.c_str(), ioHandle);
-    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle);
+    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, isSync);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     return SUCCESS;
 }

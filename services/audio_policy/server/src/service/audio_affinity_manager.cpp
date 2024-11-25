@@ -57,7 +57,7 @@ void AudioAffinityManager::OnXmlParsingCompleted(std::vector<AffinityDeviceInfo>
     }
 }
 
-std::unique_ptr<AudioDeviceDescriptor> AudioAffinityManager::GetRendererDevice(int32_t clientUID)
+std::shared_ptr<AudioDeviceDescriptor> AudioAffinityManager::GetRendererDevice(int32_t clientUID)
 {
     std::lock_guard<std::mutex> lock(rendererMapMutex_);
     int32_t affinityClientUID = clientUID;
@@ -65,17 +65,17 @@ std::unique_ptr<AudioDeviceDescriptor> AudioAffinityManager::GetRendererDevice(i
     if (item != activeRendererDeviceMap_.end()) {
         if (item->second == nullptr) {
             AUDIO_INFO_LOG("AudioDeviceDescriptor sptr not valid");
-            return make_unique<AudioDeviceDescriptor>();
+            return make_shared<AudioDeviceDescriptor>();
         }
-        unique_ptr<AudioDeviceDescriptor> desc =
-            make_unique<AudioDeviceDescriptor>(activeRendererDeviceMap_[affinityClientUID]);
+        shared_ptr<AudioDeviceDescriptor> desc =
+            make_shared<AudioDeviceDescriptor>(activeRendererDeviceMap_[affinityClientUID]);
         return desc;
     } else {
-        return make_unique<AudioDeviceDescriptor>();
+        return make_shared<AudioDeviceDescriptor>();
     }
 }
 
-std::unique_ptr<AudioDeviceDescriptor> AudioAffinityManager::GetCapturerDevice(int32_t clientUID)
+std::shared_ptr<AudioDeviceDescriptor> AudioAffinityManager::GetCapturerDevice(int32_t clientUID)
 {
     std::lock_guard<std::mutex> lock(capturerMapMutex_);
     int32_t affinityClientUID = clientUID;
@@ -83,17 +83,18 @@ std::unique_ptr<AudioDeviceDescriptor> AudioAffinityManager::GetCapturerDevice(i
     if (item != activeCapturerDeviceMap_.end()) {
         if (item->second == nullptr) {
             AUDIO_INFO_LOG("AudioDeviceDescriptor sptr not valid");
-            return make_unique<AudioDeviceDescriptor>();
+            return make_shared<AudioDeviceDescriptor>();
         }
-        unique_ptr<AudioDeviceDescriptor> desc =
-            make_unique<AudioDeviceDescriptor>(activeCapturerDeviceMap_[affinityClientUID]);
+        shared_ptr<AudioDeviceDescriptor> desc =
+            make_shared<AudioDeviceDescriptor>(activeCapturerDeviceMap_[affinityClientUID]);
         return desc;
     } else {
-        return make_unique<AudioDeviceDescriptor>();
+        return make_shared<AudioDeviceDescriptor>();
     }
 }
 
-void AudioAffinityManager::AddSelectRendererDevice(int32_t clientUID, const sptr<AudioDeviceDescriptor> &desc)
+void AudioAffinityManager::AddSelectRendererDevice(
+    int32_t clientUID, const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     std::lock_guard<std::mutex> lock(rendererMapMutex_);
     CHECK_AND_RETURN_LOG(desc != nullptr, "AudioDeviceDescriptor sptr not valid");
@@ -112,7 +113,8 @@ void AudioAffinityManager::AddSelectRendererDevice(int32_t clientUID, const sptr
     activeRendererGroupAffinityMap_[affinityDeviceInfo.groupName] = affinityDeviceInfoMap;
 }
 
-void AudioAffinityManager::AddSelectCapturerDevice(int32_t clientUID, const sptr<AudioDeviceDescriptor> &desc)
+void AudioAffinityManager::AddSelectCapturerDevice(
+    int32_t clientUID, const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     std::lock_guard<std::mutex> lock(capturerMapMutex_);
     CHECK_AND_RETURN_LOG(desc != nullptr, "AudioDeviceDescriptor sptr not valid");

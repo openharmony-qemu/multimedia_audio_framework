@@ -71,7 +71,29 @@ public:
 
     void RegisterCallbackWithFrame(int32_t callbackType, void (*callback)(), int64_t frame, int32_t *errorCode);
 
+    int32_t GetAudioEffectMode(int32_t *errorCode);
+
+    void SetAudioEffectMode(int32_t mode, int32_t *errorCode);
+
+    double GetMinStreamVolume(int32_t *errorCode);
+
+    double GetMaxStreamVolume(int32_t *errorCode);
+
+    void Release(int32_t *errorCode);
+
+    uint32_t GetStreamId(int32_t *errorCode);
+
+    void Stop(int32_t *errorCode);
+
+    void Start(int32_t *errorCode);
+
+    CAudioStreamInfo GetStreamInfo(int32_t *errorCode);
+
+    CAudioRendererInfo GetRendererInfo(int32_t *errorCode);
+
 private:
+    static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
+    static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
     void RegisterOutputDeviceCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode);
     std::shared_ptr<AudioRenderer> audioRenderer_{};
     std::shared_ptr<CjAudioRendererCallback> callback_{};

@@ -30,9 +30,16 @@
 #include "datashare_helper.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
+#include "audio_state_manager.h"
+#include "audio_device_manager.h"
+#include "audio_stream_collector.h"
+
+#include "audio_a2dp_offload_flag.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
 
 class AudioPolicyUtils {
 public:
@@ -43,9 +50,30 @@ public:
     }
     void WriteServiceStartupError(std::string reason);
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
+    void SetBtConnecting(bool flag);
+    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void ClearScoDeviceSuspendState(std::string macAddress = "");
+    int64_t GetCurrentTimeMS();
+    std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
+    string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
+    std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
+    uint32_t PcmFormatToBytes(AudioSampleFormat format);
 private:
-    AudioPolicyUtils() {}
+    AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+        audioStateManager_(AudioStateManager::GetAudioStateManager()),
+        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
+        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
     ~AudioPolicyUtils() {}
+    int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
+private:
+    bool isBTReconnecting_ = false;
+    static std::map<std::string, AudioSampleFormat> formatStrToEnum;
+
+    AudioStreamCollector& streamCollector_;
+    AudioStateManager &audioStateManager_;
+    AudioDeviceManager &audioDeviceManager_;
+    AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
 };
 
 }

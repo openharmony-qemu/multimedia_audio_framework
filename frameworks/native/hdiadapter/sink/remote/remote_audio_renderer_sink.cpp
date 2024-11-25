@@ -433,21 +433,21 @@ AudioFormat RemoteAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat fo
 
 int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::RenderFrame");
+    AUDIO_DEBUG_LOG("RemoteAudioRendererSinkInner::RenderFrame");
     const char *mediaStreamType = "1";
     return RenderFrameLogic(data, len, writeLen, mediaStreamType);
 }
 
 int32_t RemoteAudioRendererSinkInner::SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, char *streamType)
 {
-    AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::SplitRenderFrame");
+    AUDIO_DEBUG_LOG("RemoteAudioRendererSinkInner::SplitRenderFrame");
     return RenderFrameLogic(data, len, writeLen, streamType);
 }
 
 int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len, uint64_t &writeLen,
     const char *streamType)
 {
-    AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::RenderFrameLogic, streamType is %{public}s", streamType);
+    AUDIO_DEBUG_LOG("RemoteAudioRendererSinkInner::RenderFrameLogic, streamType is %{public}s", streamType);
     Trace trace("RemoteAudioRendererSinkInner::RenderFrameLogic");
     int64_t start = ClockTime::GetCurNano();
     sptr<IAudioRender> audioRender_ = audioRenderMap_[splitStreamMap_[streamType]];

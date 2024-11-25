@@ -21,12 +21,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const uint32_t SAVE_VOLUME_SYS_ABILITY_ID = 1041;
 const int32_t RESTORE_VOLUME_NOTIFICATION_ID = 116000;
 const int32_t INCREASE_VOLUME_NOTIFICATION_ID = 116001;
+const int32_t NOTIFICATION_BANNER_FLAG = 1 << 9;
 const std::string AUDIO_RESTORE_VOLUME_EVENT = "AUDIO_RESTORE_VOLUME_EVENT";
 const std::string AUDIO_INCREASE_VOLUME_EVENT = "AUDIO_INCREASE_VOLUME_EVENT";
-
-const int32_t NOTIFICATION_BANNER_FLAG = 1 << 9;
+const std::string SAVE_VOLUME_SYS_ABILITY_NAME = "audio_service";
 
 constexpr const char *SAFE_VOLUME_ICON_ID = "safe_volume_notification_icon";
 constexpr const char *SAFE_VOLUME_MUSIC_TIMER_TITTLE_ID = "ohos_id_notification_restore_volume_tittle";

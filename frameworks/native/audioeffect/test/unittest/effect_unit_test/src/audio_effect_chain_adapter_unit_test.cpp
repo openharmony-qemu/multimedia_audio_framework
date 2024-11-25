@@ -648,24 +648,6 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerReturnMultiChannelInfo
 }
 
 /**
-* @tc.name   : Test EffectChainManagerGetSpatializationEnabled API
-* @tc.number : EffectChainManagerGetSpatializationEnabled_001
-* @tc.desc   : Test EffectChainManagerGetSpatializationEnabled interface.
-*/
-HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerGetSpatializationEnabled_001, TestSize.Level1)
-{
-    const char *sceneType = "SCENE_MUSIC";
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    int32_t result = EffectChainManagerInitCb(sceneType);
-    EXPECT_EQ(SUCCESS, result);
-
-    bool result2 = EffectChainManagerGetSpatializationEnabled();
-    EXPECT_EQ(false, result2);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
 * @tc.name   : Test EffectChainManagerSceneCheck API
 * @tc.number : EffectChainManagerSceneCheck_001
 * @tc.desc   : Test EffectChainManagerSceneCheck interface.
@@ -908,8 +890,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerExist_001, TestSize.Le
     EXPECT_EQ(SUCCESS, result);
 
     const char *effectMode = "EFFECT_DEFAULT";
-    const char *spatializationEnabled = "0";
-    result = EffectChainManagerExist(sceneType, effectMode, spatializationEnabled);
+    result = EffectChainManagerExist(sceneType, effectMode);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -928,8 +909,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerExist_002, TestSize.Le
     EXPECT_EQ(ERROR, result);
 
     const char *effectMode = "";
-    const char *spatializationEnabled = "";
-    result = EffectChainManagerExist(sceneType, effectMode, spatializationEnabled);
+    result = EffectChainManagerExist(sceneType, effectMode);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -948,8 +928,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerExist_003, TestSize.Le
     EXPECT_EQ(ERROR, result);
 
     const char *effectMode = nullptr;
-    const char *spatializationEnabled = nullptr;
-    result = EffectChainManagerExist(sceneType, effectMode, spatializationEnabled);
+    result = EffectChainManagerExist(sceneType, effectMode);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

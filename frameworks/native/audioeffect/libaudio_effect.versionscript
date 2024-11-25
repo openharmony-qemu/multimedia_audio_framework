@@ -53,7 +53,7 @@
     *GetLatency*;
     *StreamVolumeUpdate*;
     *SetStreamVolumeInfo*;
-    *UpdateExtraSceneType*;
+    *UpdateParamExtra*;
     *InitAudioEffectChainManager*;
     *InitAudioEnhanceChainManager*;
     *UpdateSpatializationState*;

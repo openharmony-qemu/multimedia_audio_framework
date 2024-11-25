@@ -14,6 +14,7 @@
  */
 #include "multimedia_audio_stream_manager_callback.h"
 #include "multimedia_audio_common.h"
+#include "multimedia_audio_error.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,26 +32,62 @@ void CjAudioCapturerStateChangeCallback::OnCapturerStateChange(
     }
     CArrAudioCapturerChangeInfo arrInfo;
     arrInfo.size = static_cast<int64_t>(audioCapturerChangeInfos.size());
-    auto head = static_cast<CAudioCapturerChangeInfo *>(
-        malloc(sizeof(CAudioCapturerChangeInfo) * (arrInfo.size)));
+    int32_t mallocSize = sizeof(CAudioCapturerChangeInfo) * (arrInfo.size);
+    auto head = static_cast<CAudioCapturerChangeInfo *>(malloc(mallocSize));
     if (head == nullptr) {
         return;
     }
     int32_t errorCode = SUCCESS_CODE;
     arrInfo.head = head;
-    if (memset_s(head, arrInfo.size, 0, arrInfo.size) != EOK) {
+    if (memset_s(head, mallocSize, 0, mallocSize) != EOK) {
         FreeCArrAudioCapturerChangeInfo(arrInfo);
         return;
     }
-    for (int32_t i = 0; i < static_cast<int32_t>(arrInfo.size); i++) {
+    for (int64_t i = 0; i < arrInfo.size; i++) {
         Convert2CAudioCapturerChangeInfo(head[i], *(audioCapturerChangeInfos[i]), &errorCode);
-    }
-    if (errorCode != SUCCESS_CODE) {
-        FreeCArrAudioCapturerChangeInfo(arrInfo);
-        return;
+        if (errorCode != SUCCESS_CODE) {
+            FreeCArrAudioCapturerChangeInfo(arrInfo);
+            return;
+        }
     }
     func_(arrInfo);
     FreeCArrAudioCapturerChangeInfo(arrInfo);
+}
+
+void CjAudioRendererStateChangeCallback::RegisterFunc(std::function<void(CArrAudioRendererChangeInfo)> cjCallback)
+{
+    func_ = cjCallback;
+}
+
+void CjAudioRendererStateChangeCallback::OnRendererStateChange(
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    std::lock_guard<std::mutex> lock(cbMutex_);
+    if (func_ == nullptr) {
+        return;
+    }
+    CArrAudioRendererChangeInfo arrInfo;
+    arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
+    int32_t mallocSize = sizeof(CAudioRendererChangeInfo) * audioRendererChangeInfos.size();
+    auto head = static_cast<CAudioRendererChangeInfo *>(malloc(mallocSize));
+    if (head == nullptr) {
+        return;
+    }
+    int32_t errorCode = SUCCESS_CODE;
+    arrInfo.head = head;
+    if (memset_s(head, mallocSize, 0, mallocSize) != EOK) {
+        FreeCArrAudioRendererChangeInfo(arrInfo);
+        return;
+    }
+    for (int64_t i = 0; i < arrInfo.size; i++) {
+        Convert2CAudioRendererChangeInfo(head[i], *(audioRendererChangeInfos[i]), &errorCode);
+        if (errorCode != SUCCESS_CODE) {
+            FreeCArrAudioRendererChangeInfo(arrInfo);
+            return;
+        }
+    }
+    func_(arrInfo);
+    FreeCArrAudioRendererChangeInfo(arrInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

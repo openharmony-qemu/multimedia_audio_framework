@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 AudioSettingProvider* AudioSettingProvider::instance_;
 std::mutex AudioSettingProvider::mutex_;
+bool AudioSettingProvider::isDataShareReady_;
 sptr<IRemoteObject> AudioSettingProvider::remoteObj_;
 
 const std::string SETTING_COLUMN_KEYWORD = "KEYWORD";
@@ -247,7 +248,8 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
     int32_t count;
     resultSet->GetRowCount(count);
     if (count == 0) {
-        AUDIO_WARNING_LOG("not found value, key=%{public}s, count=%{public}d", key.c_str(), count);
+        AUDIO_WARNING_LOG("not found value, key=%{public}s, uri=%{public}s, count=%{public}d", key.c_str(),
+            uri.ToString().c_str(), count);
         IPCSkeleton::SetCallingIdentity(callingIdentity);
         resultSet->Close();
         return ERR_NAME_NOT_FOUND;
@@ -261,7 +263,8 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
         resultSet->Close();
         return ERR_INVALID_VALUE;
     } else {
-        AUDIO_INFO_LOG("Read audio_info_database with key: %{public}s value: %{public}s", key.c_str(), value.c_str());
+        AUDIO_INFO_LOG("Read audio_info_database with key: %{public}s value: %{public}s in uri=%{public}s ",
+            key.c_str(), value.c_str(), uri.ToString().c_str());
     }
     resultSet->Close();
     IPCSkeleton::SetCallingIdentity(callingIdentity);
@@ -320,9 +323,18 @@ int32_t AudioSettingProvider::GetCurrentUserId()
     return currentuserId;
 }
 
+void AudioSettingProvider::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    isDataShareReady_ = isDataShareReady;
+}
+
 std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShareHelper(
     std::string tableType)
 {
+    if (!isDataShareReady_) {
+        AUDIO_WARNING_LOG("DataShareHelper is not ready");
+        return nullptr;
+    }
 #ifdef SUPPORT_USER_ACCOUNT
     int32_t currentuserId = GetCurrentUserId();
     if (currentuserId < MIN_USER_ACCOUNT) {

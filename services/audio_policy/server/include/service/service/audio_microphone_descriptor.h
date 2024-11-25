@@ -50,9 +50,9 @@ public:
     bool GetMicrophoneMuteTemporary();
     bool GetMicrophoneMutePersistent();
 
-    void AddMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void AddMicrophoneDescriptor(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
-    void RemoveMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void RemoveMicrophoneDescriptor(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     void AddAudioCapturerMicrophoneDescriptor(int32_t sessionId, DeviceType devType);
 

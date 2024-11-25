@@ -213,5 +213,17 @@ int32_t PolicyHandler::GetMaxRendererInstances()
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->GetMaxRendererInstances();
 }
+
+int32_t PolicyHandler::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->ActivateConcurrencyFromServer(incomingPipe);
+}
+
+int32_t PolicyHandler::NotifyCapturerRemoved(uint64_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->NotifyCapturerRemoved(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -114,7 +114,7 @@ void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChan
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
@@ -198,17 +198,19 @@ void AudioPolicyClientProxy::OnMicStateUpdated(const MicStateChangeEvent &micSta
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_ACTIVE_OUTPUT_DEVICE_UPDATED));
+    rendererInfo.Marshalling(data);
     int32_t size = static_cast<int32_t>(desc.size());
     data.WriteInt32(size);
     for (int i = 0; i < size; i++) {
@@ -222,17 +224,19 @@ void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const std::vector<sp
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_ACTIVE_INPUT_DEVICE_UPDATED));
+    capturerInfo.Marshalling(data);
     int32_t size = static_cast<int32_t>(desc.size());
     data.WriteInt32(size);
     for (int i = 0; i < size; i++) {
@@ -251,7 +255,7 @@ void AudioPolicyClientProxy::OnRendererStateChange(
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
@@ -279,7 +283,7 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
@@ -308,7 +312,7 @@ void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
@@ -424,7 +428,7 @@ void AudioPolicyClientProxy::OnSpatializationEnabledChange(const bool &enabled)
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
+void AudioPolicyClientProxy::OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor>
     &deviceDescriptor, const bool &enabled)
 {
     MessageParcel data;
@@ -476,7 +480,7 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChange(const bool &enabled)
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
+void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor>
     &deviceDescriptor, const bool &enabled)
 {
     MessageParcel data;

@@ -271,7 +271,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckSpatializationAndEffectState_001
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
-    bool ret = server->audioPolicyService_.CheckSpatializationAndEffectState();
+    bool ret = server->audioPolicyService_.audioOffloadStream_.CheckSpatializationAndEffectState();
     EXPECT_FALSE(ret);
 }
 
@@ -285,23 +285,23 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UpdateRoute_001 start");
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     EXPECT_NE(nullptr, server);
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
     outputDevices.push_back(std::move(audioDeviceDescriptor));
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
     server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, server->audioPolicyService_.ringerModeMute_);
+    EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
 
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor1 = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor1 = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptor1->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
     outputDevices.push_back(std::move(audioDeviceDescriptor1));
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptor2->deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
     outputDevices.push_back(std::move(audioDeviceDescriptor2));
     server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, server->audioPolicyService_.ringerModeMute_);
+    EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
     audioDeviceDescriptor.reset();
     audioDeviceDescriptor1.reset();
     audioDeviceDescriptor2.reset();
@@ -318,18 +318,18 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_002, TestSize.Level1)
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UpdateRoute_001 start");
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     EXPECT_NE(nullptr, server);
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_DP;
     outputDevices.push_back(std::move(audioDeviceDescriptor));
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
     server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, server->audioPolicyService_.ringerModeMute_);
+    EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
 
     server->audioPolicyService_.enableDualHalToneState_ = true;
     server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, server->audioPolicyService_.ringerModeMute_);
+    EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
     audioDeviceDescriptor.reset();
     rendererChangeInfo.reset();
 }
@@ -673,7 +673,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ResetRingerModeMute_001, TestSize.Lev
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ResetRingerModeMute_001 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
 
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.ringerModeMute_ = true;
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioVolumeManager_.ringerModeMute_ = true;
     auto ret = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.ResetRingerModeMute();
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -688,7 +688,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ResetRingerModeMute_002, TestSize.Lev
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ResetRingerModeMute_002 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
 
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.ringerModeMute_ = false;
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioVolumeManager_.ringerModeMute_ = false;
     auto ret = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.ResetRingerModeMute();
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -703,10 +703,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ErasePreferredDeviceByType_001, TestS
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ErasePreferredDeviceByType_001 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
 
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.isBTReconnecting_ = true;
+    AudioPolicyUtils::GetInstance().isBTReconnecting_ = true;
     const PreferredType preferredType = AUDIO_MEDIA_RENDER;
-    auto ret =
-        AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.ErasePreferredDeviceByType(preferredType);
+    auto ret = AudioPolicyUtils::GetInstance().ErasePreferredDeviceByType(preferredType);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -721,8 +720,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ErasePreferredDeviceByType_002, TestS
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
 
     const PreferredType preferredType = AUDIO_MEDIA_RENDER;
-    auto ret =
-        AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.ErasePreferredDeviceByType(preferredType);
+    auto ret = AudioPolicyUtils::GetInstance().ErasePreferredDeviceByType(preferredType);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -889,20 +887,20 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneOutputDevices_001, Test
     const AudioScene audioScene = AUDIO_SCENE_RINGING;
     std::vector<DeviceType> activeOutputDevices;
     bool haveArmUsbDevice = false;
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.DealAudioSceneOutputDevices(
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
         audioScene, activeOutputDevices, haveArmUsbDevice);
     EXPECT_EQ(false, haveArmUsbDevice);
 
     const AudioScene audioScene2 = AUDIO_SCENE_VOICE_RINGING;
     haveArmUsbDevice = false;
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.DealAudioSceneOutputDevices(
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
         audioScene2, activeOutputDevices, haveArmUsbDevice);
     EXPECT_EQ(false, haveArmUsbDevice);
 
     const AudioScene audioScene3 = AUDIO_SCENE_DEFAULT;
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs {};
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs {};
     haveArmUsbDevice = false;
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.DealAudioSceneOutputDevices(
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
         audioScene3, activeOutputDevices, haveArmUsbDevice);
     EXPECT_TRUE(descs.empty());
     EXPECT_EQ(false, haveArmUsbDevice);
@@ -917,14 +915,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SelectRingerOrAlarmDevices_001 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs1;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs1;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo1 = std::make_shared<AudioRendererChangeInfo>();
     bool result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SelectRingerOrAlarmDevices(
         descs1, rendererChangeInfo1);
     EXPECT_EQ(false, result);
 
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs2;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs2;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptor2->deviceType_ = DEVICE_TYPE_SPEAKER;
     descs2.push_back(std::move(audioDeviceDescriptor2));
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo2 = std::make_shared<AudioRendererChangeInfo>();
@@ -934,8 +932,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
         descs2, rendererChangeInfo2);
     EXPECT_EQ(true, result);
 
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs3;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor3 = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs3;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor3 = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptor3->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     descs3.push_back(std::move(audioDeviceDescriptor3));
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo3 = std::make_shared<AudioRendererChangeInfo>();
@@ -948,8 +946,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
         descs3, rendererChangeInfo3);
     EXPECT_EQ(true, result);
 
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs4;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor4 = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs4;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor4 = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptor4->deviceType_ = DEVICE_TYPE_EXTERN_CABLE;
     descs3.push_back(std::move(audioDeviceDescriptor4));
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo4 = std::make_shared<AudioRendererChangeInfo>();
@@ -979,37 +977,36 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetPreferredDevice_001, TestSize.Leve
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetPreferredDevice_001 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr1 = nullptr;
-    int32_t result =
-        AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetPreferredDevice(
-            AUDIO_MEDIA_RENDER, audioDeviceDescriptorSptr1);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr1 = nullptr;
+    int32_t result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
+        AUDIO_MEDIA_RENDER, audioDeviceDescriptorSptr1);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr2 = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr2 = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptorSptr2->deviceType_ = DEVICE_TYPE_NONE;
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetPreferredDevice(
+    result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         AUDIO_CALL_RENDER, audioDeviceDescriptorSptr2);
     EXPECT_EQ(SUCCESS, result);
 
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetPreferredDevice(
+    result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         AUDIO_CALL_CAPTURE, audioDeviceDescriptorSptr2);
     EXPECT_EQ(SUCCESS, result);
 
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetPreferredDevice(
+    result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         AUDIO_RECORD_CAPTURE, audioDeviceDescriptorSptr2);
     EXPECT_EQ(SUCCESS, result);
 
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetPreferredDevice(
+    result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         AUDIO_RING_RENDER, audioDeviceDescriptorSptr2);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetPreferredDevice(
+    result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         AUDIO_TONE_RENDER, audioDeviceDescriptorSptr2);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 
     uint32_t preferredType = 6;
     PreferredType ERR_PFTYPE = static_cast<PreferredType>(preferredType);
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetPreferredDevice(
+    result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         ERR_PFTYPE, audioDeviceDescriptorSptr2);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 }

@@ -70,9 +70,6 @@ struct Userdata {
     pthread_rwlock_t rwlockSleep;
     int64_t timestampSleep;
     pa_usec_t timestampLastLog;
-    int8_t spatializationFadingState; // for indicating the fading state, =0:no fading, >0:fading in, <0:fading out
-    int8_t spatializationFadingCount; // for indicating the fading rate
-    bool actualSpatializationEnabled; // the spatialization state that actually applies effect
     bool isFirstStarted;
     bool isEffectBufferAllocated;
     pa_hashmap *sceneToCountMap;
@@ -143,6 +140,8 @@ struct Userdata {
         int32_t multiChannelFadingInDone;
         int32_t multiChannelSinkInIndex;
         int32_t multiChannelTmpSinkInIndex;
+        uint32_t sinkChannel;
+        uint64_t sinkChannelLayout;
     } multiChannel;
 };
 

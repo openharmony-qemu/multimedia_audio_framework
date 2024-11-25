@@ -94,6 +94,8 @@ private:
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void SetClientCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply);
+    void SetCallbackRendererInfoInternal(MessageParcel &data, MessageParcel &reply);
+    void SetCallbackCapturerInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);

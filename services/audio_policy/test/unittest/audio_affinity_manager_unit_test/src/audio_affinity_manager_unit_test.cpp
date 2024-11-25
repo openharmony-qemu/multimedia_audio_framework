@@ -196,7 +196,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_004, TestSize.Level1)
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     // Test not exising clientUID
     int32_t nonExistentClientUID = 9999;
-    std::unique_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetRendererDevice(nonExistentClientUID);
+    std::shared_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetRendererDevice(nonExistentClientUID);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->getType(), DeviceType::DEVICE_TYPE_NONE);
     EXPECT_EQ(result->getRole(), DeviceRole::DEVICE_ROLE_NONE);
@@ -216,10 +216,10 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_005, TestSize.Level1)
     int32_t testInterruptGroupId = 1;
     int32_t testVolumeGroupId = 1;
     std::string testNetworkId = "test_network";
-    sptr<AudioDeviceDescriptor> testDescriptor = new AudioDeviceDescriptor(
+    std::shared_ptr<AudioDeviceDescriptor> testDescriptor = std::make_shared<AudioDeviceDescriptor>(
         testDeviceType, testDeviceRole, testInterruptGroupId, testVolumeGroupId, testNetworkId);
     audioAffinityManager->activeRendererDeviceMap_[testClientUID] = testDescriptor;
-    std::unique_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetRendererDevice(testClientUID);
+    std::shared_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetRendererDevice(testClientUID);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->getType(), testDeviceType);
     EXPECT_EQ(result->getRole(), testDeviceRole);
@@ -238,7 +238,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_006, TestSize.Level1)
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     // Test no existing clientUID
     int32_t nonExistentClientUID = 9999;
-    std::unique_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetRendererDevice(nonExistentClientUID);
+    std::shared_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetRendererDevice(nonExistentClientUID);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->getType(), DeviceType::DEVICE_TYPE_NONE);
     EXPECT_EQ(result->getRole(), DeviceRole::DEVICE_ROLE_NONE);
@@ -255,7 +255,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_007, TestSize.Level1)
     // Add a null pointer to the map
     int32_t testClientUID = 2000;
     audioAffinityManager->activeRendererDeviceMap_[testClientUID] = nullptr;
-    std::unique_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetRendererDevice(testClientUID);
+    std::shared_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetRendererDevice(testClientUID);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->getType(), DeviceType::DEVICE_TYPE_NONE);
     EXPECT_EQ(result->getRole(), DeviceRole::DEVICE_ROLE_NONE);
@@ -270,7 +270,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_008, TestSize.Level1)
 {
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     int32_t clientUID = 1000;
-    std::unique_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetCapturerDevice(clientUID);
+    std::shared_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetCapturerDevice(clientUID);
     EXPECT_NE(nullptr, result);
     // For non-existing clientUID, expect a new empty AudioDeviceDescriptor
     EXPECT_NE(result->networkId_, "");
@@ -288,7 +288,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_009, TestSize.Level1)
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     int32_t clientUID = 1001;
     audioAffinityManager->activeCapturerDeviceMap_[clientUID] = nullptr;
-    std::unique_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetCapturerDevice(clientUID);
+    std::shared_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetCapturerDevice(clientUID);
     EXPECT_NE(nullptr, result);
     // For null descriptor, expect a new empty AudioDeviceDescriptor
     EXPECT_NE(result->networkId_, "");
@@ -305,12 +305,12 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_010, TestSize.Level1)
 {
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     int32_t clientUID = 1002;
-    sptr<AudioDeviceDescriptor> descriptor = new AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
     descriptor->networkId_ = "test_network";
     descriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
     descriptor->deviceType_ = DeviceType::DEVICE_TYPE_MIC;
     audioAffinityManager->activeCapturerDeviceMap_[clientUID] = descriptor;
-    std::unique_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetCapturerDevice(clientUID);
+    std::shared_ptr<AudioDeviceDescriptor> result = audioAffinityManager->GetCapturerDevice(clientUID);
     EXPECT_NE(nullptr, result);
     // Verify the returned descriptor matches the original
     EXPECT_EQ(result->networkId_, "test_network");
@@ -344,7 +344,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_012, TestSize.Level1)
 {
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     int32_t clientUID = 1000;
-    sptr<AudioDeviceDescriptor> descriptor = new AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
     // Verify initial state
     EXPECT_EQ(audioAffinityManager->activeRendererDeviceMap_.count(clientUID), 0);
     // Execute deletion
@@ -362,7 +362,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_013, TestSize.Level1)
 {
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     int32_t clientUID = 1001;
-    sptr<AudioDeviceDescriptor> descriptor = new AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
     // Initialize with null descriptor
     audioAffinityManager->activeRendererDeviceMap_[clientUID] = nullptr;
     // Execute deletion
@@ -380,7 +380,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_014, TestSize.Level1)
 {
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     int32_t clientUID = 1002;
-    sptr<AudioDeviceDescriptor> descriptor = new AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
     std::string networkId = "test_network";
     std::string groupName = "test_group";
     // Verify initial state
@@ -406,7 +406,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_015, TestSize.Level1)
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     int32_t clientUID1 = 1003;
     int32_t clientUID2 = 1004;
-    sptr<AudioDeviceDescriptor> descriptor = new AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
     std::string networkId = "test_network";
     std::string groupName = "test_group";
     // Verify initial state
@@ -517,7 +517,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_020, TestSize.Level1)
         testNetworkID
     );
     // Add test equipment to the activeRendererDeviceMap_
-    sptr<AudioDeviceDescriptor> deviceDesc = new AudioDeviceDescriptor(updateDesc);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>(updateDesc);
     int32_t testClientUID = 1000;
     affinityManager.activeRendererDeviceMap_[testClientUID] = deviceDesc;
     // Add AffinityDeviceInfo to rendererAffinityDeviceArray_
@@ -556,7 +556,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_021, TestSize.Level1)
         testNetworkID
     );
     // Add test equipment to the activeCapturerDeviceMap_
-    sptr<AudioDeviceDescriptor> deviceDesc = new AudioDeviceDescriptor(updateDesc);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>(updateDesc);
     int32_t testClientUID = 2000;
     affinityManager.activeCapturerDeviceMap_[testClientUID] = deviceDesc;
     // Add AffinityDeviceInfo to capturerAffinityDeviceArray_

@@ -23,9 +23,9 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetSelectedMediaRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetSelectedMediaRenderDevice();
     if (desc == nullptr) {
         desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
     }
@@ -34,9 +34,9 @@ unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsag
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetSelectedCallRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetSelectedCallRenderDevice();
     if (desc == nullptr) {
         desc = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice(streamUsage);
     }
@@ -45,33 +45,33 @@ unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
+    shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
         desc->deviceType_);
     return desc;
 }
 
-vector<std::unique_ptr<AudioDeviceDescriptor>> DefaultRouter::GetRingRenderDevices(StreamUsage streamUsage,
+vector<std::shared_ptr<AudioDeviceDescriptor>> DefaultRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
     return descs;
 }
 
-unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
+    shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
         desc->deviceType_);
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+    shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
         desc->deviceType_);
     return desc;

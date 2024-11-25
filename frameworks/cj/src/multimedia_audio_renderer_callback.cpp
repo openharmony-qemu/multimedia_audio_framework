@@ -92,7 +92,7 @@ void CjAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(con
     FreeCArrDeviceDescriptor(arr);
 }
 
-void CjAudioRendererWriteCallback::RegisterFunc(std::function<void(CArrUI8)> cjCallback,
+void CjAudioRendererWriteCallback::RegisterFunc(std::function<int32_t(CArrUI8)> cjCallback,
     std::shared_ptr<AudioRenderer> audioRenderer)
 {
     func_ = cjCallback;
@@ -112,11 +112,12 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
         return;
     }
     arr.size = std::min(length, buf.bufLength);
-    arr.head = static_cast<uint8_t *>(malloc(sizeof(uint8_t) * arr.size));
+    int32_t mallocSize = sizeof(uint8_t) * arr.size;
+    arr.head = static_cast<uint8_t *>(malloc(mallocSize));
     if (arr.head == nullptr) {
         return;
     }
-    if (memset_s(arr.head, arr.size, 0, arr.size) != EOK) {
+    if (memset_s(arr.head, mallocSize, 0, mallocSize) != EOK) {
         free(arr.head);
         arr.head = nullptr;
         return;
@@ -126,13 +127,7 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
     }
     func_(arr);
     free(arr.head);
-    free(buf.buffer);
-    if (buf.metaBuffer != nullptr) {
-        free(buf.metaBuffer);
-    }
     arr.head = nullptr;
-    buf.buffer = nullptr;
-    buf.metaBuffer = nullptr;
 }
 
 void CjAudioRendererCallback::RegisterFunc(std::function<void(int32_t)> cjCallback)

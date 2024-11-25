@@ -107,7 +107,7 @@ bool AudioMicrophoneDescriptor::GetMicrophoneMutePersistent()
     return isMicrophoneMutePersistent_;
 }
 
-void AudioMicrophoneDescriptor::AddMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioMicrophoneDescriptor::AddMicrophoneDescriptor(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     if (deviceDescriptor->deviceRole_ == INPUT_DEVICE &&
         deviceDescriptor->deviceType_ != DEVICE_TYPE_FILE_SOURCE) {
@@ -126,7 +126,7 @@ void AudioMicrophoneDescriptor::AddMicrophoneDescriptor(sptr<AudioDeviceDescript
     }
 }
 
-void AudioMicrophoneDescriptor::RemoveMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioMicrophoneDescriptor::RemoveMicrophoneDescriptor(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     auto isPresent = [&deviceDescriptor](const sptr<MicrophoneDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");

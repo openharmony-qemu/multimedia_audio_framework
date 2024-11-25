@@ -115,8 +115,7 @@ public:
     int32_t CreateAudioEffectChainDynamic(const std::string &sceneType);
     bool CheckAndRemoveSessionID(const std::string &sessionID);
     int32_t ReleaseAudioEffectChainDynamic(const std::string &sceneType);
-    bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode,
-        const std::string &spatializationEnabled);
+    bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode);
     int32_t ApplyAudioEffectChain(const std::string &sceneType, std::unique_ptr<EffectBufferAttr> &bufferAttr);
     void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
     bool GetOffloadEnabled();
@@ -134,12 +133,10 @@ public:
     uint32_t GetLatency(const std::string &sessionId);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     int32_t SetSceneTypeSystemVolume(const std::string sceneType, const float systemVolume);
-    bool GetCurSpatializationEnabled();
-    void ResetEffectBuffer();
     void ResetInfo();  // Use for testing temporarily.
     void UpdateDefaultAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
-    void UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType);
+    void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value);
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
     void UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation);
@@ -169,6 +166,8 @@ private:
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
     void UpdateCurrSceneTypeAndStreamUsageForDsp();
+    void SendAudioParamToHDI(HdiSetParamCommandCode code, const std::string &value, DeviceType device);
+    void SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value);
     std::string GetDeviceTypeName();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
@@ -178,8 +177,7 @@ private:
 #endif
     int32_t CreateAudioEffectChainDynamicInner(const std::string &sceneType);
     int32_t ReleaseAudioEffectChainDynamicInner(const std::string &sceneType);
-    bool ExistAudioEffectChainInner(const std::string &sceneType, const std::string &effectMode,
-        const std::string &spatializationEnabled);
+    bool ExistAudioEffectChainInner(const std::string &sceneType, const std::string &effectMode);
     int32_t UpdateMultichannelConfigInner(const std::string &sceneType);
     int32_t UpdateSpatializationStateInner(AudioSpatializationState spatializationState);
     int32_t SetHdiParam(const AudioEffectScene &sceneType);
@@ -204,6 +202,7 @@ private:
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     std::string deviceClass_ = "";
     std::string extraSceneType_ = "0";
+    std::string foldState_ = "0";
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
     bool isInitialized_ = false;

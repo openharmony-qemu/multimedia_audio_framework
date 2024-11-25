@@ -28,33 +28,34 @@ const int32_t LIMITSIZE = 4;
 const uint32_t STREAMUSAGE_ENUM_NUM = 23;
 const uint32_t NUM = 1;
 
+static std::shared_ptr<AudioSpatializationService> g_audioSpatializationService =
+    std::make_shared<AudioSpatializationService>();
+
 void AudioSpatializationServiceFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
 
-    std::shared_ptr<AudioSpatializationService> audioSpatializationService =
-        std::make_shared<AudioSpatializationService>();
     AudioSpatialDeviceState audioSpatialDeviceState;
-    audioSpatializationService->UpdateSpatialDeviceState(audioSpatialDeviceState);
-    audioSpatializationService->Deinit();
+    g_audioSpatializationService->UpdateSpatialDeviceState(audioSpatialDeviceState);
+    g_audioSpatializationService->Deinit();
 
-    sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
-    audioSpatializationService->SetHeadTrackingEnabled(selectedAudioDevice, true);
-    audioSpatializationService->HandleHeadTrackingEnabledChange(selectedAudioDevice, true);
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    g_audioSpatializationService->SetHeadTrackingEnabled(selectedAudioDevice, true);
+    g_audioSpatializationService->HandleHeadTrackingEnabledChange(selectedAudioDevice, true);
 
     uint32_t sessionID = *reinterpret_cast<const uint32_t*>(rawData);
     uint32_t streamUsage_int = *reinterpret_cast<const uint32_t*>(rawData);
     streamUsage_int = (streamUsage_int % STREAMUSAGE_ENUM_NUM) - NUM;
     StreamUsage streamUsage = static_cast<StreamUsage>(streamUsage_int);
 
-    audioSpatializationService->GetSpatializationSceneType();
-    audioSpatializationService->UpdateSpatializationState();
-    audioSpatializationService->InitSpatializationState();
-    audioSpatializationService->HandleSpatializationStateChange(false);
-    audioSpatializationService->HandleSpatializationStateChange(true);
-    audioSpatializationService->RemoveOldestDevice();
+    g_audioSpatializationService->GetSpatializationSceneType();
+    g_audioSpatializationService->UpdateSpatializationState();
+    g_audioSpatializationService->InitSpatializationState();
+    g_audioSpatializationService->HandleSpatializationStateChange(false);
+    g_audioSpatializationService->HandleSpatializationStateChange(true);
+    g_audioSpatializationService->RemoveOldestDevice();
 }
 
 } // namespace AudioStandard

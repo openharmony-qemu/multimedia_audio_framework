@@ -308,6 +308,11 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
     }
 }
 
+void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
@@ -736,13 +741,6 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
-    if (!isLoaded_) {
-        AUDIO_ERR_LOG("The data base is not loaded. Can not load new volume for new device!");
-        // The ring volume is also saved in audio_config.para.
-        // So the boot animation can still play with right volume.
-        return;
-    }
-
     // The same device does not set the volume
     // Except for A2dp, because the currentActiveDevice_ has already been set in Activea2dpdevice.
     bool isRingerModeMute = AudioPolicyService::GetAudioPolicyService().IsRingerModeMute();
@@ -824,11 +822,11 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     return ioHandle;
 }
 
-int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
+int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle, bool isSync)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_--;
-    int32_t ret = audioServiceAdapter_->CloseAudioPort(ioHandle);
+    int32_t ret = audioServiceAdapter_->CloseAudioPort(ioHandle, isSync);
     AUDIO_INFO_LOG("Close %{public}d port end.", static_cast<int32_t>(ioHandle));
     return ret;
 }
@@ -1512,7 +1510,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
         if (!result) {
             AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
         }
-        if (streamType == STREAM_RING) {
+        if (streamType == STREAM_RING && VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
             bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
             if (currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
                 continue;
@@ -1631,6 +1629,27 @@ int64_t AudioAdapterManager::GetCurentDeviceSafeTime(DeviceType deviceType)
     return -1;
 }
 
+int32_t AudioAdapterManager::GetRestoreVolumeLevel(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            volumeDataMaintainer_.GetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, safeActiveVolume_);
+            return safeActiveVolume_;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            volumeDataMaintainer_.GetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtVolume_);
+            return safeActiveBtVolume_;
+        default:
+            AUDIO_ERR_LOG("current device : %{public}d is not support", deviceType);
+            break;
+    }
+
+    return SAFE_UNKNOWN;
+}
+
 int32_t AudioAdapterManager::SetDeviceSafeStatus(DeviceType deviceType, SafeStatus status)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -1652,6 +1671,18 @@ int32_t AudioAdapterManager::SetDeviceSafeTime(DeviceType deviceType, int64_t ti
     }
     bool ret = volumeDataMaintainer_.SaveSafeVolumeTime(deviceType, time);
     CHECK_AND_RETURN_RET(ret, ERROR, "SetDeviceSafeTime failed");
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume)
+{
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        safeActiveBtVolume_ = volume;
+    } else if (deviceType == DEVICE_TYPE_WIRED_HEADSET) {
+        safeActiveVolume_ = volume;
+    }
+    bool ret = volumeDataMaintainer_.SetRestoreVolumeLevel(deviceType, volume);
+    CHECK_AND_RETURN_RET(ret, ERROR, "SetRestoreVolumeLevel failed");
     return SUCCESS;
 }
 
@@ -1960,7 +1991,11 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     isAbsVolumeMute_ = mute;
     float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
-    SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+    } else {
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
+    }
 }
 
 

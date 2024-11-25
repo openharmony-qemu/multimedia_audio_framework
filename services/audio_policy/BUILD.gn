@@ -14,6 +14,7 @@
 import("//build/ohos.gni")
 import("../../accessibility.gni")
 import("../../appgallery.gni")
+import("../../audio_framework_test_sources.gni")
 import("../../av_session.gni")
 import("../../bluetooth_part.gni")
 import("../../config.gni")
@@ -133,7 +134,7 @@ ohos_shared_library("audio_setting_provider") {
   subsystem_name = "multimedia"
 }
 
-ohos_shared_library("audio_policy_service") {
+audio_ohos_library("audio_policy_service") {
   stack_protector_ret = true
   sanitize = {
     cfi = true
@@ -150,6 +151,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_concurrency_state_listener_proxy.cpp",
     "server/src/audio_group_handle.cpp",
     "server/src/audio_policy_client_proxy.cpp",
+    "server/src/audio_policy_manager_device_stub.cpp",
     "server/src/audio_policy_manager_listener_proxy.cpp",
     "server/src/audio_policy_manager_stub.cpp",
     "server/src/audio_policy_server.cpp",
@@ -197,16 +199,21 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/routers/public_priority_router.cpp",
     "server/src/service/routers/stream_filter_router.cpp",
     "server/src/service/routers/user_select_router.cpp",
+    "server/src/service/service/audio_a2dp_device.cpp",
     "server/src/service/service/audio_a2dp_offload_flag.cpp",
     "server/src/service/service/audio_a2dp_offload_manager.cpp",
+    "server/src/service/service/audio_active_device.cpp",
     "server/src/service/service/audio_config_manager.cpp",
     "server/src/service/service/audio_connected_device.cpp",
     "server/src/service/service/audio_iohandle_map.cpp",
     "server/src/service/service/audio_microphone_descriptor.cpp",
+    "server/src/service/service/audio_offload_stream.cpp",
     "server/src/service/service/audio_policy_utils.cpp",
     "server/src/service/service/audio_router_map.cpp",
+    "server/src/service/service/audio_scene_manager.cpp",
     "server/src/service/service/audio_server_proxy.cpp",
     "server/src/service/service/audio_tone_manager.cpp",
+    "server/src/service/service/audio_volume_manager.cpp",
     "server/src/service/session/audio_session.cpp",
     "server/src/service/session/audio_session_service.cpp",
     "server/src/service/session/audio_session_timer.cpp",
@@ -239,7 +246,7 @@ ohos_shared_library("audio_policy_service") {
 
   public_configs = [ ":audio_policy_public_config" ]
 
-  public_deps = [
+  deps = [
     "../../frameworks/native/audioadapter:pulse_audio_service_adapter",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioutils:audio_utils",
@@ -250,7 +257,7 @@ ohos_shared_library("audio_policy_service") {
     "../audio_service:audio_common",
   ]
 
-  public_external_deps = [
+  external_deps = [
     "ability_base:session_info",
     "ability_base:want",
     "ability_base:zuri",
@@ -290,6 +297,8 @@ ohos_shared_library("audio_policy_service") {
     "samgr:samgr_proxy",
   ]
 
+  public_external_deps = [ "ffrt:libffrt" ]
+
   public_external_deps += [
     "libxml2:libxml2",
     "openssl:libcrypto_shared",
@@ -297,13 +306,13 @@ ohos_shared_library("audio_policy_service") {
 
   if (usb_manager_enable) {
     defines += [ "USB_ENABLE" ]
-    public_external_deps += [ "usb_manager:usbsrv_client" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
     sources += [ "server/src/service/manager/audio_usb_manager.cpp" ]
   }
 
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
-    public_external_deps += [ "config_policy:configpolicy_util" ]
+    external_deps += [ "config_policy:configpolicy_util" ]
   }
 
   if (appgallery_part_enable == true) {
@@ -311,12 +320,12 @@ ohos_shared_library("audio_policy_service") {
   }
 
   if (bluetooth_part_enable == true) {
-    public_deps +=
-        [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+    deps += [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+    external_deps += [ "bluetooth:btframework" ]
   }
 
   if (avsession_part_enable == true) {
-    public_external_deps += [
+    external_deps += [
       "ability_base:want",
       "ability_runtime:wantagent_innerkits",
       "av_session:avsession_client",
@@ -326,12 +335,12 @@ ohos_shared_library("audio_policy_service") {
 
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
-    public_external_deps += [ "input:libmmi-client" ]
+    external_deps += [ "input:libmmi-client" ]
   }
 
   if (audio_framework_feature_device_manager) {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
-    public_external_deps += [ "device_manager:devicemanagersdk" ]
+    external_deps += [ "device_manager:devicemanagersdk" ]
   }
 
   cflags = [ "-Os" ]
@@ -443,7 +452,7 @@ config("audio_policy_client_config") {
   }
 }
 
-ohos_shared_library("audio_policy_client") {
+audio_ohos_library("audio_policy_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
 
@@ -462,6 +471,7 @@ ohos_shared_library("audio_policy_client") {
     "client/src/audio_policy_client_stub.cpp",
     "client/src/audio_policy_client_stub_impl.cpp",
     "client/src/audio_policy_manager.cpp",
+    "client/src/audio_policy_manager_device.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
     "client/src/audio_spatialization_state_change_listener_stub.cpp",

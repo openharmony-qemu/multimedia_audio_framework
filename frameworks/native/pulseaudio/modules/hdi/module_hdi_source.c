@@ -98,7 +98,11 @@ static void IncreaseScenekeyCount(pa_hashmap *sceneMap, const char *key)
         if (sceneKey != NULL) {
             num = pa_xnew0(uint32_t, 1);
             *num = 1;
-            pa_hashmap_put(sceneMap, sceneKey, num);
+            if (pa_hashmap_put(sceneMap, sceneKey, num) != 0) {
+                AUDIO_ERR_LOG("pa_hashmap_put failed");
+                free(sceneKey);
+                pa_xfree(num);
+            }
         }
     }
 }
@@ -119,6 +123,33 @@ static bool DecreaseScenekeyCount(pa_hashmap *sceneMap, const char *key)
     return false;
 }
 
+static enum HdiAdapterFormat ConvertPaFormat(pa_sample_format_t paFormat)
+{
+    enum HdiAdapterFormat format;
+    switch (paFormat) {
+        case PA_SAMPLE_U8:
+            format = SAMPLE_U8;
+            break;
+        case PA_SAMPLE_S16LE:
+        case PA_SAMPLE_S16BE:
+            format = SAMPLE_S16;
+            break;
+        case PA_SAMPLE_S24LE:
+        case PA_SAMPLE_S24BE:
+            format = SAMPLE_S24;
+            break;
+        case PA_SAMPLE_S32LE:
+        case PA_SAMPLE_S32BE:
+            format = SAMPLE_S32;
+            break;
+        default:
+            format = SAMPLE_S16;
+            break;
+    }
+
+    return format;
+}
+
 static void SetResampler(pa_source_output *so, const char *sceneKey, const struct Userdata *u,
     const struct AlgoSpecs *algoSpecs)
 {
@@ -128,8 +159,9 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
     if (!pa_sample_spec_equal(&so->source->sample_spec, &algoSpecs->micSpec)) {
         AUDIO_INFO_LOG("SOURCE spec:%{public}u_%{public}u_%{public}u ALGO spec:%{public}u_%{public}u_%{public}u",
             so->source->sample_spec.rate, (uint32_t)so->source->sample_spec.channels,
-            (uint32_t)so->source->sample_spec.format,
-            algoSpecs->micSpec.rate,  (uint32_t)algoSpecs->micSpec.channels, (uint32_t)algoSpecs->micSpec.format);
+            (uint32_t)ConvertPaFormat(so->source->sample_spec.format),
+            algoSpecs->micSpec.rate,  (uint32_t)algoSpecs->micSpec.channels,
+            (uint32_t)ConvertPaFormat(algoSpecs->micSpec.format));
         pa_resampler *preResampler = pa_resampler_new(so->source->core->mempool,
             &so->source->sample_spec, &so->source->channel_map,
             &algoSpecs->micSpec, &so->source->channel_map,
@@ -146,8 +178,9 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
     if ((u->ecType != EC_NONE) && (algoSpecs->ecSpec.rate != 0) &&
         (!pa_sample_spec_equal(&u->ecSpec, &algoSpecs->ecSpec))) {
         AUDIO_INFO_LOG("EC SOURCE spec:%{public}u_%{public}u_%{public}u ALGO spec:%{public}u_%{public}u_%{public}u",
-            u->ecSpec.rate, (uint32_t)u->ecSpec.channels, (uint32_t)u->ecSpec.format,
-            algoSpecs->ecSpec.rate,  (uint32_t)algoSpecs->ecSpec.channels, (uint32_t)algoSpecs->ecSpec.format);
+            u->ecSpec.rate, (uint32_t)u->ecSpec.channels, (uint32_t)ConvertPaFormat(u->ecSpec.format),
+            algoSpecs->ecSpec.rate,  (uint32_t)algoSpecs->ecSpec.channels,
+            (uint32_t)ConvertPaFormat(algoSpecs->ecSpec.format));
         pa_resampler *ecResampler = pa_resampler_new(so->source->core->mempool,
             &u->ecSpec, &so->source->channel_map,
             &algoSpecs->ecSpec, &so->source->channel_map,
@@ -158,9 +191,9 @@ static void SetResampler(pa_source_output *so, const char *sceneKey, const struc
     if ((u->micRef == REF_ON) && (algoSpecs->micRefSpec.rate != 0) &&
         (!pa_sample_spec_equal(&u->micRefSpec, &algoSpecs->micRefSpec))) {
         AUDIO_INFO_LOG("MIC REF SOURCE spec:%{public}u_%{public}u_%{public}u ALGO:%{public}u_%{public}u_%{public}u",
-            u->micRefSpec.rate, (uint32_t)u->micRefSpec.channels, (uint32_t)u->micRefSpec.format,
+            u->micRefSpec.rate, (uint32_t)u->micRefSpec.channels, (uint32_t)ConvertPaFormat(u->micRefSpec.format),
             algoSpecs->micRefSpec.rate,  (uint32_t)algoSpecs->micRefSpec.channels,
-            (uint32_t)algoSpecs->micRefSpec.format);
+            (uint32_t)ConvertPaFormat(algoSpecs->micRefSpec.format));
         pa_resampler *micRefResampler = pa_resampler_new(so->source->core->mempool,
             &u->micRefSpec, &so->source->channel_map,
             &algoSpecs->micRefSpec, &so->source->channel_map,
@@ -176,15 +209,22 @@ static void SetDefaultResampler(pa_source_output *so, const pa_sample_spec *algo
         if (u->defaultSceneResampler) {
             pa_resampler_free(u->defaultSceneResampler);
         }
-        AUDIO_INFO_LOG("SOURCE rate = %{public}d ALGO rate = %{public}d ",
-            so->source->sample_spec.rate, algoConfig->rate);
+        AUDIO_INFO_LOG("default SOURCE:%{public}u_%{public}u_%{public}u ALGO:%{public}u_%{public}u_%{public}u",
+            so->source->sample_spec.rate, (uint32_t)so->source->sample_spec.channels,
+            (uint32_t)ConvertPaFormat(so->source->sample_spec.format),
+            algoConfig->rate,  (uint32_t)algoConfig->channels,
+            (uint32_t)ConvertPaFormat(algoConfig->format));
         u->defaultSceneResampler = pa_resampler_new(so->source->core->mempool,
             &so->source->sample_spec, &so->source->channel_map,
             algoConfig, &so->source->channel_map,
             so->source->core->lfe_crossover_freq,
-            PA_RESAMPLER_AUTO,
-            PA_RESAMPLER_VARIABLE_RATE);
-        pa_resampler_set_input_rate(so->thread_info.resampler, algoConfig->rate);
+            PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+        pa_resampler *postResampler = pa_resampler_new(so->source->core->mempool,
+            algoConfig, &so->source->channel_map,
+            &so->sample_spec, &so->source->channel_map,
+            so->source->core->lfe_crossover_freq,
+            PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+        so->thread_info.resampler = postResampler;
     }
 }
 
@@ -470,7 +510,7 @@ int pa__get_n_used(pa_module *m)
 
     pa_source *source = m->userdata;
 
-    CHECK_AND_RETURN_RET_LOG(source == m->userdata, 0, "source is not equal to m->userdata");
+    CHECK_AND_RETURN_RET_LOG(source != NULL, 0, "source is null");
 
     return pa_source_linked_by(source);
 }

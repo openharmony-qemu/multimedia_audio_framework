@@ -65,6 +65,10 @@ AudioProcessInServer::~AudioProcessInServer()
     if (convertedBuffer_.buffer != nullptr) {
         delete [] convertedBuffer_.buffer;
     }
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyStop(tokenId, sessionId_);
+    }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -484,11 +488,6 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
     DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
-
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            buffer, bufferSize);
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
