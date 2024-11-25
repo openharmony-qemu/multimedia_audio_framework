@@ -722,10 +722,7 @@ static void ThreadCaptureData(void *userdata)
     int32_t ret = 0;
     pa_usec_t now = 0;
 
-    while (true) {
-        if (pa_atomic_load(&u->quitCaptureFlag) == 1) {
-            break;
-        }
+    while (!pa_atomic_load(&u->quitCaptureFlag)) {
         now = pa_rtclock_now();
         if (pa_atomic_load(&u->captureFlag) == 1) {
             chunk.length = u->bufferSize;
@@ -737,7 +734,7 @@ static void ThreadCaptureData(void *userdata)
                 continue;
             }
             pa_asyncmsgq_post(u->CaptureMq, NULL, HDI_POST, NULL, 0, &chunk, NULL);
-            AUDIO_DEBUG_LOG("capture frame cost :%{public}ld", (int64_t)pa_rtclock_now() - (int64_t)now);
+            AUDIO_DEBUG_LOG("capture frame cost :%{public}" PRIu64, pa_rtclock_now() - now);
         } else {
             struct timespec req, rem;
             req.tv_sec = 0;
