@@ -944,7 +944,7 @@ void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice 
         if (deviceIter != privacyDevices_.rend()) {
             deviceAddr = deviceIter->GetDeviceAddr();
             AUDIO_WARNING_LOG("Change user select device from watch %{public}s to wear headphone %{public}s",
-                device.GetDeviceAddr().c_str(), deviceAddr.c_str());
+                GetEncryptAddr(device.GetDeviceAddr()).c_str(), GetEncryptAddr(deviceAddr).c_str());
         }
     }
     std::lock_guard<std::mutex> observerLock(g_observerLock);

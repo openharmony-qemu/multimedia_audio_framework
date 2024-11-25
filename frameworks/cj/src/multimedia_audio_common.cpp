@@ -74,13 +74,14 @@ void Convert2CArrDeviceDescriptorByDeviceInfo(CArrDeviceDescriptor &devices, con
     int32_t *errorCode)
 {
     size_t deviceSize = 1;
-    CDeviceDescriptor *device = static_cast<CDeviceDescriptor *>(malloc(sizeof(CDeviceDescriptor) * deviceSize));
+    int32_t mallocSize = sizeof(CDeviceDescriptor) * deviceSize;
+    CDeviceDescriptor *device = static_cast<CDeviceDescriptor *>(malloc(mallocSize));
     if (device == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return;
     }
     devices.head = device;
-    if (memset_s(device, sizeof(*device), 0, deviceSize) != EOK) {
+    if (memset_s(device, mallocSize, 0, mallocSize) != EOK) {
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
@@ -101,13 +102,14 @@ void InitializeDeviceRatesAndChannels(CDeviceDescriptor *device, const AudioDevi
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
-    auto rates = static_cast<int32_t *>(malloc(sizeof(int32_t) * rateSize));
+    int32_t mallocSize = sizeof(int32_t) * rateSize;
+    auto rates = static_cast<int32_t *>(malloc(mallocSize));
     if (rates == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return;
     }
     int32_t iter = 0;
-    if (memset_s(rates, sizeof(int32_t) * rateSize, 0, rateSize) != EOK) {
+    if (memset_s(rates, mallocSize, 0, mallocSize) != EOK) {
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
@@ -124,12 +126,13 @@ void InitializeDeviceRatesAndChannels(CDeviceDescriptor *device, const AudioDevi
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
-    auto channels = static_cast<int32_t *>(malloc(sizeof(int32_t) * channelSize));
+    mallocSize = sizeof(int32_t) * channelSize;
+    auto channels = static_cast<int32_t *>(malloc(mallocSize));
     if (channels == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return;
     }
-    if (memset_s(channels, sizeof(int32_t) * channelSize, 0, channelSize) != EOK) {
+    if (memset_s(channels, mallocSize, 0, mallocSize) != EOK) {
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
@@ -153,13 +156,17 @@ void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const AudioDeviceDescr
     device->id = deviceInfo.deviceId_;
 
     InitializeDeviceRatesAndChannels(device, deviceInfo, errorCode);
-    auto masks = static_cast<int32_t *>(malloc(sizeof(int32_t) * deviceSize));
+    if (*errorCode != SUCCESS_CODE) {
+        return;
+    }
+    int32_t mallocSize = sizeof(int32_t) * deviceSize;
+    auto masks = static_cast<int32_t *>(malloc(mallocSize));
     if (masks == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return;
     }
     int32_t iter = 0;
-    if (memset_s(masks, sizeof(int32_t) * deviceSize, 0, deviceSize) != EOK) {
+    if (memset_s(masks, mallocSize, 0, mallocSize) != EOK) {
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
@@ -167,12 +174,12 @@ void Convert2CDeviceDescriptor(CDeviceDescriptor *device, const AudioDeviceDescr
     device->channelMasks.size = deviceSize;
     device->channelMasks.head = masks;
 
-    auto encodings = static_cast<int32_t *>(malloc(sizeof(int32_t) * deviceSize));
+    auto encodings = static_cast<int32_t *>(malloc(mallocSize));
     if (encodings == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return;
     }
-    if (memset_s(encodings, sizeof(int32_t) * deviceSize, 0, deviceSize) != EOK) {
+    if (memset_s(encodings, mallocSize, 0, mallocSize) != EOK) {
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
@@ -190,13 +197,14 @@ void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor &devices,
         return;
     } else {
         devices.size = static_cast<int64_t>(deviceDescriptors.size());
-        CDeviceDescriptor *device = static_cast<CDeviceDescriptor *>(malloc(sizeof(CDeviceDescriptor) * devices.size));
+        int32_t mallocSize = sizeof(CDeviceDescriptor) * devices.size;
+        CDeviceDescriptor *device = static_cast<CDeviceDescriptor *>(malloc(mallocSize));
         if (device == nullptr) {
             *errorCode = CJ_ERR_NO_MEMORY;
             return;
         }
         devices.head = device;
-        if (memset_s(device, devices.size, 0, devices.size) != EOK) {
+        if (memset_s(device, mallocSize, 0, mallocSize) != EOK) {
             *errorCode = CJ_ERR_SYSTEM;
             return;
         }
@@ -234,29 +242,25 @@ void ConvertAudioDeviceDescriptor2DeviceInfo(AudioDeviceDescriptor &deviceInfo,
 void FreeCDeviceDescriptor(CDeviceDescriptor &device)
 {
     free(device.address);
-    device.address = NULL;
+    device.address = nullptr;
     free(device.displayName);
-    device.displayName = NULL;
+    device.displayName = nullptr;
     free(device.name);
-    device.name = NULL;
+    device.name = nullptr;
     if (device.channelCounts.size != 0) {
         free(device.channelCounts.head);
-        device.channelCounts.head = nullptr;
     }
     device.channelCounts.head = nullptr;
     if (device.channelMasks.size != 0) {
         free(device.channelMasks.head);
-        device.channelMasks.head = nullptr;
     }
     device.channelMasks.head = nullptr;
     if (device.sampleRates.size != 0) {
         free(device.sampleRates.head);
-        device.sampleRates.head = nullptr;
     }
     device.sampleRates.head = nullptr;
     if (device.encodingTypes.hasValue && device.encodingTypes.arr.size != 0) {
         free(device.encodingTypes.arr.head);
-        device.encodingTypes.arr.head = nullptr;
     }
     device.encodingTypes.arr.head = nullptr;
 }
@@ -291,7 +295,7 @@ void FreeCArrAudioRendererChangeInfo(CArrAudioRendererChangeInfo &infos)
         return;
     }
     for (int64_t i = 0; i < infos.size; i++) {
-        FreeCDeviceDescriptor((infos.head)[i].deviceDescriptor);
+        FreeCArrDeviceDescriptor((infos.head)[i].deviceDescriptors);
     }
     free(infos.head);
     infos.head = nullptr;
@@ -319,10 +323,10 @@ void Convert2AudioRendererInfo(CAudioRendererInfo &cInfo, const AudioRendererInf
 }
 
 void Convert2CAudioRendererChangeInfo(CAudioRendererChangeInfo &cInfo, const AudioRendererChangeInfo &changeInfo,
-                                      int32_t *errorCode)
+    int32_t *errorCode)
 {
     cInfo.streamId = changeInfo.sessionId;
-    Convert2CDeviceDescriptor(&cInfo.deviceDescriptor, changeInfo.outputDeviceInfo, errorCode);
+    Convert2CArrDeviceDescriptorByDeviceInfo(cInfo.deviceDescriptors, changeInfo.outputDeviceInfo, errorCode);
     Convert2AudioRendererInfo(cInfo.rendererInfo, changeInfo.rendererInfo);
 }
 } // namespace AudioStandard

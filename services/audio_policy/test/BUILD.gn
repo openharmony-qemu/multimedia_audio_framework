@@ -402,6 +402,10 @@ ohos_unittest("audio_policy_server_unit_test") {
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 
+  if (audio_framework_feature_dtmf_tone) {
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
+
   if (accessibility_enable == true) {
     external_deps += [
       "accessibility:accessibility_common",

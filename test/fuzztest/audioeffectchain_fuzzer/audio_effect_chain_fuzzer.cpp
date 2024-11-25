@@ -151,18 +151,6 @@ void EffectChainManagerReturnMultiChannelInfoFuzzTest(const uint8_t* rawData, si
     EffectChainManagerReturnMultiChannelInfo(&processChannels, &processChannelLayout);
 }
 
-void EffectChainManagerGetSpatializationEnabledFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    EffectChainManagerInitCb(SCENETYPEMUSIC);
-
-    EffectChainManagerGetSpatializationEnabled();
-    EffectChainManagerFlush();
-}
-
 void EffectChainManagerSceneCheckFuzzTest(const uint8_t* rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -344,7 +332,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
     OHOS::AudioStandard::EffectChainManagerDeleteSessionInfoFuzzTest(rawData, size);
     OHOS::AudioStandard::EffectChainManagerReturnEffectChannelInfoFuzzTest(rawData, size);
     OHOS::AudioStandard::EffectChainManagerReturnMultiChannelInfoFuzzTest(rawData, size);
-    OHOS::AudioStandard::EffectChainManagerGetSpatializationEnabledFuzzTest(rawData, size);
     OHOS::AudioStandard::EffectChainManagerSceneCheckFuzzTest(rawData, size);
     OHOS::AudioStandard::EffectChainManagerProcessFuzzTest(rawData, size);
     OHOS::AudioStandard::EffectChainManagerMultichannelUpdateFuzzTest(rawData, size);

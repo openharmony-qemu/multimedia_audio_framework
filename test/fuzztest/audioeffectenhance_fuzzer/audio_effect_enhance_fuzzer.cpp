@@ -132,8 +132,7 @@ void AudioEffectChainAdapterFuzzTest(const uint8_t* rawData, size_t size)
     EffectChainManagerGetSceneCount(sceneTypeExist);
 
     const char *effectMode = "EFFECT_DEFAULT";
-    const char *spatializationEnabled = "0";
-    EffectChainManagerExist(sceneTypeExist, effectMode, spatializationEnabled);
+    EffectChainManagerExist(sceneTypeExist, effectMode);
 
     const uint64_t channelLayout = CH_LAYOUT_MONO;
     pa_channel_map processCm;

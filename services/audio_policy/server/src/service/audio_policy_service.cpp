@@ -897,8 +897,7 @@ int32_t AudioPolicyService::HandleDpDevice(DeviceType deviceType, const std::str
 
         getDPInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, GET_DP_DEVICE_INFO,
             defaulyDPInfo + " address=" + address + " ");
-        AUDIO_DEBUG_LOG("device info from dp hal is \n defaulyDPInfo:%{public}s \n getDPInfo:%{public}s",
-            defaulyDPInfo.c_str(), getDPInfo.c_str());
+        AUDIO_DEBUG_LOG("device info from dp hal is \n defaulyDPInfo:%{public}s", defaulyDPInfo.c_str());
 
         getDPInfo = getDPInfo.empty() ? defaulyDPInfo : getDPInfo;
         int32_t ret = LoadDpModule(getDPInfo);
@@ -1383,8 +1382,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
         audioActiveDevice_.GetCurrentOutputDeviceType(),
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
     // only for the active a2dp device.
-    if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)
-        && audioActiveDevice_.IsDeviceActive(deviceType)) {
+    if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
         auto activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
         AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag: %{public}d",
             streamInfo.samplingRate, GetA2dpOffloadFlag());
@@ -3551,7 +3549,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpD
         AppendFormat(dumpString, "  - device id:%d\n", devDesc->deviceId_);
         AppendFormat(dumpString, "  - device role:%d\n", devDesc->deviceRole_);
         AppendFormat(dumpString, "  - device name:%s\n", devDesc->deviceName_.c_str());
-        AppendFormat(dumpString, "  - device mac:%s\n", devDesc->macAddress_.c_str());
+        AppendFormat(dumpString, "  - device mac:%s\n", GetEncryptAddr(devDesc->macAddress_).c_str());
         AppendFormat(dumpString, "  - device network:%s\n", devDesc->networkId_.c_str());
         if (deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG || deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
             conneceType_  = CONNECT_TYPE_LOCAL;
@@ -4039,7 +4037,11 @@ int32_t AudioPolicyService::UnsetAudioConcurrencyCallback(const uint32_t session
 
 int32_t AudioPolicyService::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
-    return streamCollector_.ActivateAudioConcurrency(pipeType);
+    int32_t ret = streamCollector_.ActivateAudioConcurrency(pipeType);
+    if (ret != SUCCESS && pipeType == PIPE_TYPE_CALL_IN) {
+        return streamCollector_.ActivateAudioConcurrency(PIPE_TYPE_NORMAL_IN);
+    }
+    return ret;
 }
 
 int32_t AudioPolicyService::ResetRingerModeMute()

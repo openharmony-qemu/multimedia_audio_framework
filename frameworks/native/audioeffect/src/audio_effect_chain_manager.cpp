@@ -369,11 +369,10 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     return ReleaseAudioEffectChainDynamicInner(sceneType);
 }
 
-bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode,
-    const std::string &spatializationEnabled)
+bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
-    return ExistAudioEffectChainInner(sceneType, effectMode, spatializationEnabled);
+    return ExistAudioEffectChainInner(sceneType, effectMode);
 }
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneType,
@@ -662,7 +661,7 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
             SessionEffectInfo info = sessionIDToEffectInfoMap_[*s];
             if (info.channels > tmpChannelCount &&
                 info.channels <= DSP_MAX_NUM_CHANNEL &&
-                !ExistAudioEffectChainInner(it->first, info.sceneMode, info.spatializationEnabled) &&
+                !ExistAudioEffectChainInner(it->first, info.sceneMode) &&
                 IsChannelLayoutSupported(info.channelLayout)) {
                 tmpChannelCount = info.channels;
                 tmpChannelLayout = info.channelLayout;
@@ -944,20 +943,6 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
     }
 }
 
-bool AudioEffectChainManager::GetCurSpatializationEnabled()
-{
-    return spatializationEnabled_;
-}
-
-void AudioEffectChainManager::ResetEffectBuffer()
-{
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    for (const auto &[sceneType, effectChain] : sceneTypeToEffectChainMap_) {
-        if (effectChain == nullptr) continue;
-        effectChain->InitEffectChain();
-    }
-}
-
 void AudioEffectChainManager::ResetInfo()
 {
     effectToLibraryEntryMap_.clear();
@@ -1102,7 +1087,7 @@ void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType
         uint64_t tmpChannelLayout;
         std::string deviceType = GetDeviceTypeName();
         if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER"))
-            && ExistAudioEffectChainInner(sceneType, info.sceneMode, info.spatializationEnabled)
+            && ExistAudioEffectChainInner(sceneType, info.sceneMode)
             && IsChannelLayoutSupported(info.channelLayout)) {
             tmpChannelLayout = info.channelLayout;
             tmpChannelCount = info.channels;
@@ -1448,8 +1433,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamicInner(const std::
     return SUCCESS;
 }
 
-bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &sceneType, const std::string &effectMode,
-    const std::string &spatializationEnabled)
+bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &sceneType, const std::string &effectMode)
 {
     if (!isInitialized_) {
         if (initializedLogFlag_) {

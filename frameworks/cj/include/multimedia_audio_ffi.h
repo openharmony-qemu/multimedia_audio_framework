@@ -141,9 +141,9 @@ struct CAudioRendererOptions {
 };
 
 struct CAudioRendererChangeInfo {
-    int32_t streamId;
-    CDeviceDescriptor deviceDescriptor;
     CAudioRendererInfo rendererInfo;
+    CArrDeviceDescriptor deviceDescriptors;
+    int32_t streamId;
 };
 
 struct CArrAudioRendererChangeInfo {

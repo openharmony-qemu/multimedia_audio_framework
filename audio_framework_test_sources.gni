@@ -19,13 +19,5 @@ template("audio_ohos_library") {
   }
   ohos_static_library("${target_name}_static") {
     forward_variables_from(invoker, "*", [ "version_script" ])
-    if (!defined(invoker.sanitize)) {
-      sanitize = {
-        cfi = true
-        cfi_cross_dso = true
-        cfi_vcall_icall_only = true
-        debug = false
-      }
-    }
   }
 }
