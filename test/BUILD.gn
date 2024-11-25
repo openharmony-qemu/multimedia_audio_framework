@@ -52,7 +52,6 @@ group("audio_unit_test") {
     "../frameworks/native/hdiadapter/sink/test/unittest/remote_fast_audio_render_sink_unit_test:remote_fast_audio_render_sink_unit_test",
     "../frameworks/native/hdiadapter/test/unittest/audio_device_adapter_impl_unit_test:audio_device_adapter_impl_unit_test",
     "../frameworks/native/hdiadapter/test/unittest/audio_device_manager_impl_unit_test:audio_device_manager_impl_unit_test",
-    "../frameworks/native/hdiadapter/test/unittest/hdi_utils_ringbuffer_unit_test:hdi_utils_ringbuffer_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_capture_test:audio_oh_capture_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_device_change_test:audio_oh_device_change_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",

@@ -5726,11 +5726,7 @@ std::string AudioPolicyService::GetEcChannels(const std::string &halName, Stream
         }
         return std::to_string(outModuleInfo.channelLayout_);
     } else {
-        if (audioEcInfo_.inputDevice == DEVICE_TYPE_MIC) {
-            return "4";
-        } else {
-            return std::to_string(HEADPHONE_CHANNEL_NUM);
-        }
+        return std::to_string(HEADPHONE_CHANNEL_NUM);
     }
 }
 
