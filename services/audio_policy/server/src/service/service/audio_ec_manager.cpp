@@ -321,11 +321,7 @@ std::string AudioEcManager::GetEcChannels(const std::string &halName, StreamProp
         }
         return std::to_string(outModuleInfo.channelLayout_);
     } else {
-        if (audioEcInfo_.inputDevice == DEVICE_TYPE_MIC) {
-            return "4";
-        } else {
-            return std::to_string(HEADPHONE_CHANNEL_NUM);
-        }
+        return std::to_string(HEADPHONE_CHANNEL_NUM);
     }
 }
 
