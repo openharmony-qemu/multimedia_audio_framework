@@ -101,7 +101,7 @@ static void IncreaseScenekeyCount(pa_hashmap *sceneMap, const char *key)
             if (pa_hashmap_put(sceneMap, sceneKey, num) != 0) {
                 AUDIO_ERR_LOG("pa_hashmap_put failed");
                 free(sceneKey);
-                free(num);
+                pa_xfree(num);
             }
         }
     }
