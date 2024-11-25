@@ -52,7 +52,9 @@ struct Userdata {
     pa_usec_t blockUsec;
     pa_usec_t timestamp;
     SourceAttr attrs;
-    pa_atomic_t isCapturerStarted;
+    bool isCapturerStarted;
+    pa_atomic_t captureFlag;
+    pa_atomic_t quitCaptureFlag;
     EcType ecType;
     const char *ecAdapaterName;
     uint32_t ecSamplingRate;
@@ -65,7 +67,6 @@ struct Userdata {
     uint32_t micRefChannels;
     pa_sample_spec micRefSpec;
     struct CapturerSourceAdapter *sourceAdapter;
-    pa_usec_t delayTime;
     pa_hashmap *sceneToCountMap;
     pa_hashmap *sceneToPreResamplerMap;
     pa_hashmap *sceneToEcResamplerMap;
