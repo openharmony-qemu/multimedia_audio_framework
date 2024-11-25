@@ -38,6 +38,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include "source_userdata.h"
 #include "securec.h"
@@ -69,16 +70,12 @@
 #define DEVICE_TYPE_MIC 15
 #define FRAME_DURATION_DEFAULT 20
 #define MILLISECOND_PER_SECOND 1000
+#define HDI_POST 100
 
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const int32_t SUCCESS = 0;
 const int32_t ERROR = -1;
-
-enum {
-    HDI_CAPTURE,
-    QUIT
-};
 
 static int PaHdiCapturerInit(struct Userdata *u);
 static void PaHdiCapturerExit(struct Userdata *u);
@@ -226,7 +223,7 @@ static void UserdataFree(struct Userdata *u)
     }
 
     if (u->threadCap) {
-        pa_asyncmsgq_post(u->CaptureMq, NULL, QUIT, NULL, 0, NULL, NULL);
+        pa_atomic_store(&u->quitCaptureFlag, 1);
         pa_thread_free(u->threadCap);
     }
     if (u->CaptureMq) {
@@ -298,36 +295,35 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
 
     if ((s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) &&
         PA_SOURCE_IS_OPENED(newState)) {
-        u->delayTime = 0;
         u->timestamp = pa_rtclock_now();
         if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
             u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
         }
-        if (newState == PA_SOURCE_RUNNING && (pa_atomic_load(&u->isCapturerStarted) == 0)) {
+        if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
             if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("HDI capturer start failed");
                 return -PA_ERR_IO;
             }
             StartAuxCapture(u);
-            pa_atomic_store(&u->isCapturerStarted, 1);
+            u->isCapturerStarted = true;
             AUDIO_DEBUG_LOG("Successfully started HDI capturer");
         }
     } else if (s->thread_info.state == PA_SOURCE_IDLE) {
         if (newState == PA_SOURCE_SUSPENDED) {
-            if (pa_atomic_load(&u->isCapturerStarted) == 1) {
+            if (u->isCapturerStarted) {
                 u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
-                pa_atomic_store(&u->isCapturerStarted, 0);
+                u->isCapturerStarted = false;
                 AUDIO_DEBUG_LOG("Stopped HDI capturer");
                 StopAuxCapture(u);
             }
-        } else if (newState == PA_SOURCE_RUNNING && (pa_atomic_load(&u->isCapturerStarted) == 0)) {
+        } else if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
             AUDIO_DEBUG_LOG("Idle to Running starting HDI capturing device");
             if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("Idle to Running HDI capturer start failed");
                 return -PA_ERR_IO;
             }
             StartAuxCapture(u);
-            pa_atomic_store(&u->isCapturerStarted, 1);
+            u->isCapturerStarted = true;
             AUDIO_DEBUG_LOG("Idle to Running: Successfully reinitialized HDI renderer");
         }
     }
@@ -675,17 +671,9 @@ static int32_t MicRefResample(const char *sceneKey, struct Userdata *u)
     return SUCCESS;
 }
 
-static int32_t GetCapturerFrameFromHdiAndProcess(pa_memchunk *chunk, struct Userdata *u)
+static int32_t AudioEnhanceExistAndProcess(pa_memchunk *chunk, struct Userdata *u)
 {
-    AUTO_CTRACE("GetCapturerFrameFromHdiAndProcess");
-    // new chunks
-    chunk->length = u->bufferSize;
-    AUDIO_DEBUG_LOG("HDI Source: chunk.length = u->bufferSize: %{public}zu", chunk->length);
-    chunk->memblock = pa_memblock_new(u->core->mempool, chunk->length);
-
-    if (GetCapturerFrameFromHdi(chunk, u) != 0) {
-        return -1;
-    }
+    AUTO_CTRACE("AudioEnhanceExistAndProcess");
 
     bool ret = EnhanceChainManagerIsEmptyEnhanceChain();
     if (ret) {
@@ -724,60 +712,71 @@ static int32_t GetCapturerFrameFromHdiAndProcess(pa_memchunk *chunk, struct User
     return 0;
 }
 
-static void ThreadProcessCapData(void *userdata)
+static void ThreadCaptureData(void *userdata)
 {
     struct Userdata *u = userdata;
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
     pa_thread_mq_install(&u->threadCapMq);
 
     pa_memchunk chunk;
-    int32_t quit = 0;
+    int32_t ret = 0;
+    pa_usec_t now = 0;
 
-    do {
-        AUTO_CTRACE("OS_ProcessCapDataLoop");
-        int32_t code = 0;
-        pa_assert_se(pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, NULL, 1) == 0);
-
-        switch (code) {
-            case HDI_CAPTURE: {
-                if (pa_atomic_load(&u->isCapturerStarted) == 1) { GetCapturerFrameFromHdiAndProcess(&chunk, u); }
-                break;
+    while (!pa_atomic_load(&u->quitCaptureFlag)) {
+        now = pa_rtclock_now();
+        if (pa_atomic_load(&u->captureFlag) == 1) {
+            chunk.length = u->bufferSize;
+            AUDIO_DEBUG_LOG("HDI Source: chunk.length = u->bufferSize: %{public}zu", chunk.length);
+            chunk.memblock = pa_memblock_new(u->core->mempool, chunk.length);
+            ret = GetCapturerFrameFromHdi(&chunk, u);
+            if (ret != 0) {
+                AUDIO_ERR_LOG("GetCapturerFrameFromHdi failed");
+                continue;
             }
-            case QUIT: {
-                quit = 1;
-                break;
-            }
-            default:
-                break;
+            pa_asyncmsgq_post(u->CaptureMq, NULL, HDI_POST, NULL, 0, &chunk, NULL);
+            AUDIO_DEBUG_LOG("capture frame cost :%{public}" PRIu64, pa_rtclock_now() - now);
+        } else {
+            struct timespec req, rem;
+            req.tv_sec = 0;
+            req.tv_nsec = 20000000; // 20000000 nanoseconds = 20ms
+            clock_nanosleep(CLOCK_REALTIME, 0, &req, &rem);
         }
-
-        pa_asyncmsgq_done(u->CaptureMq, 0);
-    } while (!quit);
+    }
+    AUDIO_INFO_LOG("[SL]: ThreadCaptureData quit pid %{public}d, tid %{public}d", getpid(), gettid());
 }
 
 static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
 {
     bool flag = (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) ?
-        (u->source->thread_info.state == PA_SOURCE_RUNNING && (pa_atomic_load(&u->isCapturerStarted) == 1)) :
-        (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && (pa_atomic_load(&u->isCapturerStarted) == 1));
+        (u->source->thread_info.state == PA_SOURCE_RUNNING && u->isCapturerStarted) :
+        (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->isCapturerStarted);
     if (!flag) {
+        pa_atomic_store(&u->captureFlag, 0);
         pa_rtpoll_set_timer_disabled(u->rtpoll);
-        AUDIO_DEBUG_LOG("HDI Source: pa_rtpoll_set_timer_disabled done ");
         return true;
     }
-    pa_usec_t now;
 
-    now = pa_rtclock_now();
+    pa_memchunk chunk;
+    int32_t code = 0;
+    pa_usec_t now = pa_rtclock_now();
     AUDIO_DEBUG_LOG("HDI Source: now: %{public}" PRIu64 " timerElapsed: %{public}d", now, timerElapsed);
 
     if (timerElapsed) {
         uint32_t length = pa_usec_to_bytes(now - u->timestamp, &u->source->sample_spec);
         if (length > 0) {
-            pa_asyncmsgq_post(u->CaptureMq, NULL, HDI_CAPTURE, NULL, 0, NULL, NULL);
+            pa_atomic_store(&u->captureFlag, 1);
+            pa_assert_se(pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
+            if (code == HDI_POST) {
+                AudioEnhanceExistAndProcess(&chunk, u);
+            }
+            pa_asyncmsgq_done(u->CaptureMq, 0);
 
             u->timestamp += pa_bytes_to_usec(length, &u->source->sample_spec);
-            AUDIO_DEBUG_LOG("HDI Source: new u->timestamp : %{public}" PRIu64, u->timestamp);
+            AUDIO_DEBUG_LOG("length:%{public}u timestamp add:%{public}" PRIu64" to %{public}" PRIu64" ",
+                length, pa_bytes_to_usec(length, &u->source->sample_spec), u->timestamp);
         }
+    } else {
+        pa_atomic_store(&u->captureFlag, 0);
     }
 
     int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE];
@@ -796,11 +795,8 @@ static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
     }
 
     pa_usec_t costTime = pa_rtclock_now() - now;
-    if (costTime > u->blockUsec) {
-        u->delayTime += (costTime - u->blockUsec);
-    }
-
-    pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->blockUsec + u->delayTime);
+    AUDIO_DEBUG_LOG("enhance process and post costTime:%{public}" PRIu64 " ", costTime);
+    pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + costTime);
     return true;
 }
 
@@ -878,7 +874,7 @@ static int PaHdiCapturerInit(struct Userdata *u)
             goto fail;
         }
         StartAuxCapture(u);
-        pa_atomic_store(&u->isCapturerStarted, 1);
+        u->isCapturerStarted = true;
     }
     return ret;
 
@@ -1027,7 +1023,7 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
         "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
 
     u->attrs.openMicSpeaker = u->openMicSpeaker;
-    
+
     u->sceneToCountMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
         pa_xfree, pa_xfree);
 
@@ -1197,6 +1193,9 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
     CHECK_AND_RETURN_RET_LOG(m != NULL, -1, "m is null");
     CHECK_AND_RETURN_RET_LOG(u != NULL, -1, "u is null");
 
+    pa_atomic_store(&u->captureFlag, 0);
+    pa_atomic_store(&u->quitCaptureFlag, 0);
+
     if (!(u->thread = pa_thread_new("OS_ReadHdi", ThreadFuncCapturerTimer, u))) {
         AUDIO_ERR_LOG("Failed to create hdi-source-record thread!");
         return -1;
@@ -1211,7 +1210,7 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
         return -1;
     }
 
-    if (!(u->threadCap = pa_thread_new("OS_ProcessCapData", ThreadProcessCapData, u))) {
+    if (!(u->threadCap = pa_thread_new("OS_CaptureData", ThreadCaptureData, u))) {
         AUDIO_ERR_LOG("Failed to create capture-data thread!");
         return -1;
     }
@@ -1277,7 +1276,7 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 
 fail:
 
-    if (pa_atomic_load(&u->isCapturerStarted) == 1) {
+    if (u->isCapturerStarted) {
         PaHdiCapturerExit(u);
     }
     UserdataFree(u);
