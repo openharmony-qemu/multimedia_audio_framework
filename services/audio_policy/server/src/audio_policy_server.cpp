@@ -470,9 +470,12 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
 {
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
-    if (isInitMuteState_ == false && action == "usual.event.DATA_SHARE_READY") {
-        AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
-        InitMicrophoneMute();
+    if (action == "usual.event.DATA_SHARE_READY") {
+        if (isInitMuteState_ == false) {
+            AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
+            InitMicrophoneMute();
+        }
+        audioPolicyService_.SetDataShareReady(true);
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
@@ -804,9 +807,9 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
         return ERR_OPERATION_FAILED;
     }
     if (streamType == STREAM_ALL) {
-        for (auto audioSteamType : GET_STREAM_ALL_VOLUME_TYPES) {
-            AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d ", audioSteamType);
-            int32_t setResult = SetSingleStreamVolume(audioSteamType, volumeLevel, isUpdateUi);
+        for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
+            AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d ", audioStreamType);
+            int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi);
             if (setResult != SUCCESS) {
                 return setResult;
             }

@@ -4527,12 +4527,17 @@ bool AudioPolicyService::IsDataShareReady()
     }
 }
 
+void AudioPolicyService::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    audioPolicyManager_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
     CHECK_AND_RETURN_LOG(dataShareHelper != nullptr, "dataShareHelper is NULL");
 
-    auto uri = std::make_shared<Uri>(SETTINGS_DATA_BASE_URI + "&key=" + PREDICATES_STRING);
+    auto uri = std::make_shared<Uri>(std::string(SETTINGS_DATA_BASE_URI) + "&key=" + PREDICATES_STRING);
     sptr<AAFwk::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
     dataShareHelper->RegisterObserver(*uri, settingDataObserver);
 
@@ -7062,8 +7067,7 @@ void AudioPolicyService::RegisterDataObserver()
 {
     std::string devicesName = "";
     int32_t ret = GetDeviceNameFromDataShareHelper(devicesName);
-    AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", devicesName.c_str());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterDataObserver get devicesName failed");
     SetDisplayName(devicesName, true);
     RegisterNameMonitorHelper();
 }
