@@ -4629,10 +4629,10 @@ uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
 
 bool AudioPolicyService::getFastControlParam()
 {
-    int32_t fastControlFlag = 0;
+    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
-    if (fastControlFlag == 1) {
-        isFastControlled_ = true;
+    if (fastControlFlag == 0) {
+        isFastControlled_ = false;
     }
     return isFastControlled_;
 }

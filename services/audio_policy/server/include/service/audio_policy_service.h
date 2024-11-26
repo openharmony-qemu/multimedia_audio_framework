@@ -970,7 +970,7 @@ private:
     bool enableDualHalToneState_ = false;
     int32_t enableDualHalToneSessionId_ = -1;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
-    bool isFastControlled_ = false;
+    bool isFastControlled_ = true;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
