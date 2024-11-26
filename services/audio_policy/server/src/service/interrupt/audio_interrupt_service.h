@@ -97,6 +97,7 @@ public:
     int32_t GetStreamTypePriority(AudioStreamType streamType);
     unordered_map<AudioStreamType, int> GetStreamPriorityMap() const;
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
+    AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
     void AudioInterruptZoneDump(std::string &dumpString);
@@ -231,6 +232,8 @@ private:
         const AudioInterrupt &activeInterrupt);
     bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
         &audioFocusInfoList);
+
+    AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
