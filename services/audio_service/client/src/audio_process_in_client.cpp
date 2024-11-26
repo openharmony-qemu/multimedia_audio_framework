@@ -392,6 +392,7 @@ int32_t AudioProcessInClientInner::GetBufferSize(size_t &bufferSize)
 int32_t AudioProcessInClientInner::GetFrameCount(uint32_t &frameCount)
 {
     frameCount = static_cast<uint32_t>(clientSpanSizeInFrame_);
+    AUDIO_INFO_LOG ("GetFrameCount successfully, FrameCount: %{public}u", frameCount);
     return SUCCESS;
 }
 
@@ -526,11 +527,8 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     spanSizeInMs_ = spanSizeInFrame_ * MILLISECOND_PER_SECOND / processConfig_.streamInfo.samplingRate;
 
     clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
-    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        if (clientSpanSizeInFrame_ != spanSizeInFrame_) {
-            clientSpanSizeInFrame_ = spanSizeInFrame_;
-        }
-    } else if (!isVoipMmap_) {
+    clientSpanSizeInFrame_ = spanSizeInFrame_;
+    if ((processConfig_.audioMode != AUDIO_MODE_PLAYBACK) && (!isVoipMmap_)) {
         clientSpanSizeInByte_ = spanSizeInByte_;
     }
 
