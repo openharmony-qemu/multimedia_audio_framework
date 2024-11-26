@@ -123,7 +123,7 @@ private:
     std::string dumpNameIn_ = "";
     std::string dumpNameOut_ = "";
     bool spatializationEnabledFading_ = false;
-    int32_t fadingCounts = 0;
+    int32_t fadingCounts_ = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
