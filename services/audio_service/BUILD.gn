@@ -185,6 +185,7 @@ ohos_shared_library("audio_client") {
     "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
+    "client/src/resource_manager_adapter.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
@@ -205,11 +206,13 @@ ohos_shared_library("audio_client") {
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
+    "i18n:intl_util",
     "init:libbegetutil",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
+    "resource_management:global_resmgr",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

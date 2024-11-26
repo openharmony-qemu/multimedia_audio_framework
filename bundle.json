@@ -126,6 +126,7 @@
                 "header_files": [
                   "audio_system_manager.h",
                   "audio_stream_manager.h",
+                  "resource_manager_adapter.h",
                   "audio_group_manager.h",
                   "./audiocommon/include/audio_info.h",
                   "./audiocommon/include/audio_stream_change_info.h"
