@@ -291,7 +291,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_001, TestSize.Level1)
     outputDevices.push_back(std::move(audioDeviceDescriptor));
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-    server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
+    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
 
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor1 = std::make_shared<AudioDeviceDescriptor>();
@@ -300,7 +300,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_001, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptor2->deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
     outputDevices.push_back(std::move(audioDeviceDescriptor2));
-    server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
+    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
     audioDeviceDescriptor.reset();
     audioDeviceDescriptor1.reset();
@@ -324,11 +324,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_002, TestSize.Level1)
     outputDevices.push_back(std::move(audioDeviceDescriptor));
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
+    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
 
-    server->audioPolicyService_.enableDualHalToneState_ = true;
-    server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
+    server->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
+    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
     audioDeviceDescriptor.reset();
     rendererChangeInfo.reset();
@@ -376,7 +376,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetDefaultOutputDevice_001, TestSize.
         AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
             deviceType, sessionID, streamUsage, isRunning);
     EXPECT_EQ(SUCCESS, result);
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.hasEarpiece_ = true;
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
     result =
         AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
             deviceType, sessionID, streamUsage, isRunning);
@@ -752,19 +752,19 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsRingerOrAlarmerDualDevicesRange_001
     EXPECT_NE(nullptr, server);
 
     InternalDeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    bool ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    bool ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_WIRED_HEADSET;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_WIRED_HEADPHONES;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 }
 
@@ -780,43 +780,19 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsRingerOrAlarmerDualDevicesRange_002
     EXPECT_NE(nullptr, server);
 
     InternalDeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    bool ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    bool ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_USB_HEADSET;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_DP;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test IsA2dpOrArmUsbDevice.
-* @tc.number: IsA2dpOrArmUsbDevice_001
-* @tc.desc  : Test AudioPolicyServic interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOrArmUsbDevice_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOrArmUsbDevice_001 start");
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    InternalDeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    bool ret = server->audioPolicyService_.IsA2dpOrArmUsbDevice(deviceType);
-    EXPECT_EQ(true, ret);
-
-    deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
-    ret = server->audioPolicyService_.IsA2dpOrArmUsbDevice(deviceType);
-    EXPECT_EQ(true, ret);
-
-    deviceType = DEVICE_TYPE_DP;
-    ret = server->audioPolicyService_.IsA2dpOrArmUsbDevice(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(false, ret);
 }
 
@@ -849,13 +825,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ScoInputDeviceFetchedForRecongnition_
 
     bool handleFlag = false;
     ConnectState connectState = DEACTIVE_CONNECTED;
-    int32_t result =
-        server->audioPolicyService_.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
+    int32_t result = server->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(handleFlag,
+        address, connectState);
     EXPECT_EQ(SUCCESS, result);
 
     handleFlag = true;
     connectState = VIRTUAL_CONNECTED;
-    result = server->audioPolicyService_.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
+    result = server->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(handleFlag,
+        address, connectState);
     EXPECT_EQ(SUCCESS, result);
 }
 
@@ -917,8 +894,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs1;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo1 = std::make_shared<AudioRendererChangeInfo>();
-    bool result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SelectRingerOrAlarmDevices(
-        descs1, rendererChangeInfo1);
+    bool result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs1, rendererChangeInfo1);
     EXPECT_EQ(false, result);
 
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs2;
@@ -928,8 +905,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo2 = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo2->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
     rendererChangeInfo2->sessionId = TEST_SESSIONID;
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SelectRingerOrAlarmDevices(
-        descs2, rendererChangeInfo2);
+    result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs2, rendererChangeInfo2);
     EXPECT_EQ(true, result);
 
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs3;
@@ -939,11 +916,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo3 = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo3->rendererInfo.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
     rendererChangeInfo3->sessionId = TEST_SESSIONID;
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.enableDualHalToneState_ = true;
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
     AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioPolicyManager_.SetRingerMode(
         RINGER_MODE_VIBRATE);
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SelectRingerOrAlarmDevices(
-        descs3, rendererChangeInfo3);
+    result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs3, rendererChangeInfo3);
     EXPECT_EQ(true, result);
 
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs4;
@@ -953,9 +930,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo4 = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo4->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
     rendererChangeInfo4->sessionId = TEST_SESSIONID;
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.enableDualHalToneState_ = true;
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SelectRingerOrAlarmDevices(
-        descs4, rendererChangeInfo4);
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
+    result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs4, rendererChangeInfo4);
     EXPECT_EQ(false, result);
 
     rendererChangeInfo1.reset();
