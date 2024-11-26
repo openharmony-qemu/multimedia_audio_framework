@@ -1011,8 +1011,10 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
     CHECK_AND_RETURN_RET_LOG(offloadRunningLockManager_ == nullptr, ERR_OPERATION_FAILED,
         "OffloadKeepRunningLock is not null, init failed!");
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:OffloadRunningLockInit");
     keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
         PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+    guard.CheckCurrTimeout();
 
     CHECK_AND_RETURN_RET_LOG(keepRunningLock != nullptr, ERR_OPERATION_FAILED, "keepRunningLock is nullptr");
     offloadRunningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
@@ -1027,8 +1029,10 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
     AUDIO_INFO_LOG("keepRunningLock Lock");
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (offloadRunningLockManager_ == nullptr) {
+        WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:OffloadRunningLockLock");
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        guard.CheckCurrTimeout();
         if (keepRunningLock) {
             offloadRunningLockManager_ =
                 std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
