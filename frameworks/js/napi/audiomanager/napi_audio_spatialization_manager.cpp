@@ -526,6 +526,10 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupportedForDevice(napi
     CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
         "invalid parameter");
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
+        "napiAudioSpatializationManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,
+        "audioSpatializationMngr_ is nullptr");
 
     bool isHeadTrackingSupportedForDevice = napiAudioSpatializationManager
         ->audioSpatializationMngr_->IsHeadTrackingSupportedForDevice(selectedAudioDevice);
