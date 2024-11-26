@@ -633,6 +633,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
 
+    CHECK_AND_RETURN_RET_PRELOG(isStopDrain_ == false, ERR_ILLEGAL_STATE,
+        "Write: client is stopping sessionid: %{public}u", sessionId_);
+
     // hold lock
     if (isBlendSet_) {
         audioBlend_.Process(buffer, bufferSize);
