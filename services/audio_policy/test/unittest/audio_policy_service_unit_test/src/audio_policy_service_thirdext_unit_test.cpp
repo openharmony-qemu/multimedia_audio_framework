@@ -987,5 +987,228 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetPreferredDevice_001, TestSize.Leve
         ERR_PFTYPE, audioDeviceDescriptorSptr2);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 }
+
+/**
+* @tc.name  : Test IsA2dpOffloadConnecting.
+* @tc.number: IsA2dpOffloadConnecting_004
+* @tc.desc  : Test AudioPolicyServic interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnecting_004 start");
+    EXPECT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
+
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+    audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
+
+    bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(0);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test IsA2dpOffloadConnecting.
+* @tc.number: IsA2dpOffloadConnecting_005
+* @tc.desc  : Test AudioPolicyServic interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnecting_005 start");
+    EXPECT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
+
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_TIMEOUT;
+    audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
+
+    bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(0);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test IsAllowedPlayback.
+* @tc.number: IsAllowedPlayback_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    const int32_t uid = 0;
+    const int32_t pid = 0;
+    bool result = server->audioPolicyService_.IsAllowedPlayback(uid, pid);
+#ifdef AVSESSION_ENABLE
+    EXPECT_EQ(true, result);
+#else
+    EXPECT_EQ(true, result);
+#endif
+}
+
+/**
+* @tc.name  : Test IsAllowedPlayback.
+* @tc.number: IsAllowedPlayback_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    const int32_t uid = BOOTUP_MUSIC_UID;
+    const int32_t pid = 0;
+    bool result = server->audioPolicyService_.IsAllowedPlayback(uid, pid);
+#ifdef AVSESSION_ENABLE
+    EXPECT_EQ(true, result);
+#else
+    EXPECT_EQ(true, result);
+#endif
+}
+
+/**
+* @tc.name  : Test IsA2dpOffloadConnected.
+* @tc.number: IsA2dpOffloadConnected_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
+}
+
+/**
+* @tc.name  : Test IsA2dpOffloadConnected.
+* @tc.number: IsA2dpOffloadConnected_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    ASSERT_NE(nullptr, server->audioPolicyService_.audioA2dpOffloadManager_);
+    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
+}
+
+/**
+* @tc.name  : Test SetA2dpOffloadFlag.
+* @tc.number: SetA2dpOffloadFlag_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, SetA2dpOffloadFlag_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetA2dpOffloadFlag_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    BluetoothOffloadState state = NO_A2DP_DEVICE;
+    server->audioPolicyService_.SetA2dpOffloadFlag(state);
+}
+/**
+* @tc.name  : Test SetA2dpOffloadFlag.
+* @tc.number: SetA2dpOffloadFlag_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, SetA2dpOffloadFlag_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetA2dpOffloadFlag_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    ASSERT_NE(nullptr, server->audioPolicyService_.audioA2dpOffloadManager_);
+    BluetoothOffloadState state = NO_A2DP_DEVICE;
+    server->audioPolicyService_.SetA2dpOffloadFlag(state);
+}
+
+/**
+* @tc.name  : Test GetA2dpOffloadFlag.
+* @tc.number: GetA2dpOffloadFlag_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetA2dpOffloadFlag_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetA2dpOffloadFlag_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    EXPECT_EQ(NO_A2DP_DEVICE, server->audioPolicyService_.GetA2dpOffloadFlag());
+}
+
+/**
+* @tc.name  : Test GetA2dpOffloadFlag.
+* @tc.number: GetA2dpOffloadFlag_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetA2dpOffloadFlag_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetA2dpOffloadFlag_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    ASSERT_NE(nullptr, server->audioPolicyService_.audioA2dpOffloadManager_);
+    BluetoothOffloadState flag = server->audioPolicyService_.GetA2dpOffloadFlag();
+    EXPECT_EQ(NO_A2DP_DEVICE, server->audioPolicyService_.GetA2dpOffloadFlag());
+}
+
+/**
+* @tc.name  : Test ActivateConcurrencyFromServer.
+* @tc.number: ActivateConcurrencyFromServer_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateConcurrencyFromServer_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
+    int32_t ret = server->audioPolicyService_.ActivateConcurrencyFromServer(incomingPipe);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, server->audioPolicyService_.ActivateConcurrencyFromServer(incomingPipe));
+}
+
+/**
+* @tc.name  : Test ActivateConcurrencyFromServer.
+* @tc.number: ActivateConcurrencyFromServer_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateConcurrencyFromServer_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
+    if (server->audioPolicyService_.offloadSessionID_.has_value()) {
+        server->audioPolicyService_.offloadSessionID_.reset();
+    }
+    EXPECT_EQ(SUCCESS, server->audioPolicyService_.ActivateConcurrencyFromServer(incomingPipe));
+}
+
+/**
+* @tc.name  : Test NotifyCapturerRemoved.
+* @tc.number: NotifyCapturerRemoved_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, NotifyCapturerRemoved_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest NotifyCapturerRemoved_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    uint64_t sessionId = 0;
+    EXPECT_EQ(SUCCESS, server->audioPolicyService_.NotifyCapturerRemoved(sessionId));
+}
+
+/**
+* @tc.name  : Test ActivateConcurrencyFromServer.
+* @tc.number: NotifyCapturerRemoved_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, NotifyCapturerRemoved_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest NotifyCapturerRemoved_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    uint64_t sessionId = 0;
+    server->audioPolicyService_.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_EQ(SUCCESS, server->audioPolicyService_.NotifyCapturerRemoved(sessionId));
+}
 } // namespace AudioStandard
 } // namespace OHOS

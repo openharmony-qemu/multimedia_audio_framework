@@ -700,7 +700,7 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
-    bool isFastControlled_ = false;
+    bool isFastControlled_ = true;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
     std::vector<std::pair<AudioDeviceDescriptor, bool>> pnpDeviceList_;
@@ -710,7 +710,6 @@ private:
     AudioStreamCollector& streamCollector_;
     AudioRouterCenter& audioRouterCenter_;
     std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
-    std::unordered_map<int32_t, sptr<MicrophoneDescriptor>> audioCaptureMicrophoneDescriptor_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;
