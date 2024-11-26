@@ -3579,7 +3579,7 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
         u->block_usec = s->thread_info.max_latency;
 
     if (u->block_usec < DEFAULT_BLOCK_USEC) {
-        AUDIO_WARNING_LOG("block_usec is less than 20000");
+        AUDIO_WARNING_LOG("block_usec is less than 20000, block_usec: %{public}" PRIu64, u->block_usec);
         u->block_usec = DEFAULT_BLOCK_USEC;
     }
     nbytes = pa_usec_to_bytes(u->block_usec, &s->sample_spec);
