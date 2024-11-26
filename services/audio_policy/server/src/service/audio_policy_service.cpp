@@ -1066,7 +1066,8 @@ int32_t AudioPolicyService::SelectFastInputDevice(sptr<AudioCapturerFilter> audi
     // if is running, call moveProcessToEndpoint.
 
     // otherwises, keep router info in the map
-    int32_t res = audioRouteMap_.AddFastRouteMapInfo(audioCapturerFilter->uid, deviceDescriptor->networkId_, INPUT_DEVICE);
+    int32_t res = audioRouteMap_.AddFastRouteMapInfo(audioCapturerFilter->uid,
+        deviceDescriptor->networkId_, INPUT_DEVICE);
     return res;
 }
 
