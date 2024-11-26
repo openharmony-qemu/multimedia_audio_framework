@@ -58,7 +58,6 @@ ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, b
       totalBytesWritten_(0),
       sinkBytesWritten_(0),
       minBufferSize_(0),
-      powerVolumeFactor_(1.f),
       status_(I_STATUS_INVALID),
       resample_(nullptr),
       processConfig_(processConfig),
@@ -340,18 +339,6 @@ int32_t ProRendererStreamImpl::SetRate(int32_t rate)
     }
     (void)currentRate;
     renderRate_ = rate;
-    return SUCCESS;
-}
-
-int32_t ProRendererStreamImpl::SetLowPowerVolume(float volume)
-{
-    powerVolumeFactor_ = volume; // todo power Volume Factor
-    return SUCCESS;
-}
-
-int32_t ProRendererStreamImpl::GetLowPowerVolume(float &powerVolume)
-{
-    powerVolume = powerVolumeFactor_;
     return SUCCESS;
 }
 

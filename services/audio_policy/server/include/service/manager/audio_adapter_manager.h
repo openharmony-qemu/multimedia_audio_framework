@@ -192,6 +192,10 @@ public:
     void HandleRingerMode(AudioRingerMode ringerMode);
 
     void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
+
+    void SetOffloadSessionId(uint32_t sessionId);
+
+    void ResetOffloadSessionId();
 private:
     friend class PolicyCallbackImpl;
 
@@ -316,6 +320,7 @@ private:
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
     sptr<IStandardAudioService> audioServerProxy_ = nullptr;
+    std::optional<uint32_t> offloadSessionID_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

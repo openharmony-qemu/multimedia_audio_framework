@@ -463,7 +463,6 @@ void AudioRendererInServerTestFirst(const uint8_t* rawData, size_t size, std::sh
     bool isAppBack = *reinterpret_cast<const bool*>(rawData);
     renderer->SetOffloadMode(state, isAppBack);
     renderer->UnsetOffloadMode();
-    renderer->OffloadSetVolume(volume);
 }
 
 void AudioRendererInServerTestSecond(const uint8_t* rawData, size_t size, std::shared_ptr<RendererInServer> renderer)
@@ -494,7 +493,7 @@ void AudioRendererInServerTestSecond(const uint8_t* rawData, size_t size, std::s
     renderer->InitDualToneStream();
     renderer->GetStreamManagerType();
     renderer->SetSilentModeAndMixWithOthers(isAppBack);
-    renderer->SetClientVolume(false, true);
+    renderer->SetClientVolume();
     uint32_t operation_int = *reinterpret_cast<const uint32_t*>(rawData);
     operation_int = (operation_int%IOPERTAION_LENGTH) - 1;
     IOperation operation = static_cast<IOperation>(operation_int);
