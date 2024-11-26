@@ -21,11 +21,10 @@
 #include "parameters.h"
 #include "audio_utils.h"
 #include "audio_log.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t SUCCESS = 0;
-const int32_t ERROR = -1;
 static const size_t FAST_ROUTE_LIMIT = 1024;
 
 std::string AudioRouteMap::GetDeviceInfoByUidAndPid(int32_t uid, int32_t pid)

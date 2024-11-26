@@ -518,6 +518,7 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupportedForDevice(napi
     if (napiAudioSpatializationManager == nullptr || napiAudioSpatializationManager
             ->audioSpatializationMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioSpatializationManager or audioSpatializationMngr_ is  nullptr");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
         return nullptr;
     }
     

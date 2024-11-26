@@ -166,6 +166,7 @@ napi_value NapiAudioSessionMgr::ActivateAudioSession(napi_env env, napi_callback
         ObjectRefMap objectGuard(obj);
         auto *napiSessionMgr = objectGuard.GetPtr();
         if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
+            context->SignError(NAPI_ERR_INPUT_INVALID);
             AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
             return;
         }
@@ -197,6 +198,7 @@ napi_value NapiAudioSessionMgr::DeactivateAudioSession(napi_env env, napi_callba
         ObjectRefMap objectGuard(obj);
         auto *napiSessionMgr = objectGuard.GetPtr();
         if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
+            context->SignError(NAPI_ERR_INPUT_INVALID);
             AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
             return;
         }
