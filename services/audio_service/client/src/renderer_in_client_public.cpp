@@ -841,7 +841,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 {
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
-    isStopDrain_ = false;
     if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
         AUDIO_ERR_LOG("Start failed Illegal state:%{public}d", state_.load());
         return false;
@@ -941,19 +940,18 @@ bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+    std::lock_guard<std::mutex> lock(writeMutex_);
     if (!offloadEnable_) {
-        DrainAudioStream(true);
+        DrainAudioStreamInner(true);
     }
     std::unique_lock<std::mutex> statusLock(statusMutex_);
 
     if (state_ == STOPPED) {
         AUDIO_INFO_LOG("Renderer in client is already stopped");
-        isStopDrain_ = false;
         return true;
     }
     if ((state_ != RUNNING) && (state_ != PAUSED)) {
         AUDIO_ERR_LOG("Stop failed. Illegal state:%{public}u", state_.load());
-        isStopDrain_ = false;
         return false;
     }
 
@@ -967,18 +965,15 @@ bool RendererInClientInner::StopAudioStream()
     int32_t ret = ipcStream_->Stop();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);
-        isStopDrain_ = false;
         return false;
     }
 
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        isStopDrain_ = false;
         return state_ == STOPPED; // will be false when got notified.
     });
     if (!stopWaiting) {
         AUDIO_ERR_LOG("Stop failed: timeout");
         state_ = INVALID;
-        isStopDrain_ = false;
         return false;
     }
 
@@ -992,7 +987,6 @@ bool RendererInClientInner::StopAudioStream()
 
     AUDIO_INFO_LOG("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
-    isStopDrain_ = false;
     return true;
 }
 
@@ -1104,7 +1098,6 @@ bool RendererInClientInner::DrainAudioStream(bool stopFlag)
         return false;
     }
     std::lock_guard<std::mutex> lock(writeMutex_);
-    isStopDrain_ = true;
     CHECK_AND_RETURN_RET_LOG(WriteCacheData(true, stopFlag) == SUCCESS, false, "Drain cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
