@@ -91,6 +91,7 @@
 #define FADE_OUT_END 0.0
 #define PRINT_INTERVAL_FRAME_COUNT 100
 #define MIN_SLEEP_FOR_USEC 2000
+#define DEFAULT_BLOCK_USEC 20000
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 const uint64_t DEFAULT_GETLATENCY_LOG_THRESHOLD_MS = 100;
@@ -3577,6 +3578,10 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
     if (u->block_usec == (pa_usec_t) - 1)
         u->block_usec = s->thread_info.max_latency;
 
+    if (u->block_usec < DEFAULT_BLOCK_USEC) {
+        AUDIO_WARNING_LOG("block_usec is less than 20000, block_usec: %{public}" PRIu64, u->block_usec);
+        u->block_usec = DEFAULT_BLOCK_USEC;
+    }
     nbytes = pa_usec_to_bytes(u->block_usec, &s->sample_spec);
     pa_sink_set_max_request_within_thread(s, nbytes);
 }
