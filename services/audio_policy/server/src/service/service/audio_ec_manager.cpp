@@ -98,6 +98,22 @@ static const std::map<std::pair<DeviceType, DeviceType>, EcType> DEVICE_TO_EC_TY
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
 };
 
+static std::string GetEncryptAddr(const std::string &addr)
+{
+    const int32_t START_POS = 6;
+    const int32_t END_POS = 13;
+    const int32_t ADDRESS_STR_LEN = 17;
+    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
+        return std::string("");
+    }
+    std::string tmp = "**:**:**:**:**:**";
+    std::string out = addr;
+    for (int i = START_POS; i <= END_POS; i++) {
+        out[i] = tmp[i];
+    }
+    return out;
+}
+
 static string ParseAudioFormat(string format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
