@@ -476,7 +476,7 @@ void AudioEcManager::ResetAudioEcInfo()
 
 void AudioEcManager::PresetArmIdleInput(const string& address)
 {
-    AUDIO_INFO_LOG("Entry. address=%{public}s", address.c_str());
+    AUDIO_INFO_LOG("Entry. address=%{public}s", GetEncryptAddr(address).c_str());
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_RET(ret,);
@@ -492,7 +492,7 @@ void AudioEcManager::PresetArmIdleInput(const string& address)
 
 void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole role)
 {
-    AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d", address.c_str(), role);
+    AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d", GetEncryptAddr(address).c_str(), role);
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_RET(ret,);
@@ -533,9 +533,9 @@ void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         if (isEcFeatureEnable_) {
-            uint32_t bufferSize = (std::stoi(moduleInfo.rate) *
+            uint32_t bufferSize = (static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
                 AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
-                std::stoi(moduleInfo.channels)) * RENDER_FRAME_INTERVAL_IN_SECONDS;
+                static_cast<uint32_t>(std::stoi(moduleInfo.channels))) * RENDER_FRAME_INTERVAL_IN_SECONDS;
             moduleInfo.bufferSize = std::to_string(bufferSize);
             AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
         }
