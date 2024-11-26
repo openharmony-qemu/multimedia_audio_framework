@@ -70,7 +70,7 @@ static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
-static const int32_t WAIT_FOR_NEXT_CB = 5; //ms
+static const uint32_t WAIT_FOR_NEXT_CB = 5000; // 5ms
 static const int32_t HALF_FACTOR = 2;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
@@ -374,7 +374,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
                 sleepCount_ = 0;
                 AUDIO_WARNING_LOG("OnWriteData Process 1st or 500 times INVALID buffer");
             }
-            sleep(WAIT_FOR_NEXT_CB);
+            usleep(WAIT_FOR_NEXT_CB);
         }
     }
     if (result < 0) {
