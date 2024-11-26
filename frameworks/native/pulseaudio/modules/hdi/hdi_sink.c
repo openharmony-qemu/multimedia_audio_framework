@@ -2056,7 +2056,7 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
     void* resampler = NULL;
     while ((pa_hashmap_iterate(sceneToResamplerMap, &resampler, &sceneType))) {
         if (pa_hashmap_get(sceneToCountMap, sceneType) == NULL) {
-            AUDIO_INFO_LOG("UpdateSceneToResamplerMap: sceneType [%{public}s] is removed", (char *)sceneType);
+            AUDIO_INFO_LOG("SceneToResamplerMap: sceneType [%{public}s] is removed", (char *)sceneType);
             pa_hashmap_remove_and_free(sceneToResamplerMap, sceneType);
         }
     }
