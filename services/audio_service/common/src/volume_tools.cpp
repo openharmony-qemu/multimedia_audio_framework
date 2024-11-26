@@ -346,7 +346,6 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     const size_t byteSizePerData = VolumeTools::GetByteSize(format);
-    size_t offset = 8; // convert a 24-bit number to a 16-bit number
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -367,8 +366,8 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
             int32_t sample = static_cast<int32_t>(ReadInt24LE(raw8));
-            uint32_t sampleAbs = sample >= 0 ? static_cast<uint32_t>(sample)
-                : static_cast<uint32_t>(-sample) >> offset;
+            uint32_t sampleAbs = (sample >= 0 ? static_cast<uint32_t>(sample): static_cast<uint32_t>(-sample)) >>
+                SHIFT_EIGHT;
             volMaps.volStart[channelIdx] +=  static_cast<int32_t>(sampleAbs);
             raw8 += byteSizePerData;
         }
@@ -394,7 +393,6 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     const size_t byteSizePerData = VolumeTools::GetByteSize(format);
-    size_t offset = 16; // convert a 32-bit number to a 16-bit number
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -414,8 +412,8 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     int32_t *raw32 = reinterpret_cast<int32_t *>(buffer.buffer);
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            uint32_t sampleAbs = *raw32 >= 0 ? static_cast<uint32_t>(*raw32)
-                : static_cast<uint32_t>(-*raw32) >> offset;
+            uint32_t sampleAbs = (*raw32 >= 0 ? static_cast<uint32_t>(*raw32): static_cast<uint32_t>(-*raw32)) >>
+                SHIFT_SIXTEEN;
             volSums[channelIdx] += static_cast<int32_t>(sampleAbs);
             raw32++;
         }
