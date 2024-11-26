@@ -24,6 +24,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const int32_t SUCCESS = 0;
+const int32_t ERROR = -1;
+const size_t FAST_ROUTE_LIMIT = 1024;
 
 std::string AudioRouteMap::GetDeviceInfoByUidAndPid(int32_t uid, int32_t pid)
 {
@@ -58,10 +61,14 @@ void AudioRouteMap::AddRouteMapInfo(int32_t uid, std::string device, int32_t pid
     routerMap_[uid] = std::pair(device, pid);
 }
 
-void AudioRouteMap::AddFastRouteMapInfo(int32_t uid, std::string device, DeviceRole role)
+int32_t AudioRouteMap::AddFastRouteMapInfo(int32_t uid, std::string device, DeviceRole role)
 {
     std::lock_guard<std::mutex> lock(fastRouterMapMutex_);
+    if (fastRouterMap_.size() > FAST_ROUTE_LIMIT) {
+        return ERROR;
+    }
     fastRouterMap_[uid] = std::make_pair(device, role);
+    return SUCCESS;
 }
 
 void AudioRouteMap::RemoveDeviceInRouterMap(std::string networkId)

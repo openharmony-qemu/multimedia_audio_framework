@@ -515,7 +515,12 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupportedForDevice(napi
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
         "mandatory parameters are left unspecified"), "invalid arguments");
-
+    if (napiAudioSpatializationManager == nullptr || napiAudioSpatializationManager
+            ->audioSpatializationMngr_ == nullptr) {
+        AUDIO_ERR_LOG("napiAudioSpatializationManager or audioSpatializationMngr_ is  nullptr");
+        return nullptr;
+    }
+    
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
