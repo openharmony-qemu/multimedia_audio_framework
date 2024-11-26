@@ -662,23 +662,29 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
     std::string usbInfoStr;
     if (role == OUTPUT_DEVICE) {
         rendererSink->SetAddress(address);
-        usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
-        AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
-        usbInfoMap_[address] = usbInfoStr;
+        auto it = usbInfoMap_.find(address);
+        if (it == usbInfoMap_.end()) {
+            usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
+            usbInfoMap_[address] = usbInfoStr;
+        } else {
+            usbInfoStr = it->second;
+        }
         rendererSink->Preload(usbInfoStr);
     } else if (role == INPUT_DEVICE) {
         IAudioCapturerSource *capturerSource = IAudioCapturerSource::GetInstance("usb", "");
         CHECK_AND_RETURN_RET_LOG(capturerSource, "", "capturerSource is nullptr");
         capturerSource->SetAddress(address);
-        if (usbInfoMap_.count(address) != 0) {
-            usbInfoStr = usbInfoMap_[address];
-        } else {
+        auto it = usbInfoMap_.find(address);
+        if (it == usbInfoMap_.end()) {
             usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
+            usbInfoMap_[address] = usbInfoStr;
+        } else {
+            usbInfoStr = it->second;
         }
-        AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
     } else {
         usbInfoMap_.erase(address);
     }
+    AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
     return usbInfoStr;
 }
 
