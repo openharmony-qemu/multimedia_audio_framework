@@ -2033,7 +2033,7 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
                 PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
             char* newSceneType = strdup(sceneType);
             if (newSceneType == NULL) {
-                AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", sceneType);
+                AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
                 continue;
             }
             pa_hashmap_put(sceneToResamplerMap, (void *)newSceneType, (void *)resampler);
