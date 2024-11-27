@@ -2554,7 +2554,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
         pa_memchunk tchunk;
         tchunk = *chunk;
         tchunk.index += (size_t)d;
-        tchunk.length = PA_MIN((size_t)l, blockSize - tchunk.index);
+        tchunk.length = (size_t)l;
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
         d += (int64_t)tchunk.length;
