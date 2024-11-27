@@ -101,7 +101,7 @@ ChannelVolumes VolumeTools::GetChannelVolumes(AudioChannel channel, float volSta
     return vols;
 }
 
-size_t GetByteSize(AudioSampleFormat format)
+size_t VolumeTools::GetByteSize(AudioSampleFormat format)
 {
     size_t bitWidthSize = 0;
     switch (format) {
@@ -250,13 +250,14 @@ double VolumeTools::GetVolDb(AudioSampleFormat format, int32_t vol)
     return std::log10(volume);
 }
 
-static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split)
+static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split <= 0) {
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    size_t byteSizePerData = 1; // 1 for unsigned 8bit
+    size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -293,13 +294,14 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
     return;
 }
 
-static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split)
+static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split <= 0) {
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    size_t byteSizePerData = 2; // 2 for signed 16bit
+    size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -336,14 +338,14 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     return;
 }
 
-static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split)
+static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split <= 0) {
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    const size_t byteSizePerData = 3; // 3 for 24bit
-    size_t offset = 8; // convert a 24-bit number to a 16-bit number
+    const size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -364,7 +366,8 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
             int32_t sample = static_cast<int32_t>(ReadInt24LE(raw8));
-            uint32_t sampleAbs = static_cast<uint32_t>(sample >= 0 ? sample: (-sample)) >> offset;
+            uint32_t sampleAbs = static_cast<uint32_t>(sample >= 0 ? sample: (-sample)) >>
+                SHIFT_EIGHT;
             volMaps.volStart[channelIdx] +=  static_cast<int32_t>(sampleAbs);
             raw8 += byteSizePerData;
         }
@@ -382,14 +385,14 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     return;
 }
 
-static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split)
+static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split <= 0) {
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    const size_t byteSizePerData = 4; // 4 for signed 32bit
-    size_t offset = 16; // convert a 32-bit number to a 16-bit number
+    const size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -409,7 +412,8 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     int32_t *raw32 = reinterpret_cast<int32_t *>(buffer.buffer);
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            uint32_t sampleAbs = static_cast<uint32_t>(*raw32 >= 0 ? *raw32: (-*raw32)) >> offset;
+            uint32_t sampleAbs = static_cast<uint32_t>(*raw32 >= 0 ? *raw32: (-*raw32)) >>
+                SHIFT_SIXTEEN;
             volSums[channelIdx] += static_cast<int32_t>(sampleAbs);
             raw32++;
         }
@@ -429,13 +433,14 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     return;
 }
 
-static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split)
+static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps, size_t split,
+    AudioSampleFormat format)
 {
     if (split <= 0) {
         AUDIO_ERR_LOG("invalid split");
         return;
     }
-    size_t byteSizePerData = 4; // 4 for 32bit
+    size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -484,19 +489,19 @@ ChannelVolumes VolumeTools::CountVolumeLevel(const BufferDesc &buffer, AudioSamp
     }
     switch (format) {
         case SAMPLE_U8:
-            CountU8Volume(buffer, channel, channelVols, split);
+            CountU8Volume(buffer, channel, channelVols, split, format);
             break;
         case SAMPLE_S16LE:
-            CountS16Volume(buffer, channel, channelVols, split);
+            CountS16Volume(buffer, channel, channelVols, split, format);
             break;
         case SAMPLE_S24LE:
-            CountS24Volume(buffer, channel, channelVols, split);
+            CountS24Volume(buffer, channel, channelVols, split, format);
             break;
         case SAMPLE_S32LE:
-            CountS32Volume(buffer, channel, channelVols, split);
+            CountS32Volume(buffer, channel, channelVols, split, format);
             break;
         case SAMPLE_F32LE:
-            CountF32Volume(buffer, channel, channelVols, split);
+            CountF32Volume(buffer, channel, channelVols, split, format);
             break;
         default:
             break;

@@ -1826,7 +1826,11 @@ static void UpdateStreamAvailableMap(struct Userdata *u, const char *sceneType)
         char *scene = strdup(sceneType);
         if (scene != NULL) {
             (*num) = u->streamAvailable;
-            pa_hashmap_put(u->streamAvailableMap, scene, num);
+            if (pa_hashmap_put(u->streamAvailableMap, scene, num) != 0) {
+                AUDIO_ERR_LOG("pa_hashmap_put failed");
+                free(scene);
+                pa_xfree(num);
+            }
         }
     }
 }
