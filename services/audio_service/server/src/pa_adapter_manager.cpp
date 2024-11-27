@@ -551,7 +551,6 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
         pa_proplist_sets(propList, "stream.flush", "false");
         pa_proplist_sets(propList, "spatialization.enabled", "0");
-        pa_proplist_sets(propList, "fadeoutPause", "0");
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
         pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
