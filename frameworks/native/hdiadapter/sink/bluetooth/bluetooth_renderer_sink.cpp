@@ -40,7 +40,6 @@
 #include "volume_tools.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
-#include "audio_log_utils.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
