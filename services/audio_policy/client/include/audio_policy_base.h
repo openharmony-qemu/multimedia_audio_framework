@@ -140,6 +140,9 @@ public:
 
     virtual AudioStreamType GetStreamInFocus(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
+    virtual AudioStreamType GetStreamInFocusByUid(
+        const int32_t uid, const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+
     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 

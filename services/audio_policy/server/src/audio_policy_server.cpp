@@ -1546,6 +1546,19 @@ AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)
     return STREAM_MUSIC;
 }
 
+AudioStreamType AudioPolicyServer::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return STREAM_MUSIC;
+    }
+
+    if (interruptService_ != nullptr) {
+        return interruptService_->GetStreamInFocusByUid(uid, zoneID);
+    }
+    return STREAM_MUSIC;
+}
+
 int32_t AudioPolicyServer::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {

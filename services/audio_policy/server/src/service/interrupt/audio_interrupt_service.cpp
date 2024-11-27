@@ -885,6 +885,17 @@ unordered_map<AudioStreamType, int> AudioInterruptService::GetStreamPriorityMap(
 
 AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
 {
+    return GetStreamInFocusInternal(0, zoneId);
+}
+
+AudioStreamType AudioInterruptService::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId)
+{
+    return GetStreamInFocusInternal(uid, zoneId);
+}
+
+AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId)
+{
+    AUDIO_INFO_LOG("GetStreamInFocusInternal, uid:%{public}d", uid);
     AudioStreamType streamInFocus = STREAM_DEFAULT;
 
     auto itZone = zonesMap_.find(zoneId);
@@ -898,6 +909,9 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
         if ((iter->second != ACTIVE && iter->second != DUCK) ||
             (iter->first).audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
             // if the steam is not active or the active stream is an audio capturer stream, skip it.
+            continue;
+        }
+        if (uid != 0 && (iter->first).uid != uid) {
             continue;
         }
         int32_t curPriority = GetStreamTypePriority((iter->first).audioFocusType.streamType);

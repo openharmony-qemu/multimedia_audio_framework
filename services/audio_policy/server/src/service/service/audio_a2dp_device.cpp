@@ -128,7 +128,7 @@ bool AudioA2dpDevice::GetA2dpDeviceInfo(const std::string& device, A2dpDeviceCon
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(device);
-    if (configInfoPos != connectedA2dpDeviceMap_.end() && configInfoPos->second.absVolumeSupport) {
+    if (configInfoPos != connectedA2dpDeviceMap_.end()) {
         info.streamInfo = configInfoPos->second.streamInfo;
         info.absVolumeSupport = configInfoPos->second.absVolumeSupport;
         info.volumeLevel = configInfoPos->second.volumeLevel;
@@ -142,7 +142,7 @@ bool AudioA2dpDevice::GetA2dpInDeviceInfo(const std::string& device, A2dpDeviceC
 {
     std::lock_guard<std::mutex> lock(a2dpInDeviceMapMutex_);
     auto configInfoPos = connectedA2dpInDeviceMap_.find(device);
-    if (configInfoPos != connectedA2dpInDeviceMap_.end() && configInfoPos->second.absVolumeSupport) {
+    if (configInfoPos != connectedA2dpInDeviceMap_.end()) {
         info.streamInfo = configInfoPos->second.streamInfo;
         info.absVolumeSupport = configInfoPos->second.absVolumeSupport;
         info.volumeLevel = configInfoPos->second.volumeLevel;
@@ -189,7 +189,7 @@ bool AudioA2dpDevice::GetA2dpDeviceMute(const std::string& device, bool& isMute)
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(device);
-    if (configInfoPos == connectedA2dpDeviceMap_.end()) {
+    if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
         return false;
     }
     isMute = configInfoPos->second.mute;

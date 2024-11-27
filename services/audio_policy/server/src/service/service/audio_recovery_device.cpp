@@ -172,7 +172,9 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceForFastInner(sptr<AudioRendererFi
     int32_t res = SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "SetRenderDeviceForUsage fail");
     SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
-    SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
+    res = SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
+        "AddFastRouteMapInfo failed! fastRouteMap is too large!");
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     return true;
 }
@@ -245,8 +247,9 @@ int32_t AudioRecoveryDevice::SelectFastOutputDevice(sptr<AudioRendererFilter> au
     // if is running, call moveProcessToEndpoint.
 
     // otherwises, keep router info in the map
-    audioRouteMap_.AddFastRouteMapInfo(audioRendererFilter->uid, deviceDescriptor->networkId_, OUTPUT_DEVICE);
-    return SUCCESS;
+    int32_t res = audioRouteMap_.AddFastRouteMapInfo(audioRendererFilter->uid, deviceDescriptor->networkId_,
+        OUTPUT_DEVICE);
+    return res;
 }
 
 int32_t AudioRecoveryDevice::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
@@ -297,7 +300,11 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
 
     if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST && selectedDesc.size() == 1) {
         SetCaptureDeviceForUsage(audioSceneManager_.GetAudioScene(true), srcType, selectedDesc[0]);
-        SelectFastInputDevice(audioCapturerFilter, selectedDesc[0]);
+        int32_t result = SelectFastInputDevice(audioCapturerFilter, selectedDesc[0]);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+            "AddFastRouteMapInfo failed! fastRouteMap is too large!");
+        AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",
+            audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
         audioDeviceCommon_.FetchDevice(false);
         audioCapturerSession_.ReloadSourceForDeviceChange(
             audioActiveDevice_.GetCurrentInputDeviceType(),
@@ -340,10 +347,9 @@ int32_t AudioRecoveryDevice::SelectFastInputDevice(sptr<AudioCapturerFilter> aud
     // if is running, call moveProcessToEndpoint.
 
     // otherwises, keep router info in the map
-    audioRouteMap_.AddFastRouteMapInfo(audioCapturerFilter->uid, deviceDescriptor->networkId_, INPUT_DEVICE);
-    AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]", audioCapturerFilter->uid,
-        GetEncryptStr(deviceDescriptor->networkId_).c_str());
-    return SUCCESS;
+    int32_t res = audioRouteMap_.AddFastRouteMapInfo(audioCapturerFilter->uid,
+        deviceDescriptor->networkId_, INPUT_DEVICE);
+    return res;
 }
 
 void AudioRecoveryDevice::WriteSelectInputSysEvents(
