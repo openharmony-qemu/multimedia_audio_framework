@@ -156,9 +156,7 @@ private:
     bool isVoiceRingtoneMute_ = false;
 
     std::mutex notifyMutex_;
-    int32_t streamMusicVol_;
-    bool isSelectRestoreVol_ = false;
-    bool isSelectIncreaseVol_ = false;
+    int32_t streamMusicVol_ = 0;
     bool restoreNIsShowing_ = false;
     bool increaseNIsShowing_ = false;
 
