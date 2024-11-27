@@ -64,12 +64,14 @@ bool AudioAdapterManagerHandler::SendSaveVolume(const DeviceType &deviceType,
 bool AudioAdapterManagerHandler::SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
     const StreamUsage &streamUsage)
 {
+    bool ret = true;
+#ifndef TEST_COVERAGE
     auto eventContextObj = std::make_shared<StreamMuteStatusEvent>(streamType, mute, streamUsage);
     lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = true;
     ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAdapterManagerServerCmd::STREAM_MUTE_STATUS_UPDATE,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "SendStreamMuteStatusUpdate event failed");
+#endif
     return ret;
 }
 

@@ -776,6 +776,16 @@ bool GetSysPara(const char *key, T &value)
     return true;
 }
 
+template <typename T>
+T StringParser(std::string& param)
+{
+    std::stringstream valueStr;
+    valueStr << param;
+    T result = 0;
+    valueStr >> result;
+    return result;
+}
+
 template bool GetSysPara(const char *key, int32_t &value);
 template bool GetSysPara(const char *key, uint32_t &value);
 template bool GetSysPara(const char *key, int64_t &value);
