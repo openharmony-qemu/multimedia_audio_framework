@@ -113,6 +113,7 @@ public:
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
         ConnectState connectState);
     std::vector<SourceOutput> GetSourceOutputs();
+    void BluetoothScoDisconectForRecongnition();
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

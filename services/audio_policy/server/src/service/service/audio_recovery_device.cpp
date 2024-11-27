@@ -23,7 +23,6 @@
 #include "audio_log.h"
 #include "media_monitor_manager.h"
 
-#include "audio_policy_service.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 
@@ -153,7 +152,7 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0]);
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     audioDeviceCommon_.FetchDevice(false);
-    AudioPolicyService::GetAudioPolicyService().ReloadSourceForDeviceChange(
+    audioCapturerSession_.ReloadSourceForDeviceChange(
         audioActiveDevice_.GetCurrentInputDeviceType(),
         audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectOutputDevice");
     if ((selectedDesc[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
@@ -300,7 +299,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
         SetCaptureDeviceForUsage(audioSceneManager_.GetAudioScene(true), srcType, selectedDesc[0]);
         SelectFastInputDevice(audioCapturerFilter, selectedDesc[0]);
         audioDeviceCommon_.FetchDevice(false);
-        AudioPolicyService::GetAudioPolicyService().ReloadSourceForDeviceChange(
+        audioCapturerSession_.ReloadSourceForDeviceChange(
             audioActiveDevice_.GetCurrentInputDeviceType(),
             audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectInputDevice fast");
         return SUCCESS;
@@ -316,7 +315,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     audioDeviceCommon_.FetchDevice(false);
 
     WriteSelectInputSysEvents(selectedDesc, srcType, scene);
-    AudioPolicyService::GetAudioPolicyService().ReloadSourceForDeviceChange(
+    audioCapturerSession_.ReloadSourceForDeviceChange(
         audioActiveDevice_.GetCurrentInputDeviceType(),
         audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectInputDevice");
     return SUCCESS;

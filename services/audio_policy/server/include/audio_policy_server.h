@@ -46,6 +46,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
 #include "audio_interrupt_service.h"
+#include "audio_policy_dump.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -644,6 +645,7 @@ private:
     pid_t lastMicMuteSettingPid_ = 0;
     std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
+    AudioPolicyDump& audioPolicyDump_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
