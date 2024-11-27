@@ -19,13 +19,13 @@
 #include "offline_audio_effect_server_chain.h"
 
 #include <algorithm>
- 
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cinttypes>
 #include <unistd.h>
 #include "securec.h"
+
 #include "audio_common_log.h"
 #include "audio_errors.h"
 
@@ -129,6 +129,8 @@ int32_t OfflineAudioEffectServerChain::Prepare(const std::shared_ptr<AudioShared
 
 int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize)
 {
+    CHECK_AND_RETURN_RET_LOG(inSize <= serverBufferIn_.GetSize() && outSize <= serverBufferOut_.GetSize(),
+        ERR_INVALID_PARAM, "inSize %{public}u or outSize %{public}u out of range", inSize, outSize);
     uint8_t *bufIn = serverBufferIn_->GetBase();
     uint8_t *bufOut = serverBufferOut_->GetBase();
     for (uint32_t i = 0; i < outSize; i++) {

@@ -21,16 +21,17 @@
 #include <string>
 #include <vector>
 #include <mutex>
- 
+
+#include "v1_0/effect_types.h"
+#include "v1_0/ieffect_control.h"
+#include "v1_0/ieffect_model.h"
+
 #include "audio_device_info.h"
 #include "audio_stream_info.h"
 #include "audio_source_type.h"
 #include "audio_shared_memory.h"
 #include "oh_audio_buffer.h"
-#include "v1_0/effect_types.h"
-#include "v1_0/ieffect_control.h"
-#include "v1_0/ieffect_model.h"
- 
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -38,24 +39,24 @@ class OfflineAudioEffectServerChain {
 public:
     OfflineAudioEffectServerChain(const string &chainName);
     ~OfflineAudioEffectServerChain();
- 
+
     static int32_t InitEffectModel();
     static int32_t ReleaseEffectModel();
     static int32_t GetOfflineAudioEffectChains(vector<string> &chainNamesVector);
- 
+
     int32_t Create();
     int32_t SetParam(AudioStreamInfo inInfo, AudioStreamInfo outInfo);
     int32_t GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize);
     int32_t Prepare(const shared_ptr<AudioSharedMemory> &bufferIn, const shared_ptr<AudioSharedMemory> &bufferOut);
     int32_t Process(uint32_t inBufferSize, uint32_t outBufferSize);
     int32_t Release();
- 
+
 private:
     int32_t SetDeviceType(const DeviceType deviceType);
     int32_t SetRenderStreamUsage(const StreamUsage usage);
     int32_t SetCapturerSourceType(const SourceType sourceType);
     int32_t Configure();
- 
+
     static struct IEffectModel *model_;
     static struct EffectInfo info_;
     struct IEffectControl *controller_ = nullptr;
@@ -67,4 +68,4 @@ private:
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // OFFLINE_AUDIO_EFFECT_SERVER_CHAIN_H
+#endif // OFFLINE_AUDIO_EFFECT_SERVER_CHAIN_H

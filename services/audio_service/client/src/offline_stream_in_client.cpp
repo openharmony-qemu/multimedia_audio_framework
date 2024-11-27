@@ -18,15 +18,16 @@
 
 #include "offline_stream_in_client.h"
 
-#include "audio_manager_base.h"
-#include "audio_service_log.h"
-#include "audio_errors.h"
+#include <mutex>
+
 #include "ipc_offline_stream.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include <mutex>
+#include "audio_manager_base.h"
+#include "audio_service_log.h"
+#include "audio_errors.h"
 
 using namespace std;
 

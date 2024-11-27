@@ -23,8 +23,8 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    static const std::string OFFLINE_SERVER_BUFFER_IN = "offline_server_buffer_in";
-    static const std::string OFFLINE_SERVER_BUFFER_OUT = "offline_server_buffer_out";
+static const std::string OFFLINE_SERVER_BUFFER_IN = "offline_server_buffer_in";
+static const std::string OFFLINE_SERVER_BUFFER_OUT = "offline_server_buffer_out";
 }
 // static method
 sptr<OfflineStreamInServer> OfflineStreamInServer::GetOfflineStream(int32_t &errCode)
@@ -82,6 +82,8 @@ void OfflineStreamInServer::ReleaseOfflineEffectChain()
 
 int32_t OfflineStreamInServer::AllocSharedMemory(uint32_t inSize, uint32_t outSize)
 {
+    CHECK_AND_RETURN_RET_LOG(inSize < MAXIMUM_BUFFER_SIZE && outSize < MAXIMUM_BUFFER_SIZE,
+        ERR_INVALID_PARAM, "alloc %{public}u inBuf or %{public}u outBuf out of range", inSize, outSize);
     serverBufferIn_ = AudioSharedMemory::CreateFormLocal(inSize, OFFLINE_SERVER_BUFFER_IN);
     CHECK_AND_RETURN_RET_LOG(serverBufferIn_ != nullptr, ERR_OPERATION_FAILED, "serverBufferIn_ mmap failed.");
     serverBufferOut_ = AudioSharedMemory::CreateFormLocal(outSize, OFFLINE_SERVER_BUFFER_OUT);

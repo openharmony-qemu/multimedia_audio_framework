@@ -18,19 +18,13 @@
 
 #include "offline_audio_effect_manager.h"
 
+#include <securec.h>
+
 #include "audio_errors.h"
 #include "audio_service_log.h"
 
-#include <securec.h>
-
 namespace OHOS {
 namespace AudioStandard {
-std::shared_ptr<OfflineAudioEffectManager> OfflineAudioEffectManager::GetInstance()
-{
-    static std::shared_ptr<OfflineAudioEffectManager> manager = std::make_shared<OfflineAudioEffectManager>();
-    return manager;
-}
-
 std::vector<std::string> OfflineAudioEffectManager::GetOfflineAudioEffectChains()
 {
     std::vector<std::string> effectChains{};

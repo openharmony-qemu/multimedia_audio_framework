@@ -16,13 +16,13 @@
 #ifndef ST_OFFLINE_AUDIO_EFFECT_MANAGER_H
 #define ST_OFFLINE_AUDIO_EFFECT_MANAGER_H
 
-#include "offline_stream_in_client.h"
-#include "audio_info.h"
-#include "oh_audio_buffer.h"
-
 #include <mutex>
 #include <shared_mutex>
 #include <vector>
+
+#include "audio_info.h"
+#include "offline_stream_in_client.h"
+#include "oh_audio_buffer.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,7 +36,7 @@ public:
      * @param inInfo Input audio stream information
      * @param outInfo Output audio stream information
      * @return The result of the config, 0 for success, other for error code
-     * @since 12
+     * @since 15
      */
     int32_t Configure(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo);
 
@@ -44,7 +44,7 @@ public:
      * @brief Prepare the offline audio effect chain
      *
      * @return The result of the preparation, 0 for success, other for error code
-     * @since 12
+     * @since 15
      */
     int32_t Prepare();
 
@@ -54,7 +54,7 @@ public:
      * @param inBufferSize Size of the input buffer
      * @param outBufferSize Size of the output buffer
      * @return The result of the retrieval, 0 for success, other for error code
-     * @since 12
+     * @since 15
      */
     int32_t GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize);
 
@@ -66,17 +66,19 @@ public:
      * @param outBuffer Output audio data buffer
      * @param outSize Size of the output audio data
      * @return The result of processing, 0 for success, other for error code
-     * @since 12
+     * @since 15
      */
     int32_t Process(uint8_t *inBuffer, int32_t inSize, uint8_t *outBuffer, int32_t outSize);
 
     /**
      * @brief Release the resources of the audio effect chain
      *
-     * @since 12
+     * @since 15
      */
     void Release();
 private:
+    friend class OfflineAudioEffectManager;
+
     OfflineAudioEffectChain(const std::string &effectChainName);
     ~OfflineAudioEffectChain();
     int32_t InitIpcChain();
@@ -87,13 +89,10 @@ private:
     uint8_t *inBufferBase_;
     uint8_t *outBufferBase_;
     std::shared_mutex bufferMutex_;
-    friend class OfflineAudioEffectManager;
 };
 
 class OfflineAudioEffectManager {
 public:
-    static std::shared_ptr<OfflineAudioEffectManager> GetInstance();
-
     /**
      * @brief 
      *

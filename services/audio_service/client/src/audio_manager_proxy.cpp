@@ -30,7 +30,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    constexpr int32_t MAX_OFFLINE_EFFECT_CHAIN_NUM = 10;
+constexpr int32_t MAX_OFFLINE_EFFECT_CHAIN_NUM = 10;
 }
 AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioService>(impl)

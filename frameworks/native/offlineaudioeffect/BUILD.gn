@@ -21,7 +21,6 @@ config("offline_audio_effect_public_config") {
   cflags = [
     "-Wall",
     "-Werror",
-    "-fno-access-control",
   ]
 }
 

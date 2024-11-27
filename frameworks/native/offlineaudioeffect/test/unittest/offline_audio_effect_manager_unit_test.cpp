@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
+#include <iostream>
 #include <thread>
 #include <gtest/gtest.h>
-#include "offline_audio_effect_manager.h"
+
 #include "audio_errors.h"
-#include <iostream>
+#include "offline_audio_effect_manager.h"
 
 using namespace testing::ext;
 using namespace std;
@@ -78,11 +79,11 @@ void OfflineAudioEffectChainUnitTest::TearDown(void)
 }
 
 /**
-* @tc.name  : Test GetOfflineAudioEffectChains API
-* @tc.type  : FUNC
-* @tc.number: OfflineAudioEffectManager_001
-* @tc.desc  : Test OfflineAudioEffectManager interface.
-*/
+ * @tc.name  : Test GetOfflineAudioEffectChains API
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectManager_001
+ * @tc.desc  : Test OfflineAudioEffectManager interface.
+ */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSize.Level1)
 {
     auto manager = OfflineAudioEffectManager::GetInstance();
@@ -91,11 +92,11 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSiz
 }
 
 /**
-* @tc.name  : Test CreateOfflineAudioEffectChain API
-* @tc.type  : FUNC
-* @tc.number: OfflineAudioEffectManager_002
-* @tc.desc  : Test OfflineAudioEffectManager interface.
-*/
+ * @tc.name  : Test CreateOfflineAudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectManager_002
+ * @tc.desc  : Test OfflineAudioEffectManager interface.
+ */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSize.Level1)
 {
     auto chain = OfflineAudioEffectManager::GetInstance()->CreateOfflineAudioEffectChain(NORMAL_CHAIN_NAME);
@@ -103,11 +104,11 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSiz
 }
 
 /**
-* @tc.name  : Test OfflineAudioEffectChain API
-* @tc.type  : FUNC
-* @tc.number: OfflineAudioEffectChain_001
-* @tc.desc  : Test OfflineAudioEffectChain interface.
-*/
+ * @tc.name  : Test OfflineAudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectChain_001
+ * @tc.desc  : Test OfflineAudioEffectChain interface.
+ */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, chain_);
@@ -116,11 +117,11 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_001, TestSize.
 }
 
 /**
-* @tc.name  : Test OfflineAudioEffectChain API
-* @tc.type  : FUNC
-* @tc.number: OfflineAudioEffectChain_002
-* @tc.desc  : Test OfflineAudioEffectChain interface.
-*/
+ * @tc.name  : Test OfflineAudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectChain_002
+ * @tc.desc  : Test OfflineAudioEffectChain interface.
+ */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, chain_);
@@ -129,11 +130,11 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_002, TestSize.
 }
 
 /**
-* @tc.name  : Test OfflineAudioEffectChain API
-* @tc.type  : FUNC
-* @tc.number: OfflineAudioEffectChain_003
-* @tc.desc  : Test OfflineAudioEffectChain interface.
-*/
+ * @tc.name  : Test OfflineAudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectChain_003
+ * @tc.desc  : Test OfflineAudioEffectChain interface.
+ */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_003, TestSize.Level1)
 {
     uint32_t inSize = 0;

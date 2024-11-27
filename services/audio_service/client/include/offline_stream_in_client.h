@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+
 #include "audio_info.h"
 #include "audio_shared_memory.h"
 #include "ipc_offline_stream.h"
@@ -33,11 +34,11 @@ public:
     ~OfflineStreamInClient() = default;
 
     /**
-     * @brief 
+     * @brief Create the offline audio effect chain
      *
-     * @param 
-     * @return 
-     * @since 12
+     * @param chainName Audio effect chain name
+     * @return The result of construction, 0 for success, other for error code
+     * @since 15
      */
     int32_t CreateOfflineEffectChain(const std::string &chainName);
 
@@ -47,7 +48,7 @@ public:
      * @param inInfo Input audio stream information
      * @param outInfo Output audio stream information
      * @return The result of configuration, 0 for success, other for error code
-     * @since 12
+     * @since 15
      */
     int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo);
 
@@ -57,7 +58,7 @@ public:
      * @param bufIn Input audio sharedmemory buffer
      * @param bufOut Output audio sharedmemory buffer
      * @return The result of preparation, 0 for success, other for error code
-     * @since 12
+     * @since 15
      */
     int32_t PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &bufIn,
         std::shared_ptr<AudioSharedMemory> &bufOut);
@@ -68,14 +69,14 @@ public:
      * @param inSize Size of input audio data in sharedmemory
      * @param outSize Size of output audio data in sharedmemory
      * @return The result of processing, 0 for success, other for error code
-     * @since 12
+     * @since 15
      */
     int32_t ProcessOfflineEffectChain(uint32_t inSize, uint32_t outSize);
 
     /**
      * @brief Release the offline audio effect chain
      *
-     * @since 12
+     * @since 15
      */
     void ReleaseOfflineEffectChain();
 private:

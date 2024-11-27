@@ -16,8 +16,9 @@
 #define LOG_TAG "IpcOfflineStreamProxy"
 #endif
 
-#include "ipc_offline_stream_stub.h"
 #include "ipc_offline_stream_proxy.h"
+
+#include "ipc_offline_stream_stub.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
 
