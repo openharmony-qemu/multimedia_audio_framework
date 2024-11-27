@@ -20,6 +20,7 @@
 #include <mutex>
 #include <shared_mutex>
 
+#include "offline_audio_effect_manager.h"
 #include "oh_audio_buffer.h"
 
 namespace OHOS {

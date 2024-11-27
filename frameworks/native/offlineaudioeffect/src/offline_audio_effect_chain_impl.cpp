@@ -16,7 +16,6 @@
 #define LOG_TAG "OfflineAudioEffectManager"
 #endif
 
-#include "offline_audio_effect_manager.h"
 #include "offline_audio_effect_chain_impl.h"
 
 #include <securec.h>
