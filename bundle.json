@@ -190,6 +190,16 @@
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
               }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/frameworks/native/offlineaudioeffect:offline_audio_effect",
+              "header": {
+                "header_files": [
+                  "./offlineaudioeffect/include/offline_audio_effect_manager.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
+              }
             }
           ],
           "test": [

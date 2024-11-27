@@ -26,6 +26,7 @@
 #include "audio_process_in_server.h"
 #include "audio_endpoint.h"
 #include "ipc_stream_in_server.h"
+#include "offline_stream_in_server.h"
 #include "playback_capturer_manager.h"
 
 namespace OHOS {

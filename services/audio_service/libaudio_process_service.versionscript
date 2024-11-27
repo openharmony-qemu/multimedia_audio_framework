@@ -43,6 +43,8 @@
     *Dump*;
     *CleanAppUseNumMap*;
     *GetSharedVolume*;
+    *GetOfflineStream*;
+    *GetOfflineAudioEffectChains*;
   local:
     *;
 };
