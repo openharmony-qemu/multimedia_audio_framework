@@ -38,7 +38,7 @@ public:
     std::string GetDeviceInfoByUidAndPid(int32_t uid, int32_t pid);
     bool DelRouteMapInfoByKey(int32_t uid);
     void AddRouteMapInfo(int32_t uid, std::string device, int32_t pid);
-    void AddFastRouteMapInfo(int32_t uid, std::string device, DeviceRole role);
+    int32_t AddFastRouteMapInfo(int32_t uid, std::string device, DeviceRole role);
     void RemoveDeviceInRouterMap(std::string networkId);
     void RemoveDeviceInFastRouterMap(std::string networkId);
     void GetNetworkIDInFastRouterMap(int32_t uid, DeviceRole role, std::string& newworkId);

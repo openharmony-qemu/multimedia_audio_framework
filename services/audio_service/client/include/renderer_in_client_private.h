@@ -242,6 +242,8 @@ private:
     int32_t ProcessWriteInner(BufferDesc &bufferDesc);
 
     void InitDirectPipeType();
+
+    bool DrainAudioStreamInner(bool stopFlag = false);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
