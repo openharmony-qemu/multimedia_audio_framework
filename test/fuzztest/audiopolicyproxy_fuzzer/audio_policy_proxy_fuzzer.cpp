@@ -39,6 +39,10 @@ const float FLOAT_VOLUME = 1.0f;
 const bool RUN_ON_CREATE = false;
 bool g_hasPermission = false;
 bool g_hasServerInit = false;
+static const uint8_t *RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
 
 AudioPolicyServer *GetServerPtr()
 {
@@ -93,12 +97,38 @@ void AudioFuzzTestGetPermission()
     }
 }
 
-void AudioPolicyCallbackFuzzTest(const uint8_t *rawData, size_t size)
+/*
+* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
+* tips: only support basic type
+*/
+template<class T>
+T GetData()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
     }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
 
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
+
+void AudioPolicyCallbackFuzzTest()
+{
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
 
@@ -107,13 +137,13 @@ void AudioPolicyCallbackFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
 
-    uint32_t sessionID = *reinterpret_cast<const uint32_t*>(rawData);
-    uint32_t clientUid = *reinterpret_cast<const uint32_t*>(rawData);
-    int32_t zoneID = *reinterpret_cast<const int32_t*>(rawData);
+    uint32_t sessionID = GetData<uint32_t>();
+    uint32_t clientUid = GetData<uint32_t>();
+    int32_t zoneID = GetData<int32_t>();
     audioPolicyProxy->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
     audioPolicyProxy->UnsetAudioInterruptCallback(sessionID, zoneID);
 
-    int32_t clientId = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t clientId = GetData<int32_t>();
     audioPolicyProxy->SetAudioManagerInterruptCallback(clientId, object);
     audioPolicyProxy->UnsetAudioManagerInterruptCallback(clientId);
     audioPolicyProxy->SetQueryClientTypeCallback(object);
@@ -129,12 +159,8 @@ void AudioPolicyCallbackFuzzTest(const uint8_t *rawData, size_t size)
     audioPolicyProxy->UnregisterSpatializationStateEventListener(sessionID);
 }
 
-void AudioPolicyMicrophoneFuzzTest(const uint8_t *rawData, size_t size)
+void AudioPolicyMicrophoneFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
 
@@ -148,17 +174,13 @@ void AudioPolicyMicrophoneFuzzTest(const uint8_t *rawData, size_t size)
     audioPolicyProxy->SetMicrophoneMutePersistent(true, PRIVACY_POLCIY_TYPE);
     audioPolicyProxy->IsMicrophoneMuteLegacy();
 
-    int32_t sessionId = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t sessionId = GetData<int32_t>();
     audioPolicyProxy->GetAudioCapturerMicrophoneDescriptors(sessionId);
     audioPolicyProxy->GetAvailableMicrophones();
 }
 
-void AudioPolicyVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioPolicyVolumeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
 
@@ -167,14 +189,14 @@ void AudioPolicyVolumeFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
 
-    int32_t volumeLevel = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t volumeFlag = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t volumeLevel = GetData<int32_t>();
+    int32_t volumeFlag = GetData<int32_t>();
     audioPolicyProxy->SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel, volumeFlag);
 
-    int32_t clientUid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t clientUid = GetData<int32_t>();
     audioPolicyProxy->GetSystemActiveVolumeType(clientUid);
 
-    int32_t streamId = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t streamId = GetData<int32_t>();
     float volume = FLOAT_VOLUME;
     audioPolicyProxy->SetLowPowerVolume(streamId, volume);
     audioPolicyProxy->GetLowPowerVolume(streamId);
@@ -186,9 +208,39 @@ void AudioPolicyVolumeFuzzTest(const uint8_t *rawData, size_t size)
     audioPolicyProxy->SetDeviceAbsVolumeSupported(macAddress, true);
     audioPolicyProxy->IsAbsVolumeScene();
 
-    int32_t volumeSetA2dpDevice = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t volumeSetA2dpDevice = GetData<int32_t>();
     audioPolicyProxy->SetA2dpDeviceVolume(macAddress, volumeSetA2dpDevice, true);
     audioPolicyProxy->DisableSafeMediaVolume();
+}
+
+typedef void (*TestFuncs[3])();
+
+TestFuncs g_testFuncs = {
+    AudioPolicyCallbackFuzzTest,
+    AudioPolicyMicrophoneFuzzTest,
+    AudioPolicyVolumeFuzzTest,
+};
+
+bool FuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr) {
+        return false;
+    }
+
+    // initialize data
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+    }
+
+    return true;
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -200,11 +252,12 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 }
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    /* Run your code on data */
-    OHOS::AudioStandard::AudioPolicyCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::AudioPolicyMicrophoneFuzzTest(data, size);
-    OHOS::AudioStandard::AudioPolicyVolumeFuzzTest(data, size);
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
 }
