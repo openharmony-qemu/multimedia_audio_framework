@@ -3131,6 +3131,11 @@ int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeTyp
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
 }
 
+void AudioPolicyServer::CheckHibernateState(bool hibernate)
+{
+    audioPolicyService_.CheckHibernateState(hibernate);
+}
+
 int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();

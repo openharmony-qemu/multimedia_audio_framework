@@ -110,7 +110,7 @@ public:
 
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
     int32_t RegisterRenderCallback(OnRenderCallback (*callback), int8_t *userdata) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
@@ -361,7 +361,7 @@ bool OffloadAudioRendererSinkInner::IsInited()
     return rendererInited_;
 }
 
-void OffloadAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void OffloadAudioRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
     AUDIO_WARNING_LOG("not supported.");
 }

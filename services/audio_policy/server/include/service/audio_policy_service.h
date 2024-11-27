@@ -397,6 +397,8 @@ public:
 
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
 
+    void CheckHibernateState(bool onHibernate);
+
     // for hidump
     int32_t GetCurActivateCount();
     void CheckStreamMode(const int64_t activateSessionId);

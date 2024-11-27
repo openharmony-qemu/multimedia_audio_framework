@@ -518,6 +518,9 @@ public:
     void MicrophoneMuteInfoDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
 
+    // for hibernate callback
+    void CheckHibernateState(bool hibernate);
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId);

@@ -115,7 +115,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     int32_t SetPaPower(int32_t flag) override;
     int32_t SetPriPaPower() override;
@@ -859,7 +859,7 @@ std::string RemoteAudioRendererSinkInner::GetAudioParameter(const AudioParamKey 
 #endif
 }
 
-void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void RemoteAudioRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
     AUDIO_INFO_LOG("register sink audio param callback.");
     callback_ = callback;
@@ -872,9 +872,9 @@ void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback*
         audioAdapter = audioAdapter_;
     }
 
-    CHECK_AND_RETURN_LOG(audioAdapter != nullptr, "RegisterParameterCallback: Audio adapter is null.");
+    CHECK_AND_RETURN_LOG(audioAdapter != nullptr, "RegisterAudioSinkCallback: Audio adapter is null.");
     int32_t ret = audioAdapter->RegExtraParamObserver();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterParameterCallback failed, ret %{public}d.", ret);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterAudioSinkCallback failed, ret %{public}d.", ret);
 #endif
 }
 

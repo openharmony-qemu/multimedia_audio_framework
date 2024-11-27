@@ -63,6 +63,7 @@ public:
     void SetVoiceVolumeProxy(float volume);
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
+    void CheckHibernateStateProxy(bool hibernate);
     void RestoreSessionProxy(const int32_t &sessionID, bool isOutput);
     int32_t GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE);
