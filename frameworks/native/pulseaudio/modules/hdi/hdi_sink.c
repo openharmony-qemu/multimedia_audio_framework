@@ -87,6 +87,7 @@
 #define SPATIALIZATION_FADING_FRAMECOUNT 5
 #define POSSIBLY_UNUSED __attribute__((unused))
 #define MIN_SLEEP_FOR_USEC 2000
+#define DEFAULT_BLOCK_USEC 20000
 #define FADE_IN_BEGIN 0.0
 #define FADE_IN_END 1.0
 #define FADE_OUT_BEGIN 1.0
@@ -3405,6 +3406,10 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
     if (u->block_usec == (pa_usec_t) - 1)
         u->block_usec = s->thread_info.max_latency;
 
+    if (u->block_usec < DEFAULT_BLOCK_USEC) {
+        AUDIO_WARNING_LOG("block_usec is less than 20000, block_usec: %{public}" PRIu64, u->block_usec);
+        u->block_usec = DEFAULT_BLOCK_USEC;
+    }
     nbytes = pa_usec_to_bytes(u->block_usec, &s->sample_spec);
     pa_sink_set_max_request_within_thread(s, nbytes);
 }
