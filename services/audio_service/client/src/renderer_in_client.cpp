@@ -590,8 +590,8 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     DfxWriteInterval();
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
-        "invalid size is %{public}zu", bufferSize);   
-        
+        "invalid size is %{public}zu", bufferSize);
+
     if (gServerProxy_ == nullptr && getuid() == MEDIA_SERVICE_UID) {
         uint32_t samplingRate = clientConfig_.streamInfo.samplingRate;
         uint32_t channels = clientConfig_.streamInfo.channels;

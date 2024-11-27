@@ -404,10 +404,10 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
 
+    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
         static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
     VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
-    DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,

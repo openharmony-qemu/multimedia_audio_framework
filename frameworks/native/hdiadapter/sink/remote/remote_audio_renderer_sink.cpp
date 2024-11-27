@@ -959,8 +959,6 @@ int32_t RemoteAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &
     return ERR_NOT_SUPPORTED;
 }
 
-
-
 int32_t RemoteAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
 {
     renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_REMOTE);

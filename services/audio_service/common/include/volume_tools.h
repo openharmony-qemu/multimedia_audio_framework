@@ -48,7 +48,7 @@ public:
     // will count volume for each channel, vol sum will be kept in volStart
     static ChannelVolumes CountVolumeLevel(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel,
         size_t split = 1);
-    static void DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo,std::string logTag,
+    static void DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
         int64_t &volumeDataCount, size_t split = 1);
 };
 } // namespace AudioStandard
