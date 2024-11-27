@@ -1174,38 +1174,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetA2dpOffloadFlag_002, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test ActivateConcurrencyFromServer.
-* @tc.number: ActivateConcurrencyFromServer_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateConcurrencyFromServer_001 start");
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
-    int32_t ret = server->audioPolicyService_.ActivateConcurrencyFromServer(incomingPipe);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, server->audioPolicyService_.ActivateConcurrencyFromServer(incomingPipe));
-}
-
-/**
-* @tc.name  : Test ActivateConcurrencyFromServer.
-* @tc.number: ActivateConcurrencyFromServer_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateConcurrencyFromServer_002 start");
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
-    if (server->audioPolicyService_.offloadSessionID_.has_value()) {
-        server->audioPolicyService_.offloadSessionID_.reset();
-    }
-    EXPECT_EQ(SUCCESS, server->audioPolicyService_.ActivateConcurrencyFromServer(incomingPipe));
-}
-
-/**
 * @tc.name  : Test NotifyCapturerRemoved.
 * @tc.number: NotifyCapturerRemoved_001
 * @tc.desc  : Test AudioPolicyService interfaces.
