@@ -814,7 +814,6 @@ int32_t RendererInClientInner::UnregisterSpatializationStateEventListener(uint32
 bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
 {
     Trace trace("RendererInClientInner::DrainAudioStreamInner " + std::to_string(sessionId_));
-    std::lock_guard<std::mutex> statusLock(statusMutex_);
     if (state_ != RUNNING) {
         AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
         return false;
