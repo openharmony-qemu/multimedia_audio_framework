@@ -57,7 +57,7 @@ shared_ptr<OfflineAudioEffectManager> manager_ = nullptr;
 
 void OfflineAudioEffectChainUnitTest::SetUpTestCase(void)
 {
-    manager_ = OfflineAudioEffectManager::GetInstance();
+    manager_ = make_shared<OfflineAudioEffectManager>();
 }
 
 void OfflineAudioEffectChainUnitTest::TearDownTestCase(void)
@@ -86,7 +86,7 @@ void OfflineAudioEffectChainUnitTest::TearDown(void)
  */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSize.Level1)
 {
-    auto manager = OfflineAudioEffectManager::GetInstance();
+    auto manager = make_shared<OfflineAudioEffectManager>();
     EXPECT_NE(nullptr, manager);
     EXPECT_GE(manager->GetOfflineAudioEffectChains().size(), 0);
 }
@@ -99,7 +99,8 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSiz
  */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSize.Level1)
 {
-    auto chain = OfflineAudioEffectManager::GetInstance()->CreateOfflineAudioEffectChain(NORMAL_CHAIN_NAME);
+    auto manager = make_shared<OfflineAudioEffectManager>();
+    auto chain = manager->CreateOfflineAudioEffectChain(NORMAL_CHAIN_NAME);
     EXPECT_NE(nullptr, chain);
 }
 
