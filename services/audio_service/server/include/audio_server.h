@@ -35,6 +35,7 @@
 #include "audio_effect_server.h"
 #include "audio_asr.h"
 #include "audio_utils.h"
+#include "offline_stream_in_server.h"
 #include "policy_handler.h"
 
 namespace OHOS {

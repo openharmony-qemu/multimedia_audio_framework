@@ -38,6 +38,7 @@ ohos_shared_library("offline_audio_effect") {
   install_enable = true
 
   sources = [
+    "src/offline_audio_effect_chain_impl.cpp",
     "src/offline_audio_effect_manager.cpp",
     "src/offline_audio_effect_server_chain.cpp",
   ]
