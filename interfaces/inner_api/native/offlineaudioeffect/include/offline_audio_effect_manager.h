@@ -26,7 +26,28 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class OfflineAudioEffectChain;
+class OfflineAudioEffectManager {
+public:
+    /**
+     * @brief Get all offline audio effect chain names
+     *
+     * @return Returns all offline audio effect chains avalible.
+     * @since 15
+     */
+    std::vector<std::string> GetOfflineAudioEffectChains();
+
+    /**
+     * @brief Creata an offline audio effect chain
+     *
+     * @return Returns offload audio effect chain with chainName provided, nullptr if failed
+     * @since 15
+     */
+    std::unique_ptr<OfflineAudioEffectChain> CreateOfflineAudioEffectChain(const std::string &chainName);
+};
+
 class OfflineAudioEffectChain {
+    friend class OfflineAudioEffectManager;
 public:
     OfflineAudioEffectChain(const OfflineAudioEffectChain&) = delete;
     OfflineAudioEffectChain& operator=(const OfflineAudioEffectChain&) = delete;
@@ -77,8 +98,6 @@ public:
      */
     void Release();
 private:
-    friend class OfflineAudioEffectManager;
-
     OfflineAudioEffectChain(const std::string &effectChainName);
     ~OfflineAudioEffectChain();
     int32_t InitIpcChain();
@@ -89,25 +108,6 @@ private:
     uint8_t *inBufferBase_;
     uint8_t *outBufferBase_;
     std::shared_mutex bufferMutex_;
-};
-
-class OfflineAudioEffectManager {
-public:
-    /**
-     * @brief 
-     *
-     * @return Returns all offline audio effect chains avalible.
-     * @since 12
-     */
-    std::vector<std::string> GetOfflineAudioEffectChains();
-
-    /**
-     * @brief 
-     *
-     * @return Returns offload audio effect chain with chainName provided, nullptr if failed
-     * @since 12
-     */
-    std::unique_ptr<OfflineAudioEffectChain> CreateOfflineAudioEffectChain(const std::string &chainName);
 };
 } // namespace AudioStandard
 } // namespace OHOS
