@@ -37,7 +37,7 @@ namespace {
     constexpr size_t DEFAULT_BUFFER_SIZE = 7680 * 2;
     constexpr uint32_t SEND_COMMAND_LEN = 10;
     constexpr uint32_t GET_BUFFER_LEN = 10;
-    static const std::string LIBNAME = "huawei_offline_record_algo";
+    static const std::string LIBNAME = "offline_record_algo";
     static const std::string UUID = "a953e8d6-fb7c-4684-9dc2-78be1a995bb2";
 }
 
@@ -79,14 +79,12 @@ int32_t OfflineAudioEffectServerChain::ReleaseEffectModel()
 
 int32_t OfflineAudioEffectServerChain::GetOfflineAudioEffectChains(std::vector<std::string> &chainNamesVector)
 {
-    // todo get effectchains
     AUDIO_INFO_LOG("GetOfflineAudioEffectChains done");
     return SUCCESS;
 }
 
 int32_t OfflineAudioEffectServerChain::Create()
 {
-    // todo create effectchain
     AUDIO_INFO_LOG("Create %{public}s done", chainName_.c_str());
     return SUCCESS;
 }
@@ -96,7 +94,6 @@ int32_t OfflineAudioEffectServerChain::Configure()
     int8_t input[SEND_COMMAND_LEN] = {0};
     int8_t output[GET_BUFFER_LEN] = {0};
     uint32_t replyLen = GET_BUFFER_LEN;
-    // effect_config_t config = {inputCfg, outputCfg}
 
     int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_SET_CONFIG,
         input, SEND_COMMAND_LEN, output, &replyLen);
@@ -106,7 +103,6 @@ int32_t OfflineAudioEffectServerChain::Configure()
 
 int32_t OfflineAudioEffectServerChain::SetParam(AudioStreamInfo inInfo, AudioStreamInfo outInfo)
 {
-    // todo configure real effect
     AUDIO_INFO_LOG("%{public}d %{public}d %{public}hhu %{public}hhu %{public}" PRIu64 "StreamInfo set",
         inInfo.samplingRate, inInfo.encoding, inInfo.format, inInfo.channels, inInfo.channelLayout);
     AUDIO_INFO_LOG("%{public}d %{public}d %{public}hhu %{public}hhu %{public}" PRIu64 "StreamInfo set",
@@ -128,13 +124,11 @@ int32_t OfflineAudioEffectServerChain::Prepare(const std::shared_ptr<AudioShared
     serverBufferIn_ = bufferIn;
     serverBufferOut_ = bufferOut;
     AUDIO_INFO_LOG("Prepare in server done");
-    // todo prepare real effect
     return SUCCESS;
 }
 
 int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize)
 {
-    // todo implement real effect
     uint8_t *bufIn = serverBufferIn_->GetBase();
     uint8_t *bufOut = serverBufferOut_->GetBase();
     for (uint32_t i = 0; i < outSize; i++) {
@@ -146,7 +140,6 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
 
 int32_t OfflineAudioEffectServerChain::Release()
 {
-    // todo release real effect
     AUDIO_INFO_LOG("Release in server success");
     return SUCCESS;
 }

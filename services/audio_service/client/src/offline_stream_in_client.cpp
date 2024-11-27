@@ -45,8 +45,6 @@ static const sptr<IStandardAudioService> GetAudioServerProxy()
         CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
         gAudioServerProxy = iface_cast<IStandardAudioService>(object);
         CHECK_AND_RETURN_RET_LOG(gAudioServerProxy != nullptr, nullptr, "get audio service proxy failed");
-
-        // may add register death recipent to restore proxy in the future
     }
     sptr<IStandardAudioService> gasp = gAudioServerProxy;
     return gasp;
@@ -108,4 +106,4 @@ void OfflineStreamInClient::ReleaseOfflineEffectChain()
     streamProxy_->ReleaseOfflineEffectChain();
 }
 } // namespace AudioStandard
-} // namespace OHOS
+} // namespace OHOS

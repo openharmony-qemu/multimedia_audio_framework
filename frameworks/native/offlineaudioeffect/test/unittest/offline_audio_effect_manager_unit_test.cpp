@@ -25,7 +25,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const std::string NORMAL_CHAIN_NAME = "abcdefg";
-    constexpr int32_t NORMAL_BUFFER_SIZE = 7680;
     constexpr AudioStreamInfo NORMAL_STREAM_INFO(
         AudioSamplingRate::SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM,
         AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);

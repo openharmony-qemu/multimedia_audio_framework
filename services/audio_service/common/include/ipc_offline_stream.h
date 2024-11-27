@@ -34,7 +34,7 @@ public:
 
     virtual int32_t CreateOfflineEffectChain(const std::string &chainName) = 0;
 
-    virtual int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo, const AudioStreamInfo&outInfo) = 0;
+    virtual int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo) = 0;
 
     virtual int32_t PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &inBuffer,
         std::shared_ptr<AudioSharedMemory> &outBuffer) = 0;
@@ -56,4 +56,4 @@ public:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // IPC_OFFLINE_STREAM_H
+#endif // IPC_OFFLINE_STREAM_H

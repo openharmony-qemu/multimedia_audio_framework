@@ -31,7 +31,7 @@ public:
 
     int32_t CreateOfflineEffectChain(const std::string &chainName) override;
 
-    int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo, const AudioStreamInfo&outInfo) override;
+    int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo) override;
 
     int32_t PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &inBuffer,
         std::shared_ptr<AudioSharedMemory> &outBuffer) override;
