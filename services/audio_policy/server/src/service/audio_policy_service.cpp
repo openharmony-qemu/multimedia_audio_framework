@@ -2627,15 +2627,10 @@ bool AudioPolicyService::NotifyRecreateRendererStream(std::unique_ptr<AudioDevic
     AUDIO_INFO_LOG("New device type: %{public}d, current rendererFlag: %{public}d, origianl flag: %{public}d",
         desc->deviceType_, rendererChangeInfo->rendererInfo.rendererFlags,
         rendererChangeInfo->rendererInfo.originalFlag);
-    CHECK_AND_RETURN_RET_LOG((rendererChangeInfo->outputDeviceInfo.deviceType != DEVICE_TYPE_INVALID &&
-        desc->deviceType_ != DEVICE_TYPE_INVALID) || desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST,
-        false, "isUpdateActiveDevice is false");
+    CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->outputDeviceInfo.deviceType != DEVICE_TYPE_INVALID &&
+        desc->deviceType_ != DEVICE_TYPE_INVALID, false, "isUpdateActiveDevice is false");
     CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_NORMAL &&
         rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_FORCED_NORMAL, false, "original flag is normal");
-    CHECK_AND_RETURN_RET_LOG(desc->deviceType_ != DEVICE_TYPE_REMOTE_CAST ||
-        (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST &&
-        rendererChangeInfo->rendererInfo.rendererFlags != AUDIO_FLAG_NORMAL),
-        false, "new device is remote cast and current renderer flag is normal");
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = GetSinkPortName(rendererChangeInfo->outputDeviceInfo.deviceType);
     bool isOldDeviceLocal = rendererChangeInfo->outputDeviceInfo.networkId == "" ||
