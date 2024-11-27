@@ -31,41 +31,48 @@ public:
     OfflineAudioEffectChain(const OfflineAudioEffectChain&) = delete;
     OfflineAudioEffectChain& operator=(const OfflineAudioEffectChain&) = delete;
     /**
-     * @brief 
+     * @brief Configure the audio stream information
      *
-     * @return 
+     * @param inInfo Input audio stream information
+     * @param outInfo Output audio stream information
+     * @return The result of the config, 0 for success, other for error code
      * @since 12
      */
     int32_t Configure(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo);
 
     /**
-     * @brief 
+     * @brief Prepare the offline audio effect chain
      *
-     * @return 
+     * @return The result of the preparation, 0 for success, other for error code
      * @since 12
      */
     int32_t Prepare();
 
     /**
-     * @brief 
+     * @brief Get the size of the audio effect buffer
      *
-     * @return 
+     * @param inBufferSize Size of the input buffer
+     * @param outBufferSize Size of the output buffer
+     * @return The result of the retrieval, 0 for success, other for error code
      * @since 12
      */
     int32_t GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize);
 
     /**
-     * @brief 
+     * @brief Process the audio data
      *
-     * @return 
+     * @param inBuffer Input audio data buffer
+     * @param inSize Size of the input audio data
+     * @param outBuffer Output audio data buffer
+     * @param outSize Size of the output audio data
+     * @return The result of processing, 0 for success, other for error code
      * @since 12
      */
     int32_t Process(uint8_t *inBuffer, int32_t inSize, uint8_t *outBuffer, int32_t outSize);
 
     /**
-     * @brief 
+     * @brief Release the resources of the audio effect chain
      *
-     * @return 
      * @since 12
      */
     void Release();
