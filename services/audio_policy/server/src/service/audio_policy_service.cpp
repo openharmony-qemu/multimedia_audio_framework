@@ -852,7 +852,9 @@ int32_t AudioPolicyService::SelectOutputDeviceForFastInner(sptr<AudioRendererFil
     int32_t res = SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "SetRenderDeviceForUsage fail");
     SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
-    SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
+    res = SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
+        "AddFastRouteMapInfo failed! fastRouteMap is too large!");
     FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     return true;
 }
@@ -940,8 +942,9 @@ int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> aud
     // if is running, call moveProcessToEndpoint.
 
     // otherwises, keep router info in the map
-    audioRouteMap_.AddFastRouteMapInfo(audioRendererFilter->uid, deviceDescriptor->networkId_, OUTPUT_DEVICE);
-    return SUCCESS;
+    int32_t res = audioRouteMap_.AddFastRouteMapInfo(audioRendererFilter->uid,
+        deviceDescriptor->networkId_, OUTPUT_DEVICE);
+    return res;
 }
 
 std::vector<SourceOutput> AudioPolicyService::FilterSourceOutputs(int32_t sessionId)
@@ -1064,10 +1067,9 @@ int32_t AudioPolicyService::SelectFastInputDevice(sptr<AudioCapturerFilter> audi
     // if is running, call moveProcessToEndpoint.
 
     // otherwises, keep router info in the map
-    audioRouteMap_.AddFastRouteMapInfo(audioCapturerFilter->uid, deviceDescriptor->networkId_, INPUT_DEVICE);
-    AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]", audioCapturerFilter->uid,
-        GetEncryptStr(deviceDescriptor->networkId_).c_str());
-    return SUCCESS;
+    int32_t res = audioRouteMap_.AddFastRouteMapInfo(audioCapturerFilter->uid,
+        deviceDescriptor->networkId_, INPUT_DEVICE);
+    return res;
 }
 
 void AudioPolicyService::SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType,
@@ -1109,7 +1111,11 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 
     if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST && selectedDesc.size() == 1) {
         SetCaptureDeviceForUsage(GetAudioScene(true), srcType, selectedDesc[0]);
-        SelectFastInputDevice(audioCapturerFilter, selectedDesc[0]);
+        int32_t result = SelectFastInputDevice(audioCapturerFilter, selectedDesc[0]);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+            "AddFastRouteMapInfo failed! fastRouteMap is too large!");
+        AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",
+            audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
         FetchDevice(false);
         ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDeviceType(),
             audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectInputDevice fast");
