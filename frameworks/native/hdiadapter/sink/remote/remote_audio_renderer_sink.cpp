@@ -39,7 +39,7 @@
 #include "audio_utils.h"
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 using namespace std;
 using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter;
@@ -140,7 +140,6 @@ private:
     void ClearRender();
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 private:
     std::string deviceNetworkId_ = "";
     std::atomic<bool> rendererInited_ = false;
@@ -464,7 +463,9 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
     }
 
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     Trace traceRenderFrame("audioRender_->RenderFrame");
     ret = audioRender_->RenderFrame(frameHal, writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "Render frame fail, ret %{public}x.", ret);
@@ -958,17 +959,7 @@ int32_t RemoteAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &
     return ERR_NOT_SUPPORTED;
 }
 
-void RemoteAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
-    AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
-}
+
 
 int32_t RemoteAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
 {

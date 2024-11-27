@@ -44,7 +44,7 @@
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
 
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 using namespace std;
 
@@ -266,7 +266,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
@@ -786,7 +785,9 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(&data), len);
@@ -810,17 +811,6 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 #endif
 
     return SUCCESS;
-}
-
-void AudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void AudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)

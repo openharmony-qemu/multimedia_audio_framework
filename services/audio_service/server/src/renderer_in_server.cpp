@@ -500,7 +500,7 @@ int32_t RendererInServer::WriteData()
                 DoFadingOut(bufferDesc);
             }
         }
-        Trace::CountVolume(traceTag_, *bufferDesc.buffer);
+        VolumeTools::DfxOperation(bufferDesc, processConfig_.streamInfo, traceTag_, volumeDataCount_);  
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {

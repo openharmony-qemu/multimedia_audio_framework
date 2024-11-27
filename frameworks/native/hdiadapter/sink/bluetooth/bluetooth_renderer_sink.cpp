@@ -37,7 +37,7 @@
 
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
-#include "audio_utils.h"
+#include "volume_tools.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
 #include "audio_log_utils.h"
@@ -196,7 +196,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     mutable int64_t volumeDataCount_ = 0;
@@ -530,7 +529,9 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(&data), len);
@@ -576,16 +577,6 @@ void BluetoothRendererSinkInner::UpdateAppsUid()
 }
 #endif
 
-void BluetoothRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
-}
 
 ConvertHdiFormat BluetoothRendererSinkInner::ConvertToHdiAdapterFormat(AudioFormat format)
 {

@@ -22,6 +22,7 @@
 #include "volume_tools_c.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
+#include "audio_utils.h"
 
 namespace {
 static const int32_t UINT8_SHIFT = 0x80;
@@ -32,6 +33,8 @@ static const uint32_t SHIFT_SIXTEEN = 16;
 static const uint32_t ARRAY_INDEX_TWO = 2;
 static const size_t MIN_FRAME_SIZE = 1;
 static const size_t MAX_FRAME_SIZE = 100000; // max to about 2s for 48khz
+static const uint32_t INT_32_MAX = 0x7fffffff;
+static const int32_t HALF_FACTOR = 2;
 }
 namespace OHOS {
 namespace AudioStandard {
@@ -509,6 +512,28 @@ ChannelVolumes VolumeTools::CountVolumeLevel(const BufferDesc &buffer, AudioSamp
 
     return channelVols;
 }
+
+void VolumeTools::DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
+    int64_t &volumeDataCount, size_t split)
+{
+    size_t byteSizePerData = GetByteSize(streamInfo.format);
+    size_t frameLen = byteSizePerData * static_cast<size_t>(streamInfo.channels) *
+        static_cast<size_t>(streamInfo.samplingRate) * 0.02; // 0.02s 
+    int32_t minVolume = INT_32_MAX;
+    for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
+        BufferDesc temp = {buffer.buffer + frameLen * index,
+            std::min(buffer.bufLength - frameLen * index, frameLen), std::min(buffer.dataLength - frameLen * index, frameLen)};
+        ChannelVolumes vols = CountVolumeLevel(temp, streamInfo.format, streamInfo.channels, split);
+        if (streamInfo.channels == MONO) {
+            minVolume = std::min(minVolume, vols.volStart[0]);
+        } else {
+            minVolume = std::min(minVolume, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+        }
+        AudioLogUtils::ProcessVolumeData(logTag, vols, volumeDataCount);
+    }
+    Trace::Count(logTag, minVolume);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
 

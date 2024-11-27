@@ -52,7 +52,7 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 #include "media_monitor_manager.h"
 
@@ -71,7 +71,6 @@ static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offlo
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const uint32_t WAIT_FOR_NEXT_CB = 5000; // 5ms
-static const int32_t HALF_FACTOR = 2;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
@@ -591,9 +590,8 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     DfxWriteInterval();
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
-        "invalid size is %{public}zu", bufferSize);
-    Trace::CountVolume(traceTag_, *buffer);
-
+        "invalid size is %{public}zu", bufferSize);   
+        
     if (gServerProxy_ == nullptr && getuid() == MEDIA_SERVICE_UID) {
         uint32_t samplingRate = clientConfig_.streamInfo.samplingRate;
         uint32_t channels = clientConfig_.streamInfo.channels;
@@ -762,24 +760,13 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     }
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
-    DfxOperation(desc, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
+    VolumeTools::DfxOperation(desc, clientConfig_.streamInfo, traceTag_, volumeDataCount_);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;
-}
-
-void RendererInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t RendererInClientInner::RegisterSpatializationStateEventListener()

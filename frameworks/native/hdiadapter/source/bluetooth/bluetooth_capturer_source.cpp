@@ -42,7 +42,7 @@
 #include "audio_proxy_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "audio_attribute.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -168,7 +168,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
     int32_t DoStop();
@@ -405,7 +404,9 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
 
-    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
     DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
@@ -809,18 +810,6 @@ int32_t BluetoothCapturerSourceInner::UpdateAppsUid(const std::vector<int32_t> &
 #endif
 
     return SUCCESS;
-}
-
-void BluetoothCapturerSourceInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
-    AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t BluetoothCapturerSourceInner::GetCaptureId(uint32_t &captureId) const
