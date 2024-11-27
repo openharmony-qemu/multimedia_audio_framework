@@ -93,6 +93,10 @@ void NapiRendererWriteDataCallback::OnWriteData(size_t length)
     cb->rendererNapiObj = napiRenderer_;
 
     CHECK_AND_RETURN_LOG(napiRenderer_ != nullptr, "Cannot find the reference to audio renderer napi");
+    if (!napiRenderer_->audioRenderer_) {
+        AUDIO_INFO_LOG("OnWriteData audioRenderer_ is null.");
+        return;
+    }
     napiRenderer_->audioRenderer_->GetBufferDesc(cb->bufDesc);
     if (cb->bufDesc.buffer == nullptr) {
         return;
