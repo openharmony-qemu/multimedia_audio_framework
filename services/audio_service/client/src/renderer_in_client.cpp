@@ -53,13 +53,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
-const uint64_t AUDIO_US_PER_MS = 1000;
-const uint64_t AUDIO_NS_PER_US = 1000;
-const uint64_t AUDIO_US_PER_S = 1000000;
-const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
-const uint64_t MAX_CBBUF_IN_USEC = 100000;
-const uint64_t MIN_CBBUF_IN_USEC = 20000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
@@ -68,6 +62,7 @@ static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offlo
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
+static const uint32_t WAIT_FOR_NEXT_CB = 5000; // 5ms
 static const int32_t HALF_FACTOR = 2;
 static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
@@ -952,8 +947,17 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
     }
-    if (curStreamParams_.encoding == ENCODING_PCM && bufferDesc.dataLength != 0) {
-        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
+    if (curStreamParams_.encoding == ENCODING_PCM) {
+        if (bufferDesc.dataLength != 0) {
+            result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
+            sleepCount_ = LOG_COUNT_LIMIT;
+        } else {
+            if (sleepCount_++ == LOG_COUNT_LIMIT) {
+                sleepCount_ = 0;
+                AUDIO_WARNING_LOG("OnWriteData Process 1st or 500 times INVALID buffer");
+            }
+            usleep(WAIT_FOR_NEXT_CB);
+        }
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
@@ -1425,6 +1429,9 @@ bool RendererInClientInner::FlushAudioStream()
     // clear cbBufferQueue
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbBufferQueue_.Clear();
+        if (memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_) != EOK) {
+            AUDIO_ERR_LOG("memset_s buffer failed");
+        };
     }
 
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");

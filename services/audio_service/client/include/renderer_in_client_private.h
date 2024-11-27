@@ -57,6 +57,16 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const uint64_t AUDIO_US_PER_MS = 1000;
+const uint64_t AUDIO_NS_PER_US = 1000;
+const uint64_t AUDIO_US_PER_S = 1000000;
+const uint64_t AUDIO_MS_PER_S = 1000;
+const uint64_t MAX_CBBUF_IN_USEC = 100000;
+const uint64_t MIN_CBBUF_IN_USEC = 20000;
+const int32_t LOG_COUNT_LIMIT = 500;
+} // namespace
+
 class SpatializationStateChangeCallbackImpl;
 
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
@@ -416,6 +426,8 @@ private:
 
     std::mutex setPreferredFrameSizeMutex_;
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
+
+    int32_t sleepCount_ = LOG_COUNT_LIMIT;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {
