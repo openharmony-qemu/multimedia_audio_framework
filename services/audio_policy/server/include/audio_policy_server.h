@@ -79,14 +79,20 @@ const std::vector<AudioStreamType> GET_PC_STREAM_RING_VOLUME_TYPES {
 };
 
 const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
-    STREAM_MUSIC,
     STREAM_VOICE_CALL,
     STREAM_VOICE_ASSISTANT,
     STREAM_ACCESSIBILITY,
     STREAM_RING,
     STREAM_ALARM,
     STREAM_VOICE_RING,
-    STREAM_ULTRASONIC
+    STREAM_ULTRASONIC,
+    // adjust the type of music from the head of list to end, make sure music is updated last.
+    // avoid interference from ring updates on special platform.
+    // when the device is switched to headset,ring and alarm is dualtone type.
+    // dualtone type use fixed volume curve of speaker.
+    // the ring and alarm are classified into the music group.
+    // the music volume becomes abnormal when the db value of music is modified.
+    STREAM_MUSIC
 };
 
 class AudioPolicyServer : public SystemAbility,
@@ -231,6 +237,8 @@ public:
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     AudioStreamType GetStreamInFocus(const int32_t zoneId = 0) override;
+
+    AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId = 0) override;
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 

@@ -45,6 +45,40 @@ const uint32_t ENUM_LENGTH_2 = 1;
 const uint32_t APPID_LENGTH = 10;
 const uint64_t COMMON_UINT64_NUM = 2;
 const uint32_t RES_TYPE_AUDIO_RENDERER_STANDBY = 119;
+static const uint8_t *RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
+
+/*
+* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
+* tips: only support basic type
+*/
+template<class T>
+T GetData()
+{
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
+    }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
+
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
 
 void AudioServerSetSpatializationSceneTypeTest(const uint8_t *rawData, size_t size)
 {
@@ -378,8 +412,7 @@ void AudioLoadAudioEffectLibrariesTest(const uint8_t* rawData, size_t size)
         data, reply, option);
 }
 
-void AudioCapturerInServerTestFirst(const uint8_t* rawData, size_t size,
-    std::shared_ptr<CapturerInServer> capturerInServer)
+void AudioCapturerInServerTestFirst(std::shared_ptr<CapturerInServer> capturerInServer)
 {
     capturerInServer->Init();
     capturerInServer->Start();
@@ -395,12 +428,8 @@ void AudioCapturerInServerTestFirst(const uint8_t* rawData, size_t size,
     capturerInServer->Release();
 }
 
-void AudioCapturerInServerFuzzTest(const uint8_t* rawData, size_t size)
+void AudioCapturerInServerFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     std::shared_ptr<CapturerInServer> capturerInServer = nullptr;
     AudioProcessConfig config;
     config.appInfo.appUid = APPID_LENGTH;
@@ -417,30 +446,27 @@ void AudioCapturerInServerFuzzTest(const uint8_t* rawData, size_t size)
     if (capturerInServer == nullptr) {
         return;
     }
-    uint32_t operation_int = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t operation_int = GetData<uint32_t>();
     operation_int = (operation_int%IOPERTAION_LENGTH) - 1;
     IOperation operation = static_cast<IOperation>(operation_int);
     capturerInServer->OnStatusUpdate(operation);
     std::shared_ptr<OHAudioBuffer> buffer = nullptr;
     capturerInServer->ResolveBuffer(buffer);
-    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t sessionId = GetData<uint32_t>();
     capturerInServer->GetSessionId(sessionId);
-    AudioCapturerInServerTestFirst(rawData, size, capturerInServer);
+    AudioCapturerInServerTestFirst(capturerInServer);
 }
 
-void AudioRendererInServerTestFirst(const uint8_t* rawData, size_t size, std::shared_ptr<RendererInServer> renderer)
+void AudioRendererInServerTestFirst(std::shared_ptr<RendererInServer> renderer)
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t operation_int = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t operation_int = GetData<uint32_t>();
     operation_int = (operation_int%IOPERTAION_LENGTH) - 1;
     IOperation operation = static_cast<IOperation>(operation_int);
     renderer->OnStatusUpdate(operation);
     renderer->HandleOperationFlushed();
     std::shared_ptr<OHAudioBuffer> buffer = nullptr;
     renderer->ResolveBuffer(buffer);
-    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t sessionId = GetData<uint32_t>();
     renderer->GetSessionId(sessionId);
     uint64_t framePos = COMMON_UINT64_NUM;
     uint64_t timeStamp = COMMON_UINT64_NUM;
@@ -448,31 +474,27 @@ void AudioRendererInServerTestFirst(const uint8_t* rawData, size_t size, std::sh
     renderer->GetAudioTime(framePos, timeStamp);
     renderer->GetAudioPosition(framePos, timeStamp, latency);
     renderer->GetLatency(latency);
-    int32_t rate = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t rate = GetData<int32_t>();
     renderer->SetRate(rate);
-    float volume = *reinterpret_cast<const float*>(rawData);
+    float volume = GetData<float>();
     renderer->SetLowPowerVolume(volume);
     renderer->GetLowPowerVolume(volume);
-    int32_t effectMode = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t effectMode = GetData<int32_t>();
     renderer->SetAudioEffectMode(effectMode);
     renderer->GetAudioEffectMode(effectMode);
-    int32_t privacyType = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t privacyType = GetData<int32_t>();
     renderer->SetPrivacyType(privacyType);
     renderer->GetPrivacyType(privacyType);
-    int32_t state = *reinterpret_cast<const int32_t*>(rawData);
-    bool isAppBack = *reinterpret_cast<const bool*>(rawData);
+    int32_t state = GetData<int32_t>();
+    bool isAppBack = GetData<bool>();
     renderer->SetOffloadMode(state, isAppBack);
     renderer->UnsetOffloadMode();
 }
 
-void AudioRendererInServerTestSecond(const uint8_t* rawData, size_t size, std::shared_ptr<RendererInServer> renderer)
+void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
 {
-    if (rawData == nullptr || size < LIMITSIZE || size < sizeof(uint32_t)) {
-        return;
-    }
-
-    bool isAppBack = *reinterpret_cast<const bool*>(rawData);
-    bool headTrackingEnabled = *reinterpret_cast<const bool*>(rawData);
+    bool isAppBack = GetData<bool>();
+    bool headTrackingEnabled = GetData<bool>();
     renderer->UpdateSpatializationState(isAppBack, headTrackingEnabled);
     renderer->WriterRenderStreamStandbySysEvent();
     uint64_t timeStamp = COMMON_UINT64_NUM;
@@ -494,7 +516,7 @@ void AudioRendererInServerTestSecond(const uint8_t* rawData, size_t size, std::s
     renderer->GetStreamManagerType();
     renderer->SetSilentModeAndMixWithOthers(isAppBack);
     renderer->SetClientVolume();
-    uint32_t operation_int = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t operation_int = GetData<uint32_t>();
     operation_int = (operation_int%IOPERTAION_LENGTH) - 1;
     IOperation operation = static_cast<IOperation>(operation_int);
     renderer->OnDataLinkConnectionUpdate(operation);
@@ -511,11 +533,8 @@ void AudioRendererInServerTestSecond(const uint8_t* rawData, size_t size, std::s
     renderer->Release();
 }
 
-void AudioRendererInServerTest(const uint8_t* rawData, size_t size)
+void AudioRendererInServerTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     config.appInfo.appUid = APPID_LENGTH;
     config.appInfo.appPid = APPID_LENGTH;
@@ -537,10 +556,10 @@ void AudioRendererInServerTest(const uint8_t* rawData, size_t size)
     renderer->ConfigServerBuffer();
     renderer->InitBufferStatus();
     renderer->UpdateWriteIndex();
-    uint32_t statusInt = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t statusInt = GetData<uint32_t>();
     statusInt = (statusInt % ENUM_LENGTH) -ENUM_LENGTH_2;
     IStatus status = static_cast<IStatus>(statusInt);
-    uint32_t typeInt = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t typeInt = GetData<uint32_t>();
     typeInt = typeInt % ENUM_LENGTH_1;
     ManagerType type = static_cast<ManagerType>(typeInt);
     renderer->managerType_ = type;
@@ -550,15 +569,12 @@ void AudioRendererInServerTest(const uint8_t* rawData, size_t size)
     renderer->SetStreamVolumeInfoForEnhanceChain();
     std::unordered_map<std::string, std::string> payload;
     renderer->ReportDataToResSched(payload, RES_TYPE_AUDIO_RENDERER_STANDBY);
-    AudioRendererInServerTestFirst(rawData, size, renderer);
-    AudioRendererInServerTestSecond(rawData, size, renderer);
+    AudioRendererInServerTestFirst(renderer);
+    AudioRendererInServerTestSecond(renderer);
 }
 
-void AudioMicroPhoneFuzzTest(const uint8_t* rawData, size_t size)
+void AudioMicroPhoneFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<MicrophoneDescriptor> micDesc = new (std::nothrow) MicrophoneDescriptor();
     MicrophoneDescriptor micDescs;
     Vector3D vector3d;
@@ -569,13 +585,46 @@ void AudioMicroPhoneFuzzTest(const uint8_t* rawData, size_t size)
     micDesc->SetMicOrientationInfo(vector3d);
 }
 
+typedef void (*TestFuncs[3])();
+
+TestFuncs g_testFuncs = {
+    AudioCapturerInServerFuzzTest,
+    AudioRendererInServerTest,
+    AudioMicroPhoneFuzzTest,
+};
+
+bool FuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr) {
+        return false;
+    }
+
+    // initialize data
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+    }
+
+    return true;
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    /* Run your code on data */
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::FuzzTest(data, size);
     OHOS::AudioStandard::AudioServerSetSpatializationSceneTypeTest(data, size);
     OHOS::AudioStandard::AudioServerUpdateSpatialDeviceTypeTest(data, size);
     OHOS::AudioStandard::AudioServerSetCaptureSilentStateTest(data, size);
@@ -590,8 +639,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioGetAudioParameterTest(data, size);
     OHOS::AudioStandard::AudioCreateAudioProcessTest(data, size);
     OHOS::AudioStandard::AudioLoadAudioEffectLibrariesTest(data, size);
-    OHOS::AudioStandard::AudioCapturerInServerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioRendererInServerTest(data, size);
-    OHOS::AudioStandard::AudioMicroPhoneFuzzTest(data, size);
     return 0;
 }

@@ -238,6 +238,7 @@ private:
     std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitSystemSoundUriMap();
     void InitVolumeMapIndex();
+    void InitBootAnimationVolume();
     void UpdateVolumeMapIndex();
     void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
         std::vector<VolumePoint> &volumePoints);

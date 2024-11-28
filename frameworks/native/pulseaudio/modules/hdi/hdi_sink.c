@@ -91,6 +91,7 @@
 #define FADE_OUT_END 0.0
 #define PRINT_INTERVAL_FRAME_COUNT 100
 #define MIN_SLEEP_FOR_USEC 2000
+#define DEFAULT_BLOCK_USEC 20000
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 const uint64_t DEFAULT_GETLATENCY_LOG_THRESHOLD_MS = 100;
@@ -1851,15 +1852,14 @@ static pa_resampler *UpdateResamplerIchannelMap(const char *sinkSceneType, struc
             "format[%{public}d]", (char *)sinkSceneType, ichannelmap.channels, ispec.rate, ispec.format);
         pa_sample_spec sink_spec = *(pa_resampler_output_sample_spec(resampler));
         pa_channel_map sink_channelmap = *(pa_resampler_output_channel_map(resampler));
+        pa_resampler_free(resampler);
         resampler = pa_resampler_new(
             u->sink->core->mempool,
             &ispec, &ichannelmap,
             &sink_spec, &sink_channelmap,
             u->sink->core->lfe_crossover_freq,
             PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
-        const char *dupSceneType = strdup(sinkSceneType);
-        pa_hashmap_remove_and_free(u->sceneToResamplerMap, (void *)sinkSceneType);
-        pa_hashmap_put(u->sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
+        pa_hashmap_put(u->sceneToResamplerMap, (void *)sinkSceneType, (void *)resampler);
     }
     return resampler;
 }
@@ -1877,8 +1877,8 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     }
     const pa_sample_spec *ispec = pa_resampler_input_sample_spec(resampler);
     const pa_sample_spec *ospec = pa_resampler_output_sample_spec(resampler);
-    size_t inBufferLen = u->bufferAttr->frameLen * ispec->channels * sizeof(float);
-    size_t outBufferLen = u->bufferAttr->frameLen * ospec->channels * sizeof(float);
+    size_t inBufferLen = (size_t)u->bufferAttr->frameLen * ispec->channels * sizeof(float);
+    size_t outBufferLen = (size_t)u->bufferAttr->frameLen * ospec->channels * sizeof(float);
     pa_memchunk unsampledChunk;
     pa_memchunk sampledChunk;
     unsampledChunk.length = inBufferLen;
@@ -2029,12 +2029,14 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
             AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
                 ", format[%{public}d]", (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
             resampler = pa_resampler_new(
-                si->core->mempool,
-                &sink_spec, &sink_channelmap,
-                &sink_spec, &sink_channelmap,
-                si->core->lfe_crossover_freq,
+                si->core->mempool, &sink_spec, &sink_channelmap,
+                &sink_spec, &sink_channelmap, si->core->lfe_crossover_freq,
                 PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
             char* newSceneType = strdup(sceneType);
+            if (newSceneType == NULL) {
+                AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
+                continue;
+            }
             pa_hashmap_put(sceneToResamplerMap, (void *)newSceneType, (void *)resampler);
         } else {
             if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
@@ -2042,15 +2044,12 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
                 AUDIO_INFO_LOG("SceneToResamplerMap: [%{public}s], new output channels[%{public}d], "
                     "sample rate[%{public}d], format[%{public}d]",
                     (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
-                char *dupSceneType = strdup(sceneType);
-                pa_hashmap_remove_and_free(sceneToResamplerMap, (void *)sceneType);
+                pa_resampler_free(resampler);
                 resampler = pa_resampler_new(
-                    si->core->mempool,
-                    &sink_spec, &sink_channelmap,
-                    &sink_spec, &sink_channelmap,
-                    si->core->lfe_crossover_freq,
+                    si->core->mempool, &sink_spec, &sink_channelmap,
+                    &sink_spec, &sink_channelmap, si->core->lfe_crossover_freq,
                     PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
-                pa_hashmap_put(sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
+                pa_hashmap_put(sceneToResamplerMap, (void *)sceneType, (void *)resampler);
             }
         }
     }
@@ -2058,7 +2057,7 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
     void* resampler = NULL;
     while ((pa_hashmap_iterate(sceneToResamplerMap, &resampler, &sceneType))) {
         if (pa_hashmap_get(sceneToCountMap, sceneType) == NULL) {
-            AUDIO_INFO_LOG("UpdateSceneToResamplerMap: sceneType [%{public}s] is removed", (char *)sceneType);
+            AUDIO_INFO_LOG("SceneToResamplerMap: sceneType [%{public}s] is removed", (char *)sceneType);
             pa_hashmap_remove_and_free(sceneToResamplerMap, sceneType);
         }
     }
@@ -2555,7 +2554,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
         pa_memchunk tchunk;
         tchunk = *chunk;
         tchunk.index += (size_t)d;
-        tchunk.length = PA_MIN((size_t)l, blockSize - tchunk.index);
+        tchunk.length = (size_t)l;
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
         d += (int64_t)tchunk.length;
@@ -2626,6 +2625,8 @@ static int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int
 
     pa_sink_input *i = infoInputs[0].userdata;
     if (GetFadeoutState(i->index) != NO_FADE) {
+        InputsDropFromInputs2(infoInputs, nInputs);
+        pa_sink_unref(s);
         AUDIO_WARNING_LOG("stream is croked, do not need peek");
         return 0;
     }
@@ -3577,6 +3578,10 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
     if (u->block_usec == (pa_usec_t) - 1)
         u->block_usec = s->thread_info.max_latency;
 
+    if (u->block_usec < DEFAULT_BLOCK_USEC) {
+        AUDIO_WARNING_LOG("block_usec is less than 20000, block_usec: %{public}" PRIu64, u->block_usec);
+        u->block_usec = DEFAULT_BLOCK_USEC;
+    }
     nbytes = pa_usec_to_bytes(u->block_usec, &s->sample_spec);
     pa_sink_set_max_request_within_thread(s, nbytes);
 }

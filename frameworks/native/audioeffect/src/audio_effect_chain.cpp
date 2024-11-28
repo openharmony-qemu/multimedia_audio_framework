@@ -133,7 +133,7 @@ void AudioEffectChain::SetSpatializationEnabledForFading(bool enabled)
     CHECK_AND_RETURN_LOG(spatializationEnabledFading_ != enabled,
         "no need to update spatialization enabled for fading: %{public}d", enabled);
     spatializationEnabledFading_ = enabled;
-    fadingCounts = CROSS_FADE_FRAME_COUNT;
+    fadingCounts_ = CROSS_FADE_FRAME_COUNT;
 }
 
 void AudioEffectChain::SetStreamUsage(const int32_t streamUsage)
@@ -191,7 +191,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[SPATIALIZATION_SCENE_TYPE_INDEX] = spatializationSceneType_;
     data[SPATIALIZATION_ENABLED_INDEX] = spatializationEnabled_;
     data[STREAM_USAGE_INDEX] = streamUsage_;
-    data[FOLD_STATE_INDEX] = foldState_;
+    data[FOLD_STATE_INDEX] = static_cast<int32_t>(foldState_);
     AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
         "spatializationSceneType: %{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d",
@@ -541,7 +541,7 @@ int32_t AudioEffectChain::UpdateEffectParamInner()
 
 void AudioEffectChain::CrossFadeProcess(float *bufOut, uint32_t frameLen)
 {
-    if (fadingCounts == 0) {
+    if (fadingCounts_ == 0) {
         return;
     }
 
@@ -549,17 +549,17 @@ void AudioEffectChain::CrossFadeProcess(float *bufOut, uint32_t frameLen)
     int32_t frameLength = static_cast<int32_t>(frameLen);
 
     // fading out to zero
-    if (fadingCounts > 0) {
+    if (fadingCounts_ > 0) {
         for (int32_t i = 0; i < frameLength; ++i) {
             for (int32_t j = 0; j < channelNum; ++j) {
                 bufOut[i * channelNum + j] *=
-                    (fadingCounts * frameLength - i) / static_cast<float>(frameLength * CROSS_FADE_FRAME_COUNT);
+                    (fadingCounts_ * frameLength - i) / static_cast<float>(frameLength * CROSS_FADE_FRAME_COUNT);
             }
         }
-        fadingCounts--;
+        fadingCounts_--;
         // fading out finish, update spatialization enabled and start fading in
-        if (fadingCounts == 0) {
-            fadingCounts = -CROSS_FADE_FRAME_COUNT;
+        if (fadingCounts_ == 0) {
+            fadingCounts_ = -CROSS_FADE_FRAME_COUNT;
             spatializationEnabled_ = spatializationEnabledFading_;
             UpdateEffectParamInner();
             AUDIO_INFO_LOG("fading out finish, switch to %{public}d and start fading in", spatializationEnabled_);
@@ -568,16 +568,16 @@ void AudioEffectChain::CrossFadeProcess(float *bufOut, uint32_t frameLen)
     }
 
     // fading in to one
-    if (fadingCounts < 0) {
+    if (fadingCounts_ < 0) {
         for (int32_t i = 0; i < frameLength; ++i) {
             for (int32_t j = 0; j < channelNum; ++j) {
                 bufOut[i * channelNum + j] *=
-                    (1 - (fadingCounts * frameLength + i) / static_cast<float>(frameLength * CROSS_FADE_FRAME_COUNT));
+                    (1 + (fadingCounts_ * frameLength + i) / static_cast<float>(frameLength * CROSS_FADE_FRAME_COUNT));
             }
         }
-        fadingCounts++;
+        fadingCounts_++;
         // fading in finish, start normally processing
-        if (fadingCounts == 0) {
+        if (fadingCounts_ == 0) {
             AUDIO_INFO_LOG("fading in finish, start normally processing for %{public}d", spatializationEnabled_);
         }
         return;

@@ -91,7 +91,7 @@ void ResourceManagerAdapter::ReleaseSystemResourceManager()
         resourceManager_ = nullptr;
     }
     
-    if (!resConfig_) {
+    if (resConfig_) {
         delete resConfig_;
         resConfig_ = nullptr;
     }

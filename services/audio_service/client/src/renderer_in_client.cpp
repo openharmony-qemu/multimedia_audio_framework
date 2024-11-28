@@ -809,6 +809,39 @@ int32_t RendererInClientInner::UnregisterSpatializationStateEventListener(uint32
     return SUCCESS;
 }
 
+bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
+{
+    Trace trace("RendererInClientInner::DrainAudioStreamInner " + std::to_string(sessionId_));
+    if (state_ != RUNNING) {
+        AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
+        return false;
+    }
+    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true, stopFlag) == SUCCESS, false, "Drain cache failed");
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
+    int32_t ret = ipcStream_->Drain(stopFlag);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Drain call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        notifiedOperation_ = MAX_OPERATION_CODE;
+        return false;
+    }
+    notifiedOperation_ = MAX_OPERATION_CODE;
+    waitLock.unlock();
+    AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
+    return true;
+}
+
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
 {
     AUDIO_INFO_LOG("Instance create");

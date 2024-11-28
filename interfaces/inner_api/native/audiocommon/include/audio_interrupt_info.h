@@ -171,6 +171,7 @@ public:
     uint32_t sessionId = 0;
     bool pauseWhenDucked = false;
     int32_t pid { -1 };
+    int32_t uid { -1 };
     InterruptMode mode { SHARE_MODE };
     bool parallelPlayFlag {false};
     AudioFocusConcurrency currencySources;
@@ -191,6 +192,7 @@ public:
         res = res && parcel.WriteUint32(interrupt.sessionId);
         res = res && parcel.WriteBool(interrupt.pauseWhenDucked);
         res = res && parcel.WriteInt32(interrupt.pid);
+        res = res && parcel.WriteInt32(interrupt.uid);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.mode));
         res = res && parcel.WriteBool(interrupt.parallelPlayFlag);
         size_t vct = interrupt.currencySources.sourcesTypes.size();
@@ -211,6 +213,7 @@ public:
         interrupt.sessionId = parcel.ReadUint32();
         interrupt.pauseWhenDucked = parcel.ReadBool();
         interrupt.pid = parcel.ReadInt32();
+        interrupt.uid = parcel.ReadInt32();
         interrupt.mode = static_cast<InterruptMode>(parcel.ReadInt32());
         interrupt.parallelPlayFlag = parcel.ReadBool();
         int32_t vct = parcel.ReadInt32();

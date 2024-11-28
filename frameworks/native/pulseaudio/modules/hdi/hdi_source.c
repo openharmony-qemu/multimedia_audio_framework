@@ -738,7 +738,7 @@ static void ThreadCaptureData(void *userdata)
         } else {
             struct timespec req, rem;
             req.tv_sec = 0;
-            req.tv_nsec = 20000000; // 20000000 nanoseconds = 20ms
+            req.tv_nsec = u->blockUsec * MILLISECOND_PER_SECOND; // 20000000 nanoseconds = 20ms
             clock_nanosleep(CLOCK_REALTIME, 0, &req, &rem);
         }
     }
