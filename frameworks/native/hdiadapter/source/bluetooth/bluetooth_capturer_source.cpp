@@ -288,10 +288,10 @@ int32_t BluetoothCapturerSourceInner::InitAudioManager()
 
     getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
     if (getAudioManager == nullptr) {
-        dlclose(handle_);
 #ifndef TEST_COVERAGE
-        handle_ = nullptr;
+        dlclose(handle_);
 #endif
+        handle_ = nullptr;
         AUDIO_ERR_LOG("getaudiomanager fail!");
         return ERR_INVALID_HANDLE;
     }
@@ -299,10 +299,10 @@ int32_t BluetoothCapturerSourceInner::InitAudioManager()
 
     audioManager_ = getAudioManager();
     if (audioManager_ == nullptr) {
-        dlclose(handle_);
 #ifndef TEST_COVERAGE
-        handle_ = nullptr;
+        dlclose(handle_);
 #endif
+        handle_ = nullptr;
         AUDIO_ERR_LOG("getAudioManager() fail!");
         return ERR_INVALID_HANDLE;
     }
