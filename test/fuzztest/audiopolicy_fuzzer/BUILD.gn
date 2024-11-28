@@ -42,7 +42,7 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
   }
 
   if (use_libfuzzer || use_clang_coverage) {
-    defines += ["TEST_COVERAGE"]
+    defines += [ "TEST_COVERAGE" ]
   }
 
   sources = [ "audio_policy_fuzzer.cpp" ]
