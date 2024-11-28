@@ -183,6 +183,6 @@ AI_VOICE_NOISE_SUPPRESSION:
   CURRENT_VALUE: {type: INT32, desc: current value after operation triggered}
 
 VOLUME_SUBSCRIBE:
-  __BASE: {type: BEHAVIOR, level: MINOR, desc: Subscribe to volume key events, preserve: true}
+  __BASE: {type: BEHAVIOR, level: MINOR, desc: Subscribe to volume key events}
   SUBSCRIBE_KEY: {type: STRING, desc: Subscribed events}
   SUBSCRIBE_RESULT: {type: UINT32, desc: Subscribed event results}
