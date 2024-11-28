@@ -68,11 +68,15 @@ static AudioProcessConfig GetInnerCapConfig()
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_001, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int result = adapterManager->CreateRender(processConfig, rendererStream);
     EXPECT_NE(ERROR, result);
 }
@@ -85,7 +89,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_001, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_002, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -100,6 +106,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_002, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int result = adapterManager->CreateRender(config, rendererStream);
     EXPECT_NE(ERROR, result);
 }
@@ -112,7 +120,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_002, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_003, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -127,6 +137,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_003, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int result = adapterManager->CreateRender(config, rendererStream);
     EXPECT_NE(ERROR, result);
 }
@@ -139,7 +151,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_003, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_004, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -153,8 +167,11 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_004, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int32_t rendererStreamMap = MAP_NUM;
     adapterManager->rendererStreamMap_.emplace(rendererStreamMap, rendererStream);
+
     uint32_t streamIndex = STREAMINDEX_ONE;
     int result = adapterManager->ReleaseRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -168,7 +185,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_004, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_005, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -182,8 +201,11 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_005, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int32_t rendererStreamMap = 0;
     adapterManager->rendererStreamMap_.emplace(rendererStreamMap, rendererStream);
+
     uint32_t streamIndex = 0;
     int result = adapterManager->ReleaseRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -197,7 +219,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_005, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_006, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -211,9 +235,12 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_006, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int32_t rendererStreamMap = MAP_NUM;
     adapterManager->rendererStreamMap_.emplace(rendererStreamMap, rendererStream);
     adapterManager->isHighResolutionExist_ = true;
+
     uint32_t streamIndex = STREAMINDEX_ONE;
     int result = adapterManager->ReleaseRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -227,7 +254,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_006, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_007, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -241,9 +270,12 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_007, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int32_t rendererStreamMap = 0;
     adapterManager->rendererStreamMap_.emplace(rendererStreamMap, rendererStream);
     adapterManager->isHighResolutionExist_ = true;
+
     uint32_t streamIndex = 0;
     int result = adapterManager->ReleaseRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -257,6 +289,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_007, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_008, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     uint32_t streamIndex = 0;
     int result = adapterManager->StartRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -270,7 +304,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_008, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_009, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -284,8 +320,11 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_009, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int32_t rendererStreamMap = MAP_NUM;
     adapterManager->rendererStreamMap_.emplace(rendererStreamMap, rendererStream);
+
     uint32_t streamIndex = STREAMINDEX_ONE;
     int result = adapterManager->StartRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -299,6 +338,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_009, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_010, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     uint32_t streamIndex = 0;
     int result = adapterManager->StopRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -312,7 +353,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_010, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_011, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -326,8 +369,11 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_011, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int32_t rendererStreamMap = MAP_NUM;
     adapterManager->rendererStreamMap_.emplace(rendererStreamMap, rendererStream);
+
     uint32_t streamIndex = STREAMINDEX_ONE;
     int result = adapterManager->StopRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -341,6 +387,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_011, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_012, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     uint32_t streamIndex = 0;
     int result = adapterManager->PauseRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -354,7 +402,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_012, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_013, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -368,8 +418,11 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_013, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
+    ASSERT_TRUE(rendererStream != nullptr);
+
     int32_t rendererStreamMap = MAP_NUM;
     adapterManager->rendererStreamMap_.emplace(rendererStreamMap, rendererStream);
+
     uint32_t streamIndex = STREAMINDEX_ONE;
     int result = adapterManager->PauseRender(streamIndex);
     EXPECT_NE(ERROR, result);
@@ -383,8 +436,10 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_013, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_014, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     adapterManager->GetStreamCount();
-    EXPECT_NE(nullptr, adapterManager);
+    EXPECT_EQ(true, adapterManager->rendererStreamMap_.size() == 0);
 }
 
 /**
@@ -395,9 +450,11 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_014, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_015, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     adapterManager->managerType_ = RECORDER;
     adapterManager->GetStreamCount();
-    EXPECT_NE(nullptr, adapterManager);
+    EXPECT_EQ(true, adapterManager->capturerStreamMap_.size() == 0);
 }
 
 /**
@@ -408,11 +465,15 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_015, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_016, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
     std::shared_ptr<ICapturerStream> capturerStream = adapterManager->CreateCapturerStream(processConfig, stream);
+    ASSERT_TRUE(capturerStream != nullptr);
+
     adapterManager->managerType_ = RECORDER;
     int result = adapterManager->CreateCapturer(processConfig, capturerStream);
     EXPECT_NE(ERROR, result);
@@ -426,7 +487,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_016, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_017, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -441,6 +504,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_017, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<ICapturerStream> capturerStream = adapterManager->CreateCapturerStream(config, stream);
+    ASSERT_TRUE(capturerStream != nullptr);
+
     adapterManager->managerType_ = RECORDER;
     int result = adapterManager->CreateCapturer(config, capturerStream);
     EXPECT_NE(ERROR, result);
@@ -454,7 +519,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_017, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_018, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -469,6 +536,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_018, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<ICapturerStream> capturerStream = adapterManager->CreateCapturerStream(config, stream);
+    ASSERT_TRUE(capturerStream != nullptr);
+
     adapterManager->managerType_ = RECORDER;
     int result = adapterManager->CreateCapturer(config, capturerStream);
     EXPECT_NE(ERROR, result);
@@ -482,6 +551,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_018, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_019, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     adapterManager->context_ = nullptr;
     adapterManager->mainLoop_ = nullptr;
     int result = adapterManager->ResetPaContext();
@@ -496,6 +567,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_019, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_020, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     adapterManager->context_ = nullptr;
     adapterManager->mainLoop_ = pa_threaded_mainloop_new();
     int result = adapterManager->ResetPaContext();
@@ -510,10 +583,13 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_020, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_021, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     pa_mainloop_api *mainloop = new pa_mainloop_api();
     char *name = nullptr;
     adapterManager->context_ = pa_context_new(mainloop, name);
     adapterManager->mainLoop_ = nullptr;
+
     int result = adapterManager->ResetPaContext();
     EXPECT_EQ(SUCCESS, result);
 }
@@ -526,10 +602,13 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_021, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_022, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     pa_mainloop_api *mainloop = new pa_mainloop_api();
     char *name = nullptr;
     adapterManager->context_ = pa_context_new(mainloop, name);
     adapterManager->mainLoop_ = pa_threaded_mainloop_new();
+
     int result = adapterManager->HandleMainLoopStart();
     EXPECT_NE(SUCCESS, result);
 }
@@ -542,6 +621,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_022, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_023, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -569,6 +650,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_023, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_024, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -595,13 +678,15 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_024, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_025, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
     adapterManager->mainLoop_ = pa_threaded_mainloop_new();
     adapterManager->ReleasePaStream(stream);
-    EXPECT_NE(nullptr, adapterManager);
+    EXPECT_NE(nullptr, adapterManager->mainLoop_);
 }
 
 /**
@@ -612,13 +697,15 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_025, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_026, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
     adapterManager->mainLoop_ = nullptr;
     adapterManager->ReleasePaStream(stream);
-    EXPECT_NE(nullptr, adapterManager);
+    EXPECT_NE(nullptr, stream);
 }
 
 /**
@@ -629,6 +716,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_026, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_027, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     pa_stream *stream = nullptr;
     adapterManager->mainLoop_ = nullptr;
     adapterManager->ReleasePaStream(stream);
@@ -643,6 +732,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_027, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_028, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     bool result = adapterManager->IsEffectNone(STREAM_USAGE_SYSTEM);
     EXPECT_NE(false, result);
 }
@@ -655,6 +746,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_028, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_029, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     bool result = adapterManager->IsEffectNone(STREAM_USAGE_DTMF);
     EXPECT_NE(false, result);
 }
@@ -667,6 +760,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_029, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_030, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     bool result = adapterManager->IsEffectNone(STREAM_USAGE_ENFORCED_TONE);
     EXPECT_NE(false, result);
 }
@@ -679,6 +774,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_030, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_031, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     bool result = adapterManager->IsEffectNone(STREAM_USAGE_ULTRASONIC);
     EXPECT_NE(false, result);
 }
@@ -691,6 +788,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_031, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_032, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     bool result = adapterManager->IsEffectNone(STREAM_USAGE_NAVIGATION);
     EXPECT_NE(false, result);
 }
@@ -703,6 +802,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_032, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_033, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     bool result = adapterManager->IsEffectNone(STREAM_USAGE_NOTIFICATION);
     EXPECT_NE(false, result);
 }
@@ -715,6 +816,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_033, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_034, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     bool result = adapterManager->IsEffectNone(STREAM_USAGE_INVALID);
     EXPECT_NE(true, result);
 }
@@ -727,6 +830,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_034, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_035, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -749,6 +854,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_035, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_036, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -771,6 +878,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_036, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_037, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -793,6 +902,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_037, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_038, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -815,6 +926,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_038, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_039, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -837,6 +950,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_039, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_040, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -859,6 +974,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_040, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_041, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -885,6 +1002,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_041, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_042, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -911,6 +1030,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_042, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_043, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -937,6 +1058,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_043, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_044, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -952,7 +1075,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_044, TestSize.Level1)
     uint32_t sessionId = SESSIONID;
     adapterManager->isHighResolutionExist_ = false;
     adapterManager->SetHighResolution(propList, config, sessionId);
-    EXPECT_NE(nullptr, adapterManager);
+    EXPECT_EQ(true, adapterManager->isHighResolutionExist_);
 }
 
 /**
@@ -963,7 +1086,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_044, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_045, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->unprocessAppUidSet_.emplace(CAPTURER_FLAG);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;
@@ -987,7 +1112,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_045, TestSize.Level1)
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_046, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
+
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
