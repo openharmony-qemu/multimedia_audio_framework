@@ -349,8 +349,13 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
         switch (curOutputDeviceType) {
             case DEVICE_TYPE_BLUETOOTH_A2DP:
             case DEVICE_TYPE_BLUETOOTH_SCO:
-                if (curOutputDeviceCategory != BT_SOUNDBOX &&
-                    curOutputDeviceCategory != BT_CAR) {
+                if (curOutputDeviceCategory == BT_SOUNDBOX || curOutputDeviceCategory == BT_CAR) {
+                    break;
+                }
+                if (isBtFirstBoot_) {
+                    sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
+                    AUDIO_INFO_LOG("Btfirstboot set volume use safe volume");
+                } else {
                     sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
                 }
                 break;
@@ -365,6 +370,7 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
                 break;
         }
     }
+    isBtFirstBoot_ = false;
     ResetSelectValue(isSelectRestoreVol_, isSelectIncreaseVol_);
     return sVolumeLevel;
 }
@@ -383,6 +389,7 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
             sVolumeLevel = HandleAbsBluetoothVolume(macAddress, volumeLevel);
         }
     }
+    isBtFirstBoot_ = false;
     if (audioA2dpDevice_.SetA2dpDeviceVolumeLevel(macAddress, sVolumeLevel) == false) {
         return ERROR;
     }
@@ -399,9 +406,10 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
 int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel)
 {
     int32_t sVolumeLevel = volumeLevel;
-    if (isAbsBtFirstBoot_) {
+    if (isBtFirstBoot_) {
         sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
-        isAbsBtFirstBoot_ = false;
+        AUDIO_INFO_LOG("Btfirstboot set volume use safe volume");
+        isBtFirstBoot_ = false;
         Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
     } else {
         sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
