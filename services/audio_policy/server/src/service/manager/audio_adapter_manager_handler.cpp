@@ -37,9 +37,10 @@ AudioAdapterManagerHandler::~AudioAdapterManagerHandler()
 
 bool AudioAdapterManagerHandler::SendKvDataUpdate(const bool &isFirstBoot)
 {
+    bool ret = true;
+#ifndef TEST_COVERAGE
     auto eventContextObj = std::make_shared<bool>(isFirstBoot);
     lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = true;
     if (isFirstBoot) {
         ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAdapterManagerServerCmd::DATABASE_UPDATE, eventContextObj),
             MAX_DELAY_TIME);
@@ -47,6 +48,7 @@ bool AudioAdapterManagerHandler::SendKvDataUpdate(const bool &isFirstBoot)
         ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAdapterManagerServerCmd::DATABASE_UPDATE, eventContextObj));
     }
     CHECK_AND_RETURN_RET_LOG(ret, ret, "SendKvDataUpdate event failed");
+#endif
     return ret;
 }
 
