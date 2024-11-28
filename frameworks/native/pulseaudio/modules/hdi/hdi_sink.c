@@ -2463,6 +2463,8 @@ static int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int
 
     pa_sink_input *i = infoInputs[0].userdata;
     if (GetFadeoutState(i->index) != NO_FADE) {
+        InputsDropFromInputs2(infoInputs, nInputs);
+        pa_sink_unref(s);
         AUDIO_WARNING_LOG("stream is croked, do not need peek");
         return 0;
     }
