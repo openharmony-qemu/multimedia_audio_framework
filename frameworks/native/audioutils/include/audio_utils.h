@@ -195,10 +195,10 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 }
 
 template <typename T>
-bool GetSysPara(const char *key, T &value);
+T StringParser(std::string& param);
 
 template <typename T>
-T StringParser(std::string& param);
+bool GetSysPara(const char *key, T &value);
 
 enum AudioDumpFileType {
     AUDIO_APP = 0,
