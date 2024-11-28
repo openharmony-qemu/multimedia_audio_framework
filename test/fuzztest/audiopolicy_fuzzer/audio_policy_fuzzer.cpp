@@ -189,9 +189,6 @@ void AudioPolicyFuzzFouthLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
-    if (code == static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK)) {
-        return;
-    }
 
     GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
@@ -213,9 +210,6 @@ void AudioPolicyFuzzFifthLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
-    if (code == static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOICE_RINGTONE_MUTE)) {
-        return;
-    }
 
     GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
