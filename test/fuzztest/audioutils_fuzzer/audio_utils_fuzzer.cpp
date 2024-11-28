@@ -39,6 +39,40 @@ const uint32_t ENUMSIZE = 4;
 const uint64_t COMMON_UINT64_NUM = 2;
 const int64_t COMMON_INT64_NUM = 2;
 bool g_hasPermission = false;
+static const uint8_t* RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
+
+/*
+* describe: get data from outside untrusted data(g_data) which size is according to sizeof(T)
+* tips: only support basic type
+*/
+template<class T>
+T GetData()
+{
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
+    }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
+
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
 
 void AudioFuzzTestGetPermission()
 {
@@ -83,12 +117,9 @@ void GetCurNanoFuzzTest(const uint8_t* rawData, size_t size)
 
     ClockTime::GetCurNano();
 }
-void AbsoluteSleepFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
 
+void AbsoluteSleepFuzzTest()
+{
     int64_t nanoTime = COMMON_INT64_NUM;
     if (nanoTime > LIMIT_TIME) {
         nanoTime = LIMIT_TIME;
@@ -96,12 +127,8 @@ void AbsoluteSleepFuzzTest(const uint8_t* rawData, size_t size)
     ClockTime::AbsoluteSleep(nanoTime);
 }
 
-void RelativeSleepFuzzTest(const uint8_t* rawData, size_t size)
+void RelativeSleepFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     int64_t nanoTime = COMMON_INT64_NUM;
     if (nanoTime > LIMIT_TIME) {
         nanoTime = LIMIT_TIME;
@@ -109,24 +136,16 @@ void RelativeSleepFuzzTest(const uint8_t* rawData, size_t size)
     ClockTime::RelativeSleep(nanoTime);
 }
 
-void CountFuzzTest(const uint8_t* rawData, size_t size)
+void CountFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     int64_t count = COMMON_INT64_NUM;
     const std::string value = "value";
     Trace::Count(value, count);
 }
 
-void CountVolumeFuzzTest(const uint8_t* rawData, size_t size)
+void CountVolumeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    uint8_t data = *(reinterpret_cast<const uint8_t*>(rawData));
+    uint8_t data = GetData<uint8_t>();
     const std::string value = "value";
     Trace::CountVolume(value, data);
 }
@@ -199,48 +218,73 @@ void NotifyPrivacyFuzzTest(const uint8_t *rawData, size_t size)
     PermissionUtil::NotifyStop(targetTokenId, 0);
 }
 
-void GetTimeFuzzTest(const uint8_t *rawData, size_t size)
+void GetTimeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     GetTime();
 }
 
-void AudioBlendFuzzTest(const uint8_t *rawData, size_t size)
+void AudioBlendFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     std::shared_ptr<AudioBlend> audioBlend = nullptr;
     audioBlend = std::make_shared<AudioBlend>();
-    uint32_t blendMode_int = *reinterpret_cast<const uint32_t*>(rawData);
-    blendMode_int = blendMode_int % ENUMSIZE;
-    ChannelBlendMode blendMode = static_cast<ChannelBlendMode>(blendMode_int);
-    uint8_t format = *reinterpret_cast<const uint8_t*>(rawData);
+    uint32_t blendModeInt = GetData<uint32_t>();
+    blendModeInt = blendModeInt % ENUMSIZE;
+    ChannelBlendMode blendMode = static_cast<ChannelBlendMode>(blendModeInt);
+    uint8_t format = GetData<uint8_t>();
     format = format % ENUMSIZE;
-    uint8_t channel = *reinterpret_cast<const uint8_t*>(rawData);
+    uint8_t channel = GetData<uint8_t>();
     audioBlend->SetParams(blendMode, format, channel);
     uint8_t *buffer = new uint8_t[LIMITSIZE];
-    memcpy_s(buffer, LIMITSIZE, rawData, LIMITSIZE);
+    memcpy_s(buffer, LIMITSIZE, RAW_DATA, LIMITSIZE);
     audioBlend->Process(buffer, LIMITSIZE);
     delete[] buffer;
 }
 
-void VolumeRampFuzzTest(const uint8_t *rawData, size_t size)
+void VolumeRampFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     std::shared_ptr<VolumeRamp> volumeRamp = nullptr;
     volumeRamp = std::make_shared<VolumeRamp>();
-    float targetVolume = *reinterpret_cast<const float*>(rawData);
-    float currStreamVolume = *reinterpret_cast<const float*>(rawData);
-    int32_t duration = *reinterpret_cast<const int32_t*>(rawData);
+    float targetVolume = GetData<float>();
+    float currStreamVolume = GetData<float>();
+    int32_t duration = GetData<int32_t>();
     volumeRamp->SetVolumeRampConfig(targetVolume, currStreamVolume, duration);
     volumeRamp->GetRampVolume();
     volumeRamp->IsActive();
     volumeRamp->Terminate();
+}
+
+typedef void (*TestFuncs[7])();
+
+TestFuncs g_testFuncs = {
+    AbsoluteSleepFuzzTest,
+    RelativeSleepFuzzTest,
+    CountFuzzTest,
+    CountVolumeFuzzTest,
+    GetTimeFuzzTest,
+    AudioBlendFuzzTest,
+    VolumeRampFuzzTest,
+};
+
+bool FuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr) {
+        return false;
+    }
+
+    // initialize data
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+    }
+
+    return true;
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -252,16 +296,12 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 }
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    /* Run your code on data */
-    OHOS::AudioStandard::GetCurNanoFuzzTest(data, size);
-    OHOS::AudioStandard::AbsoluteSleepFuzzTest(data, size);
-    OHOS::AudioStandard::RelativeSleepFuzzTest(data, size);
-    OHOS::AudioStandard::CountFuzzTest(data, size);
-    OHOS::AudioStandard::CountVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::GetTimeFuzzTest(data, size);
-    OHOS::AudioStandard::AudioBlendFuzzTest(data, size);
-    OHOS::AudioStandard::VolumeRampFuzzTest(data, size);
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
 }
