@@ -722,29 +722,6 @@ void AudioIpcStreamStubGetCacheFuzzTest(const uint8_t* rawData, size_t size)
     ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME, data, reply, option);
 }
 
-void AudioIpcStreamStubSetOffloadVolFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_OFFLOAD_VOLUME, data, reply, option);
-}
-
 void AudioIpcStreamStubUpdateStateFuzzTest(const uint8_t* rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -860,6 +837,29 @@ void AudioIpcStreamStubSetMuteFuzzTest(const uint8_t* rawData, size_t size)
     ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_MUTE, data, reply, option);
 }
 
+void AudioIpcStreamStubSetDuckFactorFuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    AudioProcessConfig config = InitProcessConfig();
+    int32_t ret = 0;
+    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
+    if (ipcStream == nullptr) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+    MessageParcel reply;
+    MessageOption option;
+
+    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_DUCK_FACTOR, data, reply, option);
+}
+
 void AudioIpcStreamStubRegisterFuzzTest(const uint8_t* rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -918,12 +918,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
     OHOS::AudioStandard::AudioIpcStreamStubSetOffloadFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioIpcStreamStubUnsetOffloadFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioIpcStreamStubGetCacheFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSetOffloadVolFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioIpcStreamStubUpdateStateFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioIpcStreamStubGetManagerFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioIpcStreamStubSetOthersFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioIpcStreamStubSetClientFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioIpcStreamStubSetMuteFuzzTest(rawData, size);
+    OHOS::AudioStandard::AudioIpcStreamStubSetDuckFactorFuzzTest(rawData, size);
     OHOS::AudioStandard::AudioIpcStreamStubRegisterFuzzTest(rawData, size);
     return 0;
 }

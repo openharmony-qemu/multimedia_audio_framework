@@ -55,7 +55,6 @@ private:
     int32_t HandleSetOffloadMode(MessageParcel &data, MessageParcel &reply);
     int32_t HandleUnsetOffloadMode(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetOffloadApproximatelyCacheTime(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
 
     int32_t HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
 
@@ -66,6 +65,8 @@ private:
     int32_t HandleSetClientVolume(MessageParcel &data, MessageParcel &reply);
 
     int32_t HandleSetMute(MessageParcel &data, MessageParcel &reply);
+
+    int32_t HandleSetDuckFactor(MessageParcel &data, MessageParcel &reply);
 
     int32_t HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply);
 

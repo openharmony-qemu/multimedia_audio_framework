@@ -617,21 +617,6 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_034, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetLowPowerVolume.
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_035
- * @tc.desc  : Test SetLowPowerVolume.
- */
-HWTEST_F(PaRendererStreamUnitTest, PaRenderer_035, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    float powerVolume = 0.0f;
-    unit->paStream_ = nullptr;
-    int32_t ret = unit->SetLowPowerVolume(powerVolume);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-}
-
-/**
  * @tc.name  : Test Start.
  * @tc.type  : FUNC
  * @tc.number: PaRenderer_036

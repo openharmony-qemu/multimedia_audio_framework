@@ -494,32 +494,6 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_018, TestSize.Level1)
 /**
  * @tc.name  : Test IpcStreamInServer API
  * @tc.type  : FUNC
- * @tc.number: IpcStreamInServer_019
- * @tc.desc  : Test IpcStreamInServer interface.
- */
-HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_019, TestSize.Level1)
-{
-    AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_RECORD;
-    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    float volumeRet = 0.5;
-
-    auto ret1 = ipcStreamInServerRet.OffloadSetVolume(volumeRet);
-    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
-
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    auto ret2 = ipcStreamInServerRet.OffloadSetVolume(volumeRet);
-    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
-
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
-    ipcStreamInServerRet.ConfigRenderer();
-    auto ret3 = ipcStreamInServerRet.OffloadSetVolume(volumeRet);
-    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : Test IpcStreamInServer API
- * @tc.type  : FUNC
  * @tc.number: IpcStreamInServer_020
  * @tc.desc  : Test IpcStreamInServer interface.
  */
@@ -606,22 +580,17 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_023, TestSize.Level1)
     AudioProcessConfig configRet;
     AudioMode modeRet = AUDIO_MODE_RECORD;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    bool isStreamVolumeChangeRet = false;
-    bool isMediaServiceAndOffloadEnableRet = false;
 
-    auto ret1 = ipcStreamInServerRet.SetClientVolume(isStreamVolumeChangeRet,
-        isMediaServiceAndOffloadEnableRet);
+    auto ret1 = ipcStreamInServerRet.SetClientVolume();
     EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    auto ret2 = ipcStreamInServerRet.SetClientVolume(isStreamVolumeChangeRet,
-        isMediaServiceAndOffloadEnableRet);
+    auto ret2 = ipcStreamInServerRet.SetClientVolume();
     EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     ipcStreamInServerRet.ConfigRenderer();
-    auto ret3 = ipcStreamInServerRet.SetClientVolume(isStreamVolumeChangeRet,
-        isMediaServiceAndOffloadEnableRet);
+    auto ret3 = ipcStreamInServerRet.SetClientVolume();
     EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
 
@@ -934,6 +903,58 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_035, TestSize.Level1)
     EXPECT_NE(ipcStreamInServerRet.rendererInServer_, nullptr);
     ret = ipcStreamInServerRet.GetRenderer();
     EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_036
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_036, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    bool onRet = false;
+
+    auto ret1 = ipcStreamInServerRet.SetMute(onRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.SetMute(onRet);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    auto ret3 = ipcStreamInServerRet.SetMute(onRet);
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_037
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_037, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    float duckFactor = 0.2f;
+
+    auto ret1 = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    auto ret3 = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
 }
 }

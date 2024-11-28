@@ -510,6 +510,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
 
 void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float volumeDb)
 {
+    float volume = volumeDb; // maybe only system volume
     if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
         return;
     }
@@ -519,8 +520,27 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
     }
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    audioServerProxy_->OffloadSetVolume(volumeDb);
+    if (offloadSessionID_.has_value()) { // need stream volume and system volume
+        volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_.value(), streamType, OFFLOAD_CLASS);
+    }
+    audioServerProxy_->OffloadSetVolume(volume);
     IPCSkeleton::SetCallingIdentity(identity);
+}
+
+void AudioAdapterManager::SetOffloadSessionId(uint32_t sessionId)
+{
+    if (sessionId < MIN_SESSIONID || sessionId > MAX_SESSIONID) {
+        AUDIO_PRERELEASE_LOGE("set sessionId[%{public}d] error", sessionId);
+    } else {
+        AUDIO_PRERELEASE_LOGI("set sessionId[%{public}d]", sessionId);
+    }
+    offloadSessionID_ = sessionId;
+}
+
+void AudioAdapterManager::ResetOffloadSessionId()
+{
+    AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", offloadSessionID_.value());
+    offloadSessionID_.reset();
 }
 
 int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
@@ -2002,6 +2022,7 @@ bool AudioAdapterManager::IsAbsVolumeScene() const
 
 void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
+    AUDIO_INFO_LOG("SetAbsVolumeMute: %{public}d", mute);
     isAbsVolumeMute_ = mute;
     float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
     if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
