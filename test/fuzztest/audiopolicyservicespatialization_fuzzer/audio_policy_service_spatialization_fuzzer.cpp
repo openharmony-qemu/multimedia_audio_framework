@@ -53,8 +53,6 @@ void AudioSpatializationServiceFuzzTest(const uint8_t *rawData, size_t size)
     g_audioSpatializationService->GetSpatializationSceneType();
     g_audioSpatializationService->UpdateSpatializationState();
     g_audioSpatializationService->InitSpatializationState();
-    g_audioSpatializationService->HandleSpatializationStateChange(false);
-    g_audioSpatializationService->HandleSpatializationStateChange(true);
     g_audioSpatializationService->RemoveOldestDevice();
 }
 

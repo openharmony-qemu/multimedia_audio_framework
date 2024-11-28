@@ -762,6 +762,16 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
 }
 
 template <typename T>
+void StringParser(std::string& param, T& result)
+{
+    std::stringstream valueStr;
+    valueStr << param;
+    valueStr >> result;
+}
+
+template void StringParser(std::string& param, uint32_t& result);
+
+template <typename T>
 bool GetSysPara(const char *key, T &value)
 {
     CHECK_AND_RETURN_RET_LOG(key != nullptr, false, "key is nullptr");

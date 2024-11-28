@@ -218,10 +218,7 @@ private:
 
 BluetoothCapturerSourceInner::BluetoothCapturerSourceInner()
     : captureInited_(false), started_(false), paused_(false),
-      audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr), halName_ ("bt_hdap")
-{
-    attr_ = {};
-}
+      audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr), halName_ ("bt_hdap") {}
 
 BluetoothCapturerSourceInner::~BluetoothCapturerSourceInner()
 {
@@ -291,7 +288,9 @@ int32_t BluetoothCapturerSourceInner::InitAudioManager()
 
     getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
     if (getAudioManager == nullptr) {
+#ifndef TEST_COVERAGE
         dlclose(handle_);
+#endif
         handle_ = nullptr;
         AUDIO_ERR_LOG("getaudiomanager fail!");
         return ERR_INVALID_HANDLE;
@@ -300,7 +299,9 @@ int32_t BluetoothCapturerSourceInner::InitAudioManager()
 
     audioManager_ = getAudioManager();
     if (audioManager_ == nullptr) {
+#ifndef TEST_COVERAGE
         dlclose(handle_);
+#endif
         handle_ = nullptr;
         AUDIO_ERR_LOG("getAudioManager() fail!");
         return ERR_INVALID_HANDLE;
