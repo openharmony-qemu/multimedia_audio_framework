@@ -767,7 +767,6 @@ void StringParser(std::string& param, T& result)
     std::stringstream valueStr;
     valueStr << param;
     valueStr >> result;
-    return result;
 }
 
 template void StringParser(std::string& param, uint32_t& result);
