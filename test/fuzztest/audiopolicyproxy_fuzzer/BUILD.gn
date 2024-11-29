@@ -135,6 +135,9 @@ ohos_fuzztest("AudioPolicyProxyFuzzTest") {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
 }
 
 group("fuzztest") {

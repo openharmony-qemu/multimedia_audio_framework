@@ -65,6 +65,10 @@ ohos_fuzztest("AudioPolicyServerConfigFuzzTest") {
       "accessibility:accessibilityconfig",
     ]
   }
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
 }
 
 group("fuzztest") {
