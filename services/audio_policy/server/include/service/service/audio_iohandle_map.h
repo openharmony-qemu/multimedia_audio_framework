@@ -60,7 +60,6 @@ private:
     ~AudioIOHandleMap() {}
 
     void UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType);
-    std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
 private:
     std::mutex ioHandlesMutex_;
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};

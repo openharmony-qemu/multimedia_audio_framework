@@ -472,7 +472,6 @@ void AudioRendererInServerTestFirst(std::shared_ptr<RendererInServer> renderer)
     bool isAppBack = GetData<bool>();
     renderer->SetOffloadMode(state, isAppBack);
     renderer->UnsetOffloadMode();
-    renderer->OffloadSetVolume(volume);
 }
 
 void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
@@ -499,7 +498,7 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     renderer->InitDualToneStream();
     renderer->GetStreamManagerType();
     renderer->SetSilentModeAndMixWithOthers(isAppBack);
-    renderer->SetClientVolume(false, true);
+    renderer->SetClientVolume();
     uint32_t operationCode = GetData<uint32_t>();
     operationCode = (operationCode % IOPERTAION_LENGTH) - 1;
     IOperation operation = static_cast<IOperation>(operationCode);

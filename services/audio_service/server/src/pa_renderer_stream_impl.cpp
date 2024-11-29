@@ -49,8 +49,6 @@ const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_NS_PER_S = 1000000000;
 const uint64_t AUDIO_CYCLE_TIME_US = 20000;
-const float MIN_VOLUME = 0.0;
-const float MAX_VOLUME = 1.0;
 
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
@@ -557,45 +555,6 @@ int32_t PaRendererStreamImpl::SetRate(int32_t rate)
     } else {
         AUDIO_ERR_LOG("SetRate: operation is nullptr");
     }
-    return SUCCESS;
-}
-
-int32_t PaRendererStreamImpl::SetLowPowerVolume(float powerVolume)
-{
-    AUDIO_INFO_LOG("SetLowPowerVolume: %{public}f", powerVolume);
-    PaLockGuard lock(mainloop_);
-    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
-        return ERR_ILLEGAL_STATE;
-    }
-
-    /* Validate and return INVALID_PARAMS error */
-    if ((powerVolume < MIN_STREAM_VOLUME_LEVEL) || (powerVolume > MAX_STREAM_VOLUME_LEVEL)) {
-        AUDIO_ERR_LOG("Invalid Power Volume Set!");
-        return -1;
-    }
-
-    powerVolumeFactor_ = powerVolume;
-    pa_proplist *propList = pa_proplist_new();
-    if (propList == nullptr) {
-        AUDIO_ERR_LOG("pa_proplist_new failed");
-        return ERR_OPERATION_FAILED;
-    }
-
-    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(powerVolumeFactor_).c_str());
-    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
-        nullptr, nullptr);
-    pa_proplist_free(propList);
-    CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOperation is nullptr");
-    pa_operation_unref(updatePropOperation);
-
-    // In plan: Call reset volume
-
-    return SUCCESS;
-}
-
-int32_t PaRendererStreamImpl::GetLowPowerVolume(float &powerVolume)
-{
-    powerVolume = powerVolumeFactor_;
     return SUCCESS;
 }
 
@@ -1240,26 +1199,13 @@ void PaRendererStreamImpl::BlockStream() noexcept
 
 int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
 {
-    PaLockGuard lock(mainloop_);
-    if (clientVolume < MIN_VOLUME || clientVolume > MAX_VOLUME) {
+    if (clientVolume < MIN_FLOAT_VOLUME || clientVolume > MAX_FLOAT_VOLUME) {
         AUDIO_ERR_LOG("SetClientVolume with invalid clientVolume %{public}f", clientVolume);
         return ERR_INVALID_PARAM;
-    }
-    
-    pa_proplist *propList = pa_proplist_new();
-    if (propList == nullptr) {
-        AUDIO_ERR_LOG("pa_proplist_new failed");
-        return ERR_OPERATION_FAILED;
     }
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     audioEffectChainManager->StreamVolumeUpdate(std::to_string(streamIndex_), clientVolume);
-
-    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
-        nullptr, nullptr);
-    pa_proplist_free(propList);
-    CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOperation is nullptr");
-    pa_operation_unref(updatePropOperation);
     AUDIO_PRERELEASE_LOGI("set client volume success");
 
     return SUCCESS;

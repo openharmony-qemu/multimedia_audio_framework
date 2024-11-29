@@ -69,7 +69,6 @@ public:
     int32_t UnsetOffloadMode();
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
-    int32_t OffloadSetVolume(float volume);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
     void WriterRenderStreamStandbySysEvent();
 
@@ -95,8 +94,9 @@ public:
 
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
-    int32_t SetClientVolume(bool isStreamVolumeChange, bool isMediaServiceAndOffloadEnable);
+    int32_t SetClientVolume();
     int32_t SetMute(bool isMute);
+    int32_t SetDuckFactor(float duckFactor);
 
     void OnDataLinkConnectionUpdate(IOperation operation);
     int32_t GetActualStreamManagerType() const noexcept;
@@ -117,6 +117,7 @@ private:
     int32_t SetStreamVolumeInfoForEnhanceChain();
     void StandByCheck();
     bool ShouldEnableStandBy();
+    int32_t OffloadSetVolumeInner();
 
 private:
     std::mutex statusLock_;

@@ -218,6 +218,11 @@ void AudioServer::SetRotationToEffect(const uint32_t rotate)
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->EffectRotationUpdate(rotate);
+
+    std::string value = "rotation=" + std::to_string(rotate);
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_LOG(audioRendererSinkInstance != nullptr, "has no valid sink");
+    audioRendererSinkInstance->SetAudioParameter(AudioParamKey::NONE, "", value);
 }
 
 int32_t AudioServer::SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType)
