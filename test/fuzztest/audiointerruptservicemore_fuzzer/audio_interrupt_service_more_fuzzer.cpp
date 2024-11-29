@@ -26,43 +26,10 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 bool g_hasServerInit = false;
+const int32_t LIMITSIZE = 4;
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
-static const uint8_t *RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
-const size_t THRESHOLD = 10;
-
-/*
-* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
-* tips: only support basic type
-*/
-template<class T>
-T GetData()
-{
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
-}
-
-template<class T>
-uint32_t GetArrLength(T& arr)
-{
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
-    }
-    return sizeof(arr) / sizeof(arr[0]);
-}
 
 AudioPolicyServer* GetServerPtr()
 {
@@ -83,18 +50,26 @@ AudioPolicyServer* GetServerPtr()
     return &server;
 }
 
-void MoreFuzzTest()
+void MoreFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
     GetServerPtr()->interruptService_->GetAudioServerProxy();
     GetServerPtr()->interruptService_->WriteServiceStartupError();
 
-    int32_t pid = GetData<int32_t>();
+    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
     GetServerPtr()->interruptService_->OnSessionTimeout(pid);
     GetServerPtr()->interruptService_->HandleSessionTimeOutEvent(pid);
 }
 
-void AddAudioSessionFuzzTest()
+void AddAudioSessionFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
     AudioSessionStrategy sessionStrategy;
     sessionStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
     GetServerPtr()->ActivateAudioSession(sessionStrategy);
@@ -114,11 +89,14 @@ void AddAudioSessionFuzzTest()
     GetServerPtr()->interruptService_->IsActiveStreamLowPriority(focusEntry);
 }
 
-void AddSetAudioManagerInterruptCallbackFuzzTest()
+void AddSetAudioManagerInterruptCallbackFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(RAW_DATA, g_dataSize);
+    data.WriteBuffer(rawData, size);
     data.RewindRead(0);
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     GetServerPtr()->interruptService_->GetAudioServerProxy();
@@ -127,66 +105,43 @@ void AddSetAudioManagerInterruptCallbackFuzzTest()
     }
     GetServerPtr()->interruptService_->SetAudioManagerInterruptCallback(object);
 
-    int32_t zoneId = GetData<int32_t>();
-    uint32_t sessionId = GetData<uint32_t>();
-    uint32_t uid = GetData<uint32_t>();
+    int32_t zoneId = *reinterpret_cast<const int32_t*>(rawData);
+    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t uid = *reinterpret_cast<const uint32_t*>(rawData);
     GetServerPtr()->interruptService_->SetAudioInterruptCallback(zoneId, sessionId, object, uid);
 }
 
-void ResetNonInterruptControlFuzzTest() //build.gn 未添加宏定义defines
+void ResetNonInterruptControlFuzzTest(const uint8_t *rawData, size_t size) //build.gn 未添加宏定义defines
 {
-    uint32_t sessionId = GetData<uint32_t>();
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    
+    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
     GetServerPtr()->interruptService_->GetClientTypeBySessionId(sessionId);
     GetServerPtr()->interruptService_->ResetNonInterruptControl(sessionId);
 }
 
-void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
+void ClearAudioFocusInfoListOnAccountsChangedFuzzTest(const uint8_t *rawData, size_t size)
 {
-    int id = GetData<int>();
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    int id = *reinterpret_cast<const int*>(rawData);
     GetServerPtr()->interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
-}
-
-typedef void (*TestFuncs[5])();
-
-TestFuncs g_testFuncs = {
-    MoreFuzzTest,
-    AddAudioSessionFuzzTest,
-    AddSetAudioManagerInterruptCallbackFuzzTest,
-    ResetNonInterruptControlFuzzTest,
-    ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr) {
-        return false;
-    }
-
-    // initialize data
-    RAW_DATA = rawData;
-    g_dataSize = size;
-    g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
 }
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
 {
-    if (size < OHOS::AudioStandard::THRESHOLD) {
-        return 0;
-    }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    /* Run your code on data */
+    OHOS::AudioStandard::MoreFuzzTest(rawData, size);
+    OHOS::AudioStandard::AddAudioSessionFuzzTest(rawData, size);
+    OHOS::AudioStandard::AddSetAudioManagerInterruptCallbackFuzzTest(rawData, size);
+    OHOS::AudioStandard::ResetNonInterruptControlFuzzTest(rawData, size);
+    OHOS::AudioStandard::ClearAudioFocusInfoListOnAccountsChangedFuzzTest(rawData, size);
     return 0;
 }

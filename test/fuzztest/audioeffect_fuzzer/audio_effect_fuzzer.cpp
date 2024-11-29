@@ -27,13 +27,11 @@ namespace AudioStandard {
 using namespace std;
 constexpr uint32_t INFOCHANNELS = 2;
 constexpr uint64_t INFOCHANNELLAYOUT = 0x3;
+const int32_t LIMITSIZE = 4;
 const string SCENETYPEDEFAULT = "SCENE_MOVIE";
 const string SCENETYPEMUSIC = "SCENE_MUSIC";
-static const uint8_t* RAW_DATA = nullptr;
-static size_t g_dataSize = 0;
-static size_t g_pos;
-const size_t THRESHOLD = 10;
-
+bool g_hasPermission = false;
+const uint64_t COMMON_UINT64_NUM = 2;
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
 EffectChainManagerParam DEFAULT_MAP{
     3,
@@ -53,41 +51,14 @@ SessionEffectInfo DEFAULT_INFO = {
     "0",
 };
 
-/*
-* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
-* tips: only support basic type
-*/
-template<class T>
-T GetData()
+void InitAudioEffectChainManagerFuzzTest(const uint8_t *rawData, size_t size)
 {
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
     }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
-}
-
-template<class T>
-uint32_t GetArrLength(T& arr)
-{
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
-    }
-    return sizeof(arr) / sizeof(arr[0]);
-}
-
-void InitAudioEffectChainManagerFuzzTest()
-{
     string effectMode = "EFFECT_DEFAULT";
     string sceneType = "SCENE_MOVIE";
-    AudioEffectScene currSceneType = GetData<AudioEffectScene>();
+    AudioEffectScene currSceneType = SCENE_MUSIC;
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
@@ -96,23 +67,32 @@ void InitAudioEffectChainManagerFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void CheckAndAddSessionIDFuzzTest()
+void CheckAndAddSessionIDFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::string sessionID = "123456";
     AudioEffectChainManager::GetInstance()->CheckAndAddSessionID(sessionID);
     AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID(sessionID);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void CheckAndRemoveSessionIDFuzzTest()
+void CheckAndRemoveSessionIDFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     const std::string sessionID = "123456";
     AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID(sessionID);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void ReleaseAudioEffectChainDynamicFuzzTest()
+void ReleaseAudioEffectChainDynamicFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
     const std::string sceneType = "SCENE_MOVIE";
@@ -121,14 +101,17 @@ void ReleaseAudioEffectChainDynamicFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void ApplyAudioEffectChainFuzzTest()
+void ApplyAudioEffectChainFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
-    int numChans = GetData<int>();
-    int frameLen = GetData<int>();
-    float* bufIn = GetData<float*>();
-    float* bufOut = GetData<float*>();
+    int numChans = *reinterpret_cast<const int*>(rawData);
+    int frameLen = *reinterpret_cast<const int*>(rawData);
+    float* bufIn = const_cast<float *>(reinterpret_cast<const float*>(rawData));
+    float* bufOut = const_cast<float *>(reinterpret_cast<const float*>(rawData));
     uint32_t outChannels = INFOCHANNELS;
     uint64_t outChannelLayout = INFOCHANNELLAYOUT;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
@@ -138,24 +121,33 @@ void ApplyAudioEffectChainFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void SetOutputDeviceSinkFuzzTest()
+void SetOutputDeviceSinkFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
-    int32_t device = GetData<int32_t>();
+    int32_t device = *reinterpret_cast<const int32_t *>(rawData);
     const std::string sinkName = "123456";
     AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void GetDeviceSinkNameFuzzTest()
+void GetDeviceSinkNameFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void GetOffloadEnabledFuzzTest()
+void GetOffloadEnabledFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
@@ -166,8 +158,11 @@ void GetOffloadEnabledFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void UpdateMultichannelConfigFuzzTest()
+void UpdateMultichannelConfigFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(SCENETYPEDEFAULT);
@@ -176,43 +171,58 @@ void UpdateMultichannelConfigFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void UpdateSpatializationStateFuzzTest()
+void UpdateSpatializationStateFuzzTest(const uint8_t *rawData, size_t size)
 {
-    bool spatializationEnabled = GetData<bool>();
-    bool headTrackingEnabled = GetData<bool>();
-
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    bool spatializationEnabled = *reinterpret_cast<const bool*>(rawData);
+    bool headTrackingEnabled = *reinterpret_cast<const bool*>(rawData + sizeof(bool));
     AudioSpatializationState spatializationState = {spatializationEnabled, headTrackingEnabled};
-
+    
     AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void SetHdiParamFuzzTest()
+void SetHdiParamFuzzTest(const uint8_t *rawData, size_t size)
 {
-    AudioEffectScene currSceneType = GetData<AudioEffectScene>();
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioEffectScene currSceneType = SCENE_MUSIC;
     AudioEffectChainManager::GetInstance()->SetHdiParam(currSceneType);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void SessionInfoMapAddFuzzTest()
+void SessionInfoMapAddFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     const std::string sessionID = "123456";
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(SCENETYPEDEFAULT, sessionID);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void SessionInfoMapDeleteFuzzTest()
+void SessionInfoMapDeleteFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     const std::string sessionID = "123456";
     AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(SCENETYPEDEFAULT, sessionID);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void ReturnEffectChannelInfoFuzzTest()
+void ReturnEffectChannelInfoFuzzTest(const uint8_t *rawData, size_t size)
 {
-    uint32_t channels = GetData<uint32_t>();
-    uint64_t channelLayout = GetData<uint64_t>();
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    uint32_t channels = *reinterpret_cast<const uint32_t*>(rawData);
+    uint64_t channelLayout = COMMON_UINT64_NUM;
     const std::string sessionID = "123456";
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
@@ -226,10 +236,14 @@ void ReturnEffectChannelInfoFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void ReturnMultiChannelInfoFuzzTest()
+void ReturnMultiChannelInfoFuzzTest(const uint8_t *rawData, size_t size)
 {
-    uint32_t channels = GetData<uint32_t>();
-    uint64_t channelLayout = GetData<uint64_t>();
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    uint32_t channels = *reinterpret_cast<const uint32_t*>(rawData);
+    uint64_t channelLayout = COMMON_UINT64_NUM;
     const std::string sessionID = "123456";
 
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
@@ -237,34 +251,47 @@ void ReturnMultiChannelInfoFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void EffectRotationUpdateFuzzTest()
+void EffectRotationUpdateFuzzTest(const uint8_t *rawData, size_t size)
 {
-    uint32_t rotationState = GetData<uint32_t>();
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    uint32_t rotationState = *reinterpret_cast<const uint32_t*>(rawData);
     AudioEffectChainManager::GetInstance()->EffectRotationUpdate(rotationState);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void GetLatencyFuzzTest()
+void GetLatencyFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     const std::string sessionID = "123456";
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     AudioEffectChainManager::GetInstance()->GetLatency(sessionID);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void SetSpatializationSceneTypeFuzzTest()
+void SetSpatializationSceneTypeFuzzTest(const uint8_t *rawData, size_t size)
 {
-    AudioSpatializationSceneType spatializationSceneType = GetData<AudioSpatializationSceneType>();
+    if (rawData == nullptr || size < LIMITSIZE || size < sizeof(AudioSpatializationSceneType)) {
+        return;
+    }
+    AudioSpatializationSceneType spatializationSceneType =
+        *reinterpret_cast<const AudioSpatializationSceneType*>(rawData);
 
     AudioEffectChainManager::GetInstance()->SetSpatializationSceneType(spatializationSceneType);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void UpdateSpkOffloadEnabledFuzzTest()
+void UpdateSpkOffloadEnabledFuzzTest(const uint8_t* rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
-    bool spkOffloadEnabled = GetData<bool>();
+    bool spkOffloadEnabled = *reinterpret_cast<const bool*>(rawData);
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = spkOffloadEnabled;
     AudioEffectChainManager::GetInstance()->UpdateDefaultAudioEffect();
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
@@ -272,14 +299,18 @@ void UpdateSpkOffloadEnabledFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void UpdateDeviceInfoFuzzTest()
+void UpdateDeviceInfoFuzzTest(const uint8_t* rawData, size_t size)
 {
-    int32_t device = GetData<int32_t>();
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    int32_t device = *reinterpret_cast<const int32_t*>(rawData);
     string sinkName = "Speaker";
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
-    bool isInitialized = GetData<bool>();
+    bool isInitialized = *reinterpret_cast<const bool*>(rawData);
     AudioEffectChainManager::GetInstance()->isInitialized_ = isInitialized;
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
@@ -288,20 +319,27 @@ void UpdateDeviceInfoFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void CheckAndReleaseCommonEffectChainFuzzTest()
+void CheckAndReleaseCommonEffectChainFuzzTest(const uint8_t* rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
-    bool isCommonEffectChainExisted = GetData<bool>();
+    bool isCommonEffectChainExisted = *reinterpret_cast<const bool*>(rawData);
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = isCommonEffectChainExisted;
     AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(SCENETYPEMUSIC);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void UpdateCurrSceneTypeFuzzTest()
+void UpdateCurrSceneTypeFuzzTest(const uint8_t* rawData, size_t size)
 {
-    AudioEffectScene currSceneType = GetData<AudioEffectScene>();
-    bool spatializationEnabled = GetData<bool>();
+    if (rawData == nullptr || size < LIMITSIZE || size < sizeof(AudioEffectScene)) {
+        return;
+    }
+    AudioEffectScene currSceneType = *reinterpret_cast<const AudioEffectScene*>(rawData);
+    bool spatializationEnabled = *reinterpret_cast<const bool*>(rawData);
 
     std::string sceneType = SCENETYPEMUSIC;
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
@@ -311,8 +349,12 @@ void UpdateCurrSceneTypeFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void CheckSceneTypeMatchFuzzTest()
+void CheckSceneTypeMatchFuzzTest(const uint8_t* rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
     const std::string sinkSceneType = SCENETYPEMUSIC;
     const std::string sceneType = SCENETYPEMUSIC;
 
@@ -322,76 +364,48 @@ void CheckSceneTypeMatchFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void UpdateSpatialDeviceTypeFuzzTest()
+void UpdateSpatialDeviceTypeFuzzTest(const uint8_t* rawData, size_t size)
 {
-    AudioSpatialDeviceType spatialDeviceType = GetData<AudioSpatialDeviceType>();
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    AudioSpatialDeviceType spatialDeviceType = *reinterpret_cast<const AudioSpatialDeviceType*>(rawData);
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->UpdateSpatialDeviceType(spatialDeviceType);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
-
-typedef void (*TestFuncs[24])();
-
-TestFuncs g_testFuncs = {
-    InitAudioEffectChainManagerFuzzTest,
-    CheckAndAddSessionIDFuzzTest,
-    CheckAndRemoveSessionIDFuzzTest,
-    ReleaseAudioEffectChainDynamicFuzzTest,
-    ApplyAudioEffectChainFuzzTest,
-    SetOutputDeviceSinkFuzzTest,
-    GetDeviceSinkNameFuzzTest,
-    GetOffloadEnabledFuzzTest,
-    UpdateMultichannelConfigFuzzTest,
-    UpdateSpatializationStateFuzzTest,
-    SetHdiParamFuzzTest,
-    SessionInfoMapAddFuzzTest,
-    SessionInfoMapDeleteFuzzTest,
-    ReturnEffectChannelInfoFuzzTest,
-    ReturnMultiChannelInfoFuzzTest,
-    EffectRotationUpdateFuzzTest,
-    GetLatencyFuzzTest,
-    SetSpatializationSceneTypeFuzzTest,
-    UpdateSpkOffloadEnabledFuzzTest,
-    UpdateDeviceInfoFuzzTest,
-    CheckAndReleaseCommonEffectChainFuzzTest,
-    UpdateCurrSceneTypeFuzzTest,
-    CheckSceneTypeMatchFuzzTest,
-    UpdateSpatialDeviceTypeFuzzTest
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr) {
-        return false;
-    }
-
-    // initialize data
-    RAW_DATA = rawData;
-    g_dataSize = size;
-    g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
-}
 } // namespace AudioStandard
 } // namespace OHOS
 
-/* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
 {
-    if (size < OHOS::AudioStandard::THRESHOLD) {
-        return 0;
-    }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    /* Run your code on data */
+    OHOS::AudioStandard::InitAudioEffectChainManagerFuzzTest(rawData, size);
+    OHOS::AudioStandard::CheckAndAddSessionIDFuzzTest(rawData, size);
+    OHOS::AudioStandard::CheckAndRemoveSessionIDFuzzTest(rawData, size);
+    OHOS::AudioStandard::ReleaseAudioEffectChainDynamicFuzzTest(rawData, size);
+    OHOS::AudioStandard::ApplyAudioEffectChainFuzzTest(rawData, size);
+    OHOS::AudioStandard::SetOutputDeviceSinkFuzzTest(rawData, size);
+    OHOS::AudioStandard::GetDeviceSinkNameFuzzTest(rawData, size);
+    OHOS::AudioStandard::GetOffloadEnabledFuzzTest(rawData, size);
+    OHOS::AudioStandard::UpdateMultichannelConfigFuzzTest(rawData, size);
+    OHOS::AudioStandard::UpdateSpatializationStateFuzzTest(rawData, size);
+    OHOS::AudioStandard::SetHdiParamFuzzTest(rawData, size);
+    OHOS::AudioStandard::SessionInfoMapAddFuzzTest(rawData, size);
+    OHOS::AudioStandard::SessionInfoMapDeleteFuzzTest(rawData, size);
+    OHOS::AudioStandard::ReturnEffectChannelInfoFuzzTest(rawData, size);
+    OHOS::AudioStandard::ReturnMultiChannelInfoFuzzTest(rawData, size);
+    OHOS::AudioStandard::EffectRotationUpdateFuzzTest(rawData, size);
+    OHOS::AudioStandard::GetLatencyFuzzTest(rawData, size);
+    OHOS::AudioStandard::SetSpatializationSceneTypeFuzzTest(rawData, size);
+    OHOS::AudioStandard::UpdateSpkOffloadEnabledFuzzTest(rawData, size);
+    OHOS::AudioStandard::UpdateDeviceInfoFuzzTest(rawData, size);
+    OHOS::AudioStandard::CheckAndReleaseCommonEffectChainFuzzTest(rawData, size);
+    OHOS::AudioStandard::UpdateCurrSceneTypeFuzzTest(rawData, size);
+    OHOS::AudioStandard::CheckSceneTypeMatchFuzzTest(rawData, size);
+    OHOS::AudioStandard::UpdateSpatialDeviceTypeFuzzTest(rawData, size);
     return 0;
 }
