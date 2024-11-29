@@ -189,7 +189,7 @@ bool AudioA2dpDevice::GetA2dpDeviceMute(const std::string& device, bool& isMute)
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(device);
-    if (configInfoPos == connectedA2dpDeviceMap_.end()) {
+    if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
         return false;
     }
     isMute = configInfoPos->second.mute;

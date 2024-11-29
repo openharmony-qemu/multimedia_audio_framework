@@ -147,7 +147,6 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     uint8_t num = *reinterpret_cast<const uint8_t *>(rawData);
     DeviceType deviceType = static_cast<DeviceType>(num % DEVICE_TYPE_FILE_SOURCE);
     bool isConnected = static_cast<bool>(num % MOD_NUM_TWO);
@@ -161,14 +160,14 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
     std::string macAddress = "11:22:33:44:55:66";
     GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected, macAddress);
 
-    GetServerPtr()->audioPolicyService_.UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
-    GetServerPtr()->audioPolicyService_.GetA2dpOffloadCodecAndSendToDsp();
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
     GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.UpdateAudioCapturerMicrophoneDescriptor(deviceType);
 
     // the max value of BluetoothOffloadState is A2DP_OFFLOAD.
     BluetoothOffloadState flag = static_cast<BluetoothOffloadState>(num % (A2DP_OFFLOAD + 1));
-    GetServerPtr()->audioPolicyService_.HandleA2dpDeviceInOffload(flag);
-    GetServerPtr()->audioPolicyService_.HandleA2dpDeviceOutOffload(flag);
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleA2dpDeviceInOffload(flag);
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleA2dpDeviceOutOffload(flag);
 
     bool captureSilentState = static_cast<bool>(num % MOD_NUM_TWO);
     GetServerPtr()->audioPolicyService_.SetCaptureSilentState(captureSilentState);
@@ -237,9 +236,9 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
 
     // set offload support on for covery
     GetServerPtr()->audioPolicyService_.audioOffloadStream_.isOffloadAvailable_ = true;
-
-    GetServerPtr()->audioPolicyService_.HandleRecoveryPreferredDevices(fuzzInt32One, fuzzInt32Two, fuzzInt32Three);
-    GetServerPtr()->audioPolicyService_.GetVolumeGroupType(fuzzDeviceType);
+    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.HandleRecoveryPreferredDevices(fuzzInt32One,
+        fuzzInt32Two, fuzzInt32Three);
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetVolumeGroupType(fuzzDeviceType);
     GetServerPtr()->audioPolicyService_.GetSystemVolumeDb(fuzzAudioStreamType);
     GetServerPtr()->audioPolicyService_.SetLowPowerVolume(fuzzInt32One, fuzzFloat);
     GetServerPtr()->audioPolicyService_.audioOffloadStream_.SetOffloadMode();
@@ -251,17 +250,19 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(fuzzInt32One, fuzzBool);
     GetServerPtr()->audioPolicyService_.NotifyRemoteRenderState(fuzzNetworkId, fuzzString, fuzzString);
     GetServerPtr()->audioPolicyService_.IsArmUsbDevice(fuzzAudioDeviceDescriptor);
-    GetServerPtr()->audioPolicyService_.IsDeviceConnected(fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.DeviceParamsCheck(fuzzDeviceRole, fuzzAudioDeviceDescriptorSptrVector);
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsDeviceConnected(fuzzAudioDeviceDescriptorSptr);
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.DeviceParamsCheck(fuzzDeviceRole,
+        fuzzAudioDeviceDescriptorSptrVector);
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.NotifyUserSelectionEventToBt(fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.SetRenderDeviceForUsage(fuzzStreamUsage, fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.SelectOutputDevice(
+    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SetRenderDeviceForUsage(fuzzStreamUsage,
+        fuzzAudioDeviceDescriptorSptr);
+    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDevice(
         fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptrVector);
-    GetServerPtr()->audioPolicyService_.WriteSelectOutputSysEvents(
+    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.WriteSelectOutputSysEvents(
         fuzzAudioDeviceDescriptorSptrVector, fuzzStreamUsage);
-    GetServerPtr()->audioPolicyService_.SelectFastOutputDevice(
+    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectFastOutputDevice(
         fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.FilterSourceOutputs(fuzzInt32One);
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.FilterSourceOutputs(fuzzInt32One);
     GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzAudioDeviceDescriptor, fuzzBool);
 }
 
