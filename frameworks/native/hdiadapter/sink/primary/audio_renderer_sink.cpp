@@ -205,6 +205,7 @@ public:
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     std::string GetDPDeviceAttrInfo(const std::string &condition);
+    void WriterSmartPAStatusSysEvent(int32_t status);
 
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
@@ -1615,6 +1616,15 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len
     return ret;
 }
 
+void AudioRendererSinkInner::WriterSmartPAStatusSysEvent(int32_t status)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::SMARTPA_STATUS,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("STATUS", status);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 {
     Trace trace("AudioRendererSinkInner::SetPaPower flag:" + std::to_string(flag));
@@ -1631,6 +1641,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         }
         if (ret == 0) {
             g_paStatus = 0;
+            WriterSmartPAStatusSysEvent(g_paStatus);
         }
         return ret;
     } else if (flag == 0 && g_paStatus == 0) {
@@ -1646,6 +1657,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         ret = audioRender_->SetExtraParams(audioRender_, keyValueList1) + ret;
         if (ret == 0) {
             g_paStatus = 1;
+            WriterSmartPAStatusSysEvent(g_paStatus);
         }
         return ret;
     } else if (flag == 1 && g_paStatus == 1) {
