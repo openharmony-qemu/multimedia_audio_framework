@@ -145,7 +145,7 @@ private:
     SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
     SafeStatus safeStatus_ = SAFE_UNKNOWN;
 
-    bool isAbsBtFirstBoot_ = true;
+    bool isBtFirstBoot_ = true;
 
     std::vector<sptr<VolumeGroupInfo>> volumeGroups_;
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
