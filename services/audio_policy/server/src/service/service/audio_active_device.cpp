@@ -74,7 +74,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
         }
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         A2dpDeviceConfigInfo info;
-        if (audioA2dpDevice_.GetA2dpInDeviceInfo(GetCurrentInputDeviceMacAddr(), info)) {
+        if (audioA2dpDevice_.GetA2dpInDeviceInfo(activeBTInDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
             streamInfo.channels = *info.streamInfo.channels.rbegin();
@@ -128,9 +128,14 @@ std::string AudioActiveDevice::GetActiveBtDeviceMac()
     return activeBTDevice_;
 }
 
-void AudioActiveDevice::SetActiveBtDeviceMac(std::string macAddress)
+void AudioActiveDevice::SetActiveBtDeviceMac(const std::string macAddress)
 {
     activeBTDevice_ = macAddress;
+}
+
+void AudioActiveDevice::SetActiveBtInDeviceMac(const std::string macAddress)
+{
+    activeBTInDevice_ = macAddress;
 }
 
 bool AudioActiveDevice::IsDirectSupportedDevice()

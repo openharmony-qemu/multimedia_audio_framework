@@ -212,7 +212,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
-    void HandleA2dpInputDeviceFetched();
+    void HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
