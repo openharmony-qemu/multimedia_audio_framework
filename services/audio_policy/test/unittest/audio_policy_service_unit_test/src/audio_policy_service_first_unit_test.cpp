@@ -320,8 +320,10 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
         }
         bool ret = GetServerPtr()->audioPolicyService_.IsA2dpOffloadConnected();
         EXPECT_EQ(false, ret);
-        GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(TEST_SESSIONID, CONNECTING_NUMBER);
-        GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(TEST_SESSIONID, (CONNECTING_NUMBER + 1));
+        GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(TEST_SESSIONID,
+            CONNECTING_NUMBER);
+        GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(TEST_SESSIONID,
+            (CONNECTING_NUMBER + 1));
         GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
         GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
         GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.UpdateAudioCapturerMicrophoneDescriptor(
@@ -1894,20 +1896,24 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
 
     int32_t ret = SUCCESS;
     GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
-    ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
+    ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+        sessionInfo, streamInfo);
     EXPECT_EQ(ERROR, ret);
 
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     sessionInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+        sessionInfo, streamInfo);
     EXPECT_EQ(ERROR, ret);
 
     sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+        sessionInfo, streamInfo);
     EXPECT_EQ(ERROR, ret);
 
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionIdisRemovedSet_.insert(TEST_SESSIONID);
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+        sessionInfo, streamInfo);
     EXPECT_EQ(ERROR, ret);
 }
 
@@ -1931,30 +1937,37 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionRemoved_001, TestSize.Leve
     sessionInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
     sessionInfo.rate = RATE;
     sessionInfo.channels = CHANNELS;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_[TEST_SESSIONID] = sessionInfo;
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_[TEST_SESSIONID] =
+        sessionInfo;
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
 
     sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_[TEST_SESSIONID] = sessionInfo;
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_[TEST_SESSIONID] =
+        sessionInfo;
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
 
     // dummy sessionWithNormalSourceType_
     sessionInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] = sessionInfo;
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
+        sessionInfo;
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
 
     sessionInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] = sessionInfo;
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
+        sessionInfo;
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
 
     sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] = sessionInfo;
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
+        sessionInfo;
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
 
     sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] = sessionInfo;
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
+        sessionInfo;
     sessionInfo.sourceType = SOURCE_TYPE_MIC;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID + 1] = sessionInfo;
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID + 1] =
+        sessionInfo;
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
 }
 

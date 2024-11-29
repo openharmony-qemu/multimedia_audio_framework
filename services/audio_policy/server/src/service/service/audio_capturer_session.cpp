@@ -41,7 +41,7 @@ static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_REMOTE_CAST
 };
 
-inline std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -57,7 +57,7 @@ inline std::string GetEncryptAddr(const std::string &addr)
     return out;
 }
 
-inline bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
+static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
 {
     std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
         // from high to low

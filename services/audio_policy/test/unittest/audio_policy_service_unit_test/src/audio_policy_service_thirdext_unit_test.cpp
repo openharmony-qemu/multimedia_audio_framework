@@ -394,7 +394,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateDefaultOutputDeviceWhenStopping
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
 
     int32_t uid = getuid();
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateDefaultOutputDeviceWhenStopping(uid);
+    AudioPolicyServiceUnitTest::GetServerPtr()->
+        audioPolicyService_.audioDeviceLock_.UpdateDefaultOutputDeviceWhenStopping(uid);
     EXPECT_EQ(SUCCESS, uid);
 }
 

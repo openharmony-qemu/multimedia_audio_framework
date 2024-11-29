@@ -1711,6 +1711,5 @@ void AudioDeviceCommon::BluetoothScoDisconectForRecongnition()
     }
 }
 
-
 }
 }

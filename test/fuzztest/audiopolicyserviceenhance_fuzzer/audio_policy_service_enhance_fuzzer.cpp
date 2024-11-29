@@ -349,7 +349,8 @@ void AudioPolicyServiceEnhanceFiveFuzzTest(const uint8_t *rawData, size_t size)
 
     GetServerPtr()->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = true;
     GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_COMMUNICATION;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.ReloadSourceForDeviceChange(DEVICE_TYPE_DEFAULT, DEVICE_TYPE_DEFAULT, "test");
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.ReloadSourceForDeviceChange(DEVICE_TYPE_DEFAULT,
+        DEVICE_TYPE_DEFAULT, "test");
     GetServerPtr()->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(DEVICE_TYPE_DEFAULT, DEVICE_TYPE_DEFAULT);
 }
 
@@ -547,7 +548,8 @@ void AudioPolicyServiceEnhanceNineFuzzTest(const uint8_t *rawData, size_t size)
 
     std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     SourceOutput sourceOutput;
-    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.WriteInputDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.WriteInputDeviceChangedSysEvents(deviceDescriptor,
+        sourceOutput);
 
     int32_t notificationId = *reinterpret_cast<const int32_t*>(rawData);
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.CancelSafeVolumeNotification(notificationId);

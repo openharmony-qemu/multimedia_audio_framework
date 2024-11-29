@@ -388,7 +388,8 @@ int32_t AudioDeviceLock::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRe
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, status,
         "AudioPolicyServer:: Get renderer change info failed");
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices = audioConnectedDevice_.GetDevicesInner(OUTPUT_DEVICES_FLAG);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices =
+        audioConnectedDevice_.GetDevicesInner(OUTPUT_DEVICES_FLAG);
     DeviceType activeDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     DeviceRole activeDeviceRole = OUTPUT_DEVICE;
     for (std::shared_ptr<AudioDeviceDescriptor> desc : outputDevices) {

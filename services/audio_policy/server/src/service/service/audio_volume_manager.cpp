@@ -993,6 +993,5 @@ void AudioVolumeManager::NotifyVolumeGroup()
     loadDefaultDeviceCV_.notify_all();
 }
 
-
 }
 }

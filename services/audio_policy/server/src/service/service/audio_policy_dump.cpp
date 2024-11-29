@@ -155,8 +155,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyDump::GetDumpDevi
             break;
     }
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs = audioConnectedDevice_.GetDevicesInner(deviceFlag);;
-
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
+        audioConnectedDevice_.GetDevicesInner(deviceFlag);
     if (!hasSystemPermission) {
         for (std::shared_ptr<AudioDeviceDescriptor> desc : deviceDescs) {
             desc->networkId_ = "";

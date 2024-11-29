@@ -75,7 +75,8 @@ public:
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, DeviceType devType,
-        std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo, bool isConnected);    
+        std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
+        bool isConnected);
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 private:
     AudioDeviceStatus() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

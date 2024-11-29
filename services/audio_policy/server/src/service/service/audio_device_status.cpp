@@ -656,8 +656,9 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
-    AUDIO_WARNING_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d] NETWORKID[%{public}s]",
-        statusInfo.hdiPin, statusInfo.isConnected, GetEncryptStr(statusInfo.networkId).c_str());
+    AUDIO_WARNING_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d]"
+        " NETWORKID[%{public}s]", statusInfo.hdiPin, statusInfo.isConnected,
+        GetEncryptStr(statusInfo.networkId).c_str());
     if (isStop) {
         HandleOfflineDistributedDevice();
         audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDeviceType(),
@@ -794,7 +795,8 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
         LOCAL_NETWORK_ID, true, NO_REMOTE_ID);
 
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(devType,
-        AudioPolicyUtils::GetInstance().GetDeviceRole(moduleInfo.role), volumeGroupId, interruptGroupId, LOCAL_NETWORK_ID);
+        AudioPolicyUtils::GetInstance().GetDeviceRole(moduleInfo.role), volumeGroupId, interruptGroupId,
+        LOCAL_NETWORK_ID);
     if (!moduleInfo.supportedRate_.empty() && !moduleInfo.supportedChannels_.empty()) {
         DeviceStreamInfo streamInfo = {};
         for (auto supportedRate : moduleInfo.supportedRate_) {
@@ -820,17 +822,18 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo = {};
     audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
     for (const auto &device : deviceClassInfo) {
-        if (device.first == ClassType::TYPE_PRIMARY || device.first == ClassType::TYPE_FILE_IO) {
-            auto moduleInfoList = device.second;
-            for (auto &moduleInfo : moduleInfoList) {
-                AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
-                uint32_t sinkLatencyInMsec = audioConfigManager_.GetSinkLatencyFromXml();
-                moduleInfo.sinkLatency = sinkLatencyInMsec != 0 ? to_string(sinkLatencyInMsec) : "";
-                if (OpenPortAndAddDeviceOnServiceConnected(moduleInfo)) {
-                    result = SUCCESS;
-                }
-                audioOffloadStream_.SetOffloadAvailableFromXML(moduleInfo);
+        if (device.first != ClassType::TYPE_PRIMARY && device.first != ClassType::TYPE_FILE_IO) {
+            continue;
+        }
+        auto moduleInfoList = device.second;
+        for (auto &moduleInfo : moduleInfoList) {
+            AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
+            uint32_t sinkLatencyInMsec = audioConfigManager_.GetSinkLatencyFromXml();
+            moduleInfo.sinkLatency = sinkLatencyInMsec != 0 ? to_string(sinkLatencyInMsec) : "";
+            if (OpenPortAndAddDeviceOnServiceConnected(moduleInfo)) {
+                result = SUCCESS;
             }
+            audioOffloadStream_.SetOffloadAvailableFromXML(moduleInfo);
         }
     }
 
@@ -892,7 +895,8 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
 }
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, DeviceType devType,
-    std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo, bool isConnected)
+    std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
+    bool isConnected)
 {
     AUDIO_WARNING_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d], mac[%{public}s]",
         devType, isConnected, GetEncryptStr(macAddress).c_str());

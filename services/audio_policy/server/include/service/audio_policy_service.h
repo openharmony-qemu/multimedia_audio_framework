@@ -494,7 +494,6 @@ private:
 
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
 
-
     void ResetToSpeaker(DeviceType devType);
 
     PipeInfo& GetPipeInfoByPipeName(std::string &supportPipe, AudioAdapterInfo &adapterInfo);
@@ -544,7 +543,7 @@ private:
     int32_t maxRendererInstances_ = 128;
     bool isFastControlled_ = true;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
-    std::mutex serviceFlagMutex_;    
+    std::mutex serviceFlagMutex_;
 
     IAudioPolicyInterface& audioPolicyManager_;
 

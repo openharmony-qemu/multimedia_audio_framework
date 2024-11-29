@@ -1029,7 +1029,8 @@ void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
 int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
     &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission)
 {
-    return audioDeviceLock_.GetCurrentRendererChangeInfos(audioRendererChangeInfos, hasBTPermission, hasSystemPermission);
+    return audioDeviceLock_.GetCurrentRendererChangeInfos(audioRendererChangeInfos, hasBTPermission,
+        hasSystemPermission);
 }
 
 int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>>
@@ -1047,8 +1048,8 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
             size_t capturerInfosSize = audioCapturerChangeInfos.size();
             for (size_t i = 0; i < capturerInfosSize; i++) {
                 UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
-                audioDeviceCommon_.UpdateDeviceInfo(audioCapturerChangeInfos[i]->inputDeviceInfo, desc, hasBTPermission,
-                    hasSystemPermission);
+                audioDeviceCommon_.UpdateDeviceInfo(audioCapturerChangeInfos[i]->inputDeviceInfo, desc,
+                    hasBTPermission, hasSystemPermission);
             }
             break;
         }

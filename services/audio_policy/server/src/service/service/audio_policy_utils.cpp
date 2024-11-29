@@ -538,10 +538,8 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     } else if (deviceName == "file_source") {
         devType = DEVICE_TYPE_FILE_SOURCE;
     }
-
     return devType;
 }
-
 
 }
 }
