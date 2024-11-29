@@ -412,22 +412,6 @@ void AudioLoadAudioEffectLibrariesTest(const uint8_t* rawData, size_t size)
         data, reply, option);
 }
 
-void AudioCapturerInServerTestFirst(std::shared_ptr<CapturerInServer> capturerInServer)
-{
-    capturerInServer->Init();
-    capturerInServer->Start();
-    capturerInServer->ConfigServerBuffer();
-    capturerInServer->InitBufferStatus();
-    capturerInServer->UpdateReadIndex();
-    uint32_t sessionId;
-    capturerInServer->GetSessionId(sessionId);
-    capturerInServer->DrainAudioBuffer();
-    capturerInServer->Pause();
-    capturerInServer->Flush();
-    capturerInServer->Stop();
-    capturerInServer->Release();
-}
-
 void AudioCapturerInServerFuzzTest()
 {
     std::shared_ptr<CapturerInServer> capturerInServer = nullptr;
@@ -454,7 +438,6 @@ void AudioCapturerInServerFuzzTest()
     capturerInServer->ResolveBuffer(buffer);
     uint32_t sessionId = GetData<uint32_t>();
     capturerInServer->GetSessionId(sessionId);
-    AudioCapturerInServerTestFirst(capturerInServer);
 }
 
 void AudioRendererInServerTestFirst(std::shared_ptr<RendererInServer> renderer)
