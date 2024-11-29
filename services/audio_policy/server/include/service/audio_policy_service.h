@@ -677,6 +677,8 @@ private:
 
     void OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
         const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
+    
+    vector<shared_ptr<AudioDeviceDescriptor>> UserSelectDeviceMapInit();
 
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
 
