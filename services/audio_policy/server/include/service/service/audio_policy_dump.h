@@ -85,6 +85,7 @@ private:
         std::unordered_map<std::string, std::string>& interruptGroupData,
         GlobalConfigs globalConfigs);
     void GetEffectManagerInfo();
+    bool IsStreamSupported(AudioStreamType streamType);
 private:
     AudioPolicyDump() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioEffectService_(AudioEffectService::GetAudioEffectService()),

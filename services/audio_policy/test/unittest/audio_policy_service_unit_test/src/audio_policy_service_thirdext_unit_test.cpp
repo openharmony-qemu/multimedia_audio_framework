@@ -394,7 +394,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateDefaultOutputDeviceWhenStopping
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
 
     int32_t uid = getuid();
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.UpdateDefaultOutputDeviceWhenStopping(uid);
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateDefaultOutputDeviceWhenStopping(uid);
     EXPECT_EQ(SUCCESS, uid);
 }
 
@@ -736,7 +736,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
     EXPECT_NE(nullptr, server);
     int32_t sessionID = SESSION_ID;
     int32_t state = STATE;
-    server->audioPolicyService_.UpdateSessionConnectionState(sessionID, state);
+    server->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(sessionID, state);
     EXPECT_NE(nullptr, server->audioPolicyService_.GetAudioServerProxy());
 }
 

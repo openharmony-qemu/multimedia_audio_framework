@@ -427,7 +427,6 @@ public:
 
     AudioScene GetLastAudioScene() const;
     void SetRotationToEffect(const uint32_t rotate);
-    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
@@ -536,8 +535,6 @@ private:
 
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
-
-    bool IsStreamSupported(AudioStreamType streamType);
 private:
 
     static bool isBtListenerRegistered;

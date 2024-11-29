@@ -217,7 +217,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, WriteAllDeviceSysEvents_001, TestSize.Le
 
     isConnected = false;
     desc = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::ALL_DEVICES_FLAG);
-    server->audioPolicyService_.WriteAllDeviceSysEvents(desc, isConnected);
+    server->audioPolicyService_.audioDeviceStatus_.WriteAllDeviceSysEvents(desc, isConnected);
     EXPECT_EQ(isConnected, false);
 }
 
@@ -231,7 +231,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateTrackerDeviceChange_001, TestSize.
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc =
         AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::ALL_DEVICES_FLAG);
-    server->audioPolicyService_.UpdateTrackerDeviceChange(desc);
+    server->audioPolicyService_.audioDeviceLock_.UpdateTrackerDeviceChange(desc);
     EXPECT_TRUE(desc.size() >= 0);
 }
 
@@ -418,7 +418,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, TriggerDeviceChangedCallback_001, TestSi
     vector<std::shared_ptr<AudioDeviceDescriptor>> desc =
         AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::ALL_DEVICES_FLAG);
     bool isConnected = false;
-    server->audioPolicyService_.TriggerDeviceChangedCallback(desc, isConnected);
+    server->audioPolicyService_.audioDeviceStatus_.TriggerDeviceChangedCallback(desc, isConnected);
     EXPECT_NE(server->audioPolicyService_.audioPolicyServerHandler_, nullptr);
 }
 
@@ -431,15 +431,15 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceRole_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    DeviceRole deviceRole = server->audioPolicyService_.GetDeviceRole(deviceType);
+    DeviceRole deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType);
     EXPECT_EQ(deviceRole, DeviceRole::OUTPUT_DEVICE);
 
     deviceType = DeviceType::DEVICE_TYPE_WAKEUP;
-    deviceRole = server->audioPolicyService_.GetDeviceRole(deviceType);
+    deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType);
     EXPECT_EQ(deviceRole, DeviceRole::INPUT_DEVICE);
 
     deviceType = DeviceType::DEVICE_TYPE_DEFAULT;
-    deviceRole = server->audioPolicyService_.GetDeviceRole(deviceType);
+    deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType);
     EXPECT_EQ(deviceRole, DeviceRole::DEVICE_ROLE_NONE);
 }
 
@@ -452,19 +452,19 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceRole_002, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     AudioPin pin = AudioPin::AUDIO_PIN_NONE;
-    DeviceRole deviceRole = server->audioPolicyService_.GetDeviceRole(pin);
+    DeviceRole deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(pin);
     EXPECT_EQ(deviceRole, DeviceRole::DEVICE_ROLE_NONE);
 
     pin = AudioPin::AUDIO_PIN_OUT_SPEAKER;
-    deviceRole = server->audioPolicyService_.GetDeviceRole(pin);
+    deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(pin);
     EXPECT_EQ(deviceRole, DeviceRole::OUTPUT_DEVICE);
 
     pin = AudioPin::AUDIO_PIN_IN_MIC;
-    deviceRole = server->audioPolicyService_.GetDeviceRole(pin);
+    deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(pin);
     EXPECT_EQ(deviceRole, DeviceRole::INPUT_DEVICE);
 
     pin = (AudioPin)666;
-    deviceRole = server->audioPolicyService_.GetDeviceRole(pin);
+    deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(pin);
     EXPECT_EQ(deviceRole, DeviceRole::DEVICE_ROLE_NONE);
 }
 
@@ -620,23 +620,23 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceTypeFromPin_001, TestSize.Level
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     AudioPin hdiPin;
     hdiPin = AudioPin::AUDIO_PIN_NONE;
-    DeviceType deviceType = server->audioPolicyService_.GetDeviceTypeFromPin(hdiPin);
+    DeviceType deviceType = server->audioPolicyService_.audioDeviceStatus_.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DeviceType::DEVICE_TYPE_DEFAULT);
 
     hdiPin = AudioPin::AUDIO_PIN_OUT_SPEAKER;
-    deviceType = server->audioPolicyService_.GetDeviceTypeFromPin(hdiPin);
+    deviceType = server->audioPolicyService_.audioDeviceStatus_.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DeviceType::DEVICE_TYPE_SPEAKER);
 
     hdiPin = AudioPin::AUDIO_PIN_OUT_USB_HEADSET;
-    deviceType = server->audioPolicyService_.GetDeviceTypeFromPin(hdiPin);
+    deviceType = server->audioPolicyService_.audioDeviceStatus_.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DeviceType::DEVICE_TYPE_USB_ARM_HEADSET);
 
     hdiPin = AudioPin::AUDIO_PIN_IN_MIC;
-    deviceType = server->audioPolicyService_.GetDeviceTypeFromPin(hdiPin);
+    deviceType = server->audioPolicyService_.audioDeviceStatus_.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DeviceType::DEVICE_TYPE_MIC);
 
     hdiPin = (AudioPin)666;
-    deviceType = server->audioPolicyService_.GetDeviceTypeFromPin(hdiPin);
+    deviceType = server->audioPolicyService_.audioDeviceStatus_.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DeviceType::DEVICE_TYPE_DEFAULT);
 }
 
@@ -1066,10 +1066,10 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, TriggerAvailableDeviceChangedCallback_00
     bool isConnected;
 
     isConnected = true;
-    server->audioPolicyService_.TriggerAvailableDeviceChangedCallback(desc, isConnected);
+    server->audioPolicyService_.audioDeviceStatus_.TriggerAvailableDeviceChangedCallback(desc, isConnected);
 
     isConnected = false;
-    server->audioPolicyService_.TriggerAvailableDeviceChangedCallback(desc, isConnected);
+    server->audioPolicyService_.audioDeviceStatus_.TriggerAvailableDeviceChangedCallback(desc, isConnected);
     EXPECT_NE(server->audioPolicyService_.audioPolicyServerHandler_, nullptr);
 }
 
@@ -1199,21 +1199,21 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OnPreferredStateUpdated_001, TestSize.Le
     desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.macAddress_ = server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.macAddress_;
-    server->audioPolicyService_.OnPreferredStateUpdated(desc, updateCommand, reason);
+    server->audioPolicyService_.audioDeviceStatus_.OnPreferredStateUpdated(desc, updateCommand, reason);
 
     desc.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
     desc.macAddress_ = server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.macAddress_;
-    server->audioPolicyService_.OnPreferredStateUpdated(desc, updateCommand, reason);
+    server->audioPolicyService_.audioDeviceStatus_.OnPreferredStateUpdated(desc, updateCommand, reason);
 
     desc.deviceCategory_ = DeviceCategory::BT_HEADPHONE;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    server->audioPolicyService_.OnPreferredStateUpdated(desc, updateCommand, reason);
+    server->audioPolicyService_.audioDeviceStatus_.OnPreferredStateUpdated(desc, updateCommand, reason);
 
     desc.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    server->audioPolicyService_.OnPreferredStateUpdated(desc, updateCommand, reason);
+    server->audioPolicyService_.audioDeviceStatus_.OnPreferredStateUpdated(desc, updateCommand, reason);
 
     updateCommand = DeviceInfoUpdateCommand::ENABLE_UPDATE;
-    server->audioPolicyService_.OnPreferredStateUpdated(desc, updateCommand, reason);
+    server->audioPolicyService_.audioDeviceStatus_.OnPreferredStateUpdated(desc, updateCommand, reason);
 
     EXPECT_EQ(reason.isOverride(), false);
 }
@@ -1228,15 +1228,15 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CheckAndActiveHfpDevice_001, TestSize.Le
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     AudioDeviceDescriptor desc;
 
-    server->audioPolicyService_.CheckAndActiveHfpDevice(desc);
+    server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
 
     desc.connectState_ = ConnectState::DEACTIVE_CONNECTED;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_MIC;
-    server->audioPolicyService_.CheckAndActiveHfpDevice(desc);
+    server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
 
     desc.connectState_ = ConnectState::CONNECTED;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
-    server->audioPolicyService_.CheckAndActiveHfpDevice(desc);
+    server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
     EXPECT_EQ(desc.deviceType_, DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
 }
 

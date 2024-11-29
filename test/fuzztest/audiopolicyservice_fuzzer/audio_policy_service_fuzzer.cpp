@@ -117,27 +117,26 @@ void AudioPolicyServiceDumpTest(const uint8_t *rawData, size_t size)
     size = size - OFFSET;
 
     std::string dumpStr = "";
-    GetServerPtr()->audioPolicyService_.DevicesInfoDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.AudioModeDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.AudioPolicyParserDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.XmlParsedDataMapDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.StreamVolumesDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.DevicesInfoDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.AudioModeDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.AudioPolicyParserDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.XmlParsedDataMapDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.StreamVolumesDump(dumpStr);
     std::map<DeviceVolumeType, std::shared_ptr<DeviceVolumeInfo>> deviceVolumeInfoMap;
-    GetServerPtr()->audioPolicyService_.DeviceVolumeInfosDump(dumpStr, deviceVolumeInfoMap);
-    GetServerPtr()->audioPolicyService_.AudioStreamDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetGroupInfoDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetCallStatusDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetRingerModeDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetMicrophoneDescriptorsDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetCapturerStreamDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetSafeVolumeDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetOffloadStatusDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.EffectManagerInfoDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.MicrophoneMuteInfoDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.DeviceVolumeInfosDump(dumpStr, deviceVolumeInfoMap);
+    GetServerPtr()->audioPolicyDump_.AudioStreamDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetVolumeConfigDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetGroupInfoDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetCallStatusDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetRingerModeDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetMicrophoneDescriptorsDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetCapturerStreamDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetOffloadStatusDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.EffectManagerInfoDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.MicrophoneMuteInfoDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetVolumeConfigDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetVolumeConfigDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetVolumeConfigDump(dumpStr);
 
     GetServerPtr()->interruptService_->AudioInterruptZoneDump(dumpStr);
 }
@@ -155,7 +154,7 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
 
     GetServerPtr()->audioPolicyService_.IsA2dpOffloadConnected();
     int32_t state = (num % MOD_NUM_TWO) + CONNECTING_NUMBER; // DATA_LINK_CONNECTING = 10, DATA_LINK_CONNECTED = 11;
-    GetServerPtr()->audioPolicyService_.UpdateSessionConnectionState(num, state);
+    GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(num, state);
 
     std::string macAddress = "11:22:33:44:55:66";
     GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected, macAddress);

@@ -38,23 +38,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-inline bool IsStreamSupported(AudioStreamType streamType)
-{
-    switch (streamType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_COMMUNICATION:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_WAKEUP:
-        case STREAM_SYSTEM:
-        case STREAM_CAMCORDER:
-            return true;
-        default:
-            return false;
-    }
-}
-
 static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
@@ -69,6 +52,23 @@ static std::string GetEncryptAddr(const std::string &addr)
         out[i] = tmp[i];
     }
     return out;
+}
+
+bool AudioPolicyDump::IsStreamSupported(AudioStreamType streamType)
+{
+    switch (streamType) {
+        case STREAM_MUSIC:
+        case STREAM_RING:
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
+        case STREAM_VOICE_ASSISTANT:
+        case STREAM_WAKEUP:
+        case STREAM_SYSTEM:
+        case STREAM_CAMCORDER:
+            return true;
+        default:
+            return false;
+    }
 }
 
 void AudioPolicyDump::DevicesInfoDump(std::string &dumpString)

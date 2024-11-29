@@ -172,9 +172,8 @@ void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStre
         return;
     }
 
-    GetServerPtr()->audioPolicyService_.LoadSinksForCapturer();
-    GetServerPtr()->audioPolicyService_.HandleRemoteCastDevice(true, audioStreamInfo);
-    GetServerPtr()->audioPolicyService_.HandleRemoteCastDevice(false, audioStreamInfo);
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemoteCastDevice(true, audioStreamInfo);
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemoteCastDevice(false, audioStreamInfo);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(false);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVoipConfig();
     pid_t clientPid = *reinterpret_cast<const pid_t*>(rawData);
@@ -206,8 +205,8 @@ void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStre
     GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSourceIOHandle(DEVICE_TYPE_DP);
     SinkInput sinkInput = {};
     SourceOutput sourceOutput = {};
-    GetServerPtr()->audioPolicyService_.WriteOutputDeviceChangedSysEvents(remoteDeviceDescriptor, sinkInput);
-    GetServerPtr()->audioPolicyService_.WriteInputDeviceChangedSysEvents(remoteDeviceDescriptor, sourceOutput);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.WriteOutputDeviceChangedSysEvents(remoteDeviceDescriptor, sinkInput);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.WriteInputDeviceChangedSysEvents(remoteDeviceDescriptor, sourceOutput);
 }
 
 void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)
@@ -394,7 +393,7 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
         push_back(make_shared<AudioRendererChangeInfo>(audioRendererChangeInfo));
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->WaitForConnectionCompleted();
     std::string dumpString = "";
-    GetServerPtr()->audioPolicyService_.AudioStreamDump(dumpString);
+    GetServerPtr()->audioPolicyDump_.AudioStreamDump(dumpString);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(true, NETWORKID,
         SUSPEND_CONNECTED);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(false, NETWORKID,
@@ -408,7 +407,7 @@ void AudioPolicyServiceTestIII(const uint8_t* rawData, size_t size)
     audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioStreamInfo.channels = AudioChannel::STEREO;
-    GetServerPtr()->audioPolicyService_.ReloadA2dpOffloadOnDeviceChanged(DEVICE_TYPE_BLUETOOTH_A2DP,
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.ReloadA2dpOffloadOnDeviceChanged(DEVICE_TYPE_BLUETOOTH_A2DP,
         GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "DeviceName", audioStreamInfo);
     std::shared_ptr<AudioDeviceDescriptor> dis = std::make_shared<AudioDeviceDescriptor>();
     dis->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
