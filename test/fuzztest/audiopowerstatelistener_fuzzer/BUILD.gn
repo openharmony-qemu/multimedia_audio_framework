@@ -42,9 +42,6 @@ ohos_fuzztest("AudioPowerStateListenerFuzzTest") {
   if (audio_framework_feature_dtmf_tone) {
     defines += [ "FEATURE_DTMF_TONE" ]
   }
-  if (use_libfuzzer || use_clang_coverage) {
-    defines += [ "TEST_COVERAGE" ]
-  }
 
   sources = [ "audio_power_state_listener_fuzzer.cpp" ]
 
@@ -82,6 +79,10 @@ ohos_fuzztest("AudioPowerStateListenerFuzzTest") {
       "accessibility:accessibility_common",
       "accessibility:accessibilityconfig",
     ]
+  }
+
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
   }
 }
 

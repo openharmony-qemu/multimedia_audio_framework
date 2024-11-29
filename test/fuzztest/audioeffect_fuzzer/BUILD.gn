@@ -93,6 +93,7 @@ ohos_fuzztest("AudioEffectFuzzTest") {
   if (window_manager_enable == true) {
     cflags += [ "-DWINDOW_MANAGER_ENABLE" ]
   }
+  
   defines = []
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
