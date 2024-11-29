@@ -431,6 +431,5 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray
     }
 }
 
-
 }
 }

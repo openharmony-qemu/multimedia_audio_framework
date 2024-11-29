@@ -337,8 +337,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
             AUDIO_INFO_LOG("AudioPolicyServiceTest_001 pipeType:%{public}d", static_cast<uint32_t>(pipeType));
             GetServerPtr()->audioPolicyService_.audioOffloadStream_.MoveToNewPipeInner(TEST_SESSIONID, pipeType);
         }
-        int32_t result = SUCCESS;
-        result = GetServerPtr()->audioPolicyService_.audioOffloadStream_.LoadMchModule();
+        int32_t result = GetServerPtr()->audioPolicyService_.audioOffloadStream_.LoadMchModule();
         EXPECT_EQ(SUCCESS, result);
         GetServerPtr()->audioPolicyService_.audioOffloadStream_.ConstructMchAudioModuleInfo(deviceType);
         result = GetServerPtr()->audioPolicyService_.audioOffloadStream_.LoadOffloadModule();
