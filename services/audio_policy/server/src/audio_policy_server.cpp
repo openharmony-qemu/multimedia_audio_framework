@@ -389,6 +389,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 void AudioPolicyServer::SubscribeVolumeKeyEvents()
 {
+    std::lock_guard<std::mutex> lock(subscribeVolumeKey_);
     if (hasSubscribedVolumeKeyEvents_.load()) {
         AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: volume key events has been sunscirbed!");
         return;
