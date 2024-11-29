@@ -175,6 +175,7 @@ int32_t PaRendererStreamImpl::Start()
         std::string sessionIDTemp = std::to_string(streamIndex_);
         audioEffectVolume->SetStreamVolume(sessionIDTemp, clientVolume_);
     }
+    isInitFlag_ = true;
 
     return SUCCESS;
 }
