@@ -334,12 +334,6 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     return 0;
 }
 
-extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
-{
-    OHOS::AudioStandard::GetServerPtr();
-    return 0;
-}
-
 OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioVolumeFuzzTest,
     OHOS::AudioStandard::AudioDeviceFuzzTest,
