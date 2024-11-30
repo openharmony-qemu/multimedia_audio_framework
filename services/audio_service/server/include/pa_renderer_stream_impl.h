@@ -70,6 +70,7 @@ public:
     int32_t ReturnIndex(int32_t index) override;
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
     int32_t SetClientVolume(float clientVolume) override;
+    bool IsEffectNone(StreamUsage streamUsage);
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -122,7 +123,7 @@ private:
 
     size_t totalBytesWritten_ = 0;
     int32_t renderRate_ = 0;
-    int32_t effectMode_ = -1;
+    int32_t effectMode_ = 1;
     std::string effectSceneName_ = "";
     int32_t privacyType_ = 0;
 
@@ -142,6 +143,7 @@ private:
     time_t lastOffloadUpdateFinishTime_ = 0;
     // offload end
     float clientVolume_ = 1.0f;
+    bool initEffectFlag_ = false;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
     std::mutex fadingMutex_;
