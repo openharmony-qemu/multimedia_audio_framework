@@ -247,7 +247,7 @@ describe("AudioRoutingManagerJsTest", function () {
       expect().assertFail();
       done();
     } catch (e) {
-      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+      if (e.code != ERROR_INPUT_INVALID) {
         console.error(`${TAG} on_referOutputDeviceForRendererInfo check string parameter ERROR: ${e.message}`);
         expect().assertFail();
         done();
@@ -272,7 +272,7 @@ describe("AudioRoutingManagerJsTest", function () {
       expect().assertFail();
       done();
     } catch (e) {
-      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+      if (e.code != ERROR_INPUT_INVALID) {
         console.error(`${TAG} on_referOutputDeviceForRendererInfo check number parameter ERROR: ${e.message}`);
         expect().assertFail();
         done();
@@ -766,7 +766,7 @@ describe("AudioRoutingManagerJsTest", function () {
       expect().assertFail();
       done();
     } catch (e) {
-      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+      if (e.code != ERROR_INPUT_INVALID) {
         console.error(`${TAG} on_preferredInputDeviceChangeForCapturerInfo check string parameter ERROR: ${e.message}`);
         expect().assertFail();
         done();
@@ -791,7 +791,7 @@ describe("AudioRoutingManagerJsTest", function () {
       expect().assertFail();
       done();
     } catch (e) {
-      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+      if (e.code != ERROR_INPUT_INVALID) {
         console.error(`${TAG} on_preferredInputDeviceChangeForCapturerInfo check number parameter ERROR: ${e.message}`);
         expect().assertFail();
         done();
