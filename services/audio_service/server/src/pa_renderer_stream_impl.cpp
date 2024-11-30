@@ -175,7 +175,7 @@ int32_t PaRendererStreamImpl::Start()
         std::string sessionIDTemp = std::to_string(streamIndex_);
         audioEffectVolume->SetStreamVolume(sessionIDTemp, clientVolume_);
     }
-    isInitFlag_ = true;
+    initEffectFlag_ = false;
 
     return SUCCESS;
 }
@@ -213,12 +213,12 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     palock.Unlock();
 
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        isInitFlag_ == true && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
+        initEffectFlag_ == false && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager != nullptr) {
             audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
         }
-        isInitFlag_ = false;
+        initEffectFlag_ = true;
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
@@ -263,12 +263,12 @@ int32_t PaRendererStreamImpl::Flush()
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
 
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        isInitFlag_ == true && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
+        initEffectFlag_ == false && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager != nullptr) {
             audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
         }
-        isInitFlag_ = false;
+        initEffectFlag_ = true;
     }
 
     pa_operation_unref(operation);
@@ -326,12 +326,12 @@ int32_t PaRendererStreamImpl::Stop()
     pa_operation_unref(operation);
 
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        isInitFlag_ == true && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
+        initEffectFlag_ == false && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager != nullptr) {
             audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
         }
-        isInitFlag_ = false;
+        initEffectFlag_ = true;
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
@@ -364,12 +364,12 @@ int32_t PaRendererStreamImpl::Release()
     state_ = RELEASED;
 
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        isInitFlag_ == true && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
+        initEffectFlag_ == false && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager != nullptr) {
             audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
         }
-        isInitFlag_ = false;
+        initEffectFlag_ = true;
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
