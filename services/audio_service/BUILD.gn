@@ -440,9 +440,10 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/hdiadapter/source:bluetooth_capturer_source",
     "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    "../../frameworks/native/offlineaudioeffect:offline_audio_effect",
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
+
+  public_deps = [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
 
   external_deps = [
     "ability_base:want",

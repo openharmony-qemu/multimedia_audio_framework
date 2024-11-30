@@ -12,11 +12,14 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
 
-config("offline_audio_effect_public_config") {
-  include_dirs =
-      [ "../../../interfaces/inner_api/native/offlineaudioeffect/include" ]
+config("offline_audio_effect_config") {
+  include_dirs = [
+    "include",
+    "../../../interfaces/inner_api/native/offlineaudioeffect/include",
+  ]
 
   cflags = [
     "-Wall",
@@ -24,11 +27,7 @@ config("offline_audio_effect_public_config") {
   ]
 }
 
-config("offline_audio_effect_config") {
-  include_dirs = [ "include" ]
-}
-
-ohos_shared_library("offline_audio_effect") {
+audio_ohos_library("offline_audio_effect") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -48,16 +47,16 @@ ohos_shared_library("offline_audio_effect") {
     "../audioutils:audio_utils",
   ]
 
-  public_external_deps = [
+  external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hilog:libhilog",
     "ipc:ipc_single",
   ]
 
-  configs = [ ":offline_audio_effect_config" ]
-
-  public_configs = [ ":offline_audio_effect_public_config" ]
+  public_configs = [
+    ":offline_audio_effect_config"
+  ]
 
   version_script = "../../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
