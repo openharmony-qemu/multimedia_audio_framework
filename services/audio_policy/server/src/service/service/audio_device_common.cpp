@@ -1223,7 +1223,7 @@ void AudioDeviceCommon::HandleBluetoothInputDeviceFetched(std::shared_ptr<AudioD
     if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         BluetoothScoFetch(desc, capturerChangeInfos, sourceType);
     } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-        HandleA2dpInputDeviceFetched();
+        HandleA2dpInputDeviceFetched(desc);
     }
 }
 
@@ -1356,8 +1356,9 @@ std::vector<SourceOutput> AudioDeviceCommon::FilterSourceOutputs(int32_t session
     return targetSourceOutputs;
 }
 
-void AudioDeviceCommon::HandleA2dpInputDeviceFetched()
+void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
+    audioActiveDevice_.SetActiveBtInDeviceMac(desc->macAddress_);
     AudioStreamInfo audioStreamInfo = {};
     audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo);
 
