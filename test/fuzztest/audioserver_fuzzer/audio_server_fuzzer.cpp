@@ -510,7 +510,7 @@ void AudioServerUnsetOffloadTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioServerFuzzTest,
     OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest,
     OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
@@ -534,7 +534,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
     OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest,
     OHOS::AudioStandard::AudioServerSetOffloadModeTest,
     OHOS::AudioStandard::AudioServerUnsetOffloadTest
-}
+};
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)

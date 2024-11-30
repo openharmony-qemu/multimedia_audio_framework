@@ -320,14 +320,14 @@ void AudioDeviceConnectTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioPolicyServiceDumpTest,
     OHOS::AudioStandard::AudioPolicyServiceDeviceTest,
     OHOS::AudioStandard::AudioPolicyServiceAccountTest,
     OHOS::AudioStandard::AudioPolicyServiceSafeVolumeTest,
     OHOS::AudioStandard::AudioPolicyServiceInterfaceTest,
     OHOS::AudioStandard::AudioDeviceConnectTest
-}
+};
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {

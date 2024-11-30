@@ -340,7 +340,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     return 0;
 }
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioVolumeFuzzTest,
     OHOS::AudioStandard::AudioDeviceFuzzTest,
     OHOS::AudioStandard::AudioInterruptFuzzTest,
@@ -348,7 +348,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
     OHOS::AudioStandard::AudioPolicyOtherFuzzTest,
     OHOS::AudioStandard::AudioVolumeKeyCallbackStub,
     OHOS::AudioStandard::AudioSessionFuzzTest
-}
+};
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
