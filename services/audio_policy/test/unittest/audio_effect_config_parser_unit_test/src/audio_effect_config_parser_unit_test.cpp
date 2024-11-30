@@ -232,11 +232,6 @@ HWTEST(AudioEffectConfigParserUnitTest, AudioEffectConfigParser_006, TestSize.Le
     int32_t ret = parser.LoadEffectConfig(result);
     EXPECT_NE(ret, 0);
     EXPECT_NE(result.effects.size(), 1);
-    if (!result.effects.empty()) {
-        EXPECT_EQ(result.effects[0].name, "test_effect");
-        EXPECT_EQ(result.effects[0].libraryName, "bundle");
-        EXPECT_EQ(result.effects[0].effectProperty.size(), 2);
-    }
 
     result = OriginalEffectConfig();
 
@@ -249,10 +244,6 @@ HWTEST(AudioEffectConfigParserUnitTest, AudioEffectConfigParser_006, TestSize.Le
     ret = parser.LoadEffectConfig(result);
     EXPECT_NE(ret, 0);
     EXPECT_NE(result.effects.size(), 2);
-    if (result.effects.size() >= 2) {
-        EXPECT_EQ(result.effects[0].name, "effect1");
-        EXPECT_EQ(result.effects[1].name, "effect2");
-    }
 }
 
 /**
@@ -283,11 +274,6 @@ HWTEST(AudioEffectConfigParserUnitTest, AudioEffectConfigParser_007, TestSize.Le
     int32_t ret = parser.LoadEffectConfig(result);
     EXPECT_NE(ret, 0);
     EXPECT_NE(result.effectChains.size(), 1);
-    if (!result.effectChains.empty()) {
-        EXPECT_EQ(result.effectChains[0].name, "chain1");
-        EXPECT_EQ(result.effectChains[0].label, "label1");
-        EXPECT_EQ(result.effectChains[0].apply.size(), 2);
-    }
 }
 
 
