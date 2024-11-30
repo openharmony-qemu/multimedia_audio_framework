@@ -42,6 +42,8 @@ const uint32_t LIMIT_TWO = 30;
 const uint32_t LIMIT_THREE = 60;
 const uint32_t LIMIT_FOUR = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
 bool g_hasServerInit = false;
+const uint8_t TESTSIZE = 6;
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 AudioPolicyServer* GetServerPtr()
 {
@@ -318,22 +320,25 @@ void AudioDeviceConnectTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
-{
-    OHOS::AudioStandard::AudioFuzzTestGetPermission();
-    return 0;
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
+    OHOS::AudioStandard::AudioPolicyServiceDumpTest,
+    OHOS::AudioStandard::AudioPolicyServiceDeviceTest,
+    OHOS::AudioStandard::AudioPolicyServiceAccountTest,
+    OHOS::AudioStandard::AudioPolicyServiceSafeVolumeTest,
+    OHOS::AudioStandard::AudioPolicyServiceInterfaceTest,
+    OHOS::AudioStandard::AudioDeviceConnectTest
 }
 
-/* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioPolicyServiceDumpTest(data, size);
-    OHOS::AudioStandard::AudioPolicyServiceDeviceTest(data, size);
-    OHOS::AudioStandard::AudioPolicyServiceAccountTest(data, size);
-    OHOS::AudioStandard::AudioPolicyServiceSafeVolumeTest(data, size);
-    OHOS::AudioStandard::AudioPolicyServiceInterfaceTest(data, size);
-    OHOS::AudioStandard::AudioDeviceConnectTest(data, size);
-
+    if (data == nullptr) {
+        return 0;
+    }
+    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
+    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+        return 0;
+    }
+    g_testPtrs[firstByte](data, size);
     return 0;
 }
