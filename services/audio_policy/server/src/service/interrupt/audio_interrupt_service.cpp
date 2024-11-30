@@ -647,20 +647,18 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
         incomingSessionId, audioInterrupt.pid, streamType,
         audioInterrupt.streamUsage, (audioInterrupt.audioFocusType).sourceType);
 
-    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId) && !isUpdatedAudioStrategy) {
-        AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
-        return SUCCESS;
-    }
-
     if (audioInterrupt.parallelPlayFlag) {
         AUDIO_PRERELEASE_LOGI("allow parallel play");
         return SUCCESS;
     }
-    ResetNonInterruptControl(incomingSessionId);
-
     policyServer_->CheckStreamMode(incomingSessionId);
     policyServer_->OffloadStreamCheck(incomingSessionId, OFFLOAD_NO_SESSION_ID);
 
+    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId) && !isUpdatedAudioStrategy) {
+        AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
+        return SUCCESS;
+    }
+    ResetNonInterruptControl(incomingSessionId);
     bool shouldReturnSuccess = false;
     ProcessAudioScene(audioInterrupt, incomingSessionId, zoneId, shouldReturnSuccess);
     if (shouldReturnSuccess) {
