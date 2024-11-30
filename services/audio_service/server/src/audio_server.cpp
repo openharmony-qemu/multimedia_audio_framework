@@ -54,6 +54,7 @@
 #include "playback_capturer_manager.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
+#include "offline_stream_in_server.h"
 
 #define PA
 #ifdef PA
