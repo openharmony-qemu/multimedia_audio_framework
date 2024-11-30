@@ -231,6 +231,16 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     return SUCCESS;
 }
 
+bool PaRendererStreamImpl::IsEffectNone(StreamUsage streamUsage)
+{
+    if (streamUsage == STREAM_USAGE_SYSTEM || streamUsage == STREAM_USAGE_DTMF ||
+        streamUsage == STREAM_USAGE_ENFORCED_TONE || streamUsage == STREAM_USAGE_ULTRASONIC ||
+        streamUsage == STREAM_USAGE_NAVIGATION || streamUsage == STREAM_USAGE_NOTIFICATION) {
+        return true;
+    }
+    return false;
+}
+
 int32_t PaRendererStreamImpl::Flush()
 {
     AUDIO_PRERELEASE_LOGI("Enter");
