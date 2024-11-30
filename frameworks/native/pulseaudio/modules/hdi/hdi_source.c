@@ -71,6 +71,7 @@
 #define FRAME_DURATION_DEFAULT 20
 #define MILLISECOND_PER_SECOND 1000
 #define HDI_POST 100
+#define MAX_SEND_COMMAND_LATANCY 10000
 
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -289,7 +290,7 @@ static void SendInitCommandToAlgo()
     int32_t ret = EnhanceChainManagerSendInitCommand();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "send init command failed");
     pa_usec_t cost = pa_rtclock_now() - now;
-    if (cost > 10000) { // send command cost more than 10 ms
+    if (cost > MAX_SEND_COMMAND_LATANCY) { // send command cost more than 10 ms
         AUDIO_WARNING_LOG("send int command cost time:%{public}" PRIu64, cost);
     }
 }
