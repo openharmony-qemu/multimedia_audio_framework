@@ -6449,7 +6449,7 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
-    if (audioRendererForVoiceCall == nullptr) {
+    if (audioRendererForVoip == nullptr) {
         return ;
     }
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
@@ -6520,7 +6520,7 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
-    if (audioRendererForVoiceCall == nullptr) {
+    if (audioRendererForVoip == nullptr) {
         return ;
     }
     audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
