@@ -54,9 +54,7 @@ audio_ohos_library("offline_audio_effect") {
     "ipc:ipc_single",
   ]
 
-  public_configs = [
-    ":offline_audio_effect_config"
-  ]
+  public_configs = [ ":offline_audio_effect_config" ]
 
   version_script = "../../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
