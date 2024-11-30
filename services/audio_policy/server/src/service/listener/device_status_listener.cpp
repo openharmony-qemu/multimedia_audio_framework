@@ -112,8 +112,10 @@ static void OnDeviceStatusChange(const std::string &info, DeviceStatusListener *
 
     DeviceType internalDevice = GetInternalDeviceType(pnpDeviceType);
     AUDIO_DEBUG_LOG("internalDevice = %{public}d, pnpDeviceType = %{public}d", internalDevice, pnpDeviceType);
-    CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
-
+    if (internalDevice == DEVICE_TYPE_NONE) {
+        AUDIO_DEBUG_LOG("Unsupported device %{public}d", pnpDeviceType);
+        return;
+    }
     bool isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
     AudioStreamInfo streamInfo = {};
     devListener->deviceObserver_.OnDeviceStatusUpdated(internalDevice, isConnected, "", "", streamInfo);
@@ -249,7 +251,10 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
         addressEnd - addressBegin - std::strlen("DEVICE_ADDRESS="));
 
     desc.deviceType_ = GetInternalDeviceType(pnpDeviceType);
-    CHECK_AND_RETURN_LOG(desc.deviceType_ != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
+    if (desc.deviceType_ == DEVICE_TYPE_NONE) {
+        AUDIO_DEBUG_LOG("Unsupported device %{public}d", pnpDeviceType);
+        return;
+    }
     bool isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
 
     if (desc.deviceType_ == DEVICE_TYPE_DP) {
@@ -295,7 +300,10 @@ void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
     }
  
     DeviceType micBlockedDeviceType = GetInternalDeviceType(pnpDeviceType);
-    CHECK_AND_RETURN_LOG(micBlockedDeviceType != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
+    if (micBlockedDeviceType == DEVICE_TYPE_NONE) {
+        AUDIO_DEBUG_LOG("Unsupported device %{public}d", pnpDeviceType);
+        return;
+    }
 
     DeviceBlockStatus status = DEVICE_UNBLOCKED;
     if (pnpEventType == PNP_EVENT_MIC_BLOCKED) {
