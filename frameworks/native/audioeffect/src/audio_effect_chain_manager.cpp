@@ -861,7 +861,8 @@ void AudioEffectChainManager::SendAudioParamToHDI(
     HdiSetParamCommandCode code, const std::string &value, DeviceType device)
 {
     effectHdiInput_[0] = code;
-    effectHdiInput_[1] = static_cast<int8_t>(std::stoi(value));
+    CHECK_AND_RETURN_LOG(StringConverter(value, effectHdiInput_[1]),
+        "convert invalid bufferSize: %{public}s", value.c_str());
     if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, device) != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi parameter failed for code %{public}d and value %{public}s", code, value.c_str());
     }

@@ -103,12 +103,14 @@ void AudioEffectChain::SetEffectMode(const std::string &mode)
 
 void AudioEffectChain::SetExtraSceneType(const std::string &extraSceneType)
 {
-    extraEffectChainType_ = static_cast<uint32_t>(std::stoi(extraSceneType));
+    CHECK_AND_RETURN_LOG(StringConverter(extraSceneType, extraEffectChainType_),
+        "convert invalid extraSceneType: %{public}s", extraSceneType.c_str());
 }
 
 void AudioEffectChain::SetFoldState(const std::string &foldState)
 {
-    foldState_ = static_cast<uint32_t>(std::stoi(foldState));
+    CHECK_AND_RETURN_LOG(StringConverter(foldState, foldState_),
+        "convert invalid foldState: %{public}s", foldState.c_str());
 }
 
 void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)

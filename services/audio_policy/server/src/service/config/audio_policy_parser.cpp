@@ -420,12 +420,14 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
             streamPropInfo.format_ = ExtractPropertyValue("format", *currNode);
             std::string sampleRateStr = ExtractPropertyValue("sampleRates", *currNode);
             if (sampleRateStr != "") {
-                streamPropInfo.sampleRate_ = (uint32_t)std::stoi(sampleRateStr);
+                CHECK_AND_RETURN_LOG(StringConvertor(sampleRateStr, streamPropInfo.sampleRate_),
+                    "convert invalid sampleRate: %{public}s", sampleRateStr.c_str());
                 pipeInfo.sampleRates_.push_back(streamPropInfo.sampleRate_);
             }
             std::string periodInMsStr = ExtractPropertyValue("periodInMs", *currNode);
             if (periodInMsStr != "") {
-                streamPropInfo.periodInMs_ = (uint32_t)std::stoi(periodInMsStr);
+                CHECK_AND_RETURN_LOG(StringConvertor(periodInMsStr, streamPropInfo.periodInMs_),
+                    "convert invalid periodInMsStr: %{public}s", periodInMsStr.c_str());
             }
             std::string channelLayoutStr = ExtractPropertyValue("channelLayout", *currNode);
             if (channelLayoutStr != "") {
@@ -435,7 +437,8 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
 
             std::string bufferSizeStr = ExtractPropertyValue("bufferSize", *currNode);
             if (bufferSizeStr != "") {
-                streamPropInfo.bufferSize_ = (uint32_t)std::stoi(bufferSizeStr);
+                CHECK_AND_RETURN_LOG(StringConvertor(bufferSizeStr, streamPropInfo.bufferSize_),
+                    "convert invalid bufferSizeStr: %{public}s", bufferSizeStr.c_str());
             } else {
                 streamPropInfo.bufferSize_ = formatStrToEnum[streamPropInfo.format_] * streamPropInfo.sampleRate_ *
                     streamPropInfo.periodInMs_ * streamPropInfo.channelLayout_ / AUDIO_MS_PER_S;
@@ -617,11 +620,17 @@ void AudioPolicyParser::ParsePAConfigs(xmlNode &node)
 
             switch (GetPaConfigType(name)) {
                 case PAConfigType::AUDIO_LATENCY:
-                    portObserver_.OnAudioLatencyParsed((uint64_t)std::stoi(value));
+                    uint64_t convertValue = 0;
+                    CHECK_AND_RETURN_LOG(StringConvertor(value, convertValue),
+                        "convert invalid value: %{public}s", value.c_str());
+                    portObserver_.OnAudioLatencyParsed(convertValue);
                     globalConfigs_.globalPaConfigs_.audioLatency_ = value;
                     break;
                 case PAConfigType::SINK_LATENCY:
-                    portObserver_.OnSinkLatencyParsed((uint64_t)std::stoi(value));
+                    uint64_t convertValue = 0;
+                    CHECK_AND_RETURN_LOG(StringConvertor(value, convertValue),
+                        "convert invalid value: %{public}s", value.c_str());
+                    portObserver_.OnSinkLatencyParsed(convertValue);
                     globalConfigs_.globalPaConfigs_.sinkLatency_ = value;
                     break;
                 default:

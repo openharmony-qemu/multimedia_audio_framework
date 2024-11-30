@@ -533,19 +533,30 @@ void AudioSpatializationService::UpdateDeviceSpatialInfo(const uint32_t deviceID
     std::stringstream ss(deviceSpatialInfo);
     std::string token;
     std::string address;
+    int32_t convertValue = 0;
     std::getline(ss, address, '|');
     addressToDeviceSpatialInfoMap_[address] = deviceSpatialInfo;
     addressToDeviceIDMap_[address] = deviceID;
     std::getline(ss, token, '|');
-    addressToSpatialEnabledMap_[address].spatializationEnabled = std::stoi(token);
+    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue),
+        "convert invalid spatializationEnabled: %{public}s", token.c_str());
+    addressToSpatialEnabledMap_[address].spatializationEnabled = convertValue;
     std::getline(ss, token, '|');
-    addressToSpatialEnabledMap_[address].headTrackingEnabled = std::stoi(token);
+    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue),
+        "convert invalid headTrackingEnabled: %{public}s", token.c_str());
+    addressToSpatialEnabledMap_[address].headTrackingEnabled = convertValue;
     std::getline(ss, token, '|');
-    addressToSpatialDeviceStateMap_[address].isSpatializationSupported = std::stoi(token);
+    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue),
+        "convert invalid isSpatializationSupported: %{public}s", token.c_str());
+    addressToSpatialDeviceStateMap_[address].isSpatializationSupported = convertValue;
     std::getline(ss, token, '|');
-    addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported = std::stoi(token);
+    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue),
+        "convert invalid isHeadTrackingSupported: %{public}s", token.c_str());
+    addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported = convertValue;
     std::getline(ss, token, '|');
-    addressToSpatialDeviceStateMap_[address].spatialDeviceType = static_cast<AudioSpatialDeviceType>(std::stoi(token));
+    CHECK_AND_RETURN_LOG(StringConverter(token, convertValue),
+        "convert invalid spatialDeviceType: %{public}s", token.c_str());
+    addressToSpatialDeviceStateMap_[address].spatialDeviceType = static_cast<AudioSpatialDeviceType>(convertValue);
 }
 
 void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)

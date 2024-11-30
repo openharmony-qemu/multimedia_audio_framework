@@ -79,7 +79,10 @@ static vector<SoundCard> GetUsbSoundCards()
         if (file.length() <= card.length() || !(file.find(card, 0) == 0)) {continue;}
         string sIndex = file.substr(card.length());
         if (!IsNumericStr(sIndex)) {continue;}
-        SoundCard card = {.cardNum_ = stoi(sIndex)};
+        uint32_t convertIndex = 0;
+        CHECK_AND_RETURN_LOG(StringConvertor(sIndex, convertIndex),
+            "convert invalid sIndex: %{public}s", sIndex.c_str());
+        SoundCard card = {.cardNum_ = convertIndex};
         FillSoundCard(baseDir + "/" + file, card);
         if (card.usbBus_.empty()) {continue;}
         soundCards.push_back(card);
@@ -100,9 +103,12 @@ static UsbAddr GetUsbAddr(const SoundCard &card)
     size_t pos = card.usbBus_.find('/');
     CHECK_AND_RETURN_RET_LOG(pos != string::npos, {}, "Error Parameter: card.usbbus");
     string str = card.usbBus_.substr(0, pos);
-    uint8_t busNum = (uint8_t)stoi(str);
+    uint8_t busNum = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConvertor(str, busNum), {0,0},
+        "convert invalid busNum: %{public}s", str.c_str());
     str = card.usbBus_.substr(pos + 1);
-    uint8_t devAddr = (uint8_t)stoi(str);
+    CHECK_AND_RETURN_RET_LOG(StringConvertor(str, devAddr), {0,0},
+        "convert invalid devAddr: %{public}s", str.c_str());
     return {busNum, devAddr};
 }
 
