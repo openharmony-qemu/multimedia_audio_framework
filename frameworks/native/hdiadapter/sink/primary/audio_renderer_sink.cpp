@@ -1396,13 +1396,9 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
         address_end - address_begin - std::strlen("address="));
 
-    uint32_t sampleRateValue = 0;
-    uint32_t channelValue = 0;
-    StringParser(sampleRateStr, sampleRateValue);
-    StringParser(channeltStr, channelValue);
-
-    attr_.sampleRate = sampleRateValue;
-    attr_.channel = channelValue;
+    StringParser(sampleRateStr, attr_.sampleRate);
+    StringParser(channeltStr, attr_.channel);
+    
     attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {

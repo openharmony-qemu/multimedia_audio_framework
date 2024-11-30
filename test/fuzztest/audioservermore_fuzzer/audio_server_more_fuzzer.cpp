@@ -412,22 +412,6 @@ void AudioLoadAudioEffectLibrariesTest(const uint8_t* rawData, size_t size)
         data, reply, option);
 }
 
-void AudioCapturerInServerTestFirst(std::shared_ptr<CapturerInServer> capturerInServer)
-{
-    capturerInServer->Init();
-    capturerInServer->Start();
-    capturerInServer->ConfigServerBuffer();
-    capturerInServer->InitBufferStatus();
-    capturerInServer->UpdateReadIndex();
-    uint32_t sessionId;
-    capturerInServer->GetSessionId(sessionId);
-    capturerInServer->DrainAudioBuffer();
-    capturerInServer->Pause();
-    capturerInServer->Flush();
-    capturerInServer->Stop();
-    capturerInServer->Release();
-}
-
 void AudioCapturerInServerFuzzTest()
 {
     std::shared_ptr<CapturerInServer> capturerInServer = nullptr;
@@ -446,22 +430,21 @@ void AudioCapturerInServerFuzzTest()
     if (capturerInServer == nullptr) {
         return;
     }
-    uint32_t operation_int = GetData<uint32_t>();
-    operation_int = (operation_int%IOPERTAION_LENGTH) - 1;
-    IOperation operation = static_cast<IOperation>(operation_int);
+    uint32_t operationCode = GetData<uint32_t>();
+    operationCode = (operationCode % IOPERTAION_LENGTH) - 1;
+    IOperation operation = static_cast<IOperation>(operationCode);
     capturerInServer->OnStatusUpdate(operation);
     std::shared_ptr<OHAudioBuffer> buffer = nullptr;
     capturerInServer->ResolveBuffer(buffer);
     uint32_t sessionId = GetData<uint32_t>();
     capturerInServer->GetSessionId(sessionId);
-    AudioCapturerInServerTestFirst(capturerInServer);
 }
 
 void AudioRendererInServerTestFirst(std::shared_ptr<RendererInServer> renderer)
 {
-    uint32_t operation_int = GetData<uint32_t>();
-    operation_int = (operation_int%IOPERTAION_LENGTH) - 1;
-    IOperation operation = static_cast<IOperation>(operation_int);
+    uint32_t operationCode = GetData<uint32_t>();
+    operationCode = (operationCode % IOPERTAION_LENGTH) - 1;
+    IOperation operation = static_cast<IOperation>(operationCode);
     renderer->OnStatusUpdate(operation);
     renderer->HandleOperationFlushed();
     std::shared_ptr<OHAudioBuffer> buffer = nullptr;
@@ -516,9 +499,9 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     renderer->GetStreamManagerType();
     renderer->SetSilentModeAndMixWithOthers(isAppBack);
     renderer->SetClientVolume();
-    uint32_t operation_int = GetData<uint32_t>();
-    operation_int = (operation_int%IOPERTAION_LENGTH) - 1;
-    IOperation operation = static_cast<IOperation>(operation_int);
+    uint32_t operationCode = GetData<uint32_t>();
+    operationCode = (operationCode % IOPERTAION_LENGTH) - 1;
+    IOperation operation = static_cast<IOperation>(operationCode);
     renderer->OnDataLinkConnectionUpdate(operation);
     std::string dumpString = "";
     renderer->managerType_ = DIRECT_PLAYBACK;
