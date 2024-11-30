@@ -21,18 +21,53 @@
 #include "ipc_stream_in_server.h"
 #include "none_mix_engine.h"
 #include "ipc_stream.h"
+#include "securec.h"
+#include "audio_errors.h"
+#include "audio_log.h"
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t LIMITSIZE = 4;
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
 const uint64_t COMMON_LENGTH_NUM = 2;
-const uint32_t SOURCETYPE_ENUM_NUM = 18;
 const uint32_t OPERATION_ENUM_NUM = 13;
+const uint32_t SOURCETYPE_ENUM_NUM = 4;
 const uint32_t NUM = 1;
+static const uint8_t* RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
 
+/*
+* describe: get data from outside untrusted data(g_data) which size is according to sizeof(T)
+* tips: only support basic type
+*/
+template<class T>
+T GetData()
+{
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
+    }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
+
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
 
 static AudioProcessConfig InitProcessConfig()
 {
@@ -49,12 +84,8 @@ static AudioProcessConfig InitProcessConfig()
     return config;
 }
 
-void AudioServiceMoreFuzzTest(const uint8_t* rawData, size_t size)
+void AudioServiceMoreFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     AudioProcessConfig config;
     config.appInfo.appUid = DEFAULT_STREAM_ID;
     config.appInfo.appPid = DEFAULT_STREAM_ID;
@@ -73,7 +104,7 @@ void AudioServiceMoreFuzzTest(const uint8_t* rawData, size_t size)
     audioProcessInServer->Release(true);
     audioProcessInServer->Release(false);
 
-    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t sessionId = GetData<uint32_t>();
     AudioPlaybackCaptureConfig newConfig;
     audioServicePtr->UpdateMuteControlSet(sessionId, true);
     audioServicePtr->UpdateMuteControlSet(sessionId, false);
@@ -81,8 +112,8 @@ void AudioServiceMoreFuzzTest(const uint8_t* rawData, size_t size)
     audioServicePtr->OnCapturerFilterChange(sessionId, newConfig);
     audioServicePtr->OnCapturerFilterRemove(sessionId);
 
-    int32_t ret = 0;
-    audioServicePtr->workingInnerCapId_ = *reinterpret_cast<const uint32_t*>(rawData);
+    int32_t ret = GetData<int32_t>();
+    audioServicePtr->workingInnerCapId_ = GetData<uint32_t>();
     audioServicePtr->GetIpcStream(config, ret);
     audioServicePtr->ShouldBeInnerCap(config);
     audioServicePtr->ShouldBeDualTone(config);
@@ -91,18 +122,14 @@ void AudioServiceMoreFuzzTest(const uint8_t* rawData, size_t size)
     audioServicePtr->OnUpdateInnerCapList();
     audioServicePtr->ResetAudioEndpoint();
 
-    uint32_t sourceType_int = *reinterpret_cast<const uint32_t*>(rawData);
-    sourceType_int = (sourceType_int % SOURCETYPE_ENUM_NUM) - NUM;
-    SourceType sourceType = static_cast<SourceType>(sourceType_int);
+    uint32_t sourceTypeInt = GetData<uint32_t>();
+    sourceTypeInt = (sourceTypeInt % SOURCETYPE_ENUM_NUM) - NUM;
+    SourceType sourceType = static_cast<SourceType>(sourceTypeInt);
     audioServicePtr->UpdateSourceType(sourceType);
 }
 
-void AudioCapturerInServerMoreFuzzTest(const uint8_t* rawData, size_t size)
+void AudioCapturerInServerMoreFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     AudioProcessConfig config = InitProcessConfig();
     std::weak_ptr<IStreamListener> innerListener;
     std::shared_ptr<CapturerInServer> capturerInServer = std::make_shared<CapturerInServer>(config, innerListener);
@@ -110,9 +137,9 @@ void AudioCapturerInServerMoreFuzzTest(const uint8_t* rawData, size_t size)
         return;
     }
 
-    uint32_t operation_int = *reinterpret_cast<const uint32_t*>(rawData);
-    operation_int = (operation_int % OPERATION_ENUM_NUM) - NUM;
-    IOperation operation = static_cast<IOperation>(operation_int);
+    uint32_t operationInt = GetData<uint32_t>();
+    operationInt = (operationInt % OPERATION_ENUM_NUM) - NUM;
+    IOperation operation = static_cast<IOperation>(operationInt);
     capturerInServer->OnStatusUpdate(operation);
 
     size_t length = COMMON_LENGTH_NUM;
@@ -124,12 +151,8 @@ void AudioCapturerInServerMoreFuzzTest(const uint8_t* rawData, size_t size)
     capturerInServer->RestoreSession();
 }
 
-void AudioNoneMixEngineMoreFuzzTest(const uint8_t* rawData, size_t size)
+void AudioNoneMixEngineMoreFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     std::shared_ptr<NoneMixEngine> noneMixEngine = std::make_shared<NoneMixEngine>();
     noneMixEngine->isInit_ = true;
     AudioDeviceDescriptor type(AudioDeviceDescriptor::DEVICE_INFO);
@@ -144,15 +167,19 @@ void AudioNoneMixEngineMoreFuzzTest(const uint8_t* rawData, size_t size)
     noneMixEngine->MixStreams();
     noneMixEngine->IsPlaybackEngineRunning();
     noneMixEngine->StandbySleep();
-    noneMixEngine->GetDirectVoipSampleRate(AudioSamplingRate::SAMPLE_RATE_16000);
+
+    std::vector<AudioSamplingRate> audioSamplingRate = {
+        SAMPLE_RATE_16000,
+        SAMPLE_RATE_48000,
+    };
+    uint32_t sourceTypeInt = GetData<uint32_t>();
+    sourceTypeInt = sourceTypeInt % audioSamplingRate.size();
+    AudioSamplingRate samplingRate = audioSamplingRate[sourceTypeInt];
+    noneMixEngine->GetDirectVoipSampleRate(samplingRate);
 }
 
-void AudioIpcStreamStubListenerFuzzTest(const uint8_t* rawData, size_t size)
+void AudioIpcStreamStubFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     AudioProcessConfig config = InitProcessConfig();
     int32_t ret = 0;
     sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
@@ -162,342 +189,37 @@ void AudioIpcStreamStubListenerFuzzTest(const uint8_t* rawData, size_t size)
 
     MessageParcel data;
     data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
+    data.WriteBuffer(RAW_DATA, g_dataSize);
     data.RewindRead(0);
     MessageParcel reply;
     MessageOption option;
 
-    ipcStream->OnRemoteRequest(IpcStream::ON_REGISTER_STREAM_LISTENER, data, reply, option);
+    std::vector<IpcStream::IpcStreamMsg> ipcStreamType = {
+        IpcStream::ON_REGISTER_STREAM_LISTENER,
+        IpcStream::ON_RESOLVE_BUFFER,
+        IpcStream::ON_UPDATE_POSITION,
+        IpcStream::ON_GET_AUDIO_SESSIONID,
+        IpcStream::ON_START,
+        IpcStream::ON_PAUSE,
+        IpcStream::ON_STOP,
+        IpcStream::ON_RELEASE,
+        IpcStream::ON_FLUSH,
+        IpcStream::ON_DRAIN,
+        IpcStream::ON_UPDATA_PLAYBACK_CAPTURER_CONFIG,
+        IpcStream::OH_GET_AUDIO_TIME,
+        IpcStream::OH_GET_AUDIO_POSITION,
+        IpcStream::ON_GET_LATENCY,
+        IpcStream::ON_SET_RATE,
+        IpcStream::ON_GET_RATE,
+    };
+    uint32_t sourceTypeInt = GetData<uint32_t>();
+    sourceTypeInt = sourceTypeInt % ipcStreamType.size();
+    IpcStream::IpcStreamMsg StreamType = ipcStreamType[sourceTypeInt];
+    ipcStream->OnRemoteRequest(StreamType, data, reply, option);
 }
 
-void AudioIpcStreamStubBufferFuzzTest(const uint8_t* rawData, size_t size)
+void AudioIpcStreamStubOnMiddleCodeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_RESOLVE_BUFFER, data, reply, option);
-}
-
-void AudioIpcStreamStubPositionFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_UPDATE_POSITION, data, reply, option);
-}
-
-void AudioIpcStreamStubSessionidFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_GET_AUDIO_SESSIONID, data, reply, option);
-}
-
-void AudioIpcStreamStubStartFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_START, data, reply, option);
-}
-
-void AudioIpcStreamStubPauseFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_PAUSE, data, reply, option);
-}
-
-void AudioIpcStreamStubStopFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_STOP, data, reply, option);
-}
-
-void AudioIpcStreamStubReleaseFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_RELEASE, data, reply, option);
-}
-
-void AudioIpcStreamStubFlushFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_FLUSH, data, reply, option);
-}
-
-void AudioIpcStreamStubDrainFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_DRAIN, data, reply, option);
-}
-
-void AudioIpcStreamStubConfigFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_UPDATA_PLAYBACK_CAPTURER_CONFIG, data, reply, option);
-}
-
-void AudioIpcStreamStubTimeFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::OH_GET_AUDIO_TIME, data, reply, option);
-}
-
-void AudioIpcStreamStubAudioPositionFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::OH_GET_AUDIO_POSITION, data, reply, option);
-}
-
-void AudioIpcStreamStubLatencyFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_GET_LATENCY, data, reply, option);
-}
-
-void AudioIpcStreamStubRateFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnRemoteRequest(IpcStream::ON_SET_RATE, data, reply, option);
-}
-
-void AudioIpcStreamStubGetRateFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     AudioProcessConfig config = InitProcessConfig();
     int32_t ret = 0;
     sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
@@ -507,423 +229,75 @@ void AudioIpcStreamStubGetRateFuzzTest(const uint8_t* rawData, size_t size)
 
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
+    data.WriteBuffer(RAW_DATA, g_dataSize);
     data.RewindRead(0);
     MessageParcel reply;
     MessageOption option;
 
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_GET_RATE, data, reply, option);
+    std::vector<IpcStream::IpcStreamMsg> ipcStreamType = {
+        IpcStream::ON_SET_LOWPOWER_VOLUME,
+        IpcStream::ON_GET_LOWPOWER_VOLUME,
+        IpcStream::ON_SET_EFFECT_MODE,
+        IpcStream::ON_GET_EFFECT_MODE,
+        IpcStream::ON_SET_PRIVACY_TYPE,
+        IpcStream::ON_GET_PRIVACY_TYPE,
+        IpcStream::ON_SET_OFFLOAD_MODE,
+        IpcStream::ON_UNSET_OFFLOAD_MODE,
+        IpcStream::ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME,
+        IpcStream::ON_UPDATE_SPATIALIZATION_STATE,
+        IpcStream::ON_GET_STREAM_MANAGER_TYPE,
+        IpcStream::ON_SET_SILENT_MODE_AND_MIX_WITH_OTHERS,
+        IpcStream::ON_SET_CLIENT_VOLUME,
+        IpcStream::ON_SET_MUTE,
+        IpcStream::ON_REGISTER_THREAD_PRIORITY,
+    };
+    uint32_t sourceTypeInt = GetData<uint32_t>();
+    sourceTypeInt = sourceTypeInt % ipcStreamType.size();
+    IpcStream::IpcStreamMsg StreamType = ipcStreamType[sourceTypeInt];
+    ipcStream->OnMiddleCodeRemoteRequest(StreamType, data, reply, option);
 }
 
-void AudioIpcStreamStubSetVolumeFuzzTest(const uint8_t* rawData, size_t size)
+typedef void (*TestFuncs[5])();
+
+TestFuncs g_testFuncs = {
+    AudioServiceMoreFuzzTest,
+    AudioCapturerInServerMoreFuzzTest,
+    AudioNoneMixEngineMoreFuzzTest,
+    AudioIpcStreamStubFuzzTest,
+    AudioIpcStreamStubOnMiddleCodeFuzzTest,
+};
+
+bool FuzzTest(const uint8_t* rawData, size_t size)
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
+    if (rawData == nullptr) {
+        return false;
     }
 
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
+    // initialize data
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
 
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_LOWPOWER_VOLUME, data, reply, option);
+    return true;
 }
-
-void AudioIpcStreamStubGetVolumeFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_GET_LOWPOWER_VOLUME, data, reply, option);
-}
-
-void AudioIpcStreamStubSetModeFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_EFFECT_MODE, data, reply, option);
-}
-
-void AudioIpcStreamStubGetModeFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_GET_EFFECT_MODE, data, reply, option);
-}
-
-void AudioIpcStreamStubSetTypeFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_PRIVACY_TYPE, data, reply, option);
-}
-
-void AudioIpcStreamStubGetTypeFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_GET_PRIVACY_TYPE, data, reply, option);
-}
-
-void AudioIpcStreamStubSetOffloadFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_OFFLOAD_MODE, data, reply, option);
-}
-
-void AudioIpcStreamStubUnsetOffloadFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_UNSET_OFFLOAD_MODE, data, reply, option);
-}
-
-void AudioIpcStreamStubGetCacheFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME, data, reply, option);
-}
-
-void AudioIpcStreamStubUpdateStateFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_UPDATE_SPATIALIZATION_STATE, data, reply, option);
-}
-
-void AudioIpcStreamStubGetManagerFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_GET_STREAM_MANAGER_TYPE, data, reply, option);
-}
-
-void AudioIpcStreamStubSetOthersFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_SILENT_MODE_AND_MIX_WITH_OTHERS, data, reply, option);
-}
-
-void AudioIpcStreamStubSetClientFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_CLIENT_VOLUME, data, reply, option);
-}
-
-void AudioIpcStreamStubSetMuteFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_MUTE, data, reply, option);
-}
-
-void AudioIpcStreamStubSetDuckFactorFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_SET_DUCK_FACTOR, data, reply, option);
-}
-
-void AudioIpcStreamStubRegisterFuzzTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    ipcStream->OnMiddleCodeRemoteRequest(IpcStream::ON_REGISTER_THREAD_PRIORITY, data, reply, option);
-}
-
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *rawData, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    /* Run your code on data */
-    OHOS::AudioStandard::AudioServiceMoreFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioCapturerInServerMoreFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioNoneMixEngineMoreFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubListenerFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubBufferFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubPositionFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSessionidFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubStartFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubPauseFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubStopFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubReleaseFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubFlushFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubDrainFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubConfigFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubTimeFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubAudioPositionFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubLatencyFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubRateFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubGetRateFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSetVolumeFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubGetVolumeFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSetModeFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubGetModeFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSetTypeFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubGetTypeFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSetOffloadFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubUnsetOffloadFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubGetCacheFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubUpdateStateFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubGetManagerFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSetOthersFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSetClientFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSetMuteFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubSetDuckFactorFuzzTest(rawData, size);
-    OHOS::AudioStandard::AudioIpcStreamStubRegisterFuzzTest(rawData, size);
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
 }
