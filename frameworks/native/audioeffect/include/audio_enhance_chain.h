@@ -94,6 +94,7 @@ public:
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
     bool IsDefaultChain();
     int32_t SetInputDevice(const std::string &inputDevice, const std::string &deviceName);
+    int32_t InitCommand();
 
 private:
     void InitAudioEnhanceChain();

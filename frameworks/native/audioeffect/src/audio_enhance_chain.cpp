@@ -420,5 +420,20 @@ bool AudioEnhanceChain::IsDefaultChain()
 {
     return defaultFlag_;
 }
+
+int32_t AudioEnhanceChain::InitCommand()
+{
+    std::lock_guard<std::mutex> lock(chainMutex_);
+    uint32_t size = standByEnhanceHandles_.size();
+    AudioEffectTransInfo cmdInfo{};
+    AudioEffectTransInfo replyInfo{};
+    for (uint32_t index = 0; index < size; index++) {
+        auto &handle = standByEnhanceHandles_[index];
+        CHECK_AND_RETURN_RET_LOG(
+            (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo) == SUCCESS, ERROR,
+            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
+    }
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
