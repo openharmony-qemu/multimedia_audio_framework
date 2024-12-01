@@ -43,6 +43,7 @@
     *Dump*;
     *CleanAppUseNumMap*;
     *GetSharedVolume*;
+    *HasBluetoothEndpoint*;
   local:
     *;
 };
