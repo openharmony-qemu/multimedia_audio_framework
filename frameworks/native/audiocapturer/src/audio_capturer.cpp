@@ -139,7 +139,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.originalFlag = ((sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) &&
-        (capturerOptions.capturer.capturerFlags == AUDIO_FLAG_MMAP)) ?
+        (capturerOptions.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP)) ?
         AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
