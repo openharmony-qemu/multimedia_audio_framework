@@ -238,7 +238,7 @@ template <typename...Args>
 void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
 {
     char buf[STRING_BUFFER_SIZE] = {0};
-    int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
+    int len = ::sprintf_s(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
     if (len <= 0) {
         return;
     }
