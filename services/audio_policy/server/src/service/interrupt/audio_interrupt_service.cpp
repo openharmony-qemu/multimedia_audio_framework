@@ -1111,6 +1111,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         targetZoneIt->second->zoneId = zoneId;
     }
 
+    std::list<int32_t> removeFocusInfoPidList = {};
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
         AudioFocusEntry focusEntry =
             focusCfgMap_[std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType)];
@@ -1134,18 +1135,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         bool removeFocusInfo = false;
         ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt, removeFocusInfo, interruptEvent);
         if (removeFocusInfo) {
-            // execute remove from list, iter move to next by erase
-            int32_t pidToRemove = (iterActive->first).pid;
-            uint32_t streamId = (iterActive->first).sessionId;
-            auto pidIt = targetZoneIt->second->pids.find(pidToRemove);
-            if (pidIt != targetZoneIt->second->pids.end()) {
-                targetZoneIt->second->pids.erase(pidIt);
-            }
-            iterActive = tmpFocusInfoList.erase(iterActive);
-            targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
-            if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pidToRemove)) {
-                HandleLowPriorityEvent(pidToRemove, streamId);
-            }
+            RemoveFocusInfo(iterActive, tmpFocusInfoList, targetZoneIt->second, removeFocusInfoPidList);
         } else {
             ++iterActive;
         }
@@ -1155,18 +1145,44 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
 
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
     zonesMap_[zoneId] = targetZoneIt->second;
+    for (auto pid : removeFocusInfoPidList) {
+        RemovePlaceholderInterruptForSession(pid);
+    }
 }
 
-void AudioInterruptService::HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId)
+void AudioInterruptService::RemoveFocusInfo(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList,
+    std::shared_ptr<AudioInterruptZone> &zoneInfo,
+    std::list<int32_t> &removeFocusInfoPidList)
 {
+    int32_t pidToRemove = (iterActive->first).pid;
+    uint32_t streamId = (iterActive->first).sessionId;
+    auto pidIt = zoneInfo->pids.find(pidToRemove);
+    if (pidIt != zoneInfo->pids.end()) {
+        zoneInfo->pids.erase(pidIt);
+    }
+    iterActive = tmpFocusInfoList.erase(iterActive);
+    zoneInfo->audioFocusInfoList = tmpFocusInfoList;
+    bool isAudioSessionDeactivated = false;
+    if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pidToRemove)) {
+        isAudioSessionDeactivated = HandleLowPriorityEvent(pidToRemove, streamId);
+    }
+    if (isAudioSessionDeactivated) {
+        removeFocusInfoPidList.push_back(pidToRemove);
+    }
+}
+
+bool AudioInterruptService::HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId)
+{
+    // If AudioSession is deactivated, return true, otherwise, return false.
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
-        return;
+        return false;
     }
     auto audioSession = sessionService_->GetAudioSessionByPid(pid);
     if (audioSession == nullptr) {
         AUDIO_ERR_LOG("audioSession is nullptr!");
-        return;
+        return false;
     }
 
     audioSession->RemoveAudioInterrptByStreamId(streamId);
@@ -1181,7 +1197,9 @@ void AudioInterruptService::HandleLowPriorityEvent(const int32_t pid, const uint
             AUDIO_INFO_LOG("AudioSessionService::handler_ is not null. Send event!");
             handler_->SendAudioSessionDeactiveCallback(sessionDeactivePair);
         }
+        return true;
     }
+    return false;
 }
 
 void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeSessionId,
