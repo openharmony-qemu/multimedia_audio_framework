@@ -70,6 +70,7 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 constexpr uint32_t BIT_TO_BYTES = 8;
 constexpr int64_t STAMP_THRESHOLD_MS = 20;
+const char *BLUETOOTH_CANCEL_SUSPEND = "A2dpSuspended=0;";
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
@@ -260,10 +261,27 @@ void BluetoothRendererSinkInner::SetAudioParameter(const AudioParamKey key, cons
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("SetAudioParameter for render failed, audioRender_ is null");
         return;
-    } else {
-        int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
-        if (ret != SUCCESS) {
-            AUDIO_WARNING_LOG("SetAudioParameter for render failed, error code: %d", ret);
+    }
+
+    int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("SetAudioParameter for render failed, error code: %d", ret);
+    }
+
+    if (started_ && isBluetoothLowLatency_ && !strcmp(value.c_str(), BLUETOOTH_CANCEL_SUSPEND)) {
+        int32_t tryCount = 3; // try to start bluetooth render up to 3 times;
+        while (tryCount-- > 0) {
+            AUDIO_INFO_LOG("Try to start bluetooth render");
+            CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "Bluetooth renderer is nullptr");
+            ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+            if (ret == SUCCESS) {
+                AUDIO_INFO_LOG("Start Fast Success");
+                CheckBluetoothScenario();
+                return;
+            } else {
+                AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
+                usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
+            }
         }
     }
 }

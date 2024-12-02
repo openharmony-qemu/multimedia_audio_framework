@@ -1029,6 +1029,15 @@ void AudioService::CleanAppUseNumMap(int32_t appUid)
     }
 }
 
+bool AudioService::HasBluetoothEndpoint()
+{
+    std::lock_guard<std::mutex> lock(processListMutex_);
+    return std::any_of(linkedPairedList_.begin(), linkedPairedList_.end(),
+        [](const auto & linkPair) {
+            return linkPair.second->GetDeviceInfo().getType() == DEVICE_TYPE_BLUETOOTH_A2DP;
+        });
+}
+
 int32_t AudioService::GetCurrentRendererStreamCnt()
 {
     return currentRendererStreamCnt_;
