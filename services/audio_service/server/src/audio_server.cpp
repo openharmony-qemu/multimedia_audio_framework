@@ -54,6 +54,7 @@
 #include "playback_capturer_manager.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
+#include "offline_stream_in_server.h"
 
 #define PA
 #ifdef PA
@@ -2005,6 +2006,24 @@ int32_t AudioServer::UnsetOffloadMode(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
         callingUid);
     return AudioService::GetInstance()->UnsetOffloadMode(sessionId);
+}
+
+sptr<IRemoteObject> AudioServer::CreateIpcOfflineStream(int32_t &errorCode)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), nullptr, "refused for %{public}d", callingUid);
+    sptr<OfflineStreamInServer> stream = OfflineStreamInServer::GetOfflineStream(errorCode);
+    CHECK_AND_RETURN_RET_LOG(stream, nullptr, "Create IpcOfflineStream failed.");
+    sptr<IRemoteObject> remoteObject = stream->AsObject();
+    return remoteObject;
+}
+
+int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effectChains)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "refused for %{public}d", callingUid);
+    return OfflineStreamInServer::GetOfflineAudioEffectChains(effectChains);
 }
 } // namespace AudioStandard
 } // namespace OHOS
