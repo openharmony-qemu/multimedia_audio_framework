@@ -110,6 +110,12 @@ private:
         RouterType &routerType);
     void DealRingRenderRouters(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         StreamUsage streamUsage, int32_t clientUID, RouterType &routerType);
+    shared_ptr<AudioDeviceDescriptor> FetchCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+        RouterType &routerType);
+    shared_ptr<AudioDeviceDescriptor> FetchRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+        RouterType &routerType);
+    shared_ptr<AudioDeviceDescriptor> FetchVoiceMessageCaptureDevice(SourceType sourceType, int32_t clientUID,
+        RouterType &routerType);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;
