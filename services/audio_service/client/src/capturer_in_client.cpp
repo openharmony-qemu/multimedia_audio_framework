@@ -1857,6 +1857,7 @@ void CapturerInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.eStreamType = eStreamType_;
     info.state = state_;
     info.sessionId = sessionId_;
+    info.captureMode = audioCaptureMode_;
     info.streamTrackerRegistered = streamTrackerRegistered_;
     GetStreamSwitchInfo(info);
 }

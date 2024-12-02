@@ -1138,7 +1138,7 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         IAudioStream::SwitchInfo info;
         audioStream_->GetSwitchInfo(info);
         info.params.originalSessionId = sessionID_;
-        info.captureMode = audioCaptureMode_;
+   
 
         // release old stream and restart audio stream
         switchResult = audioStream_->ReleaseAudioStream();
