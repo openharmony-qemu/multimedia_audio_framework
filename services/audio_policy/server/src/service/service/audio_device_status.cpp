@@ -100,6 +100,12 @@ void AudioDeviceStatus::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpO
     audioPolicyServerHandler_ = handler;
 }
 
+void AudioDeviceStatus::DeInit()
+{
+    audioA2dpOffloadManager_ = nullptr;
+    audioPolicyServerHandler_ = nullptr;
+}
+
 void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role)
 {
@@ -581,7 +587,10 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
     // only for the active a2dp device.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
-        auto activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
+        int32_t activeSessionsSize = 0;
+        if (audioA2dpOffloadManager_) {
+            activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
+        }
         AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag: %{public}d",
             streamInfo.samplingRate, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
         if (!IsConfigurationUpdated(deviceType, streamInfo) ||

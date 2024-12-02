@@ -62,6 +62,7 @@ public:
         return instance;
     }
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
+    void DeInit();
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(

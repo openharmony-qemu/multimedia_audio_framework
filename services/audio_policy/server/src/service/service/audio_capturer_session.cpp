@@ -80,6 +80,11 @@ void AudioCapturerSession::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2
     audioA2dpOffloadManager_ = audioA2dpOffloadManager;
 }
 
+void AudioCapturerSession::DeInit()
+{
+    audioA2dpOffloadManager_ = nullptr;
+}
+
 void AudioCapturerSession::SetConfigParserFlag()
 {
     isPolicyConfigParsered_ = true;

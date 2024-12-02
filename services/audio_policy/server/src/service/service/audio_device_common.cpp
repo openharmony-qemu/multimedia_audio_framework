@@ -82,6 +82,11 @@ void AudioDeviceCommon::Init(std::shared_ptr<AudioPolicyServerHandler> handler)
     audioPolicyServerHandler_ = handler;
 }
 
+void AudioDeviceCommon::DeInit()
+{
+    audioPolicyServerHandler_ = nullptr;
+}
+
 bool AudioDeviceCommon::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType)
 {
     switch (deviceType) {

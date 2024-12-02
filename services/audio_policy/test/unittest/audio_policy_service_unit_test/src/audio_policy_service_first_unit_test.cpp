@@ -2230,6 +2230,9 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnDeviceConfigurationChanged_001, TestSize.
     audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.Init(
+        GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_,
+        GetServerPtr()->audioPolicyService_.audioPolicyServerHandler_);
     // clear activeBTDevice_ and connectedA2dpDeviceMap_
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_ = "";
     GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.clear();

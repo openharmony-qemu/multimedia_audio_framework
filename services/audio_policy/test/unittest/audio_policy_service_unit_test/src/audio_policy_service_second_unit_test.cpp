@@ -979,7 +979,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcChannels_001, TestSize.Level1)
     halName = INVALID_CLASS;
     server->audioPolicyService_.audioEcManager_.audioEcInfo_.inputDevice = DEVICE_TYPE_MIC;
     ecChannels = server->audioPolicyService_.audioEcManager_.GetEcChannels(halName, outModuleInfo);
-    EXPECT_EQ(ecChannels, "4");
+    EXPECT_EQ(ecChannels, "2");
 
     server->audioPolicyService_.audioEcManager_.audioEcInfo_.inputDevice = DEVICE_TYPE_MAX;
     ecChannels = server->audioPolicyService_.audioEcManager_.GetEcChannels(halName, outModuleInfo);

@@ -47,6 +47,7 @@ public:
         return instance;
     }
     void Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager);
+    void DeInit();
     void RecoveryPreferredDevices();
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

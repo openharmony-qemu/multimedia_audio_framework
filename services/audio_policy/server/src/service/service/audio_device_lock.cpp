@@ -55,6 +55,11 @@ void AudioDeviceLock::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOff
     audioA2dpOffloadManager_ = audioA2dpOffloadManager;
 }
 
+void AudioDeviceLock::DeInit()
+{
+    audioA2dpOffloadManager_ = nullptr;
+}
+
 int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);

@@ -61,6 +61,7 @@ public:
     }
     void Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager);
     int32_t SetAudioScene(AudioScene audioScene);
+    void DeInit();
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     int32_t SetDeviceActive(DeviceType deviceType, bool active);

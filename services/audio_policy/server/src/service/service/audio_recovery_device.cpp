@@ -50,6 +50,11 @@ void AudioRecoveryDevice::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2d
     audioA2dpOffloadManager_ = audioA2dpOffloadManager;
 }
 
+void AudioRecoveryDevice::DeInit()
+{
+    audioA2dpOffloadManager_ = nullptr;
+}
+
 void AudioRecoveryDevice::RecoveryPreferredDevices()
 {
     AUDIO_DEBUG_LOG("Start recovery peferred devices.");

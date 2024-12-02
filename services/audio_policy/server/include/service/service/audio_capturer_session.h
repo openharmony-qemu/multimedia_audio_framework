@@ -55,6 +55,7 @@ public:
         return instance;
     }
     void Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager);
+    void DeInit();
     void SetConfigParserFlag();
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
     void OnCapturerSessionRemoved(uint64_t sessionID);

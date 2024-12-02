@@ -114,6 +114,7 @@ void AudioVolumeManager::DeInit(void)
         safeVolumeDialogThrd_.reset();
         safeVolumeDialogThrd_ = nullptr;
     }
+    audioPolicyServerHandler_ = nullptr;
 }
 
 int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType) const

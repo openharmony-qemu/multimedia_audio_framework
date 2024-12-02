@@ -250,6 +250,11 @@ void AudioPolicyService::Deinit(void)
         RecoveryDevicesThread_ = nullptr;
     }
 
+    audioDeviceCommon_.DeInit();
+    audioRecoveryDevice_.DeInit();
+    audioDeviceStatus_.DeInit();
+    audioDeviceLock_.DeInit();
+    audioCapturerSession_.DeInit();
     return;
 }
 

@@ -62,6 +62,7 @@ public:
     }
     void Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager,
         std::shared_ptr<AudioPolicyServerHandler> handler);
+    void DeInit();
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE);
