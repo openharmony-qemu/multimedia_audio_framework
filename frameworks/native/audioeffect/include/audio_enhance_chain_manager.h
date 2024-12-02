@@ -61,6 +61,7 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE);
     void ResetInfo();  // use for unit test
     int32_t ApplyAudioEnhanceChainDefault(const uint32_t captureId, uint32_t length);
+    int32_t SendInitCommand();
 
 private:
     int32_t AddAudioEnhanceChainHandles(std::shared_ptr<AudioEnhanceChain> &audioEnhanceChain,
