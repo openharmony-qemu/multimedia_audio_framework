@@ -33,6 +33,7 @@ ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
+    "-fno-access-control",
   ]
 
   sources = [ "audio_service_server_src_fuzzer.cpp" ]
@@ -67,11 +68,6 @@ ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  defines = []
-  if (use_libfuzzer || use_clang_coverage) {
-    defines += [ "TEST_COVERAGE" ]
-  }
 }
 
 group("fuzztest") {
