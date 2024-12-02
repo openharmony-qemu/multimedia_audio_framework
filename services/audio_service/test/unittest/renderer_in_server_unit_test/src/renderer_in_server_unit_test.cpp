@@ -2539,56 +2539,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerUnsetOffloadMode_003, TestSiz
 }
 
 /**
- * @tc.name  : Test OffloadSetVolume API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerOffloadSetVolume_001
- * @tc.desc  : Test OffloadSetVolume interface, volume is OUT_OF_MAX_FLOAT_VOLUME.
- */
-HWTEST_F(RendererInServerUnitTest, RendererInServerOffloadSetVolume_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-
-    float volume = OUT_OF_MAX_FLOAT_VOLUME;
-    int32_t ret = rendererInServer->OffloadSetVolume(volume);
-
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-}
-
-/**
- * @tc.name  : Test OffloadSetVolume API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerOffloadSetVolume_002
- * @tc.desc  : Test OffloadSetVolume interface, volume is OUT_OF_MIN_FLOAT_VOLUME.
- */
-HWTEST_F(RendererInServerUnitTest, RendererInServerOffloadSetVolume_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-
-    float volume = OUT_OF_MIN_FLOAT_VOLUME;
-    int32_t ret = rendererInServer->OffloadSetVolume(volume);
-
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-}
-
-/**
- * @tc.name  : Test OffloadSetVolume API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerOffloadSetVolume_003
- * @tc.desc  : Test OffloadSetVolume interface, volume is MAX_FLOAT_VOLUME.
- */
-HWTEST_F(RendererInServerUnitTest, RendererInServerOffloadSetVolume_003, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-
-    rendererInServer->managerType_ = DIRECT_PLAYBACK;
-    rendererInServer->Init();
-    float volume = MAX_FLOAT_VOLUME;
-    int32_t ret = rendererInServer->OffloadSetVolume(volume);
-
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
-}
-
-/**
  * @tc.name  : Test UpdateSpatializationState API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerUpdateSpatializationState_001
@@ -2658,9 +2608,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_001, TestSize
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    bool isStreamVolumeChange = true;
-    bool isMediaServiceAndOffloadEnable = true;
-    int32_t ret = rendererInServer->SetClientVolume(isStreamVolumeChange, isMediaServiceAndOffloadEnable);
+    int32_t ret = rendererInServer->SetClientVolume();
 
     EXPECT_EQ(ERROR, ret);
 }
@@ -2669,8 +2617,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_001, TestSize
  * @tc.name  : Test SetClientVolume API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerSetClientVolume_002
- * @tc.desc  : Test SetClientVolume interface. Set audioServerBuffer_ is not nullptr, isStreamVolumeChange is true,
- *             isMediaServiceAndOffloadEnable is false.
+ * @tc.desc  : Test SetClientVolume interface. Set audioServerBuffer_ is not nullptr.
  */
 HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_002, TestSize.Level1)
 {
@@ -2680,41 +2627,38 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_002, TestSize
     rendererInServer->Init();
     rendererInServer->ConfigServerBuffer();
 
-    bool isStreamVolumeChange = true;
-    bool isMediaServiceAndOffloadEnable = false;
-    int32_t ret = rendererInServer->SetClientVolume(isStreamVolumeChange, isMediaServiceAndOffloadEnable);
+    int32_t ret = rendererInServer->SetClientVolume();
 
     EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
- * @tc.name  : Test SetClientVolume API
+ * @tc.name  : Test SetMute API
  * @tc.type  : FUNC
- * @tc.number: RendererInServerSetClientVolume_003
- * @tc.desc  : Test SetClientVolume interface. Set audioServerBuffer_ is not nullptr, isStreamVolumeChange is false,
- *             isMediaServiceAndOffloadEnable is true.
- */
-HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_003, TestSize.Level1)
+ * @tc.number: RendererInServerSetMute_001
+ * @tc.desc  : Test SetMute interface.
+*/
+HWTEST_F(RendererInServerUnitTest, RendererInServerSetMute_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->managerType_ = DIRECT_PLAYBACK;
-    rendererInServer->Init();
-    rendererInServer->ConfigServerBuffer();
-
-    bool isStreamVolumeChange = false;
-    bool isMediaServiceAndOffloadEnable = true;
-    int32_t ret = rendererInServer->SetClientVolume(isStreamVolumeChange, isMediaServiceAndOffloadEnable);
+    bool mute = true;
+    int32_t ret = rendererInServer->SetMute(mute);
     EXPECT_EQ(SUCCESS, ret);
+}
 
-    isStreamVolumeChange = false;
-    isMediaServiceAndOffloadEnable = false;
-    ret = rendererInServer->SetClientVolume(isStreamVolumeChange, isMediaServiceAndOffloadEnable);
-    EXPECT_EQ(SUCCESS, ret);
+/**
+ * @tc.name  : Test SetDuckFactor API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetDuckFactor_001
+ * @tc.desc  : Test SetDuckFactor interface.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerSetDuckFactor_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
 
-    isStreamVolumeChange = true;
-    isMediaServiceAndOffloadEnable = true;
-    ret = rendererInServer->SetClientVolume(isStreamVolumeChange, isMediaServiceAndOffloadEnable);
+    float duck = 0.2f;
+    int32_t ret = rendererInServer->SetDuckFactor(duck);
     EXPECT_EQ(SUCCESS, ret);
 }
 

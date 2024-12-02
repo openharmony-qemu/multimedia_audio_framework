@@ -617,7 +617,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
         }
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, descs, reason);
+        MuteSinkForSwtichBluetoothDevice(rendererChangeInfo, descs, reason);
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
@@ -722,6 +722,24 @@ void AudioDeviceCommon::MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendere
         rendererChangeInfo->sessionId);
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
     MuteSinkPort(oldSinkName, newSinkName, reason);
+}
+
+void AudioDeviceCommon::MuteSinkForSwtichGeneralDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+        outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO)) {
+        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+    }
+}
+
+void AudioDeviceCommon::MuteSinkForSwtichBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
+        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+    }
 }
 
 void AudioDeviceCommon::SetVoiceCallMuteForSwitchDevice()
@@ -857,6 +875,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         static_cast<int>(reason));
 
     DeviceType oldDevice = rendererChangeInfo->outputDeviceInfo.deviceType_;
+    auto oldRendererChangeInfo = std::make_shared<AudioRendererChangeInfo>(*rendererChangeInfo.get());
 
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo,
         std::make_shared<AudioDeviceDescriptor>(*outputDevices.front()), true, true);
@@ -865,6 +884,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
+    MuteSinkForSwtichGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
 
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     // MoveSinkInputByIndexOrName
@@ -1208,7 +1228,7 @@ void AudioDeviceCommon::HandleBluetoothInputDeviceFetched(std::shared_ptr<AudioD
     if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         BluetoothScoFetch(desc, capturerChangeInfos, sourceType);
     } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-        HandleA2dpInputDeviceFetched();
+        HandleA2dpInputDeviceFetched(desc);
     }
 }
 
@@ -1341,8 +1361,9 @@ std::vector<SourceOutput> AudioDeviceCommon::FilterSourceOutputs(int32_t session
     return targetSourceOutputs;
 }
 
-void AudioDeviceCommon::HandleA2dpInputDeviceFetched()
+void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
+    audioActiveDevice_.SetActiveBtInDeviceMac(desc->macAddress_);
     AudioStreamInfo audioStreamInfo = {};
     audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo);
 

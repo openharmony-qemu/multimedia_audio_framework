@@ -609,6 +609,7 @@ private:
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
+    void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);
 
     void InitPolicyDumpMap();
     void PolicyDataDump(std::string &dumpString);
@@ -634,6 +635,7 @@ private:
     std::mutex systemVolumeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
+    std::mutex subscribeVolumeKey_;
 
     SessionProcessor sessionProcessor_{
         [this] (const uint64_t sessionID, const int32_t zoneID) { this->ProcessSessionRemoved(sessionID, zoneID); },

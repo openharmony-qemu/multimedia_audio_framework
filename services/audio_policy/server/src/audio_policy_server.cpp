@@ -88,6 +88,42 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     }
 }
 
+static std::string TranslateKeyEvent(const int32_t keyType)
+{
+    string event = "KEYCODE_UNKNOWN";
+
+    if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) {
+        event = "KEYCODE_VOLUME_UP";
+    } else if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN) {
+        event = "KEYCODE_VOLUME_DOWN";
+    } else if (keyType == OHOS::MMI::KeyEvent::KEYCODE_MUTE) {
+        event = "KEYCODE_MUTE";
+    }
+    return event;
+}
+
+static uint32_t TranslateErrorCode(int32_t result)
+{
+    uint32_t resultForMonitor = 0;
+    switch (result) {
+        case ERR_INVALID_PARAM:
+            resultForMonitor = ERR_SUBSCRIBE_INVALID_PARAM;
+            break;
+        case ERR_NULL_POINTER:
+            resultForMonitor = ERR_SUBSCRIBE_KEY_OPTION_NULL;
+            break;
+        case ERR_MMI_CREATION:
+            resultForMonitor = ERR_SUBSCRIBE_MMI_NULL;
+            break;
+        case ERR_MMI_SUBSCRIBE:
+            resultForMonitor = ERR_MODE_SUBSCRIBE;
+            break;
+        default:
+            break;
+    }
+    return resultForMonitor;
+}
+
 void AudioPolicyServer::OnDump()
 {
     return;
@@ -302,11 +338,11 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
 
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_MMI_CREATION, "Failed to obtain INPUT manager");
 
     std::set<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_RET_LOG(keyOption != nullptr, ERR_INVALID_PARAM, "Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOption != nullptr, ERR_NULL_POINTER, "Invalid key option");
     WatchTimeout guard("keyOption->SetPreKeys:RegisterVolumeKeyEvents");
     keyOption->SetPreKeys(preKeys);
     keyOption->SetFinalKey(keyType);
@@ -341,8 +377,8 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, true);
     });
     if (keySubId < 0) {
-        AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume key: %{public}s option failed",
-            (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
+        AUDIO_ERR_LOG("key: %{public}s failed", (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
+        return ERR_MMI_SUBSCRIBE;
     }
     return keySubId;
 }
@@ -353,10 +389,10 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 {
     AUDIO_INFO_LOG("RegisterVolumeKeyMuteEvents: volume key: mute");
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_MMI_CREATION, "Failed to obtain INPUT manager");
 
     std::shared_ptr<OHOS::MMI::KeyOption> keyOptionMute = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_RET_LOG(keyOptionMute != nullptr, ERR_INVALID_PARAM, "keyOptionMute: Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOptionMute != nullptr, ERR_NULL_POINTER, "keyOptionMute: Invalid key option");
     std::set<int32_t> preKeys;
     WatchTimeout guard("keyOption->SetPreKeys:RegisterVolumeKeyMuteEvents");
     keyOptionMute->SetPreKeys(preKeys);
@@ -381,6 +417,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
         });
     if (muteKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
+        return ERR_MMI_SUBSCRIBE;
     }
     return muteKeySubId;
 }
@@ -389,6 +426,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 void AudioPolicyServer::SubscribeVolumeKeyEvents()
 {
+    std::lock_guard<std::mutex> lock(subscribeVolumeKey_);
     if (hasSubscribedVolumeKeyEvents_.load()) {
         AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: volume key events has been sunscirbed!");
         return;
@@ -396,8 +434,11 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
 
     AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: first time.");
     int32_t resultOfVolumeUp = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    SendMonitrtEvent(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, resultOfVolumeUp);
     int32_t resultOfVolumeDown = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    SendMonitrtEvent(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN, resultOfVolumeDown);
     int32_t resultOfMute = RegisterVolumeKeyMuteEvents();
+    SendMonitrtEvent(OHOS::MMI::KeyEvent::KEYCODE_MUTE, resultOfMute);
     if (resultOfVolumeUp >= 0 && resultOfVolumeDown >= 0 && resultOfMute >= 0) {
         hasSubscribedVolumeKeyEvents_.store(true);
     } else {
@@ -406,6 +447,16 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
     }
 }
 #endif
+
+void AudioPolicyServer::SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::VOLUME_SUBSCRIBE,
+        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+    bean->Add("SUBSCRIBE_KEY", TranslateKeyEvent(keyType));
+    bean->Add("SUBSCRIBE_RESULT", static_cast<int32_t>(TranslateErrorCode(resultOfVolumeKey)));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
 
 void AudioPolicyServer::SubscribeSafeVolumeEvent()
 {
@@ -2879,7 +2930,7 @@ AudioSpatializationSceneType AudioPolicyServer::GetSpatializationSceneType()
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
-        return SPATIALIZATION_SCENE_TYPE_DEFAULT;
+        return SPATIALIZATION_SCENE_TYPE_MUSIC;
     }
     return audioSpatializationService_.GetSpatializationSceneType();
 }

@@ -35,6 +35,7 @@
 #include "audio_spatialization_manager.h"
 #include "audio_spatialization_state_change_listener_stub.h"
 #include "i_standard_spatialization_state_change_listener.h"
+#include "audio_combine_denoising_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

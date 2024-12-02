@@ -67,6 +67,11 @@ ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
 }
 
 group("fuzztest") {

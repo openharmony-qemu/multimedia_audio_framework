@@ -386,6 +386,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
         UpdateActiveA2dpDeviceWhenDisconnecting(updatedDesc.macAddress_);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         if (audioA2dpDevice_.DelA2dpInDevice(updatedDesc.macAddress_) == 0) {
+            audioActiveDevice_.SetActiveBtInDeviceMac("");
             audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_MIC);
         }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {

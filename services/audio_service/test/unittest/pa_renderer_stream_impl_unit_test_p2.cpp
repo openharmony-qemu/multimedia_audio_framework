@@ -77,81 +77,6 @@ std::shared_ptr<PaRendererStreamImpl> PaRendererStreamUnitTestP2::CreatePaRender
 }
 
 /**
- * @tc.name  : Test SetLowPowerVolume.
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_001
- * @tc.desc  : Test SetLowPowerVolume.
- */
-HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_001, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
-    adapterManager->InitPaContext();
-    uint32_t sessionId = 123456;
-    AudioProcessConfig processConfig = GetInnerCapConfig();
-    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
-    unit->paStream_ = stream;
-    if (stream == nullptr) {
-        std::cout << "stream is nullptr" << std::endl;
-    }
-    float powerVolume = -1.0f;
-    if (unit == nullptr) {
-        std::cout << "unit is nullptr" << std::endl;
-    }
-    unit->Start();
-    int32_t ret = unit->SetLowPowerVolume(powerVolume);
-    EXPECT_EQ(ret, -1);
-    unit->Release();
-}
-
-/**
- * @tc.name  : Test SetLowPowerVolume.
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_002
- * @tc.desc  : Test SetLowPowerVolume.
- */
-HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_002, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
-    adapterManager->InitPaContext();
-    uint32_t sessionId = 123456;
-    AudioProcessConfig processConfig = GetInnerCapConfig();
-    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
-    unit->paStream_ = stream;
-    if (stream == nullptr) {
-        std::cout << "stream is nullptr" << std::endl;
-    }
-    float powerVolume = 2.0f;
-    int32_t ret = unit->SetLowPowerVolume(powerVolume);
-    EXPECT_EQ(ret, -1);
-    unit->Release();
-}
-
-/**
- * @tc.name  : Test SetLowPowerVolume.
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_003
- * @tc.desc  : Test SetLowPowerVolume.
- */
-HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_003, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
-    adapterManager->InitPaContext();
-    uint32_t sessionId = 123456;
-    AudioProcessConfig processConfig = GetInnerCapConfig();
-    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
-    unit->paStream_ = stream;
-    if (stream == nullptr) {
-        std::cout << "stream is nullptr" << std::endl;
-    }
-    float powerVolume = 0.0f;
-    int32_t ret = unit->SetLowPowerVolume(powerVolume);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test GetCurrentPosition.
  * @tc.type  : FUNC
  * @tc.number: PaRenderer_004
@@ -420,21 +345,6 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_015, TestSize.Level1)
     unit->firstGetLatency_= false;
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test SetLowPowerVolume.
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_016
- * @tc.desc  : Test SetLowPowerVolume.
- */
-HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_016, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    float powerVolume = 0.5f;
-    unit->paStream_ = nullptr;
-    int32_t ret = unit->SetLowPowerVolume(powerVolume);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 }
 }

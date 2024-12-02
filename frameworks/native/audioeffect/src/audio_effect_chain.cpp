@@ -191,7 +191,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[SPATIALIZATION_SCENE_TYPE_INDEX] = spatializationSceneType_;
     data[SPATIALIZATION_ENABLED_INDEX] = spatializationEnabled_;
     data[STREAM_USAGE_INDEX] = streamUsage_;
-    data[FOLD_STATE_INDEX] = foldState_;
+    data[FOLD_STATE_INDEX] = static_cast<int32_t>(foldState_);
     AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
         "spatializationSceneType: %{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d",

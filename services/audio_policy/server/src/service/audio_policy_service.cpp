@@ -1727,11 +1727,7 @@ int32_t AudioPolicyService::UnsetAudioConcurrencyCallback(const uint32_t session
 
 int32_t AudioPolicyService::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
-    int32_t ret = streamCollector_.ActivateAudioConcurrency(pipeType);
-    if (ret != SUCCESS && pipeType == PIPE_TYPE_CALL_IN) {
-        return streamCollector_.ActivateAudioConcurrency(PIPE_TYPE_NORMAL_IN);
-    }
-    return ret;
+    return streamCollector_.ActivateAudioConcurrency(pipeType);
 }
 
 int32_t AudioPolicyService::ResetRingerModeMute()

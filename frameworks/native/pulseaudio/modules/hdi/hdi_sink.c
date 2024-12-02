@@ -331,7 +331,7 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
     if (processChannels == sinkIn->thread_info.resampler->i_ss.channels) {
         ss.channels = sinkIn->thread_info.resampler->i_ss.channels;
         pa_channel_map cm = sinkIn->thread_info.resampler->i_cm;
-        if (pa_channel_map_equal(&sinkIn->thread_info.resampler->i_cm, &processCm)) {
+        if (pa_channel_map_equal(&sinkIn->thread_info.resampler->o_cm, &processCm)) {
             return;
         }
         r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
@@ -2625,6 +2625,8 @@ static int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int
 
     pa_sink_input *i = infoInputs[0].userdata;
     if (GetFadeoutState(i->index) != NO_FADE) {
+        InputsDropFromInputs2(infoInputs, nInputs);
+        pa_sink_unref(s);
         AUDIO_WARNING_LOG("stream is croked, do not need peek");
         return 0;
     }

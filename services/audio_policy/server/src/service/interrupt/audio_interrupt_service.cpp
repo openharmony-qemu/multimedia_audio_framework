@@ -261,14 +261,13 @@ void AudioInterruptService::RemovePlaceholderInterruptForSession(const int32_t c
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
 
-    auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
-        return pair.first.pid == callerPid && pair.second == PLACEHOLDER;
-    };
-    auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
-    if (iter != audioFocusInfoList.end()) {
-        AudioInterrupt placeholder = iter->first;
-        AUDIO_INFO_LOG("Remove stream id %{public}u (placeholder for pid%{public}d)", placeholder.sessionId, callerPid);
-        DeactivateAudioInterruptInternal(DEFAULT_ZONE_ID, placeholder, isSessionTimeout);
+    for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+        if (iter->first.pid == callerPid && iter->second == PLACEHOLDER) {
+            AudioInterrupt placeholder = iter->first;
+            AUDIO_INFO_LOG("Remove stream id %{public}u (placeholder for pid%{public}d)",
+                placeholder.sessionId, callerPid);
+            DeactivateAudioInterruptInternal(DEFAULT_ZONE_ID, placeholder, isSessionTimeout);
+        }
     }
 }
 
@@ -1452,7 +1451,9 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     bool needPlaceHolder = false;
-    if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(audioInterrupt.pid)) {
+    if (audioInterrupt.audioFocusType.streamType != STREAM_DEFAULT &&
+        sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(audioInterrupt.pid)) {
+        // if this stream is the last renderer for audio session, change the state to PLACEHOLDER.
         auto audioSession = sessionService_->GetAudioSessionByPid(audioInterrupt.pid);
         if (audioSession != nullptr) {
             audioSession->RemoveAudioInterrptByStreamId(audioInterrupt.sessionId);
@@ -1472,6 +1473,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
             iter->second = PLACEHOLDER;
             itZone->second->audioFocusInfoList = audioFocusInfoList;
             zonesMap_[zoneId] = itZone->second;
+            AUDIO_INFO_LOG("Change the state of sessionId %{public}u to PLACEHOLDER! (pid %{public}d)",
+                audioInterrupt.sessionId, audioInterrupt.pid);
             return;
         }
         ResetNonInterruptControl(audioInterrupt.sessionId);
@@ -1486,7 +1489,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, audioInterrupt);
     } else {
         // If it was not in the audioFocusInfoList, no need to take any action on other sessions, just return.
-        AUDIO_DEBUG_LOG("stream (sessionId %{public}d) is not active now", audioInterrupt.sessionId);
+        AUDIO_DEBUG_LOG("stream (sessionId %{public}u) is not active now", audioInterrupt.sessionId);
         return;
     }
 
