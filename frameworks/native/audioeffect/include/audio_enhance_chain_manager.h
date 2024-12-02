@@ -61,6 +61,7 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE);
     void ResetInfo();  // use for unit test
     int32_t ApplyAudioEnhanceChainDefault(const uint32_t captureId, uint32_t length);
+    void UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType);
     int32_t SendInitCommand();
 
 private:
@@ -115,6 +116,7 @@ private:
     float streamVol_ = 0.0f;
     bool isMute_ = false;
     std::string deviceName_ = "";
+    uint32_t foldState_ = FOLD_STATE_MIDDLE;
 };
 
 }  // namespace AudioStandard

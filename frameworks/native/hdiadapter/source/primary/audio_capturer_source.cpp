@@ -957,7 +957,7 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
     }
 
     uint32_t captureDataLen = FRAME_TIME_LEN_MS * attr_.sampleRate / MILLISECONDS_PER_SECOND_MS *
-        GetByteSizeByFormat(attr_.format) * attr_.channel;
+        static_cast<uint32_t>(GetByteSizeByFormat(attr_.format)) * attr_.channel;
     AUDIO_INFO_LOG("non blocking capture thread start, source type: %{public}d, captureDataLen: %{public}u",
         attr_.sourceType, captureDataLen);
     std::vector<uint8_t> tempBuf;
