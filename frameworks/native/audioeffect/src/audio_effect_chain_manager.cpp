@@ -225,6 +225,7 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     const EffectChainManagerParam &effectChainManagerParam,
     std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList)
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
     const std::unordered_map<std::string, std::string> &map = effectChainManagerParam.sceneTypeToChainNameMap;
     maxEffectChainCount_ = effectChainManagerParam.maxExtraNum + 1;
     priorSceneList_ = effectChainManagerParam.priorSceneList;
@@ -278,6 +279,7 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
 #endif
     isInitialized_ = true;
+    RecoverAllChains();
 }
 
 bool AudioEffectChainManager::CheckAndAddSessionID(const std::string &sessionID)
