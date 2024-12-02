@@ -964,7 +964,7 @@ void AudioEffectChainManager::ResetInfo()
     btOffloadEnabled_ = false;
     spkOffloadEnabled_ = false;
     initializedLogFlag_ = true;
-    spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     isDefaultEffectChainExisted_ = false;
 }
 

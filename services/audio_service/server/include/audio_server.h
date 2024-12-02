@@ -172,6 +172,10 @@ public:
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
+
+    sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
+
+    int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

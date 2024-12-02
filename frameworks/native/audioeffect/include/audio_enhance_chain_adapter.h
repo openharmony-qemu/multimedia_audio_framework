@@ -53,6 +53,7 @@ int32_t CopyFromEnhanceBufferAdapter(void *data, uint32_t length);
 int32_t EnhanceChainManagerProcess(const uint32_t sceneKeyCode, uint32_t length);
 int32_t GetSceneTypeCode(const char *sceneType, uint32_t *sceneTypeCode);
 int32_t EnhanceChainManagerProcessDefault(const uint32_t captureId, uint32_t length);
+int32_t EnhanceChainManagerSendInitCommand(void);
 
 #ifdef __cplusplus
 }

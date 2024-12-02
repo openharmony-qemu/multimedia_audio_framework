@@ -118,7 +118,7 @@ private:
     float currVolume_ = 0.0f;
     bool sendFinalVolumeState_ = false;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
-    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     bool spatializationEnabled_ = false;
     std::string dumpNameIn_ = "";
     std::string dumpNameOut_ = "";

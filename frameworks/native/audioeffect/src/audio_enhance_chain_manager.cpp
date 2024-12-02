@@ -829,5 +829,19 @@ int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChainDefault(const uint32_t c
     AUDIO_DEBUG_LOG("Apply default chain success with captureId %{public}u.", captureId);
     return SUCCESS;
 }
+
+int32_t AudioEnhanceChainManager::SendInitCommand()
+{
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    int32_t ret = 0;
+    for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
+        if (enhanceChain) {
+            ret = enhanceChain->InitCommand();
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "[%{public}u] set init enhance command failed", sceneType);
+        }
+    }
+    AUDIO_INFO_LOG("SendInitCommand success");
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
