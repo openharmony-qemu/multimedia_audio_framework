@@ -1826,11 +1826,11 @@ AudioSpatializationSceneType AudioPolicyProxy::GetSpatializationSceneType()
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_DEFAULT, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_MUSIC, "WriteInterfaceToken failed");
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_DEFAULT,
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_MUSIC,
         "SendRequest failed, error: %{public}d", error);
     return static_cast<AudioSpatializationSceneType>(reply.ReadInt32());
 }

@@ -2930,7 +2930,7 @@ AudioSpatializationSceneType AudioPolicyServer::GetSpatializationSceneType()
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
-        return SPATIALIZATION_SCENE_TYPE_DEFAULT;
+        return SPATIALIZATION_SCENE_TYPE_MUSIC;
     }
     return audioSpatializationService_.GetSpatializationSceneType();
 }
