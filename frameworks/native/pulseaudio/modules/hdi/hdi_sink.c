@@ -1843,7 +1843,7 @@ static pa_resampler *UpdateResamplerIchannelMap(const char *sinkSceneType, struc
     pa_channel_map ichannelmap;
     ichannelmap.channels = u->bufferAttr->numChanOut;
     ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &ichannelmap);
-    if (!pa_channel_map_valid(ichannelmap)) {
+    if (!pa_channel_map_valid(&ichannelmap)) {
         ichannelmap.channels = DEFAULT_NUM_CHANNEL;
         ConvertChLayoutToPaChMap(DEFAULT_CHANNELLAYOUT, &ichannelmap);
     }
