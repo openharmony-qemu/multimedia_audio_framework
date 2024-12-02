@@ -39,8 +39,8 @@ ohos_fuzztest("AudioHdiAdapterDeviceManagerFuzzTest") {
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
-    "../../../frameworks/native/hdiadapter/devicemanager:audio_device_manager",
-    "../../../services/audio_policy:audio_policy_service",
+    "../../../frameworks/native/hdiadapter/devicemanager:audio_device_manager_static",
+    "../../../services/audio_policy:audio_policy_service_static",
   ]
 
   external_deps = [

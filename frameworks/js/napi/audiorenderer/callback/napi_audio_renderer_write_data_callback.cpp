@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiRendererWriteDataCallback"
 #endif
-#include <thread>
 
 #include "js_native_api.h"
 #include "napi_audio_renderer_write_data_callback.h"
@@ -125,12 +124,10 @@ void NapiRendererWriteDataCallback::OnWriteData(size_t length)
     cb->rendererNapiObj = napiRenderer_;
 
     CHECK_AND_RETURN_LOG(napiRenderer_ != nullptr, "Cannot find the reference to audio renderer napi");
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
     if (!napiRenderer_->audioRenderer_) {
         AUDIO_INFO_LOG("OnWriteData audioRenderer_ is null.");
         return;
     }
-#endif
     napiRenderer_->audioRenderer_->GetBufferDesc(cb->bufDesc);
     if (cb->bufDesc.buffer == nullptr) {
         return;

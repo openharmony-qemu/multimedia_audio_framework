@@ -650,6 +650,7 @@ int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
 
 int32_t AudioCapturerPrivate::GetAudioStreamId(uint32_t &sessionID) const
 {
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_HANDLE, "GetAudioStreamId faied.");
     return audioStream_->GetAudioSessionID(sessionID);
 }
 
@@ -927,7 +928,7 @@ std::vector<sptr<MicrophoneDescriptor>> AudioCapturerPrivate::GetCurrentMicropho
 {
     uint32_t sessionId = static_cast<uint32_t>(-1);
     GetAudioStreamId(sessionId);
-    return AudioPolicyManager::GetInstance().GetAudioCapturerMicrophoneDescriptors(sessionId);
+    return AudioPolicyManager::GetInstance().GetAudioCapturerMicrophoneDescriptors(static_cast<int32_t>(sessionId));
 }
 
 int32_t AudioCapturerPrivate::SetAudioCapturerDeviceChangeCallback(
@@ -1242,7 +1243,7 @@ void AudioCapturerPrivate::ConcedeStream()
     AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, capturerInfo_.pipeType);
     AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
     audioStream_->GetAudioPipeType(pipeType);
-    if (pipeType == PIPE_TYPE_LOWLATENCY_IN) {
+    if (pipeType == PIPE_TYPE_LOWLATENCY_IN || pipeType == PIPE_TYPE_CALL_IN) {
         SwitchStream(sessionID_, IAudioStream::PA_STREAM, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     }
 }

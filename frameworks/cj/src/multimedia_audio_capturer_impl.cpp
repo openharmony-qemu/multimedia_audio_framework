@@ -25,7 +25,6 @@ namespace AudioStandard {
 extern "C" {
 MMAAudioCapturerImpl::MMAAudioCapturerImpl()
 {
-    callback_ = std::make_shared<CjAudioCapturerCallback>();
     capturerReadDataCb_ = std::make_shared<CjAudioCapturerReadCallback>();
 }
 
@@ -38,6 +37,14 @@ int32_t MMAAudioCapturerImpl::CreateAudioCapturer(CAudioCapturerOptions options)
     if (audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("Create AudioCapturer failed.");
         return ERR_INVALID_INSTANCE_CODE;
+    }
+    if (callback_ == nullptr) {
+        callback_ = std::make_shared<CjAudioCapturerCallback>();
+        int ret = audioCapturer_->SetCapturerCallback(callback_);
+        if (ret != SUCCESS_CODE) {
+            AUDIO_ERR_LOG("SetCapturerCallback failed.");
+            return CJ_ERR_SYSTEM;
+        }
     }
     return SUCCESS_CODE;
 }
@@ -205,6 +212,10 @@ CAudioCapturerChangeInfo MMAAudioCapturerImpl::GetAudioCapturerChangeInfo(int32_
     }
     CAudioCapturerChangeInfo cInfo;
     Convert2CAudioCapturerChangeInfo(cInfo, changeInfo, errorCode);
+    if (*errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(cInfo.deviceDescriptors);
+        return CAudioCapturerChangeInfo();
+    }
     return cInfo;
 }
 
@@ -237,6 +248,7 @@ void MMAAudioCapturerImpl::RegisterCArrCallback(int32_t callbackType, void (*cal
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register preferredInputDeviceChangeForCapturerInfo event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         auto cb = std::make_shared<CjAudioCapturerDeviceChangeCallback>();
         cb->RegisterFunc(func);
@@ -251,7 +263,11 @@ void MMAAudioCapturerImpl::RegisterCArrCallback(int32_t callbackType, void (*cal
         }
         audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
         capturerReadDataCb_->RegisterFunc(func, audioCapturer_);
-        audioCapturer_->SetCapturerReadCallback(capturerReadDataCb_);
+        int32_t ret = audioCapturer_->SetCapturerReadCallback(capturerReadDataCb_);
+        if (ret != SUCCESS_CODE) {
+            AUDIO_ERR_LOG("SetCapturerReadCallback failure!");
+            *errorCode = CJ_ERR_SYSTEM;
+        }
     }
 }
 
@@ -266,6 +282,7 @@ void MMAAudioCapturerImpl::RegisterCallback(int32_t callbackType, void (*callbac
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register audiocapturerchange event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         auto cb = std::make_shared<CjAudioCapturerInfoChangeCallback>();
         cb->RegisterFunc(func);
@@ -277,6 +294,7 @@ void MMAAudioCapturerImpl::RegisterCallback(int32_t callbackType, void (*callbac
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register audio_interrupt event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         callback_->RegisterInterruptFunc(func);
     }
@@ -285,6 +303,7 @@ void MMAAudioCapturerImpl::RegisterCallback(int32_t callbackType, void (*callbac
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register state_change event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         callback_->RegisterStateChangeFunc(func);
         auto state = audioCapturer_->GetStatus();
@@ -303,35 +322,48 @@ void MMAAudioCapturerImpl::RegisterCallbackWithFrame(int32_t callbackType, void 
         return;
     }
     if (callbackType == AudioCapturerCallbackType::MARK_REACH) {
-        auto func = CJLambda::Create(reinterpret_cast<void (*)(int32_t)>(callback));
+        auto func = CJLambda::Create(reinterpret_cast<void (*)(int64_t)>(callback));
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register mark_reach event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         if (frame <= 0) {
             AUDIO_ERR_LOG("mark position not supported!");
             *errorCode = CJ_ERR_INVALID_PARAM;
+            return;
         }
         positionCb_ = std::make_shared<CjCapturerPositionCallback>();
         positionCb_->RegisterFunc(func);
-        audioCapturer_->SetCapturerPositionCallback(frame, positionCb_);
+        int32_t ret = audioCapturer_->SetCapturerPositionCallback(frame, positionCb_);
+        if (ret != SUCCESS_CODE) {
+            AUDIO_ERR_LOG("SetCapturerPositionCallback failure!");
+            *errorCode = CJ_ERR_SYSTEM;
+        }
     }
     if (callbackType == AudioCapturerCallbackType::PERIOD_REACH) {
-        auto func = CJLambda::Create(reinterpret_cast<void (*)(int32_t)>(callback));
+        auto func = CJLambda::Create(reinterpret_cast<void (*)(int64_t)>(callback));
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register period_reach event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         if (frame <= 0) {
             AUDIO_ERR_LOG("framecount not supported!");
             *errorCode = CJ_ERR_INVALID_PARAM;
+            return;
         }
         if (periodPositionCb_ != nullptr) {
             AUDIO_ERR_LOG("period_reach already subscribed!");
+            return;
         }
         periodPositionCb_ = std::make_shared<CjCapturerPeriodPositionCallback>();
         periodPositionCb_->RegisterFunc(func);
-        audioCapturer_->SetCapturerPeriodPositionCallback(frame, periodPositionCb_);
+        int32_t ret = audioCapturer_->SetCapturerPeriodPositionCallback(frame, periodPositionCb_);
+        if (ret != SUCCESS_CODE) {
+            AUDIO_ERR_LOG("SetCapturerPeriodPositionCallback failure!");
+            *errorCode = CJ_ERR_SYSTEM;
+        }
     }
 }
 }

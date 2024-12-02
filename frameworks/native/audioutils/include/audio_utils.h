@@ -53,6 +53,7 @@ const int32_t SIGNAL_THRESHOLD = 10;
 const int32_t BLANK_THRESHOLD_MS = 100;
 const int32_t DETECTED_ZERO_THRESHOLD = 1;
 const size_t MILLISECOND_PER_SECOND = 1000;
+const int64_t DEFAULT_TIMEOUT_NS = 40 * 1000 * 1000;
 const size_t MOCK_INTERVAL = 2000;
 const int32_t GET_EXTRA_PARAM_LEN = 200;
 const int32_t YEAR_BASE = 1900;
@@ -72,20 +73,13 @@ static constexpr unsigned int AUDIO_XCOLLIE_FLAG_RECOVERY = (1 << 1); // die whe
 
 class Util {
 public:
-    static bool IsDualToneStreamType(const AudioStreamType streamType)
-    {
-        return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
-    }
+    static bool IsDualToneStreamType(const AudioStreamType streamType);
 
-    static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
-    {
-        return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE;
-    }
+    static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
 
-    static bool IsRingerAudioScene(const AudioScene &audioScene)
-    {
-        return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
-    }
+    static bool IsRingerAudioScene(const AudioScene &audioScene);
+
+    static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);
 };
 
 class Trace {
@@ -118,6 +112,27 @@ public:
     static int64_t GetCurNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);
     static int32_t RelativeSleep(int64_t nanoTime);
+};
+
+/**
+ * Example 1: Use specific timeout call Check().
+ *     WatchTimeout guard("DoSomeWorkFunction", 50 * AUDIO_US_PER_SECOND); // if func cost more than 50 ms, print log
+ *     DoSomeWorkFunction();
+ *     guard.CheckCurrTimeout();
+ * Example 2: Use default timeout(40ms) and auto-check in release.
+ *     WatchTimeout guard("DoSomeWorkFunction")
+ *     DoSomeWorkFunction();
+ */
+class WatchTimeout {
+public:
+    WatchTimeout(const std::string &funcName, int64_t timeoutNs = DEFAULT_TIMEOUT_NS);
+    ~WatchTimeout();
+    void CheckCurrTimeout();
+private:
+    const std::string funcName_;
+    int64_t timeoutNs_ = 0;
+    int64_t startTimeNs_ = 0;
+    bool isChecked_ = false;
 };
 
 class PermissionUtil {
@@ -188,25 +203,25 @@ enum AudioDumpFileType {
     AUDIO_PULSE = 2,
 };
 
-const std::string DUMP_SERVER_PARA = "sys.audio.dump.writeserver.enable";
-const std::string DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
-const std::string DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
-const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";
-const std::string DUMP_APP_DIR = "/data/storage/el2/base/cache/";
-const std::string DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
-const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
-const std::string DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
-const std::string DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
-const std::string DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
-const std::string DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
-const std::string DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
-const std::string DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";
-const std::string DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
-const std::string DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
-const std::string DUMP_ENDPOINT_DCP_FILENAME = "dump_endpoint_dcp_audio.pcm";
-const std::string DUMP_ENDPOINT_HDI_FILENAME = "dump_endpoint_hdi_audio.pcm";
+namespace {
+const char* DUMP_SERVER_PARA = "sys.audio.dump.writeserver.enable";
+const char* DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
+const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
+const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
+const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
+const char* DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
+const char* DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
+const char* DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
+const char* DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
+const char* DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
+const char* DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
+const char* DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
+const char* DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";
+const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
+const char* DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
 const uint32_t PARAM_VALUE_LENTH = 150;
-const std::string BETA_VERSION = "beta";
+const char* BETA_VERSION = "beta";
+}
 
 class DumpFileUtil {
 public:
@@ -622,7 +637,6 @@ enum HdiRenderOffset : uint32_t {
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

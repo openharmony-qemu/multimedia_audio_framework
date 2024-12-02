@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioRountingAvailableDeviceChangeCallback"
 #endif
-#include <thread>
 
 #include "js_native_api.h"
 #include "napi_audio_rounting_available_devicechange_callback.h"

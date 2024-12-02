@@ -20,5 +20,5 @@
     <strategy name="TONE_RENDER"  routers="AppSelectRouter,UserSelectRouter,PrivacyPriorityRouter,PublicPriorityRouter,StreamFilterRouter,DefaultRouter"/>
     <strategy name="RECORD_CAPTURE" routers="AppSelectRouter,UserSelectRouter,PrivacyPriorityRouter,PublicPriorityRouter,StreamFilterRouter,DefaultRouter"/>
     <strategy name="CALL_CAPTURE"  routers="AppSelectRouter,UserSelectRouter,PairDeviceRouter,PrivacyPriorityRouter,CockpitPhoneRouter,StreamFilterRouter,DefaultRouter"/>
-    <strategy name="VOICE_MESSAGE"  routers="StreamFilterRouter,DefaultRouter"/>
+    <strategy name="VOICE_MESSAGE_CAPTURE"  routers="AppSelectRouter,UserSelectRouter,PrivacyPriorityRouter,PublicPriorityRouter,StreamFilterRouter,DefaultRouter"/>
 </audioStrategyRouter>

@@ -29,8 +29,7 @@ using namespace std;
 
 constexpr int32_t NEED_TO_FETCH = 1;
 
-typedef function<bool(const std::unique_ptr<AudioDeviceDescriptor> &desc)> IsPresentFunc;
-std::string GetEncryptAddr(const std::string &addr);
+typedef function<bool(const std::shared_ptr<AudioDeviceDescriptor> &desc)> IsPresentFunc;
 class AudioDeviceManager {
 public:
     static AudioDeviceManager& GetAudioDeviceManager()
@@ -39,40 +38,40 @@ public:
         return audioDeviceManager;
     }
 
-    void AddNewDevice(const sptr<AudioDeviceDescriptor> &devDesc);
-    void RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devDesc);
+    void AddNewDevice(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void RemoveNewDevice(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     void OnXmlParsingCompleted(const unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> &xmlData);
     int32_t GetDeviceUsageFromType(const DeviceType devType) const;
     void ParseDeviceXml();
-    void UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    void UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const DeviceInfoUpdateCommand updateCommand);
 
-    vector<unique_ptr<AudioDeviceDescriptor>> GetRemoteRenderDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetRemoteCaptureDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetCommRenderPrivacyDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetCommRenderPublicDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetCommRenderBTCarDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetCommCapturePrivacyDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetCommCapturePublicDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetMediaRenderPrivacyDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetMediaRenderPublicDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetMediaCapturePrivacyDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetMediaCapturePublicDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetRecongnitionCapturePrivacyDevices();
-    unique_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
-    unique_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
-    unique_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetRemoteRenderDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetRemoteCaptureDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCommRenderPrivacyDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCommRenderPublicDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCommRenderBTCarDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCommCapturePrivacyDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCommCapturePublicDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetMediaRenderPrivacyDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetMediaRenderPublicDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetMediaCapturePrivacyDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetMediaCapturePublicDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetRecongnitionCapturePrivacyDevices();
+    shared_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
+    shared_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
+    shared_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> GetDevicePrivacyMaps();
-    vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableDevicesByUsage(AudioDeviceUsage usage);
-    unique_ptr<AudioDeviceDescriptor> GetDeviceByMacAddressAndDeviceType(
-        const vector<unique_ptr<AudioDeviceDescriptor>> &descs,
+    vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesByUsage(AudioDeviceUsage usage);
+    shared_ptr<AudioDeviceDescriptor> GetDeviceByMacAddressAndDeviceType(
+        const vector<shared_ptr<AudioDeviceDescriptor>> &descs,
         const string &macAddress, DeviceType deviceType);
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
-        const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
-        std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-    vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
+        const list<DevicePrivacyInfo> &deviceInfos, const std::shared_ptr<AudioDeviceDescriptor> &dev,
+        std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
         const std::string &macAddress);
     void UpdateScoState(const std::string &macAddress, bool isConnnected);
     bool GetScoState();
@@ -84,16 +83,16 @@ public:
     std::string GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs);
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
-    bool IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors);
-    bool IsVirtualConnectedDevice(const sptr<AudioDeviceDescriptor> &selectedDesc);
-    int32_t UpdateDeviceDescDeviceId(sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors);
+    bool IsVirtualConnectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc);
+    int32_t UpdateDeviceDescDeviceId(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
     int32_t UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
     int32_t UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     int32_t RemoveSelectedDefaultOutputDevice(const uint32_t sessionID);
-    unique_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
-    unique_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
 
 private:
     AudioDeviceManager();
@@ -118,21 +117,21 @@ private:
     void RemoveConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddRemoteRenderDev(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddRemoteCaptureDev(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void AddDefaultDevices(const sptr<AudioDeviceDescriptor> &devDesc);
+    void AddDefaultDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
 
     void UpdateDeviceInfo(shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     void AddCommunicationDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddMediaDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddCaptureDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    bool IsExistedDevice(const sptr<AudioDeviceDescriptor> &device,
-        const vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    bool IsExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+        const vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
-        const DevicePrivacyInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &dev,
-        std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+        const DevicePrivacyInfo &deviceInfo, const std::shared_ptr<AudioDeviceDescriptor> &dev,
+        std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
-        vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-    bool UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+        vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    bool UpdateExistDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     void AddBtToOtherList(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void RemoveBtFromOtherList(const AudioDeviceDescriptor &devDesc);
@@ -141,7 +140,7 @@ private:
     void RemoveMediaDevices(const AudioDeviceDescriptor &devDesc);
     void RemoveCaptureDevices(const AudioDeviceDescriptor &devDesc);
     bool UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    bool UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    bool UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     bool UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     bool UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
@@ -165,9 +164,9 @@ private:
     vector<shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> reconCapturePrivacyDevices_;
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
-    sptr<AudioDeviceDescriptor> earpiece_ = nullptr;
-    sptr<AudioDeviceDescriptor> speaker_ = nullptr;
-    sptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
+    std::shared_ptr<AudioDeviceDescriptor> earpiece_ = nullptr;
+    std::shared_ptr<AudioDeviceDescriptor> speaker_ = nullptr;
+    std::shared_ptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
     bool hasEarpiece_ = false;
     unordered_map<uint32_t, std::pair<DeviceType, StreamUsage>> selectedDefaultOutputDeviceInfo_;
     vector<std::pair<uint32_t, DeviceType>> mediaDefaultOutputDevices_;

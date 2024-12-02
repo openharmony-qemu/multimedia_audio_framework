@@ -66,7 +66,7 @@ const uint32_t BIT_IN_BYTE = 8;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 const unsigned int TIME_OUT_SECONDS = 10;
 const std::string LOG_UTILS_TAG = "Offload";
-constexpr int32_t OFFLOAD_DFX_SPLIT = 2;
+constexpr size_t OFFLOAD_DFX_SPLIT = 2;
 }
 
 struct AudioCallbackService {
@@ -176,7 +176,7 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel, AudioSamplingRate rate) const;
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> offloadRunningLockManager_;
@@ -435,6 +435,20 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
     frames = frames_ * SECOND_TO_MICROSECOND / attr_.sampleRate;
     timeSec = timestamp.tvSec;
     timeNanoSec = timestamp.tvNSec;
+    // check hdi timestamp out of range 40 * 1000 * 1000 ns
+    struct timespec time;
+    clockid_t clockId = CLOCK_MONOTONIC;
+    if (clock_gettime(clockId, &time) >= 0) {
+        int64_t curNs = time.tv_sec * AUDIO_NS_PER_SECOND + time.tv_nsec;
+        int64_t hdiNs = timestamp.tvSec * AUDIO_NS_PER_SECOND + timestamp.tvNSec;
+        int64_t outNs = 40 * 1000 * 1000; // 40 * 1000 * 1000 ns
+        if (curNs <= hdiNs || curNs > hdiNs + outNs) {
+            AUDIO_PRERELEASE_LOGW("HDI time is not in the range, timestamp: %{public}" PRId64
+                ", now: %{public}" PRId64, hdiNs, curNs);
+            timeSec = time.tv_sec;
+            timeNanoSec = time.tv_nsec;
+        }
+    }
     return ret;
 }
 
@@ -662,7 +676,8 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     if (ret == 0 && writeLen != 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
         BufferDesc buffer = {reinterpret_cast<uint8_t *>(&data), len, len};
-        DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+        DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel),
+            static_cast<AudioSamplingRate>(attr_.sampleRate));
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
                 static_cast<void *>(&data), writeLen);
@@ -686,15 +701,24 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 }
 
 void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
-    AudioChannel channel) const
+    AudioChannel channel, AudioSamplingRate rate) const
 {
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel, OFFLOAD_DFX_SPLIT);
-    if (channel == MONO) {
-        Trace::Count(LOG_UTILS_TAG, vols.volStart[0]);
-    } else {
-        Trace::Count(LOG_UTILS_TAG, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    size_t byteSizePerData = VolumeTools::GetByteSize(format);
+    size_t frameLen =  byteSizePerData * static_cast<size_t>(channel) * static_cast<size_t>(rate) * 0.02; // 20ms
+    
+    int32_t minVolume = INT_32_MAX;
+    for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
+        BufferDesc temp = {buffer.buffer + frameLen * index,
+            min(buffer.bufLength - frameLen * index, frameLen), min(buffer.dataLength - frameLen * index, frameLen)};
+        ChannelVolumes vols = VolumeTools::CountVolumeLevel(temp, format, channel, OFFLOAD_DFX_SPLIT);
+        if (channel == MONO) {
+            minVolume = min(minVolume, vols.volStart[0]);
+        } else {
+            minVolume = min(minVolume, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+        }
+        AudioLogUtils::ProcessVolumeData(LOG_UTILS_TAG, vols, volumeDataCount_);
     }
-    AudioLogUtils::ProcessVolumeData(LOG_UTILS_TAG, vols, volumeDataCount_);
+    Trace::Count(LOG_UTILS_TAG, minVolume);
 }
 
 void OffloadAudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -999,8 +1023,10 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
     CHECK_AND_RETURN_RET_LOG(offloadRunningLockManager_ == nullptr, ERR_OPERATION_FAILED,
         "OffloadKeepRunningLock is not null, init failed!");
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:OffloadRunningLockInit");
     keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
         PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+    guard.CheckCurrTimeout();
 
     CHECK_AND_RETURN_RET_LOG(keepRunningLock != nullptr, ERR_OPERATION_FAILED, "keepRunningLock is nullptr");
     offloadRunningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
@@ -1015,8 +1041,10 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
     AUDIO_INFO_LOG("keepRunningLock Lock");
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (offloadRunningLockManager_ == nullptr) {
+        WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:OffloadRunningLockLock");
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        guard.CheckCurrTimeout();
         if (keepRunningLock) {
             offloadRunningLockManager_ =
                 std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);

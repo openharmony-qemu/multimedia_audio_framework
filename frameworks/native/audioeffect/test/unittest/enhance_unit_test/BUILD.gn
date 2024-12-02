@@ -34,7 +34,7 @@ ohos_unittest("audio_enhance_chain_manager_unit_test") {
   sources = [ "src/audio_enhance_chain_manager_unit_test.cpp" ]
 
   deps = [
-    "../../../../audioeffect:audio_effect",
+    "../../../../audioeffect:audio_effect_static",
     "../../../../audioutils:audio_utils",
   ]
 
@@ -66,7 +66,7 @@ ohos_unittest("audio_enhance_chain_adapter_unit_test") {
   sources = [ "src/audio_enhance_chain_adapter_unit_test.cpp" ]
 
   deps = [
-    "../../../../audioeffect:audio_effect",
+    "../../../../audioeffect:audio_effect_static",
     "../../../../audioutils:audio_utils",
   ]
 

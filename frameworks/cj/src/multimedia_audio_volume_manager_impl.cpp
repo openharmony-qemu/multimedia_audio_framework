@@ -14,6 +14,7 @@
  */
 
 #include "multimedia_audio_volume_manager_impl.h"
+#include "cj_lambda.h"
 #include "audio_info.h"
 #include "audio_log.h"
 #include "multimedia_audio_error.h"
@@ -25,6 +26,8 @@ extern "C" {
 MMAAudioVolumeManagerImpl::MMAAudioVolumeManagerImpl()
 {
     audioMngr_ = AudioSystemManager::GetInstance();
+    volumeChangeCallback_ = std::make_shared<CjVolumeKeyEventCallback>();
+    cachedClientId_ = getpid();
 }
 
 int64_t MMAAudioVolumeManagerImpl::GetVolumeGroupManager(int32_t groupId, int32_t *errorCode)
@@ -37,6 +40,21 @@ int64_t MMAAudioVolumeManagerImpl::GetVolumeGroupManager(int32_t groupId, int32_
     }
     *errorCode = SUCCESS_CODE;
     return mgr->GetID();
+}
+
+void MMAAudioVolumeManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+{
+    if (callbackType != AudioVolumeManagerCallbackType::VOLUME_CHANGE) {
+        return;
+    }
+    auto func = CJLambda::Create(reinterpret_cast<void (*)(CVolumeEvent)>(callback));
+    if (func == nullptr) {
+        AUDIO_ERR_LOG("Register CVolumeEvent event failure!");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    volumeChangeCallback_->RegisterFunc(func);
+    audioMngr_->RegisterVolumeKeyEventCallback(cachedClientId_, volumeChangeCallback_);
 }
 }
 } // namespace AudioStandard

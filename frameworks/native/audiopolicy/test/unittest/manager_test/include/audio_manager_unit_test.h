@@ -58,7 +58,7 @@ class AudioDistributedRoutingRoleCallbackTest : public AudioDistributedRoutingRo
 public:
     AudioDistributedRoutingRoleCallbackTest() {}
     ~AudioDistributedRoutingRoleCallbackTest() {}
-    void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor,
+    void OnDistributedRoutingRoleChange(std::shared_ptr<AudioDeviceDescriptor>descriptor,
         const CastType type) override {}
 };
 

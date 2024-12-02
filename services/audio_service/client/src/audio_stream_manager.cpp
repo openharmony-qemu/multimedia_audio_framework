@@ -27,6 +27,10 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+static const std::map<std::string, AudioEffectMode> effectModeMap = {
+    {"EFFECT_NONE", EFFECT_NONE},
+    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
+};
 AudioStreamManager *AudioStreamManager::GetInstance()
 {
     static AudioStreamManager audioStreamManager;
@@ -174,6 +178,7 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
         case STREAM_CAMCORDER:
@@ -192,12 +197,12 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
     return AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
 }
 
-int32_t AudioStreamManager::GetHardwareOutputSamplingRate(sptr<AudioDeviceDescriptor> &desc)
+int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     int32_t result = 0;
 
     if (desc == nullptr) {
-        sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
+        std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
         desc->deviceType_ = DEVICE_TYPE_SPEAKER;
         desc->deviceRole_ = OUTPUT_DEVICE;
     }

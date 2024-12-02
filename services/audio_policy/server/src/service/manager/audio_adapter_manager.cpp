@@ -40,12 +40,13 @@ static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_ASSISTANT,
     STREAM_ALARM,
     STREAM_ACCESSIBILITY,
+    STREAM_SYSTEM,
     STREAM_ULTRASONIC,
     STREAM_VOICE_CALL_ASSISTANT
 };
 
-static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
-    // The three devices represent the three volume groups(build-in, wireless, wired).
+static const std::vector<DeviceType> VOLUME_GROUP_TYPE_LIST = {
+    DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_BLUETOOTH_A2DP,
     DEVICE_TYPE_WIRED_HEADSET,
@@ -269,14 +270,30 @@ int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
-    return maxVolumeIndexMap_[volumeType];
+    if (maxVolumeIndexMap_.end() != maxVolumeIndexMap_.find(volumeType)) {
+        return maxVolumeIndexMap_[volumeType];
+    } else if (maxVolumeIndexMap_.end() != maxVolumeIndexMap_.find(STREAM_MUSIC)) {
+        AUDIO_WARNING_LOG("can't find volumeType:%{public}d and use default STREAM_MUSIC", volumeType);
+        return maxVolumeIndexMap_[STREAM_MUSIC];
+    } else {
+        AUDIO_ERR_LOG("use default max volume level %{public}d", MAX_VOLUME_LEVEL);
+        return MAX_VOLUME_LEVEL;
+    }
 }
 
 int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
-    return minVolumeIndexMap_[volumeType];
+    if (minVolumeIndexMap_.end() != minVolumeIndexMap_.find(volumeType)) {
+        return minVolumeIndexMap_[volumeType];
+    } else if (minVolumeIndexMap_.end() != minVolumeIndexMap_.find(STREAM_MUSIC)) {
+        AUDIO_WARNING_LOG("can't find volumeType:%{public}d and use default STREAM_MUSIC", volumeType);
+        return minVolumeIndexMap_[STREAM_MUSIC];
+    } else {
+        AUDIO_ERR_LOG("use default max volume level %{public}d", MIN_VOLUME_LEVEL);
+        return MIN_VOLUME_LEVEL;
+    }
 }
 
 void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel)
@@ -289,6 +306,11 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
             AUDIO_ERR_LOG("Save ringtone volume for boot failed, result %{public}d", ret);
         }
     }
+}
+
+void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
 }
 
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
@@ -318,13 +340,6 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     // In case if KvStore didnot connect during bootup
     if (!isLoaded_) {
         InitKVStoreInternal();
-    }
-
-    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO || currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        if (isBtFirstSetVolume_ && volumeLevel > safeVolume_) {
-            volumeLevel = safeVolume_;
-            isBtFirstSetVolume_ = false;
-        }
     }
 
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
@@ -404,9 +419,9 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d", streamType, volumeDb, volumeLevel);
     if (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION) {
         return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamType == STREAM_MUSIC) {
+    } else if (streamType == STREAM_MUSIC || (VolumeUtils::IsPCVolumeEnable() && streamForVolumeMap == STREAM_MUSIC)) {
         return SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING) {
+    } else if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_SYSTEM) {
         const std::vector<AudioStreamType> &streamTypeArray =
             (VolumeUtils::IsPCVolumeEnable())? GET_PC_STREAM_RING_VOLUME_TYPES : RINGTONE_VOLUME_TYPE_LIST;
         return SetVolumeDbForVolumeTypeGroup(streamTypeArray, volumeDb);
@@ -726,13 +741,6 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
-    if (!isLoaded_) {
-        AUDIO_ERR_LOG("The data base is not loaded. Can not load new volume for new device!");
-        // The ring volume is also saved in audio_config.para.
-        // So the boot animation can still play with right volume.
-        return;
-    }
-
     // The same device does not set the volume
     // Except for A2dp, because the currentActiveDevice_ has already been set in Activea2dpdevice.
     bool isRingerModeMute = AudioPolicyService::GetAudioPolicyService().IsRingerModeMute();
@@ -749,7 +757,8 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceType;
 
-    if (!isSameVolumeGroup) {
+    if (!isSameVolumeGroup || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        (deviceType == DEVICE_TYPE_BLUETOOTH_SCO && isRingerModeMute)) {
         LoadVolumeMap();
         LoadMuteStatusMap();
         UpdateSafeVolume();
@@ -813,11 +822,11 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     return ioHandle;
 }
 
-int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
+int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle, bool isSync)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_--;
-    int32_t ret = audioServiceAdapter_->CloseAudioPort(ioHandle);
+    int32_t ret = audioServiceAdapter_->CloseAudioPort(ioHandle, isSync);
     AUDIO_INFO_LOG("Close %{public}d port end.", static_cast<int32_t>(ioHandle));
     return ret;
 }
@@ -1234,9 +1243,6 @@ void AudioAdapterManager::DeleteAudioPolicyKvStore()
 
 void AudioAdapterManager::UpdateSafeVolume()
 {
-    if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
-        return;
-    }
     auto currentActiveOutputDeviceDescriptor =
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     switch (currentActiveDevice_) {
@@ -1244,6 +1250,11 @@ void AudioAdapterManager::UpdateSafeVolume()
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+            if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
+                AUDIO_INFO_LOG("1st connect bt device volume is safe");
+                isWiredBoot_ = false;
+                return;
+            }
             if (isWiredBoot_) {
                 AUDIO_INFO_LOG("1st connect wired device:%{public}d after boot, update current volume to safevolume",
                     currentActiveDevice_);
@@ -1254,6 +1265,11 @@ void AudioAdapterManager::UpdateSafeVolume()
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
+            if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
+                AUDIO_INFO_LOG("1st connect bt device volume is safe");
+                isBtBoot_ = false;
+                return;
+            }
             if (currentActiveOutputDeviceDescriptor != nullptr) {
                 AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveOutputDeviceDescriptor->deviceCategory_);
                 if (currentActiveOutputDeviceDescriptor->deviceCategory_ != BT_HEADPHONE &&
@@ -1286,7 +1302,7 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     }
     AUDIO_INFO_LOG("InitVolumeMap: Wrote default stream volumes to KvStore");
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMapTemp = volumeDataMaintainer_.GetVolumeMap();
-    for (auto &deviceType: DEVICE_TYPE_LIST) {
+    for (auto &deviceType: VOLUME_GROUP_TYPE_LIST) {
         for (auto &streamType: VOLUME_TYPE_LIST) {
             // if GetVolume failed, wirte default value
             if (!volumeDataMaintainer_.GetVolume(deviceType, streamType)) {
@@ -1348,7 +1364,7 @@ void AudioAdapterManager::CloneVolumeMap(void)
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "clone volumemap failed, audioPolicyKvStore_nullptr");
     // read volume from private Kvstore
     AUDIO_INFO_LOG("Copy Volume from private database to shareDatabase");
-    for (auto &deviceType : DEVICE_TYPE_LIST) {
+    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
         for (auto &streamType : VOLUME_TYPE_LIST) {
             std::string volumeKey = GetVolumeKeyForKvStore(deviceType, streamType);
             Key key = volumeKey;
@@ -1406,7 +1422,7 @@ void AudioAdapterManager::TransferMuteStatus(void)
 void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 {
     if (isFirstBoot) {
-        for (auto &deviceType : DEVICE_TYPE_LIST) {
+        for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
             for (auto &streamType : VOLUME_TYPE_LIST) {
                 CheckAndDealMuteStatus(deviceType, streamType);
             }
@@ -1459,7 +1475,7 @@ void AudioAdapterManager::CloneMuteStatusMap(void)
     // read mute status from private Kvstore
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "clone mute status failed, audioPolicyKvStore_ nullptr");
     AUDIO_INFO_LOG("Copy mute from private database to shareDatabase");
-    for (auto &deviceType : DEVICE_TYPE_LIST) {
+    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
         for (auto &streamType : VOLUME_TYPE_LIST) {
             std::string muteKey = GetMuteKeyForKvStore(deviceType, streamType);
             Key key = muteKey;
@@ -1494,7 +1510,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
         if (!result) {
             AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
         }
-        if (streamType == STREAM_RING) {
+        if (streamType == STREAM_RING && VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
             bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
             if (currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
                 continue;
@@ -1515,7 +1531,7 @@ void AudioAdapterManager::InitSafeStatus(bool isFirstBoot)
 {
     if (isFirstBoot) {
         AUDIO_INFO_LOG("Wrote default safe status to KvStore");
-        for (auto &deviceType : DEVICE_TYPE_LIST) {
+        for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
             // Adapt to safe volume upgrade scenarios
             if (!volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_) &&
                 (deviceType == DEVICE_TYPE_WIRED_HEADSET)) {
@@ -1536,7 +1552,7 @@ void AudioAdapterManager::InitSafeTime(bool isFirstBoot)
 {
     if (isFirstBoot) {
         AUDIO_INFO_LOG("Wrote default safe status to KvStore");
-        for (auto &deviceType : DEVICE_TYPE_LIST) {
+        for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
             if (!volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, safeActiveTime_) &&
                 (deviceType == DEVICE_TYPE_WIRED_HEADSET)) {
                 volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
@@ -1613,6 +1629,27 @@ int64_t AudioAdapterManager::GetCurentDeviceSafeTime(DeviceType deviceType)
     return -1;
 }
 
+int32_t AudioAdapterManager::GetRestoreVolumeLevel(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            volumeDataMaintainer_.GetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, safeActiveVolume_);
+            return safeActiveVolume_;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            volumeDataMaintainer_.GetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtVolume_);
+            return safeActiveBtVolume_;
+        default:
+            AUDIO_ERR_LOG("current device : %{public}d is not support", deviceType);
+            break;
+    }
+
+    return SAFE_UNKNOWN;
+}
+
 int32_t AudioAdapterManager::SetDeviceSafeStatus(DeviceType deviceType, SafeStatus status)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -1634,6 +1671,18 @@ int32_t AudioAdapterManager::SetDeviceSafeTime(DeviceType deviceType, int64_t ti
     }
     bool ret = volumeDataMaintainer_.SaveSafeVolumeTime(deviceType, time);
     CHECK_AND_RETURN_RET(ret, ERROR, "SetDeviceSafeTime failed");
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume)
+{
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        safeActiveBtVolume_ = volume;
+    } else if (deviceType == DEVICE_TYPE_WIRED_HEADSET) {
+        safeActiveVolume_ = volume;
+    }
+    bool ret = volumeDataMaintainer_.SetRestoreVolumeLevel(deviceType, volume);
+    CHECK_AND_RETURN_RET(ret, ERROR, "SetRestoreVolumeLevel failed");
     return SUCCESS;
 }
 
@@ -1900,8 +1949,10 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
 {
     auto streamVolInfo = streamVolumeInfos_.find(streamType);
     if (streamVolInfo == streamVolumeInfos_.end()) {
-        AUDIO_ERR_LOG("Cannot find stream type %{public}d", streamType);
-        return;
+        AUDIO_WARNING_LOG("Cannot find stream type %{public}d and try to use STREAM_MUSIC", streamType);
+        streamVolInfo = streamVolumeInfos_.find(STREAM_MUSIC);
+        CHECK_AND_RETURN_LOG(streamVolInfo != streamVolumeInfos_.end(),
+            "Cannot find stream type STREAM_MUSIC");
     }
     auto deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(deviceType);
     if (deviceVolInfo == streamVolInfo->second->deviceVolumeInfos.end()) {
@@ -1940,7 +1991,11 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     isAbsVolumeMute_ = mute;
     float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
-    SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+    } else {
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
+    }
 }
 
 
@@ -1954,6 +2009,14 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
     LoadVolumeMap();
     LoadMuteStatusMap();
+
+    auto iter = VOLUME_TYPE_LIST.begin();
+    while (iter != VOLUME_TYPE_LIST.end()) {
+        SetVolumeDb(*iter);
+        AUDIO_INFO_LOG("NotifyAccountsChanged: volume: %{public}d, mute: %{public}d for stream type %{public}d",
+            volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
+        iter++;
+    }
 }
 
 int32_t AudioAdapterManager::DoRestoreData()

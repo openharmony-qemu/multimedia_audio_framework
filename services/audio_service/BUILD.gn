@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("../../appgallery.gni")
+import("../../audio_framework_test_sources.gni")
 import("../../config.gni")
 import("../../ressche_part.gni")
 import("../../sensor.gni")
@@ -63,6 +64,7 @@ ohos_shared_library("audio_common") {
     "-Wall",
     "-Werror",
   ]
+  cflags += [ "-Os" ]
   if (target_cpu == "arm") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
@@ -182,6 +184,7 @@ ohos_shared_library("audio_client") {
     "client/src/microphone_descriptor.cpp",
     "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
+    "client/src/renderer_in_client_public.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
@@ -229,6 +232,8 @@ ohos_shared_library("audio_client") {
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -246,6 +251,7 @@ config("audio_service_config") {
   visibility += [
     "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
     "../../services/audio_service/test/unittest/audio_server_unit_test",
+    "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
     "../../test/fuzztest/*",
   ]
 
@@ -295,7 +301,7 @@ config("audio_service_config") {
   cflags_cc += [ "-std=c++20" ]
 }
 
-ohos_shared_library("audio_process_service") {
+audio_ohos_library("audio_process_service") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -379,12 +385,15 @@ ohos_shared_library("audio_process_service") {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
   }
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libaudio_process_service.versionscript"
 }
 
-ohos_shared_library("audio_service") {
+audio_ohos_library("audio_service") {
   stack_protector_ret = true
   sanitize = {
     cfi = true
@@ -475,8 +484,12 @@ ohos_shared_library("audio_service") {
     defines += [ "TEST_COVERAGE" ]
   }
 
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libaudio_service.versionscript"
 }
 
 ohos_shared_library("audio_sasdk") {

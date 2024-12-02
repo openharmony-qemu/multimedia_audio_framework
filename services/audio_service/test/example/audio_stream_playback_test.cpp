@@ -267,10 +267,10 @@ int32_t PlaybackTest::SwitchOutputDevice()
         return ERR_INVALID_OPERATION;
     }
 
-    vector<sptr<AudioDeviceDescriptor>> devices;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (isSpkRemote_) {
         devices = manager->GetDevices(OUTPUT_DEVICES_FLAG);
-        vector<sptr<AudioDeviceDescriptor>>::iterator it;
+        vector<std::shared_ptr<AudioDeviceDescriptor>>::iterator it;
         for (it = devices.begin(); it != devices.end();) {
             if ((*it)->deviceType_ != DEVICE_TYPE_SPEAKER) {
                 it = devices.erase(it);
@@ -314,7 +314,7 @@ int32_t PlaybackTest::SwitchInputDevice()
         return ERR_INVALID_OPERATION;
     }
 
-    vector<sptr<AudioDeviceDescriptor>> devices;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (isMicRemote_) {
         devices = manager->GetDevices(INPUT_DEVICES_FLAG);
     } else {

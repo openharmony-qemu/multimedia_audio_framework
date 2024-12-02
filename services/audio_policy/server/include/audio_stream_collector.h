@@ -79,7 +79,8 @@ public:
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     int32_t ResumeStreamState();
     bool HasVoipRendererStream();
-    bool HasVoipCapturerStream();
+    bool ChangeVoipCapturerStreamToNormal();
+    bool IsCallStreamUsage(StreamUsage usage);
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
@@ -114,7 +115,6 @@ private:
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool IsTransparentCapture(const uint32_t clientUid);
-    bool IsCallStreamUsage(StreamUsage usage);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;

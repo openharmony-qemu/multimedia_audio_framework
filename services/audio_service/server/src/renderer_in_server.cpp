@@ -51,8 +51,7 @@ namespace {
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
-    constexpr int32_t DEFAULT_SPAN_SIZE = 4;
-    constexpr int32_t DIRECT_SPAN_SIZE = 1;
+    constexpr int32_t DEFAULT_SPAN_SIZE = 1;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -81,11 +80,7 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    int32_t frameCount = DEFAULT_SPAN_SIZE;
-    if (managerType_ == VOIP_PLAYBACK || managerType_ == DIRECT_PLAYBACK) {
-        frameCount = DIRECT_SPAN_SIZE;
-    }
-    totalSizeInFrame_ = spanSizeInFrame_ * frameCount; // 4 frames
+    totalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
@@ -197,6 +192,11 @@ void RendererInServer::WriterRenderStreamStandbySysEvent()
     bean->Add("STREAMID", static_cast<int32_t>(streamIndex_));
     bean->Add("STANDBY", standByEnable_ ? 1 : 0);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+    payload["sessionId"] = std::to_string(streamIndex_);
+    payload["isStandby"] = std::to_string(standByEnable_ ? 1 : 0);
+    ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_STANDBY);
 }
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
@@ -271,8 +271,8 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_UNDERRUN:
             AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
                 audioServerBuffer_->GetAvailableDataFrames());
-            // In plan, maxlength is 4
-            if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(4 * spanSizeInFrame_)) {
+            if (audioServerBuffer_->GetAvailableDataFrames() ==
+                static_cast<int32_t>(DEFAULT_SPAN_SIZE * spanSizeInFrame_)) {
                 AUDIO_INFO_LOG("Buffer is empty");
                 needForceWrite_ = 0;
             } else {
@@ -394,7 +394,12 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if ((currentTime - startMuteTime_ >= ONE_MINUTE) && silentState_ == 1) { // 1 means unsilent
             silentState_ = 0; // 0 means silent
             AUDIO_WARNING_LOG("write invalid data for some time in server");
-            ReportDataToResSched(true);
+
+            std::unordered_map<std::string, std::string> payload;
+            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+            payload["sessionId"] = std::to_string(streamIndex_);
+            payload["isSilent"] = std::to_string(true);
+            ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
         }
     } else {
         if (startMuteTime_ != 0) {
@@ -403,21 +408,22 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if (silentState_ == 0) { // 0 means silent
             AUDIO_WARNING_LOG("begin write valid data in server");
             silentState_ = 1; // 1 means unsilent
-            ReportDataToResSched(false);
+
+            std::unordered_map<std::string, std::string> payload;
+            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+            payload["sessionId"] = std::to_string(streamIndex_);
+            payload["isSilent"] = std::to_string(false);
+            ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
         }
     }
 }
 
-void RendererInServer::ReportDataToResSched(bool isSilent)
+void RendererInServer::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
 {
-    #ifdef RESSCHE_ENABLE
-    std::unordered_map<std::string, std::string> payload;
-    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
-    payload["sessionId"] = std::to_string(streamIndex_);
-    payload["isSilent"] = std::to_string(isSilent);
-    uint32_t type = ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK;
+#ifdef RESSCHE_ENABLE
+    AUDIO_INFO_LOG("report event to ResSched ,event type : %{public}d", type);
     ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
-    #endif
+#endif
 }
 
 void RendererInServer::VolumeHandle(BufferDesc &desc)
@@ -472,6 +478,13 @@ int32_t RendererInServer::WriteData()
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         FutexTool::FutexWake(audioServerBuffer_->GetFutex());
+        if (!offloadEnable_) {
+            CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+                "invalid write and read position.");
+            uint64_t dataSize = currentWriteFrame - currentReadFrame;
+            AUDIO_INFO_LOG("sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
+                streamIndex_, dataSize);
+        }
         return ERR_OPERATION_FAILED;
     }
 
@@ -590,8 +603,10 @@ int32_t RendererInServer::UpdateWriteIndex()
     if (needForceWrite_ < 3 && stream_->GetWritableSize() >= spanSizeInByte_) { // 3 is maxlength - 1
         if (writeLock_.try_lock()) {
             AUDIO_DEBUG_LOG("Start force write data");
-            WriteData();
-            needForceWrite_++;
+            int32_t ret = WriteData();
+            if (ret == SUCCESS) {
+                needForceWrite_++;
+            }
             writeLock_.unlock();
         }
     }
@@ -853,7 +868,6 @@ int32_t RendererInServer::Release()
     AudioXCollie audioXCollie(
         "RendererInServer::Release", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ == I_STATUS_RELEASED) {
@@ -869,6 +883,7 @@ int32_t RendererInServer::Release()
 
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
+    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
@@ -1192,6 +1207,7 @@ bool RendererInServer::IsHighResolution() const noexcept
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", on);
     if (silentModeAndMixWithOthers_) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
     } else {
@@ -1221,6 +1237,7 @@ int32_t RendererInServer::SetClientVolume(bool isStreamVolumeChange, bool isMedi
 
 int32_t RendererInServer::SetMute(bool isMute)
 {
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     if (isMute) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
     } else {

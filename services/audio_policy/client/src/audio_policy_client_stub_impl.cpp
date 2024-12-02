@@ -109,21 +109,21 @@ size_t AudioPolicyClientStubImpl::GetFocusInfoChangeCallbackSize() const
     return focusInfoChangeCallbackList_.size();
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilterByFlag(DeviceFlag flag,
-    const std::vector<sptr<AudioDeviceDescriptor>>& desc)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilterByFlag(DeviceFlag flag,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> descRet;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descRet;
     DeviceRole role = DEVICE_ROLE_NONE;
     switch (flag) {
         case DeviceFlag::ALL_DEVICES_FLAG:
-            for (sptr<AudioDeviceDescriptor> var : desc) {
+            for (std::shared_ptr<AudioDeviceDescriptor> var : desc) {
                 if (var->networkId_ == LOCAL_NETWORK_ID) {
                     descRet.insert(descRet.end(), var);
                 }
             }
             break;
         case DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG:
-            for (sptr<AudioDeviceDescriptor> var : desc) {
+            for (std::shared_ptr<AudioDeviceDescriptor> var : desc) {
                 if (var->networkId_ != LOCAL_NETWORK_ID) {
                     descRet.insert(descRet.end(), var);
                 }
@@ -135,7 +135,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilter
         case DeviceFlag::OUTPUT_DEVICES_FLAG:
         case DeviceFlag::INPUT_DEVICES_FLAG:
             role = flag == INPUT_DEVICES_FLAG ? INPUT_DEVICE : OUTPUT_DEVICE;
-            for (sptr<AudioDeviceDescriptor> var : desc) {
+            for (std::shared_ptr<AudioDeviceDescriptor> var : desc) {
                 if (var->networkId_ == LOCAL_NETWORK_ID && var->deviceRole_ == role) {
                     descRet.insert(descRet.end(), var);
                 }
@@ -144,7 +144,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilter
         case DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG:
         case DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG:
             role = flag == DISTRIBUTED_INPUT_DEVICES_FLAG ? INPUT_DEVICE : OUTPUT_DEVICE;
-            for (sptr<AudioDeviceDescriptor> var : desc) {
+            for (std::shared_ptr<AudioDeviceDescriptor> var : desc) {
                 if (var->networkId_ != LOCAL_NETWORK_ID && var->deviceRole_ == role) {
                     descRet.insert(descRet.end(), var);
                 }
@@ -370,61 +370,87 @@ void AudioPolicyClientStubImpl::OnMicStateUpdated(const MicStateChangeEvent &mic
     }
 }
 
-int32_t AudioPolicyClientStubImpl::AddPreferredOutputDeviceChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
-    preferredOutputDeviceCallbackList_.push_back(cb);
+    preferredOutputDeviceCallbackMap_[rendererInfo.streamUsage].push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemovePreferredOutputDeviceChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemovePreferredOutputDeviceChangeCallback(
+    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
-    preferredOutputDeviceCallbackList_.clear();
+    if (cb == nullptr) {
+        preferredOutputDeviceCallbackMap_.clear();
+        return SUCCESS;
+    }
+    for (auto &it : preferredOutputDeviceCallbackMap_) {
+        auto iter = find(it.second.begin(), it.second.end(), cb);
+        if (iter != it.second.end()) {
+            it.second.erase(iter);
+        }
+    }
     return SUCCESS;
 }
 
 size_t AudioPolicyClientStubImpl::GetPreferredOutputDeviceChangeCallbackSize() const
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
-    return preferredOutputDeviceCallbackList_.size();
+    return preferredOutputDeviceCallbackMap_.size();
 }
 
-void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
-    for (auto it = preferredOutputDeviceCallbackList_.begin(); it != preferredOutputDeviceCallbackList_.end(); ++it) {
-        (*it)->OnPreferredOutputDeviceUpdated(desc);
+    auto it = preferredOutputDeviceCallbackMap_.find(rendererInfo.streamUsage);
+    for (auto iter = it->second.begin(); iter != it->second.end(); ++iter) {
+        CHECK_AND_CONTINUE_LOG(iter != it->second.end() && (*iter) != nullptr, "iter is null");
+        (*iter)->OnPreferredOutputDeviceUpdated(desc);
     }
 }
 
-int32_t AudioPolicyClientStubImpl::AddPreferredInputDeviceChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddPreferredInputDeviceChangeCallback(const AudioCapturerInfo &capturerInfo,
     const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
-    preferredInputDeviceCallbackList_.push_back(cb);
+    preferredInputDeviceCallbackMap_[capturerInfo.sourceType].push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemovePreferredInputDeviceChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemovePreferredInputDeviceChangeCallback(
+    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
-    preferredInputDeviceCallbackList_.clear();
+    if (cb == nullptr) {
+        preferredInputDeviceCallbackMap_.clear();
+        return SUCCESS;
+    }
+    for (auto &it : preferredInputDeviceCallbackMap_) {
+        auto iter = find(it.second.begin(), it.second.end(), cb);
+        if (iter != it.second.end()) {
+            it.second.erase(iter);
+        }
+    }
     return SUCCESS;
 }
 
 size_t AudioPolicyClientStubImpl::GetPreferredInputDeviceChangeCallbackSize() const
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
-    return preferredInputDeviceCallbackList_.size();
+    return preferredInputDeviceCallbackMap_.size();
 }
 
-void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
-    for (auto it = preferredInputDeviceCallbackList_.begin(); it != preferredInputDeviceCallbackList_.end(); ++it) {
-        (*it)->OnPreferredInputDeviceUpdated(desc);
+    auto it = preferredInputDeviceCallbackMap_.find(capturerInfo.sourceType);
+    for (auto iter = it->second.begin(); iter != it->second.end(); ++iter) {
+        CHECK_AND_CONTINUE_LOG(iter != it->second.end() && (*iter) != nullptr, "iter is null");
+        (*iter)->OnPreferredInputDeviceUpdated(desc);
     }
 }
 
@@ -686,8 +712,8 @@ void AudioPolicyClientStubImpl::OnSpatializationEnabledChange(const bool &enable
     }
 }
 
-void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
-    &deviceDescriptor, const bool &enabled)
+void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
@@ -724,12 +750,40 @@ void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(const bool &enabled)
     }
 }
 
-void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
-    &deviceDescriptor, const bool &enabled)
+void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
         callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    }
+}
+
+int32_t AudioPolicyClientStubImpl::AddNnStateChangeCallback(const std::shared_ptr<AudioNnStateChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    nnStateChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveNnStateChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    nnStateChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetNnStateChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    return nnStateChangeCallbackList_.size();
+}
+
+void AudioPolicyClientStubImpl::OnNnStateChange(const int32_t &nnState)
+{
+    std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
+    for (const auto &callback : nnStateChangeCallbackList_) {
+        callback->OnNnStateChange(nnState);
     }
 }
 } // namespace AudioStandard

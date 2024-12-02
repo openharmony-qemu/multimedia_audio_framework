@@ -58,7 +58,7 @@ ohos_unittest("audio_endpoint_unit_test") {
     "../../../../../frameworks/native/playbackcapturer:playback_capturer",
     "../../../../../services/audio_service:audio_common",
     "../../../../../services/audio_service:audio_service",
-    "../../../../audio_service:audio_process_service",
+    "../../../../audio_service:audio_process_service_static",
   ]
 
   external_deps = [
@@ -130,7 +130,7 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "../../../../../services/audio_service:audio_client",
     "../../../../../services/audio_service:audio_common",
     "../../../../../services/audio_service:audio_service",
-    "../../../../audio_service:audio_process_service",
+    "../../../../audio_service:audio_process_service_static",
   ]
 
   external_deps = [

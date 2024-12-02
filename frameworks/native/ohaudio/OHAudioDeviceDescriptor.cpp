@@ -129,7 +129,7 @@ OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceEncodingTypes(OH_AudioDe
 namespace OHOS {
 namespace AudioStandard {
 
-OHAudioDeviceDescriptor::OHAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+OHAudioDeviceDescriptor::OHAudioDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
     : audioDeviceDescriptor_(audioDeviceDescriptor)
 {
     AUDIO_INFO_LOG("OHAudioDeviceDescriptor Constructor is called\n");

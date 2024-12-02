@@ -41,7 +41,7 @@ void ClientTypeManager::GetAndSaveClientType(uint32_t uid, const std::string &bu
     }
     handlerLock.unlock();
 
-    std::unique_lock<std::mutex> lock(clientTypeMapMutex_);
+    std::unique_lock<ffrt::mutex> lock(clientTypeMapMutex_);
     auto it = clientTypeMap_.find(uid);
     if (it != clientTypeMap_.end()) {
         AUDIO_INFO_LOG("Uid already in map");
@@ -76,7 +76,7 @@ void ClientTypeManager::SetQueryClientTypeCallback(const sptr<IStandardAudioPoli
 
 ClientType ClientTypeManager::GetClientTypeByUid(uint32_t uid)
 {
-    std::lock_guard<std::mutex> lock(clientTypeMapMutex_);
+    std::lock_guard<ffrt::mutex> lock(clientTypeMapMutex_);
     AUDIO_INFO_LOG("uid %{public}u", uid);
     auto it = clientTypeMap_.find(uid);
     if (it == clientTypeMap_.end()) {
@@ -88,7 +88,7 @@ ClientType ClientTypeManager::GetClientTypeByUid(uint32_t uid)
 
 void ClientTypeManager::OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType)
 {
-    std::lock_guard<std::mutex> lock(clientTypeMapMutex_);
+    std::lock_guard<ffrt::mutex> lock(clientTypeMapMutex_);
     AUDIO_INFO_LOG("uid: %{public}u, client type: %{public}d", uid, clientType);
     clientTypeMap_.insert_or_assign(uid, clientType);
 }

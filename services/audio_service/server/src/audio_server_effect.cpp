@@ -33,7 +33,7 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
         AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
         return;
     }
-    audioEffectChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+    audioEffectChainManager->UpdateParamExtra(mainkey, subkey, extraSceneType);
 }
 
 bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
@@ -93,6 +93,7 @@ int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, f
     switch (streamType) {
         case STREAM_RING:
         case STREAM_ALARM:
+        case STREAM_SYSTEM:
             sceneType = "SCENE_RING";
             break;
         case STREAM_VOICE_ASSISTANT:

@@ -41,6 +41,7 @@ public:
     static bool IsVolumeValid(float volFloat); // 0.0 <= volFloat <= 1.0
     static bool IsVolumeValid(int32_t volInt); // 0 <= volInt <= 65536
     static bool IsVolumeValid(ChannelVolumes vols);
+    static size_t GetByteSize(AudioSampleFormat format);
     static int32_t GetInt32Vol(float volFloat);
     static ChannelVolumes GetChannelVolumes(AudioChannel channel, int32_t volStart, int32_t volEnd);
     static ChannelVolumes GetChannelVolumes(AudioChannel channel, float volStart, float volEnd);
@@ -51,7 +52,7 @@ public:
 
     // will count volume for each channel, vol sum will be kept in volStart
     static ChannelVolumes CountVolumeLevel(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel,
-        int32_t split = 1);
+        size_t split = 1);
 };
 } // namespace AudioStandard
 } // namespace OHOS

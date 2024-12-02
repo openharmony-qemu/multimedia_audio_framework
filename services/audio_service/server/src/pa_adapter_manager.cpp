@@ -92,7 +92,8 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = 0;
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK ||
+        processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
     } else {
         sessionId = processConfig.originalSessionId;
@@ -372,7 +373,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
                 deviceName = INNER_CAPTURER_SOURCE;
             }
         } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
-            deviceName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
+            deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME) + std::string(MONITOR_SOURCE_SUFFIX);
         }
         return PolicyHandler::GetInstance().NotifyCapturerAdded(processConfig.capturerInfo,
             processConfig.streamInfo, sessionId);
@@ -430,6 +431,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     if (ret < 0) {
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         ReleasePaStream(paStream);
+        PolicyHandler::GetInstance().NotifyCapturerRemoved(sessionId);
         return nullptr;
     }
     return paStream;
@@ -545,7 +547,6 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
         pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
         pa_proplist_sets(propList, "stream.flush", "false");
-        pa_proplist_sets(propList, "fadeoutPause", "0");
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
         pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
@@ -659,7 +660,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
-    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK.c_str() :
+    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK :
         (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
     uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;
@@ -689,9 +690,12 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
         bufferAttr.maxlength, bufferAttr.fragsize);
 
     const char *cDeviceName = (deviceName == "") ? nullptr : deviceName.c_str();
-    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr,
-        (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
-        PA_STREAM_VARIABLE_RATE));
+
+    uint32_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED | PA_STREAM_VARIABLE_RATE;
+    if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        flags |= PA_STREAM_DONT_MOVE; //inner cap source-output,should not be moved!
+    }
+    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr, static_cast<pa_stream_flags_t>(flags));
     // PA_STREAM_ADJUST_LATENCY exist, return peek length from server;
     if (result < 0) {
         int32_t error = pa_context_errno(context_);

@@ -27,10 +27,13 @@ const std::string AUDIO_SAFE_VOLUME_STATE = "audio_safe_volume_state";
 const std::string AUDIO_SAFE_VOLUME_STATE_BT = "audio_safe_volume_state_bt";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS = "unsafe_volume_music_active_ms";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_BT = "unsafe_volume_music_active_ms_bt";
+const std::string UNSAFE_VOLUME_LEVEL = "unsafe_volume_level";
+const std::string UNSAFE_VOLUME_LEVEL_BT = "unsafe_volume_level_bt";
 const std::string SETTINGS_CLONED = "settingsCloneStatus";
 const int32_t INVALIAD_SETTINGS_CLONE_STATUS = -1;
 const int32_t SETTINGS_CLONING_STATUS = 1;
 const int32_t SETTINGS_CLONED_STATUS = 0;
+constexpr int32_t MAX_SAFE_STATUS = 2;
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
@@ -119,9 +122,15 @@ bool VolumeDataMaintainer::GetFirstBoot(bool &firstBoot)
     return true;
 }
 
+void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    audioSettingProvider.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
 bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
 {
-    std::lock_guard<std::mutex> lock(volumeForDbMutex_);
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     std::string volumeKey = GetVolumeKeyForDataShare(type, streamType);
     if (!volumeKey.compare("")) {
         AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
@@ -140,7 +149,7 @@ bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamTyp
 
 bool VolumeDataMaintainer::GetVolume(DeviceType deviceType, AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeForDbMutex_);
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     return GetVolumeInternal(deviceType, streamType);
 }
 
@@ -161,12 +170,13 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     int32_t volumeValue = 0;
     ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeValue, "system");
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Get Volume FromDataBase volumeMap failed");
+        AUDIO_ERR_LOG("Get streamType %{public}d, deviceType %{public}d, Volume FromDataBase volumeMap failed.",
+            streamType, deviceType);
         return false;
     } else {
         volumeLevelMap_[streamType] = volumeValue;
-        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d Volume FromDataBase volumeMap from datashare %{public}d",
-            streamType, volumeValue);
+        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d, deviceType %{public}d, "\
+            "Volume FromDataBase volumeMap from datashare %{public}d.", streamType, deviceType, volumeValue);
     }
 
     return true;
@@ -174,7 +184,7 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
 
 void VolumeDataMaintainer::SetStreamVolume(AudioStreamType streamType, int32_t volumeLevel)
 {
-    std::lock_guard<std::mutex> lock(volumeMutex_);
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     SetStreamVolumeInternal(streamType, volumeLevel);
 }
 
@@ -186,7 +196,7 @@ void VolumeDataMaintainer::SetStreamVolumeInternal(AudioStreamType streamType, i
 
 int32_t VolumeDataMaintainer::GetStreamVolume(AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeMutex_);
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     return GetStreamVolumeInternal(streamType);
 }
 
@@ -198,15 +208,15 @@ int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType
 
 std::unordered_map<AudioStreamType, int32_t> VolumeDataMaintainer::GetVolumeMap()
 {
-    std::lock_guard<std::mutex> lock(volumeMutex_);
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     return volumeLevelMap_;
 }
 
 bool VolumeDataMaintainer::SaveMuteStatus(DeviceType deviceType, AudioStreamType streamType,
     bool muteStatus)
 {
-    std::lock_guard<std::mutex> lock(volumeForDbMutex_);
-    if (streamType == STREAM_RING) {
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    if (streamType == STREAM_RING && VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
         AUDIO_INFO_LOG("set ring stream mute status to all device.");
         bool saveMuteResult = false;
         for (auto &device : DEVICE_TYPE_LIST) {
@@ -245,7 +255,7 @@ bool VolumeDataMaintainer::SaveMuteStatusInternal(DeviceType deviceType, AudioSt
 
 bool VolumeDataMaintainer::SetStreamMuteStatus(AudioStreamType streamType, bool muteStatus)
 {
-    std::lock_guard<std::mutex> lock(volumeMutex_);
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     muteStatusMap_[streamForVolumeMap] = muteStatus;
     return true;
@@ -253,7 +263,7 @@ bool VolumeDataMaintainer::SetStreamMuteStatus(AudioStreamType streamType, bool 
 
 bool VolumeDataMaintainer::GetMuteStatus(DeviceType deviceType, AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeForDbMutex_);
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     return GetMuteStatusInternal(deviceType, streamType);
 }
 
@@ -282,7 +292,7 @@ bool VolumeDataMaintainer::GetMuteStatusInternal(DeviceType deviceType, AudioStr
 
 bool VolumeDataMaintainer::GetStreamMute(AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeMutex_);
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     return GetStreamMuteInternal(streamType);
 }
 
@@ -479,6 +489,61 @@ bool VolumeDataMaintainer::GetSafeVolumeTime(DeviceType deviceType, int64_t &tim
     return true;
 }
 
+bool VolumeDataMaintainer::SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume)
+{
+    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = SUCCESS;
+    switch (deviceType) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            ret = settingProvider.PutIntValue(UNSAFE_VOLUME_LEVEL_BT, volume);
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
+            ret = settingProvider.PutIntValue(UNSAFE_VOLUME_LEVEL, volume);
+            break;
+        default:
+            AUDIO_WARNING_LOG("the device type not support safe volume");
+            return false;
+    }
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("device:%{public}d, insert failed", deviceType);
+        return false;
+    }
+
+    return true;
+}
+
+bool VolumeDataMaintainer::GetRestoreVolumeLevel(DeviceType deviceType, int32_t &volume)
+{
+    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = SUCCESS;
+    int32_t value = 0;
+    switch (deviceType) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            ret = settingProvider.GetIntValue(UNSAFE_VOLUME_LEVEL_BT, value);
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
+            ret = settingProvider.GetIntValue(UNSAFE_VOLUME_LEVEL, value);
+            break;
+        default:
+            AUDIO_WARNING_LOG("the device type not support safe volume");
+            return false;
+    }
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("device:%{public}d, insert failed", deviceType);
+        return false;
+    }
+    volume = value;
+    return true;
+}
+
 bool VolumeDataMaintainer::SaveSystemSoundUrl(const std::string &key, const std::string &value)
 {
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
@@ -555,6 +620,8 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
     std::string type = "";
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
+            type = "_earpiece";
+            return type;
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_DP:
             type = "_builtin";

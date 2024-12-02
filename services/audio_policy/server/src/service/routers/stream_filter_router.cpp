@@ -25,12 +25,12 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage,
+shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
     DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
     if (routingInfo.descriptor != nullptr) {
-        sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
         bool hasDescriptor = false;
         AUDIO_INFO_LOG("streamUsage %{public}d clientUid %{public}d",
@@ -41,14 +41,14 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(Strea
                 break;
             }
             case CAST_TYPE_ALL: {
-                vector<unique_ptr<AudioDeviceDescriptor>> descriptors =
+                vector<shared_ptr<AudioDeviceDescriptor>> descriptors =
                     AudioDeviceManager::GetAudioDeviceManager().GetRemoteRenderDevices();
                 hasDescriptor = IsIncomingDeviceInRemoteDevice(descriptors, deviceDescriptor);
                 break;
             }
             case CAST_TYPE_PROJECTION: {
                 if (streamUsage == STREAM_USAGE_MUSIC) {
-                    vector<unique_ptr<AudioDeviceDescriptor>> descriptors =
+                    vector<shared_ptr<AudioDeviceDescriptor>> descriptors =
                         AudioDeviceManager::GetAudioDeviceManager().GetRemoteRenderDevices();
                     hasDescriptor = IsIncomingDeviceInRemoteDevice(descriptors, deviceDescriptor);
                 }
@@ -64,19 +64,19 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(Strea
         }
         if (hasDescriptor) {
             AUDIO_INFO_LOG("Incoming device is in remote devices");
-            unique_ptr<AudioDeviceDescriptor> incomingDevice = make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+            shared_ptr<AudioDeviceDescriptor> incomingDevice = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
             return incomingDevice;
         }
     }
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(StreamUsage streamUsage,
+shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
     DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
     if (routingInfo.descriptor != nullptr) {
-        sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
         bool hasDescriptor = false;
         AUDIO_INFO_LOG("streamUsage %{public}d clientUid %{public}d",
@@ -87,7 +87,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(Stream
                 break;
             }
             case CAST_TYPE_ALL: {
-                vector<unique_ptr<AudioDeviceDescriptor>> descriptors =
+                vector<shared_ptr<AudioDeviceDescriptor>> descriptors =
                     AudioDeviceManager::GetAudioDeviceManager().GetRemoteRenderDevices();
                 hasDescriptor = IsIncomingDeviceInRemoteDevice(descriptors, deviceDescriptor);
                 break;
@@ -105,19 +105,19 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(Stream
         }
         if (hasDescriptor) {
             AUDIO_INFO_LOG("Incoming device is in remote devices");
-            unique_ptr<AudioDeviceDescriptor> incomingDevice = make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+            shared_ptr<AudioDeviceDescriptor> incomingDevice = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
             return incomingDevice;
         }
     }
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(SourceType sourceType,
+shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(SourceType sourceType,
     int32_t clientUID)
 {
     DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
     if (routingInfo.descriptor != nullptr) {
-        sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
         bool hasDescriptor = false;
         AUDIO_INFO_LOG("sourceType %{public}d clientUid %{public}d",
@@ -127,7 +127,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(Sourc
                 break;
             }
             case CAST_TYPE_ALL: {
-                vector<unique_ptr<AudioDeviceDescriptor>> descriptors =
+                vector<shared_ptr<AudioDeviceDescriptor>> descriptors =
                     AudioDeviceManager::GetAudioDeviceManager().GetRemoteCaptureDevices();
                 hasDescriptor = IsIncomingDeviceInRemoteDevice(descriptors, deviceDescriptor);
                 break;
@@ -145,29 +145,29 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(Sourc
         }
         if (hasDescriptor) {
             AUDIO_INFO_LOG("Incoming device is in remote devices");
-            unique_ptr<AudioDeviceDescriptor> incomingDevice = make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+            shared_ptr<AudioDeviceDescriptor> incomingDevice = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
             return incomingDevice;
         }
     }
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-vector<std::unique_ptr<AudioDeviceDescriptor>> StreamFilterRouter::GetRingRenderDevices(StreamUsage streamUsage,
+vector<std::shared_ptr<AudioDeviceDescriptor>> StreamFilterRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
     return descs;
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(SourceType sourceType,
+shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(SourceType sourceType,
     int32_t clientUID)
 {
     DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
     if (routingInfo.descriptor != nullptr) {
-        sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
         bool hasDescriptor = false;
-        unique_ptr<AudioDeviceDescriptor> captureDevice;
+        shared_ptr<AudioDeviceDescriptor> captureDevice;
         AUDIO_INFO_LOG("sourceType %{public}d clientUid %{public}d",
             sourceType, clientUID);
         switch (type) {
@@ -175,14 +175,14 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(Sou
                 break;
             }
             case CAST_TYPE_ALL: {
-                vector<unique_ptr<AudioDeviceDescriptor>> descriptors =
+                vector<shared_ptr<AudioDeviceDescriptor>> descriptors =
                     AudioDeviceManager::GetAudioDeviceManager().GetRemoteCaptureDevices();
                 captureDevice = SelectRemoteCaptureDevice(descriptors, deviceDescriptor, hasDescriptor);
                 break;
             }
             case CAST_TYPE_PROJECTION: {
                 if (sourceType == SOURCE_TYPE_MIC) {
-                    vector<unique_ptr<AudioDeviceDescriptor>> descriptors =
+                    vector<shared_ptr<AudioDeviceDescriptor>> descriptors =
                         AudioDeviceManager::GetAudioDeviceManager().GetRemoteCaptureDevices();
                     captureDevice = SelectRemoteCaptureDevice(descriptors, deviceDescriptor, hasDescriptor);
                 }
@@ -201,17 +201,17 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(Sou
             return captureDevice;
         }
     }
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetToneRenderDevice(StreamUsage streamUsage,
+shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetToneRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 
-bool StreamFilterRouter::IsIncomingDeviceInRemoteDevice(vector<unique_ptr<AudioDeviceDescriptor>> &descriptors,
-    sptr<AudioDeviceDescriptor> incomingDevice)
+bool StreamFilterRouter::IsIncomingDeviceInRemoteDevice(vector<shared_ptr<AudioDeviceDescriptor>> &descriptors,
+    std::shared_ptr<AudioDeviceDescriptor> incomingDevice)
 {
     for (const auto &desc : descriptors) {
         if (desc != nullptr) {
@@ -228,8 +228,8 @@ bool StreamFilterRouter::IsIncomingDeviceInRemoteDevice(vector<unique_ptr<AudioD
     return false;
 }
 
-std::unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::SelectRemoteCaptureDevice(
-    vector<unique_ptr<AudioDeviceDescriptor>> &descriptors, sptr<AudioDeviceDescriptor> incomingDevice,
+std::shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::SelectRemoteCaptureDevice(
+    vector<shared_ptr<AudioDeviceDescriptor>> &descriptors, std::shared_ptr<AudioDeviceDescriptor> incomingDevice,
     bool &hasDescriptor)
 {
     for (auto &descriptor : descriptors) {
@@ -238,10 +238,10 @@ std::unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::SelectRemoteCaptureDe
             descriptor->deviceRole_ == INPUT_DEVICE &&
             descriptor->deviceType_ == DEVICE_TYPE_MIC) {
             hasDescriptor = true;
-            return make_unique<AudioDeviceDescriptor>(*descriptor);
+            return make_shared<AudioDeviceDescriptor>(*descriptor);
         }
     }
-    return make_unique<AudioDeviceDescriptor>();
+    return make_shared<AudioDeviceDescriptor>();
 }
 } // namespace AudioStandard
 } // namespace OHOS

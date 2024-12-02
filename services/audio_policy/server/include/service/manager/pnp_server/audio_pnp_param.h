@@ -45,6 +45,10 @@
 #define USB_DEV_NAME_LEN_MAX    64
 #define USB_DES_LEN_MAX         4096
 
+#define STATE_NOT_SUPPORTED     0
+#define STATE_NN_OFF            1
+#define STATE_NN_ON             2
+
 #define UEVENT_ACTION           "ACTION="
 #define UEVENT_NAME             "NAME="
 #define UEVENT_STATE            "STATE="

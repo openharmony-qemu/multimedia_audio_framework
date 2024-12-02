@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioCapturerInfoChangeCallback"
 #endif
-#include <thread>
 
 #include "js_native_api.h"
 #include "napi_audio_capturer_info_change_callback.h"

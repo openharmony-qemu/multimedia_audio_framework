@@ -45,7 +45,7 @@ ohos_fuzztest("AudioPolicyServiceFuzzTest") {
   sources = [ "audio_policy_service_fuzzer.cpp" ]
 
   deps = [
-    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
   ]
 

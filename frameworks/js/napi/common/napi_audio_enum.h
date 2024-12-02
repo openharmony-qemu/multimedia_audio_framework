@@ -47,6 +47,7 @@ public:
         MEDIA = 3,
         ALARM = 4,
         ACCESSIBILITY = 5,
+        SYSTEM = 6,
         VOICE_ASSISTANT = 9,
         ULTRASONIC = 10,
         VOLUMETYPE_MAX,

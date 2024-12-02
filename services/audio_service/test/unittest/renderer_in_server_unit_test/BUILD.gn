@@ -61,7 +61,7 @@ ohos_unittest("renderer_in_server_unit_test") {
 
   deps = [
     "../../../../../services/audio_service:audio_service",
-    "../../../../audio_service:audio_process_service",
+    "../../../../audio_service:audio_process_service_static",
   ]
 
   external_deps = [

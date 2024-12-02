@@ -35,9 +35,9 @@ public:
     /**
      * Called when the prefer output device changes
      *
-     * @param vector<sptr<AudioDeviceDescriptor>> deviceDescriptor.
+     * @param vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor.
      */
-    virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
+    virtual void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
 };
 
 class AudioPreferredInputDeviceChangeCallback {
@@ -46,9 +46,9 @@ class AudioPreferredInputDeviceChangeCallback {
     /**
      * Called when the prefer input device changes
      *
-     * @param vector<sptr<AudioDeviceDescriptor>> deviceDescriptor.
+     * @param vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor.
      */
-    virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
+    virtual void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
 };
 
 class AudioRoutingManager {
@@ -59,18 +59,20 @@ public:
     static AudioRoutingManager *GetInstance();
     int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
     int32_t GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
-        std::vector<sptr<AudioDeviceDescriptor>> &desc);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
-        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback);
-    int32_t UnsetPreferredOutputDeviceChangeCallback();
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
+    int32_t UnsetPreferredOutputDeviceChangeCallback(
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr);
     int32_t GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
-        std::vector<sptr<AudioDeviceDescriptor>> &desc);
-    int32_t SetPreferredInputDeviceChangeCallback(AudioCapturerInfo captureInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+    int32_t SetPreferredInputDeviceChangeCallback(AudioCapturerInfo capturerInfo,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
-    int32_t UnsetPreferredInputDeviceChangeCallback();
+    int32_t UnsetPreferredInputDeviceChangeCallback(
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback = nullptr);
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
-    std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
+    std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
     int32_t SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback);
     int32_t UnsetAudioDeviceRefinerCallback();
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);

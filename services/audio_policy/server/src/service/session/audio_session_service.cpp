@@ -19,6 +19,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -165,5 +166,31 @@ void AudioSessionService::OnAudioSessionTimeOut(const int32_t callerPid)
     }
     cb->OnSessionTimeout(callerPid);
 }
+
+void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    if (sessionMap_.empty()) {
+        AppendFormat(dumpString, "    - The AudioSessionMap is empty.\n");
+        return;
+    }
+    for (auto iterAudioSession = sessionMap_.begin(); iterAudioSession != sessionMap_.end(); ++iterAudioSession) {
+        int32_t pid = iterAudioSession->first;
+        std::shared_ptr<AudioSession> audioSession = iterAudioSession->second;
+        if (audioSession == nullptr) {
+            AppendFormat(dumpString, "    - pid: %d, AudioSession is null.\n", pid);
+            continue;
+        }
+        if (audioSession->IsAudioSessionEmpty()) {
+            AppendFormat(dumpString, "    - pid: %d, AudioSession is empty.\n", pid);
+        } else {
+            AudioSessionState sessionState = audioSession->GetSessionState();
+            AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %d.\n", pid,
+                static_cast<uint32_t>(sessionState));
+        }
+    }
+    dumpString += "\n";
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

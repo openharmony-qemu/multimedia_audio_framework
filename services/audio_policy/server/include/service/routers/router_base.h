@@ -30,21 +30,21 @@ public:
     RouterBase() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()) {}
     virtual ~RouterBase() {};
 
-    virtual std::unique_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
-    virtual std::unique_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
-    virtual std::unique_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
-    virtual vector<std::unique_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage streamUsage,
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
+    virtual vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage streamUsage,
         int32_t clientUID) = 0;
-    virtual std::unique_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
-    virtual std::unique_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
     virtual RouterType GetRouterType() = 0;
 
     virtual std::string GetClassName()
     {
         return name_;
     }
-    std::unique_ptr<AudioDeviceDescriptor> GetLatestConnectDeivce(
-        std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
+    std::shared_ptr<AudioDeviceDescriptor> GetLatestConnectDeivce(
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
     {
         // remove abnormal device
         for (size_t i = 0; i < descs.size(); i++) {
@@ -55,18 +55,18 @@ public:
             }
         }
         if (descs.size() > 0) {
-            auto compare = [&] (std::unique_ptr<AudioDeviceDescriptor> &desc1,
-                std::unique_ptr<AudioDeviceDescriptor> &desc2) {
+            auto compare = [&] (std::shared_ptr<AudioDeviceDescriptor> &desc1,
+                std::shared_ptr<AudioDeviceDescriptor> &desc2) {
                 return desc1->connectTimeStamp_ < desc2->connectTimeStamp_;
             };
             sort(descs.begin(), descs.end(), compare);
             return std::move(descs.back());
         }
-        return std::make_unique<AudioDeviceDescriptor>();
+        return std::make_shared<AudioDeviceDescriptor>();
     }
 
-    std::unique_ptr<AudioDeviceDescriptor> GetPairCaptureDevice(std::unique_ptr<AudioDeviceDescriptor> &desc,
-        std::vector<std::unique_ptr<AudioDeviceDescriptor>> &captureDescs)
+    std::shared_ptr<AudioDeviceDescriptor> GetPairCaptureDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &captureDescs)
     {
         for (auto &captureDesc : captureDescs) {
             if (captureDesc->deviceRole_ != desc->deviceRole_
@@ -80,11 +80,11 @@ public:
                  captureDesc->connectState_ != SUSPEND_CONNECTED)) {
                 return std::move(captureDesc);
             }
-            AUDIO_INFO_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] isEnable[%{public}d]" \
+            AUDIO_WARNING_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] isEnable[%{public}d]" \
                 "exceptionFlag[%{public}d]", captureDesc->deviceType_, captureDesc->connectState_,
                 captureDesc->isEnable_, captureDesc->exceptionFlag_);
         }
-        return std::make_unique<AudioDeviceDescriptor>();
+        return std::make_shared<AudioDeviceDescriptor>();
     }
 };
 } // namespace AudioStandard

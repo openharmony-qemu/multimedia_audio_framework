@@ -79,7 +79,7 @@ public:
      * @return Returns {@link SUCCESS} if module/port is closed successfully; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-    virtual int32_t CloseAudioPort(int32_t audioHandleIndex) = 0;
+    virtual int32_t CloseAudioPort(int32_t audioHandleIndex, bool isSync = false) = 0;
 
     /**
      * @brief sets default audio sink.

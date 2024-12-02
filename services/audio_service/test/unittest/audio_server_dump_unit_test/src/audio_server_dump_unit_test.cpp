@@ -86,31 +86,6 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerIsEndWith_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test Initialize
- * @tc.type  : FUNC
- * @tc.number: AudioServerInitialize_001
- * @tc.desc  : Test Initialize
- */
-HWTEST_F(AudioServerDumpUnitTest, AudioServerInitialize_001, TestSize.Level1)
-{
-    AudioServerDump audioServerDump;
-
-    int32_t ret = audioServerDump.Initialize();
-    int32_t single = pa_threaded_mainloop_start(audioServerDump.mainLoop);
-    EXPECT_NE(nullptr, audioServerDump.mainLoop);
-
-    EXPECT_NE(nullptr, audioServerDump.api);
-
-    EXPECT_NE(nullptr, audioServerDump.context);
-
-    EXPECT_TRUE(audioServerDump.isContextConnected_);
-
-    EXPECT_TRUE(single >= 0);
-
-    EXPECT_EQ(AUDIO_DUMP_SUCCESS, ret);
-}
-
-/**
  * @tc.name  : Test PlaybackSinkDump
  * @tc.type  : FUNC
  * @tc.number: AudioServerPlaybackSinkDump_001

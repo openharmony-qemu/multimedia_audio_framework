@@ -40,14 +40,14 @@ class AudioPreferredOutputDeviceChangeCallbackFuzz : public AudioPreferredOutput
 public:
     explicit AudioPreferredOutputDeviceChangeCallbackFuzz() = default;
     virtual ~AudioPreferredOutputDeviceChangeCallbackFuzz() = default;
-    virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+    virtual void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {};
 };
 
 class AudioPreferredInputDeviceChangeCallbackFuzz : public AudioPreferredInputDeviceChangeCallback {
 public:
     explicit AudioPreferredInputDeviceChangeCallbackFuzz() = default;
     virtual ~AudioPreferredInputDeviceChangeCallbackFuzz() = default;
-    virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+    virtual void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {};
 };
 
 class AudioFocusInfoChangeCallbackFuzz : public AudioFocusInfoChangeCallback {

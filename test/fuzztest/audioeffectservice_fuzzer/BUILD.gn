@@ -39,9 +39,9 @@ ohos_fuzztest("AudioEffectServiceFuzzTest") {
   sources = [ "audio_effect_service_fuzzer.cpp" ]
 
   deps = [
-    "../../../frameworks/native/audioeffect:audio_effect",
+    "../../../frameworks/native/audioeffect:audio_effect_static",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
-    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_policy:audio_policy_service_static",
   ]
 
   external_deps = [

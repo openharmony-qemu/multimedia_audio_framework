@@ -20,14 +20,14 @@
 namespace OHOS {
 namespace AudioStandard {
 struct BufferBaseInfo {
-    uint8_t *buffer;
-    size_t bufLength;
-    uint32_t frameSize;
-    uint32_t samplePerFrame;
-    int32_t format;
-    int32_t channelCount;
-    float volumeBg;
-    float volumeEd;
+    uint8_t *buffer = nullptr;
+    size_t bufLength = 0;
+    uint32_t frameSize = 0;
+    uint32_t samplePerFrame = 0;
+    int32_t format = 0;
+    uint32_t channelCount = 0;
+    float volumeBg = 0.f;
+    float volumeEd = 0.f;
 };
 
 class AudioCommonConverter {

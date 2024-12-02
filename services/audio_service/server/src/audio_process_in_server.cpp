@@ -52,10 +52,10 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     }
 
     const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig.streamInfo;
-    // eg: 100005_48000_2_1_dump_process_server_audio.pcm
-    dumpFileName_ = std::to_string(sessionId_) + '_' +
+    // eg: 100005_dump_process_server_audio_48000_2_1.pcm
+    dumpFileName_ = std::to_string(sessionId_) + '_' + "_dump_process_server_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
-        "_dump_process_server_audio.pcm";
+        ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 }
 
@@ -64,6 +64,10 @@ AudioProcessInServer::~AudioProcessInServer()
     AUDIO_INFO_LOG("~AudioProcessInServer()");
     if (convertedBuffer_.buffer != nullptr) {
         delete [] convertedBuffer_.buffer;
+    }
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyStop(tokenId, sessionId_);
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -484,11 +488,6 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
     DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
-
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            buffer, bufferSize);
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

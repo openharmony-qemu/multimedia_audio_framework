@@ -205,7 +205,7 @@ void AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLi
     if (algoSupportedConfig_.sampleRate != maxSampleRate) {
         algoSupportedConfig_.sampleRate = maxSampleRate;
         uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (maxSampleRate / MILLISECOND) *
-            algoSupportedConfig_.dataFormat;
+            DEFAULT_FORMAT;
         algoAttr_.byteLenPerFrame = byteLenPerFrame;
 
         algoCache_.input.resize(algoAttr_.byteLenPerFrame * algoAttr_.batchLen);
@@ -268,21 +268,21 @@ void AudioEnhanceChain::GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferC
 uint32_t AudioEnhanceChain::GetAlgoBufferSize()
 {
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
-        algoSupportedConfig_.dataFormat;
+        DEFAULT_FORMAT;
     return byteLenPerFrame * deviceAttr_.micChannels;
 }
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSizeEc()
 {
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
-        algoSupportedConfig_.dataFormat;
+        DEFAULT_FORMAT;
     return byteLenPerFrame * deviceAttr_.ecChannels;
 }
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSizeMicRef()
 {
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
-        algoSupportedConfig_.dataFormat;
+        DEFAULT_FORMAT;
     return byteLenPerFrame * deviceAttr_.micRefChannels;
 }
 

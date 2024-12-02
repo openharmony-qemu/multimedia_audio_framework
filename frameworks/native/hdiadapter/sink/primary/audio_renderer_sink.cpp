@@ -85,6 +85,7 @@ const uint32_t DEVICE_PARAM_MAX_LEN = 40;
 const std::string VOIP_HAL_NAME = "voip";
 const std::string DIRECT_HAL_NAME = "direct";
 const std::string PRIMARY_HAL_NAME = "primary";
+const std::string USB_HAL_NAME = "usb";
 #ifdef FEATURE_POWER_MANAGER
 const std::string PRIMARY_LOCK_NAME_BASE = "AudioBackgroundPlay";
 #endif
@@ -195,6 +196,8 @@ public:
     int32_t SetPriPaPower() override;
     int32_t GetRenderId(uint32_t &renderId) const override;
 
+    void SetAddress(const std::string &address) override;
+
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
         const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -249,6 +252,8 @@ private:
 
     // for device switch
     std::mutex switchDeviceMutex_;
+    // for adapter_
+    std::mutex sinkMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
 
@@ -288,6 +293,7 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     int32_t currentDevicesSize_ = 0;
+    std::string usbAddress_;
 };
 
 struct HdfRemoteService *AudioRendererSinkInner::hdfRemoteService_ = nullptr;
@@ -425,9 +431,10 @@ std::string AudioRendererSinkInner::GetDPDeviceAttrInfo(const std::string &condi
 
 std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s, halName: %{public}s",
         key, condition.c_str(), halName_.c_str());
-    if (condition == "get_usb_info") {
+    if (condition.starts_with("get_usb_info#C")) {
         // Init adapter to get parameter before load sink module (need fix)
         adapterNameCase_ = "usb";
         int32_t ret = InitAdapter();
@@ -576,6 +583,7 @@ void AudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callb
 
 void AudioRendererSinkInner::DeInit()
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     sinkInited_ = false;
@@ -701,7 +709,8 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.desc = const_cast<char *>(attr_.address.c_str());
+    std::string desc = halName_ == USB_HAL_NAME ? usbAddress_ : attr_.address;
+    deviceDesc.desc = const_cast<char*>(desc.c_str());
     deviceDesc.pins = PIN_OUT_SPEAKER;
     if (halName_ == "usb") {
         deviceDesc.pins = PIN_OUT_USB_HEADSET;
@@ -712,8 +721,8 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     }
 
     AUDIO_INFO_LOG("Create render sinkName:%{public}s, rate:%{public}u channel:%{public}u format:%{public}u, " \
-        "devicePin:%{public}u",
-        halName_.c_str(), param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
+        "devicePin:%{public}u desc:%{public}s",
+        halName_.c_str(), param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "CreateRender failed, audioAdapter_ is null");
     int32_t ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
@@ -730,6 +739,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 
 int32_t AudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
     AUDIO_INFO_LOG("adapterNameCase_ :%{public}s", adapterNameCase_.c_str());
@@ -848,8 +858,10 @@ int32_t AudioRendererSinkInner::Start(void)
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (runningLockManager_ == nullptr) {
         std::string lockName = PRIMARY_LOCK_NAME_BASE + halName_;
+        WatchTimeout guard("PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock:Start");
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock(
             lockName, PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        guard.CheckCurrTimeout();
         if (keepRunningLock) {
             runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
         }
@@ -1039,7 +1051,7 @@ int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRout
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetOutputRoutes failed with null adapter");
     int32_t ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
+    AUDIO_WARNING_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     return SUCCESS;
@@ -1123,7 +1135,6 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "Invalid audio devices.");
     DeviceType activeDevice = activeDevices.front();
-    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d", audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -1150,6 +1161,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
             int32_t ret = audioRender_->SelectScene(audioRender_, &scene);
             CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
                 "Select scene FAILED: %{public}d", ret);
+            AUDIO_WARNING_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevice);
             currentAudioScene_ = audioScene;
             isAudioSceneUpdate = true;
         }
@@ -1394,7 +1406,7 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
         formatByte = static_cast<uint32_t>(stoi(bufferSize)) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
             / attr_.channel / attr_.sampleRate;
     }
-    
+
     attr_.format = static_cast<HdiAdapterFormat>(ConvertByteToAudioFormat(formatByte));
 
     AUDIO_DEBUG_LOG("UpdateDPAttrs sampleRate %{public}d,format:%{public}d,channelCount:%{public}d,address:%{public}s",
@@ -1606,7 +1618,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
     if (flag == 0 && g_paStatus == 1) {
         ret = snprintf_s(keyValueList, sizeof(keyValueList), sizeof(keyValueList) - 1,
             "zero_volume=true;routing=0");
-        if (ret > 0 && ret < sizeof(keyValueList)) {
+        if (ret > 0 && ret < static_cast<int32_t>(sizeof(keyValueList))) {
             CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERROR);
             ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
         }
@@ -1722,6 +1734,11 @@ int32_t AudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
         renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
     }
     return SUCCESS;
+}
+
+void AudioRendererSinkInner::SetAddress(const std::string &address)
+{
+    usbAddress_ = address;
 }
 
 int32_t AudioRendererSinkInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &outputDevice)

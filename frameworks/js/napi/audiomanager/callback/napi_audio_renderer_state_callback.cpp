@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioRendererStateCallback"
 #endif
-#include <thread>
 
 #include "js_native_api.h"
 #include "napi_audio_renderer_state_callback.h"

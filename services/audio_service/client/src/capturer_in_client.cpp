@@ -53,7 +53,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 static const size_t MAX_CLIENT_READ_SIZE = 20 * 1024 * 1024; // 20M
-static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
+static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t LOGLITMITTIMES = 20;
 const uint64_t AUDIO_US_PER_MS = 1000;

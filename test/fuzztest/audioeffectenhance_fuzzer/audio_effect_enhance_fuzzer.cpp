@@ -93,7 +93,7 @@ void AudioEffectChainManagerEnhanceFuzzTest(const uint8_t* rawData, size_t size)
     std::string mainkey = "audio_effect";
     std::string subkey = "update_audio_effect_type";
     std::string extraSceneType = "0";
-    AudioEffectChainManager::GetInstance()->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkey, extraSceneType);
     AudioEffectChainManager::GetInstance()->SetSpatializationSceneTypeToChains();
     AudioEffectChainManager::GetInstance()->UpdateStreamUsage();
     AudioEffectChainManager::GetInstance()->UpdateCurrSceneTypeAndStreamUsageForDsp();
@@ -132,8 +132,7 @@ void AudioEffectChainAdapterFuzzTest(const uint8_t* rawData, size_t size)
     EffectChainManagerGetSceneCount(sceneTypeExist);
 
     const char *effectMode = "EFFECT_DEFAULT";
-    const char *spatializationEnabled = "0";
-    EffectChainManagerExist(sceneTypeExist, effectMode, spatializationEnabled);
+    EffectChainManagerExist(sceneTypeExist, effectMode);
 
     const uint64_t channelLayout = CH_LAYOUT_MONO;
     pa_channel_map processCm;

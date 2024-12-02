@@ -41,11 +41,12 @@ void AudioPolicyManagerListenerStub::ReadInterruptEventParams(MessageParcel &dat
     interruptEvent.forceType = static_cast<InterruptForceType>(data.ReadInt32());
     interruptEvent.hintType = static_cast<InterruptHint>(data.ReadInt32());
     interruptEvent.duckVolume = data.ReadFloat();
+    interruptEvent.callbackToApp = data.ReadBool();
 }
 
 void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDesc = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceChangeDesc = {};
 
     int32_t type = data.ReadInt32();
     int32_t flag = data.ReadInt32();

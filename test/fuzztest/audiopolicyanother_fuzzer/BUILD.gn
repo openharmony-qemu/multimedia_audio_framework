@@ -46,8 +46,9 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
   }
 
   deps = [
-    "../../../services/audio_policy:audio_policy_client",
-    "../../../services/audio_policy:audio_policy_service",
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_policy:audio_policy_client_static",
+    "../../../services/audio_policy:audio_policy_service_static",
   ]
 
   external_deps = [
@@ -70,6 +71,7 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
   if (accessibility_enable == true) {
     external_deps += [

@@ -131,6 +131,7 @@ public:
     void EnableVoiceModemCommunicationStartStream(bool enable) override;
 
     bool IsNoStreamRenderer() const override;
+    void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
 
@@ -235,6 +236,7 @@ public:
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
+    void NotifyForcedEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
     bool HandleForceDucking(const InterruptEventInternal &interruptEvent);
     std::shared_ptr<IAudioStream> audioStream_;

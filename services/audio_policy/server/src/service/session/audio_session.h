@@ -47,6 +47,7 @@ public:
     int32_t RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair);
     int32_t RemoveAudioInterrptByStreamId(const uint32_t &streamId);
     bool IsAudioSessionEmpty();
+    bool IsAudioRendererEmpty();
 
 private:
     std::mutex sessionMutex_;

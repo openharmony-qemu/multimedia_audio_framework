@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioRingerModeCallback"
 #endif
-#include <thread>
 
 #include "js_native_api.h"
 #include "napi_audio_ringermode_callback.h"
@@ -105,7 +104,7 @@ bool NapiAudioRingerModeCallback::IsSameCallback(const napi_value args)
 void NapiAudioRingerModeCallback::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("NapiAudioRingerModeCallback: ringer mode: %{public}d", ringerMode);
+    AUDIO_INFO_LOG("NapiAudioRingerModeCallback: ringer mode: %{public}d", ringerMode);
     CHECK_AND_RETURN_LOG(ringerModeCallback_ != nullptr, "Cannot find the reference of ringer mode callback");
 
     std::unique_ptr<AudioRingerModeJsCallback> cb = std::make_unique<AudioRingerModeJsCallback>();

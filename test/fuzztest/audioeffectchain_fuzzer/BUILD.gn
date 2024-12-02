@@ -43,7 +43,7 @@ ohos_fuzztest("AudioEffectChainFuzzTest") {
   sources = [ "audio_effect_chain_fuzzer.cpp" ]
 
   deps = [
-    "../../../frameworks/native/audioeffect:audio_effect",
+    "../../../frameworks/native/audioeffect:audio_effect_static",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../services/audio_policy:audio_policy_service",
   ]

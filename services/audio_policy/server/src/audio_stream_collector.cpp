@@ -32,6 +32,17 @@ constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
+const std::unordered_map<std::string, uint8_t> EFFECT_CHAIN_TYPE_MAP {
+    {"UNKNOWN", 0},
+    {"NONE", 1},
+    {"SCENE_OTHERS", 2},
+    {"SCENE_MUSIC", 3},
+    {"SCENE_MOVIE", 4},
+    {"SCENE_GAME", 5},
+    {"SCENE_SPEECH", 6},
+    {"SCENE_RING", 7},
+    {"SCENE_VOIP_DOWN", 8}
+};
 
 map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::CreateStreamMap()
 {
@@ -426,6 +437,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                 "Memory Allocation Failed");
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
             rendererChangeInfo->channelCount = (*it)->channelCount;
+            rendererChangeInfo->backMute = (*it)->backMute;
             if (rendererChangeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_INVALID) {
                 streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo = (*it)->outputDeviceInfo;
                 rendererChangeInfo->outputDeviceInfo = (*it)->outputDeviceInfo;
@@ -467,7 +479,7 @@ int32_t AudioStreamCollector::UpdateRendererStreamInternal(AudioStreamChangeInfo
     }
 
     AUDIO_ERR_LOG("Not found clientUid:%{public}d sessionId:%{public}d",
-        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.clientUID);
+        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
     return ERROR;
 }
 
@@ -894,10 +906,14 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
                 callback->PausedStreamImpl(streamSetStateEventInternal);
             } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_RESUME) {
                 callback->ResumeStreamImpl(streamSetStateEventInternal);
-            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_MUTE) {
+            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_MUTE &&
+                !changeInfo->backMute) {
                 callback->MuteStreamImpl(streamSetStateEventInternal);
-            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_UNMUTE) {
+                changeInfo->backMute = true;
+            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_UNMUTE &&
+                changeInfo->backMute) {
                 callback->UnmuteStreamImpl(streamSetStateEventInternal);
+                changeInfo->backMute = false;
             }
         }
     }
@@ -1292,16 +1308,17 @@ std::vector<uint32_t> AudioStreamCollector::GetAllRendererSessionIDForUID(int32_
     return sessionIDSet;
 }
 
-bool AudioStreamCollector::HasVoipCapturerStream()
+bool AudioStreamCollector::ChangeVoipCapturerStreamToNormal()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    int count = 0;
-    for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        if (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-            ++count;
-        }
-    }
+    int count = std::count_if(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            const auto &sourceType = changeInfo->capturerInfo.sourceType;
+            return sourceType == SOURCE_TYPE_VOICE_COMMUNICATION || sourceType == SOURCE_TYPE_MIC ||
+                sourceType == SOURCE_TYPE_VOICE_MESSAGE || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
+        });
 
+    AUDIO_INFO_LOG("Has capture stream count: %{public}d", count);
     // becasue self has been added
     return count > 1;
 }
@@ -1309,14 +1326,14 @@ bool AudioStreamCollector::HasVoipCapturerStream()
 bool AudioStreamCollector::HasVoipRendererStream()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (const auto &changeInfo : audioRendererChangeInfos_) {
-        // judge stream original flage is AUDIO_FLAG_VOIP_FAST
-        if (changeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST) {
-            AUDIO_INFO_LOG("Has Fast Voip stream");
-            return true;
-        }
-    }
-    return false;
+    // judge stream original flage is AUDIO_FLAG_VOIP_FAST
+    bool hasVoip = std::any_of(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            return changeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST;
+        });
+
+    AUDIO_INFO_LOG("Has Fast Voip stream : %{public}d", hasVoip);
+    return hasVoip;
 }
 } // namespace AudioStandard
 } // namespace OHOS

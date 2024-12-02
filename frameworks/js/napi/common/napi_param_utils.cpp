@@ -205,8 +205,8 @@ napi_status NapiParamUtils::SetValueBoolean(const napi_env &env, const std::stri
     napi_value value = nullptr;
     napi_status status = SetValueBoolean(env, boolValue, value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean SetValueBoolean failed");
-    napi_set_named_property(env, result, fieldStr.c_str(), value);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean napi_get_boolean failed");
+    status = napi_set_named_property(env, result, fieldStr.c_str(), value);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_set_named_property failed");
     return status;
 }
 
@@ -278,8 +278,8 @@ napi_status NapiParamUtils::CreateArrayBuffer(const napi_env &env, const size_t 
     return status;
 }
 
-void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor,
-    const AudioDeviceDescriptor &deviceInfo)
+void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor, const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
     audioDeviceDescriptor->deviceRole_ = deviceInfo.deviceRole_;
@@ -484,7 +484,7 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
 }
 
 napi_status NapiParamUtils::SetDeviceDescriptors(const napi_env &env,
-    const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result)
 {
     napi_status status = napi_create_array_with_length(env, deviceDescriptors.size(), &result);
     for (size_t i = 0; i < deviceDescriptors.size(); i++) {
@@ -511,8 +511,8 @@ napi_status NapiParamUtils::SetAudioSpatialEnabledStateForDevice(const napi_env 
 napi_status NapiParamUtils::SetValueDeviceInfo(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
     napi_value &result)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor != nullptr, napi_generic_failure,
         "audioDeviceDescriptor malloc failed");
     ConvertDeviceInfoToAudioDeviceDescriptor(audioDeviceDescriptor, deviceInfo);
@@ -736,7 +736,7 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
 }
 
 napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
-    sptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in)
+    std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in)
 {
     int32_t intValue = {0};
     argTransFlag = true;
@@ -792,7 +792,7 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
 }
 
 napi_status NapiParamUtils::GetAudioDeviceDescriptorVector(const napi_env &env,
-    std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptorsVector, bool &argTransFlag, napi_value in)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptorsVector, bool &argTransFlag, napi_value in)
 {
     uint32_t arrayLen = 0;
     napi_get_array_length(env, in, &arrayLen);
@@ -804,7 +804,7 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptorVector(const napi_env &env,
     for (size_t i = 0; i < arrayLen; i++) {
         napi_value element;
         napi_get_element(env, in, i, &element);
-        sptr<AudioDeviceDescriptor> selectedAudioDevice = new(std::nothrow) AudioDeviceDescriptor();
+        std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
         GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, element);
         if (!argTransFlag) {
             return napi_ok;
@@ -1066,7 +1066,7 @@ napi_status NapiParamUtils::GetExtraParametersVector(const napi_env &env,
 napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
     const std::vector<std::pair<std::string, std::string>> &extraParameters, napi_value &result)
 {
-    napi_status status = napi_create_array_with_length(env, extraParameters.size(), &result);
+    napi_status status = napi_create_object(env, &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "malloc array buffer failed");
 
     for (auto it = extraParameters.begin(); it != extraParameters.end(); it++) {
@@ -1218,6 +1218,17 @@ napi_status NapiParamUtils::SetAudioSessionDeactiveEvent(
     napi_create_object(env, &result);
     SetValueInt32(env, "reason", static_cast<int32_t>(deactiveEvent.deactiveReason), result);
     return napi_ok;
+}
+
+bool NapiParamUtils::CheckArgType(napi_env env, napi_value arg, napi_valuetype expectedType)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, arg, &valueType);
+    if (valueType != expectedType) {
+        AUDIO_ERR_LOG("the type of parameter is invalid");
+        return false;
+    }
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

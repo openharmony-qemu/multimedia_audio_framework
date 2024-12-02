@@ -62,8 +62,9 @@ ohos_unittest("audio_policy_unit_test") {
   }
 
   deps = [
-    "../../../../../../services/audio_policy:audio_policy_client",
-    "../../../../../../services/audio_policy:audio_policy_service",
+    "../../../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../../../services/audio_policy:audio_policy_client_static",
+    "../../../../../../services/audio_policy:audio_policy_service_static",
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",

@@ -40,9 +40,10 @@ ohos_unittest("audio_server_unit_test") {
   ]
 
   configs = [ "../../../../../services/audio_service:audio_service_config" ]
+  cflags_cc = [ "-std=c++20" ]
 
   deps = [
-    "../../../../../services/audio_service:audio_service",
+    "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service",
   ]
 

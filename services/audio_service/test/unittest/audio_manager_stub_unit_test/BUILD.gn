@@ -58,9 +58,11 @@ ohos_unittest("audio_manager_stub_unit_test") {
 
   configs = [ ":module_private_config" ]
 
+  cflags_cc = [ "-std=c++20" ]
+
   deps = [
-    "../../../../../services/audio_service:audio_service",
-    "../../../../audio_service:audio_process_service",
+    "../../../../../services/audio_service:audio_service_static",
+    "../../../../audio_service:audio_process_service_static",
   ]
 
   external_deps = [

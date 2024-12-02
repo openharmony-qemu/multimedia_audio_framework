@@ -220,9 +220,9 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 7. 使用 **GetDevices**, **deviceType_** 和 **deviceRole_** 接口来获取音频输入输出设备信息。 参考 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) 内定义的DeviceFlag, DeviceType 和 DeviceRole 枚举。
     ```
     DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
-    vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors
+    vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors
         = audioSystemMgr->GetDevices(deviceFlag);
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = audioDeviceDescriptors[0];
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = audioDeviceDescriptors[0];
     cout << audioDeviceDescriptor->deviceType_;
     cout << audioDeviceDescriptor->deviceRole_;
     ```

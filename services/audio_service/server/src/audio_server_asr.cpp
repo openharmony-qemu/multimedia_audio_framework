@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,42 +18,16 @@
 
 #include "audio_server.h"
 
-#include <cinttypes>
-#include <codecvt>
-#include <csignal>
-#include <fstream>
-#include <sstream>
-#include <thread>
 #include <unordered_map>
 #include <vector>
-#include <dlfcn.h>
-#include <format>
 
-#include "bundle_mgr_interface.h"
-#include "bundle_mgr_proxy.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
-#include "hisysevent.h"
-#include "parameters.h"
-
-#include "audio_capturer_source.h"
-#include "fast_audio_capturer_source.h"
-#include "bluetooth_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_asr.h"
-#include "audio_manager_listener_proxy.h"
-#include "audio_service.h"
-#include "audio_schedule.h"
-#include "audio_info.h"
 #include "audio_utils.h"
-#include "i_audio_capturer_source.h"
+#include "policy_handler.h"
 #include "i_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
-#include "i_standard_audio_server_manager_listener.h"
-#include "playback_capturer_manager.h"
-#include "config/audio_param_parser.h"
-#include "media_monitor_manager.h"
 
 using namespace std;
 
@@ -108,20 +82,26 @@ static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE = {
     {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "audiomix2voicetxex"},
 };
 
+static const std::string TTS_2_DEVICE_STRING = "TTS_2_DEVICE";
+static const std::string TTS_2_MODEM_STRING = "TTS_2_MODEM";
+
 static const std::map<AsrVoiceControlMode, std::vector<std::string>> VOICE_CALL_ASSISTANT_SUPPRESSION = {
-    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {"TTS_2_DEVICE", "TTS_2_MODEM"}},
-    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {"TTS_2_DEVICE", "TTS_2_MODEM"}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {TTS_2_DEVICE_STRING, TTS_2_MODEM_STRING}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {TTS_2_DEVICE_STRING, TTS_2_MODEM_STRING}},
     {AsrVoiceControlMode::VOICE_TXRX_DECREASE, {"MIC_2_MODEM", "MODEM_2_DEVICE"}},
 };
 
 static const std::map<AsrVoiceControlMode, std::set<std::string>> VOICE_CALL_ASSISTANT_NEED_SUPPRESSION = {
-    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {"TTS_2_MODEM"}},
-    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {"TTS_2_DEVICE"}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE, {TTS_2_MODEM_STRING}},
+    {AsrVoiceControlMode::AUDIO_SUPPRESSION_LOCAL, {TTS_2_DEVICE_STRING}},
     {AsrVoiceControlMode::VOICE_TXRX_DECREASE, {"MIC_2_MODEM", "MODEM_2_DEVICE"}},
 };
 
-static const std::string VOICE_CALL_SUPPRESSION_VOLUME = "3";
+static const std::string VOICE_CALL_SUPPRESSION_VOLUME = "2";
 static const std::string VOICE_CALL_FULL_VOLUME = "32";
+
+static const int32_t VOICE_CALL_MIN_VOLUME = 2;
+static const int32_t VOICE_CALL_MAX_VOLUME = 32;
 
 static const std::map<std::string, AsrVoiceMuteMode> VM_MODE_MAP = {
     {"output_mute", AsrVoiceMuteMode::OUTPUT_MUTE},
@@ -393,17 +373,29 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
         audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
         return 0;
     }
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    Volume vol = {false, 0.0f, 0};
+    PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol);
+    float systemVol = vol.isMute ? 0.0f : vol.volumeFloat;
+    AUDIO_INFO_LOG("STREAM_VOICE_CALL = [%{public}f]", systemVol);
+    int32_t modifyVolume = std::floor(systemVol * VOICE_CALL_MAX_VOLUME);
+    modifyVolume = modifyVolume < VOICE_CALL_MIN_VOLUME ? VOICE_CALL_MIN_VOLUME : modifyVolume;
     if ((itCallAssistant != VOICE_CALL_ASSISTANT_SUPPRESSION.end()) && (res != RES_MAP_VERSE.end())) {
         std::vector<std::string> modes = VOICE_CALL_ASSISTANT_SUPPRESSION.at(asrVoiceControlMode);
         std::set<std::string> needSuppression = VOICE_CALL_ASSISTANT_NEED_SUPPRESSION.at(asrVoiceControlMode);
         for (size_t i = 0; i < modes.size(); i++) {
-            if (needSuppression.contains(modes[i]) && on) {
+            if (needSuppression.count(modes[i]) != 0 && on) {
                 audioRendererSinkInstance->SetAudioParameter(parmKey, "",
                     modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
                 continue;
             }
-            audioRendererSinkInstance->SetAudioParameter(parmKey, "",
-                modes[i] + "=" + VOICE_CALL_FULL_VOLUME);
+            if (modes[i] == TTS_2_MODEM_STRING) {
+                audioRendererSinkInstance->SetAudioParameter(parmKey, "",
+                    modes[i] + "=" + VOICE_CALL_FULL_VOLUME);
+            } else {
+                audioRendererSinkInstance->SetAudioParameter(parmKey, "",
+                    modes[i] + "=" + std::to_string(modifyVolume));
+            }
         }
     }
     

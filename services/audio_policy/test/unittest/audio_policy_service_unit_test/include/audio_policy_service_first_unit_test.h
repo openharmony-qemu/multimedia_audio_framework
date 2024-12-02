@@ -20,6 +20,7 @@
 
 #include "audio_policy_service.h"
 #include "audio_policy_server.h"
+#include "audio_policy_utils.h"
 #include "message_parcel.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"

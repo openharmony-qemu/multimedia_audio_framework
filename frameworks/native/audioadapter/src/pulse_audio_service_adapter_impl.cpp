@@ -44,7 +44,7 @@ namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
 SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
 
-static const int32_t PA_SERVICE_IMPL_TIMEOUT = 5; // 5s
+static const int32_t PA_SERVICE_IMPL_TIMEOUT = 10; // 10s is better
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
     {"voice_call_assistant", STREAM_VOICE_CALL_ASSISTANT},
@@ -210,7 +210,7 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
     return userData->idx;
 }
 
-int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
+int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, bool isSync)
 {
     lock_guard<mutex> lock(lock_);
 
@@ -220,10 +220,18 @@ int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
         return ERROR;
     }
 
-    pa_operation *operation = pa_context_unload_module(mContext, audioHandleIndex, nullptr, nullptr);
-    if (operation == nullptr) {
-        AUDIO_ERR_LOG("pa_context_unload_module returned nullptr!");
-        return ERROR;
+    pa_operation *operation;
+    if (isSync) {
+        operation = pa_context_unload_module(mContext, audioHandleIndex, PaUnloadModuleCb,
+            reinterpret_cast<void*>(this));
+        CHECK_AND_RETURN_RET_LOG(operation, ERROR, "pa_context_unload_module sync returned nullptr!");
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mMainLoop);
+            if (pa_operation_get_state(operation) != PA_OPERATION_RUNNING) {break;}
+        }
+    } else {
+        operation = pa_context_unload_module(mContext, audioHandleIndex, nullptr, nullptr);
+        CHECK_AND_RETURN_RET_LOG(operation, ERROR, "pa_context_unload_module returned nullptr!");
     }
 
     pa_operation_unref(operation);
@@ -255,7 +263,10 @@ int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, 
 bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     AUDIO_DEBUG_LOG("MuteAudioDevice: [%{public}s] : [%{public}d]", sinkName.c_str(), isMute);
-
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::SetSinkMute", PA_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("SetSinkMute timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
 
@@ -280,10 +291,6 @@ bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool
 
     if (isSync) {
         while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-            AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::SetSinkMute", PA_SERVICE_IMPL_TIMEOUT,
-                [](void *) {
-                    AUDIO_ERR_LOG("SetSinkMute timeout");
-                }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
             pa_threaded_mainloop_wait(mMainLoop);
         }
     }
@@ -435,6 +442,10 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex,
     std::string sinkName)
 {
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName", PA_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("MoveSinkInputByIndexOrName timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName:id:" + std::to_string(sinkInputId) +
         +":index:" + std::to_string(sinkIndex) + ":name:" + sinkName);
@@ -458,10 +469,6 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
         return ERROR;
     }
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName", PA_SERVICE_IMPL_TIMEOUT,
-            [](void *) {
-                AUDIO_ERR_LOG("MoveSinkInputByIndexOrName timeout");
-            }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         pa_threaded_mainloop_wait(mMainLoop);
     }
     pa_operation_unref(operation);
@@ -475,6 +482,10 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
 int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex,
     std::string sourceName)
 {
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName",
+        PA_SERVICE_IMPL_TIMEOUT, [](void *) {
+            AUDIO_ERR_LOG("MoveSourceOutputByIndexOrName timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName:id:" + std::to_string(sourceOutputId) +
         +":index:" + std::to_string(sourceIndex) + ":name:" + sourceName);
@@ -501,10 +512,6 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
         return ERROR;
     }
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName",
-            PA_SERVICE_IMPL_TIMEOUT, [](void *) {
-                AUDIO_ERR_LOG("MoveSourceOutputByIndexOrName timeout");
-            }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         pa_threaded_mainloop_wait(mMainLoop);
     }
     pa_operation_unref(operation);
@@ -554,6 +561,10 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
     userData->thiz = this;
     userData->sinkInfos = GetAllSinks();
 
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSinkInputs", PA_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("GetAllSinkInputs timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sinkInputList, "mContext is nullptr");
 
@@ -568,10 +579,6 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
     }
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSinkInputs", PA_SERVICE_IMPL_TIMEOUT,
-            [](void *) {
-                AUDIO_ERR_LOG("GetAllSinkInputs timeout");
-            }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         pa_threaded_mainloop_wait(mMainLoop);
     }
 
@@ -583,6 +590,10 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
 
 vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
 {
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSourceOutputs", PA_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("GetAllSourceOutputs timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("PulseAudioServiceAdapterImpl::GetAllSourceOutputs");
 
@@ -603,10 +614,6 @@ vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
     }
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSourceOutputs", PA_SERVICE_IMPL_TIMEOUT,
-            [](void *) {
-                AUDIO_ERR_LOG("GetAllSourceOutputs timeout");
-            }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         pa_threaded_mainloop_wait(mMainLoop);
     }
 
@@ -727,6 +734,13 @@ void PulseAudioServiceAdapterImpl::PaModuleLoadCb(pa_context *c, uint32_t idx, v
     pa_threaded_mainloop_signal(userData->thiz->mMainLoop, 0);
 
     return;
+}
+
+void PulseAudioServiceAdapterImpl::PaUnloadModuleCb(pa_context *c, int success, void *userdata)
+{
+    AUDIO_INFO_LOG("Entry. unload module result=%{public}d", success);
+    auto thiz = reinterpret_cast<PulseAudioServiceAdapterImpl *>(userdata);
+    pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
 }
 
 template <typename T>
@@ -886,9 +900,14 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         userData.release();
         pa_operation_unref(operation);
     } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-        uint32_t sessionID = sourceIndexSessionIDMap.ReadVal(idx);
-        AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
-        g_audioServiceAdapterCallback->OnAudioStreamRemoved(sessionID);
+        uint32_t sessionID = 0;
+        if (sourceIndexSessionIDMap.Find(idx, sessionID) == true) {
+            AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
+            g_audioServiceAdapterCallback->OnAudioStreamRemoved(sessionID);
+            sourceIndexSessionIDMap.Erase(idx);
+        } else {
+            AUDIO_ERR_LOG("cannot find sessionID in sourceIndexSessionIDMap");
+        }
     }
 }
 

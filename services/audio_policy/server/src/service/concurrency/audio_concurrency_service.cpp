@@ -90,9 +90,6 @@ int32_t AudioConcurrencyService::SetAudioConcurrencyCallback(const uint32_t sess
         std::shared_ptr<AudioConcurrencyClient> client =
             std::make_shared<AudioConcurrencyClient>(callback, object, deathRecipient, sessionID);
         concurrencyClients_[sessionID] = client;
-        for (auto t : concurrencyClients_) {
-            AUDIO_DEBUG_LOG("cb added in service, sessionID:%{public}d", t.first);
-        }
     } else {
         AUDIO_ERR_LOG("session %{public}u already exist", sessionID);
         return ERR_INVALID_PARAM;
@@ -108,13 +105,6 @@ int32_t AudioConcurrencyService::UnsetAudioConcurrencyCallback(const uint32_t se
     if (concurrencyClients_.erase(sessionID) == 0) {
         AUDIO_ERR_LOG("session %{public}u not present", sessionID);
         return ERR_INVALID_PARAM;
-    }
-    if (concurrencyClients_.size() == 0) {
-        AUDIO_DEBUG_LOG("cb map empty");
-    } else {
-        for (auto t : concurrencyClients_) {
-            AUDIO_DEBUG_LOG("cb remained, session %{public}u", t.first);
-        }
     }
     return SUCCESS;
 }

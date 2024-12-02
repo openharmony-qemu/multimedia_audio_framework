@@ -21,6 +21,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+static std::map<std::string, DeviceType> deviceTypeMap_ = {
+    {"DEVICE_TYPE_WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
+    {"DEVICE_TYPE_WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
+    {"DEVICE_TYPE_BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
+    {"DEVICE_TYPE_BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
+    {"DEVICE_TYPE_BLUETOOTH_A2DP_IN", DEVICE_TYPE_BLUETOOTH_A2DP_IN},
+    {"DEVICE_TYPE_USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
+    {"DEVICE_TYPE_DP", DEVICE_TYPE_DP},
+    {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
+};
+}
 bool AudioDeviceParser::LoadConfiguration()
 {
     mDoc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
@@ -136,12 +148,11 @@ void AudioDeviceParser::ParserDevicePrivacyInfoList(xmlNode *node, std::list<Dev
 void AudioDeviceParser::ParseAudioDevicePrivacyType(xmlNode *node, AudioDevicePrivacyType &deviceType)
 {
     xmlNode *currNode = node;
-    std::string adapterName = ExtractPropertyValue("name", currNode);
-
     while (currNode != nullptr) {
         //read deviceType
         if (currNode->type == XML_ELEMENT_NODE &&
             (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("adapter")))) {
+            std::string adapterName = ExtractPropertyValue("name", currNode);
             if (adapterName.empty()) {
                 AUDIO_ERR_LOG("AudioDeviceParser: No name provided for the adapter %{public}s", node->name);
                 return;
