@@ -196,7 +196,7 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 }
 
 template <typename T>
-bool StringConverter(std::string& str, T& result);
+bool StringConverter(const std::string& str, T& result);
 
 template <typename T>
 bool GetSysPara(const char *key, T &value);

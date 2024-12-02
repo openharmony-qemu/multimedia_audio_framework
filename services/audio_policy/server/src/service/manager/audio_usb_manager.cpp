@@ -24,6 +24,7 @@
 #include "usb_srv_client.h"
 #include "audio_usb_manager.h"
 #include "audio_policy_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,7 +81,7 @@ static vector<SoundCard> GetUsbSoundCards()
         string sIndex = file.substr(card.length());
         if (!IsNumericStr(sIndex)) {continue;}
         uint32_t convertIndex = 0;
-        CHECK_AND_RETURN_LOG(StringConvertor(sIndex, convertIndex),
+        CHECK_AND_RETURN_RET_LOG(StringConverter(sIndex, convertIndex), {},
             "convert invalid sIndex: %{public}s", sIndex.c_str());
         SoundCard card = {.cardNum_ = convertIndex};
         FillSoundCard(baseDir + "/" + file, card);
@@ -104,10 +105,11 @@ static UsbAddr GetUsbAddr(const SoundCard &card)
     CHECK_AND_RETURN_RET_LOG(pos != string::npos, {}, "Error Parameter: card.usbbus");
     string str = card.usbBus_.substr(0, pos);
     uint8_t busNum = 0;
-    CHECK_AND_RETURN_RET_LOG(StringConvertor(str, busNum), {0,0},
+    CHECK_AND_RETURN_RET_LOG(StringConverter(str, busNum), {},
         "convert invalid busNum: %{public}s", str.c_str());
     str = card.usbBus_.substr(pos + 1);
-    CHECK_AND_RETURN_RET_LOG(StringConvertor(str, devAddr), {0,0},
+    uint8_t devAddr = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(str, devAddr), {},
         "convert invalid devAddr: %{public}s", str.c_str());
     return {busNum, devAddr};
 }

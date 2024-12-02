@@ -762,15 +762,17 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
 }
 
 template <typename T>
-bool StringConverter(std::string& str, T& result);
+bool StringConverter(const std::string& str, T& result)
 {
     auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
     return ec == std::errc{} && ptr == str.data() + str.size();
 }
 
-template bool StringConverter(std::string& str, uint32_t& result);
-template bool StringConverter(std::string& str, int32_t& result);
-template bool StringConverter(std::string& str, uint8_t& result);
+template bool StringConverter(const std::string& str, uint64_t& result);
+template bool StringConverter(const std::string& str, uint32_t& result);
+template bool StringConverter(const std::string& str, int32_t& result);
+template bool StringConverter(const std::string& str, uint8_t& result);
+template bool StringConverter(const std::string& str, int8_t& result);
 
 template <typename T>
 bool GetSysPara(const char *key, T &value)

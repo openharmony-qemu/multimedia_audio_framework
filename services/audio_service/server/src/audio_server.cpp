@@ -657,7 +657,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
     string address = GetField(condition, "address", ' ');
     uint32_t deviceRoleNum = 0;
     CHECK_AND_RETURN_RET_LOG(StringConverter(GetField(condition, "role", ' '), deviceRoleNum), "",
-        "convert invalid value: %{public}s", value.c_str());
+        "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
 
     DeviceRole role = static_cast<DeviceRole>(deviceRoleNum);
     IAudioRendererSink *rendererSink = IAudioRendererSink::GetInstance("usb", "");

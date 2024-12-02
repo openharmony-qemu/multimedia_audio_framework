@@ -18,6 +18,7 @@
 #endif
 
 #include "audio_policy_parser.h"
+#include "audio_utils.h"
 
 #include <sstream>
 
@@ -420,13 +421,13 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
             streamPropInfo.format_ = ExtractPropertyValue("format", *currNode);
             std::string sampleRateStr = ExtractPropertyValue("sampleRates", *currNode);
             if (sampleRateStr != "") {
-                CHECK_AND_RETURN_LOG(StringConvertor(sampleRateStr, streamPropInfo.sampleRate_),
+                CHECK_AND_RETURN_LOG(StringConverter(sampleRateStr, streamPropInfo.sampleRate_),
                     "convert invalid sampleRate: %{public}s", sampleRateStr.c_str());
                 pipeInfo.sampleRates_.push_back(streamPropInfo.sampleRate_);
             }
             std::string periodInMsStr = ExtractPropertyValue("periodInMs", *currNode);
             if (periodInMsStr != "") {
-                CHECK_AND_RETURN_LOG(StringConvertor(periodInMsStr, streamPropInfo.periodInMs_),
+                CHECK_AND_RETURN_LOG(StringConverter(periodInMsStr, streamPropInfo.periodInMs_),
                     "convert invalid periodInMsStr: %{public}s", periodInMsStr.c_str());
             }
             std::string channelLayoutStr = ExtractPropertyValue("channelLayout", *currNode);
@@ -437,7 +438,7 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
 
             std::string bufferSizeStr = ExtractPropertyValue("bufferSize", *currNode);
             if (bufferSizeStr != "") {
-                CHECK_AND_RETURN_LOG(StringConvertor(bufferSizeStr, streamPropInfo.bufferSize_),
+                CHECK_AND_RETURN_LOG(StringConverter(bufferSizeStr, streamPropInfo.bufferSize_),
                     "convert invalid bufferSizeStr: %{public}s", bufferSizeStr.c_str());
             } else {
                 streamPropInfo.bufferSize_ = formatStrToEnum[streamPropInfo.format_] * streamPropInfo.sampleRate_ *
@@ -617,18 +618,17 @@ void AudioPolicyParser::ParsePAConfigs(xmlNode &node)
         if (currNode->type == XML_ELEMENT_NODE) {
             std::string name = ExtractPropertyValue("name", *currNode);
             std::string value = ExtractPropertyValue("value", *currNode);
+            uint64_t convertValue = 0;
 
             switch (GetPaConfigType(name)) {
                 case PAConfigType::AUDIO_LATENCY:
-                    uint64_t convertValue = 0;
-                    CHECK_AND_RETURN_LOG(StringConvertor(value, convertValue),
+                    CHECK_AND_RETURN_LOG(StringConverter(value, convertValue),
                         "convert invalid value: %{public}s", value.c_str());
                     portObserver_.OnAudioLatencyParsed(convertValue);
                     globalConfigs_.globalPaConfigs_.audioLatency_ = value;
                     break;
                 case PAConfigType::SINK_LATENCY:
-                    uint64_t convertValue = 0;
-                    CHECK_AND_RETURN_LOG(StringConvertor(value, convertValue),
+                    CHECK_AND_RETURN_LOG(StringConverter(value, convertValue),
                         "convert invalid value: %{public}s", value.c_str());
                     portObserver_.OnSinkLatencyParsed(convertValue);
                     globalConfigs_.globalPaConfigs_.sinkLatency_ = value;
