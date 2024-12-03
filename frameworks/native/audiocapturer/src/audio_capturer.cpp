@@ -1119,6 +1119,18 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     return SUCCESS;
 }
 
+void AudioCapturerPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info)
+{
+    audioStream_->GetSwitchInfo(info);
+
+    if (targetClass == IAudioStream::VOIP_STREAM) {
+        info.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
+    }
+    info.captureMode = audioCaptureMode_;
+    info.params.originalSessionId = sessionID_;
+    return;
+}
+
 bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId)
 {
     bool switchResult = false;
@@ -1136,16 +1148,12 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         std::lock_guard lock(switchStreamMutex_);
         // switch new stream
         IAudioStream::SwitchInfo info;
-        audioStream_->GetSwitchInfo(info);
-        info.params.originalSessionId = sessionID_;
+        InitSwitchInfo(targetClass, info);
 
         // release old stream and restart audio stream
         switchResult = audioStream_->ReleaseAudioStream();
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
-        if (targetClass == IAudioStream::VOIP_STREAM) {
-            info.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-        }
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, info.params,
             info.eStreamType, appInfo_.appPid);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");
