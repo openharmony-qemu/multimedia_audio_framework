@@ -20,7 +20,7 @@
             <device name="Wired Headphones" type="DEVICE_TYPE_WIRED_HEADPHONES" role="output" Category="" usage="media,voice"/>
             <device name="Usb Headset Hifi" type="DEVICE_TYPE_USB_HEADSET" role="output,input" Category="" usage="media,voice"/>
             <device name="Usb Arm Headset" type="DEVICE_TYPE_USB_ARM_HEADSET" role="output,input" Category="" usage="media,voice"/>
-            <device name="Bt A2dp In" type="DEVICE_TYPE_BLUETOOTH_A2DP_IN" role="input" Category="HEADPHONE,GLASSES" usage="media,recongnition"/>
+            <device name="Bt A2dp In" type="DEVICE_TYPE_BLUETOOTH_A2DP_IN" role="input" Category="HEADPHONE,GLASSES" usage="media"/>
             <device name="Bt A2dp" type="DEVICE_TYPE_BLUETOOTH_A2DP" role="output" Category="HEADPHONE,GLASSES" usage="media"/>
             <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="HEADPHONE,GLASSES," usage="voice,recongnition"/>
         </devices>
