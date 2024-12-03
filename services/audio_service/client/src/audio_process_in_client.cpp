@@ -1475,7 +1475,7 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
         return false;
     }
 
-    int tryCount = 10; // try 10 * 2 = 20ms
+    int tryCount = 50; // try 50 * 2 = 100ms
     SpanStatus targetStatus = SpanStatus::SPAN_READ_DONE;
     while (!tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_WRITTING) && tryCount > 0) {
         tryCount--;

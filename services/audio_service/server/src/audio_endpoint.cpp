@@ -1080,6 +1080,8 @@ bool AudioEndpointInner::StopDevice()
 int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
     InitLatencyMeasurement();
+    // Prevents the audio from immediately stopping at 0 volume on start
+    delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME;
     AUDIO_PRERELEASE_LOGI("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
