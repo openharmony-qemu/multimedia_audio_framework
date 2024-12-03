@@ -406,6 +406,7 @@ void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const AudioRender
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
     auto it = preferredOutputDeviceCallbackMap_.find(rendererInfo.streamUsage);
+    CHECK_AND_RETURN_LOG(it != preferredOutputDeviceCallbackMap_.end(), "streamUsage not found");
     for (auto iter = it->second.begin(); iter != it->second.end(); ++iter) {
         CHECK_AND_CONTINUE_LOG(iter != it->second.end() && (*iter) != nullptr, "iter is null");
         (*iter)->OnPreferredOutputDeviceUpdated(desc);
@@ -448,6 +449,7 @@ void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const AudioCapture
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
     auto it = preferredInputDeviceCallbackMap_.find(capturerInfo.sourceType);
+    CHECK_AND_RETURN_LOG(it != preferredInputDeviceCallbackMap_.end(), "sourceType not found");
     for (auto iter = it->second.begin(); iter != it->second.end(); ++iter) {
         CHECK_AND_CONTINUE_LOG(iter != it->second.end() && (*iter) != nullptr, "iter is null");
         (*iter)->OnPreferredInputDeviceUpdated(desc);
