@@ -6238,6 +6238,9 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     CheckForA2dpSuspend(desc);
 
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    if (command == CONNECTSTATE_UPDATE && desc.connectState_ != ConnectState::CONNECTED) {
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+    }
     OnPreferredStateUpdated(desc, command, reason);
     FetchDevice(true, reason);
     FetchDevice(false);
