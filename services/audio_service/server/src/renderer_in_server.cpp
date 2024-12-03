@@ -301,6 +301,13 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 void RendererInServer::StandByCheck()
 {
     Trace trace(traceTag_ + " StandByCheck:standByCounter_:" + std::to_string(standByCounter_.load()));
+
+    // msdp wait for uncertain time when waiting for bt reply, which may case stream change into standby mode.
+    // if client writes date when stream is changing into standby mode, it would cause drain fail problems.
+    // msdp promises to call api correctly to avoid power problems
+    if (processConfig_.rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_ULTRASONIC) {
+        return;
+    }
     AUDIO_INFO_LOG("sessionId:%{public}u standByCounter_:%{public}u standByEnable_:%{public}s ", streamIndex_,
         standByCounter_.load(), (standByEnable_ ? "true" : "false"));
 
