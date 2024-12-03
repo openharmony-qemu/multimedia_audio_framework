@@ -197,7 +197,7 @@ bool AudioEffectChainManager::GetOffloadEnabled()
 void AudioEffectChainManager::InitHdiState()
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
-    return InitHdiStateInner();
+    InitHdiStateInner();
 }
 
 void AudioEffectChainManager::InitHdiStateInner()
