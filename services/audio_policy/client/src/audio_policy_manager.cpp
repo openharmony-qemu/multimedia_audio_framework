@@ -1006,9 +1006,7 @@ int32_t AudioPolicyManager::GetNetworkIdByGroupId(int32_t groupId, std::string &
 bool AudioPolicyManager::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
 {
     AUDIO_DEBUG_LOG("IsAudioRendererLowLatencySupported");
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->IsAudioRendererLowLatencySupported(audioStreamInfo);
+    return true;
 }
 
 int32_t AudioPolicyManager::SetSystemSoundUri(const std::string &key, const std::string &uri)

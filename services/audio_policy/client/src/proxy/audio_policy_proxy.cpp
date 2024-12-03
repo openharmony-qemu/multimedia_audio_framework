@@ -1131,19 +1131,8 @@ int32_t AudioPolicyProxy::GetNetworkIdByGroupId(int32_t groupId, std::string &ne
 
 bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, IPC_PROXY_ERR, "WriteInterfaceToken failed");
-    audioStreamInfo.Marshalling(data);
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
-        "IsAudioRendererLowLatencySupported, error: %d", error);
-
-    return reply.ReadBool();
+    AUDIO_INFO_LOG("IsAudioRendererLowLatencySupported");
+    return true;
 }
 
 int32_t AudioPolicyProxy::SetSystemSoundUri(const std::string &key, const std::string &uri)
