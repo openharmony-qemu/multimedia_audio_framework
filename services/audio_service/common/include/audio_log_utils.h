@@ -15,10 +15,17 @@
 
 #ifndef AUDIO_LOG_UTILS_H
 #define AUDIO_LOG_UTILS_H
-#include "volume_tools.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
+static const size_t CHANNEL_MAX = 16; // same with CHANNEL_16
+
+struct ChannelVolumes {
+    AudioChannel channel = STEREO;
+    int32_t volStart[CHANNEL_MAX];
+    int32_t volEnd[CHANNEL_MAX];
+};
 class AudioLogUtils {
 public:
     static void ProcessVolumeData(const std::string &logTag, const ChannelVolumes &vols, int64_t &count);

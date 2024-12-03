@@ -36,7 +36,7 @@
 
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
 #include "parameters.h"
@@ -206,7 +206,6 @@ private:
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
     int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice, const std::string &deviceName = "");
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
     int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, const std::string &deviceName = "");
     int32_t DoSetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, const std::string &deviceName = "");
 
@@ -836,7 +835,9 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
 
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
-    DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void*>(frame), replyBytes);
@@ -849,17 +850,6 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
         AUDIO_WARNING_LOG("CaptureFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     }
     return SUCCESS;
-}
-
-void AudioCapturerSourceInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t AudioCapturerSourceInner::ProcessCaptureBlockingEc(FrameDesc *fdescEc, uint64_t &replyBytesEc)

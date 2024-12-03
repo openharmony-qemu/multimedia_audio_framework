@@ -35,7 +35,7 @@
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
 #include "audio_utils.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 #include "media_monitor_manager.h"
 
 using namespace std;
@@ -176,7 +176,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel, AudioSamplingRate rate) const;
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> offloadRunningLockManager_;
@@ -668,7 +667,6 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AdjustAudioBalance(&data, len);
     }
 
-    Trace::CountVolume("OffloadAudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     Trace trace("OffloadSink::RenderFrame");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
@@ -676,8 +674,9 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     if (ret == 0 && writeLen != 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
         BufferDesc buffer = {reinterpret_cast<uint8_t *>(&data), len, len};
-        DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel),
-            static_cast<AudioSamplingRate>(attr_.sampleRate));
+        AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+            static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+        VolumeTools::DfxOperation(buffer, streamInfo, LOG_UTILS_TAG, volumeDataCount_, OFFLOAD_DFX_SPLIT);
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
                 static_cast<void *>(&data), writeLen);
@@ -698,27 +697,6 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     }
     return SUCCESS;
-}
-
-void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
-    AudioChannel channel, AudioSamplingRate rate) const
-{
-    size_t byteSizePerData = VolumeTools::GetByteSize(format);
-    size_t frameLen =  byteSizePerData * static_cast<size_t>(channel) * static_cast<size_t>(rate) * 0.02; // 20ms
-    
-    int32_t minVolume = INT_32_MAX;
-    for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
-        BufferDesc temp = {buffer.buffer + frameLen * index,
-            min(buffer.bufLength - frameLen * index, frameLen), min(buffer.dataLength - frameLen * index, frameLen)};
-        ChannelVolumes vols = VolumeTools::CountVolumeLevel(temp, format, channel, OFFLOAD_DFX_SPLIT);
-        if (channel == MONO) {
-            minVolume = min(minVolume, vols.volStart[0]);
-        } else {
-            minVolume = min(minVolume, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-        }
-        AudioLogUtils::ProcessVolumeData(LOG_UTILS_TAG, vols, volumeDataCount_);
-    }
-    Trace::Count(LOG_UTILS_TAG, minVolume);
 }
 
 void OffloadAudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
