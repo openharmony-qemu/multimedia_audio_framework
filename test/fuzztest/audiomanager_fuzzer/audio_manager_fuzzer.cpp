@@ -197,13 +197,15 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    if (data == nullptr) {
+    if (data == nullptr || size <= 1) {
         return 0;
     }
     uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
     if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
         return 0;
     }
+    data = data + 1;
+    size = size - 1;
     g_testPtrs[firstByte](data, size);
     return 0;
 }
