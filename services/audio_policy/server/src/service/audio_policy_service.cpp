@@ -40,9 +40,6 @@
 #include "avsession_manager.h"
 #include "audio_setting_provider.h"
 #include "audio_spatialization_service.h"
-#ifdef USB_ENABLE
-#include "audio_usb_manager.h"
-#endif
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
@@ -276,9 +273,6 @@ void AudioPolicyService::Deinit(void)
         audioPolicyManager_.CloseAudioPort(handle.second);
     });
     audioPolicyManager_.Deinit();
-#ifdef USB_ENABLE
-    AudioUsbManager::GetInstance().Deinit();
-#endif
     audioIOHandleMap_.DeInit();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
     audioPnpServer_.StopPnpServer();
@@ -1734,9 +1728,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
             OnPnpDeviceStatusUpdated((*it).first, (*it).second);
         }
-#ifdef USB_ENABLE
-        AudioUsbManager::GetInstance().Init(this);
-#endif
         audioEffectService_.SetMasterSinkAvailable();
     }
     // load inner-cap-sink

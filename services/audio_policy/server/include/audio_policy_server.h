@@ -616,6 +616,7 @@ private:
     void InfoDumpHelp(std::string &dumpString);
 
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
+    void AddSystemAbilityListeners();
 
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;
