@@ -216,8 +216,8 @@ private:
 };
 
 BluetoothCapturerSourceInner::BluetoothCapturerSourceInner()
-    : captureInited_(false), started_(false), paused_(false),
-      audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr), halName_ ("bt_hdap") {}
+    : captureInited_(false), started_(false), paused_(false), audioManager_(nullptr), audioAdapter_(nullptr),
+      audioCapture_(nullptr), handle_(nullptr), halName_ ("bt_hdap") {}
 
 BluetoothCapturerSourceInner::~BluetoothCapturerSourceInner()
 {
