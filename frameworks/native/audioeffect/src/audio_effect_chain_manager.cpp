@@ -197,6 +197,11 @@ bool AudioEffectChainManager::GetOffloadEnabled()
 void AudioEffectChainManager::InitHdiState()
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    return InitHdiStateInner();
+}
+
+void AudioEffectChainManager::InitHdiStateInner()
+{
     if (audioEffectHdiParam_ == nullptr) {
         AUDIO_INFO_LOG("audioEffectHdiParam_ is nullptr.");
         return;
@@ -274,7 +279,7 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", effectToLibraryEntryMap_.size());
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu, SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         effectChainToEffectsMap_.size(), sceneTypeAndModeToEffectChainNameMap_.size());
-    InitHdiState();
+    InitHdiStateInner();
 #ifdef WINDOW_MANAGER_ENABLE
     AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
 #endif

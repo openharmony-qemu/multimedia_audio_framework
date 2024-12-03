@@ -183,6 +183,7 @@ private:
     int32_t SetHdiParam(const AudioEffectScene &sceneType);
     int32_t ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t EffectVolumeUpdateInner(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
+    void InitHdiStateInner();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
