@@ -72,7 +72,7 @@ int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
     if (audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, eBufferAttr) != SUCCESS) {
         return ERROR;
     }
-    bufferAttr->numChanOut = eBufferAttr->outChannels;
+    bufferAttr->numChanOut = static_cast<int32_t>(eBufferAttr->outChannels);
     bufferAttr->outChanLayout = eBufferAttr->outChannelLayout;
     return SUCCESS;
 }

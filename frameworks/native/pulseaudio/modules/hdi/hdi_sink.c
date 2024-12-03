@@ -1844,6 +1844,12 @@ static pa_resampler *UpdateResamplerIchannelMap(const char *sinkSceneType, struc
     pa_channel_map ichannelmap;
     ichannelmap.channels = u->bufferAttr->numChanOut;
     ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &ichannelmap);
+    if (!pa_channel_map_valid(&ichannelmap)) {
+        AUDIO_ERR_LOG("UpdateResampler: invalid channelmap, channels [%{public}d], channellayout [%{public}llu]",
+            u->bufferAttr->numChanOut, u->bufferAttr->outChanLayout);
+        ichannelmap.channels = DEFAULT_NUM_CHANNEL;
+        ConvertChLayoutToPaChMap(DEFAULT_CHANNELLAYOUT, &ichannelmap);
+    }
     if ((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &ichannelmap))) {
         // for now, use sample_spec from sink
         pa_sample_spec ispec = *(pa_resampler_input_sample_spec(resampler));
