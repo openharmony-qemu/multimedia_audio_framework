@@ -1502,6 +1502,7 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
             } else {
                 AUDIO_INFO_LOG("Volume from zero to none-zero, start device success.");
                 isStarted_ = true;
+                needReSyncPosition_ = true;
             }
             zeroVolumeStopDevice_ = false;
         }
