@@ -180,6 +180,7 @@ static void UpdateArmInstance(IAudioCapturerSource *&audioCapturerSourceInstance
     audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
     audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
     auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
     primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
 }
 
@@ -827,6 +828,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
         auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+        CHECK_AND_RETURN_RET_LOG(primarySink, ERROR, "primarySink is nullptr");
         primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
     } else {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
