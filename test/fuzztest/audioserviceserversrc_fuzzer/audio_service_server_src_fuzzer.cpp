@@ -22,6 +22,7 @@
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
 #include "audio_service.h"
+#include "fast_audio_renderer_sink.h"
 #include "audio_endpoint.h"
 #include "access_token.h"
 #include "message_parcel.h"
@@ -35,9 +36,42 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t LIMITSIZE = 4;
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 static std::unique_ptr<NoneMixEngine> playbackEngine_ = nullptr;
+static const uint8_t* RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
+
+/*
+* describe: get data from outside untrusted data(g_data) which size is according to sizeof(T)
+* tips: only support basic type
+*/
+template<class T>
+T GetData()
+{
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
+    }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
+
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
 
 void DeviceFuzzTestSetUp()
 {
@@ -47,7 +81,8 @@ void DeviceFuzzTestSetUp()
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceType_ = DEVICE_TYPE_USB_HEADSET;
     playbackEngine_ = std::make_unique<NoneMixEngine>();
-    playbackEngine_->Init(deviceInfo, false);
+    bool isVoip = GetData<bool>();
+    playbackEngine_->Init(deviceInfo, isVoip);
 }
 
 static AudioProcessConfig InitProcessConfig()
@@ -70,7 +105,8 @@ void DirectAudioPlayBackEngineStateFuzzTest()
     AudioProcessConfig config = InitProcessConfig();
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     rendererStream->InitParams();
-    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
+    uint32_t num = GetData<uint32_t>();
+    rendererStream->SetStreamIndex(num);
     rendererStream->Start();
     rendererStream->Pause();
     rendererStream->Flush();
@@ -80,59 +116,56 @@ void DirectAudioPlayBackEngineStateFuzzTest()
 
 void NoneMixEngineStartFuzzTest()
 {
+    playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Start();
 }
 
 void NoneMixEngineStopFuzzTest()
 {
+    playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Stop();
 }
 
 void NoneMixEnginePauseFuzzTest()
 {
+    playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Pause();
 }
 
 void NoneMixEngineFlushFuzzTest()
 {
+    playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Flush();
 }
 
-void NoneMixEngineAddRendererFuzzTest(const uint8_t* rawData, size_t size)
+void NoneMixEngineAddRendererFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config = InitProcessConfig();
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     rendererStream->InitParams();
-    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
+    uint32_t num = GetData<uint32_t>();
+    rendererStream->SetStreamIndex(num);
     rendererStream->Start();
+    playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->AddRenderer(rendererStream);
 }
 
-void NoneMixEngineRemoveRendererFuzzTest(const uint8_t* rawData, size_t size)
+void NoneMixEngineRemoveRendererFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     AudioProcessConfig config = InitProcessConfig();
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     rendererStream->InitParams();
-    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
+    uint32_t num = GetData<uint32_t>();
+    rendererStream->SetStreamIndex(num);
     rendererStream->Start();
+    playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->AddRenderer(rendererStream);
     playbackEngine_->RemoveRenderer(rendererStream);
 }
 
 
-void AudioEndPointSeparateStartDeviceFuzzTest(const uint8_t* rawData, size_t size,
-    std::shared_ptr<AudioEndpointSeparate> audioEndpoint)
+void AudioEndPointSeparateStartDeviceFuzzTest(std::shared_ptr<AudioEndpointSeparate> audioEndpoint)
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     audioEndpoint->StartDevice();
     audioEndpoint->GetEndpointName();
     audioEndpoint->ShouldInnerCap();
@@ -141,11 +174,8 @@ void AudioEndPointSeparateStartDeviceFuzzTest(const uint8_t* rawData, size_t siz
     return;
 }
 
-void AudioEndPointSeparateConfigFuzzTest(const uint8_t* rawData, size_t size)
+void AudioEndPointSeparateConfigFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceType_ = DEVICE_TYPE_USB_HEADSET;
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
@@ -157,21 +187,24 @@ void AudioEndPointSeparateConfigFuzzTest(const uint8_t* rawData, size_t size)
     };
     deviceInfo.audioStreamInfo_ = audioStreamInfo;
     std::shared_ptr<AudioEndpointSeparate> audioEndpoint = nullptr;
-    uint64_t id = 2;
-    audioEndpoint =
-        std::make_shared<AudioEndpointSeparate>(AudioEndpoint::EndpointType::TYPE_INDEPENDENT, id, STREAM_DEFAULT);
+    uint64_t id = GetData<uint64_t>();
+    AudioEndpoint::EndpointType type = GetData<AudioEndpoint::EndpointType>();
+    AudioStreamType streamType = GetData<AudioStreamType>();
+    audioEndpoint = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
     AudioProcessConfig config = InitProcessConfig();
     AudioService *g_audioServicePtr = AudioService::GetInstance();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     audioEndpoint->Config(deviceInfo);
 
-    AudioEndPointSeparateStartDeviceFuzzTest(rawData, size, audioEndpoint);
-    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
-    float volume = *reinterpret_cast<const float*>(rawData);
+    AudioEndPointSeparateStartDeviceFuzzTest(audioEndpoint);
+
+    audioEndpoint->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    float volume = GetData<float>();
     audioEndpoint->SetVolume(streamType, volume);
-    uint32_t spanSizeInFrame = *reinterpret_cast<const uint32_t*>(rawData);
-    uint32_t totalSizeInFrame = spanSizeInFrame;
-    uint32_t byteSizePerFrame = *reinterpret_cast<const uint32_t*>(rawData);
+
+    uint32_t spanSizeInFrame = GetData<uint32_t>();
+    uint32_t totalSizeInFrame = GetData<uint32_t>();
+    uint32_t byteSizePerFrame = GetData<uint32_t>();
     std::shared_ptr<OHAudioBuffer> oHAudioBuffer =
         OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
     audioEndpoint->ResolveBuffer(oHAudioBuffer);
@@ -194,21 +227,51 @@ void AudioEndPointSeparateConfigFuzzTest(const uint8_t* rawData, size_t size)
     return;
 }
 
+typedef void (*TestFuncs[9])();
+
+TestFuncs g_testFuncs = {
+    DeviceFuzzTestSetUp,
+    DirectAudioPlayBackEngineStateFuzzTest,
+    NoneMixEngineStartFuzzTest,
+    NoneMixEngineStopFuzzTest,
+    NoneMixEnginePauseFuzzTest,
+    NoneMixEngineFlushFuzzTest,
+    NoneMixEngineAddRendererFuzzTest,
+    NoneMixEngineRemoveRendererFuzzTest,
+    AudioEndPointSeparateConfigFuzzTest,
+};
+
+bool FuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr) {
+        return false;
+    }
+
+    // initialize data
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+    }
+
+    return true;
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    /* Run your code on data */
-    OHOS::AudioStandard::DeviceFuzzTestSetUp();
-    OHOS::AudioStandard::DirectAudioPlayBackEngineStateFuzzTest();
-    OHOS::AudioStandard::NoneMixEngineStartFuzzTest();
-    OHOS::AudioStandard::NoneMixEngineStopFuzzTest();
-    OHOS::AudioStandard::NoneMixEnginePauseFuzzTest();
-    OHOS::AudioStandard::NoneMixEngineFlushFuzzTest();
-    OHOS::AudioStandard::NoneMixEngineAddRendererFuzzTest(data, size);
-    OHOS::AudioStandard::NoneMixEngineRemoveRendererFuzzTest(data, size);
-    OHOS::AudioStandard::AudioEndPointSeparateConfigFuzzTest(data, size);
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
 }
