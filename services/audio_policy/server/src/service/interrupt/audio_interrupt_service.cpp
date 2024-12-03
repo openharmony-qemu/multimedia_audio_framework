@@ -620,7 +620,7 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
         return false;
     }
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
-    if (itZone != zonesMap_.end()) { audioFocusInfoList = itZone->second->audioFocusInfoList; }
+    audioFocusInfoList = itZone->second->audioFocusInfoList;
     auto isPresent = [incomingSessionId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
         return pair.first.sessionId == incomingSessionId && pair.second == ACTIVE;
     };
