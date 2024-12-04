@@ -719,17 +719,6 @@ void AudioPolicyManagerStub::GetNetworkIdByGroupIdInternal(MessageParcel& data, 
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamInfo audioStreamInfo = {};
-    audioStreamInfo.samplingRate = static_cast<AudioSamplingRate>(data.ReadInt32());
-    audioStreamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
-    audioStreamInfo.format = static_cast<OHOS::AudioStandard::AudioSampleFormat>(data.ReadInt32());
-    audioStreamInfo.encoding = static_cast<AudioEncodingType>(data.ReadInt32());
-    bool isSupported = IsAudioRendererLowLatencySupported(audioStreamInfo);
-    reply.WriteBool(isSupported);
-}
-
 void AudioPolicyManagerStub::SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::string key = data.ReadString();
@@ -1503,9 +1492,6 @@ void AudioPolicyManagerStub::OnMiddleTirRemoteRequest(
             GetSupportedTonesInternal(data, reply);
             break;
 #endif
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED):
-            IsAudioRendererLowLatencySupportedInternal(data, reply);
-            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY):
             CheckRecordingStateChangeInternal(data, reply);
             break;

@@ -244,8 +244,6 @@ public:
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId);
 
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo);
 

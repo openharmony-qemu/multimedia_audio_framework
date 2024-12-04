@@ -222,15 +222,6 @@ public:
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 
     /**
-     * @brief Is audio renderer low latency supported.
-     *
-     * @param audioStreamInfo  audioStreamInfo
-     * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
-     * @since 9
-     */
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
-
-    /**
      * @brief Get Audio Effect Infos.
      *
      * @param AudioSceneEffectInfo  AudioSceneEffectInfo
