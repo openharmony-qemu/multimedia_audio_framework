@@ -45,6 +45,7 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
 constexpr int32_t TIME_OUT_SECONDS = 10;
+constexpr int32_t START_TIME_OUT_SECONDS = 15;
 
 static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
 {
@@ -584,9 +585,31 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
     audioStream_->UnsetRendererPeriodPositionCallback();
 }
 
+bool AudioRendererPrivate::GetStartStreamResult(StateChangeCmdType cmdType)
+{
+    bool result = audioStream_->StartAudioStream(cmdType);
+    if (!result) {
+        AUDIO_ERR_LOG("Start audio stream failed");
+        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
+        if (!audioStream_->GetSilentModeAndMixWithOthers()) {
+            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+            }
+        }
+    }
+
+    state_ = RENDERER_RUNNING;
+    return result;
+}
+
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Start");
+    AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
+        [](void *) {
+            AUDIO_ERR_LOG("Start timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
@@ -627,21 +650,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         return true;
     }
 
-    bool result = audioStream_->StartAudioStream(cmdType);
-    if (!result) {
-        AUDIO_ERR_LOG("Start audio stream failed");
-        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
-        if (!audioStream_->GetSilentModeAndMixWithOthers()) {
-            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
-            if (ret != 0) {
-                AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
-            }
-        }
-    }
-
-    state_ = RENDERER_RUNNING;
-
-    return result;
+    return GetStartStreamResult(cmdType);
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
