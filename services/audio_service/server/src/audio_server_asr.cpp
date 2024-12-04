@@ -347,6 +347,31 @@ int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhis
     return 0;
 }
 
+int32_t AudioServer::SetAsrVoiceSuppressionControlMode(
+    const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode, bool on, int32_t modifyVolume)
+{
+    IAudioRendererSink *audioRendererSinkInstance = IaudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    std::vector<std::string> modes = VOICE_CALL_ASSISTANT_SUPPRESSION.at(asrVoiceControlMode);
+    std::set<std::string> needSuppression = VOICE_CALL_ASSISTANT_NEED_SUPPRESSION.at(asrVoiceControlMode);
+    for (size_t i = 0; i < modes.size(); i++) {
+        if (needSuppression.contains(modes[i]) && on) {
+            audioRendererSinkInstance->SetAudioParameter(paramKey, "",
+                modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
+            continue;
+        }
+        if (modes[i] == TTS_2_MODEM_STRING || !on) {
+            audioRendererSinkInstance->SetAudioParameter(paramKey, "",
+                modes[i] + "=" + VOICE_CALL_FULL_VOLUME);
+            continue;
+        }
+        audioRendererSinkInstance->SetAudioParameter(paramKey, "",
+            modes[i] + "=" + std::to_string(modifyVolume));
+    }
+
+    return 0;
+}
+
 int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
@@ -364,13 +389,13 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
         return ERR_INVALID_PARAM;
     }
 
-    AudioParamKey parmKey = AudioParamKey::NONE;
+    AudioParamKey paramKey = AudioParamKey::NONE;
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     if ((itVerse != VC_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
         value = itVerse->second + "=" + res->second;
         AudioServer::audioParameters[key] = value;
-        audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+        audioRendererSinkInstance->SetAudioParameter(paramKey, "", value);
         return 0;
     }
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
@@ -381,22 +406,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     int32_t modifyVolume = std::floor(systemVol * VOICE_CALL_MAX_VOLUME);
     modifyVolume = modifyVolume < VOICE_CALL_MIN_VOLUME ? VOICE_CALL_MIN_VOLUME : modifyVolume;
     if ((itCallAssistant != VOICE_CALL_ASSISTANT_SUPPRESSION.end()) && (res != RES_MAP_VERSE.end())) {
-        std::vector<std::string> modes = VOICE_CALL_ASSISTANT_SUPPRESSION.at(asrVoiceControlMode);
-        std::set<std::string> needSuppression = VOICE_CALL_ASSISTANT_NEED_SUPPRESSION.at(asrVoiceControlMode);
-        for (size_t i = 0; i < modes.size(); i++) {
-            if (needSuppression.count(modes[i]) != 0 && on) {
-                audioRendererSinkInstance->SetAudioParameter(parmKey, "",
-                    modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
-                continue;
-            }
-            if (modes[i] == TTS_2_MODEM_STRING) {
-                audioRendererSinkInstance->SetAudioParameter(parmKey, "",
-                    modes[i] + "=" + VOICE_CALL_FULL_VOLUME);
-            } else {
-                audioRendererSinkInstance->SetAudioParameter(parmKey, "",
-                    modes[i] + "=" + std::to_string(modifyVolume));
-            }
-        }
+        return SetAsrVoiceSuppressionControlMode(paramKey, asrVoiceControlMode, on, modifyVolume);
     }
     
     return 0;
