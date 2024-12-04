@@ -1129,12 +1129,6 @@ int32_t AudioPolicyProxy::GetNetworkIdByGroupId(int32_t groupId, std::string &ne
     return ret;
 }
 
-bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
-{
-    AUDIO_INFO_LOG("IsAudioRendererLowLatencySupported");
-    return true;
-}
-
 int32_t AudioPolicyProxy::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
     MessageParcel data;

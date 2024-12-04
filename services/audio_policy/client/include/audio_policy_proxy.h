@@ -180,8 +180,6 @@ public:
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
 

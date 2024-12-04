@@ -393,12 +393,6 @@ void AudioPolicyOtherMoreFuzzTest()
 {
     int pid = GetData<int>();
     GetServerPtr()->RegisteredTrackerClientDied(pid, 0);
-    AudioStreamInfo audioStreamInfo;
-    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioStreamInfo.channels = AudioChannel::MONO;
-    GetServerPtr()->IsAudioRendererLowLatencySupported(audioStreamInfo);
 
     int32_t clientUid = GetData<int32_t>();
     StreamSetState streamSetState = GetData<StreamSetState>();

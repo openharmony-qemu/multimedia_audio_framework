@@ -137,22 +137,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetStreamInFocus_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test Audio_Policy_IsAudioRendererLowLatencySupported_001 via legal state
- * @tc.number: Audio_Policy_IsAudioRendererLowLatencySupported_001
- * @tc.desc  : Test IsAudioRendererLowLatencySupported interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
-{
-    AudioStreamInfo audioStreamInfo;
-    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioStreamInfo.channels = AudioChannel::MONO;
-    bool ret = AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
-    EXPECT_EQ(true, ret);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_Manager_IsStreamActive_001 via illegal state
  * @tc.number: Audio_Policy_Manager_IsStreamActive_001
  * @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
@@ -282,22 +266,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioCapturerEventListe
 
     ret = AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientId);
     EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001 via legal state
- * @tc.number: Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001
- * @tc.desc  : Test IsAudioRendererLowLatencySupported interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
-{
-    AudioStreamInfo audioStreamInfo;
-    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioStreamInfo.channels = AudioChannel::MONO;
-    bool ret = AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
-    EXPECT_EQ(true, ret);
 }
 
 /**
