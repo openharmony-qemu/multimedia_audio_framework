@@ -202,7 +202,6 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     if (volumeEvent.volumeType == AudioStreamType::STREAM_VOICE_CALL_ASSISTANT) {
-        AUDIO_INFO_LOG("Voice Call Assistant don't need send volumeKeyEventCallback");
         return false;
     }
     eventContextObj->volumeEvent = volumeEvent;
