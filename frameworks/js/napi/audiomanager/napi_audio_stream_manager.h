@@ -65,7 +65,6 @@ private:
     static napi_value GetCurrentAudioRendererInfosSync(napi_env env, napi_callback_info info);
     static napi_value GetCurrentAudioCapturerInfos(napi_env env, napi_callback_info info);
     static napi_value GetCurrentAudioCapturerInfosSync(napi_env env, napi_callback_info info);
-    static napi_value IsAudioRendererLowLatencySupported(napi_env env, napi_callback_info info);
     static napi_value IsStreamActive(napi_env env, napi_callback_info info);
     static napi_value IsStreamActiveSync(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArray(napi_env env, napi_callback_info info);
