@@ -862,6 +862,7 @@ static void ThreadFuncProcessTimer(void *userdata)
         if (u->rtpollItem) {
             struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
             if (pollFd == NULL) {
+                AUDIO_ERR_LOG("get pollFd failed");
                 break;
             }
             pollFd->events = flag ? POLLIN : 0;
