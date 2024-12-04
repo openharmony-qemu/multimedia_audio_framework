@@ -680,6 +680,12 @@ bool AudioEcManager::GetMicRefFeatureEnable()
     return isMicRefFeatureEnable_;
 }
 
+void AudioEcManager::UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
+{
+    UpdateStreamEcInfo(moduleInfo, sourceType);
+    UpdateStreamMicRefInfo(moduleInfo, sourceType);
+}
+
 std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const DeviceType deviceType)
 {
     std::string halName = "";
