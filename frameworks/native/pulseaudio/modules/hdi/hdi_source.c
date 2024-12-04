@@ -861,7 +861,9 @@ static void ThreadFuncProcessTimer(void *userdata)
         pa_rtpoll_set_timer_relative(u->rtpoll, RTPOLL_RUN_WAKEUP_INTERVAL_USEC);
         if (u->rtpollItem) {
             struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
-            CHECK_AND_RETURN_RET_LOG(pollFd != NULL, -1, "get pollfd failed");
+            if (pollFd == NULL) {
+                continue;
+            }
             pollFd->events = flag ? POLLIN : 0;
         }
         /* Hmm, nothing to do. Let's sleep */
