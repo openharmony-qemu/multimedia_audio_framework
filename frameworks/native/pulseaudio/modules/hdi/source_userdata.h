@@ -15,6 +15,8 @@
 #ifndef SOURCE_USERDATA_H
 #define SOURCE_USERDATA_H
 
+#include <sys/eventfd.h>
+#include <poll.h>
 #include <pulsecore/core.h>
 #include <pulsecore/log.h>
 #include <pulsecore/module.h>
@@ -80,6 +82,8 @@ struct Userdata {
     uint32_t captureId;
     uint32_t renderId;
     pa_resampler *defaultSceneResampler;
+    pa_rtpoll_item *rtpollItem;
+    int64_t eventFd;
 };
 
 struct AlgoSpecs {
