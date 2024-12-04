@@ -2168,8 +2168,15 @@ static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        float volumeFloat = GetCurVolume(sessionID, streamType, deviceClass);
-        uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
+        float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
+        float volumeBeg = GetPreVolume(sessionID);
+        if (volumeBeg != volumeEnd) {
+            AUDIO_INFO_LOG("sessionID:%{public}s, volumeBeg:%{public}f, volumeEnd:%{public}f",
+                sessionIDStr, volumeBeg, volumeEnd);
+            SetPreVolume(sessionID, volumeEnd);
+            MonitorVolume(sessionID, true);
+        }
+        uint32_t volume = pa_sw_volume_from_linear(volumeEnd);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
     }
 }
