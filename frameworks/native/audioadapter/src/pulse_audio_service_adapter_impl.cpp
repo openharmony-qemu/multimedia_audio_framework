@@ -45,6 +45,7 @@ static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
 SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
 
 static const int32_t PA_SERVICE_IMPL_TIMEOUT = 10; // 10s is better
+static const int32_t PA_CORE_MODULE_INDEX = 2; // 0: unix stub module, 1: suspend on idle module, 2:Speak module
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
     {"voice_call_assistant", STREAM_VOICE_CALL_ASSISTANT},
@@ -212,6 +213,7 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
 
 int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, bool isSync)
 {
+    AUDIO_INFO_LOG("try to close module:%{public}d", audioHandleIndex);
     lock_guard<mutex> lock(lock_);
 
     PaLockGuard palock(mMainLoop);
@@ -220,6 +222,10 @@ int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, b
         return ERROR;
     }
 
+    if (audioHandleIndex <= PA_CORE_MODULE_INDEX) {
+        AUDIO_ERR_LOG("Core modules, not allowed to close!");
+        return ERROR;
+    }
     pa_operation *operation;
     if (isSync) {
         operation = pa_context_unload_module(mContext, audioHandleIndex, PaUnloadModuleCb,
