@@ -1205,16 +1205,6 @@ int32_t AudioPolicyService::UpdateStreamState(int32_t clientUid,
     return streamCollector_.UpdateStreamState(clientUid, streamSetStateEventInternal);
 }
 
-AudioStreamType AudioPolicyService::GetStreamType(int32_t sessionId)
-{
-    return streamCollector_.GetStreamType(sessionId);
-}
-
-int32_t AudioPolicyService::GetChannelCount(uint32_t sessionId)
-{
-    return streamCollector_.GetChannelCount(sessionId);
-}
-
 int32_t AudioPolicyService::GetUid(int32_t sessionId)
 {
     return streamCollector_.GetUid(sessionId);

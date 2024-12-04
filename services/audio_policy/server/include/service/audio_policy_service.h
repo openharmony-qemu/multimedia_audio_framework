@@ -522,10 +522,6 @@ private:
 
     void LoadModernInnerCapSink();
 
-    AudioStreamType GetStreamType(int32_t sessionId);
-
-    int32_t GetChannelCount(uint32_t sessionId);
-
     int32_t GetUid(int32_t sessionId);
 
     void UnregisterBluetoothListener();
