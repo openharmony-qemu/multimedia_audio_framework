@@ -313,9 +313,10 @@ T *ObjectRefMap<T>::IncreaseRef(T *obj)
 template <typename T>
 void ObjectRefMap<T>::DecreaseRef(T *obj)
 {
-    std::lock_guard<std::mutex> lock(allObjLock);
+    std::unique_lock<std::mutex> lock(allObjLock);
     if (refMap.count(obj) && --refMap[obj] == 0) {
         refMap.erase(obj);
+        lock.unlock();
         delete obj;
         obj = nullptr;
     }

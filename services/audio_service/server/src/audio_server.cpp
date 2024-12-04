@@ -180,6 +180,7 @@ static void UpdateArmInstance(IAudioCapturerSource *&audioCapturerSourceInstance
     audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
     audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
     auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
     primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
 }
 
@@ -431,6 +432,21 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     return SUCCESS;
 }
 
+void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
+{
+    auto parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
+    IAudioRendererSink* bluetoothSinkInstance = IAudioRendererSink::GetInstance("a2dp", "");
+    CHECK_AND_RETURN_LOG(bluetoothSinkInstance != nullptr, "has no valid sink");
+    bluetoothSinkInstance->SetAudioParameter(parmKey, "", renderValue);
+
+    if (AudioService::GetInstance()->HasBluetoothEndpoint()) {
+        IAudioRendererSink* fastBluetoothSinkInstance = IAudioRendererSink::GetInstance("a2dp_fast", "");
+        CHECK_AND_RETURN_LOG(fastBluetoothSinkInstance != nullptr, "has no valid fast sink");
+        fastBluetoothSinkInstance->SetAudioParameter(parmKey, "", renderValue);
+        AUDIO_INFO_LOG("HasBlueToothEndpoint");
+    }
+}
+
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
@@ -448,19 +464,16 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     AudioServer::audioParameters[key] = value;
 
     // send it to hal
-    AudioParamKey parmKey = AudioParamKey::NONE;
     if (key == "A2dpSuspended") {
-        parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
-        IAudioRendererSink* bluetoothSinkInstance = IAudioRendererSink::GetInstance("a2dp", "");
-        CHECK_AND_RETURN_LOG(bluetoothSinkInstance != nullptr, "has no valid sink");
         std::string renderValue = key + "=" + value + ";";
-        bluetoothSinkInstance->SetAudioParameter(parmKey, "", renderValue);
+        SetA2dpAudioParameter(renderValue);
         return;
     }
 
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_LOG(audioRendererSinkInstance != nullptr, "has no valid sink");
 
+    AudioParamKey parmKey = AudioParamKey::NONE;
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
         HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SMARTPA_LOWPOWER",
@@ -815,6 +828,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
         auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+        CHECK_AND_RETURN_RET_LOG(primarySink, ERROR, "primarySink is nullptr");
         primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
     } else {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");

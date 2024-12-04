@@ -949,6 +949,7 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+        CheckForA2dpSuspend(updatedDesc);
         audioDeviceCommon_.FetchDevice(true, reason); //  fix pop, fetch device before unload module
         int32_t result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
@@ -1021,8 +1022,7 @@ void AudioDeviceStatus::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
     }
 }
 
-void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
-    const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceStatus::UserSelectDeviceMapInit()
 {
     AudioStateManager& stateManager = AudioStateManager::GetAudioStateManager();
     shared_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice = stateManager.GetPreferredMediaRenderDevice();
@@ -1034,6 +1034,13 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectCallRenderDevice));
     userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectCallCaptureDevice));
     userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectRecordCaptureDevice));
+    return userSelectDeviceMap;
+}
+
+void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
+    const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
+{
+    vector<shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap = UserSelectDeviceMapInit();
     if (updateCommand == CATEGORY_UPDATE) {
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
@@ -1066,6 +1073,10 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
+        if (!desc.isEnable_ && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            desc.IsSameDeviceDesc(audioActiveDevice_.GetCurrentOutputDevice())) {
+            Bluetooth::AudioHfpManager::DisconnectSco();
+        }
         UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>(desc));
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;

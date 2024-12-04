@@ -180,6 +180,7 @@ protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
 private:
+    void SetA2dpAudioParameter(const std::string &renderValue);
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);

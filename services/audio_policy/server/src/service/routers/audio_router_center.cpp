@@ -198,30 +198,17 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
 {
     shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
     RouterType routerType = ROUTER_TYPE_NONE;
+    AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
     if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
-        for (auto &router : recordCaptureRouters_) {
-            desc = router->GetRecordCaptureDevice(sourceType, clientUID);
-            if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-                routerType = router->GetRouterType();
-                break;
-            }
+        if (audioScene != AUDIO_SCENE_DEFAULT) {
+            desc = FetchCallCaptureDevice(sourceType, clientUID, routerType);
+        } else {
+            desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType);
         }
     } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
-        for (auto &router : callCaptureRouters_) {
-            desc = router->GetCallCaptureDevice(sourceType, clientUID);
-            if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-                routerType = router->GetRouterType();
-                break;
-            }
-        }
+        desc = FetchCallCaptureDevice(sourceType, clientUID, routerType);
     } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
-        for (auto &router : voiceMessageRouters_) {
-            desc = router->GetRecordCaptureDevice(sourceType, clientUID);
-            if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-                routerType = router->GetRouterType();
-                break;
-            }
-        }
+        desc = FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType);
     } else {
         AUDIO_INFO_LOG("sourceType %{public}d didn't config router strategy, skipped", sourceType);
         return desc;
@@ -236,6 +223,45 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     AUDIO_PRERELEASE_LOGI("source:%{public}d uid:%{public}d fetch type:%{public}d id:%{public}d router:%{public}d",
         sourceType, clientUID, type, audioId_, routerType);
     return move(descs[0]);
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallCaptureDevice(SourceType sourceType,
+    int32_t clientUID, RouterType &routerType)
+{
+    for (auto &router : callCaptureRouters_) {
+        shared_ptr<AudioDeviceDescriptor> desc = router->GetCallCaptureDevice(sourceType, clientUID);
+        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+            routerType = router->GetRouterType();
+            return desc;
+        }
+    }
+    return make_shared<AudioDeviceDescriptor>();
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchRecordCaptureDevice(SourceType sourceType,
+    int32_t clientUID, RouterType &routerType)
+{
+    for (auto &router : recordCaptureRouters_) {
+        shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID);
+        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+            routerType = router->GetRouterType();
+            return desc;
+        }
+    }
+    return make_shared<AudioDeviceDescriptor>();
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchVoiceMessageCaptureDevice(SourceType sourceType,
+    int32_t clientUID, RouterType &routerType)
+{
+    for (auto &router : voiceMessageRouters_) {
+        shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID);
+        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+            routerType = router->GetRouterType();
+            return desc;
+        }
+    }
+    return make_shared<AudioDeviceDescriptor>();
 }
 
 int32_t AudioRouterCenter::SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object)

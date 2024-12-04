@@ -34,6 +34,13 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
         return;
     }
     audioEffectChainManager->UpdateParamExtra(mainkey, subkey, extraSceneType);
+
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    if (audioEnhanceChainManager == nullptr) {
+        AUDIO_ERR_LOG("audioEnhanceChainManager is nullptr");
+        return;
+    }
+    audioEnhanceChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
 }
 
 bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,

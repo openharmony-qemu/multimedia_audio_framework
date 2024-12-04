@@ -39,6 +39,7 @@
 #include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
+#include "volume_tools.h"
 
 using namespace std;
 
@@ -141,6 +142,8 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
+    std::string logUtilsTag_ = "MultiChannelRendererSinkInner::RenderFrame";
+    mutable int64_t volumeDataCount_ = 0;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -540,7 +543,10 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
             switchCV_.notify_all();
         }
     }
-    Trace::CountVolume("MultiChannelRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
+    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&data), len, len};
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
     Trace trace("MchSinkInner::RenderFrame");
 
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),

@@ -71,6 +71,7 @@
 #define FRAME_DURATION_DEFAULT 20
 #define MILLISECOND_PER_SECOND 1000
 #define HDI_POST 100
+#define MAX_SEND_COMMAND_LATANCY 10000
 
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -283,6 +284,17 @@ static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offse
     return pa_source_process_msg(o, code, data, offset, chunk);
 }
 
+static void SendInitCommandToAlgo()
+{
+    pa_usec_t now = pa_rtclock_now();
+    int32_t ret = EnhanceChainManagerSendInitCommand();
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "send init command failed");
+    pa_usec_t cost = pa_rtclock_now() - now;
+    if (cost > MAX_SEND_COMMAND_LATANCY) { // send command cost more than 10 ms
+        AUDIO_WARNING_LOG("send int command cost time:%{public}" PRIu64, cost);
+    }
+}
+
 /* Called from the IO thread. */
 static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     pa_suspend_cause_t newSuspendCause)
@@ -315,6 +327,7 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
                 u->isCapturerStarted = false;
                 AUDIO_DEBUG_LOG("Stopped HDI capturer");
                 StopAuxCapture(u);
+                SendInitCommandToAlgo();
             }
         } else if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
             AUDIO_DEBUG_LOG("Idle to Running starting HDI capturing device");

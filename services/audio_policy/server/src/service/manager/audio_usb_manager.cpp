@@ -74,12 +74,13 @@ static vector<SoundCard> GetUsbSoundCards()
     DIR *dir = opendir(baseDir.c_str());
     CHECK_AND_RETURN_RET(dir != nullptr, soundCards);
     struct dirent *tmp;
+    int num;
     while ((tmp = readdir(dir)) != nullptr) {
         string file(tmp->d_name);
         if (file.length() <= card.length() || !(file.find(card, 0) == 0)) {continue;}
-        string sIndex = file.substr(card.length());
-        if (!IsNumericStr(sIndex)) {continue;}
-        SoundCard card = {.cardNum_ = stoi(sIndex)};
+        string strNum = file.substr(card.length());
+        if (!StrToInt(strNum, num)) {continue;}
+        SoundCard card = {.cardNum_ = static_cast<uint32_t>(num)};
         FillSoundCard(baseDir + "/" + file, card);
         if (card.usbBus_.empty()) {continue;}
         soundCards.push_back(card);
@@ -99,10 +100,16 @@ static UsbAddr GetUsbAddr(const SoundCard &card)
 {
     size_t pos = card.usbBus_.find('/');
     CHECK_AND_RETURN_RET_LOG(pos != string::npos, {}, "Error Parameter: card.usbbus");
+    int value;
+
     string str = card.usbBus_.substr(0, pos);
-    uint8_t busNum = (uint8_t)stoi(str);
+    CHECK_AND_RETURN_RET(StrToInt(str, value), {});
+    uint8_t busNum = static_cast<uint8_t>(value);
+
     str = card.usbBus_.substr(pos + 1);
-    uint8_t devAddr = (uint8_t)stoi(str);
+    CHECK_AND_RETURN_RET(StrToInt(str, value), {});
+    uint8_t devAddr = static_cast<uint8_t>(value);
+
     return {busNum, devAddr};
 }
 
