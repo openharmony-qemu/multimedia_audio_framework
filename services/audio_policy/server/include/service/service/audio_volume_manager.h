@@ -119,6 +119,7 @@ private:
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
     int32_t DealWithEventVolume(const int32_t notificationId);
+    void SetSafeVolumeStatusForDeviceSwitch();
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
