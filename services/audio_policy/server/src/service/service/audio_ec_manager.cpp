@@ -47,7 +47,8 @@ static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_WIRED_HEADSET,
     DEVICE_TYPE_USB_HEADSET,
     DEVICE_TYPE_BLUETOOTH_SCO,
-    DEVICE_TYPE_USB_ARM_HEADSET
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN
 };
 
 static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
