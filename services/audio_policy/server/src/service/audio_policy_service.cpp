@@ -4276,8 +4276,8 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
 
 void AudioPolicyService::UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
 {
-    UpdateStreamEcInfo(moduleInfo, sourceType);
-    UpdateStreamMicRefInfo(moduleInfo, sourceType);
+    audioEcManager_.UpdateStreamEcInfo(moduleInfo, sourceType);
+    audioEcManager_.UpdateStreamMicRefInfo(moduleInfo, sourceType);
 }
 
 } // namespace AudioStandard
