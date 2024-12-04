@@ -147,14 +147,15 @@ void AudioAdapterManager::InitBootAnimationVolume()
 {
     char currentVolumeValue[3] = {0};
     AudioVolumeType typeForBootAnimation = VolumeUtils::IsPCVolumeEnable() ? STREAM_SYSTEM : STREAM_RING;
-    std::string defaultVolume = VolumeUtils::IsPCVolumeEnable()?
-        std::to_string(volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation)) : "7";
+    int32_t bootAnimationVolume = volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation);
+    AUDIO_DEBUG_LOG("Init: Type[%{public}d],volume[%{public}d]", typeForBootAnimation, bootAnimationVolume);
+    std::string defaultVolume = VolumeUtils::IsPCVolumeEnable()? std::to_string(bootAnimationVolume) : "7";
     auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", defaultVolume.c_str(),
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
         volumeDataMaintainer_.SetStreamVolume(typeForBootAnimation, atoi(currentVolumeValue));
-        AUDIO_INFO_LOG("Init: Get ringtone volume to map success %{public}d",
-            volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation));
+        AUDIO_INFO_LOG("Init: Get Type[%{public}d] volume to map volume [%{public}d]",
+            typeForBootAnimation, volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation));
     } else {
         AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
     }

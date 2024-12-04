@@ -416,6 +416,11 @@ public:
 
     // Check if the multi-channel sound effect is working on the DSP
     virtual bool GetEffectOffloadEnabled() = 0;
+    // for effect V3
+    virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) = 0;
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) = 0;
     // for effect
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
@@ -537,6 +542,8 @@ private:
     int HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioEffectPropertyV3(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAudioEffectPropertyV3(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioEffectProperty(MessageParcel &data, MessageParcel &reply);
     int HandleGetAudioEffectProperty(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply);

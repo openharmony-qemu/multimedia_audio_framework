@@ -265,6 +265,40 @@ const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
     {DEVICE_TYPE_DEFAULT, "DEVICE_TYPE_DEFAULT"},
 };
 
+
+enum EffectFlag { RENDER_EFFECT_FLAG = 0, CAPTURE_EFFECT_FLAG = 1};
+
+struct AudioEffectPropertyV3 {
+    std::string name;
+    std::string category;
+    EffectFlag flag;
+    friend bool operator==(const AudioEffectPropertyV3 &lhs, const AudioEffectPropertyV3 &rhs)
+    {
+        return (lhs.category == rhs.category && lhs.name == rhs.name && lhs.flag == rhs.flag);
+    };
+    friend bool operator<(const AudioEffectPropertyV3 &lhs, const AudioEffectPropertyV3 &rhs)
+    {
+        return ((lhs.name == rhs.name) || (lhs.name == rhs.name && lhs.category < rhs.category)
+            || (lhs.name == rhs.name && lhs.category == rhs.category && lhs.flag < rhs.flag));
+    };
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteString(name)&&
+            parcel.WriteString(category)&&
+            parcel.WriteInt32(flag);
+    };
+    void Unmarshalling(Parcel &parcel)
+    {
+        name = parcel.ReadString();
+        category = parcel.ReadString();
+        flag = static_cast<EffectFlag>(parcel.ReadInt32());
+    };
+};
+
+struct AudioEffectPropertyArrayV3 {
+    std::vector<AudioEffectPropertyV3> property;
+};
+
 struct AudioEnhanceProperty {
     std::string enhanceClass;
     std::string enhanceProp;

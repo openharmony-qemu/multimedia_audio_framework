@@ -352,35 +352,52 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     int32_t keySubId = im->SubscribeKeyEvent(keyOption, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
         AUDIO_PRERELEASE_LOGI("Receive volume key event: %{public}s.",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
-        std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-        AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-        if (volumeApplyToAll_) {
-            streamInFocus = AudioStreamType::STREAM_ALL;
-        } else {
-            streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
-        }
-        if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
-            AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
-            SetStreamMuteInternal(streamInFocus, false, true);
-            if (!VolumeUtils::IsPCVolumeEnable()) {
-                AUDIO_DEBUG_LOG("phone need return");
-                return;
-            }
-        }
-        int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
-        if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
+        int32_t ret = ProcessVolumeKeyMuteEvents(keyType);
+        if (ret != AUDIO_OK) {
+            AUDIO_DEBUG_LOG("process volume key mute events need return[%{public}d]", ret);
             return;
         }
-
-        volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ?
-            ++volumeLevelInInt : --volumeLevelInInt;
-        SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, true);
     });
     if (keySubId < 0) {
         AUDIO_ERR_LOG("key: %{public}s failed", (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
         return ERR_MMI_SUBSCRIBE;
     }
     return keySubId;
+}
+
+int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
+{
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
+    if (volumeApplyToAll_) {
+        streamInFocus = AudioStreamType::STREAM_ALL;
+    } else {
+        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+    }
+    if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
+        AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
+        SetStreamMuteInternal(streamInFocus, false, true);
+        if (!VolumeUtils::IsPCVolumeEnable()) {
+            AUDIO_DEBUG_LOG("phone need return");
+            return ERROR_UNSUPPORTED;
+        }
+    }
+    if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(STREAM_SYSTEM) &&
+        VolumeUtils::IsPCVolumeEnable()) {
+        SetStreamMuteInternal(STREAM_SYSTEM, false, true);
+    }
+    int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
+    if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
+        AUDIO_ERR_LOG("volumelevel[%{public}d] invalid", volumeLevelInInt);
+        return ERROR_INVALID_PARAM;
+    }
+
+    volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? ++volumeLevelInInt : --volumeLevelInInt;
+    SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, true);
+    if (volumeLevelInInt <= 0 && VolumeUtils::IsPCVolumeEnable()) {
+        SetStreamMuteInternal(STREAM_SYSTEM, true, true);
+    }
+    return AUDIO_OK;
 }
 #endif
 
@@ -3106,6 +3123,40 @@ int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionI
 int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
+}
+
+int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
+    return AUDIO_OK;
+}
+
+int32_t AudioPolicyServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+{
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioPolicyService_.SetAudioEffectProperty(propertyArray);
+}
+
+int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioPolicyService_.GetAudioEffectProperty(propertyArray);
 }
 
 int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
