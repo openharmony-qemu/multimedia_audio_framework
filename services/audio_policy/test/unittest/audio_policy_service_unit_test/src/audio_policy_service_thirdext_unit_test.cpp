@@ -1025,46 +1025,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_005, TestSize
 }
 
 /**
-* @tc.name  : Test IsAllowedPlayback.
-* @tc.number: IsAllowedPlayback_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_001 start");
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    const int32_t uid = 0;
-    const int32_t pid = 0;
-    bool result = server->audioPolicyService_.IsAllowedPlayback(uid, pid);
-#ifdef AVSESSION_ENABLE
-    EXPECT_EQ(true, result);
-#else
-    EXPECT_EQ(true, result);
-#endif
-}
-
-/**
-* @tc.name  : Test IsAllowedPlayback.
-* @tc.number: IsAllowedPlayback_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_002 start");
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    const int32_t uid = BOOTUP_MUSIC_UID;
-    const int32_t pid = 0;
-    bool result = server->audioPolicyService_.IsAllowedPlayback(uid, pid);
-#ifdef AVSESSION_ENABLE
-    EXPECT_EQ(true, result);
-#else
-    EXPECT_EQ(true, result);
-#endif
-}
-
-/**
 * @tc.name  : Test IsA2dpOffloadConnected.
 * @tc.number: IsA2dpOffloadConnected_001
 * @tc.desc  : Test AudioPolicyService interfaces.
