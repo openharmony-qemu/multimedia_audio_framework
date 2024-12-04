@@ -773,6 +773,8 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 
 int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
 {
+    AudioXCollie audioXCollie("OffloadAudioRendererSinkInner::SetVolumeInner", TIME_OUT_SECONDS,
+        nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("set offload vol left is %{public}f, right is %{public}f", left, right);
     float thevolume;
     int32_t ret;
