@@ -66,6 +66,24 @@ static void FillSoundCard(const string &path, SoundCard &card)
     closedir(dir);
 }
 
+static string Trim(const string &str)
+{
+    static const set<char> WHITE_SPACE{' ', '\r', '\n', '\t'};
+    size_t pos = 0;
+    size_t end = str.length();
+    for (; pos < end; pos++) {
+        if (WHITE_SPACE.find(str[pos]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    for (; end > pos; end--) {
+        if (WHITE_SPACE.find(str[end - 1]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    return str.substr(pos, end - pos);
+}
+
 static vector<SoundCard> GetUsbSoundCards()
 {
     const string baseDir{"/proc/asound"};
@@ -74,13 +92,13 @@ static vector<SoundCard> GetUsbSoundCards()
     DIR *dir = opendir(baseDir.c_str());
     CHECK_AND_RETURN_RET(dir != nullptr, soundCards);
     struct dirent *tmp;
-    int num;
+    int cardNum;
     while ((tmp = readdir(dir)) != nullptr) {
         string file(tmp->d_name);
         if (file.length() <= card.length() || !(file.find(card, 0) == 0)) {continue;}
-        string strNum = file.substr(card.length());
-        if (!StrToInt(strNum, num)) {continue;}
-        SoundCard card = {.cardNum_ = static_cast<uint32_t>(num)};
+        string cardNumStr = file.substr(card.length());
+        if (!StrToInt(cardNumStr, cardNum)) {continue;}
+        SoundCard card = {.cardNum_ = static_cast<uint32_t>(cardNum)};
         FillSoundCard(baseDir + "/" + file, card);
         if (card.usbBus_.empty()) {continue;}
         soundCards.push_back(card);
@@ -100,17 +118,11 @@ static UsbAddr GetUsbAddr(const SoundCard &card)
 {
     size_t pos = card.usbBus_.find('/');
     CHECK_AND_RETURN_RET_LOG(pos != string::npos, {}, "Error Parameter: card.usbbus");
-    int value;
-
-    string str = card.usbBus_.substr(0, pos);
-    CHECK_AND_RETURN_RET(StrToInt(str, value), {});
-    uint8_t busNum = static_cast<uint8_t>(value);
-
-    str = card.usbBus_.substr(pos + 1);
-    CHECK_AND_RETURN_RET(StrToInt(str, value), {});
-    uint8_t devAddr = static_cast<uint8_t>(value);
-
-    return {busNum, devAddr};
+    int busNum, devAddr;
+    string busNumStr = Trim(card.usbBus_.substr(0, pos));
+    string devAddrStr = Trim(card.usbBus_.substr(pos + 1));
+    CHECK_AND_RETURN_RET_LOG(StrToInt(busNumStr, busNum) && StrToInt(devAddrStr, devAddr), {}, "StrToInt ERROR");
+    return {static_cast<uint8_t>(busNum), static_cast<uint8_t>(devAddr)};
 }
 
 static bool IsAudioDevice(UsbDevice &usbDevice)
