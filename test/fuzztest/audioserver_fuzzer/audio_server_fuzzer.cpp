@@ -36,6 +36,8 @@ const int32_t SHIFT_LEFT_16 = 16;
 const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_MIN = 0;
 const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
+const uint8_t TESTSIZE = 23;
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 uint32_t Convert2Uint32(const uint8_t *ptr)
 {
@@ -508,32 +510,45 @@ void AudioServerUnsetOffloadTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+    OHOS::AudioStandard::AudioServerFuzzTest,
+    OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest,
+    OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
+    OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest,
+    OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest,
+    OHOS::AudioStandard::AudioServerGetEffectLatencyTest,
+    OHOS::AudioStandard::AudioServerGetMaxAmplitudeTest,
+    OHOS::AudioStandard::AudioServerResetAudioEndpointTest,
+    OHOS::AudioStandard::AudioServerCreatePlaybackCapturerManagerTest,
+    OHOS::AudioStandard::AudioServerSetOutputDeviceSinkTest,
+    OHOS::AudioStandard::AudioServerRequestThreadPriorityTest,
+    OHOS::AudioStandard::AudioServerSetAudioMonoStateTest,
+    OHOS::AudioStandard::AudioServerSetVoiceVolumeTest,
+    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateTest,
+    OHOS::AudioStandard::AudioServerNotifyDeviceInfoTest,
+    OHOS::AudioStandard::AudioServerGetAudioParameterTest,
+    OHOS::AudioStandard::AudioServerSetAudioParameterTest,
+    OHOS::AudioStandard::AudioServerSetMicrophoneMuteTest,
+    OHOS::AudioStandard::AudioServerSetAudioBalanceValueTest,
+    OHOS::AudioStandard::AudioServerSetAudioSceneTest,
+    OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest,
+    OHOS::AudioStandard::AudioServerSetOffloadModeTest,
+    OHOS::AudioStandard::AudioServerUnsetOffloadTest
+};
+
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioServerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerGetEffectLatencyTest(data, size);
-    OHOS::AudioStandard::AudioServerGetMaxAmplitudeTest(data, size);
-    OHOS::AudioStandard::AudioServerResetAudioEndpointTest(data, size);
-    OHOS::AudioStandard::AudioServerCreatePlaybackCapturerManagerTest(data, size);
-    OHOS::AudioStandard::AudioServerSetOutputDeviceSinkTest(data, size);
-    OHOS::AudioStandard::AudioServerRequestThreadPriorityTest(data, size);
-    OHOS::AudioStandard::AudioServerSetAudioMonoStateTest(data, size);
-    OHOS::AudioStandard::AudioServerSetVoiceVolumeTest(data, size);
-    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateTest(data, size);
-    OHOS::AudioStandard::AudioServerNotifyDeviceInfoTest(data, size);
-    OHOS::AudioStandard::AudioServerGetAudioParameterTest(data, size);
-    OHOS::AudioStandard::AudioServerSetAudioParameterTest(data, size);
-    OHOS::AudioStandard::AudioServerSetMicrophoneMuteTest(data, size);
-    OHOS::AudioStandard::AudioServerSetAudioBalanceValueTest(data, size);
-    OHOS::AudioStandard::AudioServerSetAudioSceneTest(data, size);
-    OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest(data, size);
-    OHOS::AudioStandard::AudioServerSetOffloadModeTest(data, size);
-    OHOS::AudioStandard::AudioServerUnsetOffloadTest(data, size);
+    if (data == nullptr || size <= 1) {
+        return 0;
+    }
+    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
+    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+        return 0;
+    }
+    data = data + 1;
+    size = size - 1;
+    g_testPtrs[firstByte](data, size);
     return 0;
 }

@@ -52,7 +52,7 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 #include "media_monitor_manager.h"
 
@@ -71,7 +71,6 @@ static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offlo
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const uint32_t WAIT_FOR_NEXT_CB = 5000; // 5ms
-static const int32_t HALF_FACTOR = 2;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
@@ -301,10 +300,8 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetStreamVolume(volume);
-    bool isStreamVolumeChange = true;
-    bool isMediaServiceAndOffloadEnable = (getuid() == MEDIA_SERVICE_UID) && offloadEnable_;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetClientVolume(isStreamVolumeChange, isMediaServiceAndOffloadEnable);
+    int32_t ret = ipcStream_->SetClientVolume();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Set Client Volume failed:%{public}u", ret);
         return ERROR;
@@ -592,7 +589,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
-    Trace::CountVolume(traceTag_, *buffer);
 
     if (gServerProxy_ == nullptr && getuid() == MEDIA_SERVICE_UID) {
         uint32_t samplingRate = clientConfig_.streamInfo.samplingRate;
@@ -762,24 +758,13 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     }
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
-    DfxOperation(desc, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
+    VolumeTools::DfxOperation(desc, clientConfig_.streamInfo, traceTag_, volumeDataCount_);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;
-}
-
-void RendererInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t RendererInClientInner::RegisterSpatializationStateEventListener()
@@ -809,6 +794,39 @@ int32_t RendererInClientInner::UnregisterSpatializationStateEventListener(uint32
     int32_t ret = AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionID);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "UnregisterSpatializationStateEventListener failed");
     return SUCCESS;
+}
+
+bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
+{
+    Trace trace("RendererInClientInner::DrainAudioStreamInner " + std::to_string(sessionId_));
+    if (state_ != RUNNING) {
+        AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
+        return false;
+    }
+    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true, stopFlag) == SUCCESS, false, "Drain cache failed");
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
+    int32_t ret = ipcStream_->Drain(stopFlag);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Drain call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        notifiedOperation_ = MAX_OPERATION_CODE;
+        return false;
+    }
+    notifiedOperation_ = MAX_OPERATION_CODE;
+    waitLock.unlock();
+    AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
+    return true;
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()

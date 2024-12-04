@@ -87,7 +87,7 @@ config("audio_policy_public_config") {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
 
-  if (avsession_part_enable == true) {
+  if (avsession_part_enable == true && !(use_libfuzzer || use_clang_coverage)) {
     cflags += [ "-DAVSESSION_ENABLE" ]
   }
 
@@ -205,10 +205,13 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/service/audio_active_device.cpp",
     "server/src/service/service/audio_config_manager.cpp",
     "server/src/service/service/audio_connected_device.cpp",
+    "server/src/service/service/audio_device_common.cpp",
+    "server/src/service/service/audio_ec_manager.cpp",
     "server/src/service/service/audio_iohandle_map.cpp",
     "server/src/service/service/audio_microphone_descriptor.cpp",
     "server/src/service/service/audio_offload_stream.cpp",
     "server/src/service/service/audio_policy_utils.cpp",
+    "server/src/service/service/audio_recovery_device.cpp",
     "server/src/service/service/audio_router_map.cpp",
     "server/src/service/service/audio_scene_manager.cpp",
     "server/src/service/service/audio_server_proxy.cpp",

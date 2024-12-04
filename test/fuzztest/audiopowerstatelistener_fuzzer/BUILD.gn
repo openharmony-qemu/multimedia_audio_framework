@@ -80,6 +80,10 @@ ohos_fuzztest("AudioPowerStateListenerFuzzTest") {
       "accessibility:accessibilityconfig",
     ]
   }
+
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
 }
 
 group("fuzztest") {

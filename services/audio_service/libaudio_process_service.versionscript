@@ -43,6 +43,9 @@
     *Dump*;
     *CleanAppUseNumMap*;
     *GetSharedVolume*;
+    *HasBluetoothEndpoint*;
+    *GetOfflineStream*;
+    *GetOfflineAudioEffectChains*;
   local:
     *;
 };

@@ -82,6 +82,7 @@ public:
     bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, int32_t maxStreamCntPerUid);
     void GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum);
     void CleanAppUseNumMap(int32_t appUid);
+    bool HasBluetoothEndpoint();
 
 private:
     AudioService();

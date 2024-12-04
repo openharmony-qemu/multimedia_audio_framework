@@ -186,6 +186,8 @@ private:
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
     void UpdateAudioInterruptStrategy(float volume) const;
     bool IsAllowedStartBackgroud();
+    bool GetStartStreamResult(StateChangeCmdType cmdType);
+    std::shared_ptr<IAudioStream> GetInnerStream() const;
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

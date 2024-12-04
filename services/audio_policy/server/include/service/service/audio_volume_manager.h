@@ -145,7 +145,7 @@ private:
     SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
     SafeStatus safeStatus_ = SAFE_UNKNOWN;
 
-    bool isAbsBtFirstBoot_ = true;
+    bool isBtFirstBoot_ = true;
 
     std::vector<sptr<VolumeGroupInfo>> volumeGroups_;
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
@@ -157,8 +157,6 @@ private:
 
     std::mutex notifyMutex_;
     int32_t streamMusicVol_ = 0;
-    bool isSelectRestoreVol_ = false;
-    bool isSelectIncreaseVol_ = false;
     bool restoreNIsShowing_ = false;
     bool increaseNIsShowing_ = false;
 

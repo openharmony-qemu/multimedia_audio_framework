@@ -70,6 +70,12 @@ enum AudioSpatialDeviceType {
     EARPHONE_TYPE_OTHERS,
 };
 
+enum FoldState : uint32_t {
+    FOLD_STATE_EXPAND = 1,
+    FOLD_STATE_CLOSE = 2,
+    FOLD_STATE_MIDDLE = 3,
+};
+
 struct AudioSpatialDeviceState {
     std::string address;
     bool isSpatializationSupported;
@@ -428,6 +434,7 @@ struct AudioRendererInfoForSpatialization {
 struct AudioEnhanceParam {
     uint32_t muteInfo;
     uint32_t volumeInfo;
+    uint32_t foldState;
     const char *preDevice;
     const char *postDevice;
     const char *sceneType;

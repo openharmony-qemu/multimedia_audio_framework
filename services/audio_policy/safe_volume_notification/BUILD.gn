@@ -26,11 +26,12 @@ ohos_shared_library("audio_safe_volume_notification_impl") {
   include_dirs = [
     "include",
     "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
   ]
 
   sources = [ "src/audio_safe_volume_notification_impl.cpp" ]
 
-  deps = []
+  deps = [ "../../../services/audio_service:audio_client" ]
 
   external_deps = [
     "ability_base:want",
@@ -42,7 +43,6 @@ ohos_shared_library("audio_safe_volume_notification_impl") {
     "image_framework:image_native",
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
-    "resource_management:global_resmgr",
   ]
 
   cflags = [

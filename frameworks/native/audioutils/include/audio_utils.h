@@ -195,6 +195,9 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 }
 
 template <typename T>
+void StringParser(std::string& param, T& result);
+
+template <typename T>
 bool GetSysPara(const char *key, T &value);
 
 enum AudioDumpFileType {
@@ -310,9 +313,10 @@ T *ObjectRefMap<T>::IncreaseRef(T *obj)
 template <typename T>
 void ObjectRefMap<T>::DecreaseRef(T *obj)
 {
-    std::lock_guard<std::mutex> lock(allObjLock);
+    std::unique_lock<std::mutex> lock(allObjLock);
     if (refMap.count(obj) && --refMap[obj] == 0) {
         refMap.erase(obj);
+        lock.unlock();
         delete obj;
         obj = nullptr;
     }

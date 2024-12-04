@@ -89,7 +89,6 @@ private:
     void GetToneInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
 #endif
-    void IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply);
     void CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);

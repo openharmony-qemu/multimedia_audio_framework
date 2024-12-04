@@ -79,14 +79,20 @@ const std::vector<AudioStreamType> GET_PC_STREAM_RING_VOLUME_TYPES {
 };
 
 const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
-    STREAM_MUSIC,
     STREAM_VOICE_CALL,
     STREAM_VOICE_ASSISTANT,
     STREAM_ACCESSIBILITY,
     STREAM_RING,
     STREAM_ALARM,
     STREAM_VOICE_RING,
-    STREAM_ULTRASONIC
+    STREAM_ULTRASONIC,
+    // adjust the type of music from the head of list to end, make sure music is updated last.
+    // avoid interference from ring updates on special platform.
+    // when the device is switched to headset,ring and alarm is dualtone type.
+    // dualtone type use fixed volume curve of speaker.
+    // the ring and alarm are classified into the music group.
+    // the music volume becomes abnormal when the db value of music is modified.
+    STREAM_MUSIC
 };
 
 class AudioPolicyServer : public SystemAbility,
@@ -278,8 +284,6 @@ public:
     void RegisteredTrackerClientDied(int pid, int uid);
 
     void RegisteredStreamListenerClientDied(int pid, int uid);
-
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 
     int32_t ResumeStreamState();
 
@@ -602,6 +606,7 @@ private:
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
+    void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);
 
     void InitPolicyDumpMap();
     void PolicyDataDump(std::string &dumpString);
@@ -627,6 +632,7 @@ private:
     std::mutex systemVolumeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
+    std::mutex subscribeVolumeKey_;
 
     SessionProcessor sessionProcessor_{
         [this] (const uint64_t sessionID, const int32_t zoneID) { this->ProcessSessionRemoved(sessionID, zoneID); },

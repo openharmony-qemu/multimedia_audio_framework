@@ -31,43 +31,16 @@
 #include "audio_log.h"
 #include "os_account_manager.h"
 #include "locale_config.h"
+#include "resource_manager_adapter.h"
 
 namespace OHOS {
 namespace AudioStandard {
-std::string AudioSafeVolumeNotificationImpl::GetStringByName(const char *name)
+std::string AudioSafeVolumeNotificationImpl::GetSystemStringByName(std::string name)
 {
-    std::string resourceContext;
-    if (resourceManager_ == nullptr) {
-        AUDIO_ERR_LOG("resourceManager_ is null.");
-        return resourceContext;
-    }
-
-    auto ret = OHOS::Global::Resource::RState::SUCCESS;
-    if (name == SAFE_VOLUME_MUSIC_TIMER_TITTLE_ID) {
-        ret = resourceManager_->GetStringByName(SAFE_VOLUME_MUSIC_TIMER_TITTLE_ID, resourceContext);
-        if (ret != OHOS::Global::Resource::RState::SUCCESS) {
-            AUDIO_ERR_LOG("get SAFE_VOLUME_MUSIC_TIMER_TITTLE_ID failed.");
-        }
-    } else if (name == SAFE_VOLUME_INCREASE_VOLUME_TITTLE_ID) {
-        ret = resourceManager_->GetStringByName(SAFE_VOLUME_INCREASE_VOLUME_TITTLE_ID, resourceContext);
-        if (ret != OHOS::Global::Resource::RState::SUCCESS) {
-            AUDIO_ERR_LOG("get SAFE_VOLUME_INCREASE_VOLUME_TITTLE_ID failed.");
-        }
-    } else if (name == SAFE_VOLUME_MUSIC_TIMER_TEXT_ID) {
-        ret = resourceManager_->GetStringByName(SAFE_VOLUME_MUSIC_TIMER_TEXT_ID, resourceContext);
-        if (ret != OHOS::Global::Resource::RState::SUCCESS) {
-            AUDIO_ERR_LOG("get SAFE_VOLUME_MUSIC_TIMER_TEXT_ID failed.");
-        }
-    } else if (name == SAFE_VOLUME_INCREASE_VOLUME_TEXT_ID) {
-        ret = resourceManager_->GetStringByName(SAFE_VOLUME_INCREASE_VOLUME_TEXT_ID, resourceContext);
-        if (ret != OHOS::Global::Resource::RState::SUCCESS) {
-            AUDIO_ERR_LOG("get SAFE_VOLUME_INCREASE_VOLUME_TEXT_ID failed.");
-        }
-    } else {
-        AUDIO_ERR_LOG("resource name is error.");
-        return resourceContext;
-    }
-    return resourceContext;
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    std::string result = ResourceManagerAdapter::GetInstance()->GetSystemStringByName(name);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return result;
 }
 
 bool AudioSafeVolumeNotificationImpl::SetTitleAndText(int32_t notificationId,
@@ -78,19 +51,14 @@ bool AudioSafeVolumeNotificationImpl::SetTitleAndText(int32_t notificationId,
         return false;
     }
 
-    if (resourceManager_ == nullptr) {
-        AUDIO_ERR_LOG("resourceManager_ is null.");
-        return false;
-    }
-
     switch (notificationId) {
         case RESTORE_VOLUME_NOTIFICATION_ID:
-            content->SetTitle(GetStringByName(SAFE_VOLUME_MUSIC_TIMER_TITTLE_ID));
-            content->SetText(GetStringByName(SAFE_VOLUME_MUSIC_TIMER_TEXT_ID));
+            content->SetTitle(GetSystemStringByName(SAFE_VOLUME_MUSIC_TIMER_TITTLE_ID));
+            content->SetText(GetSystemStringByName(SAFE_VOLUME_MUSIC_TIMER_TEXT_ID));
             break;
         case INCREASE_VOLUME_NOTIFICATION_ID:
-            content->SetTitle(GetStringByName(SAFE_VOLUME_INCREASE_VOLUME_TITTLE_ID));
-            content->SetText(GetStringByName(SAFE_VOLUME_INCREASE_VOLUME_TEXT_ID));
+            content->SetTitle(GetSystemStringByName(SAFE_VOLUME_INCREASE_VOLUME_TITTLE_ID));
+            content->SetText(GetSystemStringByName(SAFE_VOLUME_INCREASE_VOLUME_TEXT_ID));
             break;
         default:
             AUDIO_ERR_LOG("error notificationId");
@@ -102,26 +70,15 @@ bool AudioSafeVolumeNotificationImpl::SetTitleAndText(int32_t notificationId,
 std::string AudioSafeVolumeNotificationImpl::GetButtonName(uint32_t notificationId)
 {
     std::string buttonName;
-    if (resourceManager_ == nullptr) {
-        AUDIO_ERR_LOG("resourceManager_ is null.");
-        return buttonName;
-    }
 
-    auto ret = OHOS::Global::Resource::RState::SUCCESS;
     switch (notificationId) {
         case RESTORE_VOLUME_NOTIFICATION_ID:
             AUDIO_INFO_LOG("GetButtonName RESTORE_VOLUME_NOTIFICATION_ID.");
-            ret = resourceManager_->GetStringByName(SAFE_VOLUME_RESTORE_VOL_BUTTON_ID, buttonName);
-            if (ret != OHOS::Global::Resource::RState::SUCCESS) {
-                AUDIO_ERR_LOG("get SAFE_VOLUME_RESTORE_VOL_BUTTON_ID failed.");
-            }
+            buttonName = GetSystemStringByName(SAFE_VOLUME_RESTORE_VOL_BUTTON_ID);
             break;
         case INCREASE_VOLUME_NOTIFICATION_ID:
             AUDIO_INFO_LOG("GetButtonName INCREASE_VOLUME_NOTIFICATION_ID.");
-            ret = resourceManager_->GetStringByName(SAFE_VOLUME_INCREASE_VOL_BUTTON_ID, buttonName);
-            if (ret != OHOS::Global::Resource::RState::SUCCESS) {
-                AUDIO_ERR_LOG("get SAFE_VOLUME_INCREASE_VOL_BUTTON_ID failed.");
-            }
+            buttonName = GetSystemStringByName(SAFE_VOLUME_INCREASE_VOL_BUTTON_ID);
             break;
         default:
             AUDIO_ERR_LOG("resource name is error.");
@@ -160,39 +117,6 @@ static void SetActionButton(int32_t notificationId, const std::string& buttonNam
     request.AddActionButton(actionButtonDeal);
 }
 
-void AudioSafeVolumeNotificationImpl::RefreshResConfig()
-{
-    std::string language = Global::I18n::LocaleConfig::GetSystemLanguage();
-    UErrorCode status = U_ZERO_ERROR;
-    icu::Locale locale = icu::Locale::forLanguageTag(language, status);
-    if (status != U_ZERO_ERROR) {
-        AUDIO_INFO_LOG("forLanguageTag failed, errCode:%{public}d", status);
-    }
-    if (resConfig_) {
-        resConfig_->SetLocaleInfo(locale.getLanguage(), locale.getScript(), locale.getCountry());
-    }
-    if (resourceManager_) {
-        resourceManager_->UpdateResConfig(*resConfig_);
-    }
-}
-
-void AudioSafeVolumeNotificationImpl::Init()
-{
-    if (resourceManager_ == nullptr) {
-        resourceManager_ = Global::Resource::GetSystemResourceManagerNoSandBox();
-    }
-    if (resConfig_ == nullptr) {
-        resConfig_ = Global::Resource::CreateResConfig();
-    }
-    RefreshResConfig();
-}
-
-AudioSafeVolumeNotificationImpl::AudioSafeVolumeNotificationImpl()
-{
-    AUDIO_INFO_LOG("AudioSafeVolumeNotificationImpl enter.");
-    Init();
-}
-
 bool AudioSafeVolumeNotificationImpl::GetPixelMap()
 {
     if (iconPixelMap_ != nullptr) {
@@ -200,16 +124,12 @@ bool AudioSafeVolumeNotificationImpl::GetPixelMap()
         return false;
     }
 
-    if (resourceManager_ == nullptr) {
-        AUDIO_ERR_LOG("resourceManager_ is null.");
-        return false;
-    }
-
     std::unique_ptr<uint8_t[]> resourceData;
     size_t resourceDataLength = 0;
-    auto ret = resourceManager_->GetMediaDataByName(SAFE_VOLUME_ICON_ID, resourceDataLength, resourceData);
+    auto ret = GetMediaDataByName(SAFE_VOLUME_ICON_ID, resourceDataLength, resourceData);
     if (ret != Global::Resource::RState::SUCCESS) {
-        AUDIO_ERR_LOG("get (%{public}s) failed, errorCode:%{public}d", SAFE_VOLUME_ICON_ID, static_cast<int32_t>(ret));
+        AUDIO_ERR_LOG("get (%{public}s) failed, errorCode:%{public}d", SAFE_VOLUME_ICON_ID.c_str(),
+            static_cast<int32_t>(ret));
         return false;
     }
 
@@ -249,8 +169,6 @@ static void SetBasicOption(Notification::NotificationRequest &request)
 
 void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t notificationId)
 {
-    RefreshResConfig();
-
     std::shared_ptr<Notification::NotificationNormalContent> normalContent =
         std::make_shared<Notification::NotificationNormalContent>();
     if (normalContent == nullptr) {
@@ -294,6 +212,20 @@ void AudioSafeVolumeNotificationImpl::CancelSafeVolumeNotification(int32_t notif
 {
     auto ret = Notification::NotificationHelper::CancelNotification(notificationId);
     AUDIO_INFO_LOG("safe volume service cancel notification result = %{public}d", ret);
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    ResourceManagerAdapter::GetInstance()->ReleaseSystemResourceManager();
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+Global::Resource::RState AudioSafeVolumeNotificationImpl::GetMediaDataByName(const std::string& name, size_t& len,
+    std::unique_ptr<uint8_t[]>& outValue, uint32_t density)
+{
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    Global::Resource::RState rstate =
+        ResourceManagerAdapter::GetInstance()->GetMediaDataByName(name, len, outValue, density);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return rstate;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -35,6 +35,7 @@
 #include "audio_spatialization_manager.h"
 #include "audio_spatialization_state_change_listener_stub.h"
 #include "i_standard_spatialization_state_change_listener.h"
+#include "audio_combine_denoising_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -242,8 +243,6 @@ public:
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos);
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId);
-
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo);

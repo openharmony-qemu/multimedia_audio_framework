@@ -45,6 +45,7 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
 constexpr int32_t TIME_OUT_SECONDS = 10;
+constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
@@ -660,9 +661,37 @@ bool AudioRendererPrivate::IsAllowedStartBackgroud()
     return ret;
 }
 
+bool AudioRendererPrivate::GetStartStreamResult(StateChangeCmdType cmdType)
+{
+    bool result = audioStream_->StartAudioStream(cmdType);
+    if (!result) {
+        AUDIO_ERR_LOG("Start audio stream failed");
+        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
+        if (!audioStream_->GetSilentModeAndMixWithOthers()) {
+            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+            }
+        }
+    }
+
+    state_ = RENDERER_RUNNING;
+    return result;
+}
+
+std::shared_ptr<IAudioStream> AudioRendererPrivate::GetInnerStream() const
+{
+    std::shared_lock<std::shared_mutex> lock(rendererMutex_);
+    return audioStream_;
+}
+
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Start");
+    AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
+        [](void *) {
+            AUDIO_ERR_LOG("Start timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "volume: %{public}f, interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType,
@@ -704,21 +733,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         return true;
     }
 
-    bool result = audioStream_->StartAudioStream(cmdType);
-    if (!result) {
-        AUDIO_ERR_LOG("Start audio stream failed");
-        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
-        if (!audioStream_->GetSilentModeAndMixWithOthers()) {
-            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
-            if (ret != 0) {
-                AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
-            }
-        }
-    }
-
-    state_ = RENDERER_RUNNING;
-
-    return result;
+    return GetStartStreamResult(cmdType);
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
@@ -890,7 +905,7 @@ bool AudioRendererPrivate::Stop()
 
 bool AudioRendererPrivate::Release()
 {
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
     bool result = audioStream_->ReleaseAudioStream();
@@ -904,6 +919,7 @@ bool AudioRendererPrivate::Release()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
+    lock.unlock();
     RemoveRendererPolicyServiceDiedCallback();
 
     return result;
@@ -1671,24 +1687,31 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_
 
 AudioEffectMode AudioRendererPrivate::GetAudioEffectMode() const
 {
-    return audioStream_->GetAudioEffectMode();
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, EFFECT_NONE, "audioStream_ is nullptr");
+    return currentStream->GetAudioEffectMode();
 }
 
 int64_t AudioRendererPrivate::GetFramesWritten() const
 {
-    return framesAlreadyWritten_ + audioStream_->GetFramesWritten();
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return framesAlreadyWritten_ + currentStream->GetFramesWritten();
 }
 
 int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) const
 {
-    return audioStream_->SetAudioEffectMode(effectMode);
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->SetAudioEffectMode(effectMode);
 }
 
 int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 {
     AUDIO_INFO_LOG("volume:%{public}f duration:%{public}d", volume, duration);
-    CHECK_AND_RETURN_RET(audioStream_ != nullptr, ERR_INVALID_PARAM, "Error status");
-    return audioStream_->SetVolumeWithRamp(volume, duration);
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->SetVolumeWithRamp(volume, duration);
 }
 
 void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)

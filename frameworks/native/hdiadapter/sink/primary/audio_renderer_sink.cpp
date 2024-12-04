@@ -44,7 +44,7 @@
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
 
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 using namespace std;
 
@@ -205,6 +205,7 @@ public:
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     std::string GetDPDeviceAttrInfo(const std::string &condition);
+    void WriterSmartPAStatusSysEvent(int32_t status);
 
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
@@ -266,7 +267,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
@@ -786,7 +786,9 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(&data), len);
@@ -810,17 +812,6 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 #endif
 
     return SUCCESS;
-}
-
-void AudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void AudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -1396,14 +1387,17 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
         address_end - address_begin - std::strlen("address="));
 
-    if (!sampleRateStr.empty()) attr_.sampleRate = stoi(sampleRateStr);
-    if (!channeltStr.empty()) attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
+    StringParser(sampleRateStr, attr_.sampleRate);
+    StringParser(channeltStr, attr_.channel);
+    
     attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
     } else {
-        formatByte = static_cast<uint32_t>(stoi(bufferSize)) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
+        uint32_t bufferSizeValue = 0;
+        StringParser(bufferSize, bufferSizeValue);
+        formatByte = bufferSizeValue * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
             / attr_.channel / attr_.sampleRate;
     }
 
@@ -1608,6 +1602,15 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len
     return ret;
 }
 
+void AudioRendererSinkInner::WriterSmartPAStatusSysEvent(int32_t status)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::SMARTPA_STATUS,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("STATUS", status);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 {
     Trace trace("AudioRendererSinkInner::SetPaPower flag:" + std::to_string(flag));
@@ -1624,6 +1627,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         }
         if (ret == 0) {
             g_paStatus = 0;
+            WriterSmartPAStatusSysEvent(g_paStatus);
         }
         return ret;
     } else if (flag == 0 && g_paStatus == 0) {
@@ -1639,6 +1643,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         ret = audioRender_->SetExtraParams(audioRender_, keyValueList1) + ret;
         if (ret == 0) {
             g_paStatus = 1;
+            WriterSmartPAStatusSysEvent(g_paStatus);
         }
         return ret;
     } else if (flag == 1 && g_paStatus == 1) {

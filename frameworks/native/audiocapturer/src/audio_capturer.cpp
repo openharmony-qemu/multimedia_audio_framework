@@ -1121,6 +1121,18 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     return SUCCESS;
 }
 
+void AudioCapturerPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info)
+{
+    audioStream_->GetSwitchInfo(info);
+
+    if (targetClass == IAudioStream::VOIP_STREAM) {
+        info.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
+    }
+    info.captureMode = audioCaptureMode_;
+    info.params.originalSessionId = sessionID_;
+    return;
+}
+
 bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId)
 {
     bool switchResult = false;
@@ -1138,16 +1150,12 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         std::lock_guard lock(switchStreamMutex_);
         // switch new stream
         IAudioStream::SwitchInfo info;
-        audioStream_->GetSwitchInfo(info);
-        info.params.originalSessionId = sessionID_;
+        InitSwitchInfo(targetClass, info);
 
         // release old stream and restart audio stream
         switchResult = audioStream_->ReleaseAudioStream();
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
-        if (targetClass == IAudioStream::VOIP_STREAM) {
-            info.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-        }
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, info.params,
             info.eStreamType, appInfo_.appPid);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");
@@ -1243,6 +1251,8 @@ int32_t AudioCapturerPrivate::InitAudioConcurrencyCallback()
 void AudioCapturerPrivate::ConcedeStream()
 {
     AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, capturerInfo_.pipeType);
+    CHECK_AND_RETURN_LOG(audioStream_->GetStreamClass() != IAudioStream::PA_STREAM,
+        "Session %{public}u is pa stream, no need for concede", sessionID_);
     AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
     audioStream_->GetAudioPipeType(pipeType);
     if (pipeType == PIPE_TYPE_LOWLATENCY_IN || pipeType == PIPE_TYPE_CALL_IN) {

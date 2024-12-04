@@ -261,14 +261,13 @@ void AudioInterruptService::RemovePlaceholderInterruptForSession(const int32_t c
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
 
-    auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
-        return pair.first.pid == callerPid && pair.second == PLACEHOLDER;
-    };
-    auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
-    if (iter != audioFocusInfoList.end()) {
-        AudioInterrupt placeholder = iter->first;
-        AUDIO_INFO_LOG("Remove stream id %{public}u (placeholder for pid%{public}d)", placeholder.sessionId, callerPid);
-        DeactivateAudioInterruptInternal(DEFAULT_ZONE_ID, placeholder, isSessionTimeout);
+    for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+        if (iter->first.pid == callerPid && iter->second == PLACEHOLDER) {
+            AudioInterrupt placeholder = iter->first;
+            AUDIO_INFO_LOG("Remove stream id %{public}u (placeholder for pid%{public}d)",
+                placeholder.sessionId, callerPid);
+            DeactivateAudioInterruptInternal(DEFAULT_ZONE_ID, placeholder, isSessionTimeout);
+        }
     }
 }
 
@@ -621,7 +620,7 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
         return false;
     }
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
-    if (itZone != zonesMap_.end()) { audioFocusInfoList = itZone->second->audioFocusInfoList; }
+    audioFocusInfoList = itZone->second->audioFocusInfoList;
     auto isPresent = [incomingSessionId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
         return pair.first.sessionId == incomingSessionId && pair.second == ACTIVE;
     };
@@ -648,20 +647,18 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
         incomingSessionId, audioInterrupt.pid, streamType,
         audioInterrupt.streamUsage, (audioInterrupt.audioFocusType).sourceType);
 
-    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId) && !isUpdatedAudioStrategy) {
-        AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
-        return SUCCESS;
-    }
-
     if (audioInterrupt.parallelPlayFlag) {
         AUDIO_PRERELEASE_LOGI("allow parallel play");
         return SUCCESS;
     }
-    ResetNonInterruptControl(incomingSessionId);
-
     policyServer_->CheckStreamMode(incomingSessionId);
     policyServer_->OffloadStreamCheck(incomingSessionId, OFFLOAD_NO_SESSION_ID);
 
+    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId) && !isUpdatedAudioStrategy) {
+        AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
+        return SUCCESS;
+    }
+    ResetNonInterruptControl(incomingSessionId);
     bool shouldReturnSuccess = false;
     ProcessAudioScene(audioInterrupt, incomingSessionId, zoneId, shouldReturnSuccess);
     if (shouldReturnSuccess) {
@@ -1112,6 +1109,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         targetZoneIt->second->zoneId = zoneId;
     }
 
+    std::list<int32_t> removeFocusInfoPidList = {};
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
         AudioFocusEntry focusEntry =
             focusCfgMap_[std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType)];
@@ -1135,18 +1133,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         bool removeFocusInfo = false;
         ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt, removeFocusInfo, interruptEvent);
         if (removeFocusInfo) {
-            // execute remove from list, iter move to next by erase
-            int32_t pidToRemove = (iterActive->first).pid;
-            uint32_t streamId = (iterActive->first).sessionId;
-            auto pidIt = targetZoneIt->second->pids.find(pidToRemove);
-            if (pidIt != targetZoneIt->second->pids.end()) {
-                targetZoneIt->second->pids.erase(pidIt);
-            }
-            iterActive = tmpFocusInfoList.erase(iterActive);
-            targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
-            if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pidToRemove)) {
-                HandleLowPriorityEvent(pidToRemove, streamId);
-            }
+            RemoveFocusInfo(iterActive, tmpFocusInfoList, targetZoneIt->second, removeFocusInfoPidList);
         } else {
             ++iterActive;
         }
@@ -1156,18 +1143,44 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
 
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
     zonesMap_[zoneId] = targetZoneIt->second;
+    for (auto pid : removeFocusInfoPidList) {
+        RemovePlaceholderInterruptForSession(pid);
+    }
 }
 
-void AudioInterruptService::HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId)
+void AudioInterruptService::RemoveFocusInfo(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList,
+    std::shared_ptr<AudioInterruptZone> &zoneInfo,
+    std::list<int32_t> &removeFocusInfoPidList)
 {
+    int32_t pidToRemove = (iterActive->first).pid;
+    uint32_t streamId = (iterActive->first).sessionId;
+    auto pidIt = zoneInfo->pids.find(pidToRemove);
+    if (pidIt != zoneInfo->pids.end()) {
+        zoneInfo->pids.erase(pidIt);
+    }
+    iterActive = tmpFocusInfoList.erase(iterActive);
+    zoneInfo->audioFocusInfoList = tmpFocusInfoList;
+    bool isAudioSessionDeactivated = false;
+    if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pidToRemove)) {
+        isAudioSessionDeactivated = HandleLowPriorityEvent(pidToRemove, streamId);
+    }
+    if (isAudioSessionDeactivated) {
+        removeFocusInfoPidList.push_back(pidToRemove);
+    }
+}
+
+bool AudioInterruptService::HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId)
+{
+    // If AudioSession is deactivated, return true, otherwise, return false.
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
-        return;
+        return false;
     }
     auto audioSession = sessionService_->GetAudioSessionByPid(pid);
     if (audioSession == nullptr) {
         AUDIO_ERR_LOG("audioSession is nullptr!");
-        return;
+        return false;
     }
 
     audioSession->RemoveAudioInterrptByStreamId(streamId);
@@ -1182,7 +1195,9 @@ void AudioInterruptService::HandleLowPriorityEvent(const int32_t pid, const uint
             AUDIO_INFO_LOG("AudioSessionService::handler_ is not null. Send event!");
             handler_->SendAudioSessionDeactiveCallback(sessionDeactivePair);
         }
+        return true;
     }
+    return false;
 }
 
 void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeSessionId,
@@ -1452,7 +1467,9 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     bool needPlaceHolder = false;
-    if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(audioInterrupt.pid)) {
+    if (audioInterrupt.audioFocusType.streamType != STREAM_DEFAULT &&
+        sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(audioInterrupt.pid)) {
+        // if this stream is the last renderer for audio session, change the state to PLACEHOLDER.
         auto audioSession = sessionService_->GetAudioSessionByPid(audioInterrupt.pid);
         if (audioSession != nullptr) {
             audioSession->RemoveAudioInterrptByStreamId(audioInterrupt.sessionId);
@@ -1472,6 +1489,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
             iter->second = PLACEHOLDER;
             itZone->second->audioFocusInfoList = audioFocusInfoList;
             zonesMap_[zoneId] = itZone->second;
+            AUDIO_INFO_LOG("Change the state of sessionId %{public}u to PLACEHOLDER! (pid %{public}d)",
+                audioInterrupt.sessionId, audioInterrupt.pid);
             return;
         }
         ResetNonInterruptControl(audioInterrupt.sessionId);
@@ -1486,7 +1505,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, audioInterrupt);
     } else {
         // If it was not in the audioFocusInfoList, no need to take any action on other sessions, just return.
-        AUDIO_DEBUG_LOG("stream (sessionId %{public}d) is not active now", audioInterrupt.sessionId);
+        AUDIO_DEBUG_LOG("stream (sessionId %{public}u) is not active now", audioInterrupt.sessionId);
         return;
     }
 

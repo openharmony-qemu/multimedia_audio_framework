@@ -41,6 +41,9 @@ ohos_fuzztest("AudioPolicyServiceFuzzTest") {
   if (audio_framework_feature_dtmf_tone) {
     defines += [ "FEATURE_DTMF_TONE" ]
   }
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
 
   sources = [ "audio_policy_service_fuzzer.cpp" ]
 

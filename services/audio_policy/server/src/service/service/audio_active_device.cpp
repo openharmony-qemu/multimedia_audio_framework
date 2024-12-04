@@ -74,7 +74,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
         }
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         A2dpDeviceConfigInfo info;
-        if (audioA2dpDevice_.GetA2dpInDeviceInfo(GetCurrentInputDeviceMacAddr(), info)) {
+        if (audioA2dpDevice_.GetA2dpInDeviceInfo(activeBTInDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
             streamInfo.channels = *info.streamInfo.channels.rbegin();
@@ -128,9 +128,14 @@ std::string AudioActiveDevice::GetActiveBtDeviceMac()
     return activeBTDevice_;
 }
 
-void AudioActiveDevice::SetActiveBtDeviceMac(std::string macAddress)
+void AudioActiveDevice::SetActiveBtDeviceMac(const std::string macAddress)
 {
     activeBTDevice_ = macAddress;
+}
+
+void AudioActiveDevice::SetActiveBtInDeviceMac(const std::string macAddress)
+{
+    activeBTInDevice_ = macAddress;
 }
 
 bool AudioActiveDevice::IsDirectSupportedDevice()
@@ -433,6 +438,34 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
 #endif
     }
     return SUCCESS;
+}
+
+void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFlag deviceFlag,
+    const std::string &deviceName)
+{
+    Trace trace("AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
+    AUDIO_INFO_LOG("Active route with type[%{public}d] name[%{public}s]", deviceType, deviceName.c_str());
+    std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
+    activeDevices.push_back(make_pair(deviceType, deviceFlag));
+    UpdateActiveDevicesRoute(activeDevices, deviceName);
+}
+
+void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>>
+    &activeDevices, const std::string &deviceName)
+{
+    CHECK_AND_RETURN_LOG(!activeDevices.empty(), "activeDevices is empty.");
+    auto ret = SUCCESS;
+    std::string deviceTypesInfo = "";
+    for (size_t i = 0; i < activeDevices.size(); i++) {
+        deviceTypesInfo = deviceTypesInfo + " " + std::to_string(activeDevices[i].first);
+        AUDIO_INFO_LOG("update active devices, device type info:[%{public}s]",
+            std::to_string(activeDevices[i].first).c_str());
+    }
+
+    Trace trace("AudioActiveDevice::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
+    ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices,
+        audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), deviceName);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
 
 }

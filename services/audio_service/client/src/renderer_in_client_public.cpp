@@ -52,7 +52,7 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 #include "media_monitor_manager.h"
 
@@ -459,12 +459,6 @@ int32_t RendererInClientInner::SetVolume(float volume)
         volumeRamp_.Terminate();
     }
     clientVolume_ = volume;
-    if (offloadEnable_) {
-        SetInnerVolume(MAX_FLOAT_VOLUME); // so volume will not change in RendererInServer
-        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-        ipcStream_->OffloadSetVolume(volume);
-        return SUCCESS;
-    }
 
     return SetInnerVolume(volume);
 }
@@ -486,6 +480,12 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
     duckVolume_ = volume;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetDuckFactor(volume);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetDuckFactor(volume);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Set Duck failed:%{public}u", ret);
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -501,9 +501,6 @@ int32_t RendererInClientInner::SetMute(bool mute)
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Set Mute failed:%{public}u", ret);
         return ERROR;
-    }
-    if (offloadEnable_) {
-        ipcStream_->OffloadSetVolume(mute ? 0.0f : clientVolume_);
     }
     return SUCCESS;
 }
@@ -940,10 +937,11 @@ bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
-    if (!offloadEnable_) {
-        DrainAudioStream(true);
-    }
     std::unique_lock<std::mutex> statusLock(statusMutex_);
+    std::lock_guard<std::mutex> lock(writeMutex_);
+    if (!offloadEnable_) {
+        DrainAudioStreamInner(true);
+    }
 
     if (state_ == STOPPED) {
         AUDIO_INFO_LOG("Renderer in client is already stopped");
@@ -1090,37 +1088,10 @@ bool RendererInClientInner::FlushAudioStream()
 
 bool RendererInClientInner::DrainAudioStream(bool stopFlag)
 {
-    Trace trace("RendererInClientInner::DrainAudioStream " + std::to_string(sessionId_));
     std::lock_guard<std::mutex> statusLock(statusMutex_);
-    if (state_ != RUNNING) {
-        AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
-        return false;
-    }
     std::lock_guard<std::mutex> lock(writeMutex_);
-    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true, stopFlag) == SUCCESS, false, "Drain cache failed");
-
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
-    int32_t ret = ipcStream_->Drain(stopFlag);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Drain call server failed:%{public}u", ret);
-        return false;
-    }
-    std::unique_lock<std::mutex> waitLock(callServerMutex_);
-    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
-    });
-
-    if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
-        AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
-            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
-        notifiedOperation_ = MAX_OPERATION_CODE;
-        return false;
-    }
-    notifiedOperation_ = MAX_OPERATION_CODE;
-    waitLock.unlock();
-    AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
-    return true;
+    bool ret = DrainAudioStreamInner(stopFlag);
+    return ret;
 }
 
 int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
@@ -1562,12 +1533,10 @@ bool RendererInClientInner::GetHighResolutionEnabled()
 
 void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
+    AUDIO_PRERELEASE_LOGI("SetSilentModeAndMixWithOthers %{public}d", on);
     silentModeAndMixWithOthers_ = on;
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     ipcStream_->SetSilentModeAndMixWithOthers(on);
-    if (offloadEnable_) {
-        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_);
-    }
     return;
 }
 
@@ -1585,7 +1554,11 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     State oldState = state_;
     state_ = NEW;
     SetStreamTrackerState(false);
-
+    // If pipe type is offload, need reset to normal.
+    // Otherwise, unable to enter offload mode.
+    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    }
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {
         goto error;
@@ -1593,9 +1566,6 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     if (!needStoreState) {
         AUDIO_INFO_LOG("telephony scene, return directly");
         return ret;
-    }
-    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     }
     switch (oldState) {
         case RUNNING:

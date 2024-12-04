@@ -42,7 +42,7 @@
 #include "audio_proxy_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "audio_attribute.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -168,7 +168,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
     int32_t DoStop();
@@ -217,11 +216,8 @@ private:
 };
 
 BluetoothCapturerSourceInner::BluetoothCapturerSourceInner()
-    : captureInited_(false), started_(false), paused_(false),
-      audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr), halName_ ("bt_hdap")
-{
-    attr_ = {};
-}
+    : captureInited_(false), started_(false), paused_(false), audioManager_(nullptr), audioAdapter_(nullptr),
+      audioCapture_(nullptr), handle_(nullptr), halName_ ("bt_hdap") {}
 
 BluetoothCapturerSourceInner::~BluetoothCapturerSourceInner()
 {
@@ -291,7 +287,9 @@ int32_t BluetoothCapturerSourceInner::InitAudioManager()
 
     getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
     if (getAudioManager == nullptr) {
+#ifndef TEST_COVERAGE
         dlclose(handle_);
+#endif
         handle_ = nullptr;
         AUDIO_ERR_LOG("getaudiomanager fail!");
         return ERR_INVALID_HANDLE;
@@ -300,7 +298,9 @@ int32_t BluetoothCapturerSourceInner::InitAudioManager()
 
     audioManager_ = getAudioManager();
     if (audioManager_ == nullptr) {
+#ifndef TEST_COVERAGE
         dlclose(handle_);
+#endif
         handle_ = nullptr;
         AUDIO_ERR_LOG("getAudioManager() fail!");
         return ERR_INVALID_HANDLE;
@@ -406,7 +406,9 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
 
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
-    DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
@@ -809,18 +811,6 @@ int32_t BluetoothCapturerSourceInner::UpdateAppsUid(const std::vector<int32_t> &
 #endif
 
     return SUCCESS;
-}
-
-void BluetoothCapturerSourceInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
-    AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t BluetoothCapturerSourceInner::GetCaptureId(uint32_t &captureId) const

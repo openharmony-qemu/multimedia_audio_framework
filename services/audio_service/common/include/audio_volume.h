@@ -36,7 +36,8 @@ public:
     static AudioVolume *GetInstance();
     ~AudioVolume();
 
-    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass);
+    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass); // all volume
+    float GetStreamVolume(uint32_t sessionId); // only stream volume
 
     // history volume
     float GetHistoryVolume(uint32_t sessionId);

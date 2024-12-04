@@ -92,7 +92,6 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getCurrentAudioRendererInfoArraySync", GetCurrentAudioRendererInfosSync),
         DECLARE_NAPI_FUNCTION("getCurrentAudioCapturerInfoArray", GetCurrentAudioCapturerInfos),
         DECLARE_NAPI_FUNCTION("getCurrentAudioCapturerInfoArraySync", GetCurrentAudioCapturerInfosSync),
-        DECLARE_NAPI_FUNCTION("isAudioRendererLowLatencySupported", IsAudioRendererLowLatencySupported),
         DECLARE_NAPI_FUNCTION("isActive", IsStreamActive),
         DECLARE_NAPI_FUNCTION("isActiveSync", IsStreamActiveSync),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArray", GetEffectInfoArray),
@@ -277,41 +276,6 @@ napi_value NapiAudioStreamMgr::GetCurrentAudioCapturerInfosSync(napi_env env, na
     NapiParamUtils::SetCapturerChangeInfos(env, audioCapturerChangeInfos, result);
 
     return result;
-}
-
-napi_value NapiAudioStreamMgr::IsAudioRendererLowLatencySupported(napi_env env, napi_callback_info info)
-{
-    auto context = std::make_shared<AudioStreamMgrAsyncContext>();
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("IsAudioRendererLowLatencySupported failed : no memory");
-        NapiAudioError::ThrowError(env, "IsAudioRendererLowLatencySupported failed : no memory", NAPI_ERR_NO_MEMORY);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
-
-    auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
-        context->status = NapiParamUtils::GetStreamInfo(env, &context->audioStreamInfo, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "getstreaminfo failed",
-            NAPI_ERR_INVALID_PARAM);
-    };
-    context->GetCbInfo(env, info, inputParser);
-
-    auto executor = [context]() {
-        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioStreamMgr*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiStreamMgr = objectGuard.GetPtr();
-        CHECK_AND_RETURN_LOG(CheckAudioStreamManagerStatus(napiStreamMgr, context),
-            "context object state is error.");
-        context->isLowLatencySupported = napiStreamMgr->audioStreamMngr_->IsAudioRendererLowLatencySupported(
-            context->audioStreamInfo);
-        context->isTrue = context->isLowLatencySupported;
-    };
-
-    auto complete = [env, context](napi_value &output) {
-        NapiParamUtils::SetValueBoolean(env, context->isTrue, output);
-    };
-    return NapiAsyncWork::Enqueue(env, context, "IsAudioRendererLowLatencySupported", executor, complete);
 }
 
 napi_value NapiAudioStreamMgr::IsStreamActive(napi_env env, napi_callback_info info)

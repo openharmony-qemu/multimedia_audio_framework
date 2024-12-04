@@ -349,11 +349,12 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     ipcStream->SetOffloadMode(param, false);
     ipcStream->UnsetOffloadMode();
     ipcStream->GetOffloadApproximatelyCacheTime(framePos, timestamp, timestamp, timestamp);
-    ipcStream->OffloadSetVolume(volume);
     ipcStream->UpdateSpatializationState(true, false);
     ipcStream->GetStreamManagerType();
     ipcStream->SetSilentModeAndMixWithOthers(false);
-    ipcStream->SetClientVolume(false, false);
+    ipcStream->SetClientVolume();
+    ipcStream->SetMute(false);
+    ipcStream->SetDuckFactor(volume);
     ipcStream->Stop();
     ipcStream->Release();
 }

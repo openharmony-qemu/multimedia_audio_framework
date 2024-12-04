@@ -1129,23 +1129,6 @@ int32_t AudioPolicyProxy::GetNetworkIdByGroupId(int32_t groupId, std::string &ne
     return ret;
 }
 
-bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, IPC_PROXY_ERR, "WriteInterfaceToken failed");
-    audioStreamInfo.Marshalling(data);
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
-        "IsAudioRendererLowLatencySupported, error: %d", error);
-
-    return reply.ReadBool();
-}
-
 int32_t AudioPolicyProxy::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
     MessageParcel data;
@@ -1826,11 +1809,11 @@ AudioSpatializationSceneType AudioPolicyProxy::GetSpatializationSceneType()
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_DEFAULT, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_MUSIC, "WriteInterfaceToken failed");
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_DEFAULT,
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_MUSIC,
         "SendRequest failed, error: %{public}d", error);
     return static_cast<AudioSpatializationSceneType>(reply.ReadInt32());
 }
@@ -1979,6 +1962,8 @@ int32_t AudioPolicyProxy::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyA
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Supported Audio Enhance Property, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, AUDIO_INVALID_PARAM,
+        "get support audio enhance property size upper limit.");
     for (int32_t i = 0; i < size; i++) {
         // write and read must keep same order
         AudioEnhanceProperty prop = {};
@@ -2002,6 +1987,8 @@ int32_t AudioPolicyProxy::GetSupportedAudioEffectProperty(AudioEffectPropertyArr
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Supported Audio Effect Property, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, AUDIO_INVALID_PARAM,
+        "get support audio effect property size upper limit.");
     for (int32_t i = 0; i < size; i++) {
         AudioEffectProperty prop = {};
         prop.Unmarshalling(reply);
@@ -2025,6 +2012,8 @@ int32_t AudioPolicyProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &pro
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Enhance Property, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, AUDIO_INVALID_PARAM,
+        "get audio enhance property size upper limit.");
     for (int32_t i = 0; i < size; i++) {
         // write and read must keep same order
         AudioEnhanceProperty prop = {};
@@ -2048,6 +2037,8 @@ int32_t AudioPolicyProxy::GetAudioEffectProperty(AudioEffectPropertyArray &prope
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Effect Property, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, AUDIO_INVALID_PARAM,
+        "get audio effect property size upper limit.");
     for (int32_t i = 0; i < size; i++) {
         AudioEffectProperty prop = {};
         prop.Unmarshalling(reply);
