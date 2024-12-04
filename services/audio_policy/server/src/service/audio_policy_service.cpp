@@ -6238,8 +6238,9 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     CheckForA2dpSuspend(desc);
 
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    if (command == CONNECTSTATE_UPDATE && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.connectState_ !=
-        ConnectState::CONNECTED && audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
+    if (command == CONNECTSTATE_UPDATE && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        desc.connectState_ != ConnectState::CONNECTED &&
+        audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
     OnPreferredStateUpdated(desc, command, reason);
