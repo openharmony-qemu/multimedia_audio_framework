@@ -200,12 +200,12 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
         sceneType_.c_str(), effectMode_.c_str());
 
     cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "[%{public}s] with mode [%{public}s], EFFECT_CMD_GET_CONFIG fail",
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] with mode [%{public}s], EFFECT_CMD_GET_CONFIG fail",
         sceneType_.c_str(), effectMode_.c_str());
 
     ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
