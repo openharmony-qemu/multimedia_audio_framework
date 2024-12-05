@@ -307,7 +307,7 @@ void AudioCacheMgrInner::GetCachedDuration(int64_t& startTime, int64_t& endTime)
         ClockTime::NanoTimeToString(startTime).c_str(), ClockTime::NanoTimeToString(endTime).c_str());
 }
 
-void AudioCacheMgr::PrintCurMemoryCondition() {
+void AudioCacheMgrInner::PrintCurMemoryCondition() {
     Trace trace("AudioCacheMgrInner::PrintCurMemoryCondition");
     SafeSendCallBackEvent(PRINT_MEMORY_CONDITION, 0, MEMORY_PRINT_TIME_MS);
 

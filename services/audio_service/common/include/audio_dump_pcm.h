@@ -16,6 +16,7 @@
 #define AUDIO_PCM_DUMP_H
 
 #include <string.h>
+#include <string>
 #include <memory>
 #include <vector>
 
