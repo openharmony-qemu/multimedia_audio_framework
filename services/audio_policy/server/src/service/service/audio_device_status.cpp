@@ -592,11 +592,16 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
     // only for the active a2dp device.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
-        auto activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
+        int32_t activeSessionsSize = 0;
+        BluetoothOffloadState state;
+        if (audioA2dpOffloadManager_) {
+            activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
+            state = audioA2dpOffloadManager_->GetA2dpOffloadFlag();
+        }
         AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag: %{public}d",
-            streamInfo.samplingRate, GetA2dpOffloadFlag());
+            streamInfo.samplingRate, state);
         if (!IsConfigurationUpdated(deviceType, streamInfo) ||
-            (activeSessionsSize > 0 && GetA2dpOffloadFlag() == A2DP_OFFLOAD)) {
+            (activeSessionsSize > 0 && state == A2DP_OFFLOAD)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
             return;
         }
