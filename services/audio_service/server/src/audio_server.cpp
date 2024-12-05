@@ -123,7 +123,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_REMOTE_CAST,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
-    SOURCE_TYPE_CAMCORDER
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED
 };
 
 
@@ -143,6 +144,7 @@ static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_REMOTE_CAST,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
 };
 
 static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
@@ -154,6 +156,7 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
     SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
 };
 
 static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
@@ -634,6 +637,9 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         }
         if (key == "perf_info") {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::PERF_INFO, key);
+        }
+        if (key == "hardware_info#mic_num") {
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
         }
         if (key.size() < BUNDLENAME_LENGTH_LIMIT && key.size() > CHECK_FAST_BLOCK_PREFIX.size() &&
             key.substr(0, CHECK_FAST_BLOCK_PREFIX.size()) == CHECK_FAST_BLOCK_PREFIX) {
