@@ -1198,6 +1198,7 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
         case DEVICE_TYPE_MIC:
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             source.ext.device.type = PIN_IN_MIC;
             source.ext.device.desc = (char *)"pin_in_mic";
             break;

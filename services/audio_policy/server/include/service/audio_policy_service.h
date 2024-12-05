@@ -477,6 +477,7 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
+    void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
         const std::string &caller);
 private:

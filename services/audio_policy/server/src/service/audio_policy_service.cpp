@@ -4295,5 +4295,10 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
     return SUCCESS;
 }
 
+void AudioPolicyService::UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
+{
+    audioEcManager_.UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

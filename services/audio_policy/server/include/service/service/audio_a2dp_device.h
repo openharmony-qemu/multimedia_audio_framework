@@ -39,7 +39,7 @@ public:
         return instance;
     }
     int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo, std::string networkID,
-        std::string sinkName);
+        std::string sinkName, SourceType sourceType);
     bool GetA2dpDeviceInfo(const std::string& device, A2dpDeviceConfigInfo& info);
     bool GetA2dpInDeviceInfo(const std::string& device, A2dpDeviceConfigInfo& info);
     bool GetA2dpDeviceVolumeLevel(const std::string& device, int32_t& volumeLevel);
@@ -59,9 +59,11 @@ private:
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioConfigManager_(AudioConfigManager::GetInstance()) {}
     ~AudioA2dpDevice() {}
-    void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo);
+    void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
+        SourceType sourceType);
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
-        const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName);
+        const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName,
+        SourceType sourceType);
 private:
     mutable std::mutex a2dpDeviceMapMutex_;
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;

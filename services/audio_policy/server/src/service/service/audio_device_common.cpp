@@ -1223,7 +1223,7 @@ void AudioDeviceCommon::HandleBluetoothInputDeviceFetched(std::shared_ptr<AudioD
     if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         BluetoothScoFetch(desc, capturerChangeInfos, sourceType);
     } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-        HandleA2dpInputDeviceFetched(desc);
+        HandleA2dpInputDeviceFetched(desc, sourceType);
     }
 }
 
@@ -1356,7 +1356,8 @@ std::vector<SourceOutput> AudioDeviceCommon::FilterSourceOutputs(int32_t session
     return targetSourceOutputs;
 }
 
-void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc)
+void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
+    SourceType sourceType)
 {
     audioActiveDevice_.SetActiveBtInDeviceMac(desc->macAddress_);
     AudioStreamInfo audioStreamInfo = {};
@@ -1366,7 +1367,8 @@ void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDevice
     std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(
         audioActiveDevice_.GetCurrentOutputDeviceType());
         
-    int32_t ret = audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo, networkId, sinkName);
+    int32_t ret = audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo, networkId, sinkName,
+        sourceType);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "load a2dp input module failed");
 }
 
