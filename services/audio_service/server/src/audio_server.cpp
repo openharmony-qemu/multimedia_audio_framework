@@ -638,9 +638,6 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         if (key == "perf_info") {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::PERF_INFO, key);
         }
-        if (key == "hardware_info#mic_num") {
-            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
-        }
         if (key.size() < BUNDLENAME_LENGTH_LIMIT && key.size() > CHECK_FAST_BLOCK_PREFIX.size() &&
             key.substr(0, CHECK_FAST_BLOCK_PREFIX.size()) == CHECK_FAST_BLOCK_PREFIX) {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
