@@ -187,6 +187,19 @@ void AudioUsbManager::RefreshUsbAudioDevices()
     lock_guard<mutex> lock(mutex_);
     audioDevices_ = GetUsbAudioDevices();
     soundCardMap_ = GetUsbSoundCardMap();
+    vector<UsbAddr> toAdd;
+    for (auto it = soundCardMap_.begin(); it != soundCardMap_.end(); it++) {
+        auto devIt = find_if(audioDevices_.begin(), audioDevices_.end(), [it](auto &dev) {
+            return it->first == dev.usbAddr_;
+        });
+        if (devIt == audioDevices_.end()) {
+            toAdd.push_back(it->first);
+        }
+    }
+    AUDIO_INFO_LOG("toAdd size=%{public}zu", toAdd.size());
+    for (auto &addr : toAdd) {
+        audioDevices_.push_back({addr, "UNKNOWN"});
+    }
 }
 
 void AudioUsbManager::SubscribeEvent()
@@ -288,19 +301,21 @@ vector<UsbAudioDevice> AudioUsbManager::GetUsbAudioDevices()
 
 void AudioUsbManager::HandleUsbAudioDeviceAttach(const UsbAudioDevice &device)
 {
-    AUDIO_INFO_LOG("Entry. deviceName = %{public}s", device.name_.c_str());
+    AUDIO_INFO_LOG("Entry. deviceName=%{public}s", device.name_.c_str());
     lock_guard<mutex> lock(mutex_);
     soundCardMap_ = GetUsbSoundCardMap();
     auto it = find(audioDevices_.begin(), audioDevices_.end(), device);
     if (it == audioDevices_.end()) {
         audioDevices_.push_back(device);
+    } else {
+        *it = device;
     }
     NotifyDevice(device, true);
 }
 
 void AudioUsbManager::HandleUsbAudioDeviceDetach(const UsbAudioDevice &device)
 {
-    AUDIO_INFO_LOG("Entry. deviceName = %{public}s", device.name_.c_str());
+    AUDIO_INFO_LOG("Entry. deviceName=%{public}s", device.name_.c_str());
     lock_guard<mutex> lock(mutex_);
     NotifyDevice(device, false);
     soundCardMap_.erase(device.usbAddr_);
@@ -313,7 +328,7 @@ void AudioUsbManager::HandleUsbAudioDeviceDetach(const UsbAudioDevice &device)
 void AudioUsbManager::EventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &data)
 {
     string action = data.GetWant().GetAction();
-    AUDIO_INFO_LOG("OnReceiveEvent Entry. action = %{public}s", action.c_str());
+    AUDIO_INFO_LOG("OnReceiveEvent Entry. action=%{public}s", action.c_str());
     string devStr;
     bool isAttach{false};
     if (action == EventFwk::CommonEventSupport::COMMON_EVENT_USB_DEVICE_ATTACHED) {
@@ -329,7 +344,6 @@ void AudioUsbManager::EventSubscriber::OnReceiveEvent(const EventFwk::CommonEven
         AUDIO_ERR_LOG("Error: data.GetData() returns empty");
         return;
     }
-    AUDIO_DEBUG_LOG("devStr = %{public}s", devStr.c_str());
     auto devJson = cJSON_Parse(devStr.c_str());
     if (devJson == nullptr) {
         cJSON_Delete(devJson);

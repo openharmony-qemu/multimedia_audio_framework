@@ -145,20 +145,7 @@ void AudioPolicyServer::OnStart()
     }
     audioPolicyService_.Init();
 
-    AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
-    AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
-    AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
-    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
-    AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
-#endif
-    AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
-    AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
-    AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
-    AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
-#ifdef SUPPORT_USER_ACCOUNT
-    AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
-#endif
+    AddSystemAbilityListeners();
     bool res = Publish(this);
     if (!res) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -185,9 +172,33 @@ void AudioPolicyServer::OnStart()
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
+void AudioPolicyServer::AddSystemAbilityListeners()
+{
+    AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
+    AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
+    AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
+#endif
+    AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
+    AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
+#ifdef USB_ENABLE
+    AddSystemAbilityListener(USB_SYSTEM_ABILITY_ID);
+#endif
+    AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
+#ifdef SUPPORT_USER_ACCOUNT
+    AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
+#endif
+}
+
 void AudioPolicyServer::OnStop()
 {
     audioPolicyService_.Deinit();
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().Deinit();
+#endif
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
     NotifyProcessStatus(false);
@@ -201,7 +212,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
     switch (systemAbilityId) {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         case MULTIMODAL_INPUT_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility input service start");
             SubscribeVolumeKeyEvents();
             break;
 #endif
@@ -218,13 +228,11 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             RegisterBluetoothListener();
             break;
         case ACCESSIBILITY_MANAGER_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
             SubscribeAccessibilityConfigObserver();
             InitKVStore();
             RegisterDataObserver();
             break;
         case POWER_MANAGER_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
             RegisterSyncHibernateListener();
@@ -233,9 +241,13 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             SubscribeOsAccountChangeEvents();
             break;
         case COMMON_EVENT_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility common event service start");
             SubscribeCommonEventExecute();
             break;
+#ifdef USB_ENABLE
+        case USB_SYSTEM_ABILITY_ID:
+            AudioUsbManager::GetInstance().Init(&audioPolicyService_);
+            break;
+#endif
         default:
             OnAddSystemAbilityExtract(systemAbilityId, deviceId);
             break;
