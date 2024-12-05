@@ -2308,12 +2308,6 @@ void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
     audioPolicyService_.SubscribeAccessibilityConfigObserver();
 }
 
-bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
-{
-    AUDIO_INFO_LOG("IsAudioRendererLowLatencySupported server call");
-    return true;
-}
-
 int32_t AudioPolicyServer::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
     if (!PermissionUtil::VerifySystemPermission()) {

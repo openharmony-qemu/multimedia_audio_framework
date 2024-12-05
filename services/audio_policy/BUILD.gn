@@ -87,7 +87,7 @@ config("audio_policy_public_config") {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
 
-  if (avsession_part_enable == true) {
+  if (avsession_part_enable == true && !(use_libfuzzer || use_clang_coverage)) {
     cflags += [ "-DAVSESSION_ENABLE" ]
   }
 

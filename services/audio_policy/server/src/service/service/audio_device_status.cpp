@@ -565,12 +565,16 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
                 // Load bt sink module again with new configuration
                 AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
                 AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-                CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+                if (ioHandle == OPEN_PORT_FAILURE) {
+                    audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+                    AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
+                    return;
+                }
                 audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
                 std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
                 audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
                 audioPolicyManager_.SuspendAudioDevice(portName, false);
-
+                audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
                 audioConnectedDevice_.UpdateConnectDevice(deviceType, macAddress, deviceName, streamInfo);
                 break;
             }
@@ -588,14 +592,11 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
     // only for the active a2dp device.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
-        int32_t activeSessionsSize = 0;
-        if (audioA2dpOffloadManager_) {
-            activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
-        }
+        auto activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
         AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag: %{public}d",
-            streamInfo.samplingRate, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
+            streamInfo.samplingRate, GetA2dpOffloadFlag());
         if (!IsConfigurationUpdated(deviceType, streamInfo) ||
-            (activeSessionsSize > 0 && audioA2dpOffloadFlag_.GetA2dpOffloadFlag() == A2DP_OFFLOAD)) {
+            (activeSessionsSize > 0 && GetA2dpOffloadFlag() == A2DP_OFFLOAD)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
             return;
         }

@@ -219,13 +219,6 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     int pid = *reinterpret_cast<const int *>(rawData);
     GetServerPtr()->RegisteredTrackerClientDied(pid, 0);
 
-    AudioStreamInfo audioStreamInfo = {};
-    audioStreamInfo.samplingRate = *reinterpret_cast<const AudioSamplingRate *>(rawData);
-    audioStreamInfo.channels = *reinterpret_cast<const AudioChannel *>(rawData);
-    audioStreamInfo.format = *reinterpret_cast<const AudioSampleFormat *>(rawData);
-    audioStreamInfo.encoding = *reinterpret_cast<const AudioEncodingType *>(rawData);
-    GetServerPtr()->IsAudioRendererLowLatencySupported(audioStreamInfo);
-
     int32_t clientUid = *reinterpret_cast<const int32_t *>(rawData);
     StreamSetState streamSetState = *reinterpret_cast<const StreamSetState *>(rawData);
     StreamUsage streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);

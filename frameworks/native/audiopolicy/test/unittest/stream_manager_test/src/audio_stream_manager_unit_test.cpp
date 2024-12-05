@@ -1516,27 +1516,6 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
 }
 
 /**
-* @tc.name  : Test IsAudioRendererLowLatencySupported API
-* @tc.number: Audio_Stream_IsAudioRendererLowLatencySupported_001
-* @tc.desc  : Test IsAudioRendererLowLatencySupported interface
-*/
-HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
-{
-    AudioCapturerOptions capturerOptions;
-
-    AudioStreamManagerUnitTest::InitializeCapturerOptions(capturerOptions);
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    AudioStreamInfo audioStreamInfo;
-    bool ret = AudioStreamManager::GetInstance()->IsAudioRendererLowLatencySupported(audioStreamInfo);
-    EXPECT_EQ(true, ret);
-
-    bool isReleased = audioCapturer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
  * @tc.name  : Test GetHardwareOutputSamplingRate API
  * @tc.type  : FUNC
  * @tc.number: GetHardwareOutputSamplingRate_001
