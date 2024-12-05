@@ -682,12 +682,6 @@ bool AudioRendererPrivate::GetStartStreamResult(StateChangeCmdType cmdType)
     return result;
 }
 
-std::shared_ptr<IAudioStream> AudioRendererPrivate::GetInnerStream() const
-{
-    std::shared_lock<std::shared_mutex> lock(rendererMutex_);
-    return audioStream_;
-}
-
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Start");
@@ -1690,31 +1684,24 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_
 
 AudioEffectMode AudioRendererPrivate::GetAudioEffectMode() const
 {
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, EFFECT_NONE, "audioStream_ is nullptr");
-    return currentStream->GetAudioEffectMode();
+    return audioStream_->GetAudioEffectMode();
 }
 
 int64_t AudioRendererPrivate::GetFramesWritten() const
 {
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return framesAlreadyWritten_ + currentStream->GetFramesWritten();
+    return framesAlreadyWritten_ + audioStream_->GetFramesWritten();
 }
 
 int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) const
 {
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->SetAudioEffectMode(effectMode);
+    return audioStream_->SetAudioEffectMode(effectMode);
 }
 
 int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 {
     AUDIO_INFO_LOG("volume:%{public}f duration:%{public}d", volume, duration);
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->SetVolumeWithRamp(volume, duration);
+    CHECK_AND_RETURN_RET(audioStream_ != nullptr, ERR_INVALID_PARAM, "Error status");
+    return audioStream_->SetVolumeWithRamp(volume, duration);
 }
 
 void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
