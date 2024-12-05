@@ -402,24 +402,3 @@ void AudioCacheHandler::OnHandle(uint32_t code, int64_t data)
 
 } // namespace AudioStandard
 } // namespace OHOS
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

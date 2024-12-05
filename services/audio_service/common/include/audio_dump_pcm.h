@@ -21,6 +21,14 @@
 namespace OHOS {
 namespace AudioStandard {
 
+const std::string setOpenKey = "OPEN";
+const std::string setCloseKey = "CLOSE";
+const std::string setUploadKey = "UPLOAD";
+
+const std::string getStatusKey = "STATUS";
+const std::string getTimeKey = "TIME";
+const std::string getMemoryKey = "MEMORY";
+
 class AudioCacheMgr {
 public:
     static AudioCacheMgr& GetInstance();

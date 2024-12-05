@@ -489,6 +489,7 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
     DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
+    AudioCacheMgr::GetInstance().CacheData(dumpFileName_, buffer, bufferSize);
 }
 } // namespace AudioStandard
 } // namespace OHOS

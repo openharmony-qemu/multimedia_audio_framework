@@ -381,14 +381,15 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
     CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
     int32_t audioCacheState = 0;
     GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+    CHECK_AND_RETURN_RET_LOG(params.size() > 0, false, "params is empty!");
     // audioCacheState 0:close, 1:open, 2:init
-    if (params[0].first == "OPEN") {
+    if (params[0].first == setOpenKey) {
         AudioCacheMgr::GetInstance().Init();
         SetSysPara("persist.multimedia.audio.audioCacheState", 1);
-    } else if (params[0].first == "CLOSE") {
+    } else if (params[0].first == setCloseKey) {
         AudioCacheMgr::GetInstance().DeInit();
         SetSysPara("persist.multimedia.audio.audioCacheState", 0);
-    } else if (params[0].first == "UPLOAD") {
+    } else if (params[0].first == setUploadKey) {
         CHECK_AND_RETURN_RET_LOG(audioCacheState == 1, false, 
             "cannot upload, curAudioCacheState is %{public}d, not code 1!", audioCacheState);
         CHECK_AND_RETURN_RET_LOG(AudioCacheMgr::GetInstance().DumpAllMemBlock() == SUCCESS, false,
@@ -559,16 +560,17 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
-    if (subKeys[0] == "STATUS") {
+    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "subKeys is empty!");
+    if (subKeys[0] == getStatusKey) {
         int32_t audioCacheState = 0;
         GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
         result.push_back({std::to_string(static_cast<int>(audioCacheState)), ""});
-    } else if (subKeys[0] == "TIME") {
+    } else if (subKeys[0] == getTimeKey) {
         int64_t startTime = 0;
         int64_t endTime = 0;
         AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
         result.push_back({ClockTime::NanoTimeToString(startTime), ClockTime::NanoTimeToString(endTime)});
-    } else if (subKeys[0] == "MEMORY") {
+    } else if (subKeys[0] == getMemoryKey) {
         size_t dataLength = 0;
         size_t bufferLength = 0;
         size_t structLength = 0;
