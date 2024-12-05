@@ -487,6 +487,7 @@ void AudioHfpManager::ClearRecongnitionStatus()
         AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
         AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_DISCONNECTED;
     }
+    AUDIO_WARNING_LOG("Non recognition, no need to clear");
 }
 
 ScoCategory AudioHfpManager::GetScoCategory()
