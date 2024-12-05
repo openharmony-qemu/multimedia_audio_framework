@@ -673,12 +673,13 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     if (ret == 0 && writeLen != 0) {
-         BufferDesc buffer = {reinterpret_cast<uint8_t *>(&data), len, len};
-         DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        BufferDesc buffer = {reinterpret_cast<uint8_t *>(&data), len, len};
+        AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+            static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+        VolumeTools::DfxOperation(buffer, streamInfo, LOG_UTILS_TAG, volumeDataCount_, OFFLOAD_DFX_SPLIT);
+        if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
             DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
-            AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
-                static_cast<void *>(&data), writeLen);
+            AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), writeLen);
         }
         CheckUpdateState(&data, len);
     }
