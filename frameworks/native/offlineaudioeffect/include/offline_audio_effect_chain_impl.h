@@ -43,6 +43,8 @@ public:
 
     int32_t InitIpcChain();
 private:
+    void InitDump();
+
     std::string chainName_;
     std::shared_ptr<OfflineStreamInClient> offlineStreamInClient_;
     std::shared_ptr<AudioSharedMemory> clientBufferIn_;
