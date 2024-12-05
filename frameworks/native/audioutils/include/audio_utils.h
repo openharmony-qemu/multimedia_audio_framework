@@ -110,8 +110,10 @@ private:
 class ClockTime {
 public:
     static int64_t GetCurNano();
+    static int64_t GetRealNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);
     static int32_t RelativeSleep(int64_t nanoTime);
+    static std::string NanoTimeToString(int64_t nanoTime);
 };
 
 /**
@@ -197,6 +199,7 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 template <typename T>
 void StringParser(std::string& param, T& result);
 
+bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>
 bool GetSysPara(const char *key, T &value);
 
@@ -214,7 +217,6 @@ const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
 const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
 const char* DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
 const char* DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
-const char* DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
 const char* DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
 const char* DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
 const char* DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";

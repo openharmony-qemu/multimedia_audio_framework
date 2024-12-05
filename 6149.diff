@@ -1,0 +1,1363 @@
+diff --git a/frameworks/native/audioeffect/BUILD.gn b/frameworks/native/audioeffect/BUILD.gn
+index 5b38a2bb165074985491ba4189c4ec56feb76653..29dcf8e981a1ac2ffd0f1aca6deb3c2438c337e5 100644
+--- a/frameworks/native/audioeffect/BUILD.gn
++++ b/frameworks/native/audioeffect/BUILD.gn
+@@ -24,6 +24,7 @@ config("audio_effect_config") {
+     "../../../interfaces/inner_api/native/audiocommon/include",
+     "../../../interfaces/inner_api/native/audiomanager/include",
+     "../../../services/audio_service/client/include",
++    "../../../services/audio_service/common/include",
+     "../../../services/audio_service/test/example",
+     "../../../services/audio_policy/server/include/service/manager",
+   ]
+@@ -74,6 +75,7 @@ ohos_shared_library("audio_effect") {
+ 
+   public_deps = [
+     "../../../services/audio_policy:audio_setting_provider",
++    "../../../services/audio_service:audio_common",
+     "../audioutils:audio_utils",
+   ]
+ 
+diff --git a/frameworks/native/audioeffect/src/audio_effect_chain.cpp b/frameworks/native/audioeffect/src/audio_effect_chain.cpp
+index 30bd9fd3d67ec9d1b255f9f3fa64786e56594237..9eb73bfa382fbd8efa395b92c1d33453036b66d3 100644
+--- a/frameworks/native/audioeffect/src/audio_effect_chain.cpp
++++ b/frameworks/native/audioeffect/src/audio_effect_chain.cpp
+@@ -22,6 +22,7 @@
+ #include "audio_errors.h"
+ #include "audio_effect_log.h"
+ #include "audio_utils.h"
++#include "audio_dump_pcm.h"
+ #include "securec.h"
+ #include "media_monitor_manager.h"
+ 
+@@ -297,7 +298,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
+     if (IsEmptyEffectHandles()) {
+         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error in apply effect");
+         DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
+-        DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
++        // DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
+         return;
+     }
+ 
+@@ -401,7 +402,7 @@ uint32_t AudioEffectChain::GetLatency()
+ void AudioEffectChain::DumpEffectProcessData(std::string fileName, void *buffer, size_t len)
+ {
+     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(fileName, buffer, len);
++        AudioCacheMgr::GetInstance().CacheData(fileName, buffer, len);
+     }
+ }
+ 
+diff --git a/frameworks/native/audioutils/include/audio_utils.h b/frameworks/native/audioutils/include/audio_utils.h
+index 2cae232169ea8c7f584e86a366175fc85a58e04f..283cd3ee218ab14345b0d2bf7038c9a1a4aeadc2 100644
+--- a/frameworks/native/audioutils/include/audio_utils.h
++++ b/frameworks/native/audioutils/include/audio_utils.h
+@@ -117,8 +117,10 @@ private:
+ class ClockTime {
+ public:
+     static int64_t GetCurNano();
++    static int64_t GetRealNano();
+     static int32_t AbsoluteSleep(int64_t nanoTime);
+     static int32_t RelativeSleep(int64_t nanoTime);
++    static std::string NanoTimeToString(int64_t nanoTime);
+ };
+ 
+ /**
+@@ -201,6 +203,7 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
+     return std::find(array.begin(), array.end(), value) == array.end();
+ }
+ 
++bool SetSysPara(const std::string& key, int32_t value);
+ template <typename T>
+ bool GetSysPara(const char *key, T &value);
+ 
+@@ -218,7 +221,6 @@ const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
+ const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
+ const char* DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
+ const char* DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
+-const char* DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
+ const char* DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
+ const char* DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
+ const char* DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
+diff --git a/frameworks/native/audioutils/src/audio_utils.cpp b/frameworks/native/audioutils/src/audio_utils.cpp
+index e20f15168c2d3865d0feaab8665f8b15ebe74fde..97d8659e462d5714a7972eaa8e094cb2493798f6 100644
+--- a/frameworks/native/audioutils/src/audio_utils.cpp
++++ b/frameworks/native/audioutils/src/audio_utils.cpp
+@@ -154,6 +154,18 @@ int64_t ClockTime::GetCurNano()
+     return result;
+ }
+ 
++int64_t ClockTime::GetRealNano()
++{
++    int64_t result = -1; // -1 for bad result
++    struct timespec time;
++    clockid_t clockId = CLOCK_REALTIME;
++    int ret = clock_gettime(clockId, &time);
++    CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
++        "GetRealNanotime fail, result:%{public}d", ret);
++    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
++    return result;
++}
++
+ int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
+ {
+     int32_t ret = -1; // -1 for bad result.
+@@ -172,6 +184,22 @@ int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
+     return ret;
+ }
+ 
++std::string ClockTime::NanoTimeToString(int64_t nanoTime)
++{
++    struct tm *tm_info;
++    char buffer[80];
++    time_t time_seconds = nanoTime / AUDIO_NS_PER_SECOND;
++
++    tm_info = localtime(&time_seconds);
++    if (tm_info == NULL) {
++        AUDIO_ERR_LOG("get localtime failed!");
++        return "";
++    }
++
++    strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
++    return std::string(buffer);
++}
++
+ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
+ {
+     int32_t ret = -1; // -1 for bad result.
+@@ -723,6 +751,17 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
+     return float(curMaxAmplitude) / LONG_MAX;
+ }
+ 
++bool SetSysPara(const std::string &key, int32_t value)
++{
++    auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
++    if (res < 0) {
++        AUDIO_WARNING_LOG("SetSysPara fail, key:%{public}s res:%{public}d", key.c_str(), res);
++        return false;
++    }
++    AUDIO_INFO_LOG("SetSysPara success.");
++    return true;
++}
++
+ template <typename T>
+ bool GetSysPara(const char *key, T &value)
+ {
+diff --git a/frameworks/native/hdiadapter/sink/BUILD.gn b/frameworks/native/hdiadapter/sink/BUILD.gn
+index 1631ab0620ebc4ce9265639527d51567da25746b..e5671f787a3611c34018cc8e31c2e6371c9932e2 100644
+--- a/frameworks/native/hdiadapter/sink/BUILD.gn
++++ b/frameworks/native/hdiadapter/sink/BUILD.gn
+@@ -369,9 +369,13 @@ ohos_shared_library("multichannel_audio_renderer_sink") {
+     "../common/include",
+     "../../audioutils/include",
+     "../../../../interfaces/inner_api/native/audiocommon/include",
++    "../../../../services/audio_service/common/include/",
+   ]
+ 
+-  deps = [ "../../audioutils:audio_utils" ]
++  deps = [
++    "../../../../services/audio_service:audio_common",
++    "../../audioutils:audio_utils",
++  ]
+ 
+   external_deps = [
+     "c_utils:utils",
+diff --git a/frameworks/native/hdiadapter/sink/bluetooth/bluetooth_renderer_sink.cpp b/frameworks/native/hdiadapter/sink/bluetooth/bluetooth_renderer_sink.cpp
+index 8d5f83cf840f8183cb886a495d2c6c09e859d12c..933d00caf938985e57d74d2e7451ec7110177daa 100644
+--- a/frameworks/native/hdiadapter/sink/bluetooth/bluetooth_renderer_sink.cpp
++++ b/frameworks/native/hdiadapter/sink/bluetooth/bluetooth_renderer_sink.cpp
+@@ -41,6 +41,7 @@
+ #include "parameters.h"
+ #include "media_monitor_manager.h"
+ #include "audio_log_utils.h"
++#include "audio_dump_pcm.h"
+ 
+ using namespace std;
+ using namespace OHOS::HDI::Audio_Bluetooth;
+@@ -528,11 +529,11 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
+         }
+     }
+ 
+-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
+     DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
+     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
++        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
++        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+             static_cast<void *>(&data), len);
+     }
+ 
+diff --git a/frameworks/native/hdiadapter/sink/multichannel/multichannel_audio_renderer_sink.cpp b/frameworks/native/hdiadapter/sink/multichannel/multichannel_audio_renderer_sink.cpp
+index 606e2116e54695b375d19aa23f107a917e4dace6..692571c203955533ccb61455892214fb508554d1 100644
+--- a/frameworks/native/hdiadapter/sink/multichannel/multichannel_audio_renderer_sink.cpp
++++ b/frameworks/native/hdiadapter/sink/multichannel/multichannel_audio_renderer_sink.cpp
+@@ -39,6 +39,7 @@
+ #include "audio_hdi_log.h"
+ #include "audio_utils.h"
+ #include "parameters.h"
++#include "audio_dump_pcm.h"
+ 
+ using namespace std;
+ 
+@@ -164,7 +165,7 @@ private:
+     void CheckUpdateState(char *frame, uint64_t replyBytes);
+ 
+     void InitAudioRouteNode(AudioRouteNode &source, AudioRouteNode &sink);
+-
++    std::string dumpFileName_ = "";
+     FILE *dumpFile_ = nullptr;
+     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+     AudioScene currentAudioScene_ = AudioScene::AUDIO_SCENE_INVALID;
+@@ -543,6 +544,12 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
+     Trace::CountVolume("MultiChannelRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
+     Trace trace("MchSinkInner::RenderFrame");
+ 
++    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
++        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
++        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
++            static_cast<void *>(&data), len);
++    }
++
+     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
+         &writeLen);
+     if (ret != 0) {
+@@ -603,7 +610,9 @@ int32_t MultiChannelRendererSinkInner::Start(void)
+         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
+     }
+ #endif
+-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_MCH_SINK_FILENAME, &dumpFile_);
++    dumpFileName_ = "multichannel_renderersink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
++        + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
++    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+ 
+     if (!started_) {
+         int32_t ret = audioRender_->Start(audioRender_);
+diff --git a/frameworks/native/hdiadapter/sink/offload/offload_audio_renderer_sink.cpp b/frameworks/native/hdiadapter/sink/offload/offload_audio_renderer_sink.cpp
+index 19af24021da997f346534b32b0e4ab2476a9e31c..015e03c4cb4f07208f9aa701b87748e87656d7b4 100644
+--- a/frameworks/native/hdiadapter/sink/offload/offload_audio_renderer_sink.cpp
++++ b/frameworks/native/hdiadapter/sink/offload/offload_audio_renderer_sink.cpp
+@@ -37,6 +37,7 @@
+ #include "audio_utils.h"
+ #include "audio_log_utils.h"
+ #include "media_monitor_manager.h"
++#include "audio_dump_pcm.h"
+ 
+ using namespace std;
+ 
+@@ -674,11 +675,11 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
+     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
+         &writeLen);
+     if (ret == 0 && writeLen != 0) {
+-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
+         BufferDesc buffer = {reinterpret_cast<uint8_t *>(&data), len, len};
+         DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
++            DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
++            AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+                 static_cast<void *>(&data), writeLen);
+         }
+         CheckUpdateState(&data, len);
+diff --git a/frameworks/native/hdiadapter/sink/primary/audio_renderer_sink.cpp b/frameworks/native/hdiadapter/sink/primary/audio_renderer_sink.cpp
+index ec01b322d9c4dfa856d1ceea098c769a59432a34..60768a459b37c6dc41a1a647a1c1f29917d3d0f3 100644
+--- a/frameworks/native/hdiadapter/sink/primary/audio_renderer_sink.cpp
++++ b/frameworks/native/hdiadapter/sink/primary/audio_renderer_sink.cpp
+@@ -45,6 +45,7 @@
+ #include "audio_enhance_chain_manager.h"
+ 
+ #include "audio_log_utils.h"
++#include "audio_dump_pcm.h"
+ 
+ using namespace std;
+ 
+@@ -779,11 +780,11 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
+ 
+     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
+ 
+-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
+     DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
++        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
++        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+             static_cast<void *>(&data), len);
+     }
+ 
+diff --git a/frameworks/native/hdiadapter/sink/remote/remote_audio_renderer_sink.cpp b/frameworks/native/hdiadapter/sink/remote/remote_audio_renderer_sink.cpp
+index 8818bdccb4680b68f8b93b5de95a8f7a9bab0617..61c03852cc15505a5b01a08a452c67603528fe01 100644
+--- a/frameworks/native/hdiadapter/sink/remote/remote_audio_renderer_sink.cpp
++++ b/frameworks/native/hdiadapter/sink/remote/remote_audio_renderer_sink.cpp
+@@ -40,6 +40,7 @@
+ #include "i_audio_device_adapter.h"
+ #include "i_audio_device_manager.h"
+ #include "audio_log_utils.h"
++#include "audio_dump_pcm.h"
+ 
+ using namespace std;
+ using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter;
+@@ -162,6 +163,7 @@ private:
+     unordered_map<string, AudioCategory> splitStreamMap_;
+     IAudioSinkAttr attr_ = {};
+     unordered_map<AudioCategory, FILE*> dumpFileMap_;
++    unordered_map<AudioCategory, std::string> dumpFileNameMap_;
+     std::mutex createRenderMutex_;
+     vector<uint32_t> renderIdVector_ = {MEDIA_RENDERID, NAVIGATION_RENDERID, COMMUNICATION_RENDERID};
+     // for get amplitude
+@@ -249,6 +251,7 @@ void RemoteAudioRendererSinkInner::ClearRender()
+     AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
+ 
+     dumpFileMap_.clear();
++    dumpFileNameMap_.clear();
+     AUDIO_INFO_LOG("Clear remote audio render end.");
+ }
+ 
+@@ -471,7 +474,10 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
+     writeLen = len;
+ 
+     FILE *dumpFile = dumpFileMap_[splitStreamMap_[streamType]];
++    std::string dumpFileName = dumpFileNameMap_[splitStreamMap_[streamType]];
+     DumpFileUtil::WriteDumpFile(dumpFile, static_cast<void *>(&data), len);
++    AudioCacheMgr::GetInstance().CacheData(dumpFileName, static_cast<void *>(&data), len);
++
+     CheckUpdateState(&data, len);
+ 
+     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
+@@ -531,9 +537,12 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
+ 
+     for (const auto &audioPort : audioPortMap_) {
+         FILE *dumpFile = nullptr;
+-        DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME
+-            + std::to_string(audioPort.first) + '_' + GetTime() + ".pcm", &dumpFile);
++        std::string dumpFileName = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + GetTime() + "_" +
++            std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
++            std::to_string(attr_.format) + ".pcm";
++        DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName, &dumpFile);
+         dumpFileMap_[audioPort.first] = dumpFile;
++        dumpFileNameMap_[audioPort.first] = dumpFileName;
+     }
+ 
+     for (const auto &audioRender : audioRenderMap_) {
+diff --git a/frameworks/native/hdiadapter/source/bluetooth/bluetooth_capturer_source.cpp b/frameworks/native/hdiadapter/source/bluetooth/bluetooth_capturer_source.cpp
+index 76632b14bd1bb54669358209aff9f5bb28713f13..770abd6221430b5680ac119784ca2821918591cc 100644
+--- a/frameworks/native/hdiadapter/source/bluetooth/bluetooth_capturer_source.cpp
++++ b/frameworks/native/hdiadapter/source/bluetooth/bluetooth_capturer_source.cpp
+@@ -43,6 +43,7 @@
+ #include "audio_enhance_chain_manager.h"
+ #include "audio_attribute.h"
+ #include "audio_log_utils.h"
++#include "audio_dump_pcm.h"
+ 
+ using namespace std;
+ using namespace OHOS::HDI::Audio_Bluetooth;
+@@ -403,13 +404,13 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
+ 
+     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_NOT_STARTED, "Capture Frame Fail");
+     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
+-    DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+ 
+     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
+     DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+ 
+     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
++        DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
++        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+             static_cast<void*>(frame), replyBytes);
+     }
+     CheckUpdateState(frame, requestBytes);
+diff --git a/frameworks/native/hdiadapter/source/primary/audio_capturer_source.cpp b/frameworks/native/hdiadapter/source/primary/audio_capturer_source.cpp
+index 0df6a39c30cfd3e2c8229fe0ec3264e9e524415f..b31076c237ed8f1e4a1e1a52eff1050da852032c 100644
+--- a/frameworks/native/hdiadapter/source/primary/audio_capturer_source.cpp
++++ b/frameworks/native/hdiadapter/source/primary/audio_capturer_source.cpp
+@@ -42,6 +42,7 @@
+ #include "media_monitor_manager.h"
+ #include "audio_enhance_chain_manager.h"
+ #include "hdi_utils_ringbuffer.h"
++#include "audio_dump_pcm.h"
+ 
+ using namespace std;
+ 
+@@ -831,11 +832,11 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
+     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
+     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
+ 
+-    DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
+     DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
++        DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
++        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+             static_cast<void*>(frame), replyBytes);
+     }
+     CheckUpdateState(frame, requestBytes);
+diff --git a/services/audio_policy/etc/audio_config.para b/services/audio_policy/etc/audio_config.para
+index e0cefc8f0a630fa41e6a017c7ef11f1594eefd99..590848d19d017540162cba695ca447cff8a4b838 100644
+--- a/services/audio_policy/etc/audio_config.para
++++ b/services/audio_policy/etc/audio_config.para
+@@ -11,6 +11,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ persist.multimedia.audio.ringtonevolume = 7
++persist.multimedia.audio.audioCacheState = 2
+ const.multimedia.audio.fixedvolume = false
+ const.multimedia.audio.volumestep = 1
+ persist.multimedia.audio.safevolume = 15
+diff --git a/services/audio_policy/etc/audio_config.para.dac b/services/audio_policy/etc/audio_config.para.dac
+index 7f3139defb67d7fd3a7da85aa8a099e2c4c90353..33f1a72af7d5e7453dca5a8b0a59f35f3308b460 100644
+--- a/services/audio_policy/etc/audio_config.para.dac
++++ b/services/audio_policy/etc/audio_config.para.dac
+@@ -12,6 +12,7 @@
+ # limitations under the License.
+ 
+ persist.multimedia.audio.ringtonevolume = audio:audio:660
++persist.multimedia.audio.audioCacheState = audio:audio:600
+ const.multimedia.audio.fixedvolume = audio:audio:660
+ const.multimedia.audio.volumestep = audio:audio:660
+ persist.multimedia.audio.safevolume = audio:audio:660
+diff --git a/services/audio_service/BUILD.gn b/services/audio_service/BUILD.gn
+index 1be419a499ae56f18cf6c3a068c709151fec5af8..2afb237790f926295790269550b34eda66997f71 100644
+--- a/services/audio_service/BUILD.gn
++++ b/services/audio_service/BUILD.gn
+@@ -46,12 +46,14 @@ ohos_shared_library("audio_common") {
+   sources = [
+     "common/src/audio_common_converter.cpp",
+     "common/src/audio_down_mix_stereo.cpp",
++    "common/src/audio_dump_pcm.cpp",
+     "common/src/audio_log_utils.cpp",
+     "common/src/audio_process_config.cpp",
+     "common/src/audio_resample.cpp",
+     "common/src/audio_ring_cache.cpp",
+     "common/src/audio_thread_task.cpp",
+     "common/src/audio_volume.cpp",
++    "common/src/callback_handler.cpp",
+     "common/src/format_converter.cpp",
+     "common/src/futex_tool.cpp",
+     "common/src/linear_pos_time_model.cpp",
+@@ -75,6 +77,7 @@ ohos_shared_library("audio_common") {
+ 
+   external_deps = [
+     "c_utils:utils",
++    "eventhandler:libeventhandler",
+     "hilog:libhilog",
+     "hisysevent:libhisysevent",
+     "ipc:ipc_single",
+@@ -173,7 +176,6 @@ ohos_shared_library("audio_client") {
+     "client/src/audio_stream_manager.cpp",
+     "client/src/audio_stream_tracker.cpp",
+     "client/src/audio_system_manager.cpp",
+-    "client/src/callback_handler.cpp",
+     "client/src/capturer_in_client.cpp",
+     "client/src/fast_audio_stream.cpp",
+     "client/src/i_audio_stream.cpp",
+diff --git a/services/audio_service/client/src/capturer_in_client.cpp b/services/audio_service/client/src/capturer_in_client.cpp
+index b9aa1d802212955835e9720f048325830d30ef8f..b98ebff97933fb871a045f2328b2f6d14cdb211c 100644
+--- a/services/audio_service/client/src/capturer_in_client.cpp
++++ b/services/audio_service/client/src/capturer_in_client.cpp
+@@ -691,7 +691,7 @@ void CapturerInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t da
+ void CapturerInClientInner::InitCallbackHandler()
+ {
+     if (callbackHandler_ == nullptr) {
+-        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
++        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(), "OS_AudioStateCB");
+     }
+ }
+ 
+diff --git a/services/audio_service/client/src/renderer_in_client_public.cpp b/services/audio_service/client/src/renderer_in_client_public.cpp
+index eb117974f4d9e3480de64146d21d26fd2cfa92cb..5a8b3b62449aaad88dc4e7b4fcaecb23a66e1b3e 100644
+--- a/services/audio_service/client/src/renderer_in_client_public.cpp
++++ b/services/audio_service/client/src/renderer_in_client_public.cpp
+@@ -1373,7 +1373,7 @@ void RendererInClientInner::InitCallbackHandler()
+ {
+     std::lock_guard<std::mutex> lock(runnerMutex_);
+     if (callbackHandler_ == nullptr) {
+-        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
++        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(), "OS_AudioStateCB");
+     }
+ }
+ 
+diff --git a/services/audio_service/common/include/audio_dump_pcm.h b/services/audio_service/common/include/audio_dump_pcm.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..96fad1766f4977745c9d4c351d4b81e02f1d9919
+--- /dev/null
++++ b/services/audio_service/common/include/audio_dump_pcm.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (c) 2024 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#ifndef AUDIO_PCM_DUMP_H
++#define AUDIO_PCM_DUMP_H
++
++#include <string.h>
++#include <memory>
++
++namespace OHOS {
++namespace AudioStandard {
++
++class AudioCacheMgr {
++public:
++    static AudioCacheMgr& GetInstance();
++    AudioCacheMgr() = default;
++    virtual ~AudioCacheMgr() = default;
++
++    virtual bool Init();
++    virtual bool DeInit();
++
++    virtual void CacheData(std::string& dumpFileName, void* dataPointer, size_t dataLength) = 0;
++    virtual int32_t DumpAllMemBlock() = 0;
++    virtual void GetCachedDuration(int64_t& startTime, int64_t& endTime) = 0;
++    virtual void GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength) = 0;
++};
++
++} // namespace AudioStandard
++} // namespace OHOS
++#endif // AUDIO_PCM_DUMP_H
+\ No newline at end of file
+diff --git a/services/audio_service/common/include/audio_dump_pcm_private.h b/services/audio_service/common/include/audio_dump_pcm_private.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..2c5337cbcf9117125dd5c3933ab97c2e8d16cded
+--- /dev/null
++++ b/services/audio_service/common/include/audio_dump_pcm_private.h
+@@ -0,0 +1,111 @@
++/*
++ * Copyright (c) 2024 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#ifndef AUDIO_PCM_DUMP_PRIVATE_H
++#define AUDIO_PCM_DUMP_PRIVATE_H
++
++#include "audio_dump_pcm.h"
++
++#include <mutex>
++#include <deque>
++#include <atomic>
++#include <unordered_map>
++
++#include "singleton.h"
++#include "event_handler.h"
++#include "event_runner.h"
++#include "callback_handler.h"
++#include "timestamp.h"
++
++namespace OHOS {
++namespace AudioStandard {
++
++struct MemBlock {
++public:
++    uint8_t* dataPointer_;
++    size_t dataLength_;
++    uint32_t dumpFileNameId_;
++};
++
++class MemChunk {
++public:
++    MemChunk();
++    ~MemChunk();
++    int32_t GetMemBlock(size_t dataLength, std::string& dumpFileName, MemBlock& curMemBlock);
++    std::shared_ptr<std::deque<MemBlock>> GetMemBlockDeque();
++    void GetMemChunkDuration(int64_t& startTime, int64_t& endTime);
++    int32_t GetCurUsedMemory(size_t& dataLength, size_t& bufferLength, size_t& structLength);
++    void Reset();
++public:
++    std::unordered_map<uint16_t, std::string> idFileNameMap_{};
++private:
++    std::unordered_map<std::string, uint16_t> fileNameIdMap_{};
++    std::shared_ptr<std::deque<MemBlock>> memBlockDeque_;
++
++    const size_t totalBufferSize_;
++    size_t pointerOffset_;
++    uint16_t curFileNameId_;
++    int64_t firstMemBlockTime_;
++    int64_t lastMemBlockTime_;
++    uint8_t *bufferPointer_ = nullptr;
++};
++
++class AudioCacheHandler : public IHandler {
++public:
++    AudioCacheHandler(IHandler* handler);
++    void OnHandle(uint32_t code, int64_t data) override;
++private:
++    IHandler *handler_ = nullptr;
++};
++
++class AudioCacheMgrInner : public AudioCacheMgr, public IHandler {
++public:
++    AudioCacheMgrInner();
++    ~AudioCacheMgrInner() override;
++    void OnHandle(uint32_t code, int64_t data) override;
++
++    bool Init() override;
++    bool DeInit() override;
++
++    void CacheData(std::string& dumpFileName, void* dataPointer, size_t dataLength) override;
++    int32_t DumpAllMemBlock() override;
++    void GetCachedDuration(int64_t& startTime, int64_t& endTime) override;
++    void GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength) override;
++
++private:
++    void InitCallbackHandler();
++    int32_t GetAvailableMemBlock(size_t dataLength, std::string& dumpFileName, MemBlock& curMemBlock);
++    void SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int64_t delayTime);
++    void ReleaseOverTimeMemBlock();
++private:
++    std::atomic<bool> isDumpingData_ = {false};
++    std::atomic<bool> isInited_ = {false};
++    size_t totalMemChunkNums_; // MAX_LIMIT_BUFFER_SIZE / EACH_CHUNK_SIZE
++    std::deque<std::shared_ptr<MemChunk>> memChunkDeque_;
++    std::mutex g_Mutex;
++
++    // Event handler
++    std::shared_ptr<AudioCacheHandler> handler_ = nullptr;
++    std::mutex runnerMutex_;
++    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
++
++    enum {
++        RELEASE_OVERTIME_MEMBLOCK = 0,
++        PRINT_MEMORY_CONDITION,
++    };
++};
++
++} // namespace AudioStandard
++} // namespace OHOS
++#endif // AUDIO_PCM_DUMP_PRIVATE_H
+\ No newline at end of file
+diff --git a/services/audio_service/client/include/callback_handler.h b/services/audio_service/common/include/callback_handler.h
+old mode 100755
+new mode 100644
+similarity index 85%
+rename from services/audio_service/client/include/callback_handler.h
+rename to services/audio_service/common/include/callback_handler.h
+index 2131ba30f7a5ecb39f6581bb5e302e237a3e90f5..60a5173adae262800764844fc3fe2883698ecb80
+--- a/services/audio_service/client/include/callback_handler.h
++++ b/services/audio_service/common/include/callback_handler.h
+@@ -31,9 +31,11 @@ public:
+ class CallbackHandler {
+ public:
+     virtual ~CallbackHandler() = default;
+-    static std::shared_ptr<CallbackHandler> GetInstance(std::shared_ptr<IHandler> iHandler);
++    static std::shared_ptr<CallbackHandler> GetInstance(std::shared_ptr<IHandler> iHandler,
++        const std::string &handlerName);
+ 
+     virtual void SendCallbackEvent(uint32_t code, int64_t data) = 0;
++    virtual void SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime) = 0;
+ 
+     virtual void ReleaseEventRunner() = 0;
+ };
+diff --git a/services/audio_service/common/src/audio_dump_pcm.cpp b/services/audio_service/common/src/audio_dump_pcm.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..cfcafe8e980624f88e1f5266d1177c1598327632
+--- /dev/null
++++ b/services/audio_service/common/src/audio_dump_pcm.cpp
+@@ -0,0 +1,425 @@
++/*
++ * Copyright (c) 2024 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#ifndef LOG_TAG
++#define LOG_TAG "AudioDumpPCM"
++#endif
++
++#include "audio_dump_pcm.h"
++#include "audio_dump_pcm_private.h"
++
++#include <string.h>
++#include <utility>
++
++#include "media_monitor_manager.h"
++#include "callback_handler.h"
++#include "audio_log.h"
++#include "audio_errors.h"
++#include "audio_utils.h"
++
++namespace OHOS {
++namespace AudioStandard {
++
++constexpr uint64_t MAX_LIMIT_BUFFER_SIZE = 100 * 1024 * 1024;   // 100M
++constexpr size_t EACH_CHUNK_SIZE = 1024 * 1024;                 // 1M
++constexpr int64_t MEMBLOCK_RELEASE_TIME = 5 * 60 * 1000000;     // release pcm 5min ago
++constexpr int64_t MEMBLOCK_CHECK_TIME_MS = 30 * 1000;           // check cached data's time every 30s
++constexpr int64_t MEMORY_PRINT_TIME_MS = 30 * 1000;             // print memory info every 30s
++constexpr uint16_t FILENAME_ID_MAX_INDEX = 65530;               // FileNameId 0 - 65530
++constexpr size_t FILENAME_AND_ID_SIZE = 128;                    // estimate each entry size in map
++
++MemChunk::MemChunk() : totalBufferSize_(EACH_CHUNK_SIZE), pointerOffset_(0), curFileNameId_(0)
++{
++    Trace trace("MemChunk::MemChunk");
++    firstMemBlockTime_ = ClockTime::GetRealNano();
++    lastMemBlockTime_ = firstMemBlockTime_;
++    bufferPointer_ = new (std::nothrow) uint8_t[EACH_CHUNK_SIZE];
++    if (bufferPointer_ == nullptr) {
++        AUDIO_ERR_LOG("failed to get memory!");
++    }
++    memBlockDeque_ = std::make_shared<std::deque<MemBlock>>();
++}
++
++MemChunk::~MemChunk()
++{
++    Trace trace("MemChunk::~MemChunk");
++    if (bufferPointer_ != nullptr) {
++        delete bufferPointer_;
++    }
++    bufferPointer_ = nullptr;
++}
++
++int32_t MemChunk::GetMemBlock(size_t dataLength, std::string& dumpFileName, MemBlock& curMemBlock)
++{
++    CHECK_AND_RETURN_RET(totalBufferSize_ - pointerOffset_ >= dataLength, ERROR);
++    Trace trace("MemChunk::GetMemBlock");
++
++    if (fileNameIdMap_.find(dumpFileName) != fileNameIdMap_.end()) {
++        curMemBlock.dumpFileNameId_ = fileNameIdMap_[dumpFileName];
++    } else {
++        curMemBlock.dumpFileNameId_ = (curFileNameId_ + 1 >= FILENAME_ID_MAX_INDEX) ? 0 : ++curFileNameId_;
++        fileNameIdMap_[dumpFileName] = curFileNameId_;
++        idFileNameMap_[curFileNameId_] = dumpFileName;
++    }
++    
++    curMemBlock.dataPointer_ = bufferPointer_ + pointerOffset_;
++    curMemBlock.dataLength_ = dataLength;
++    pointerOffset_ += dataLength;
++    lastMemBlockTime_ = ClockTime::GetRealNano();
++    memBlockDeque_->push_back(curMemBlock);
++    return SUCCESS;
++}
++
++std::shared_ptr<std::deque<MemBlock>> MemChunk::GetMemBlockDeque()
++{
++    return memBlockDeque_;
++}
++
++void MemChunk::GetMemChunkDuration(int64_t& startTime, int64_t& endTime)
++{
++    startTime = firstMemBlockTime_;
++    endTime = lastMemBlockTime_;
++}
++
++int32_t MemChunk::GetCurUsedMemory(size_t& dataLength, size_t& bufferLength, size_t& structLength)
++{
++    dataLength = pointerOffset_;
++    bufferLength = totalBufferSize_;
++    structLength = sizeof(MemBlock) * memBlockDeque_->size() + sizeof(MemChunk) + 
++        FILENAME_AND_ID_SIZE * idFileNameMap_.size() * 2;
++    return SUCCESS;
++}
++
++void MemChunk::Reset()
++{
++    Trace trace("MemChunk::Reset");
++    pointerOffset_ = 0;
++    curFileNameId_ = 0;
++    firstMemBlockTime_ = ClockTime::GetRealNano();
++    lastMemBlockTime_ = firstMemBlockTime_;
++    idFileNameMap_ = {};
++    fileNameIdMap_ = {};
++    memBlockDeque_->clear();
++}
++
++AudioCacheMgr& AudioCacheMgr::GetInstance()
++{
++    static AudioCacheMgrInner mgr;
++    return mgr;
++}
++
++AudioCacheMgrInner::AudioCacheMgrInner()
++{
++    Trace trace("AudioCacheMgrInner::AudioCacheMgrInner");
++    totalMemChunkNums_ = MAX_LIMIT_BUFFER_SIZE / EACH_CHUNK_SIZE;
++}
++
++AudioCacheMgrInner::~AudioCacheMgrInner()
++{
++    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
++    if (callbackHandler_ != nullptr) {
++        AUDIO_INFO_LOG("runner move");
++        callbackHandler_->ReleaseEventRunner();
++        callbackHandler_ = nullptr;
++    }
++}
++
++bool AudioCacheMgrInner::Init()
++{
++    if (isInited_ == false) {
++        InitCallbackHandler();
++        isInited_ = true;
++        return true;
++    }
++    AUDIO_WARNING_LOG("AudioCacheMgr is Inited!");
++    return true;
++}
++
++bool AudioCacheMgrInner::DeInit()
++{
++    Trace trace("AudioCacheMgrInner::DeInit");
++    std::unique_lock<std::mutex> lock(runnerMutex_);
++    if (callbackHandler_ != nullptr) {
++        callbackHandler_->ReleaseEventRunner();
++        callbackHandler_ = nullptr;
++        handler_ = nullptr;
++
++        // clear all cached pcm
++        memChunkDeque_ = {};
++        AUDIO_INFO_LOG("deinit handler success");
++    }
++    lock.unlock();
++    isInited_ = false;
++    AUDIO_WARNING_LOG("AudioCacheMgr is DeInited!");
++    return true;
++}
++
++void AudioCacheMgrInner::CacheData(std::string& dumpFileName, void* srcDataPointer, size_t dataLength)
++{
++    if (!isInited_.load()) {
++        Trace trace("AudioCacheMgrInner::CacheData::NotInited");
++        return;
++    }
++    Trace trace("AudioCacheMgrInner::CacheData");
++    if (isDumpingData_.load()) {
++        Trace trace("AudioCacheMgrInner::CacheData::ReturnWhenDumpingData");
++        return;
++    }
++    if (!g_Mutex.try_lock()) {
++        if (isDumpingData_.load()) {
++            Trace trace("AudioCacheMgrInner::CacheData::TryLockFailedWhenDumpingData");
++            return;
++        }
++        g_Mutex.lock();
++    }
++
++    MemBlock curMemBlock {nullptr,0,0};
++    int ret = GetAvailableMemBlock(dataLength, dumpFileName, curMemBlock);
++    if (ret != SUCCESS) {
++        AUDIO_ERR_LOG("GetAvailableMemBlock failed. Unable to cacheData!");
++        g_Mutex.unlock();
++        return;
++    }
++    g_Mutex.unlock();
++
++    ret = memcpy_s(curMemBlock.dataPointer_, dataLength, srcDataPointer, dataLength);
++    CHECK_AND_RETURN_LOG(ret == SUCCESS, "memcpy_s failed. Unable to cacheData!");
++}
++
++int32_t AudioCacheMgrInner::GetAvailableMemBlock(size_t dataLength, std::string& dumpFileName, MemBlock& curMemBlock)
++{
++    if (!memChunkDeque_.empty()) {
++        Trace trace1("AudioCacheMgrInner::GetAvailableMemBlock::hasNotFillMemChunk");
++        std::shared_ptr<MemChunk> lastMemChunk = memChunkDeque_.back();
++        if (lastMemChunk->GetMemBlock(dataLength, dumpFileName, curMemBlock) == SUCCESS) {
++            return SUCCESS;
++        }
++    }
++
++    if (memChunkDeque_.size() < totalMemChunkNums_) {
++        Trace trace2("AudioCacheMgrInner::getAvailMemBlock::GetMemBlock");
++        std::shared_ptr<MemChunk> newMemChunk = std::make_shared<MemChunk>();
++        Trace::Count("UsedMemChunk", memChunkDeque_.size());
++        memChunkDeque_.push_back(newMemChunk);
++        if (newMemChunk->GetMemBlock(dataLength, dumpFileName, curMemBlock) == SUCCESS) {
++            return SUCCESS;
++        }
++    }
++
++    if (!memChunkDeque_.empty()) {
++        Trace trace3("AudioCacheMgrInner::GetAvailableMemBlock::RecycleOneMemChunk");
++        std::shared_ptr<MemChunk> recycleMemChunk = memChunkDeque_.front();
++        memChunkDeque_.pop_front();
++        recycleMemChunk->Reset();
++        memChunkDeque_.push_back(recycleMemChunk);
++        if (recycleMemChunk->GetMemBlock(dataLength, dumpFileName, curMemBlock) == SUCCESS) {
++            return SUCCESS;
++        }
++    }
++
++    AUDIO_ERR_LOG("failed to get available memBlock");
++    return ERROR;
++}
++
++int32_t AudioCacheMgrInner::DumpAllMemBlock()
++{
++    if (!isInited_.load()) {
++        Trace trace("AudioCacheMgrInner::DumpAllMemBlock::NotInited");
++        AUDIO_WARNING_LOG("not inited!");
++        return ERR_ILLEGAL_STATE;
++    }
++
++    Trace trace("AudioCacheMgrInner::DumpAllMemBlock");
++    bool targetStatus = false;
++    if (!isDumpingData_.compare_exchange_strong(targetStatus, true)) {
++        AUDIO_WARNING_LOG("Already in dumping data!");
++    }
++
++    std::lock_guard<std::mutex> processsLock(g_Mutex);
++
++    std::vector<std::pair<std::string, std::string>> paramStart;
++    paramStart.push_back({"BETA","true"});
++    Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(paramStart);
++
++    while(!memChunkDeque_.empty()) {
++        std::shared_ptr<MemChunk> curMemChunk = memChunkDeque_.front();
++        memChunkDeque_.pop_front();
++
++        std::shared_ptr<std::deque<MemBlock>> curMemBlockDeque = curMemChunk->GetMemBlockDeque();
++        for (auto it = curMemBlockDeque->begin(); it != curMemBlockDeque->end(); ++it) {
++            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(
++                    "pcm_dump_" + curMemChunk->idFileNameMap_[it->dumpFileNameId_], it->dataPointer_, it->dataLength_);
++        }
++        Trace::Count("UsedMemChunk", memChunkDeque_.size());
++    }
++
++    std::vector<std::pair<std::string, std::string>> paramEnd;
++    paramStart.push_back({"BETA","false"});
++    Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(paramEnd);
++
++    isDumpingData_.store(false);
++    return SUCCESS;
++}
++
++void AudioCacheMgrInner::GetCachedDuration(int64_t& startTime, int64_t& endTime)
++{
++    Trace trace("AudioCacheMgrInner::GetCacheDuration");
++    if (!isInited_.load()) {
++        Trace trace("AudioCacheMgrInner::GetCachedDuration::NotInited");
++        AUDIO_WARNING_LOG("not inited!");
++        return;
++    }
++    std::lock_guard<std::mutex> processLock(g_Mutex);
++    // init but no data in memchunk
++    if (memChunkDeque_.size() == 0) {
++        startTime = ClockTime::GetRealNano();
++        endTime = startTime;
++        AUDIO_WARNING_LOG("GetCachedDuration while memChunkDeque_ is empty!");
++        return;
++    }
++
++    int64_t temp;
++    if (memChunkDeque_.front() != nullptr) {
++        memChunkDeque_.front()->GetMemChunkDuration(startTime, temp);
++    }
++    if (memChunkDeque_.back() != nullptr) {
++        memChunkDeque_.back()->GetMemChunkDuration(temp, endTime);
++    }
++    AUDIO_INFO_LOG("startTime:%{public}s, endTime:%{public}s.",
++        ClockTime::NanoTimeToString(startTime).c_str(), ClockTime::NanoTimeToString(endTime).c_str());
++}
++
++void AudioCacheMgrInner::GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength)
++{
++    Trace trace("AudioCacheMgrInner::GetCurMemoryCondition");
++    SafeSendCallBackEvent(PRINT_MEMORY_CONDITION, 0, MEMORY_PRINT_TIME_MS);
++    std::lock_guard<std::mutex> processLock(g_Mutex);
++
++    if (memChunkDeque_.empty()) {
++        AUDIO_INFO_LOG("cache memory is empty");
++    }
++
++    size_t curDataLength = 0;
++    size_t curBufferLength = 0;
++    size_t curStructLength = 0;
++    for (auto it = memChunkDeque_.begin(); it != memChunkDeque_.end(); ++it) {
++        (*it)->GetCurUsedMemory(curDataLength, curBufferLength, curStructLength);
++        dataLength += curDataLength;
++        bufferLength += curBufferLength;
++        structLength += curStructLength;
++    }
++}
++
++void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
++{
++    Trace trace("AudioCacheMgrInner::ReleaseOverTimeMemBlock");
++    SafeSendCallBackEvent(RELEASE_OVERTIME_MEMBLOCK, 0, MEMBLOCK_CHECK_TIME_MS);
++    std::lock_guard<std::mutex> processLock(g_Mutex);
++    if (isDumpingData_.load()) {
++        AUDIO_INFO_LOG("now dumping memblock, no need ReleaseOverTimeMemBlock");
++        return;
++    }
++
++    int32_t recycleNums = 0;
++    int64_t curTime = ClockTime::GetRealNano();
++    int64_t startTime, endTime;
++
++    while(!memChunkDeque_.empty()) {
++        memChunkDeque_.front()->GetMemChunkDuration(startTime, endTime);
++        if (curTime - endTime < MEMBLOCK_RELEASE_TIME * AUDIO_MS_PER_SECOND) {
++            break;
++        }
++        memChunkDeque_.pop_front();
++        ++recycleNums;
++        Trace::Count("UsedMemChunk", memChunkDeque_.size());
++    }
++    if (recycleNums != 0) {
++        AUDIO_INFO_LOG("CheckMemBlock Recycle %{public}d memBlocks", recycleNums);
++    }
++}
++
++void AudioCacheMgrInner::InitCallbackHandler()
++{
++    Trace trace("AudioCacheMgrInner::InitCallbackHandler");
++    std::unique_lock<std::mutex> lock(runnerMutex_);
++    if (callbackHandler_ == nullptr) {
++        handler_ = std::make_shared<AudioCacheHandler>(this);
++        callbackHandler_ = CallbackHandler::GetInstance(handler_, "OS_AUDIODumpCB");
++        AUDIO_INFO_LOG("init handler success");
++    }
++    lock.unlock();
++    SafeSendCallBackEvent(RELEASE_OVERTIME_MEMBLOCK, 0, MEMBLOCK_CHECK_TIME_MS);
++    SafeSendCallBackEvent(PRINT_MEMORY_CONDITION, 0, MEMORY_PRINT_TIME_MS);
++}
++
++void AudioCacheMgrInner::SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int64_t delayTime)
++{
++    Trace trace("AudioCacheMgrInner::SafeSendCallBackEvent");
++    std::lock_guard<std::mutex> lock(runnerMutex_);
++    CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr, "Runner is Release");
++
++    callbackHandler_->SendCallbackEvent(eventCode, data, delayTime);
++}
++
++void AudioCacheMgrInner::OnHandle(uint32_t code, int64_t data)
++{
++    size_t dataLength = 0;
++    size_t bufferLength = 0;
++    size_t structLength = 0;
++
++    switch (code) {
++        case RELEASE_OVERTIME_MEMBLOCK:
++            ReleaseOverTimeMemBlock();
++            break;
++        case PRINT_MEMORY_CONDITION:
++            GetCurMemoryCondition(dataLength, bufferLength, structLength);
++            AUDIO_INFO_LOG("dataLength:%{public}zu KB ,bufferLength:%{public}zu KB, structLength:%{public}zu KB", 
++                dataLength / 1024, bufferLength / 1024, structLength / 1024);
++            break;
++        default:
++            break;
++    }
++}
++
++AudioCacheHandler::AudioCacheHandler(IHandler* handler) : handler_(handler) {}
++
++void AudioCacheHandler::OnHandle(uint32_t code, int64_t data)
++{
++    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
++    handler_->OnHandle(code,data);
++}
++
++} // namespace AudioStandard
++} // namespace OHOS
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
+diff --git a/services/audio_service/client/src/callback_handler.cpp b/services/audio_service/common/src/callback_handler.cpp
+old mode 100755
+new mode 100644
+similarity index 79%
+rename from services/audio_service/client/src/callback_handler.cpp
+rename to services/audio_service/common/src/callback_handler.cpp
+index 03fb9b954eff165c41a7accbf89bde9a553e9f48..d30e54580d0e06df785bc2e4bda0d1defe6e9013
+--- a/services/audio_service/client/src/callback_handler.cpp
++++ b/services/audio_service/common/src/callback_handler.cpp
+@@ -26,10 +26,11 @@ namespace AudioStandard {
+ using namespace std;
+ class CallbackHandlerInner : public CallbackHandler, public AppExecFwk::EventHandler {
+ public:
+-    explicit CallbackHandlerInner(std::shared_ptr<IHandler> iHandler);
++    explicit CallbackHandlerInner(std::shared_ptr<IHandler> iHandler, const std::string &handlerName);
+     ~CallbackHandlerInner();
+ 
+     void SendCallbackEvent(uint32_t eventCode, int64_t data) override;
++    void SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime) override;
+ 
+     void ReleaseEventRunner() override;
+ 
+@@ -40,13 +41,14 @@ private:
+     std::weak_ptr<IHandler> iHandler_;
+ };
+ 
+-std::shared_ptr<CallbackHandler> CallbackHandler::GetInstance(std::shared_ptr<IHandler> iHandler)
++std::shared_ptr<CallbackHandler> CallbackHandler::GetInstance(std::shared_ptr<IHandler> iHandler,
++    const std::string &handlerName)
+ {
+-    return std::make_shared<CallbackHandlerInner>(iHandler);
++    return std::make_shared<CallbackHandlerInner>(iHandler, handlerName);
+ }
+ 
+-CallbackHandlerInner::CallbackHandlerInner(std::shared_ptr<IHandler> iHandler)
+-    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create("OS_AudioStateCB"))
++CallbackHandlerInner::CallbackHandlerInner(std::shared_ptr<IHandler> iHandler, const std::string &handlerName)
++    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create(handlerName))
+ {
+     iHandler_ = iHandler;
+ }
+@@ -61,6 +63,11 @@ void CallbackHandlerInner::SendCallbackEvent(uint32_t eventCode, int64_t data)
+     SendEvent(AppExecFwk::InnerEvent::Get(eventCode, data));
+ }
+ 
++void CallbackHandlerInner::SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime)
++{
++    SendEvent(AppExecFwk::InnerEvent::Get(eventCode, data), delayTime, Priority::LOW);
++}
++
+ void CallbackHandlerInner::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
+ {
+     uint32_t eventCode = event->GetInnerEventId();
+diff --git a/services/audio_service/server/src/audio_endpoint.cpp b/services/audio_service/server/src/audio_endpoint.cpp
+index dccf99d823b55d9f49b742174702f4255cf9def2..5d5f4f27c3773f9c822ab47f1da159583a70e44f 100644
+--- a/services/audio_service/server/src/audio_endpoint.cpp
++++ b/services/audio_service/server/src/audio_endpoint.cpp
+@@ -41,8 +41,9 @@
+ #include "i_stream_manager.h"
+ #include "linear_pos_time_model.h"
+ #include "policy_handler.h"
+-#include "media_monitor_manager.h"
+ #include "audio_log_utils.h"
++#include "audio_dump_pcm.h"
++#include "media_monitor_manager.h"
+ #ifdef DAUDIO_ENABLE
+ #include "remote_fast_audio_renderer_sink.h"
+ #include "remote_fast_audio_capturer_source.h"
+@@ -1595,12 +1596,11 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
+         ProcessToDupStream(audioDataList, dstStreamData);
+     }
+ 
+-    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
+-        dstStreamData.bufferDesc.bufLength);
+     DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_.format, dstStreamInfo_.channels);
+-
+     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
++        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
++        dstStreamData.bufferDesc.bufLength);
++        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
+             static_cast<void *>(dstStreamData.bufferDesc.buffer), dstStreamData.bufferDesc.bufLength);
+     }
+ 
+@@ -2011,10 +2011,10 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
+     BufferDesc readBuf;
+     int32_t ret = dstAudioBuffer_->GetReadbuffer(curReadPos, readBuf);
+     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get read buffer fail, ret %{public}d.", ret);
+-    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+     DfxOperation(readBuf, dstStreamInfo_.format, dstStreamInfo_.channels);
+     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
++        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
++        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
+             static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+     }
+     WriteToProcessBuffers(readBuf);
+diff --git a/services/audio_service/server/src/audio_process_in_server.cpp b/services/audio_service/server/src/audio_process_in_server.cpp
+index a3337b952208772ffb38685863f533ae8af9313e..2719684a84aca5ab7a7dd14468c6375cb488084b 100644
+--- a/services/audio_service/server/src/audio_process_in_server.cpp
++++ b/services/audio_service/server/src/audio_process_in_server.cpp
+@@ -27,6 +27,7 @@
+ #include "audio_schedule.h"
+ #include "audio_utils.h"
+ #include "media_monitor_manager.h"
++#include "audio_dump_pcm.h"
+ 
+ namespace OHOS {
+ namespace AudioStandard {
+@@ -484,11 +485,6 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
+ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
+ {
+     DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
+-
+-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+-            buffer, bufferSize);
+-    }
+ }
+ } // namespace AudioStandard
+ } // namespace OHOS
+diff --git a/services/audio_service/server/src/audio_server.cpp b/services/audio_service/server/src/audio_server.cpp
+index e3d5cc6d6b06489d9a5bc6c551441ea9dff076e0..75821b8ee62cb65861ea0aa898a12125396a44c8 100644
+--- a/services/audio_service/server/src/audio_server.cpp
++++ b/services/audio_service/server/src/audio_server.cpp
+@@ -54,6 +54,7 @@
+ #include "playback_capturer_manager.h"
+ #include "config/audio_param_parser.h"
+ #include "media_monitor_manager.h"
++#include "audio_dump_pcm.h"
+ 
+ #define PA
+ #ifdef PA
+@@ -124,7 +125,6 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
+     SOURCE_TYPE_CAMCORDER
+ };
+ 
+-
+ static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+ 
+ static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
+@@ -223,6 +223,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
+         std::string dumpString = "check fast list :bundle name is" + bundleName + " result is " + result + "\n";
+         return write(fd, dumpString.c_str(), dumpString.size());
+     }
++
+     std::queue<std::u16string> argQue;
+     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
+         argQue.push(args[index]);
+@@ -260,6 +261,11 @@ void AudioServer::OnStart()
+     if (fastControlFlag == 1) {
+         isFastControlled_ = true;
+     }
++    int32_t audioCacheState = 0;
++    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
++    if (audioCacheState) {
++        AudioCacheMgr::GetInstance().Init();
++    }
+     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
+     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
+     AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
+@@ -353,8 +359,24 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
+ {
+     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
+     CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
+-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(params);
+-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor SetMediaParameters failed.");
++    int32_t audioCacheState = 0;
++    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
++    // audioCacheState 0:close, 1:open, 2:init
++    if (params[0].first == "OPEN") {
++        AudioCacheMgr::GetInstance().Init();
++        SetSysPara("persist.multimedia.audio.audioCacheState", 1);
++    } else if (params[0].first == "CLOSE") {
++        AudioCacheMgr::GetInstance().DeInit();
++        SetSysPara("persist.multimedia.audio.audioCacheState", 0);
++    } else if (params[0].first == "UPLOAD") {
++        CHECK_AND_RETURN_RET_LOG(audioCacheState == 1, false, 
++            "cannot upload, curAudioCacheState is %{public}d, not code 1!", audioCacheState);
++        CHECK_AND_RETURN_RET_LOG(AudioCacheMgr::GetInstance().DumpAllMemBlock() == SUCCESS, false,
++            "upload allMemBlock failed!");
++    } else {
++        AUDIO_ERR_LOG("invalid param %{public}s", params[0].first.c_str());
++        return false;
++    }
+     return true;
+ }
+ 
+@@ -503,8 +525,25 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
+ {
+     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
+     CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
+-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().GetMediaParameters(subKeys, result);
+-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor GetMediaParameters failed");
++    if (subKeys[0] == "STATUS") {
++        int32_t audioCacheState = 0;
++        GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
++        result.push_back({std::to_string(static_cast<int>(audioCacheState)), ""});
++    } else if (subKeys[0] == "TIME") {
++        int64_t startTime = 0;
++        int64_t endTime = 0;
++        AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
++        result.push_back({ClockTime::NanoTimeToString(startTime), ClockTime::NanoTimeToString(endTime)});
++    } else if (subKeys[0] == "MEMORY") {
++        size_t dataLength = 0;
++        size_t bufferLength = 0;
++        size_t structLength = 0;
++        AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
++        result.push_back({std::to_string(dataLength), std::to_string(bufferLength + structLength)});
++    } else {
++        AUDIO_ERR_LOG("invalid param %{public}s", subKeys[0].c_str());
++        return false;
++    }
+     return true;
+ }
+ 
+diff --git a/services/audio_service/server/src/capturer_in_server.cpp b/services/audio_service/server/src/capturer_in_server.cpp
+index 3d52c2c81bd47c02b3813e683c57e69285419b7e..ce972bfc9a3ffc36a65ae52de9361d028737ad79 100644
+--- a/services/audio_service/server/src/capturer_in_server.cpp
++++ b/services/audio_service/server/src/capturer_in_server.cpp
+@@ -27,6 +27,7 @@
+ #include "i_stream_manager.h"
+ #include "playback_capturer_manager.h"
+ #include "media_monitor_manager.h"
++#include "audio_dump_pcm.h"
+ 
+ namespace OHOS {
+ namespace AudioStandard {
+@@ -245,9 +246,9 @@ void CapturerInServer::ReadData(size_t length)
+         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
+     }
+     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
+-    DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
++        DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
++        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+             static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+     }
+ 
+diff --git a/services/audio_service/server/src/renderer_in_server.cpp b/services/audio_service/server/src/renderer_in_server.cpp
+index 38b44a54b2c8609cd0f60f2f193a6c5be179d885..bc5b45d4e8e9249acf143702db140b2381d67f6e 100644
+--- a/services/audio_service/server/src/renderer_in_server.cpp
++++ b/services/audio_service/server/src/renderer_in_server.cpp
+@@ -34,6 +34,7 @@
+ #include "audio_enhance_chain_manager.h"
+ #include "media_monitor_manager.h"
+ #include "audio_volume.h"
++#include "audio_dump_pcm.h"
+ 
+ namespace OHOS {
+ namespace AudioStandard {
+@@ -502,9 +503,9 @@ int32_t RendererInServer::WriteData()
+         }
+         Trace::CountVolume(traceTag_, *bufferDesc.buffer);
+         stream_->EnqueueBuffer(bufferDesc);
+-        DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+-            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
++            DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
++            AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+                 static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+         }
+ 

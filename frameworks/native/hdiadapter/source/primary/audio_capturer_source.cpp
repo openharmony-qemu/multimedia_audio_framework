@@ -43,6 +43,7 @@
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "hdi_utils_ringbuffer.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 
@@ -833,13 +834,13 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
         static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
     VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+        DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
             static_cast<void*>(frame), replyBytes);
     }
     CheckUpdateState(frame, requestBytes);

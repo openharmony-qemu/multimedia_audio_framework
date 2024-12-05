@@ -40,6 +40,7 @@
 #include "volume_tools.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -544,13 +545,13 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         }
     }
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
         audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
     VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
             static_cast<void *>(&data), len);
     }
 

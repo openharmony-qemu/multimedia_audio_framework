@@ -689,7 +689,7 @@ void CapturerInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t da
 void CapturerInClientInner::InitCallbackHandler()
 {
     if (callbackHandler_ == nullptr) {
-        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
+        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(), "OS_AudioStateCB");
     }
 }
 

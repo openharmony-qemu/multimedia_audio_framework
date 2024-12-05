@@ -10,6 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+persist.multimedia.audio.audioCacheState = 2
 const.multimedia.audio.fixedvolume = false
 const.multimedia.audio.volumestep = 1
 persist.multimedia.audio.safevolume = 15

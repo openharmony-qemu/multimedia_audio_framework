@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_effect_log.h"
 #include "audio_utils.h"
+#include "audio_dump_pcm.h"
 #include "securec.h"
 #include "media_monitor_manager.h"
 
@@ -300,7 +301,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     if (IsEmptyEffectHandles()) {
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error in apply effect");
         DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
-        DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
+        // DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
         return;
     }
 
@@ -404,7 +405,7 @@ uint32_t AudioEffectChain::GetLatency()
 void AudioEffectChain::DumpEffectProcessData(std::string fileName, void *buffer, size_t len)
 {
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(fileName, buffer, len);
+        AudioCacheMgr::GetInstance().CacheData(fileName, buffer, len);
     }
 }
 
