@@ -35,13 +35,23 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+
+struct OfflineEffectConfig {
+    uint32_t samplingRate;
+    uint32_t channels;
+    uint32_t format;
+};
+
+struct OfflineEffectIOConfig {
+    OfflineEffectConfig inputCfg;
+    OfflineEffectConfig outputCfg;
+};
+
 class OfflineAudioEffectServerChain {
 public:
     OfflineAudioEffectServerChain(const string &chainName);
     ~OfflineAudioEffectServerChain();
 
-    static int32_t InitEffectModel();
-    static int32_t ReleaseEffectModel();
     static int32_t GetOfflineAudioEffectChains(vector<string> &chainNamesVector);
 
     int32_t Create();
@@ -52,19 +62,19 @@ public:
     int32_t Release();
 
 private:
-    int32_t SetDeviceType(const DeviceType deviceType);
-    int32_t SetRenderStreamUsage(const StreamUsage usage);
-    int32_t SetCapturerSourceType(const SourceType sourceType);
-    int32_t Configure();
+    void InitDump();
 
-    static struct IEffectModel *model_;
-    static struct EffectInfo info_;
     struct IEffectControl *controller_ = nullptr;
-    struct ControllerId *controllerId_ = nullptr;
+    struct ControllerId controllerId_ = {};
     shared_ptr<AudioSharedMemory> serverBufferIn_ = nullptr;
     shared_ptr<AudioSharedMemory> serverBufferOut_ = nullptr;
+    uint32_t inBufferSize_ = 0;
+    uint32_t outBufferSize_ = 0;
     string chainName_;
     mutex offlineChainMutex_;
+    OfflineEffectIOConfig offlineConfig_ = {};
+    FILE *dumpFileIn_;
+    FILE *dumpFileOut_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

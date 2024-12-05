@@ -50,6 +50,8 @@ private:
     uint8_t *inBufferBase_;
     uint8_t *outBufferBase_;
     std::shared_mutex bufferMutex_;
+    FILE *dumpFileIn_;
+    FILE *dumpFileOut_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

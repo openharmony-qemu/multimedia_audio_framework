@@ -22,6 +22,7 @@
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,10 +38,24 @@ OfflineAudioEffectChainImpl::~OfflineAudioEffectChainImpl()
     Release();
 }
 
+void OfflineAudioEffectChainImpl::InitDump()
+{
+    static int32_t chainId = 0;
+    std::string dumpFileName = "OfflineEffectClient";
+    std::string dumpFileInName = dumpFileName  + "_" + std::to_string(chainId) + "_In.pcm";
+    std::string dumpFileOutName = dumpFileName  + "_" + std::to_string(chainId) + "_Out.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileInName, &dumpFileIn_);
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileOutName, &dumpFileOut_);
+    chainId++;
+}
+
 int32_t OfflineAudioEffectChainImpl::InitIpcChain()
 {
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
-    return offlineStreamInClient_->CreateOfflineEffectChain(chainName_);
+    int32_t ret = offlineStreamInClient_->CreateOfflineEffectChain(chainName_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitIpcChainFailed!");
+    InitDump();
+    return SUCCESS;
 }
 
 int32_t OfflineAudioEffectChainImpl::Configure(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo)
@@ -79,12 +94,17 @@ int32_t OfflineAudioEffectChainImpl::Process(uint8_t *inBuffer, int32_t inSize, 
     CHECK_AND_RETURN_RET_LOG(inSize > 0 && inSize <= inBufferSize && outSize > 0 && outSize <= outBufferSize,
         ERR_INVALID_PARAM, "buffer size invalid");
     CHECK_AND_RETURN_RET_LOG(inBuffer && outBuffer, ERR_INVALID_PARAM, "buffer ptr invalid");
+
+    DumpFileUtil::WriteDumpFile(dumpFileIn_, inBufferBase_, outSize);
+
     int32_t ret = memcpy_s(inBufferBase_, inBufferSize, inBuffer, inSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "memcpy inbuffer failed");
     ret = offlineStreamInClient_->ProcessOfflineEffectChain(inSize, outSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "process effect failed");
     ret = memcpy_s(outBuffer, outSize, outBufferBase_, outSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "memcpy outBuffer failed");
+
+    DumpFileUtil::WriteDumpFile(dumpFileOut_, outBufferBase_, outSize);
     return SUCCESS;
 }
 
