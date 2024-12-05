@@ -34,47 +34,52 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const char *DEVICE_CLASS_PRIMARY = "primary";
+const char *DEVICE_CLASS_USB = "usb";
+const char *DEVICE_CLASS_DP = "dp";
+const char *DEVICE_CLASS_A2DP = "a2dp";
+const char *DEVICE_CLASS_A2DPFAST = "a2dp_fast";
+const char *DEVICE_CLASS_FILE = "file_io";
+#ifdef DAUDIO_ENABLE
+const char *DEVICE_CLASS_REMOTE = "remote";
+#endif
+const char *DEVICE_CLASS_OFFLOAD = "offload";
+const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
+
 IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, const char *deviceNetworkId)
 {
     CHECK_AND_RETURN_RET_LOG(devceClass != nullptr && deviceNetworkId != nullptr, nullptr,
         "GetInstance null class or networkid");
     AUDIO_DEBUG_LOG("%{public}s Sink:GetInstance[%{public}s]", devceClass, deviceNetworkId);
-    const char *deviceClassPrimary = "primary";
-    const char *deviceClassUsb = "usb";
-    const char *deviceClassDp = "dp";
-    const char *deviceClassA2DP = "a2dp";
-    const char *deviceClassFile = "file_io";
-#ifdef DAUDIO_ENABLE
-    const char *deviceClassRemote = "remote";
-#endif
-    const char *deviceClassOffload = "offload";
-    const char *deviceClassMultiChannel = "multichannel";
 
     IAudioRendererSink *iAudioRendererSink = nullptr;
-    if (!strcmp(devceClass, deviceClassPrimary)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_PRIMARY)) {
         iAudioRendererSink = AudioRendererSink::GetInstance("primary");
     }
-    if (!strcmp(devceClass, deviceClassUsb)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_USB)) {
         iAudioRendererSink = AudioRendererSink::GetInstance("usb");
     }
-    if (!strcmp(devceClass, deviceClassDp)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_DP)) {
         iAudioRendererSink = AudioRendererSink::GetInstance("dp");
     }
-    if (!strcmp(devceClass, deviceClassA2DP)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_A2DP)) {
         iAudioRendererSink = BluetoothRendererSink::GetInstance();
     }
-    if (!strcmp(devceClass, deviceClassFile)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_A2DPFAST)) {
+        iAudioRendererSink = BluetoothRendererSink::GetMmapInstance();
+    }
+    if (!strcmp(devceClass, DEVICE_CLASS_FILE)) {
         iAudioRendererSink = AudioRendererFileSink::GetInstance();
     }
 #ifdef DAUDIO_ENABLE
-    if (!strcmp(devceClass, deviceClassRemote)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_REMOTE)) {
         iAudioRendererSink = RemoteAudioRendererSink::GetInstance(deviceNetworkId);
     }
 #endif
-    if (!strcmp(devceClass, deviceClassOffload)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_OFFLOAD)) {
         iAudioRendererSink = OffloadRendererSink::GetInstance();
     }
-    if (!strcmp(devceClass, deviceClassMultiChannel)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_MULTICHANNEL)) {
         iAudioRendererSink = MultiChannelRendererSink::GetInstance("multichannel");
     }
 
