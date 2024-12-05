@@ -150,7 +150,7 @@ void AudioPolicyServiceEnhanceTwoFuzzTest()
 
     AudioStreamInfo audioStreamInfo;
     GetServerPtr()->audioPolicyService_.audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
-        audioStreamInfo, "", "");
+        audioStreamInfo, "", "", 0);
 
     DeviceType deviceType = GetData<DeviceType>();
     std::string networkId = "LocalDevice";
@@ -385,7 +385,7 @@ void AudioPolicyServiceEnhanceEightFuzzTest()
     AudioModuleInfo moduleInfo;
     AudioStreamInfo audioStreamInfo;
     GetServerPtr()->audioPolicyService_.audioA2dpDevice_.ReloadA2dpAudioPort(moduleInfo,
-        DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, "", "");
+        DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, "", "", 0);
 
     InternalDeviceType internalDeviceType = GetData<InternalDeviceType>();
     bool active = GetData<bool>();
