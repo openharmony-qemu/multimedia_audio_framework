@@ -40,6 +40,7 @@
 #include "avsession_manager.h"
 #include "audio_setting_provider.h"
 #include "audio_spatialization_service.h"
+#include "audio_usb_manager.h"
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
