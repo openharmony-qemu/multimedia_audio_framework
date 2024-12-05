@@ -415,6 +415,10 @@ public:
     bool IsRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
+    // for effect V3
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     // for effect
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
@@ -480,6 +484,11 @@ private:
 
     ~AudioPolicyService();
 
+    void GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    void GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray, const EffectFlag& flag);
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
+
     void RestoreSession(const int32_t &sessionID, bool isOutput);
 
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
@@ -508,6 +517,7 @@ private:
     bool LoadAudioPolicyConfig();
     void CreateRecoveryThread();
     void RecoveryPreferredDevices();
+
     void LoadHdiEffectModel();
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported);

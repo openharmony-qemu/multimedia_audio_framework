@@ -37,6 +37,7 @@ static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
     {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
+    {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_UNPROCESSED},
     {AudioStreamType::STREAM_CAMCORDER, SourceType::SOURCE_TYPE_CAMCORDER},
     {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
     {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
@@ -138,7 +139,9 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
-    capturer->capturerInfo_.originalFlag = capturerOptions.capturerInfo.capturerFlags;
+    capturer->capturerInfo_.originalFlag = ((sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) &&
+        (capturerOptions.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP)) ?
+        AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
     capturer->strategy_ = capturerOptions.strategy;

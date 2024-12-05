@@ -53,7 +53,7 @@ struct UsbAudioDevice {
     string name_;
     inline bool operator==(const UsbAudioDevice &o) const
     {
-        return name_ == o.name_ && usbAddr_ == o.usbAddr_;
+        return usbAddr_ == o.usbAddr_;
     }
 };
 

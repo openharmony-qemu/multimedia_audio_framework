@@ -65,6 +65,8 @@ public:
 
     void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
         const std::string &caller);
+    void ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
+        const AudioEffectPropertyArrayV3 &newPropertyArray);
     void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
         const AudioEnhancePropertyArray &newPropertyArray);
 private:

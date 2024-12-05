@@ -85,6 +85,9 @@ public:
     const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam);
     int32_t RegiestPolicyProviderProxy(const sptr<IRemoteObject> &object);
     void SetParameterCallbackProxy(const sptr<IRemoteObject>& object);
+    int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE);
+    int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray);
     void SetRotationToEffectProxy(const uint32_t rotate);

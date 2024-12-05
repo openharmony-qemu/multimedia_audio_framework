@@ -293,6 +293,10 @@ public:
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
+
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
@@ -585,6 +589,7 @@ private:
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
+    int32_t ProcessVolumeKeyMuteEvents(const int32_t keyType);
 #endif
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
@@ -615,6 +620,7 @@ private:
     void InfoDumpHelp(std::string &dumpString);
 
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
+    void AddSystemAbilityListeners();
 
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;

@@ -87,6 +87,11 @@ public:
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
     void LoadHdiEffectModel() override;
+    // for effect V3
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
     // for effect
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;

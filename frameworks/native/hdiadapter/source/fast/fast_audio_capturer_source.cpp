@@ -280,6 +280,7 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_PLAYBACK_CAPTURE:
         case SOURCE_TYPE_ULTRASONIC:
+        case SOURCE_TYPE_UNPROCESSED:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
             break;
         case SOURCE_TYPE_WAKEUP:

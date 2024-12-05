@@ -232,8 +232,8 @@ void AudioCapturerSession::HandleRemainingSource()
     // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
     if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(audioEcManager_.GetSourceOpened(),
         highestSourceInHdi)) {
-        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened：%{public}d, "
-            "highestSourceInHdi：%{public}d ", highestSource, audioEcManager_.GetSourceOpened(), highestSourceInHdi);
+        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened:%{public}d, "
+            "highestSourceInHdi:%{public}d ", highestSource, audioEcManager_.GetSourceOpened(), highestSourceInHdi);
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
         sessionIdUsedToOpenSource_ = highestSession;
     }
@@ -405,6 +405,35 @@ DeviceType AudioCapturerSession::GetInputDeviceTypeForReload()
 {
     std::lock_guard<std::mutex> lock(inputDeviceReloadMutex_);
     return inputDeviceForReload_;
+}
+
+void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
+    const AudioEffectPropertyArrayV3 &newPropertyArray)
+{
+    if (!audioEcManager_.GetMicRefFeatureEnable()) {
+        AUDIO_INFO_LOG("reload ignore for feature not enable");
+        return;
+    }
+    if (audioEcManager_.GetSourceOpened() != SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AUDIO_INFO_LOG("reload ignore for source not voip");
+        return;
+    }
+
+    std::string oldVoipUpProp = "";
+    std::string newVoipUpProp = "";
+    for (const AudioEffectPropertyV3 &prop : oldPropertyArray.property) {
+        if (prop.name == "voip_up") {
+            oldVoipUpProp = prop.category;
+        }
+    }
+    for (const AudioEffectPropertyV3 &prop : newPropertyArray.property) {
+        if (prop.name == "voip_up") {
+            newVoipUpProp = prop.category;
+        }
+    }
+    if ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR")) {
+        audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
+    }
 }
 
 void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
