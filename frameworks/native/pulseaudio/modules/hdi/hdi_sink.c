@@ -1864,8 +1864,9 @@ static pa_resampler *UpdateResamplerIchannelMap(const char *sinkSceneType, struc
         pa_channel_map sink_channelmap = *(pa_resampler_output_channel_map(resampler));
         char *dupSceneType = strdup(sinkSceneType);
         if (dupSceneType == NULL) {
-            AUDIO_ERR_LOG("UpdateResampler: [%{public}s], allocate new char fail!", sinkSceneType);
-            continue;
+            AUDIO_ERR_LOG("UpdateResampler: [%{public}s], allocate new char fail! return old resampler!",
+                sinkSceneType);
+            return resampler;
         }
         pa_hashmap_remove_and_free(u->sceneToResamplerMap, sinkSceneType);
         resampler = pa_resampler_new(
