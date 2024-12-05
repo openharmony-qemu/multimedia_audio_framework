@@ -133,7 +133,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,
     int32_t clientUID)
 {
-    if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+    if (Util::IsScoSupportSource(sourceType)) {
         vector<shared_ptr<AudioDeviceDescriptor>> descs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
         shared_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);

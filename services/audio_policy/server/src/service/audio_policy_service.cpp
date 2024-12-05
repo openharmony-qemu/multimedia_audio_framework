@@ -2029,7 +2029,7 @@ void AudioPolicyService::HandleAudioCaptureState(AudioMode &mode, AudioStreamCha
     if (mode == AUDIO_MODE_RECORD &&
         (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED ||
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
-        if (streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        if (Util::IsScoSupportSource(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType)) {
             BluetoothScoDisconectForRecongnition();
             Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
         }
@@ -2967,7 +2967,7 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
     }
 
     if (sessionWithNormalSourceType_.count(sessionID) > 0) {
-        if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        if (Util::IsScoSupportSource(sessionWithNormalSourceType_[sessionID].sourceType)) {
             BluetoothScoDisconectForRecongnition();
         }
         if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
