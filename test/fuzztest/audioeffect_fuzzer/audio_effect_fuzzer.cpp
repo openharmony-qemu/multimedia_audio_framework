@@ -272,7 +272,7 @@ void UpdateSpkOffloadEnabledFuzzTest()
 
 void UpdateDeviceInfoFuzzTest()
 {
-    int32_t device = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t device = GetData<int32_t>();
     string sinkName = "Speaker";
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
