@@ -51,7 +51,7 @@ private:
     std::shared_ptr<AudioSharedMemory> clientBufferOut_;
     uint8_t *inBufferBase_;
     uint8_t *outBufferBase_;
-    std::shared_mutex bufferMutex_;
+    std::mutex streamClientMutex_;
     FILE *dumpFileIn_;
     FILE *dumpFileOut_;
 };

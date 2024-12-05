@@ -51,6 +51,7 @@ void OfflineAudioEffectChainImpl::InitDump()
 
 int32_t OfflineAudioEffectChainImpl::InitIpcChain()
 {
+    std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
     int32_t ret = offlineStreamInClient_->CreateOfflineEffectChain(chainName_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitIpcChainFailed!");
@@ -60,13 +61,14 @@ int32_t OfflineAudioEffectChainImpl::InitIpcChain()
 
 int32_t OfflineAudioEffectChainImpl::Configure(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo)
 {
+    std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
     return offlineStreamInClient_->ConfigureOfflineEffectChain(inInfo, outInfo);
 }
 
 int32_t OfflineAudioEffectChainImpl::GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize)
 {
-    std::shared_lock<std::shared_mutex> lock(bufferMutex_);
+    std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(clientBufferIn_ && clientBufferOut_, ERR_ILLEGAL_STATE, "buffer not prepared");
     inBufferSize = clientBufferIn_->GetSize();
     outBufferSize = clientBufferOut_->GetSize();
@@ -75,8 +77,8 @@ int32_t OfflineAudioEffectChainImpl::GetEffectBufferSize(uint32_t &inBufferSize,
 
 int32_t OfflineAudioEffectChainImpl::Prepare()
 {
+    std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
-    std::lock_guard<std::shared_mutex> lock(bufferMutex_);
     int32_t ret = offlineStreamInClient_->PrepareOfflineEffectChain(clientBufferIn_, clientBufferOut_);
     inBufferBase_ = clientBufferIn_->GetBase();
     outBufferBase_ = clientBufferOut_->GetBase();
@@ -85,8 +87,8 @@ int32_t OfflineAudioEffectChainImpl::Prepare()
 
 int32_t OfflineAudioEffectChainImpl::Process(uint8_t *inBuffer, int32_t inSize, uint8_t *outBuffer, int32_t outSize)
 {
+    std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
-    std::lock_guard<std::shared_mutex> lock(bufferMutex_);
     CHECK_AND_RETURN_RET_LOG(inBufferBase_ && outBufferBase_ && clientBufferIn_ && clientBufferOut_,
         ERR_ILLEGAL_STATE, "buffer not prepared");
     int32_t inBufferSize = clientBufferIn_->GetSize();
@@ -110,7 +112,7 @@ int32_t OfflineAudioEffectChainImpl::Process(uint8_t *inBuffer, int32_t inSize, 
 
 void OfflineAudioEffectChainImpl::Release()
 {
-    std::lock_guard<std::shared_mutex> lock(bufferMutex_);
+    std::lock_guard<std::mutex> lock(streamClientMutex_);
     clientBufferIn_ = nullptr;
     clientBufferOut_ = nullptr;
     inBufferBase_ = nullptr;
