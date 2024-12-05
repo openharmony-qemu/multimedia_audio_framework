@@ -73,8 +73,8 @@ private:
     string chainName_;
     mutex offlineChainMutex_;
     OfflineEffectIOConfig offlineConfig_ = {};
-    FILE *dumpFileIn_;
-    FILE *dumpFileOut_;
+    FILE *dumpFileIn_ = nullptr;
+    FILE *dumpFileOut_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
