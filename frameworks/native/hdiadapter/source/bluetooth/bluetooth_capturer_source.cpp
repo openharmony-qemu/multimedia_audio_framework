@@ -412,8 +412,7 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
-        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
-            static_cast<void*>(frame), replyBytes);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void*>(frame), replyBytes);
     }
     CheckUpdateState(frame, requestBytes);
 

@@ -840,8 +840,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
-        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
-            static_cast<void*>(frame), replyBytes);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void*>(frame), replyBytes);
     }
     CheckUpdateState(frame, requestBytes);
 

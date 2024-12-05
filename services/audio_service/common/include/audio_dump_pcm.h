@@ -17,21 +17,22 @@
 
 #include <string.h>
 #include <memory>
+#include <vector>
 
 namespace OHOS {
 namespace AudioStandard {
 
-const std::string setOpenKey = "OPEN";
-const std::string setCloseKey = "CLOSE";
-const std::string setUploadKey = "UPLOAD";
+const std::string SET_OPEN_KEY = "OPEN";
+const std::string SET_CLOSE_KEY = "CLOSE";
+const std::string SET_UPLOAD_KEY = "UPLOAD";
 
-const std::string getStatusKey = "STATUS";
-const std::string getTimeKey = "TIME";
-const std::string getMemoryKey = "MEMORY";
+const std::string GET_STATUS_KEY = "STATUS";
+const std::string GET_TIME_KEY = "TIME";
+const std::string GET_MEMORY_KEY = "MEMORY";
 
 class AudioCacheMgr {
 public:
-    static AudioCacheMgr& GetInstance();
+    static AudioCacheMgr &GetInstance();
     AudioCacheMgr() = default;
     virtual ~AudioCacheMgr() = default;
 
@@ -42,6 +43,9 @@ public:
     virtual int32_t DumpAllMemBlock() = 0;
     virtual void GetCachedDuration(int64_t& startTime, int64_t& endTime) = 0;
     virtual void GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength) = 0;
+    bool SetDumpParameter(const std::vector<std::pair<std::string, std::string>> &params) = 0;
+    bool GetDumpParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result) = 0;
 };
 
 } // namespace AudioStandard

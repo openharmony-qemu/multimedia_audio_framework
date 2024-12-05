@@ -244,6 +244,31 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         return write(fd, dumpString.c_str(), dumpString.size());
     }
 
+    //hidumper -s 3001 '-a -dump time'
+    //hidumper -s 3001 '-a -dump memory'
+    if (args.size() == FAST_DUMPINFO_LEN && args[0] == u"-dump") {
+        std::string dumpParam = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(args[1]);
+        std::string dumpString;
+        if (dumpParam == "time") {
+            int64_t startTime = 0;
+            int64_t endTime = 0;
+            AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
+            dumpString = "Call dump get time:[" + ClockTime::NanoTimeToString(startTime) + "~" + ClockTime::NanoTimeToString(endTime) + 
+                " ], cur:[" + ClockTime::NanoTimeToString(ClockTime::GetRealNano()) + "] \n";
+        } else if (dumpParam == "memory") {
+            size_t dataLength = 0;
+            size_t bufferLength = 0;
+            size_t structLength = 0;
+            AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
+            dumpString = "dataLength: " + std::to_string(dataLength / 1024) + 
+                        " KB, bufferLength: " + std::to_string(bufferLength / 1024) + 
+                        " KB, structLength: " + std::to_string(structLength / 1024) + " KB \n";
+        } else {
+            dumpString = "Call dump failed, no such operation \n";
+        }
+        return write(fd, dumpString.c_str(), dumpString.size());
+    }
+
     std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
@@ -379,26 +404,8 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
-    int32_t audioCacheState = 0;
-    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
     CHECK_AND_RETURN_RET_LOG(params.size() > 0, false, "params is empty!");
-    // audioCacheState 0:close, 1:open, 2:init
-    if (params[0].first == setOpenKey) {
-        AudioCacheMgr::GetInstance().Init();
-        SetSysPara("persist.multimedia.audio.audioCacheState", 1);
-    } else if (params[0].first == setCloseKey) {
-        AudioCacheMgr::GetInstance().DeInit();
-        SetSysPara("persist.multimedia.audio.audioCacheState", 0);
-    } else if (params[0].first == setUploadKey) {
-        CHECK_AND_RETURN_RET_LOG(audioCacheState == 1, false, 
-            "cannot upload, curAudioCacheState is %{public}d, not code 1!", audioCacheState);
-        CHECK_AND_RETURN_RET_LOG(AudioCacheMgr::GetInstance().DumpAllMemBlock() == SUCCESS, false,
-            "upload allMemBlock failed!");
-    } else {
-        AUDIO_ERR_LOG("invalid param %{public}s", params[0].first.c_str());
-        return false;
-    }
-    return true;
+    return AudioCacheMgr::GetInstance().SetDumpParameter(params);
 }
 
 int32_t AudioServer::SetExtraParameters(const std::string& key,
@@ -561,26 +568,7 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
     CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "subKeys is empty!");
-    if (subKeys[0] == getStatusKey) {
-        int32_t audioCacheState = 0;
-        GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
-        result.push_back({std::to_string(static_cast<int>(audioCacheState)), ""});
-    } else if (subKeys[0] == getTimeKey) {
-        int64_t startTime = 0;
-        int64_t endTime = 0;
-        AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
-        result.push_back({ClockTime::NanoTimeToString(startTime), ClockTime::NanoTimeToString(endTime)});
-    } else if (subKeys[0] == getMemoryKey) {
-        size_t dataLength = 0;
-        size_t bufferLength = 0;
-        size_t structLength = 0;
-        AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
-        result.push_back({std::to_string(dataLength), std::to_string(bufferLength + structLength)});
-    } else {
-        AUDIO_ERR_LOG("invalid param %{public}s", subKeys[0].c_str());
-        return false;
-    }
-    return true;
+    return AudioCacheMgr::GetInstance().GetDumpParameter(subKeys, result);
 }
 
 int32_t AudioServer::GetExtraParameters(const std::string &mainKey,

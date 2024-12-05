@@ -32,10 +32,9 @@ namespace OHOS {
 namespace AudioStandard {
 
 struct MemBlock {
-public:
-    uint8_t* dataPointer_;
-    size_t dataLength_;
-    uint32_t dumpFileNameId_;
+    uint8_t* dataPointer_ = nullptr;
+    size_t dataLength_ = 0;
+    uint32_t dumpFileNameId_ = 0;
 };
 
 class MemChunk {
@@ -82,12 +81,16 @@ public:
     int32_t DumpAllMemBlock() override;
     void GetCachedDuration(int64_t& startTime, int64_t& endTime) override;
     void GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength) override;
+    bool SetDumpParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
+    bool GetDumpParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result) override;
 
 private:
     void InitCallbackHandler();
     int32_t GetAvailableMemBlock(size_t dataLength, std::string& dumpFileName, MemBlock& curMemBlock);
     void SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int64_t delayTime);
     void ReleaseOverTimeMemBlock();
+    void PrintCurMemoryCondition();
 private:
     std::atomic<bool> isDumpingData_ = {false};
     std::atomic<bool> isInited_ = {false};

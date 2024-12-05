@@ -35,7 +35,8 @@ constexpr uint64_t MAX_LIMIT_BUFFER_SIZE = 100 * 1024 * 1024;   // 100M
 constexpr size_t EACH_CHUNK_SIZE = 1024 * 1024;                 // 1M
 constexpr int64_t MEMBLOCK_RELEASE_TIME = 5 * 60 * 1000000;     // release pcm 5min ago
 constexpr int64_t MEMBLOCK_CHECK_TIME_MS = 30 * 1000;           // check cached data's time every 30s
-constexpr int64_t MEMORY_PRINT_TIME_MS = 30 * 1000;             // print memory info every 30s
+constexpr int64_t MEMORY_PRINT_TIME_MS = 60 * 1000;             // print memory info every 60s
+constexpr int64_t MEMORY_PRINT_MININUM_SIZE = 5 * 1024 * 1024;    // print memory info only when used excceds 5M
 constexpr uint16_t FILENAME_ID_MAX_INDEX = 65530;               // FileNameId 0 - 65530
 constexpr size_t FILENAME_AND_ID_SIZE = 128;                    // estimate each entry size in map
 
@@ -97,7 +98,7 @@ int32_t MemChunk::GetCurUsedMemory(size_t& dataLength, size_t& bufferLength, siz
     dataLength = pointerOffset_;
     bufferLength = totalBufferSize_;
     structLength = sizeof(MemBlock) * memBlockDeque_->size() + sizeof(MemChunk) + 
-        FILENAME_AND_ID_SIZE * idFileNameMap_.size() * 2;
+        FILENAME_AND_ID_SIZE * idFileNameMap_.size() * 2; //roughly estimate the size of the map structure
     return SUCCESS;
 }
 
@@ -177,10 +178,16 @@ void AudioCacheMgrInner::CacheData(std::string& dumpFileName, void* srcDataPoint
         return;
     }
     if (!g_Mutex.try_lock()) {
+        // condition 1: cacheData thread and dumpData thread in Concurrency
+        // if dumpData thread gets mutex, discard cacheData and return directly
+        // if cacheData threads gets mutex, dumpData thread waits for cacheData finish, 
+        // cause cacheData excutes very fast.
         if (isDumpingData_.load()) {
             Trace trace("AudioCacheMgrInner::CacheData::TryLockFailedWhenDumpingData");
             return;
         }
+        // condition 2: two cacheData threads in Concurrency, one gets mutex
+        // the other thread waits for mutex.
         g_Mutex.lock();
     }
 
@@ -300,19 +307,33 @@ void AudioCacheMgrInner::GetCachedDuration(int64_t& startTime, int64_t& endTime)
         ClockTime::NanoTimeToString(startTime).c_str(), ClockTime::NanoTimeToString(endTime).c_str());
 }
 
+void AudioCacheMgr::PrintCurMemoryCondition() {
+    Trace trace("AudioCacheMgrInner::PrintCurMemoryCondition");
+    SafeSendCallBackEvent(PRINT_MEMORY_CONDITION, 0, MEMORY_PRINT_TIME_MS);
+
+    size_t dataLength = 0;
+    size_t bufferLength = 0;
+    size_t structLength = 0;
+    GetCurMemoryCondition(dataLength, bufferLength, structLength);
+    if (bufferLength >= MEMORY_PRINT_MININUM_SIZE) {
+        AUDIO_INFO_LOG("dataLength:%{public}zu KB ,bufferLength:%{public}zu KB, structLength:%{public}zu KB", 
+            dataLength / 1024, bufferLength / 1024, structLength / 1024);
+    }
+}
+
 void AudioCacheMgrInner::GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength)
 {
     Trace trace("AudioCacheMgrInner::GetCurMemoryCondition");
-    SafeSendCallBackEvent(PRINT_MEMORY_CONDITION, 0, MEMORY_PRINT_TIME_MS);
     std::lock_guard<std::mutex> processLock(g_Mutex);
-
-    if (memChunkDeque_.empty()) {
-        AUDIO_INFO_LOG("cache memory is empty");
-    }
 
     size_t curDataLength = 0;
     size_t curBufferLength = 0;
     size_t curStructLength = 0;
+    if (memChunkDeque_.empty()) {
+        AUDIO_INFO_LOG("cache memory is empty");
+        return;
+    }
+
     for (auto it = memChunkDeque_.begin(); it != memChunkDeque_.end(); ++it) {
         (*it)->GetCurUsedMemory(curDataLength, curBufferLength, curStructLength);
         dataLength += curDataLength;
@@ -349,6 +370,55 @@ void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
     }
 }
 
+bool AudioCacheMgrInner::GetDumpParameter(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    if (subKeys[0] == GET_STATUS_KEY) {
+        int32_t audioCacheState = 0;
+        GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+        result.push_back({"status", std::to_string(static_cast<int32_t>(audioCacheState))});
+    } else if (subKeys[0] == GET_TIME_KEY) {
+        int64_t startTime = 0;
+        int64_t endTime = 0;
+        GetCachedDuration(startTime, endTime);
+        result.push_back({ClockTime::NanoTimeToString(startTime), ClockTime::NanoTimeToString(endTime)});
+    } else if (subKeys[0] == GET_MEMORY_KEY) {
+        size_t dataLength = 0;
+        size_t bufferLength = 0;
+        size_t structLength = 0;
+        GetCurMemoryCondition(dataLength, bufferLength, structLength);
+        result.push_back({std::to_string(dataLength), std::to_string(bufferLength + structLength)});
+    } else {
+        AUDIO_ERR_LOG("invalid param %{public}s", subKeys[0].c_str());
+        return false;
+    }
+    return true;
+}
+
+bool AudioCacheMgrInner::SetDumpParameter(const std::vector<std::pair<std::string, std::string>> &params)
+{
+    int32_t audioCacheState = 0;
+    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+    // audioCacheState 0:close, 1:open, 2:init
+    if (params[0].first == SET_OPEN_KEY) {
+        Init();
+        SetSysPara("persist.multimedia.audio.audioCacheState", 1);
+    } else if (params[0].first == SET_CLOSE_KEY) {
+        DeInit();
+        SetSysPara("persist.multimedia.audio.audioCacheState", 0);
+    } else if (params[0].first == SET_UPLOAD_KEY) {
+        // only when user argees to cachedata, audioCacheState will change to 1(open),.
+        CHECK_AND_RETURN_RET_LOG(audioCacheState == 1, false, 
+            "cannot upload, curAudioCacheState is %{public}d, not code 1!", audioCacheState);
+        CHECK_AND_RETURN_RET_LOG(DumpAllMemBlock() == SUCCESS, false,
+            "upload allMemBlock failed!");
+    } else {
+        AUDIO_ERR_LOG("invalid param %{public}s", params[0].first.c_str());
+        return false;
+    }
+    return true;
+}
+
 void AudioCacheMgrInner::InitCallbackHandler()
 {
     Trace trace("AudioCacheMgrInner::InitCallbackHandler");
@@ -374,18 +444,12 @@ void AudioCacheMgrInner::SafeSendCallBackEvent(uint32_t eventCode, int64_t data,
 
 void AudioCacheMgrInner::OnHandle(uint32_t code, int64_t data)
 {
-    size_t dataLength = 0;
-    size_t bufferLength = 0;
-    size_t structLength = 0;
-
     switch (code) {
         case RELEASE_OVERTIME_MEMBLOCK:
             ReleaseOverTimeMemBlock();
             break;
         case PRINT_MEMORY_CONDITION:
-            GetCurMemoryCondition(dataLength, bufferLength, structLength);
-            AUDIO_INFO_LOG("dataLength:%{public}zu KB ,bufferLength:%{public}zu KB, structLength:%{public}zu KB", 
-                dataLength / 1024, bufferLength / 1024, structLength / 1024);
+            PrintCurMemoryCondition();
             break;
         default:
             break;

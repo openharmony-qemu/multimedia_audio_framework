@@ -552,8 +552,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
-            static_cast<void *>(&data), len);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), len);
     }
 
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),

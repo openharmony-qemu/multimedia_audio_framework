@@ -806,7 +806,7 @@ bool SetSysPara(const std::string &key, int32_t value)
         AUDIO_WARNING_LOG("SetSysPara fail, key:%{public}s res:%{public}d", key.c_str(), res);
         return false;
     }
-    AUDIO_INFO_LOG("SetSysPara success.");
+    AUDIO_INFO_LOG("SetSysPara %{public}d success.", value);
     return true;
 }
 

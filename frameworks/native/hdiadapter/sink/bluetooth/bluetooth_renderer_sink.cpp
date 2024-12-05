@@ -551,8 +551,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
-            static_cast<void *>(&data), len);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), len);
     }
 
     while (true) {
