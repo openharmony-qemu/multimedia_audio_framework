@@ -88,7 +88,7 @@ void OfflineAudioEffectChainUnitTest::TearDown(void)
 /**
  * @tc.name  : Test GetOfflineAudioEffectChains API
  * @tc.type  : FUNC
- * @tc.number: OfflineAudioEffectManager001
+ * @tc.number: OfflineAudioEffectManager_001
  * @tc.desc  : Test OfflineAudioEffectManager interface.
  */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSize.Level1)
@@ -101,7 +101,7 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSiz
 /**
  * @tc.name  : Test CreateOfflineAudioEffectChain API
  * @tc.type  : FUNC
- * @tc.number: OfflineAudioEffectManager002
+ * @tc.number: OfflineAudioEffectManager_002
  * @tc.desc  : Test OfflineAudioEffectManager interface.
  */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSize.Level1)
@@ -118,7 +118,7 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSiz
 /**
  * @tc.name  : Test CreateOfflineAudioEffectChain API
  * @tc.type  : FUNC
- * @tc.number: OfflineAudioEffectManager003
+ * @tc.number: OfflineAudioEffectManager_003
  * @tc.desc  : Test OfflineAudioEffectManager interface.
  */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_003, TestSize.Level1)

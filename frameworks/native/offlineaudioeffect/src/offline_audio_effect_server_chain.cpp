@@ -40,7 +40,7 @@ namespace {
 constexpr uint32_t MAX_DESCRIPTOR_NUM = 20;
 constexpr uint32_t MAX_CMD_LEN = 10;
 constexpr uint32_t MAX_REPLY_LEN = 10;
-constexpr uint32_t MAX_TIME_INTERVAL = 160; // ms
+constexpr uint32_t MAX_TIME_INTERVAL_MS = 160; // ms
 // key for effectName, value for (libName, effectId)
 static std::map<std::string, std::pair<std::string, std::string>> g_chainName2infoMap;
 static std::mutex g_chainMutex;
@@ -112,10 +112,10 @@ static void InitControllerDescriptor()
 
 void OfflineAudioEffectServerChain::InitDump()
 {
-    static int32_t chainId = 0;
+    static uint32_t chainId = 0;
     std::string dumpFileName = "OfflineEffectServer";
-    std::string dumpFileInName = dumpFileName  + "_" + std::to_string(chainId) + "_In.pcm";
-    std::string dumpFileOutName = dumpFileName  + "_" + std::to_string(chainId) + "_Out.pcm";
+    std::string dumpFileInName = dumpFileName + "_" + std::to_string(chainId) + "_In.pcm";
+    std::string dumpFileOutName = dumpFileName + "_" + std::to_string(chainId) + "_Out.pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileInName, &dumpFileIn_);
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileOutName, &dumpFileOut_);
     chainId++;
@@ -188,9 +188,9 @@ int32_t OfflineAudioEffectServerChain::SetParam(AudioStreamInfo inInfo, AudioStr
         "%{public}s effect COMMAND_SET_CONFIG failed, errCode is %{public}d", chainName_.c_str(), ret);
 
     inBufferSize_ = GetByteSize(inInfo.format) * inInfo.samplingRate * inInfo.channels *
-        MAX_TIME_INTERVAL / AUDIO_MS_PER_SECOND;
+        MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
     outBufferSize_ = GetByteSize(outInfo.format) * outInfo.samplingRate * outInfo.channels *
-        MAX_TIME_INTERVAL / AUDIO_MS_PER_SECOND;
+        MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
     return SUCCESS;
 }
 
@@ -241,6 +241,7 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
     ret = memcpy_s(reinterpret_cast<int8_t *>(serverBufferOut_->GetBase()), outSize,
         output.rawData, output.frameCount * GetFormatByteSize(offlineConfig_.outputCfg.format));
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "memcpy failed, ret:%{public}d", ret);
+    FreeIfNotNull(output.rawData);
 
     DumpFileUtil::WriteDumpFile(dumpFileOut_, serverBufferOut_->GetBase(), outSize);
     return SUCCESS;

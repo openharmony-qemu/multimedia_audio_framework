@@ -41,7 +41,7 @@ public:
 
     ~OfflineAudioEffectChainImpl();
 
-    int32_t InitIpcChain();
+    int32_t CreateEffectChain();
 private:
     void InitDump();
 

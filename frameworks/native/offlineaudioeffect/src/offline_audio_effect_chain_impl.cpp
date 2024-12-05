@@ -40,16 +40,16 @@ OfflineAudioEffectChainImpl::~OfflineAudioEffectChainImpl()
 
 void OfflineAudioEffectChainImpl::InitDump()
 {
-    static int32_t chainId = 0;
+    static uint32_t chainId = 0;
     std::string dumpFileName = "OfflineEffectClient";
-    std::string dumpFileInName = dumpFileName  + "_" + std::to_string(chainId) + "_In.pcm";
-    std::string dumpFileOutName = dumpFileName  + "_" + std::to_string(chainId) + "_Out.pcm";
+    std::string dumpFileInName = dumpFileName + "_" + std::to_string(chainId) + "_In.pcm";
+    std::string dumpFileOutName = dumpFileName + "_" + std::to_string(chainId) + "_Out.pcm";
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileInName, &dumpFileIn_);
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileOutName, &dumpFileOut_);
     chainId++;
 }
 
-int32_t OfflineAudioEffectChainImpl::InitIpcChain()
+int32_t OfflineAudioEffectChainImpl::CreateEffectChain()
 {
     std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
@@ -97,7 +97,7 @@ int32_t OfflineAudioEffectChainImpl::Process(uint8_t *inBuffer, int32_t inSize, 
         ERR_INVALID_PARAM, "buffer size invalid");
     CHECK_AND_RETURN_RET_LOG(inBuffer && outBuffer, ERR_INVALID_PARAM, "buffer ptr invalid");
 
-    DumpFileUtil::WriteDumpFile(dumpFileIn_, inBufferBase_, outSize);
+    DumpFileUtil::WriteDumpFile(dumpFileIn_, inBufferBase_, inSize);
 
     int32_t ret = memcpy_s(inBufferBase_, inBufferSize, inBuffer, inSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "memcpy inbuffer failed");
