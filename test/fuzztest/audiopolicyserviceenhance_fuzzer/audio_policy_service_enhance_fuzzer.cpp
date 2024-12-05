@@ -168,7 +168,7 @@ void AudioPolicyServiceEnhanceTwoFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.WriteInputRouteChangeEvent(desc, reason);
 
     AudioStreamInfo audioStreamInfo;
-    GetServerPtr()->audioPolicyService_.audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
         audioStreamInfo, "", "", SOURCE_TYPE_VOICE_RECOGNITION);
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleActiveDevice(DEVICE_TYPE_INVALID);
 
@@ -492,7 +492,7 @@ void AudioPolicyServiceEnhanceEightFuzzTest(const uint8_t *rawData, size_t size)
 
     AudioModuleInfo moduleInfo;
     AudioStreamInfo audioStreamInfo;
-    GetServerPtr()->audioPolicyService_.audioA2dpDevice_.ReloadA2dpAudioPort(moduleInfo,
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.ReloadA2dpAudioPort(moduleInfo,
         DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, "", "", SOURCE_TYPE_MIC);
     GetServerPtr()->audioPolicyService_.SetDeviceActive(DEVICE_TYPE_EARPIECE, false);
 

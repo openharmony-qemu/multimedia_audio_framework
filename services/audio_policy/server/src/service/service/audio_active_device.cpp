@@ -111,15 +111,6 @@ int32_t AudioActiveDevice::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
             GetEncryptAddr(activeBTDevice_).c_str(), GetEncryptAddr(lastActiveA2dpDevice).c_str());
         return result;
     }
-
-    AudioStreamInfo audioStreamInfo = {};
-    GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo);
-    std::string networkId = GetCurrentOutputDeviceNetworkId();
-    std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(GetCurrentOutputDeviceType());
-
-    result = audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, networkId, sinkName,
-        SOURCE_TYPE_INVALID);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
 #endif
     return result;
 }
