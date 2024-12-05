@@ -28,6 +28,7 @@
 
 #include "audio_config_manager.h"
 #include "audio_iohandle_map.h"
+#include "audio_ec_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,7 +58,8 @@ public:
 private:
     AudioA2dpDevice() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()) {}
+        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioEcManager_(AudioEcManager::GetInstance()) {}
     ~AudioA2dpDevice() {}
     void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
         SourceType sourceType);
@@ -73,6 +75,7 @@ private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioConfigManager& audioConfigManager_;
+    AudioEcManager& audioEcManager_;
 };
 }
 }

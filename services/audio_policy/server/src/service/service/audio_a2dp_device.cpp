@@ -64,7 +64,7 @@ void AudioA2dpDevice::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const Audio
         moduleInfo.renderInIdleState = "1";
         moduleInfo.sinkLatency = "0";
     }
-    AudioPolicyService::GetAudioPolicyService().UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
+    audioEcManager_.UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
 }
 
 int32_t AudioA2dpDevice::LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
