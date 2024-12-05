@@ -808,6 +808,12 @@ private:
     void MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
 
+    void MuteSinkForSwtichGeneralDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
+
+    void MuteSinkForSwtichBluetoothDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
+
     std::string GetSinkName(const DeviceInfo& desc, int32_t sessionId);
 
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
