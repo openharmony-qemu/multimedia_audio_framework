@@ -36,9 +36,10 @@ constexpr size_t EACH_CHUNK_SIZE = 1024 * 1024;                 // 1M
 constexpr int64_t MEMBLOCK_RELEASE_TIME = 5 * 60 * 1000000;     // release pcm 5min ago
 constexpr int64_t MEMBLOCK_CHECK_TIME_MS = 30 * 1000;           // check cached data's time every 30s
 constexpr int64_t MEMORY_PRINT_TIME_MS = 60 * 1000;             // print memory info every 60s
-constexpr int64_t MEMORY_PRINT_MININUM_SIZE = 5 * 1024 * 1024;    // print memory info only when used excceds 5M
+constexpr int64_t MEMORY_PRINT_MININUM_SIZE = 5 * 1024 * 1024;  // print memory info only when used excceds 5M
 constexpr uint16_t FILENAME_ID_MAX_INDEX = 65530;               // FileNameId 0 - 65530
 constexpr size_t FILENAME_AND_ID_SIZE = 128;                    // estimate each entry size in map
+constexpr size_t NAME_MAP_NUM = 2;                              // FileNameIdMap and idFileNameMap
 
 MemChunk::MemChunk() : totalBufferSize_(EACH_CHUNK_SIZE), pointerOffset_(0), curFileNameId_(0)
 {
@@ -98,7 +99,7 @@ int32_t MemChunk::GetCurUsedMemory(size_t& dataLength, size_t& bufferLength, siz
     dataLength = pointerOffset_;
     bufferLength = totalBufferSize_;
     structLength = sizeof(MemBlock) * memBlockDeque_->size() + sizeof(MemChunk) + 
-        FILENAME_AND_ID_SIZE * idFileNameMap_.size() * 2; //roughly estimate the size of the map structure
+        FILENAME_AND_ID_SIZE * idFileNameMap_.size() * NAME_MAP_NUM; // roughly estimate the size of the map structure
     return SUCCESS;
 }
 
@@ -191,7 +192,7 @@ void AudioCacheMgrInner::CacheData(std::string& dumpFileName, void* srcDataPoint
         g_Mutex.lock();
     }
 
-    MemBlock curMemBlock {nullptr,0,0};
+    MemBlock curMemBlock {nullptr, 0, 0};
     int ret = GetAvailableMemBlock(dataLength, dumpFileName, curMemBlock);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("GetAvailableMemBlock failed. Unable to cacheData!");
@@ -256,7 +257,7 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock()
     std::lock_guard<std::mutex> processsLock(g_Mutex);
 
     std::vector<std::pair<std::string, std::string>> paramStart;
-    paramStart.push_back({"BETA","true"});
+    paramStart.push_back({"BETA", "true"});
     Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(paramStart);
 
     while(!memChunkDeque_.empty()) {
@@ -265,14 +266,14 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock()
 
         std::shared_ptr<std::deque<MemBlock>> curMemBlockDeque = curMemChunk->GetMemBlockDeque();
         for (auto it = curMemBlockDeque->begin(); it != curMemBlockDeque->end(); ++it) {
-            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(
-                    "pcm_dump_" + curMemChunk->idFileNameMap_[it->dumpFileNameId_], it->dataPointer_, it->dataLength_);
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer("pcm_dump_" + 
+                curMemChunk->idFileNameMap_[it->dumpFileNameId_], it->dataPointer_, it->dataLength_);
         }
         Trace::Count("UsedMemChunk", memChunkDeque_.size());
     }
 
     std::vector<std::pair<std::string, std::string>> paramEnd;
-    paramStart.push_back({"BETA","false"});
+    paramStart.push_back({"BETA", "false"});
     Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(paramEnd);
 
     isDumpingData_.store(false);
@@ -307,7 +308,8 @@ void AudioCacheMgrInner::GetCachedDuration(int64_t& startTime, int64_t& endTime)
         ClockTime::NanoTimeToString(startTime).c_str(), ClockTime::NanoTimeToString(endTime).c_str());
 }
 
-void AudioCacheMgrInner::PrintCurMemoryCondition() {
+void AudioCacheMgrInner::PrintCurMemoryCondition()
+{
     Trace trace("AudioCacheMgrInner::PrintCurMemoryCondition");
     SafeSendCallBackEvent(PRINT_MEMORY_CONDITION, 0, MEMORY_PRINT_TIME_MS);
 
@@ -316,8 +318,8 @@ void AudioCacheMgrInner::PrintCurMemoryCondition() {
     size_t structLength = 0;
     GetCurMemoryCondition(dataLength, bufferLength, structLength);
     if (bufferLength >= MEMORY_PRINT_MININUM_SIZE) {
-        AUDIO_INFO_LOG("dataLength:%{public}zu KB ,bufferLength:%{public}zu KB, structLength:%{public}zu KB", 
-            dataLength / 1024, bufferLength / 1024, structLength / 1024);
+        AUDIO_INFO_LOG("dataLength: %{public}zu KB, bufferLength: %{public}zu KB, structLength: %{public}zu KB", 
+            dataLength / BYTE_TO_KB_SIZE, bufferLength / BYTE_TO_KB_SIZE, structLength / BYTE_TO_KB_SIZE);
     }
 }
 
@@ -356,7 +358,7 @@ void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
     int64_t curTime = ClockTime::GetRealNano();
     int64_t startTime, endTime;
 
-    while(!memChunkDeque_.empty()) {
+    while (!memChunkDeque_.empty()) {
         memChunkDeque_.front()->GetMemChunkDuration(startTime, endTime);
         if (curTime - endTime < MEMBLOCK_RELEASE_TIME * AUDIO_MS_PER_SECOND) {
             break;
@@ -409,7 +411,7 @@ bool AudioCacheMgrInner::SetDumpParameter(const std::vector<std::pair<std::strin
     } else if (params[0].first == SET_UPLOAD_KEY) {
         // only when user argees to cachedata, audioCacheState will change to 1(open),.
         CHECK_AND_RETURN_RET_LOG(audioCacheState == 1, false, 
-            "cannot upload, curAudioCacheState is %{public}d, not code 1!", audioCacheState);
+            "cannot upload, curAudioCacheState is %{public}d, not code 1! ", audioCacheState);
         CHECK_AND_RETURN_RET_LOG(DumpAllMemBlock() == SUCCESS, false,
             "upload allMemBlock failed!");
     } else {
@@ -461,7 +463,7 @@ AudioCacheHandler::AudioCacheHandler(IHandler* handler) : handler_(handler) {}
 void AudioCacheHandler::OnHandle(uint32_t code, int64_t data)
 {
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
-    handler_->OnHandle(code,data);
+    handler_->OnHandle(code, data);
 }
 
 } // namespace AudioStandard

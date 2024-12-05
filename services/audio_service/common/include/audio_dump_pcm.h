@@ -15,7 +15,6 @@
 #ifndef AUDIO_PCM_DUMP_H
 #define AUDIO_PCM_DUMP_H
 
-#include <string.h>
 #include <string>
 #include <memory>
 #include <vector>
@@ -30,6 +29,7 @@ const std::string SET_UPLOAD_KEY = "UPLOAD";
 const std::string GET_STATUS_KEY = "STATUS";
 const std::string GET_TIME_KEY = "TIME";
 const std::string GET_MEMORY_KEY = "MEMORY";
+constexpr size_t BYTE_TO_KB_SIZE = 1024;
 
 class AudioCacheMgr {
 public:

@@ -1602,9 +1602,9 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     VolumeTools::DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_, logUtilsTag_, volumeDataCount_);
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
-        dstStreamData.bufferDesc.bufLength);
-        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
+        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer), 
+            dstStreamData.bufferDesc.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_, 
             static_cast<void *>(dstStreamData.bufferDesc.buffer), dstStreamData.bufferDesc.bufLength);
     }
 

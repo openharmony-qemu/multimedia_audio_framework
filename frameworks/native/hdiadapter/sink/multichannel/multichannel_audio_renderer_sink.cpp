@@ -168,6 +168,7 @@ private:
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
     void InitAudioRouteNode(AudioRouteNode &source, AudioRouteNode &sink);
+    void DumpData(std::string fileName, void *buffer, size_t len);
     std::string dumpFileName_ = "";
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -550,10 +551,8 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
     Trace trace("MchSinkInner::RenderFrame");
 
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), len);
-    }
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    DumpData(dumpFileName_, static_cast<void *>(&data), len);
 
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
@@ -1203,6 +1202,14 @@ int32_t MultiChannelRendererSinkInner::GetRenderId(uint32_t &renderId) const
     renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_MULTICHANNEL);
     return SUCCESS;
 }
+
+void MultiChannelRendererSinkInner::DumpData(std::string fileName, void *buffer, size_t len)
+{
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        AudioCacheMgr::GetInstance().CacheData(fileName, buffer, len);
+    }
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

@@ -234,7 +234,8 @@ std::string ClockTime::NanoTimeToString(int64_t nanoTime)
         return "";
     }
 
-    strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
+    size_t res = strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
+    CHECK_AND_RETURN_RET_LOG(res != 0, "", "strftime failed!");
     return std::string(buffer);
 }
 
