@@ -138,7 +138,9 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
-    capturer->capturerInfo_.originalFlag = capturerOptions.capturerInfo.capturerFlags;
+    capturer->capturerInfo_.originalFlag = ((sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) &&
+        (capturerOptions.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP)) ?
+        AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
     capturer->strategy_ = capturerOptions.strategy;
