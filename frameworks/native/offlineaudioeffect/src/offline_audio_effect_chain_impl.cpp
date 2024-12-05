@@ -121,6 +121,8 @@ void OfflineAudioEffectChainImpl::Release()
     outBufferBase_ = nullptr;
     clientBufferIn_ = nullptr;
     clientBufferOut_ = nullptr;
+    DumpFileUtil::CloseDumpFile(&dumpFileIn_);
+    DumpFileUtil::CloseDumpFile(&dumpFileOut_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

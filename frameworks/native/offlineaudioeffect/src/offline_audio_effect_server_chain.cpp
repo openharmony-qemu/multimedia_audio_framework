@@ -80,6 +80,8 @@ OfflineAudioEffectServerChain::~OfflineAudioEffectServerChain()
     FreeIfNotNull(controllerId_.effectId);
     serverBufferIn_ = nullptr;
     serverBufferOut_ = nullptr;
+    DumpFileUtil::CloseDumpFile(&dumpFileIn_);
+    DumpFileUtil::CloseDumpFile(&dumpFileOut_);
 }
 
 static struct IEffectModel *InitEffectModel()
