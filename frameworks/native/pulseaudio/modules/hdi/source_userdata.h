@@ -83,7 +83,7 @@ struct Userdata {
     uint32_t renderId;
     pa_resampler *defaultSceneResampler;
     pa_rtpoll_item *rtpollItem;
-    int64_t eventFd;
+    int eventFd;
 };
 
 struct AlgoSpecs {
