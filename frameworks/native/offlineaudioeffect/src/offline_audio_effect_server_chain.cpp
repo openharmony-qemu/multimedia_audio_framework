@@ -47,14 +47,16 @@ static std::mutex g_chainMutex;
 }
 
 template<typename T>
-static inline void FreeIfNotNull(T*& ptr) {
+static inline void FreeIfNotNull(T*& ptr)
+{
     if (ptr != nullptr) {
         free(ptr);
         ptr = nullptr;
     }
 }
 
-static inline int32_t GetByteSize(AudioSampleFormat format) {
+static inline int32_t GetByteSize(AudioSampleFormat format)
+{
     static const std::unordered_map<AudioSampleFormat, int32_t> sizeMap = {
         {SAMPLE_U8, 1},
         {SAMPLE_S16LE, 2},
