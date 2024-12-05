@@ -113,14 +113,14 @@ int32_t OfflineAudioEffectChainImpl::Process(uint8_t *inBuffer, int32_t inSize, 
 void OfflineAudioEffectChainImpl::Release()
 {
     std::lock_guard<std::mutex> lock(streamClientMutex_);
-    clientBufferIn_ = nullptr;
-    clientBufferOut_ = nullptr;
-    inBufferBase_ = nullptr;
-    outBufferBase_ = nullptr;
     if (offlineStreamInClient_ != nullptr) {
         offlineStreamInClient_->ReleaseOfflineEffectChain();
         offlineStreamInClient_ = nullptr;
     }
+    inBufferBase_ = nullptr;
+    outBufferBase_ = nullptr;
+    clientBufferIn_ = nullptr;
+    clientBufferOut_ = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS
