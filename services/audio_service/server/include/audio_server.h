@@ -93,7 +93,11 @@ public:
     int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) override;
     int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
-
+    // for effect V3
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
     // for effect
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
@@ -180,6 +184,13 @@ protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
 private:
+    int32_t GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType);
+    int32_t GetAudioEffectPropertyArray(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectChainProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEnhanceChainProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType);
+
     void SetA2dpAudioParameter(const std::string &renderValue);
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
