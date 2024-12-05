@@ -236,7 +236,8 @@ int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std
     return ret;
 }
 
-static int32_t checkHandleAndRelease(AudioEffectHandle handle, AudioEffectLibrary *libHandle, int32_t ret) {
+static int32_t checkHandleAndRelease(AudioEffectHandle handle, AudioEffectLibrary *libHandle, int32_t ret)
+{
     if (ret != SUCCESS) {
         libHandle->releaseEffect(handle);
     }
