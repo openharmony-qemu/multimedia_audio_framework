@@ -354,20 +354,7 @@ static int PaHdiCapturerInit(struct Userdata *u)
         return ret;
     }
 
-    // No start test for remote device.
-    if (strcmp(GetDeviceClass(u->sourceAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
-        ret = u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("Audio capturer start failed!");
-            goto fail;
-        }
-    }
-
-    u->IsCapturerStarted = true;
-    return ret;
-
-fail:
-    PaHdiCapturerExit(u);
+    u->IsCapturerStarted = false;
     return ret;
 }
 
