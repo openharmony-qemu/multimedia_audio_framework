@@ -168,7 +168,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, WaitForConnectionCompleted_001, TestS
 
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.WaitForConnectionCompleted();
-    EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED));
+    EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ =
+        CONNECTION_STATUS_CONNECTED));
 }
 
 /**
@@ -184,7 +185,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, WaitForConnectionCompleted_002, TestS
 
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
     audioA2dpOffloadManager_.WaitForConnectionCompleted();
-    EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED));
+    EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ =
+        CONNECTION_STATUS_CONNECTED));
 }
 
 /**
@@ -410,7 +412,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_001, TestSi
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
     EXPECT_EQ(A2DP_STOPPED, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_CONNECTED, audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_CONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -428,7 +431,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_002, TestSi
     int32_t playingState = A2DP_STOPPED;
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED, audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -446,7 +450,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_003, TestSi
     int32_t playingState = A2DP_PLAYING;
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED, audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -464,7 +469,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_004, TestSi
     int32_t playingState = A2DP_PLAYING;
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED, audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -482,7 +488,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_005, TestSi
     int32_t playingState = A2DP_PLAYING;
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_CONNECTED, audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_CONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -500,7 +507,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_006, TestSi
     int32_t playingState = A2DP_PLAYING;
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_CONNECTED, audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_CONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -517,7 +525,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_007, TestSi
     const std::string deviceAddress = "";
     int32_t playingState = A2DP_STOPPED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED, audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
