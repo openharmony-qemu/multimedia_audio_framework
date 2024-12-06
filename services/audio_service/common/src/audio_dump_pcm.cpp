@@ -61,7 +61,7 @@ MemChunk::~MemChunk()
     bufferPointer_ = nullptr;
 }
 
-int32_t MemChunk::GetMemBlock(size_t dataLength, std::string& dumpFileName, MemBlock& curMemBlock)
+int32_t MemChunk::GetMemBlock(size_t dataLength, std::string &dumpFileName, MemBlock &curMemBlock)
 {
     CHECK_AND_RETURN_RET(totalBufferSize_ - pointerOffset_ >= dataLength, ERROR);
     Trace trace("MemChunk::GetMemBlock");
@@ -87,13 +87,13 @@ std::shared_ptr<std::deque<MemBlock>> MemChunk::GetMemBlockDeque()
     return memBlockDeque_;
 }
 
-void MemChunk::GetMemChunkDuration(int64_t& startTime, int64_t& endTime)
+void MemChunk::GetMemChunkDuration(int64_t &startTime, int64_t &endTime)
 {
     startTime = firstMemBlockTime_;
     endTime = lastMemBlockTime_;
 }
 
-int32_t MemChunk::GetCurUsedMemory(size_t& dataLength, size_t& bufferLength, size_t& structLength)
+int32_t MemChunk::GetCurUsedMemory(size_t &dataLength, size_t &bufferLength, size_t &structLength)
 {
     dataLength = pointerOffset_;
     bufferLength = totalBufferSize_;
@@ -166,7 +166,7 @@ bool AudioCacheMgrInner::DeInit()
     return true;
 }
 
-void AudioCacheMgrInner::CacheData(std::string& dumpFileName, void* srcDataPointer, size_t dataLength)
+void AudioCacheMgrInner::CacheData(std::string &dumpFileName, void* srcDataPointer, size_t dataLength)
 {
     if (!isInited_.load()) {
         Trace trace("AudioCacheMgrInner::CacheData::NotInited");
@@ -204,7 +204,7 @@ void AudioCacheMgrInner::CacheData(std::string& dumpFileName, void* srcDataPoint
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "memcpy_s failed. Unable to cacheData!");
 }
 
-int32_t AudioCacheMgrInner::GetAvailableMemBlock(size_t dataLength, std::string& dumpFileName, MemBlock& curMemBlock)
+int32_t AudioCacheMgrInner::GetAvailableMemBlock(size_t dataLength, std::string &dumpFileName, MemBlock &curMemBlock)
 {
     if (!memChunkDeque_.empty()) {
         Trace trace1("AudioCacheMgrInner::GetAvailableMemBlock::hasNotFillMemChunk");
@@ -279,7 +279,7 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock()
     return SUCCESS;
 }
 
-void AudioCacheMgrInner::GetCachedDuration(int64_t& startTime, int64_t& endTime)
+void AudioCacheMgrInner::GetCachedDuration(int64_t &startTime, int64_t &endTime)
 {
     Trace trace("AudioCacheMgrInner::GetCacheDuration");
     if (!isInited_.load()) {
@@ -322,7 +322,7 @@ void AudioCacheMgrInner::PrintCurMemoryCondition()
     }
 }
 
-void AudioCacheMgrInner::GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength)
+void AudioCacheMgrInner::GetCurMemoryCondition(size_t &dataLength, size_t &bufferLength, size_t &structLength)
 {
     Trace trace("AudioCacheMgrInner::GetCurMemoryCondition");
     std::lock_guard<std::mutex> processLock(g_Mutex);

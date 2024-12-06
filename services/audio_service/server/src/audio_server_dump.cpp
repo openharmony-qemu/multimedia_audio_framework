@@ -20,6 +20,7 @@
 #include "audio_utils.h"
 #include "audio_service.h"
 #include "pa_adapter_tools.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 
@@ -48,6 +49,8 @@ void AudioServerDump::InitDumpFuncMap()
     dumpFuncMap[u"-r"] = &AudioServerDump::RecordSourceDump;
     dumpFuncMap[u"-m"] = &AudioServerDump::HDFModulesDump;
     dumpFuncMap[u"-ep"] = &AudioServerDump::PolicyHandlerDump;
+    dumpFuncMap[u"-ct"] = &AudioServerDump::AudioCacheTimeDump;
+    dumpFuncMap[u"-cm"] = &AudioServerDump::AudioCacheMemoryDump;
 }
 
 void AudioServerDump::ResetPAAudioDump()
@@ -202,6 +205,8 @@ void AudioServerDump::HelpInfoDump(string &dumpString)
     AppendFormat(dumpString, "  -r\t\t\t|dump pa record streams\n");
     AppendFormat(dumpString, "  -m\t\t\t|dump hdf input modules\n");
     AppendFormat(dumpString, "  -ep\t\t\t|dump policyhandler info\n");
+    AppendFormat(dumpString, "  -ct\t\t\t|dump AudioCached time info\n");
+    AppendFormat(dumpString, "  -cm\t\t\t|dump AudioCached memory info\n");
 }
 
 void AudioServerDump::AudioDataDump(string &dumpString, std::queue<std::u16string>& argQue)
@@ -511,6 +516,33 @@ void AudioServerDump::PolicyHandlerDump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("PolicyHandlerDump");
     AudioService::GetInstance()->Dump(dumpString);
+}
+
+void AudioServerDump::AudioCacheTimeDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("AudioCacheTimeDump");
+    dumpString += "\nAudioCached Time\n";
+
+    int64_t startTime = 0;
+    int64_t endTime = 0;
+    AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
+    dumpString += "Call dump get time: [ " + ClockTime::NanoTimeToString(startTime) + " ~ " +
+        ClockTime::NanoTimeToString(endTime) + " ], cur: [ " +
+        ClockTime::NanoTimeToString(ClockTime::GetRealNano()) + " ] \n";
+}
+
+void AudioServerDump::AudioCacheMemoryDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("AudioCacheMemoryDump");
+    dumpString += "\nAudioCached Memory\n"
+
+    size_t dataLength = 0;
+    size_t bufferLength = 0;
+    size_t structLength = 0;
+    AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
+    dumpString += "dataLength: " + std::to_string(dataLength / BYTE_TO_KB_SIZE) + " KB, " +
+                    "bufferLength: " + std::to_string(bufferLength / BYTE_TO_KB_SIZE) + " KB, " +
+                    "structLength: " + std::to_string(structLength / BYTE_TO_KB_SIZE) + " KB \n";
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -244,32 +244,6 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         return write(fd, dumpString.c_str(), dumpString.size());
     }
 
-    //hidumper -s 3001 '-a -dump time'
-    //hidumper -s 3001 '-a -dump memory'
-    if (args.size() == FAST_DUMPINFO_LEN && args[0] == u"-dump") {
-        std::string dumpParam = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(args[1]);
-        std::string dumpString;
-        if (dumpParam == "time") {
-            int64_t startTime = 0;
-            int64_t endTime = 0;
-            AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
-            dumpString = "Call dump get time: [ " + ClockTime::NanoTimeToString(startTime) + " ~ " +
-                ClockTime::NanoTimeToString(endTime) + " ], cur: [ " +
-                ClockTime::NanoTimeToString(ClockTime::GetRealNano()) + " ] \n";
-        } else if (dumpParam == "memory") {
-            size_t dataLength = 0;
-            size_t bufferLength = 0;
-            size_t structLength = 0;
-            AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
-            dumpString = "dataLength: " + std::to_string(dataLength / BYTE_TO_KB_SIZE) + " KB, " +
-                         "bufferLength: " + std::to_string(bufferLength / BYTE_TO_KB_SIZE) + " KB, " +
-                         "structLength: " + std::to_string(structLength / BYTE_TO_KB_SIZE) + " KB \n";
-        } else {
-            dumpString = "Call dump failed, no such operation \n";
-        }
-        return write(fd, dumpString.c_str(), dumpString.size());
-    }
-
     std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
@@ -309,7 +283,7 @@ void AudioServer::OnStart()
     }
     int32_t audioCacheState = 0;
     GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
-    if (audioCacheState) {
+    if (audioCacheState != 0) {
         AudioCacheMgr::GetInstance().Init();
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);

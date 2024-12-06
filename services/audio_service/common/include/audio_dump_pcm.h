@@ -41,10 +41,10 @@ public:
     virtual bool Init();
     virtual bool DeInit();
 
-    virtual void CacheData(std::string& dumpFileName, void* dataPointer, size_t dataLength) = 0;
+    virtual void CacheData(std::string &dumpFileName, void* dataPointer, size_t dataLength) = 0;
     virtual int32_t DumpAllMemBlock() = 0;
-    virtual void GetCachedDuration(int64_t& startTime, int64_t& endTime) = 0;
-    virtual void GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength) = 0;
+    virtual void GetCachedDuration(int64_t &startTime, int64_t &endTime) = 0;
+    virtual void GetCurMemoryCondition(size_t &dataLength, size_t &bufferLength, size_t &structLength) = 0;
     virtual bool SetDumpParameter(const std::vector<std::pair<std::string, std::string>> &params) = 0;
     virtual bool GetDumpParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) = 0;

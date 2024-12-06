@@ -41,10 +41,10 @@ class MemChunk {
 public:
     MemChunk();
     ~MemChunk();
-    int32_t GetMemBlock(size_t dataLength, std::string& dumpFileName, MemBlock& curMemBlock);
+    int32_t GetMemBlock(size_t dataLength, std::string &dumpFileName, MemBlock &curMemBlock);
     std::shared_ptr<std::deque<MemBlock>> GetMemBlockDeque();
-    void GetMemChunkDuration(int64_t& startTime, int64_t& endTime);
-    int32_t GetCurUsedMemory(size_t& dataLength, size_t& bufferLength, size_t& structLength);
+    void GetMemChunkDuration(int64_t &startTime, int64_t &endTime);
+    int32_t GetCurUsedMemory(size_t &dataLength, size_t &bufferLength, size_t &structLength);
     void Reset();
 public:
     std::unordered_map<uint16_t, std::string> idFileNameMap_{};
@@ -77,17 +77,17 @@ public:
     bool Init() override;
     bool DeInit() override;
 
-    void CacheData(std::string& dumpFileName, void* dataPointer, size_t dataLength) override;
+    void CacheData(std::string &dumpFileName, void* dataPointer, size_t dataLength) override;
     int32_t DumpAllMemBlock() override;
-    void GetCachedDuration(int64_t& startTime, int64_t& endTime) override;
-    void GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength) override;
+    void GetCachedDuration(int64_t &startTime, int64_t &endTime) override;
+    void GetCurMemoryCondition(size_t &dataLength, size_t &bufferLength, size_t &structLength) override;
     bool SetDumpParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
     bool GetDumpParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
 
 private:
     void InitCallbackHandler();
-    int32_t GetAvailableMemBlock(size_t dataLength, std::string& dumpFileName, MemBlock& curMemBlock);
+    int32_t GetAvailableMemBlock(size_t dataLength, std::string &dumpFileName, MemBlock &curMemBlock);
     void SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int64_t delayTime);
     void ReleaseOverTimeMemBlock();
     void PrintCurMemoryCondition();
