@@ -1245,6 +1245,8 @@ int32_t AudioCapturerPrivate::InitAudioConcurrencyCallback()
 void AudioCapturerPrivate::ConcedeStream()
 {
     AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, capturerInfo_.pipeType);
+    CHECK_AND_RETURN_LOG(audioStream_->GetStreamClass() != IAudioStream::PA_STREAM,
+        "Session %{public}u is pa stream, no need for concede", sessionID_);
     AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
     audioStream_->GetAudioPipeType(pipeType);
     if (pipeType == PIPE_TYPE_LOWLATENCY_IN || pipeType == PIPE_TYPE_CALL_IN) {
