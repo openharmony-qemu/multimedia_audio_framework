@@ -683,6 +683,9 @@ private:
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
 
+    AudioStreamDeviceChangeReason GetDeviceChangeReason(AudioDeviceDescriptor &desc,
+        const DeviceInfoUpdateCommand command);
+
 #ifdef BLUETOOTH_ENABLE
     void CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc);
 #endif
