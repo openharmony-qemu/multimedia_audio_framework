@@ -25,10 +25,11 @@ namespace AudioStandard {
 const std::string SET_OPEN_KEY = "OPEN";
 const std::string SET_CLOSE_KEY = "CLOSE";
 const std::string SET_UPLOAD_KEY = "UPLOAD";
-
 const std::string GET_STATUS_KEY = "STATUS";
 const std::string GET_TIME_KEY = "TIME";
 const std::string GET_MEMORY_KEY = "MEMORY";
+const std::vector<std::string> AUDIO_CACHE_STATE = {"CLOSE", "OPEN", "INIT"};
+
 constexpr size_t BYTE_TO_KB_SIZE = 1024;
 
 class AudioCacheMgr {

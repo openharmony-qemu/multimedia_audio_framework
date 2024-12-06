@@ -374,10 +374,14 @@ void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
 bool AudioCacheMgrInner::GetDumpParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
+    // vector size check had done before call this function
+    // audioCacheState 0:close, 1:open, 2:init
     if (subKeys[0] == GET_STATUS_KEY) {
         int32_t audioCacheState = 0;
         GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
-        result.push_back({"status", std::to_string(static_cast<int32_t>(audioCacheState))});
+        CHECK_AND_RETURN_RET_LOG(audioCacheState >= 0 && audioCacheState < AUDIO_CACHE_STATE.size(),
+            false, "get invalid audioCacheState %{public}d", audioCacheState);
+        result.push_back({"STATUS", AUDIO_CACHE_STATE[audioCacheState]});
     } else if (subKeys[0] == GET_TIME_KEY) {
         int64_t startTime = 0;
         int64_t endTime = 0;
@@ -398,9 +402,10 @@ bool AudioCacheMgrInner::GetDumpParameter(const std::vector<std::string> &subKey
 
 bool AudioCacheMgrInner::SetDumpParameter(const std::vector<std::pair<std::string, std::string>> &params)
 {
+    // vector size check had done before call this function
+    // audioCacheState 0:close, 1:open, 2:init
     int32_t audioCacheState = 0;
     GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
-    // audioCacheState 0:close, 1:open, 2:init
     if (params[0].first == SET_OPEN_KEY) {
         Init();
         SetSysPara("persist.multimedia.audio.audioCacheState", 1);
