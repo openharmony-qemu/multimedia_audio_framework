@@ -635,11 +635,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
     targetInfo = targetStreamPropInfo;
 
     if (isEcFeatureEnable_) {
-        SourceType tmpSourceType = targetSourceType;
-        if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-            tmpSourceType = SOURCE_TYPE_MIC;
-        }
-        std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(tmpSourceType, -1);
+        std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
             targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe
