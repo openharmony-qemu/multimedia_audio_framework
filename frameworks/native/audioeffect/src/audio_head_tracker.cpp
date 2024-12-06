@@ -27,7 +27,8 @@ HeadPostureData HeadTracker::headPostureData_ = {1, 1.0, 0.0, 0.0, 0.0};
 std::mutex HeadTracker::headTrackerMutex_;
 
 const uint32_t ORDER_ONE = 1;
-const uint32_t HP_DATA_PRINT_COUNT = 60; // Print once per second
+const uint32_t HP_DATA_PRINT_COUNT = 20; // Print 3 times per second
+const uint32_t HP_DATA_PRINT_COUNT_BETA = 180; // Print once per 3 seconds for info level, beta problems
 
 void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
 {
@@ -54,7 +55,14 @@ void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
     headPostureData_.y = headPostureDataTmp->y;
     headPostureData_.z = headPostureDataTmp->z;
     if (headPostureData_.order % HP_DATA_PRINT_COUNT == ORDER_ONE) {
-        AUDIO_DEBUG_LOG("Head posture data of order %{public}d received", headPostureData_.order);
+        AUDIO_DEBUG_LOG("Head posture data of order %{public}d received, w: %{public}f, x: %{public}f, "
+            "y: %{public}f, z: %{public}f", headPostureData_.order, headPostureDataTmp->w, headPostureDataTmp->x,
+            headPostureDataTmp->y, headPostureDataTmp->z);
+    }
+    if (headPostureData_.order % HP_DATA_PRINT_COUNT_BETA == ORDER_ONE) {
+        AUDIO_PRERELEASE_LOGI("Head posture data of order %{public}d received, w: %{public}f, x: %{public}f, "
+            "y: %{public}f, z: %{public}f", headPostureData_.order, headPostureDataTmp->w, headPostureDataTmp->x,
+            headPostureDataTmp->y, headPostureDataTmp->z);
     }
 }
 
