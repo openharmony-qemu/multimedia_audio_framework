@@ -1840,6 +1840,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
         case IDEL:
             if (ClockTime::GetCurNano() > delayStopTime_) {
                 targetStatus = RUNNING;
+                updateThreadCV_.notify_all();
                 break;
             }
             if (isDeviceRunningInIdel_) {
