@@ -157,7 +157,7 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
         AUDIO_ERR_LOG("napiRenderer is null");
         return;
     }
-
+    
     napi_acquire_threadsafe_function(arWriteDataTsfn_);
     napi_call_threadsafe_function(arWriteDataTsfn_, event, napi_tsfn_blocking);
 
