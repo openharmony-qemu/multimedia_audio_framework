@@ -3332,6 +3332,18 @@ void AudioPolicyService::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 }
 #endif
 
+AudioStreamDeviceChangeReason AudioPolicyService::GetDeviceChangeReason(AudioDeviceDescriptor &desc,
+    const DeviceInfoUpdateCommand command)
+{
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    if (command == CONNECTSTATE_UPDATE && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        desc.connectState_ != ConnectState::CONNECTED &&
+        audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+    }
+    return reason;
+}
+
 void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
@@ -3367,12 +3379,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
     CheckForA2dpSuspend(desc);
 
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    if (command == CONNECTSTATE_UPDATE && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        desc.connectState_ != ConnectState::CONNECTED &&
-        audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
-        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-    }
+    AudioStreamDeviceChangeReasonExt reason = GetDeviceChangeReason(desc, command);
     OnPreferredStateUpdated(desc, command, reason);
     audioDeviceCommon_.FetchDevice(true, reason);
     audioDeviceCommon_.FetchDevice(false);
