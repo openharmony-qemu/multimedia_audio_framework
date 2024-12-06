@@ -191,6 +191,7 @@ void AudioEcManager::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
 void AudioEcManager::CloseNormalSource()
 {
     AUDIO_INFO_LOG("close all sources");
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_MIC);
     audioIOHandleMap_.ClosePortAndEraseIOHandle(PRIMARY_MIC);
     if (isEcFeatureEnable_) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(USB_MIC);

@@ -108,7 +108,6 @@ private:
         vector<shared_ptr<AudioDeviceDescriptor>> &descArray);
 
     void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
     void MakePairedDefaultDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
     void MakePairedDefaultDeviceImpl(const shared_ptr<AudioDeviceDescriptor> &devDesc,
         const shared_ptr<AudioDeviceDescriptor> &connectedDesc);
