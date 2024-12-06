@@ -76,7 +76,7 @@ T GetData()
 template<class T>
 uint32_t GetArrLength(T& arr)
 {
-        if (arr == nullptr) {
+    if (arr == nullptr) {
         AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
         return 0;
     }
