@@ -549,7 +549,7 @@ const std::set<std::string> STREAM_USAGE_SET = {
     "STREAM_USAGE_RANGING", "STREAM_USAGE_VOICE_MODEM_COMMUNICATION", "STREAM_USAGE_VOICE_RINGTONE"
 };
 
-const std::unordered_map<std::string, StreamUsage> STREAM_USAGE_MAP = {
+const std::unordered_map<StreamUsage, std::string> = {
     {STREAM_USAGE_UNKNOWN, "STREAM_USAGE_UNKNOWN"},
     // STREAM_USAGE_MUSIC(1), STREAM_USAGE_MEDIA(1), both mapped to STREAM_USAGE_MUSIC
     {STREAM_USAGE_MUSIC, "STREAM_USAGE_MUSIC"},
