@@ -1602,9 +1602,9 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     VolumeTools::DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_, logUtilsTag_, volumeDataCount_);
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer), 
+        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
             dstStreamData.bufferDesc.bufLength);
-        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_, 
+        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
             static_cast<void *>(dstStreamData.bufferDesc.buffer), dstStreamData.bufferDesc.bufLength);
     }
 
@@ -2007,7 +2007,7 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     VolumeTools::DfxOperation(readBuf, dstStreamInfo_, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
-        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_, 
+        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
             static_cast<void *>(readBuf.buffer), readBuf.bufLength);
     }
     WriteToProcessBuffers(readBuf);

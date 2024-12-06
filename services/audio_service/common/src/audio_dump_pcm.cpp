@@ -19,7 +19,6 @@
 #include "audio_dump_pcm.h"
 #include "audio_dump_pcm_private.h"
 
-#include <string.h>
 #include <utility>
 
 #include "media_monitor_manager.h"
@@ -98,7 +97,7 @@ int32_t MemChunk::GetCurUsedMemory(size_t& dataLength, size_t& bufferLength, siz
 {
     dataLength = pointerOffset_;
     bufferLength = totalBufferSize_;
-    structLength = sizeof(MemBlock) * memBlockDeque_->size() + sizeof(MemChunk) + 
+    structLength = sizeof(MemBlock) * memBlockDeque_->size() + sizeof(MemChunk) +
         FILENAME_AND_ID_SIZE * idFileNameMap_.size() * NAME_MAP_NUM; // roughly estimate the size of the map structure
     return SUCCESS;
 }
@@ -181,7 +180,7 @@ void AudioCacheMgrInner::CacheData(std::string& dumpFileName, void* srcDataPoint
     if (!g_Mutex.try_lock()) {
         // condition 1: cacheData thread and dumpData thread in Concurrency
         // if dumpData thread gets mutex, discard cacheData and return directly
-        // if cacheData threads gets mutex, dumpData thread waits for cacheData finish, 
+        // if cacheData threads gets mutex, dumpData thread waits for cacheData finish,
         // cause cacheData excutes very fast.
         if (isDumpingData_.load()) {
             Trace trace("AudioCacheMgrInner::CacheData::TryLockFailedWhenDumpingData");
@@ -260,13 +259,13 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock()
     paramStart.push_back({"BETA", "true"});
     Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(paramStart);
 
-    while(!memChunkDeque_.empty()) {
+    while (!memChunkDeque_.empty()) {
         std::shared_ptr<MemChunk> curMemChunk = memChunkDeque_.front();
         memChunkDeque_.pop_front();
 
         std::shared_ptr<std::deque<MemBlock>> curMemBlockDeque = curMemChunk->GetMemBlockDeque();
         for (auto it = curMemBlockDeque->begin(); it != curMemBlockDeque->end(); ++it) {
-            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer("pcm_dump_" + 
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer("pcm_dump_" +
                 curMemChunk->idFileNameMap_[it->dumpFileNameId_], it->dataPointer_, it->dataLength_);
         }
         Trace::Count("UsedMemChunk", memChunkDeque_.size());
@@ -318,7 +317,7 @@ void AudioCacheMgrInner::PrintCurMemoryCondition()
     size_t structLength = 0;
     GetCurMemoryCondition(dataLength, bufferLength, structLength);
     if (bufferLength >= MEMORY_PRINT_MININUM_SIZE) {
-        AUDIO_INFO_LOG("dataLength: %{public}zu KB, bufferLength: %{public}zu KB, structLength: %{public}zu KB", 
+        AUDIO_INFO_LOG("dataLength: %{public}zu KB, bufferLength: %{public}zu KB, structLength: %{public}zu KB",
             dataLength / BYTE_TO_KB_SIZE, bufferLength / BYTE_TO_KB_SIZE, structLength / BYTE_TO_KB_SIZE);
     }
 }
@@ -410,7 +409,7 @@ bool AudioCacheMgrInner::SetDumpParameter(const std::vector<std::pair<std::strin
         SetSysPara("persist.multimedia.audio.audioCacheState", 0);
     } else if (params[0].first == SET_UPLOAD_KEY) {
         // only when user argees to cachedata, audioCacheState will change to 1(open),.
-        CHECK_AND_RETURN_RET_LOG(audioCacheState == 1, false, 
+        CHECK_AND_RETURN_RET_LOG(audioCacheState == 1, false,
             "cannot upload, curAudioCacheState is %{public}d, not code 1! ", audioCacheState);
         CHECK_AND_RETURN_RET_LOG(DumpAllMemBlock() == SUCCESS, false,
             "upload allMemBlock failed!");

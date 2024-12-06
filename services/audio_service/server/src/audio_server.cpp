@@ -253,17 +253,17 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
             int64_t startTime = 0;
             int64_t endTime = 0;
             AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
-            dumpString = "Call dump get time:[" + ClockTime::NanoTimeToString(startTime) + "~" + 
-                ClockTime::NanoTimeToString(endTime) + " ], cur:[" + 
-                ClockTime::NanoTimeToString(ClockTime::GetRealNano()) + "] \n";
+            dumpString = "Call dump get time: [ " + ClockTime::NanoTimeToString(startTime) + " ~ " +
+                ClockTime::NanoTimeToString(endTime) + " ], cur: [ " +
+                ClockTime::NanoTimeToString(ClockTime::GetRealNano()) + " ] \n";
         } else if (dumpParam == "memory") {
             size_t dataLength = 0;
             size_t bufferLength = 0;
             size_t structLength = 0;
             AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
-            dumpString = "dataLength: " + std::to_string(dataLength / BYTE_TO_KB_SIZE) + 
-                        " KB, bufferLength: " + std::to_string(bufferLength / BYTE_TO_KB_SIZE) + 
-                        " KB, structLength: " + std::to_string(structLength / BYTE_TO_KB_SIZE) + " KB \n";
+            dumpString = "dataLength: " + std::to_string(dataLength / BYTE_TO_KB_SIZE) + " KB, " +
+                         "bufferLength: " + std::to_string(bufferLength / BYTE_TO_KB_SIZE) + " KB, " +
+                         "structLength: " + std::to_string(structLength / BYTE_TO_KB_SIZE) + " KB \n";
         } else {
             dumpString = "Call dump failed, no such operation \n";
         }
