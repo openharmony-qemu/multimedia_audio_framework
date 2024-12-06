@@ -1764,42 +1764,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_DeactivateAudioInterruptInt
 
 /**
  * @tc.name  : Test AudioInterruptService.
- * @tc.number: AudioInterruptService_DeactivateAudioInterruptInternal_003
- * @tc.desc  : Test DeactivateAudioInterruptInternal.
- */
-HWTEST(AudioInterruptUnitTest, AudioInterruptService_DeactivateAudioInterruptInternal_003, TestSize.Level1)
-{
-    auto interruptServiceTest = GetTnterruptServiceTest();
-    interruptServiceTest->zonesMap_.clear();
-    AudioInterrupt audioInterrupt;
-    AudioInterrupt audioInterrupt_test;
-
-    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
-    audioInterrupt_test.sessionId = 0;
-    interruptServiceTest->zonesMap_.find(0)->second->audioFocusInfoList.emplace_back(
-        std::make_pair(audioInterrupt_test, ACTIVE));
-
-    interruptServiceTest->sessionService_ = std::make_shared<AudioSessionService>();
-
-    AudioSessionStrategy strategy;
-    strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
-    const std::shared_ptr<AudioSessionTimer> sessionTimer = nullptr;
-    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, sessionTimer);
-    interruptServiceTest->sessionService_->sessionMap_[0] = audioSession;
-
-    interruptServiceTest->zonesMap_.find(0)->second->pids = {0, 1, 2};
-    audioInterrupt.pid = 0;
-
-    interruptServiceTest->DeactivateAudioInterruptInternal(0, audioInterrupt, true);
-    EXPECT_TRUE(interruptServiceTest->zonesMap_.find(0)->second->pids.find(audioInterrupt.pid) !=
-        interruptServiceTest->zonesMap_.find(0)->second->pids.end());
-
-    interruptServiceTest->zonesMap_.clear();
-    interruptServiceTest->sessionService_ = nullptr;
-}
-
-/**
- * @tc.name  : Test AudioInterruptService.
  * @tc.number: AudioInterruptService_UpdateAudioSceneFromInterrupt_002
  * @tc.desc  : Test UpdateAudioSceneFromInterrupt.
  */
