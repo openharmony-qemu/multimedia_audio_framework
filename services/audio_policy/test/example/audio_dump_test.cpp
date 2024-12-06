@@ -23,7 +23,6 @@
 #include <unistd.h>
 
 #include "audio_system_manager.h"
-#include "audio_utils.h"
 
 using namespace std;
 using namespace OHOS;
@@ -87,12 +86,8 @@ int main(int argc, char *argv[])
         PrintUsage();
         return 0;
     }
-    
-    if (!StringConverter(inArgv, opt)) {
-        cerr << "argv[AudioDumpTest::FIRST_ARG] convert failed" << endl;
-        return 0;
-    }
 
+    opt = stoi(inArgv);
     AudioDumpCmd(opt);
     return 0;
 }
