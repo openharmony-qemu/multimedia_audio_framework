@@ -152,8 +152,12 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
     auto obj = static_cast<NapiAudioRenderer *>(napiRenderer_);
-    ObjectRefMap<NapiAudioRenderer>::IncreaseRef(obj);
-
+    NapiAudioRenderer napiRenderer = ObjectRefMap<NapiAudioRenderer>::IncreaseRef(obj);
+    if (napiRenderer == nullptr) {
+        AUDIO_ERR_LOG("napiRenderer is null");
+        return;
+    }
+    
     napi_acquire_threadsafe_function(arWriteDataTsfn_);
     napi_call_threadsafe_function(arWriteDataTsfn_, event, napi_tsfn_blocking);
 
