@@ -3335,7 +3335,7 @@ void AudioPolicyService::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 AudioStreamDeviceChangeReason AudioPolicyService::GetDeviceChangeReason(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand command)
 {
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN;
     if (command == CONNECTSTATE_UPDATE && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         desc.connectState_ != ConnectState::CONNECTED &&
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
