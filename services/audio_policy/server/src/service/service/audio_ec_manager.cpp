@@ -47,7 +47,8 @@ static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_WIRED_HEADSET,
     DEVICE_TYPE_USB_HEADSET,
     DEVICE_TYPE_BLUETOOTH_SCO,
-    DEVICE_TYPE_USB_ARM_HEADSET
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN
 };
 
 static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
@@ -584,6 +585,9 @@ void AudioEcManager::GetTargetSourceTypeAndMatchingFlag(SourceType source,
         case SOURCE_TYPE_VOICE_CALL:
             targetSource = SOURCE_TYPE_VOICE_CALL;
             break;
+        case SOURCE_TYPE_UNPROCESSED:
+            targetSource = SOURCE_TYPE_UNPROCESSED;
+            break;
         default:
             targetSource = SOURCE_TYPE_MIC;
             break;
@@ -641,11 +645,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
     targetInfo = targetStreamPropInfo;
 
     if (isEcFeatureEnable_) {
-        SourceType tmpSourceType = targetSourceType;
-        if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-            tmpSourceType = SOURCE_TYPE_MIC;
-        }
-        std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(tmpSourceType, -1);
+        std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
             targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe
@@ -687,6 +687,12 @@ bool AudioEcManager::GetEcFeatureEnable()
 bool AudioEcManager::GetMicRefFeatureEnable()
 {
     return isMicRefFeatureEnable_;
+}
+
+void AudioEcManager::UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
+{
+    UpdateStreamEcInfo(moduleInfo, sourceType);
+    UpdateStreamMicRefInfo(moduleInfo, sourceType);
 }
 
 std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const DeviceType deviceType)

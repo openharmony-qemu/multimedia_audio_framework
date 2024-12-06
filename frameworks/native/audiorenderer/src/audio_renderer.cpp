@@ -140,13 +140,16 @@ int32_t AudioRenderer::CheckMaxRendererInstances()
             }
         }
         for (auto iter = appUseNumMap.begin(); iter != appUseNumMap.end(); iter++) {
-            mostAppNum = iter->second > mostAppNum ? iter->second : mostAppNum;
-            mostAppUid = iter->first > mostAppUid ? iter->first : mostAppUid;
+            if (iter->second > mostAppNum) {
+                mostAppNum = iter->second;
+                mostAppUid = iter->first;
+            }
         }
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
             Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
         bean->Add("CLIENT_UID", mostAppUid);
+        bean->Add("TIMES", mostAppNum);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     }
 
@@ -899,7 +902,7 @@ bool AudioRendererPrivate::Stop()
 
 bool AudioRendererPrivate::Release()
 {
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
     bool result = audioStream_->ReleaseAudioStream();
@@ -913,6 +916,7 @@ bool AudioRendererPrivate::Release()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
+    lock.unlock();
     RemoveRendererPolicyServiceDiedCallback();
 
     return result;

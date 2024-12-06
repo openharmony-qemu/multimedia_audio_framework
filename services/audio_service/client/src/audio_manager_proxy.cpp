@@ -29,6 +29,9 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int32_t MAX_OFFLINE_EFFECT_CHAIN_NUM = 10;
+}
 AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioService>(impl)
 {
@@ -1051,6 +1054,57 @@ void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRe
         "LatencyMeas UpdateLatencyTimestamp failed, error:%{public}d", error);
 }
 
+int32_t AudioManagerProxy::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+    const DeviceType& deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool res = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(res, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY_V3), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Effect Property, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "get audio effect property size invalid.");
+    for (int32_t i = 0; i < size; i++) {
+        // write and read must keep same order
+        AudioEffectPropertyV3 prop = {};
+        prop.Unmarshalling(reply);
+        propertyArray.property.push_back(prop);
+    }
+    return AUDIO_OK;
+}
+
+int32_t AudioManagerProxy::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    const DeviceType& deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
+
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "set audio effect property size invalid.");
+    data.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        // write and read must keep same order
+        propertyArray.property[i].Marshalling(data);
+    }
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY_V3), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
 int32_t AudioManagerProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
     DeviceType deviceType)
 {
@@ -1283,6 +1337,42 @@ void AudioManagerProxy::RestoreSession(const int32_t &sessionID, bool isOutput)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_SESSION), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
+}
+
+sptr<IRemoteObject> AudioManagerProxy::CreateIpcOfflineStream(int32_t &errorCode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, nullptr, "WriteInterfaceToken failed");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_IPC_OFFLINE_STREAM), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, nullptr, "CreateIpcOfflineStream failed, error: %{public}d", error);
+    sptr<IRemoteObject> process = reply.ReadRemoteObject();
+    errorCode = reply.ReadInt32();
+    return process;
+}
+
+int32_t AudioManagerProxy::GetOfflineAudioEffectChains(vector<string> &effectChains)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetOfflineAudioEffectChains failed, error: %{public}d", error);
+    int32_t vecSize = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(vecSize >= 0 && vecSize <= MAX_OFFLINE_EFFECT_CHAIN_NUM, AUDIO_ERR,
+        "invalid offline effect chain num:%{public}d", vecSize);
+    for (int i = 0; i < vecSize; i++) {
+        effectChains.emplace_back(reply.ReadString());
+    }
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

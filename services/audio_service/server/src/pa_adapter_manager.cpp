@@ -513,7 +513,8 @@ void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConf
         std::to_string(processConfig.capturerInfo.sourceType).c_str());
     const std::string sceneType = GetEnhanceSceneName(processConfig.capturerInfo.sourceType);
     pa_proplist_sets(propList, "scene.type", sceneType.c_str());
-    if (unprocessAppUidSet_.find(processConfig.appInfo.appUid) != unprocessAppUidSet_.end()) {
+    auto item = unprocessAppUidSet_.find(processConfig.appInfo.appUid);
+    if ((item != unprocessAppUidSet_.end()) || (processConfig.capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED)) {
         AUDIO_INFO_LOG("ByPass UID is [%{public}d]", processConfig.appInfo.appUid);
         pa_proplist_sets(propList, "scene.bypass", "scene.bypass");
     }

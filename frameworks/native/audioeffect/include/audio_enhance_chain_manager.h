@@ -55,12 +55,20 @@ public:
     int32_t SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol);
     int32_t SetMicrophoneMuteInfo(const bool &isMute);
     int32_t SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol);
-
+    // for effect V3
+    int32_t SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+    // for enhance
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
     void ResetInfo();  // use for unit test
     int32_t ApplyAudioEnhanceChainDefault(const uint32_t captureId, uint32_t length);
+    void UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType);
+    int32_t SendInitCommand();
 
 private:
     int32_t AddAudioEnhanceChainHandles(std::shared_ptr<AudioEnhanceChain> &audioEnhanceChain,
@@ -77,6 +85,7 @@ private:
     void UpdateEnhancePropertyMapFromDb(DeviceType deviceType);
     int32_t WriteEnhancePropertyToDb(const std::string &key, const std::string &property);
     int32_t SetAudioEnhancePropertyToChains(AudioEnhanceProperty property);
+    int32_t SetAudioEnhancePropertyToChains(AudioEffectPropertyV3 property);
     void GetDeviceTypeName(DeviceType deviceType, std::string &deviceName);
     void GetDeviceNameByCaptureId(const uint32_t captureId, std::string &deviceName);
     // construct when init
@@ -114,6 +123,7 @@ private:
     float streamVol_ = 0.0f;
     bool isMute_ = false;
     std::string deviceName_ = "";
+    uint32_t foldState_ = FOLD_STATE_MIDDLE;
 };
 
 }  // namespace AudioStandard

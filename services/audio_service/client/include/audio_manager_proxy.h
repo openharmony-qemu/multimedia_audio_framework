@@ -87,6 +87,11 @@ public:
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
     void LoadHdiEffectModel() override;
+    // for effect V3
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
     // for effect
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
@@ -104,6 +109,8 @@ public:
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
     void RestoreSession(const int32_t &sessionID, bool isOutput) override;
+    sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
+    int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

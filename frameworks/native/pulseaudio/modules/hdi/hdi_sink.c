@@ -331,7 +331,7 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
     if (processChannels == sinkIn->thread_info.resampler->i_ss.channels) {
         ss.channels = sinkIn->thread_info.resampler->i_ss.channels;
         pa_channel_map cm = sinkIn->thread_info.resampler->i_cm;
-        if (pa_channel_map_equal(&sinkIn->thread_info.resampler->i_cm, &processCm)) {
+        if (pa_channel_map_equal(&sinkIn->thread_info.resampler->o_cm, &processCm)) {
             return;
         }
         r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
@@ -1844,6 +1844,12 @@ static pa_resampler *UpdateResamplerIchannelMap(const char *sinkSceneType, struc
     pa_channel_map ichannelmap;
     ichannelmap.channels = u->bufferAttr->numChanOut;
     ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &ichannelmap);
+    if (!pa_channel_map_valid(&ichannelmap)) {
+        AUDIO_ERR_LOG("UpdateResampler: invalid channelmap, channels [%{public}d], channellayout [%{public}" PRIu64 "]",
+            u->bufferAttr->numChanOut, u->bufferAttr->outChanLayout);
+        ichannelmap.channels = DEFAULT_NUM_CHANNEL;
+        ConvertChLayoutToPaChMap(DEFAULT_CHANNELLAYOUT, &ichannelmap);
+    }
     if ((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &ichannelmap))) {
         // for now, use sample_spec from sink
         pa_sample_spec ispec = *(pa_resampler_input_sample_spec(resampler));
@@ -2162,8 +2168,15 @@ static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        float volumeFloat = GetCurVolume(sessionID, streamType, deviceClass);
-        uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
+        float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
+        float volumeBeg = GetPreVolume(sessionID);
+        if (volumeBeg != volumeEnd) {
+            AUDIO_INFO_LOG("sessionID:%{public}s, volumeBeg:%{public}f, volumeEnd:%{public}f",
+                sessionIDStr, volumeBeg, volumeEnd);
+            SetPreVolume(sessionID, volumeEnd);
+            MonitorVolume(sessionID, true);
+        }
+        uint32_t volume = pa_sw_volume_from_linear(volumeEnd);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
     }
 }

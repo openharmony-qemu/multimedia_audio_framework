@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_NOISE_MANAGER_H
-#define ST_AUDIO_NOISE_MANAGER_H
+#ifndef ST_AUDIO_COMBINE_DENOISING_MANAGER_H
+#define ST_AUDIO_COMBINE_DENOISING_MANAGER_H
+
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -24,6 +26,16 @@ public:
 
     virtual void OnNnStateChange(const int32_t &nnState) = 0;
 };
+
+class AudioCombineDenoisingManager {
+public:
+    AudioCombineDenoisingManager() = default;
+    virtual ~AudioCombineDenoisingManager() = default;
+
+    static AudioCombineDenoisingManager *GetInstance();
+    int32_t RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback);
+    int32_t UnregisterNnStateEventListener();
+};
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // ST_AUDIO_NOISE_MANAGER_H
+#endif // ST_AUDIO_COMBINE_DENOISING_MANAGER_H

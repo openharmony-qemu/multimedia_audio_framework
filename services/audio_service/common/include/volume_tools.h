@@ -15,20 +15,15 @@
 
 #ifndef VOLUME_TOOLS_H
 #define VOLUME_TOOLS_H
-#include "audio_info.h"
+#include "audio_log_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
-static const size_t CHANNEL_MAX = 16; // same with CHANNEL_16
 
 static const int32_t INT32_VOLUME_MIN = 0; // 0, min volume
 static const uint32_t VOLUME_SHIFT = 16;
 static constexpr int32_t INT32_VOLUME_MAX = 1 << VOLUME_SHIFT; // 1 << 16 = 65536, max volume
-struct ChannelVolumes {
-    AudioChannel channel = STEREO;
-    int32_t volStart[CHANNEL_MAX];
-    int32_t volEnd[CHANNEL_MAX];
-};
+
 
 static inline bool IsVolumeSame(const float& x, const float& y, const float& epsilon)
 {
@@ -53,6 +48,8 @@ public:
     // will count volume for each channel, vol sum will be kept in volStart
     static ChannelVolumes CountVolumeLevel(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel,
         size_t split = 1);
+    static void DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
+        int64_t &volumeDataCount, size_t split = 1);
 };
 } // namespace AudioStandard
 } // namespace OHOS

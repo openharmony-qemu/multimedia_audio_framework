@@ -125,6 +125,7 @@ private:
     std::shared_ptr<IRendererStream> stream_ = nullptr;
     uint32_t streamIndex_ = -1;
     std::string traceTag_;
+    mutable int64_t volumeDataCount_ = 0;
     IStatus status_ = I_STATUS_IDLE;
     bool offloadEnable_ = false;
     std::atomic<bool> standByEnable_ = false;

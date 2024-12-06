@@ -88,7 +88,6 @@ public:
     ~FastAudioCapturerSourceInner() override;
 private:
     static constexpr int32_t INVALID_FD = -1;
-    static constexpr int32_t HALF_FACTOR = 2;
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
     static constexpr float MAX_VOLUME_LEVEL = 15.0f;
     static constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
@@ -281,6 +280,7 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_PLAYBACK_CAPTURE:
         case SOURCE_TYPE_ULTRASONIC:
+        case SOURCE_TYPE_UNPROCESSED:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
             break;
         case SOURCE_TYPE_WAKEUP:

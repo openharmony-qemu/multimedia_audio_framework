@@ -19,6 +19,7 @@
 #include "napi_audio_manager.h"
 #include "napi_audio_routing_manager.h"
 #include "napi_audio_stream_manager.h"
+#include "napi_audio_effect_manager.h"
 #include "napi_audio_volume_manager.h"
 #include "napi_audio_interrupt_manager.h"
 #include "napi_audio_spatialization_manager.h"
@@ -125,6 +126,7 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
+        DECLARE_NAPI_FUNCTION("getEffectManager", GetEffectManager),
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
         DECLARE_NAPI_FUNCTION("getSessionManager", GetSessionManager),
 #endif
@@ -243,6 +245,20 @@ napi_value NapiAudioManager::GetAudioManager(napi_env env, napi_callback_info in
     }
 
     return NapiAudioManager::CreateAudioManagerWrapper(env);
+}
+
+napi_value NapiAudioManager::GetEffectManager(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    size_t argCount = PARAM0;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
+    if (status != napi_ok || argCount != 0) {
+        AUDIO_ERR_LOG("Invalid arguments!");
+        return nullptr;
+    }
+
+    return NapiAudioEffectMgr::CreateEffectManagerWrapper(env);
 }
 
 napi_value NapiAudioManager::GetStreamManager(napi_env env, napi_callback_info info)

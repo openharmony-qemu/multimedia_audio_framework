@@ -84,6 +84,8 @@ const char *g_audioServerCodeStrs[] = {
     "SUSPEND_RENDERSINK",
     "RESTORE_RENDERSINK",
     "LOAD_HDI_EFFECT_MODEL",
+    "GET_AUDIO_EFFECT_PROPERTY_V3",
+    "SET_AUDIO_EFFECT_PROPERTY_V3",
     "GET_AUDIO_ENHANCE_PROPERTY",
     "GET_AUDIO_EFFECT_PROPERTY",
     "SET_AUDIO_ENHANCE_PROPERTY",
@@ -94,6 +96,8 @@ const char *g_audioServerCodeStrs[] = {
     "UPDATE_SESSION_CONNECTION_STATE",
     "SET_SINGLE_STREAM_MUTE",
     "RESTORE_SESSION",
+    "CREATE_IPC_OFFLINE_STREAM",
+    "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -711,6 +715,29 @@ int AudioManagerStub::HandleRestoreSession(MessageParcel &data, MessageParcel &r
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleCreateIpcOfflineStream(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> process = CreateIpcOfflineStream(errorCode);
+    CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
+        "CREATE_IPC_OFFLINE_STREAM AudioManagerStub CreateIpcOfflineStream failed");
+    reply.WriteRemoteObject(process);
+    reply.WriteInt32(errorCode);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetOfflineAudioEffectChains(MessageParcel &data, MessageParcel &reply)
+{
+    vector<string> effectChains{};
+    int32_t errCode = GetOfflineAudioEffectChains(effectChains);
+    reply.WriteInt32(effectChains.size());
+    for (auto &chainName : effectChains) {
+        reply.WriteString(chainName);
+    }
+    reply.WriteInt32(errCode);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
@@ -747,6 +774,10 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleSetNonInterruptMute(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_SESSION):
             return HandleRestoreSession(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_IPC_OFFLINE_STREAM):
+            return HandleCreateIpcOfflineStream(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS):
+            return HandleGetOfflineAudioEffectChains(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -781,6 +812,10 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetOffloadMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UNSET_OFFLOAD_MODE):
             return HandleUnsetOffloadMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY_V3):
+            return HandleGetAudioEffectPropertyV3(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY_V3):
+            return HandleSetAudioEffectPropertyV3(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_ENHANCE_PROPERTY):
             return HandleGetAudioEnhanceProperty(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY):
@@ -883,6 +918,37 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply)
 {
     LoadHdiEffectModel();
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetAudioEffectPropertyV3(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    for (int32_t i = 0; i < size; i++) {
+        AudioEffectPropertyV3 prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEffectProperty(propertyArray);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetAudioEffectPropertyV3(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    int32_t result = GetAudioEffectProperty(propertyArray);
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
+    reply.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    reply.WriteInt32(result);
     return AUDIO_OK;
 }
 

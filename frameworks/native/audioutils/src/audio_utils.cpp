@@ -144,6 +144,11 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
     return audioPerSampleLength;
 }
 
+bool Util::IsScoSupportSource(const SourceType sourceType)
+{
+    return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
+}
+
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
 {
     return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
@@ -1283,6 +1288,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
             break;
         case SOURCE_TYPE_WAKEUP:
             name = "WAKEUP";
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            name = "SOURCE_TYPE_UNPROCESSED";
             break;
         default:
             name = "UNKNOWN";

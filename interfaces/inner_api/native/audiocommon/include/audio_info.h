@@ -1055,6 +1055,26 @@ enum PolicyType {
     PRIVACY_POLCIY_TYPE = 1,
     TEMPORARY_POLCIY_TYPE = 2,
 };
+
+enum SuscribeResultCode {
+    SUCCESS_SUBSCRIBE = 0,
+    /**
+     * Volume button input error
+     */
+    ERR_SUBSCRIBE_INVALID_PARAM,
+     /**
+     * The keyOption creation failed
+     */
+    ERR_SUBSCRIBE_KEY_OPTION_NULL,
+     /**
+     * The im pointer creation failed
+     */
+    ERR_SUBSCRIBE_MMI_NULL,
+    /**
+     * Volume key multimode subscription results
+     */
+    ERR_MODE_SUBSCRIBE,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

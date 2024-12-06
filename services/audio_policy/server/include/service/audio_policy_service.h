@@ -445,6 +445,10 @@ public:
     bool IsRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
+    // for effect V3
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     // for effect
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
@@ -477,6 +481,7 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
+    void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
         const std::string &caller);
 private:
@@ -509,6 +514,11 @@ private:
     }
 
     ~AudioPolicyService();
+
+    void GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    void GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray, const EffectFlag& flag);
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
 
     bool FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, PipeInfo *pipeInfo,
         AudioModuleInfo &audioModuleInfo);
@@ -615,6 +625,8 @@ private:
 
     void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
         const AudioEnhancePropertyArray &newPropertyArray);
+    void ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
+        const AudioEffectPropertyArrayV3 &newPropertyArray);
 
     void UpdateAllUserSelectDevice(vector<shared_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
         AudioDeviceDescriptor &desc, const std::shared_ptr<AudioDeviceDescriptor> &selectDesc);
@@ -677,6 +689,8 @@ private:
 
     void OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
         const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
+    
+    vector<shared_ptr<AudioDeviceDescriptor>> UserSelectDeviceMapInit();
 
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
 

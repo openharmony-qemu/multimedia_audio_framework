@@ -208,6 +208,11 @@ public:
         napi_value in);
     static napi_status GetExtraParametersSubKV(napi_env env, std::vector<std::pair<std::string, std::string>> &subKV,
         napi_value in);
+    static int32_t UniqueEffectPropertyData(AudioEffectPropertyArrayV3 &propertyArray);
+    static napi_status SetEffectProperty(const napi_env &env,
+        const AudioEffectPropertyArrayV3 &propertyArray, napi_value &result);
+    static napi_status GetEffectPropertyArray(napi_env env,
+        AudioEffectPropertyArrayV3 &propertyArray, napi_value in);
     static napi_status SetEffectProperty(const napi_env &env,
         const AudioEffectPropertyArray &effectArray, napi_value &result);
     static napi_status SetEnhanceProperty(const napi_env &env,

@@ -40,9 +40,6 @@
 #include "avsession_manager.h"
 #include "audio_setting_provider.h"
 #include "audio_spatialization_service.h"
-#ifdef USB_ENABLE
-#include "audio_usb_manager.h"
-#endif
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
@@ -276,9 +273,6 @@ void AudioPolicyService::Deinit(void)
         audioPolicyManager_.CloseAudioPort(handle.second);
     });
     audioPolicyManager_.Deinit();
-#ifdef USB_ENABLE
-    AudioUsbManager::GetInstance().Deinit();
-#endif
     audioIOHandleMap_.DeInit();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
     audioPnpServer_.StopPnpServer();
@@ -1140,6 +1134,7 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(const AudioDeviceDescr
         UpdateActiveA2dpDeviceWhenDisconnecting(updatedDesc.macAddress_);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         if (audioA2dpDevice_.DelA2dpInDevice(updatedDesc.macAddress_) == 0) {
+            audioActiveDevice_.SetActiveBtInDeviceMac("");
             audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_MIC);
         }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
@@ -1347,6 +1342,7 @@ void AudioPolicyService::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  b
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+        CheckForA2dpSuspend(updatedDesc);
         audioDeviceCommon_.FetchDevice(true, reason); //  fix pop, fetch device before unload module
         int32_t result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
@@ -1435,11 +1431,16 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 // Load bt sink module again with new configuration
                 AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
                 AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-                CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+                if (ioHandle == OPEN_PORT_FAILURE) {
+                    audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+                    AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
+                    return;
+                }
                 audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
                 std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
                 audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
                 audioPolicyManager_.SuspendAudioDevice(portName, false);
+                audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
 
                 audioConnectedDevice_.UpdateConnectDevice(deviceType, macAddress, deviceName, streamInfo);
                 break;
@@ -1733,9 +1734,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
             OnPnpDeviceStatusUpdated((*it).first, (*it).second);
         }
-#ifdef USB_ENABLE
-        AudioUsbManager::GetInstance().Init(this);
-#endif
         audioEffectService_.SetMasterSinkAvailable();
     }
     // load inner-cap-sink
@@ -2031,7 +2029,7 @@ void AudioPolicyService::HandleAudioCaptureState(AudioMode &mode, AudioStreamCha
     if (mode == AUDIO_MODE_RECORD &&
         (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED ||
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
-        if (streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        if (Util::IsScoSupportSource(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType)) {
             BluetoothScoDisconectForRecongnition();
             Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
         }
@@ -2950,8 +2948,8 @@ void AudioPolicyService::HandleRemainingSource()
     // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
     if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(audioEcManager_.GetSourceOpened(),
         highestSourceInHdi)) {
-        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened：%{public}d, "
-            "highestSourceInHdi：%{public}d ", highestSource, audioEcManager_.GetSourceOpened(), highestSourceInHdi);
+        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened:%{public}d, "
+            "highestSourceInHdi:%{public}d ", highestSource, audioEcManager_.GetSourceOpened(), highestSourceInHdi);
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
         sessionIdUsedToOpenSource_ = highestSession;
     }
@@ -2969,7 +2967,7 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
     }
 
     if (sessionWithNormalSourceType_.count(sessionID) > 0) {
-        if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        if (Util::IsScoSupportSource(sessionWithNormalSourceType_[sessionID].sourceType)) {
             BluetoothScoDisconectForRecongnition();
         }
         if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
@@ -3027,6 +3025,35 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
         sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     }
     return SUCCESS;
+}
+
+void AudioPolicyService::ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
+    const AudioEffectPropertyArrayV3 &newPropertyArray)
+{
+    if (!audioEcManager_.GetMicRefFeatureEnable()) {
+        AUDIO_INFO_LOG("reload ignore for feature not enable");
+        return;
+    }
+    if (audioEcManager_.GetSourceOpened() != SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AUDIO_INFO_LOG("reload ignore for source not voip");
+        return;
+    }
+
+    std::string oldVoipUpProp = "";
+    std::string newVoipUpProp = "";
+    for (const AudioEffectPropertyV3 &prop : oldPropertyArray.property) {
+        if (prop.name == "voip_up") {
+            oldVoipUpProp = prop.category;
+        }
+    }
+    for (const AudioEffectPropertyV3 &prop : newPropertyArray.property) {
+        if (prop.name == "voip_up") {
+            newVoipUpProp = prop.category;
+        }
+    }
+    if ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR")) {
+        audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
+    }
 }
 
 void AudioPolicyService::ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
@@ -3263,16 +3290,7 @@ void AudioPolicyService::UpdateAllUserSelectDevice(
 void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
-    AudioStateManager& stateManager = AudioStateManager::GetAudioStateManager();
-    shared_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice = stateManager.GetPreferredMediaRenderDevice();
-    shared_ptr<AudioDeviceDescriptor> userSelectCallRenderDevice = stateManager.GetPreferredCallRenderDevice();
-    shared_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice = stateManager.GetPreferredCallCaptureDevice();
-    shared_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice = stateManager.GetPreferredRecordCaptureDevice();
-    vector<shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap;
-    userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectMediaRenderDevice));
-    userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectCallRenderDevice));
-    userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectCallCaptureDevice));
-    userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectRecordCaptureDevice));
+    vector<shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap = UserSelectDeviceMapInit();
     if (updateCommand == CATEGORY_UPDATE) {
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
@@ -3305,10 +3323,29 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
+        if (!desc.isEnable_ && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            desc.IsSameDeviceDesc(audioActiveDevice_.GetCurrentOutputDevice())) {
+            Bluetooth::AudioHfpManager::DisconnectSco();
+        }
         UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>(desc));
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::UserSelectDeviceMapInit()
+{
+    AudioStateManager& stateManager = AudioStateManager::GetAudioStateManager();
+    shared_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice = stateManager.GetPreferredMediaRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> userSelectCallRenderDevice = stateManager.GetPreferredCallRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice = stateManager.GetPreferredCallCaptureDevice();
+    shared_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice = stateManager.GetPreferredRecordCaptureDevice();
+    vector<shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap;
+    userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectMediaRenderDevice));
+    userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectCallRenderDevice));
+    userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectCallCaptureDevice));
+    userSelectDeviceMap.push_back(make_shared<AudioDeviceDescriptor>(*userSelectRecordCaptureDevice));
+    return userSelectDeviceMap;
 }
 
 #ifdef BLUETOOTH_ENABLE
@@ -3356,6 +3393,11 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     CheckForA2dpSuspend(desc);
 
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    if (command == CONNECTSTATE_UPDATE && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        desc.connectState_ != ConnectState::CONNECTED &&
+        audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+    }
     OnPreferredStateUpdated(desc, command, reason);
     audioDeviceCommon_.FetchDevice(true, reason);
     audioDeviceCommon_.FetchDevice(false);
@@ -4064,6 +4106,126 @@ void AudioPolicyService::LoadHdiEffectModel()
     return AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();
 }
 
+int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    AudioEffectPropertyArrayV3 effectPropertyArray = {};
+    GetSupportedEffectProperty(effectPropertyArray);
+    for (auto &effectItem : effectPropertyArray.property) {
+        effectItem.flag = RENDER_EFFECT_FLAG;
+        propertyArray.property.push_back(effectItem);
+    }
+    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    GetSupportedEnhanceProperty(enhancePropertyArray);
+    for (auto &enhanceItem : enhancePropertyArray.property) {
+        enhanceItem.flag = CAPTURE_EFFECT_FLAG;
+        propertyArray.property.push_back(enhanceItem);
+    }
+    return AUDIO_OK;
+}
+
+void AudioPolicyService::GetSupportedEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    std::set<std::pair<std::string, std::string>> mergedSet = {};
+    audioEffectService_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptor = GetDevices(OUTPUT_DEVICES_FLAG);
+    for (auto &item : descriptor) {
+        audioEffectService_.AddSupportedAudioEffectPropertyByDevice(item->getType(), mergedSet);
+    }
+    propertyArray.property.reserve(mergedSet.size());
+    std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
+        [](const std::pair<std::string, std::string>& p) {
+            return AudioEffectPropertyV3{p.first, p.second, RENDER_EFFECT_FLAG};
+        });
+    return;
+}
+
+void AudioPolicyService::GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    std::set<std::pair<std::string, std::string>> mergedSet = {};
+    audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptor = GetDevices(INPUT_DEVICES_FLAG);
+    for (auto &item : descriptor) {
+        audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(item->getType(), mergedSet);
+    }
+    propertyArray.property.reserve(mergedSet.size());
+    std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
+        [](const std::pair<std::string, std::string>& p) {
+            return AudioEffectPropertyV3{p.first, p.second, CAPTURE_EFFECT_FLAG};
+        });
+    return;
+}
+
+int32_t AudioPolicyService::CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    const EffectFlag& flag)
+{
+    AudioEffectPropertyArrayV3 supportPropertyArray;
+    if (flag == CAPTURE_EFFECT_FLAG) {
+        GetSupportedEnhanceProperty(supportPropertyArray);
+    } else {
+        GetSupportedEffectProperty(supportPropertyArray);
+    }
+    for (auto &item : propertyArray.property) {
+        auto oIter = std::find(supportPropertyArray.property.begin(), supportPropertyArray.property.end(), item);
+        CHECK_AND_RETURN_RET_LOG(oIter != supportPropertyArray.property.end(),
+            ERR_INVALID_PARAM, "set property not valid name:%{public}s,category:%{public}s,flag:%{public}d",
+            item.name.c_str(), item.category.c_str(), item.flag);
+    }
+    return AUDIO_OK;
+}
+
+int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+{
+    int32_t ret = AUDIO_OK;
+    AudioEffectPropertyArrayV3 effectPropertyArray = {};
+    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    for (auto &item : propertyArray.property) {
+        if (item.flag == CAPTURE_EFFECT_FLAG) {
+            enhancePropertyArray.property.push_back(item);
+        } else {
+            effectPropertyArray.property.push_back(item);
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG(CheckSupportedAudioEffectProperty(enhancePropertyArray, CAPTURE_EFFECT_FLAG) == AUDIO_OK,
+        ERR_INVALID_PARAM, "check Audio Enhance property failed");
+    CHECK_AND_RETURN_RET_LOG(CheckSupportedAudioEffectProperty(effectPropertyArray, RENDER_EFFECT_FLAG) == AUDIO_OK,
+        ERR_INVALID_PARAM, "check Audio Effect property failed");
+    if (enhancePropertyArray.property.size() > 0) {
+        AudioEffectPropertyArrayV3 oldPropertyArray = {};
+        int32_t ret = GetAudioEnhanceProperty(oldPropertyArray);
+        CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
+        ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(enhancePropertyArray,
+            audioActiveDevice_.GetCurrentInputDeviceType());
+        CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
+        ReloadSourceForEffect(oldPropertyArray, enhancePropertyArray);
+    }
+    if (effectPropertyArray.property.size() > 0) {
+        ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(effectPropertyArray);
+        CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio effect property fail");
+    }
+    return AUDIO_OK;
+}
+
+int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    int32_t ret = AUDIO_OK;
+    ret = AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
+    auto oIter = propertyArray.property.begin();
+    while (oIter != propertyArray.property.end()) {
+        if (oIter->flag == RENDER_EFFECT_FLAG) {
+            oIter = propertyArray.property.erase(oIter);
+        } else {
+            oIter++;
+        }
+    }
+    return ret;
+}
+
+int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+}
+
 int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::set<std::pair<std::string, std::string>> mergedSet = {};
@@ -4107,8 +4269,7 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
             ERR_INVALID_PARAM, "set audio effect property not valid %{public}s:%{public}s",
             item.effectClass.c_str(), item.effectProp.c_str());
     }
-    int32_t ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(propertyArray);
-    return ret;
+    return AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(propertyArray);
 }
 
 int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
@@ -4129,12 +4290,12 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
     }
     AudioEnhancePropertyArray oldPropertyArray = {};
     int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(oldPropertyArray);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("get audio enhance property fail");
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
+    
     ret = AudioServerProxy::GetInstance().SetAudioEnhancePropertyProxy(propertyArray,
         audioActiveDevice_.GetCurrentInputDeviceType());
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
+
     ReloadSourceForEffect(oldPropertyArray, propertyArray);
     return ret;
 }
@@ -4271,6 +4432,11 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, false);
     return SUCCESS;
+}
+
+void AudioPolicyService::UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
+{
+    audioEcManager_.UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
 }
 
 } // namespace AudioStandard

@@ -74,6 +74,8 @@ static constexpr unsigned int AUDIO_XCOLLIE_FLAG_RECOVERY = (1 << 1); // die whe
 
 class Util {
 public:
+    static bool IsScoSupportSource(const SourceType sourceType);
+
     static bool IsDualToneStreamType(const AudioStreamType streamType);
 
     static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
@@ -242,7 +244,7 @@ template <typename...Args>
 void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
 {
     char buf[STRING_BUFFER_SIZE] = {0};
-    int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
+    int len = ::sprintf_s(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
     if (len <= 0) {
         return;
     }
@@ -314,9 +316,10 @@ T *ObjectRefMap<T>::IncreaseRef(T *obj)
 template <typename T>
 void ObjectRefMap<T>::DecreaseRef(T *obj)
 {
-    std::lock_guard<std::mutex> lock(allObjLock);
+    std::unique_lock<std::mutex> lock(allObjLock);
     if (refMap.count(obj) && --refMap[obj] == 0) {
         refMap.erase(obj);
+        lock.unlock();
         delete obj;
         obj = nullptr;
     }

@@ -87,6 +87,42 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     }
 }
 
+static std::string TranslateKeyEvent(const int32_t keyType)
+{
+    string event = "KEYCODE_UNKNOWN";
+
+    if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) {
+        event = "KEYCODE_VOLUME_UP";
+    } else if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN) {
+        event = "KEYCODE_VOLUME_DOWN";
+    } else if (keyType == OHOS::MMI::KeyEvent::KEYCODE_MUTE) {
+        event = "KEYCODE_MUTE";
+    }
+    return event;
+}
+
+static uint32_t TranslateErrorCode(int32_t result)
+{
+    uint32_t resultForMonitor = 0;
+    switch (result) {
+        case ERR_INVALID_PARAM:
+            resultForMonitor = ERR_SUBSCRIBE_INVALID_PARAM;
+            break;
+        case ERR_NULL_POINTER:
+            resultForMonitor = ERR_SUBSCRIBE_KEY_OPTION_NULL;
+            break;
+        case ERR_MMI_CREATION:
+            resultForMonitor = ERR_SUBSCRIBE_MMI_NULL;
+            break;
+        case ERR_MMI_SUBSCRIBE:
+            resultForMonitor = ERR_MODE_SUBSCRIBE;
+            break;
+        default:
+            break;
+    }
+    return resultForMonitor;
+}
+
 void AudioPolicyServer::OnDump()
 {
     return;
@@ -109,20 +145,7 @@ void AudioPolicyServer::OnStart()
     }
     audioPolicyService_.Init();
 
-    AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
-    AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
-    AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
-    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
-    AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
-#endif
-    AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
-    AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
-    AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
-    AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
-#ifdef SUPPORT_USER_ACCOUNT
-    AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
-#endif
+    AddSystemAbilityListeners();
     bool res = Publish(this);
     if (!res) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -149,9 +172,33 @@ void AudioPolicyServer::OnStart()
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
+void AudioPolicyServer::AddSystemAbilityListeners()
+{
+    AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
+    AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
+    AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
+#endif
+    AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
+    AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
+#ifdef USB_ENABLE
+    AddSystemAbilityListener(USB_SYSTEM_ABILITY_ID);
+#endif
+    AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
+#ifdef SUPPORT_USER_ACCOUNT
+    AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
+#endif
+}
+
 void AudioPolicyServer::OnStop()
 {
     audioPolicyService_.Deinit();
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().Deinit();
+#endif
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
     NotifyProcessStatus(false);
@@ -165,7 +212,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
     switch (systemAbilityId) {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         case MULTIMODAL_INPUT_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility input service start");
             SubscribeVolumeKeyEvents();
             break;
 #endif
@@ -182,13 +228,11 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             RegisterBluetoothListener();
             break;
         case ACCESSIBILITY_MANAGER_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
             SubscribeAccessibilityConfigObserver();
             InitKVStore();
             RegisterDataObserver();
             break;
         case POWER_MANAGER_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
             RegisterSyncHibernateListener();
@@ -197,9 +241,13 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             SubscribeOsAccountChangeEvents();
             break;
         case COMMON_EVENT_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility common event service start");
             SubscribeCommonEventExecute();
             break;
+#ifdef USB_ENABLE
+        case USB_SYSTEM_ABILITY_ID:
+            AudioUsbManager::GetInstance().Init(&audioPolicyService_);
+            break;
+#endif
         default:
             OnAddSystemAbilityExtract(systemAbilityId, deviceId);
             break;
@@ -302,11 +350,11 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
 
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_MMI_CREATION, "Failed to obtain INPUT manager");
 
     std::set<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_RET_LOG(keyOption != nullptr, ERR_INVALID_PARAM, "Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOption != nullptr, ERR_NULL_POINTER, "Invalid key option");
     WatchTimeout guard("keyOption->SetPreKeys:RegisterVolumeKeyEvents");
     keyOption->SetPreKeys(preKeys);
     keyOption->SetFinalKey(keyType);
@@ -316,35 +364,52 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     int32_t keySubId = im->SubscribeKeyEvent(keyOption, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
         AUDIO_PRERELEASE_LOGI("Receive volume key event: %{public}s.",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
-        std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-        AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-        if (volumeApplyToAll_) {
-            streamInFocus = AudioStreamType::STREAM_ALL;
-        } else {
-            streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
-        }
-        if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
-            AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
-            SetStreamMuteInternal(streamInFocus, false, true);
-            if (!VolumeUtils::IsPCVolumeEnable()) {
-                AUDIO_DEBUG_LOG("phone need return");
-                return;
-            }
-        }
-        int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
-        if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
+        int32_t ret = ProcessVolumeKeyMuteEvents(keyType);
+        if (ret != AUDIO_OK) {
+            AUDIO_DEBUG_LOG("process volume key mute events need return[%{public}d]", ret);
             return;
         }
-
-        volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ?
-            ++volumeLevelInInt : --volumeLevelInInt;
-        SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, true);
     });
     if (keySubId < 0) {
-        AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume key: %{public}s option failed",
-            (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
+        AUDIO_ERR_LOG("key: %{public}s failed", (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
+        return ERR_MMI_SUBSCRIBE;
     }
     return keySubId;
+}
+
+int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
+{
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
+    if (volumeApplyToAll_) {
+        streamInFocus = AudioStreamType::STREAM_ALL;
+    } else {
+        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+    }
+    if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
+        AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
+        SetStreamMuteInternal(streamInFocus, false, true);
+        if (!VolumeUtils::IsPCVolumeEnable()) {
+            AUDIO_DEBUG_LOG("phone need return");
+            return ERROR_UNSUPPORTED;
+        }
+    }
+    if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(STREAM_SYSTEM) &&
+        VolumeUtils::IsPCVolumeEnable()) {
+        SetStreamMuteInternal(STREAM_SYSTEM, false, true);
+    }
+    int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
+    if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
+        AUDIO_ERR_LOG("volumelevel[%{public}d] invalid", volumeLevelInInt);
+        return ERROR_INVALID_PARAM;
+    }
+
+    volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? ++volumeLevelInInt : --volumeLevelInInt;
+    SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, true);
+    if (volumeLevelInInt <= 0 && VolumeUtils::IsPCVolumeEnable()) {
+        SetStreamMuteInternal(STREAM_SYSTEM, true, true);
+    }
+    return AUDIO_OK;
 }
 #endif
 
@@ -353,10 +418,10 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 {
     AUDIO_INFO_LOG("RegisterVolumeKeyMuteEvents: volume key: mute");
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_MMI_CREATION, "Failed to obtain INPUT manager");
 
     std::shared_ptr<OHOS::MMI::KeyOption> keyOptionMute = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_RET_LOG(keyOptionMute != nullptr, ERR_INVALID_PARAM, "keyOptionMute: Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOptionMute != nullptr, ERR_NULL_POINTER, "keyOptionMute: Invalid key option");
     std::set<int32_t> preKeys;
     WatchTimeout guard("keyOption->SetPreKeys:RegisterVolumeKeyMuteEvents");
     keyOptionMute->SetPreKeys(preKeys);
@@ -381,6 +446,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
         });
     if (muteKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
+        return ERR_MMI_SUBSCRIBE;
     }
     return muteKeySubId;
 }
@@ -397,8 +463,11 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
 
     AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: first time.");
     int32_t resultOfVolumeUp = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    SendMonitrtEvent(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, resultOfVolumeUp);
     int32_t resultOfVolumeDown = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    SendMonitrtEvent(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN, resultOfVolumeDown);
     int32_t resultOfMute = RegisterVolumeKeyMuteEvents();
+    SendMonitrtEvent(OHOS::MMI::KeyEvent::KEYCODE_MUTE, resultOfMute);
     if (resultOfVolumeUp >= 0 && resultOfVolumeDown >= 0 && resultOfMute >= 0) {
         hasSubscribedVolumeKeyEvents_.store(true);
     } else {
@@ -407,6 +476,16 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
     }
 }
 #endif
+
+void AudioPolicyServer::SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::VOLUME_SUBSCRIBE,
+        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+    bean->Add("SUBSCRIBE_KEY", TranslateKeyEvent(keyType));
+    bean->Add("SUBSCRIBE_RESULT", static_cast<int32_t>(TranslateErrorCode(resultOfVolumeKey)));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
 
 void AudioPolicyServer::SubscribeSafeVolumeEvent()
 {
@@ -2258,12 +2337,6 @@ void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
     audioPolicyService_.SubscribeAccessibilityConfigObserver();
 }
 
-bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
-{
-    AUDIO_INFO_LOG("IsAudioRendererLowLatencySupported server call");
-    return true;
-}
-
 int32_t AudioPolicyServer::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
@@ -2880,7 +2953,7 @@ AudioSpatializationSceneType AudioPolicyServer::GetSpatializationSceneType()
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
-        return SPATIALIZATION_SCENE_TYPE_DEFAULT;
+        return SPATIALIZATION_SCENE_TYPE_MUSIC;
     }
     return audioSpatializationService_.GetSpatializationSceneType();
 }
@@ -3056,6 +3129,40 @@ int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionI
 int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
+}
+
+int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
+    return AUDIO_OK;
+}
+
+int32_t AudioPolicyServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+{
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioPolicyService_.SetAudioEffectProperty(propertyArray);
+}
+
+int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioPolicyService_.GetAudioEffectProperty(propertyArray);
 }
 
 int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)

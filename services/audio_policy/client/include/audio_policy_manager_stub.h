@@ -89,7 +89,6 @@ private:
     void GetToneInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
 #endif
-    void IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply);
     void CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
@@ -170,6 +169,9 @@ private:
     void SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSupportedAudioEffectPropertyV3Internal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioEffectPropertyV3Internal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioEffectPropertyV3Internal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply);
     void SetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply);

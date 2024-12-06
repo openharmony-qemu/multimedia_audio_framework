@@ -147,14 +147,15 @@ void AudioAdapterManager::InitBootAnimationVolume()
 {
     char currentVolumeValue[3] = {0};
     AudioVolumeType typeForBootAnimation = VolumeUtils::IsPCVolumeEnable() ? STREAM_SYSTEM : STREAM_RING;
-    std::string defaultVolume = VolumeUtils::IsPCVolumeEnable()?
-        std::to_string(volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation)) : "7";
+    int32_t bootAnimationVolume = volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation);
+    AUDIO_DEBUG_LOG("Init: Type[%{public}d],volume[%{public}d]", typeForBootAnimation, bootAnimationVolume);
+    std::string defaultVolume = VolumeUtils::IsPCVolumeEnable()? std::to_string(bootAnimationVolume) : "7";
     auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", defaultVolume.c_str(),
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
         volumeDataMaintainer_.SetStreamVolume(typeForBootAnimation, atoi(currentVolumeValue));
-        AUDIO_INFO_LOG("Init: Get ringtone volume to map success %{public}d",
-            volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation));
+        AUDIO_INFO_LOG("Init: Get Type[%{public}d] volume to map volume [%{public}d]",
+            typeForBootAnimation, volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation));
     } else {
         AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
     }
@@ -482,6 +483,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
         {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
     };
 
+    std::lock_guard<std::mutex> lock(audioVolumeMutex_);
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     bool isMuted = GetStreamMute(volumeType);
     int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
@@ -774,12 +776,10 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
+    std::lock_guard<std::mutex> lock(activeDeviceMutex_);
     // The same device does not set the volume
-    // Except for A2dp, because the currentActiveDevice_ has already been set in Activea2dpdevice.
-    bool isRingerModeMute = AudioPolicyService::GetAudioPolicyService().IsRingerModeMute();
     bool isSameVolumeGroup = GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType);
-    if (currentActiveDevice_ == deviceType &&
-        deviceType != DEVICE_TYPE_BLUETOOTH_A2DP && (deviceType != DEVICE_TYPE_BLUETOOTH_SCO || !isRingerModeMute)) {
+    if (currentActiveDevice_ == deviceType) {
         AUDIO_INFO_LOG("Old device: %{public}d. New device: %{public}d. No need to update volume",
             currentActiveDevice_, deviceType);
         return;
@@ -790,8 +790,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceType;
 
-    if (!isSameVolumeGroup || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        (deviceType == DEVICE_TYPE_BLUETOOTH_SCO && isRingerModeMute)) {
+    if (!isSameVolumeGroup) {
         LoadVolumeMap();
         LoadMuteStatusMap();
         UpdateSafeVolume();
@@ -2002,7 +2001,8 @@ void AudioAdapterManager::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolu
 
 void AudioAdapterManager::SetActiveDevice(DeviceType deviceType)
 {
-    currentActiveDevice_ = deviceType;
+    AUDIO_PRERELEASE_LOGI("SetActiveDevice deviceType %{public}d", deviceType);
+    SetVolumeForSwitchDevice(deviceType);
 }
 
 DeviceType AudioAdapterManager::GetActiveDevice()
@@ -2012,7 +2012,13 @@ DeviceType AudioAdapterManager::GetActiveDevice()
 
 void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 {
+    AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d", isAbsVolumeScene);
     isAbsVolumeScene_ = isAbsVolumeScene;
+    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        SetVolumeDb(STREAM_MUSIC);
+    } else {
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
+    }
 }
 
 bool AudioAdapterManager::IsAbsVolumeScene() const
@@ -2024,9 +2030,8 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     AUDIO_INFO_LOG("SetAbsVolumeMute: %{public}d", mute);
     isAbsVolumeMute_ = mute;
-    float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
     if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+        SetVolumeDb(STREAM_MUSIC);
     } else {
         AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
     }

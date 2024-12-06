@@ -66,6 +66,7 @@ public:
     SourceType GetSourceOpened();
     bool GetEcFeatureEnable();
     bool GetMicRefFeatureEnable();
+    void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
 private:
     AudioEcManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
