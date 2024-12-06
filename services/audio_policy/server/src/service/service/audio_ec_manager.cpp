@@ -154,10 +154,10 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
 
     if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
         uint32_t rateValue, channelValue = 0;
-        CHECK_AND_RETURN_RET_LOG(StringConverter(moduleInfo.rate, rateValue), ERR_INVALID_PARAM,
-                "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
-        CHECK_AND_RETURN_RET_LOG(StringConverter(moduleInfo.channels, channelValue), ERR_INVALID_PARAM,
-                "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
+            "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
+            "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
 
         uint32_t bufferSize = rateValue * channelValue *
             AudioPolicyUtils::GetInstance().PcmFormatToBytes(static_cast<AudioSampleFormat>(
@@ -555,11 +555,11 @@ void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         if (isEcFeatureEnable_) {
-            uint32_t rateValue,channelValue = 0;
+            uint32_t rateValue, channelValue = 0;
             CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
                 "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
             CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
-                "convert invalid moduleInfo.channels: %{public}s",moduleInfo.channels.c_str());
+                "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
             uint32_t bufferSize = rateValue * channelValue *
                 AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
                 RENDER_FRAME_INTERVAL_IN_SECONDS;
