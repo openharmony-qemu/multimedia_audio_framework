@@ -2026,12 +2026,51 @@ static void ResetBufferAttr(struct Userdata *u)
     }
 }
 
-static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashmap *sceneToCountMap, pa_sink *si)
+static void SceneToResamplerMapAddNewScene(pa_hashmap *sceneToResamplerMap, const char *sceneType, pa_sink *si)
 {
-    // sample rate and channellayout from audio effect chain -> resampler -> sample rate and channellayout for the sink
     pa_sample_spec sink_spec = si->sample_spec;
     pa_channel_map sink_channelmap = si->channel_map;
     sink_spec.format = PA_SAMPLE_FLOAT32LE;
+    // for now, use sample_spec from sink
+    AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
+        ", format[%{public}d]", (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
+    pa_resampler *resampler = pa_resampler_new(
+        si->core->mempool, &sink_spec, &sink_channelmap,
+        &sink_spec, &sink_channelmap, si->core->lfe_crossover_freq,
+        PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+    char* newSceneType = strdup(sceneType);
+    if (newSceneType == NULL) {
+        AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
+        return;
+    }
+    pa_hashmap_put(sceneToResamplerMap, (void *)newSceneType, (void *)resampler);
+}
+
+
+static void UpdateResamplerOchannelMap(pa_hashmap *sceneToResamplerMap, const char *sceneType, pa_sink *si)
+{
+    // for now, use sample_spec from sink
+    pa_sample_spec sink_spec = si->sample_spec;
+    pa_channel_map sink_channelmap = si->channel_map;
+    sink_spec.format = PA_SAMPLE_FLOAT32LE;
+    AUDIO_INFO_LOG("SceneToResamplerMap: [%{public}s], new output channels [%{public}d], sample rate "
+        "[%{public}d], format[%{public}d].", (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
+    char *dupSceneType = strdup(sceneType);
+    if (dupSceneType == NULL) {
+        AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
+        return;
+    }
+    pa_hashmap_remove_and_free(sceneToResamplerMap, sceneType);
+    pa_resampler *resampler = pa_resampler_new(
+        si->core->mempool, &sink_spec, &sink_channelmap,
+        &sink_spec, &sink_channelmap, si->core->lfe_crossover_freq,
+        PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+    pa_hashmap_put(sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
+}
+
+static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashmap *sceneToCountMap, pa_sink *si)
+{
+    // sample rate and channellayout from audio effect chain -> resampler -> sample rate and channellayout for the sink
     const void* sceneType = NULL;
     void* count = NULL;
     while ((pa_hashmap_iterate(sceneToCountMap, &count, &sceneType))) {
@@ -2041,40 +2080,13 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
         pa_resampler* resampler = NULL;
         resampler = (pa_resampler*)pa_hashmap_get(sceneToResamplerMap, sceneType);
         if (resampler == NULL) {
-            // for now, use sample_spec from sink
-            AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
-                ", format[%{public}d]", (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
-            resampler = pa_resampler_new(
-                si->core->mempool, &sink_spec, &sink_channelmap,
-                &sink_spec, &sink_channelmap, si->core->lfe_crossover_freq,
-                PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
-            char* newSceneType = strdup(sceneType);
-            if (newSceneType == NULL) {
-                AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
-                continue;
-            }
-            pa_hashmap_put(sceneToResamplerMap, (void *)newSceneType, (void *)resampler);
+            SceneToResamplerMapAddNewScene(sceneToResamplerMap, sceneType, si);
         } else {
-            if (pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) &&
-                pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
+            if (pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &si->sample_spec) &&
+                pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &si->channel_map)) {
                     continue;
             }
-            AUDIO_INFO_LOG("SceneToResamplerMap: [%{public}s], output channels [%{public}d], sample rate[%{public}d], "
-                "format[%{public}d]. new output channels[%{public}d], sample rate[%{public}d], format[%{public}d]",
-                (char *)sceneType, pa_resampler_output_sample_spec(resampler)->channels,
-                pa_resampler_output_sample_spec(resampler)->rate, pa_resampler_output_sample_spec(resampler)->format,
-                sink_spec.channels, sink_spec.rate, sink_spec.format);
-            char *dupSceneType = strdup(sceneType);
-            if (dupSceneType == NULL) {
-                AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
-                continue;
-            }
-            pa_hashmap_remove_and_free(sceneToResamplerMap, sceneType);
-            resampler = pa_resampler_new(
-                si->core->mempool, &sink_spec, &sink_channelmap,
-                &sink_spec, &sink_channelmap, si->core->lfe_crossover_freq,
-                PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
-            pa_hashmap_put(sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
+            UpdateResamplerOchannelMap(sceneToResamplerMap, sceneType, si);
         }
     }
     // delete entries that are not in scenemap
