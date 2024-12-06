@@ -322,6 +322,8 @@ private:
     bool isNeedConvertSafeTime_ = false;
     sptr<IStandardAudioService> audioServerProxy_ = nullptr;
     std::optional<uint32_t> offloadSessionID_;
+    std::mutex audioVolumeMutex_;
+    std::mutex activeDeviceMutex_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
