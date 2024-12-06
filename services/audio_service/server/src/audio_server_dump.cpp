@@ -534,7 +534,7 @@ void AudioServerDump::AudioCacheTimeDump(std::string &dumpString)
 void AudioServerDump::AudioCacheMemoryDump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("AudioCacheMemoryDump");
-    dumpString += "\nAudioCached Memory\n"
+    dumpString += "\nAudioCached Memory\n";
 
     size_t dataLength = 0;
     size_t bufferLength = 0;
