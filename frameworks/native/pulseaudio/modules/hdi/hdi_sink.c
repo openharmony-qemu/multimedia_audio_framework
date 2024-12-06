@@ -2053,8 +2053,6 @@ static void UpdateResamplerOchannelMap(pa_hashmap *sceneToResamplerMap, const ch
     pa_sample_spec sink_spec = si->sample_spec;
     pa_channel_map sink_channelmap = si->channel_map;
     sink_spec.format = PA_SAMPLE_FLOAT32LE;
-    AUDIO_INFO_LOG("SceneToResamplerMap: [%{public}s], new output channels [%{public}d], sample rate "
-        "[%{public}d], format[%{public}d].", (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
     char *dupSceneType = strdup(sceneType);
     if (dupSceneType == NULL) {
         AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
@@ -2082,10 +2080,17 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
         if (resampler == NULL) {
             SceneToResamplerMapAddNewScene(sceneToResamplerMap, sceneType, si);
         } else {
-            if (pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &si->sample_spec) &&
+            pa_sample_spec sink_spec = si->sample_spec;
+            sink_spec.format = PA_SAMPLE_FLOAT32LE;
+            if (pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) &&
                 pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &si->channel_map)) {
                     continue;
             }
+            AUDIO_INFO_LOG("SceneToResamplerMap: [%{public}s], output channels [%{public}d], sample rate [%{public}d],"
+                " format[%{public}d]. new output channels [%{public}d], sample rate [%{public}d], format[%{public}d].",
+                (char *)sceneType, pa_resampler_output_sample_spec(resampler)->channels,
+                pa_resampler_output_sample_spec(resampler)->rate, pa_resampler_output_sample_spec(resampler)->format,
+                sink_spec.channels, sink_spec.rate, sink_spec.format);
             UpdateResamplerOchannelMap(sceneToResamplerMap, sceneType, si);
         }
     }
