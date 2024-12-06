@@ -794,19 +794,6 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     return audioDeviceDescriptors;
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetDeviceByMacAddressAndDeviceType(
-    const vector<shared_ptr<AudioDeviceDescriptor>> &descs, const string &macAddress, DeviceType deviceType)
-{
-    auto isPresent = [&](const shared_ptr<AudioDeviceDescriptor> &desc) {
-        return desc && desc->macAddress_ == macAddress && desc->deviceType_ == deviceType;
-    };
-    auto it = find_if(descs.begin(), descs.end(), isPresent);
-    if (it != descs.end()) {
-        return std::make_shared<AudioDeviceDescriptor>(**it);
-    }
-    return std::make_shared<AudioDeviceDescriptor>();
-}
-
 unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManager::GetDevicePrivacyMaps()
 {
     return devicePrivacyMaps_;
