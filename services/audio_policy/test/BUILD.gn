@@ -203,6 +203,7 @@ ohos_unittest("audio_policy_service_all_unit_test") {
   include_dirs = [
     "./unittest/audio_policy_service_unit_test/include",
     "../../audio_policy/server/include/service",
+    "../../audio_policy/server/include/service/service",
     "../../audio_policy/server/include",
   ]
 
