@@ -169,7 +169,8 @@ void AudioPolicyServiceEnhanceTwoFuzzTest()
     std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
     selectedDesc.push_back(fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.UpdateDeviceList(updatedDesc, isRemote, selectedDesc, reason);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.UpdateDeviceList(updatedDesc, isRemote,
+        selectedDesc, reason);
 
     std::string macAddress = "";
     std::unordered_map<uint32_t, bool> sessionIDToSpatialization;
@@ -299,7 +300,8 @@ void AudioPolicyServiceEnhanceFiveFuzzTest()
     uint64_t sessionID = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(sessionID);
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemainingSource();
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.ReloadSourceForDeviceChange(DEVICE_TYPE_DEFAULT, deviceType, "test");
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.ReloadSourceForDeviceChange(DEVICE_TYPE_DEFAULT,
+        deviceType, "test");
 }
 
 void AudioPolicyServiceEnhanceSixFuzzTest()

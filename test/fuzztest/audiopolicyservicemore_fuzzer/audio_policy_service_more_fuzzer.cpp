@@ -195,10 +195,7 @@ void AudioPolicyServiceSecondTest(AudioStreamInfo audioStreamInfo,
 
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    std::vector<AudioMode> audioMode = {
-        AUDIO_MODE_RECORD,
-        AUDIO_MODE_PLAYBACK
-    };
+    std::vector<AudioMode> audioMode = { AUDIO_MODE_RECORD, AUDIO_MODE_PLAYBACK };
     uint32_t modeInt = GetData<uint32_t>() % audioMode.size();
     AudioMode mode = audioMode[modeInt];
     GetServerPtr()->audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object, sessionId);
