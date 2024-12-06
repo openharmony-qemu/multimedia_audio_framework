@@ -1109,7 +1109,8 @@ bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
 
-            if ((audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL) && (streamUsage != STREAM_USAGE_ALARM)) {
+            if ((audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && streamUsage != STREAM_USAGE_ALARM) ||
+                (VolumeUtils::IsPCVolumeEnable() && audioVolumeManager_.GetStreamMute(STREAM_MUSIC))) {
                 AUDIO_INFO_LOG("no normal ringer mode and no alarm, dont dual hal tone.");
                 return false;
             }
@@ -1324,7 +1325,7 @@ void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor>
 {
     Trace trace("AudioDeviceCommon::BluetoothScoFetch");
     int32_t ret;
-    if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+    if (Util::IsScoSupportSource(sourceType)) {
         int32_t activeRet = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
         if (activeRet != SUCCESS) {
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
