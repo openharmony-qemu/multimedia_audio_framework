@@ -1374,7 +1374,7 @@ void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDevice
     std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(
         audioActiveDevice_.GetCurrentOutputDeviceType());
         
-    int32_t ret = audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo, networkId, sinkName,
+    int32_t ret = LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo, networkId, sinkName,
         sourceType);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "load a2dp input module failed");
 }
