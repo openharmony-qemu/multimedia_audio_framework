@@ -1850,7 +1850,6 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
             GetEncryptAddr(lastActiveA2dpDevice).c_str());
         return result;
     }
-    audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
 
     AudioStreamInfo audioStreamInfo = {};
     audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo);
