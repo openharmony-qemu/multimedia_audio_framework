@@ -210,6 +210,7 @@ ohos_shared_library("audio_client") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "eventhandler:libeventhandler",
+    "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "i18n:intl_util",
@@ -376,6 +377,7 @@ audio_ohos_library("audio_process_service") {
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
+    "eventhandler:libeventhandler",
     "hdf_core:libhdf_utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
