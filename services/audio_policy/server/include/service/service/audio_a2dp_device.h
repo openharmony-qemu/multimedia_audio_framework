@@ -21,13 +21,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
-#include "audio_policy_manager_factory.h"
 #include "audio_info.h"
 #include "audio_module_info.h"
 #include "audio_device_info.h"
-
-#include "audio_config_manager.h"
-#include "audio_iohandle_map.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,8 +34,6 @@ public:
         static AudioA2dpDevice instance;
         return instance;
     }
-    int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo, std::string networkID,
-        std::string sinkName, SourceType sourceType);
     bool GetA2dpDeviceInfo(const std::string& device, A2dpDeviceConfigInfo& info);
     bool GetA2dpInDeviceInfo(const std::string& device, A2dpDeviceConfigInfo& info);
     bool GetA2dpDeviceVolumeLevel(const std::string& device, int32_t& volumeLevel);
@@ -55,24 +49,13 @@ public:
     size_t DelA2dpInDevice(const std::string& device);
     bool GetA2dpDeviceMute(const std::string& device, bool& isMute);
 private:
-    AudioA2dpDevice() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()) {}
+    AudioA2dpDevice() {}
     ~AudioA2dpDevice() {}
-    void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
-        SourceType sourceType);
-    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
-        const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName,
-        SourceType sourceType);
 private:
     mutable std::mutex a2dpDeviceMapMutex_;
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     mutable std::mutex a2dpInDeviceMapMutex_;
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpInDeviceMap_;
-
-    IAudioPolicyInterface& audioPolicyManager_;
-    AudioIOHandleMap& audioIOHandleMap_;
-    AudioConfigManager& audioConfigManager_;
 };
 }
 }

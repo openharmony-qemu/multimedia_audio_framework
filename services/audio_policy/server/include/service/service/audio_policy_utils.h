@@ -68,6 +68,10 @@ public:
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
+    DeviceRole GetDeviceRole(DeviceType deviceType) const;
+    DeviceRole GetDeviceRole(const std::string &role);
+    DeviceRole GetDeviceRole(AudioPin pin) const;
+    DeviceType GetDeviceType(const std::string &deviceName);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

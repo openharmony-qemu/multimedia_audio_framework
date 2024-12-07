@@ -177,9 +177,8 @@ void ThreadFunctionTest()
 void AudioPolicyServiceSecondTest(AudioStreamInfo audioStreamInfo,
     std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
-    GetServerPtr()->audioPolicyService_.LoadSinksForCapturer();
     bool isConnected = GetData<bool>();
-    GetServerPtr()->audioPolicyService_.HandleRemoteCastDevice(isConnected, audioStreamInfo);
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemoteCastDevice(isConnected, audioStreamInfo);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(isConnected);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVoipConfig();
     pid_t clientPid = GetData<pid_t>();
@@ -196,10 +195,7 @@ void AudioPolicyServiceSecondTest(AudioStreamInfo audioStreamInfo,
 
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    std::vector<AudioMode> audioMode = {
-        AUDIO_MODE_RECORD,
-        AUDIO_MODE_PLAYBACK
-    };
+    std::vector<AudioMode> audioMode = { AUDIO_MODE_RECORD, AUDIO_MODE_PLAYBACK };
     uint32_t modeInt = GetData<uint32_t>() % audioMode.size();
     AudioMode mode = audioMode[modeInt];
     GetServerPtr()->audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object, sessionId);
@@ -224,8 +220,10 @@ void AudioPolicyServiceSecondTest(AudioStreamInfo audioStreamInfo,
     GetServerPtr()->audioPolicyService_.audioIOHandleMap_.GetSourceIOHandle(deviceTypeSou);
     SinkInput sinkInput = {};
     SourceOutput sourceOutput = {};
-    GetServerPtr()->audioPolicyService_.WriteOutputDeviceChangedSysEvents(remoteDeviceDescriptor, sinkInput);
-    GetServerPtr()->audioPolicyService_.WriteInputDeviceChangedSysEvents(remoteDeviceDescriptor, sourceOutput);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.WriteOutputDeviceChangedSysEvents(remoteDeviceDescriptor,
+        sinkInput);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.WriteInputDeviceChangedSysEvents(remoteDeviceDescriptor,
+        sourceOutput);
 }
 
 void AudioPolicyServiceThirdTest()
@@ -404,7 +402,7 @@ void AudioPolicyServiceTestIII()
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->WaitForConnectionCompleted();
 
     std::string dumpString = "";
-    GetServerPtr()->audioPolicyService_.AudioStreamDump(dumpString);
+    GetServerPtr()->audioPolicyDump_.AudioStreamDump(dumpString);
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.ringerModeMute_ = true;
     GetServerPtr()->audioPolicyService_.ResetRingerModeMute();
 
@@ -414,7 +412,7 @@ void AudioPolicyServiceTestIII()
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioStreamInfo.channels = AudioChannel::STEREO;
     DeviceType deviceType = GetData<DeviceType>();
-    GetServerPtr()->audioPolicyService_.ReloadA2dpOffloadOnDeviceChanged(deviceType,
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.ReloadA2dpOffloadOnDeviceChanged(deviceType,
         GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "DeviceName", audioStreamInfo);
 
     int32_t usageOrSourceType = GetData<int32_t>();

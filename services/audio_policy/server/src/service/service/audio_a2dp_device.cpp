@@ -30,8 +30,6 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
-
 static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
@@ -46,87 +44,6 @@ static std::string GetEncryptAddr(const std::string &addr)
         out[i] = tmp[i];
     }
     return out;
-}
-
-void AudioA2dpDevice::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
-    SourceType sourceType)
-{
-    uint32_t bufferSize = audioStreamInfo.samplingRate *
-        AudioPolicyUtils::GetInstance().PcmFormatToBytes(audioStreamInfo.format) *
-        audioStreamInfo.channels / BT_BUFFER_ADJUSTMENT_FACTOR;
-    AUDIO_INFO_LOG("a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
-        audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
-    moduleInfo.channels = to_string(audioStreamInfo.channels);
-    moduleInfo.rate = to_string(audioStreamInfo.samplingRate);
-    moduleInfo.format = AudioPolicyUtils::GetInstance().ConvertToHDIAudioFormat(audioStreamInfo.format);
-    moduleInfo.bufferSize = to_string(bufferSize);
-    if (moduleInfo.role != "source") {
-        moduleInfo.renderInIdleState = "1";
-        moduleInfo.sinkLatency = "0";
-    }
-    AudioPolicyService::GetAudioPolicyService().UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
-}
-
-int32_t AudioA2dpDevice::LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
-    std::string networkID, std::string sinkName, SourceType sourceType)
-{
-    std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_A2DP, moduleInfoList);
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED,
-        "A2dp module is not exist in the configuration file");
-
-    for (auto &moduleInfo : moduleInfoList) {
-        DeviceRole configRole = moduleInfo.role == "source" ? INPUT_DEVICE : OUTPUT_DEVICE;
-        DeviceRole deviceRole = deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ? OUTPUT_DEVICE : INPUT_DEVICE;
-        AUDIO_INFO_LOG("Load a2dp module [%{public}s], load role[%{public}d], config role[%{public}d]",
-            moduleInfo.name.c_str(), deviceRole, configRole);
-        if (configRole != deviceRole) {continue;}
-        if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
-            // a2dp device connects for the first time
-            GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
-            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-            CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-                "OpenAudioPort failed %{public}d", ioHandle);
-            audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
-        } else {
-            // At least one a2dp device is already connected. A new a2dp device is connecting.
-            // Need to reload a2dp module when switching to a2dp device.
-            int32_t result = ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo, networkID, sinkName,
-                sourceType);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "ReloadA2dpAudioPort failed %{public}d", result);
-        }
-    }
-
-    return SUCCESS;
-}
-
-int32_t AudioA2dpDevice::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
-    const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName,
-    SourceType sourceType)
-{
-    AUDIO_INFO_LOG("switch device from a2dp to another a2dp, reload a2dp module");
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        audioIOHandleMap_.MuteDefaultSinkPort(networkID, sinkName);
-    }
-
-    // Firstly, unload the existing a2dp sink or source.
-    std::string portName = BLUETOOTH_SPEAKER;
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-        portName = BLUETOOTH_MIC;
-    }
-    AudioIOHandle activateDeviceIOHandle;
-    audioIOHandleMap_.GetModuleIdByKey(portName, activateDeviceIOHandle);
-    int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
-        "CloseAudioPort failed %{public}d", result);
-
-    // Load a2dp sink or source module again with the configuration of active a2dp device.
-    GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
-    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-        "OpenAudioPort failed %{public}d", ioHandle);
-    audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
-    return SUCCESS;
 }
 
 bool AudioA2dpDevice::GetA2dpDeviceInfo(const std::string& device, A2dpDeviceConfigInfo& info)
