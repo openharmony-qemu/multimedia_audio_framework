@@ -347,6 +347,15 @@ bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &device
         networkId_ == deviceInfo.networkId_;
 }
 
+bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const
+{
+    return ((deviceDescriptor.deviceRole_ == INPUT_DEVICE && deviceRole_ == OUTPUT_DEVICE) ||
+        (deviceDescriptor.deviceRole_ == OUTPUT_DEVICE && deviceRole_ == INPUT_DEVICE)) &&
+        deviceDescriptor.deviceType_ == deviceType_ &&
+        deviceDescriptor.macAddress_ == macAddress_ &&
+        deviceDescriptor.networkId_ == networkId_;
+}
+
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(DeviceType deviceType)
 {
     switch (deviceType) {

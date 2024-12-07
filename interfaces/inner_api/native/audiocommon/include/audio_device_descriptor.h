@@ -115,6 +115,8 @@ public:
 
     bool IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const;
 
+    bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
+
     static DeviceType MapInternalToExternalDeviceType(DeviceType deviceType);
 };
 } // namespace AudioStandard

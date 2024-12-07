@@ -148,35 +148,23 @@ void AudioDeviceManager::AddRemoteCaptureDev(const shared_ptr<AudioDeviceDescrip
     }
 }
 
-void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc,
-    DeviceRole devRole)
-{
-    auto isPresent = [&devDesc, &devRole] (const shared_ptr<AudioDeviceDescriptor> &desc) {
-        if (desc->networkId_ != devDesc->networkId_ || desc->deviceRole_ != devRole) {
-            return false;
-        }
-        if (devDesc->macAddress_ != "" && devDesc->macAddress_ == desc->macAddress_) {
-            return true;
-        } else {
-            return (desc->deviceType_ == devDesc->deviceType_);
-        }
-    };
-
-    auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
-    if (it != connectedDevices_.end()) {
-        devDesc->pairDeviceDescriptor_ = *it;
-        (*it)->pairDeviceDescriptor_ = devDesc;
-    }
-
-    MakePairedDefaultDeviceDescriptor(devDesc, devRole);
-}
-
 void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    if (devDesc->deviceRole_ == INPUT_DEVICE) {
-        MakePairedDeviceDescriptor(devDesc, OUTPUT_DEVICE);
-    } else if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
-        MakePairedDeviceDescriptor(devDesc, INPUT_DEVICE);
+    auto isPresent = [&devDesc] (const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return devDesc->IsPairedDeviceDesc(*desc);
+    };
+
+    if (devDesc->deviceRole_ == INPUT_DEVICE || devDesc->deviceRole_ == OUTPUT_DEVICE) {
+        auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+        if (it != connectedDevices_.end()) {
+            devDesc->pairDeviceDescriptor_ = *it;
+            (*it)->pairDeviceDescriptor_ = devDesc;
+        }
+        if (devDesc->deviceRole_ == INPUT_DEVICE) {
+            MakePairedDefaultDeviceDescriptor(devDesc, OUTPUT_DEVICE);
+        } else {
+            MakePairedDefaultDeviceDescriptor(devDesc, INPUT_DEVICE);
+        }
     }
 }
 
