@@ -73,16 +73,6 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALL
 };
 
-static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
-    // from high to low
-    {SOURCE_TYPE_VOICE_CALL, 5},
-    {SOURCE_TYPE_VOICE_COMMUNICATION, 4},
-    {SOURCE_TYPE_VOICE_TRANSCRIPTION, 3},
-    {SOURCE_TYPE_MIC, 2},
-    {SOURCE_TYPE_VOICE_RECOGNITION, 1},
-    {SOURCE_TYPE_INVALID, 0},
-};
-
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
@@ -112,15 +102,6 @@ static std::string GetEncryptAddr(const std::string &addr)
         out[i] = tmp[i];
     }
     return out;
-}
-
-static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
-{
-    if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0 ||
-        NORMAL_SOURCE_PRIORITY.count(currentSource) == 0) {
-        return false;
-    }
-    return NORMAL_SOURCE_PRIORITY[newSource] > NORMAL_SOURCE_PRIORITY[currentSource];
 }
 
 AudioPolicyService::~AudioPolicyService()

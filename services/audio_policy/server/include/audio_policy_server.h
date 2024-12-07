@@ -659,7 +659,7 @@ private:
     pid_t lastMicMuteSettingPid_ = 0;
     std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
-    AudioPolicyDump& audioPolicyDump_;
+    AudioPolicyDump &audioPolicyDump_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
