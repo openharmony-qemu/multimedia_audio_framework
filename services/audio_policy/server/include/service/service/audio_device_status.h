@@ -154,6 +154,8 @@ private:
         const SinkInput &sinkInput);
     void WriteInputDeviceChangedSysEvents(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const SourceOutput &sourceOutput);
+    AudioStreamDeviceChangeReason GetDeviceChangeReason(AudioDeviceDescriptor &desc,
+        const DeviceInfoUpdateCommand command);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

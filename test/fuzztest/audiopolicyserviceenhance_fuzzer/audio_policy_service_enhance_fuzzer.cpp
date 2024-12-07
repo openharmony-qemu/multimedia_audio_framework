@@ -150,7 +150,7 @@ void AudioPolicyServiceEnhanceTwoFuzzTest()
 
     AudioStreamInfo audioStreamInfo;
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
-        audioStreamInfo, "", "", SOURCE_TYPE_MIC);
+        audioStreamInfo, "", "", SOURCE_TYPE_VOICE_RECOGNITION);
 
     DeviceType deviceType = GetData<DeviceType>();
     std::string networkId = "LocalDevice";

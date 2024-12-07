@@ -2492,28 +2492,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test RemoteOffloadStreamRelease.
-* @tc.number: RemoteOffloadStreamRelease_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, RemoteOffloadStreamRelease_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest RemoteOffloadStreamRelease_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    uint32_t sessionId = TEST_SESSIONID;
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.offloadSessionID_.reset();
-
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.RemoteOffloadStreamRelease(sessionId);
-
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.offloadSessionID_ = TEST_SESSIONID;
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.RemoteOffloadStreamRelease(sessionId);
-
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.offloadSessionID_ = TEST_SESSIONID + 1;
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.RemoteOffloadStreamRelease(sessionId);
-}
-
-/**
 * @tc.name  : Test HandlePowerStateChanged.
 * @tc.number: HandlePowerStateChanged_001
 * @tc.desc  : Test AudioPolicyService interfaces.

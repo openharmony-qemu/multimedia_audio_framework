@@ -141,6 +141,18 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level1)
 }
 
 /**
+* @tc.name   : Test GetAudioParameter API
+* @tc.number : GetAudioParameter_001
+* @tc.desc   : Test GetAudioParameter interface. Returns if app in fastlist
+*/
+HWTEST(AudioManagerUnitTest, GetAudioParameter_001, TestSize.Level1)
+{
+    std::string mockBundleName = "Is_Fast_Blocked_For_AppName#com.samples.audio";
+    std::string result = AudioSystemManager::GetInstance()->GetAudioParameter(mockBundleName);
+    EXPECT_EQ(result, "true");
+}
+
+/**
 * @tc.name   : Test GetDevices API
 * @tc.number : GetConnectedDevicesList_003
 * @tc.desc   : Test GetDevices interface. Returns list of output devices

@@ -138,12 +138,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
         shared_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            shared_ptr<AudioDeviceDescriptor> a2dpInDesc = AudioDeviceManager::GetAudioDeviceManager()
-                .GetDeviceByMacAddressAndDeviceType(descs, desc->macAddress_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
-            if (a2dpInDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-                desc = move(a2dpInDesc);
-            }
-            AUDIO_DEBUG_LOG(" RecongnitionsourceType %{public}d clientUID %{public}d fetch device %{public}d",
+            AUDIO_DEBUG_LOG("Recognition sourceType %{public}d clientUID %{public}d fetch device %{public}d",
                 sourceType, clientUID, desc->deviceType_);
             return desc;
         }
