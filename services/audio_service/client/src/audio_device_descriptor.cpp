@@ -292,6 +292,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
     networkId_ = parcel.ReadString();
     displayName_ = parcel.ReadString();
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
+    connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
 }
 
 void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
@@ -311,7 +312,6 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
     isLowLatencyDevice_ = parcel.ReadBool();
     a2dpOffloadFlag_ = parcel.ReadInt32();
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
-    connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
 }
 
 void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string macAddress)
