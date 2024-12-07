@@ -47,12 +47,14 @@ ohos_shared_library("audio_common") {
   sources = [
     "common/src/audio_common_converter.cpp",
     "common/src/audio_down_mix_stereo.cpp",
+    "common/src/audio_dump_pcm.cpp",
     "common/src/audio_log_utils.cpp",
     "common/src/audio_process_config.cpp",
     "common/src/audio_resample.cpp",
     "common/src/audio_ring_cache.cpp",
     "common/src/audio_thread_task.cpp",
     "common/src/audio_volume.cpp",
+    "common/src/callback_handler.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
     "common/src/linear_pos_time_model.cpp",
@@ -76,6 +78,7 @@ ohos_shared_library("audio_common") {
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
@@ -176,7 +179,6 @@ ohos_shared_library("audio_client") {
     "client/src/audio_stream_manager.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/audio_system_manager.cpp",
-    "client/src/callback_handler.cpp",
     "client/src/capturer_in_client.cpp",
     "client/src/fast_audio_stream.cpp",
     "client/src/i_audio_stream.cpp",

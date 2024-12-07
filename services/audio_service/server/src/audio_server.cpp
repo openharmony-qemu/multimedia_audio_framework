@@ -55,6 +55,7 @@
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
 #include "offline_stream_in_server.h"
+#include "audio_dump_pcm.h"
 
 #define PA
 #ifdef PA
@@ -126,7 +127,6 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_CAMCORDER,
     SOURCE_TYPE_UNPROCESSED
 };
-
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
@@ -246,6 +246,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         std::string dumpString = "check fast list :bundle name is" + bundleName + " result is " + result + "\n";
         return write(fd, dumpString.c_str(), dumpString.size());
     }
+
     std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
@@ -282,6 +283,11 @@ void AudioServer::OnStart()
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
     if (fastControlFlag == 0) {
         isFastControlled_ = false;
+    }
+    int32_t audioCacheState = 0;
+    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+    if (audioCacheState != 0) {
+        AudioCacheMgr::GetInstance().Init();
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
@@ -376,9 +382,8 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(params);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor SetMediaParameters failed.");
-    return true;
+    CHECK_AND_RETURN_RET_LOG(params.size() > 0, false, "params is empty!");
+    return AudioCacheMgr::GetInstance().SetDumpParameter(params);
 }
 
 int32_t AudioServer::SetExtraParameters(const std::string& key,
@@ -540,9 +545,8 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().GetMediaParameters(subKeys, result);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor GetMediaParameters failed");
-    return true;
+    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "subKeys is empty!");
+    return AudioCacheMgr::GetInstance().GetDumpParameter(subKeys, result);
 }
 
 int32_t AudioServer::GetExtraParameters(const std::string &mainKey,

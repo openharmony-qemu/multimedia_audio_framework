@@ -112,8 +112,10 @@ private:
 class ClockTime {
 public:
     static int64_t GetCurNano();
+    static int64_t GetRealNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);
     static int32_t RelativeSleep(int64_t nanoTime);
+    static std::string NanoTimeToString(int64_t nanoTime);
 };
 
 /**
@@ -199,6 +201,7 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 template <typename T>
 void StringParser(std::string& param, T& result);
 
+bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>
 bool GetSysPara(const char *key, T &value);
 

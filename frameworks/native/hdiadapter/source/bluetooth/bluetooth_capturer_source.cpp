@@ -43,6 +43,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "audio_attribute.h"
 #include "volume_tools.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -403,7 +404,6 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
 
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_NOT_STARTED, "Capture Frame Fail");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
-    DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
 
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
@@ -411,8 +411,8 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
     VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void*>(frame), replyBytes);
+        DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void*>(frame), replyBytes);
     }
     CheckUpdateState(frame, requestBytes);
 
