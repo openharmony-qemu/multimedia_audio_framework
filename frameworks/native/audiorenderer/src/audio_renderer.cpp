@@ -802,7 +802,7 @@ bool AudioRendererPrivate::Stop()
 
 bool AudioRendererPrivate::Release()
 {
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
     bool result = audioStream_->ReleaseAudioStream();
@@ -816,6 +816,7 @@ bool AudioRendererPrivate::Release()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
+    lock.unlock();
     RemoveRendererPolicyServiceDiedCallback();
 
     return result;
