@@ -84,38 +84,6 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
     return false;
 }
 
-int32_t AudioActiveDevice::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
-{
-    CHECK_AND_RETURN_RET_LOG(audioA2dpDevice_.CheckA2dpDeviceExist(deviceDescriptor->macAddress_),
-        ERR_INVALID_PARAM, "the target A2DP device doesn't exist.");
-    int32_t result = ERROR;
-#ifdef BLUETOOTH_ENABLE
-    AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
-    std::string lastActiveA2dpDevice = activeBTDevice_;
-    activeBTDevice_ = deviceDescriptor->macAddress_;
-    DeviceType lastDevice = audioPolicyManager_.GetActiveDevice();
-    audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
-
-    if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
-        audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
-        AUDIO_WARNING_LOG("a2dp device [%{public}s] is already active",
-            GetEncryptAddr(deviceDescriptor->macAddress_).c_str());
-        return SUCCESS;
-    }
-
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
-    if (result != SUCCESS) {
-        activeBTDevice_ = lastActiveA2dpDevice;
-        audioPolicyManager_.SetActiveDevice(lastDevice);
-        AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
-            GetEncryptAddr(activeBTDevice_).c_str(), GetEncryptAddr(lastActiveA2dpDevice).c_str());
-        return result;
-    }
-    audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
-#endif
-    return result;
-}
-
 std::string AudioActiveDevice::GetActiveBtDeviceMac()
 {
     return activeBTDevice_;

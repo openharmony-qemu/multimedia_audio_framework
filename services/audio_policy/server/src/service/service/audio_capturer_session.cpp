@@ -41,6 +41,15 @@ static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_REMOTE_CAST
 };
 
+static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
+    // from high to low
+    {SOURCE_TYPE_VOICE_CALL, 5},
+    {SOURCE_TYPE_VOICE_COMMUNICATION, 4},
+    {SOURCE_TYPE_VOICE_TRANSCRIPTION, 3},
+    {SOURCE_TYPE_MIC, 2},
+    {SOURCE_TYPE_VOICE_RECOGNITION, 1},
+};
+
 static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
@@ -59,15 +68,6 @@ static std::string GetEncryptAddr(const std::string &addr)
 
 static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
 {
-    std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
-        // from high to low
-        {SOURCE_TYPE_VOICE_CALL, 5},
-        {SOURCE_TYPE_VOICE_COMMUNICATION, 4},
-        {SOURCE_TYPE_VOICE_TRANSCRIPTION, 3},
-        {SOURCE_TYPE_MIC, 2},
-        {SOURCE_TYPE_VOICE_RECOGNITION, 1},
-    };
-
     if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0 ||
         NORMAL_SOURCE_PRIORITY.count(currentSource) == 0) {
         return false;

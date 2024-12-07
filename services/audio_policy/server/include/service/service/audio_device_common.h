@@ -185,6 +185,7 @@ private:
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
         const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName,
         SourceType sourceType);
+    int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
@@ -228,7 +229,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
-    int32_t HandleA2dpDeviceFetched(SourceType sourceType, DeviceType type);
+    void HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType);
     void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
