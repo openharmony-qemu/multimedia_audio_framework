@@ -376,7 +376,7 @@ void AudioPolicyServiceEnhanceEightFuzzTest()
     std::shared_ptr<AudioDeviceDescriptor> remote = std::make_shared<AudioDeviceDescriptor>();
     CastType type = GetData<CastType>();
     GetServerPtr()->audioPolicyService_.ConfigDistributedRoutingRole(remote, type);
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.SwitchActiveA2dpDevice(remote);
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.SwitchActiveA2dpDevice(remote);
 
     AudioProcessConfig config;
     GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
