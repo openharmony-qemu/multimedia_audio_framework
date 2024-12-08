@@ -352,7 +352,7 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     if (!createFlag) {
         return audioEnhanceChain->IsDefaultChain();
     }
-    std::string effectChainName = GetEnhanceChainNameBySceneCode(sceneKeyCode, defaultFstart buildlag);
+    std::string effectChainName = GetEnhanceChainNameBySceneCode(sceneKeyCode, defaultFlag);
     if (AddAudioEnhanceChainHandles(audioEnhanceChain, effectChainName) != SUCCESS) {
         sceneTypeToEnhanceChainCountMap_.erase(sceneKeyCode);
         sceneTypeToEnhanceChainMap_.erase(sceneKeyCode);
