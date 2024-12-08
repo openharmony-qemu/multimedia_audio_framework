@@ -2046,7 +2046,6 @@ static void SceneToResamplerMapAddNewScene(pa_hashmap *sceneToResamplerMap, cons
     pa_hashmap_put(sceneToResamplerMap, (void *)newSceneType, (void *)resampler);
 }
 
-
 static void UpdateResamplerOchannelMap(pa_hashmap *sceneToResamplerMap, const char *sceneType, pa_sink *si)
 {
     // for now, use sample_spec from sink
