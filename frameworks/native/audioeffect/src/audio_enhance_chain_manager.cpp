@@ -182,8 +182,8 @@ void AudioEnhanceChainManager::InitEnhancePropertyMapToDb()
         GetDeviceTypeName(deviceType, deviceTypeName);
         for (const auto &[enhance, prop] : enhancePropertyMap_) {
             key = enhance + "_&_" + deviceTypeName;
-            ret = settingProvider.PutStringValue(key, property);
-            if(ret != SUCCESS) {
+            ret = settingProvider.PutStringValue(key, prop);
+            if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("fail, InitEnhancePropertyMapToDb, ErrCode: %{public}d", ret);
                 return;
             }
