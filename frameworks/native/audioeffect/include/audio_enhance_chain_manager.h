@@ -82,6 +82,7 @@ private:
         const uint32_t sceneKeyCode);
     std::string GetEnhanceChainNameBySceneCode(const uint32_t sceneKeyCode, const bool defaultFlag);
     int32_t UpdatePropertyAndSendToAlgo(const DeviceType &inputDevice);
+    void InitEnhancePropertyMapToDb();
     void UpdateEnhancePropertyMapFromDb(DeviceType deviceType);
     int32_t WriteEnhancePropertyToDb(const std::string &key, const std::string &property);
     int32_t SetAudioEnhancePropertyToChains(AudioEnhanceProperty property);
@@ -124,6 +125,7 @@ private:
     bool isMute_ = false;
     std::string deviceName_ = "";
     uint32_t foldState_ = FOLD_STATE_MIDDLE;
+    const std::string DB_INITED = "ENHANCEPROPERTY_MAP_DB_INITED";
 };
 
 }  // namespace AudioStandard
