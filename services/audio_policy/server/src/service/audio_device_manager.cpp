@@ -767,11 +767,31 @@ void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usag
     }
 }
 
+// GetRemoteAvailableDevicesByUsage must be called with AudioDeviceManager::currentActiveDevicesMutex_lock
+void AudioDeviceManager::GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptor)
+{
+    if ((usage & MEDIA_OUTPUT_DEVICES) != 0) {
+        for (const auto &desc : connectedDevices_) {
+            if (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST && desc->networkId_ == LOCAL_NETWORK_ID) {
+                audioDeviceDescriptor.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+            }
+        }
+    }
+}
+
+void AudioDeviceManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    remoteInfoNetworkId_ = networkId;
+    remoteInfoDeviceType_ = deviceType;
+}
+
 std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableDevicesByUsage(AudioDeviceUsage usage)
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
+    GetRemoteAvailableDevicesByUsage(usage, audioDeviceDescriptors);
     for (const auto &dev : connectedDevices_) {
         for (const auto &devicePrivacy : devicePrivacyMaps_) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
@@ -779,7 +799,45 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
             GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
         }
     }
+    // If there are distributed devices, place them at a higher priority in the sorting order.
+    if (remoteInfoNetworkId_ != "" && remoteInfoDeviceType_ != DEVICE_TYPE_DEFAULT) {
+        ReorderAudioDevices(audioDeviceDescriptors, remoteInfoNetworkId_, remoteInfoDeviceType_);
+    }
     return audioDeviceDescriptors;
+}
+
+void AudioDeviceManager::ReorderAudioDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
+    const std::string &remoteInfoNetworkId, DeviceType remoteInfoDeviceType)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> speakerDevices;
+    for (auto &device : audioDeviceDescriptors) {
+        if (device->deviceType_ == DEVICE_TYPE_SPEAKER) {
+            speakerDevices.push_back(std::move(device));
+        }
+    }
+    audioDeviceDescriptors.erase(std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
+        [](const auto &device) {return device == nullptr;}), audioDeviceDescriptors.end());
+    std::sort(speakerDevices.begin(), speakerDevices.end(),
+        [](const auto &a, const auto &b) {return a->deviceId_ > b->deviceId_;});
+    audioDeviceDescriptors.insert(audioDeviceDescriptors.begin(),
+        std::make_move_iterator(speakerDevices.begin()), std::make_move_iterator(speakerDevices.end()));
+
+    if (remoteInfoNetworkId != "" && remoteInfoDeviceType == DEVICE_TYPE_REMOTE_CAST) {
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> remoteCastDevices;
+        for (auto &device : audioDeviceDescriptors) {
+            if (device->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
+                remoteCastDevices.push_back(std::move(device));
+            }
+        }
+        audioDeviceDescriptors.erase(std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
+            [](const auto &device) {return device == nullptr;}), audioDeviceDescriptors.end());
+        std::sort(remoteCastDevices.begin(), remoteCastDevices.end(),
+            [](const auto &a, const auto &b) {return a->deviceId_ > b->deviceId_;});
+
+        audioDeviceDescriptors.insert(audioDeviceDescriptors.begin(),
+            std::make_move_iterator(remoteCastDevices.begin()), std::make_move_iterator(remoteCastDevices.end()));
+    }
 }
 
 unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManager::GetDevicePrivacyMaps()
