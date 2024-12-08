@@ -190,7 +190,7 @@ void AudioEnhanceChainManager::InitEnhancePropertyMapToDb()
         }
     }
     ret = settingProvider.PutBoolValue(DB_INITED, true);
-    if(ret != SUCCESS) {
+    if (ret != SUCCESS) {
         AUDIO_ERR_LOG("fail, InitEnhancePropertyMapToDb, ErrCode: %{public}d", ret);
         return;
     }
@@ -352,7 +352,7 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     if (!createFlag) {
         return audioEnhanceChain->IsDefaultChain();
     }
-    std::string effectChainName = GetEnhanceChainNameBySceneCode(sceneKeyCode, defaultFlag);
+    std::string effectChainName = GetEnhanceChainNameBySceneCode(sceneKeyCode, defaultFstart buildlag);
     if (AddAudioEnhanceChainHandles(audioEnhanceChain, effectChainName) != SUCCESS) {
         sceneTypeToEnhanceChainCountMap_.erase(sceneKeyCode);
         sceneTypeToEnhanceChainMap_.erase(sceneKeyCode);
