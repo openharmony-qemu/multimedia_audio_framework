@@ -22,6 +22,7 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "microphone_descriptor.h"
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
