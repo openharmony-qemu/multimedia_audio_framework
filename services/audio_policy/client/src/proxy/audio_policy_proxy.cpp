@@ -266,7 +266,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices
 
     int32_t size = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG( size > 0 && size <= AUDIO_DEVICE_INFO_SIZE_LIMIT,
-        audioDeviceDescriptors, "Using tainted data as loop bound");
+        deviceInfo, "Using tainted data as loop bound");
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
