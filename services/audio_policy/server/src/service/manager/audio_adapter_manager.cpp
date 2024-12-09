@@ -354,13 +354,9 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
 
-    // In case if KvStore didnot connect during bootup
-    if (!isLoaded_) {
-        InitKVStoreInternal();
-    }
-
+    // Save the volume to volumeLevelMap_.
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
-
+    // Save the volume to settingsdata.
     if (handler_ != nullptr) {
         if (Util::IsDualToneStreamType(streamType)) {
             AUDIO_INFO_LOG("DualToneStreamType. Save volume for speaker.");
