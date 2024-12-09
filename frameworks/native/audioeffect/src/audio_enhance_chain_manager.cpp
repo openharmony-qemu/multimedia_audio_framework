@@ -48,7 +48,6 @@ const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_
 const std::string MAINKEY_DEVICE_STATUS = "device_status";
 const std::string SUBKEY_FOLD_STATE = "fold_state";
 const std::string DB_INITED = "ENHANCE_PROPERTY_MAP_DB_INITED";
-bool DbInited = false;
 }
 
 static int32_t FindEnhanceLib(const std::string &enhance,
@@ -167,11 +166,13 @@ void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectCh
     sceneTypeAndModeToEnhanceChainNameMap_ = managerParam.sceneTypeToChainNameMap;
     // Construct enhancePropertyMap_ that stores effect's property
     enhancePropertyMap_ = managerParam.effectDefaultProperty;
+    InitEnhancePropertyMapToDb();
 }
 
 void AudioEnhanceChainManager::InitEnhancePropertyMapToDb()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool DbInited = false;
     ErrCode ret = settingProvider.GetBoolValue(DB_INITED, DbInited);
     if (ret == SUCCESS && DbInited) {
         return;
@@ -324,10 +325,6 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     const AudioEnhanceDeviceAttr &deviceAttr)
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
-    if (!DbInited) {
-        InitEnhancePropertyMapToDb();
-    }
-
     if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0) {
         AUDIO_INFO_LOG("no algo on audio_framework");
         return ERROR;
