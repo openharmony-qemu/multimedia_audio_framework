@@ -82,7 +82,7 @@ public:
     AudioEnhanceChain(const std::string &scene, const AudioEnhanceParamAdapter &algoParam,
         const AudioEnhanceDeviceAttr &deviceAttr, const bool defaultFlag);
     ~AudioEnhanceChain();
-    void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
+   int32_t AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
         const std::string &property);
     bool IsEmptyEnhanceHandles();
     void GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferConfig &ecConfig, AudioBufferConfig &micRefConfig);

@@ -472,8 +472,11 @@ int32_t AudioEnhanceChainManager::AddAudioEnhanceChainHandles(std::shared_ptr<Au
         CHECK_AND_CONTINUE_LOG(ret == 0, "EnhanceToLibraryEntryMap[%{public}s] createEffect fail",
             enhance.c_str());
         auto propIter = enhancePropertyMap_.find(enhance);
-        audioEnhanceChain->AddEnhanceHandle(handle, enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle,
+        ret = audioEnhanceChain->AddEnhanceHandle(handle, enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle,
             enhance, propIter == enhancePropertyMap_.end() ? "" : propIter->second);
+        if (ret != SUCCESS) {
+            enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle->releaseEffect(handle);
+        }
     }
 
     if (audioEnhanceChain->IsEmptyEnhanceHandles()) {
