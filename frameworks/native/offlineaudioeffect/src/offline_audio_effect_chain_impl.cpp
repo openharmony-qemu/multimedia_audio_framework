@@ -81,6 +81,7 @@ int32_t OfflineAudioEffectChainImpl::Prepare()
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
     int32_t ret = offlineStreamInClient_->PrepareOfflineEffectChain(clientBufferIn_, clientBufferOut_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "prepare failed, errCode is %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(clientBufferIn_ && clientBufferOut_, ERR_ILLEGAL_STATE, "buffer not prepared");
     inBufferBase_ = clientBufferIn_->GetBase();
     outBufferBase_ = clientBufferOut_->GetBase();
     return ret;
