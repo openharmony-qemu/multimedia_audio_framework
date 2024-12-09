@@ -1841,16 +1841,16 @@ static pa_resampler *UpdateResamplerInChannelMap(const char *sinkSceneType, stru
     if (resampler == NULL) {
         return NULL;
     }
-    pa_channel_map InChannelMap;
-    InChannelMap.channels = u->bufferAttr->numChanOut;
-    ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &InChannelMap);
-    if (!pa_channel_map_valid(&InChannelMap)) {
+    pa_channel_map inChannelMap;
+    inChannelMap.channels = u->bufferAttr->numChanOut;
+    ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &inChannelMap);
+    if (!pa_channel_map_valid(&inChannelMap)) {
         AUDIO_ERR_LOG("UpdateResampler: invalid channelmap, channels [%{public}d], channellayout [%{public}" PRIu64 "]",
             u->bufferAttr->numChanOut, u->bufferAttr->outChanLayout);
-        InChannelMap.channels = DEFAULT_NUM_CHANNEL;
-        ConvertChLayoutToPaChMap(DEFAULT_CHANNELLAYOUT, &InChannelMap);
+        inChannelMap.channels = DEFAULT_NUM_CHANNEL;
+        ConvertChLayoutToPaChMap(DEFAULT_CHANNELLAYOUT, &inChannelMap);
     }
-    if ((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &InChannelMap))) {
+    if ((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &inChannelMap))) {
         // for now, use sample_spec from sink
         pa_sample_spec inSpec = *(pa_resampler_input_sample_spec(resampler));
         inSpec.channels = (uint8_t)u->bufferAttr->numChanOut;
@@ -1859,7 +1859,7 @@ static pa_resampler *UpdateResamplerInChannelMap(const char *sinkSceneType, stru
             "new input channels [%{public}d], sample rate [%{public}d], format[%{public}d]",
             (char *)sinkSceneType, pa_resampler_input_sample_spec(resampler)->channels,
             pa_resampler_input_sample_spec(resampler)->rate, pa_resampler_input_sample_spec(resampler)->format,
-            InChannelMap.channels, inSpec.rate, inSpec.format);
+            inChannelMap.channels, inSpec.rate, inSpec.format);
         pa_sample_spec sinkSpec = *(pa_resampler_output_sample_spec(resampler));
         pa_channel_map sinkChannelMap = *(pa_resampler_output_channel_map(resampler));
         char *dupSceneType = strdup(sinkSceneType);
@@ -1871,7 +1871,7 @@ static pa_resampler *UpdateResamplerInChannelMap(const char *sinkSceneType, stru
         pa_hashmap_remove_and_free(u->sceneToResamplerMap, sinkSceneType);
         resampler = pa_resampler_new(
             u->sink->core->mempool,
-            &inSpec, &InChannelMap,
+            &inSpec, &inChannelMap,
             &sinkSpec, &sinkChannelMap,
             u->sink->core->lfe_crossover_freq,
             PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
