@@ -2028,15 +2028,15 @@ static void ResetBufferAttr(struct Userdata *u)
 
 static void SceneToResamplerMapAddNewScene(pa_hashmap *sceneToResamplerMap, const char *sceneType, pa_sink *si)
 {
-    pa_sample_spec sink_spec = si->sample_spec;
-    pa_channel_map sink_channelmap = si->channel_map;
+    pa_sample_spec sinkSpec = si->sample_spec;
+    pa_channel_map sinkChannelMap = si->channel_map;
     sink_spec.format = PA_SAMPLE_FLOAT32LE;
     // for now, use sample_spec from sink
     AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
-        ", format[%{public}d]", (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
+        ", format[%{public}d]", (char *)sceneType, sinkSpec.channels, sinkSpec.rate, sinkSpec.format);
     pa_resampler *resampler = pa_resampler_new(
-        si->core->mempool, &sink_spec, &sink_channelmap,
-        &sink_spec, &sink_channelmap, si->core->lfe_crossover_freq,
+        si->core->mempool, &sinkSpec, &sinkChannelMap,
+        &sinkSpec, &sinkChannelMap, si->core->lfe_crossover_freq,
         PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
     char* newSceneType = strdup(sceneType);
     if (newSceneType == NULL) {
