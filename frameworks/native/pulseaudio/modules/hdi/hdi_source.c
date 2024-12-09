@@ -322,9 +322,6 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     if ((s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) &&
         PA_SOURCE_IS_OPENED(newState)) {
         u->timestamp = pa_rtclock_now();
-        if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
-            u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
-        }
         if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
             if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("HDI capturer start failed");
@@ -780,7 +777,8 @@ static void ThreadCaptureData(void *userdata)
             }
             cost = pa_rtclock_now() - now;
             AUDIO_DEBUG_LOG("capture frame cost :%{public}" PRIu64, cost);
-            if (cost < u->blockUsec) {
+            // For voice wake-up, it is necessary to read data from HDI quickly and frequently. No sleep is needed here.
+            if ((cost < u->blockUsec) && (u->attrs.sourceType != SOURCE_TYPE_WAKEUP)) {
                 ThreadCaptureSleep(u->blockUsec - cost);
             }
         } else {
@@ -841,10 +839,6 @@ static void ThreadFuncProcessTimer(void *userdata)
 
     pa_thread_mq_install(&u->threadMq);
     u->timestamp = pa_rtclock_now();
-
-    if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
-        u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
-    }
 
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
@@ -928,11 +922,6 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
     pa_source_new_data_init(&data);
     data.driver = __FILE__;
     data.module = m;
-
-    // if sourcetype is wakeup, source suspend after init
-    if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
-        data.suspend_cause = PA_SUSPEND_IDLE;
-    }
 
     pa_source_new_data_set_name(&data, pa_modargs_get_value(ma, "source_name", DEFAULT_SOURCE_NAME));
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING,
