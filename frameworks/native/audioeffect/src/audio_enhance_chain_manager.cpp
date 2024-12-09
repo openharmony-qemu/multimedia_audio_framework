@@ -475,6 +475,7 @@ int32_t AudioEnhanceChainManager::AddAudioEnhanceChainHandles(std::shared_ptr<Au
         ret = audioEnhanceChain->AddEnhanceHandle(handle, enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle,
             enhance, propIter == enhancePropertyMap_.end() ? "" : propIter->second);
         if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("AddEnhanceHandle fail");
             enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle->releaseEffect(handle);
         }
     }
@@ -801,6 +802,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEffectPrope
         std::string key = property.name + "_&_" + deviceTypeName;
         ret = WriteEnhancePropertyToDb(key, property.category);
         if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("fail, WriteEnhancePropertyToDb, ErrCode: %{public}d", ret);
             continue;
         }
         SetAudioEnhancePropertyToChains(property);
