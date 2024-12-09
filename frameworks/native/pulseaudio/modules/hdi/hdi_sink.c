@@ -221,9 +221,9 @@ static void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 static float CapMax(float v)
 {
     float value = v;
-    if (v > 1.0f) {
+    if (v >= 1.0f) {
         value = 1.0f - FLOAT_EPS;
-    } else if (v < -1.0f) {
+    } else if (v <= -1.0f) {
         value = -1.0f + FLOAT_EPS;
     }
     return value;
