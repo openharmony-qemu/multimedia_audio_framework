@@ -171,7 +171,7 @@ void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectCh
 
 void AudioEnhanceChainManager::InitEnhancePropertyMapToDb()
 {
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     bool DbInited = false;
     ErrCode ret = settingProvider.GetBoolValue(DB_INITED, DbInited);
     if (ret == SUCCESS || DbInited) {
@@ -179,7 +179,7 @@ void AudioEnhanceChainManager::InitEnhancePropertyMapToDb()
     }
     std::string deviceTypeName = "";
     std::string key = "";
-    for (const auto& deviceType : INPUT_DEVICE_TYPE_SET) {
+    for (const auto &deviceType : INPUT_DEVICE_TYPE_SET) {
         GetDeviceTypeName(deviceType, deviceTypeName);
         for (const auto &[enhance, prop] : enhancePropertyMap_) {
             key = enhance + "_&_" + deviceTypeName;
@@ -203,7 +203,7 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
 {
     std::string deviceTypeName = "";
     GetDeviceTypeName(deviceType, deviceTypeName);
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     for (const auto &[enhance, prop] : enhancePropertyMap_) {
         std::string property = "";
         if (deviceTypeName == "") {
@@ -854,7 +854,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhancePropertyToChains(AudioEnhancePr
 
 int32_t AudioEnhanceChainManager::WriteEnhancePropertyToDb(const std::string &key, const std::string &property)
 {
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = settingProvider.PutStringValue(key, property);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Write Enhance Property to Database failed");
     AUDIO_INFO_LOG("success, write Enhance_&_DeviceType:%{public}s is Property:%{public}s to Database",
