@@ -93,8 +93,7 @@ std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
         AUDIO_ERR_LOG("get ringermode failed, error: %d", error);
     }
     lListSize = reply.ReadInt32();
-    int32_t validSize = 1000; // Use 1000 as limit.
-    CHECK_AND_RETURN_RET_LOG(lListSize > 0 && lListSize <= validSize,
+    CHECK_AND_RETURN_RET_LOG(lListSize > 0 && lListSize <= static_cast<int32_t>(TONEINFO_MAX_SEGMENTS),
         lSupportedToneList, "Using tainted data as loop bound");
     for (int i = 0; i < lListSize; i++) {
         lSupportedToneList.push_back(reply.ReadInt32());
@@ -537,7 +536,8 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
 
     uint32_t size = audioDeviceDescriptors.size();
     uint32_t validSize = 20; // Use 20 as limit.
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<uint32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
         bool audioDeviceTmp = audioDeviceDescriptor->Marshalling(data);
@@ -580,8 +580,8 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioCapturerFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    uint32_t validSize = 20; // Use 20 as limit.
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<uint32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT), 
+        -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
         bool audioDeviceTmp = audioDeviceDescriptor->Marshalling(data);
@@ -684,8 +684,8 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetAudioFocusInfoList, error: %d", error);
     int32_t ret = reply.ReadInt32();
     int32_t size = reply.ReadInt32();
-    int32_t validSize = 1000; // Use 1000 as limit.
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size < validSize, ERROR, "Using tainted data as loop bound");
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_INTERRUPT_INFO_SIZE_LIMIT,
+        ERROR, "Using tainted data as loop bound");
     focusInfoList = {};
     if (ret < 0) {
         return ret;
