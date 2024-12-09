@@ -1441,5 +1441,11 @@ void RendererInServer::RestoreSession()
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
     stateListener->OnOperationHandled(RESTORE_SESSION, 0);
 }
+
+int32_t RendererInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, streamIndex_,
+    processConfig_.rendererInfo.streamUsage, status_ == I_STATUS_STARTED);   
+}
 } // namespace AudioStandard
 } // namespace OHOS

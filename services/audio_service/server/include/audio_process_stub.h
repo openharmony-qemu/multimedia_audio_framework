@@ -50,6 +50,7 @@ private:
     int32_t HandleRelease(MessageParcel &data, MessageParcel &reply);
     int32_t HandleRegisterProcessCb(MessageParcel &data, MessageParcel &reply);
     int32_t HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

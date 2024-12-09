@@ -540,5 +540,18 @@ int32_t IpcStreamProxy::RegisterThreadPriority(uint32_t tid, const std::string &
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
     return ret;
 }
+
+int32_t IpcStreamProxy::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(defaultOutputDevice);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_DEFAULT_OUTPUT_DEVICE, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

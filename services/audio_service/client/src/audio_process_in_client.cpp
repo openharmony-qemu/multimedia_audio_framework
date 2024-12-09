@@ -114,6 +114,8 @@ public:
     
     bool Init(const AudioProcessConfig &config);
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -1720,6 +1722,12 @@ void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &
             "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
         AUDIO_PRERELEASE_LOGW("wakeUpTime is too late...");
     }
+}
+
+int32_t AudioProcessInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "set failed with null ipcProxy.");
+    return processProxy_->SetDefaultOutputDevice(defaultOutputDevice);
 }
 } // namespace AudioStandard
 } // namespace OHOS

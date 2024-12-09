@@ -453,9 +453,6 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning);
-
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);

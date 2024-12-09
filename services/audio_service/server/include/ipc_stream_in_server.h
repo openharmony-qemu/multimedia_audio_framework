@@ -114,6 +114,8 @@ public:
 
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();

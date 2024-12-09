@@ -1206,9 +1206,6 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HEAD_TRACKING_ENABLED_FOR_DEVICE):
             SetHeadTrackingEnabledForDeviceInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEFAULT_OUTPUT_DEVICE):
-            SetDefaultOutputDeviceInternal(data, reply);
-            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_CLIENT_TYPE_CALLBACK):
             SetQueryClientTypeCallbackInternal(data, reply);
             break;

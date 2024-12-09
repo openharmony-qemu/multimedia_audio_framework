@@ -210,6 +210,8 @@ public:
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    DeviceType GetDefaultOutputDevice() override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -1944,6 +1946,19 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    (void)defaultOutputDevice;
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return ERROR;
+}
+
+DeviceType CapturerInClientInner::GetDefaultOutputDevice()
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return DEVICE_TYPE_NONE;
 }
 } // namespace AudioStandard
 } // namespace OHOS

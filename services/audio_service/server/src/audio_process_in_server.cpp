@@ -493,5 +493,11 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_, buffer, bufferSize);
     }
 }
+
+int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
+        processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
+}
 } // namespace AudioStandard
 } // namespace OHOS

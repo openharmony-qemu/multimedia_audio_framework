@@ -1472,6 +1472,8 @@ int32_t AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     audioStream->SetCapturerInfo(info.capturerInfo);
     int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
+    res = audioStream->SetDefaultOutputDevice(info.defaultOutputDevice);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "set default output device failed");
     audioStream->SetRenderMode(info.renderMode);
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
@@ -1592,7 +1594,6 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
-        SetDefaultOutputDevice(selectedDefaultOutputDevice_);
     }
     WriteSwitchStreamLogMsg();
     return switchResult;
@@ -1842,7 +1843,11 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
         abortRestore_ = false;
     }
 
-    SetDefaultOutputDevice(selectedDefaultOutputDevice_);
+    DeviceType defaultOutputDevice = audioStream_->GetDefaultOutputDevice();
+    if (defaultOutputDevice != DEVICE_TYPE_NONE) {
+        audioStream_->SetDefaultOutputDevice(defaultOutputDevice);
+    }
+
     if (GetStatus() == RENDERER_RUNNING) {
         GetAudioInterrupt(audioInterrupt_);
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
@@ -1985,13 +1990,7 @@ int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
         AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end(), rendererInfo_.streamUsage) !=
         AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end());
     CHECK_AND_RETURN_RET_LOG(isSupportedStreamUsage, ERR_NOT_SUPPORTED, "stream usage not supported");
-    selectedDefaultOutputDevice_ = deviceType;
-    uint32_t currentSessionID = 0;
-    audioStream_->GetAudioSessionID(currentSessionID);
-    int32_t ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType, currentSessionID,
-        rendererInfo_.streamUsage, GetStatus() == RENDERER_RUNNING);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select default output device failed");
-    return SUCCESS;
+    return audioStream_->SetDefaultOutputDevice(deviceType);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

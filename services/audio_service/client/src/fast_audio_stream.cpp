@@ -910,5 +910,17 @@ bool FastAudioStream::GetHighResolutionEnabled()
     AUDIO_WARNING_LOG("not supported in fast audio stream");
     return false;
 }
+
+int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOuputDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
+    return processClient_->SetDefaultOutputDevice(defaultOuputDevice);
+}
+
+DeviceType FastAudioStream::GetDefaultOutputDevice()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
+    return DEVICE_TYPE_NONE;
+}
 } // namespace AudioStandard
 } // namespace OHOS
