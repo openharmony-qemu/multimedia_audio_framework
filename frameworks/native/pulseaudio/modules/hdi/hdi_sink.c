@@ -174,7 +174,7 @@ static void FreeEffectBuffer(struct Userdata *u);
 static void ResetBufferAttr(struct Userdata *u);
 
 // BEGIN Utility functions
-#define FLOAT_EPS 1e-9f
+#define FLOAT_EPS 1e-6f
 #define MEMBLOCKQ_MAXLENGTH (16*1024*16)
 #define OFFSET_BIT_24 3
 #define BIT_DEPTH_TWO 2
