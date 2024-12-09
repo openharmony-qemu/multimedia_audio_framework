@@ -272,7 +272,7 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock()
     }
 
     std::vector<std::pair<std::string, std::string>> paramEnd;
-    paramStart.push_back({"BETA", "false"});
+    paramEnd.push_back({"BETA", "false"});
     Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(paramEnd);
 
     isDumpingData_.store(false);
