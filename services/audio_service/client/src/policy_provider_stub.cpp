@@ -179,7 +179,7 @@ int32_t PolicyProviderStub::HandleNotifyCapturerRemoved(MessageParcel &data, Mes
     return AUDIO_OK;
 }
 
-int32_t PolicyProviderStub:HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply)
+int32_t PolicyProviderStub::HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply)
 {
     int32_t deviceType = data.ReadInt32();
     uint32_t sessionID = data.ReadUint32();
