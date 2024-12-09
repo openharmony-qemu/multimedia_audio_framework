@@ -220,7 +220,7 @@ int32_t AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffec
     replyInfo.data = &maxSampleRate;
     replyInfo.size = sizeof(maxSampleRate);
     ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &replyInfo);
-    if (ret) {
+    if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get algo maxSampleRate failed!");
     }
     if (algoSupportedConfig_.sampleRate != maxSampleRate) {
@@ -239,7 +239,7 @@ int32_t AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffec
     cmdInfo.size = sizeof(algoSupportedConfig_);
     
     ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "[%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
         sceneType_.c_str());
 
     CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(handle) == SUCCESS, ERROR,
@@ -249,7 +249,7 @@ int32_t AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffec
         "[%{public}s] %{public}s effect EFFECT_CMD_SET_PROPERTY fail", sceneType_.c_str(), enhance.c_str());
 
     ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "[%{public}s], either one of libs EFFECT_CMD_INIT fail",
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s], either one of libs EFFECT_CMD_INIT fail",
         sceneType_.c_str());
     
     setConfigFlag_ = true;
