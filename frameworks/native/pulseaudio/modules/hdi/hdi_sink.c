@@ -174,7 +174,7 @@ static void FreeEffectBuffer(struct Userdata *u);
 static void ResetBufferAttr(struct Userdata *u);
 
 // BEGIN Utility functions
-#define FLOAT_EPS 1e-9f
+#define FLOAT_EPS 1e-6f
 #define MEMBLOCKQ_MAXLENGTH (16*1024*16)
 #define OFFSET_BIT_24 3
 #define BIT_DEPTH_TWO 2
@@ -221,9 +221,9 @@ static void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 static float CapMax(float v)
 {
     float value = v;
-    if (v > 1.0f) {
+    if (v >= 1.0f) {
         value = 1.0f - FLOAT_EPS;
-    } else if (v < -1.0f) {
+    } else if (v <= -1.0f) {
         value = -1.0f + FLOAT_EPS;
     }
     return value;

@@ -202,7 +202,7 @@ static int32_t UpdateAvailableSceneMapPost(SceneMappingItem &item, std::vector<S
 
 bool AudioEffectService::VerifySceneMappingItem(const SceneMappingItem &item)
 {
-    return STREAM_USAGE_MAP.find(item.name) != STREAM_USAGE_MAP.end() &&
+    return STREAM_USAGE_SET.find(item.name) != STREAM_USAGE_SET.end() &&
         std::find(postSceneTypeSet_.begin(), postSceneTypeSet_.end(), item.sceneType) != postSceneTypeSet_.end();
 }
 
