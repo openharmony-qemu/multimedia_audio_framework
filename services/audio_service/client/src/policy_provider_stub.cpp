@@ -270,7 +270,7 @@ int32_t PolicyProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOu
     const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);  
+    return policyWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
 } // namespace AudioStandard
 } // namespace OHOS

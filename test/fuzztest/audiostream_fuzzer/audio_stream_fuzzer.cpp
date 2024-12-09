@@ -178,7 +178,7 @@ int32_t MockPolicyProvider::NotifyCapturerRemoved(uint64_t sessionId)
 int32_t MockPolicyProvider:SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
-    return SUCCESS; 
+    return SUCCESS;
 }
 void AudioFuzzTestGetPermission()
 {

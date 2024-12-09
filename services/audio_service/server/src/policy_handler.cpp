@@ -230,7 +230,7 @@ int32_t PolicyHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevi
     const StreamUsage streamUsage, bool isRunning)
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
-    return iPolicyProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);  
+    return iPolicyProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
 } // namespace AudioStandard
 } // namespace OHOS
