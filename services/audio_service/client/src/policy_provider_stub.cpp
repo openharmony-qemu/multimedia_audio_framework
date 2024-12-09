@@ -187,7 +187,7 @@ int32_t PolicyProviderStub:HandleSetDefaultOutputDevice(MessageParcel &data, Mes
     bool isRunning = data.ReadBool();
     reply.WriteInt32(SetDefaultOutputDevice(static_cast<OHOS::AudioStandard::DeviceType>(deviceType),
         sessionID, static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage), isRunning));
-    return AUDIO_OK;    
+    return AUDIO_OK;
 }
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
@@ -270,7 +270,7 @@ int32_t PolicyProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOu
     const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);    
+    return policyWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);  
 }
 } // namespace AudioStandard
 } // namespace OHOS

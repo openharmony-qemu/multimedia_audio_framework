@@ -202,7 +202,7 @@ int32_t PolicyProviderProxy::NotifyCapturerRemoved(uint64_t sessionId)
 }
 
 int32_t PolicyProviderProxy::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning)
+    const StreamUsage streamUsage, bool isRunning)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -215,7 +215,7 @@ int32_t PolicyProviderProxy::SetDefaultOutputDevice(const DeviceType defaultOutp
     data.WriteBool(isRunning);
     int ret = Remote()->SendRequest(IPolicyProviderMsg::SET_DEFAULT_OUTPUT_DEVICE, data, reply, option);
     CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);
-    return reply.ReadInt32();   
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS
