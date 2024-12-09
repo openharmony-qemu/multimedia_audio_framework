@@ -47,6 +47,7 @@ const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_
 };
 const std::string MAINKEY_DEVICE_STATUS = "device_status";
 const std::string SUBKEY_FOLD_STATE = "fold_state";
+const std::string DB_INITED = "ENHANCE_PROPERTY_MAP_DB_INITED";
 }
 
 static int32_t FindEnhanceLib(const std::string &enhance,

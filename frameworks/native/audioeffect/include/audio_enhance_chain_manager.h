@@ -125,7 +125,6 @@ private:
     bool isMute_ = false;
     std::string deviceName_ = "";
     uint32_t foldState_ = FOLD_STATE_MIDDLE;
-    const std::string DB_INITED = "ENHANCEPROPERTY_MAP_DB_INITED";
 };
 
 }  // namespace AudioStandard
