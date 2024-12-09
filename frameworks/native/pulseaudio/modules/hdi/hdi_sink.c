@@ -2030,7 +2030,7 @@ static void SceneToResamplerMapAddNewScene(pa_hashmap *sceneToResamplerMap, cons
 {
     pa_sample_spec sinkSpec = si->sample_spec;
     pa_channel_map sinkChannelMap = si->channel_map;
-    sink_spec.format = PA_SAMPLE_FLOAT32LE;
+    sinkSpec.format = PA_SAMPLE_FLOAT32LE;
     // for now, use sample_spec from sink
     AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
         ", format[%{public}d]", (char *)sceneType, sinkSpec.channels, sinkSpec.rate, sinkSpec.format);
