@@ -991,7 +991,13 @@ void HfpBluetoothDeviceManager::OnScoStateChanged(const BluetoothRemoteDevice &d
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     desc.macAddress_ = device.GetDeviceAddr();
+    // VGS feature
+    bool isVgsSupported = false;
     if (isConnected) {
+        HandsFreeAudioGateway *hfpInstance = HandsFreeAudioGateway::GetProfile();
+            CHECK_AND_RETURN_LOG(hfpInstance != nullptr, "Failed to obtain HFP AG profile instance");
+        hfpInstance->IsVgsSupported(device, isVgsSupported);
+        AUDIO_INFO_LOG("HfpBluetoothDeviceManager::OnScoStateChanged: isVgsSupported: [%{public}d]", isVgsSupported);
         desc.connectState_ = ConnectState::CONNECTED;
     } else {
         {
@@ -1011,7 +1017,7 @@ void HfpBluetoothDeviceManager::OnScoStateChanged(const BluetoothRemoteDevice &d
     // VGS feature
     desc.isVgsSupported_ = false;
     if (desc.connectState_ == ConnectState::CONNECTED) {
-        desc.isVgsSupported_ = isConnected;
+        desc.isVgsSupported_ = isVgsSupported;
         AUDIO_INFO_LOG("desc.isVgsSupported_: %{public}d", desc.isVgsSupported_);
     }
 

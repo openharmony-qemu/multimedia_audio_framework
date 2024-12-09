@@ -450,6 +450,7 @@ void AudioHfpManager::ClearRecongnitionStatus()
     if (AudioHfpManager::scoCategory == ScoCategory::SCO_RECOGNITION) {
         AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
         AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_DISCONNECTED;
+        AUDIO_WARNING_LOG("Recognition sco status has been cleared.");
     }
 }
 
@@ -663,15 +664,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
         }
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
 
-        // VGS feature
-        bool isVgsSupported = false;
-        if (isConnected) {
-            HandsFreeAudioGateway *hfpInstance = HandsFreeAudioGateway::GetProfile();
-            CHECK_AND_RETURN_LOG(hfpInstance != nullptr, "Failed to obtain HFP AG profile instance");
-            hfpInstance->IsVgsSupported(device, isVgsSupported);
-        }
-        AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: isVgsSupported: [%{public}d]", isVgsSupported);
-        HfpBluetoothDeviceManager::OnScoStateChanged(device, isVgsSupported, reason);
+        HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
     }
 }
 
