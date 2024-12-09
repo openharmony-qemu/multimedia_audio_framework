@@ -579,7 +579,7 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioCapturerFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<uint32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT), 
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<uint32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
         -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
