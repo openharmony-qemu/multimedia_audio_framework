@@ -129,6 +129,8 @@ int32_t OfflineAudioEffectServerChain::GetOfflineAudioEffectChains(std::vector<s
     std::lock_guard<std::mutex> maplock(g_chainMutex);
     for (auto item : g_chainName2infoMap) {
         chainNamesVector.emplace_back(item.first);
+        AUDIO_DEBUG_LOG("effectName: %{public}s libName: %{public}s effectId: %{public}s", item.first.c_str(),
+            item.second.first.c_str(), item.second.second.c_str());
     }
     AUDIO_INFO_LOG("GetOfflineAudioEffectChains done");
     return SUCCESS;
