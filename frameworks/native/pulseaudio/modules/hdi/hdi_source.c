@@ -740,7 +740,7 @@ static void ThreadCaptureSleep(pa_usec_t sleepTime)
 {
     struct timespec req, rem;
     req.tv_sec = 0;
-    req.tv_nsec = sleepTime * MILLISECOND_PER_SECOND;
+    req.tv_nsec = (int64_t)(sleepTime * MILLISECOND_PER_SECOND);
     clock_nanosleep(CLOCK_REALTIME, 0, &req, &rem);
     AUDIO_DEBUG_LOG("ThreadCaptureData sleep:%{public}" PRIu64, sleepTime);
 }

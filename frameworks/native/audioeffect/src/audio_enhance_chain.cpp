@@ -396,7 +396,7 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enh
 
     for (AudioEffectHandle handle : standByEnhanceHandles_) {
         int32_t ret = (*handle)->process(handle, &audioBufIn_, &audioBufOut_);
-        CHECK_AND_CONTINUE_LOG(ret == 0, "[%{publc}s] either one of libs process fail", sceneType_.c_str());
+        CHECK_AND_CONTINUE_LOG(ret == 0, "[%{public}s] either one of libs process fail", sceneType_.c_str());
     }
     CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBuffer->micBufferOut.data(), enhanceBuffer->micBufferOut.size(),
         audioBufOut_.raw, audioBufOut_.frameLength) == 0,
