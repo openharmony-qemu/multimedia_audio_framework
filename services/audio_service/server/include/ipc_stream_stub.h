@@ -70,6 +70,8 @@ private:
 
     int32_t HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply);
 
+    int32_t HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply);
+
     int OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard

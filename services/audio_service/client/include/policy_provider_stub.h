@@ -38,6 +38,7 @@ private:
     int32_t HandleGetMaxRendererInstances(MessageParcel &data, MessageParcel &reply);
     int32_t HandleConcurrencyFromServer(MessageParcel &data, MessageParcel &reply);
     int32_t HandleNotifyCapturerRemoved(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply);
 };
 
 class PolicyProviderWrapper : public PolicyProviderStub {
@@ -58,6 +59,8 @@ public:
     int32_t GetMaxRendererInstances() override;
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning) override;
 private:
     IPolicyProvider *policyWorker_;
 };

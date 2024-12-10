@@ -73,6 +73,8 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetDuckFactor(data, reply);
         case ON_REGISTER_THREAD_PRIORITY:
             return HandleRegisterThreadPriority(data, reply);
+        case ON_SET_DEFAULT_OUTPUT_DEVICE:
+            return HandleSetDefaultOutputDevice(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -408,6 +410,13 @@ int32_t IpcStreamStub::HandleRegisterThreadPriority(MessageParcel &data, Message
     uint32_t tid = data.ReadUint32();
     std::string bundleName = data.ReadString();
     reply.WriteInt32(RegisterThreadPriority(tid, bundleName));
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t deviceType = data.ReadInt32();
+    reply.WriteInt32(SetDefaultOutputDevice(static_cast<OHOS::AudioStandard::DeviceType>(deviceType)));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

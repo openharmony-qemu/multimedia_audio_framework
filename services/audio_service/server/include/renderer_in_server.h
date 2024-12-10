@@ -97,6 +97,7 @@ public:
     int32_t SetClientVolume();
     int32_t SetMute(bool isMute);
     int32_t SetDuckFactor(float duckFactor);
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice);
 
     void OnDataLinkConnectionUpdate(IOperation operation);
     int32_t GetActualStreamManagerType() const noexcept;

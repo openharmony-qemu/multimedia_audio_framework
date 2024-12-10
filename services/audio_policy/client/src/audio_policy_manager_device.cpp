@@ -477,14 +477,6 @@ int32_t AudioPolicyManager::MoveToNewPipe(const uint32_t sessionId, const AudioP
     return gsp->MoveToNewPipe(sessionId, pipeType);
 }
 
-int32_t AudioPolicyManager::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
-}
-
 void AudioPolicyManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

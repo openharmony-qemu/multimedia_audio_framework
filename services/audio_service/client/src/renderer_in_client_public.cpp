@@ -1293,6 +1293,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.state = state_;
     info.sessionId = sessionId_;
     info.streamTrackerRegistered = streamTrackerRegistered_;
+    info.defaultOutputDevice = defaultOutputDevice_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1567,6 +1568,11 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
         AUDIO_INFO_LOG("telephony scene, return directly");
         return ret;
     }
+
+    if (defaultOutputDevice_ != DEVICE_TYPE_NONE) {
+        SetDefaultOutputDevice(defaultOutputDevice_);
+    }
+
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();
@@ -1590,6 +1596,21 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetDefaultOutputDevice(defaultOutputDevice);
+    if (ret == SUCCESS) {
+        defaultOutputDevice_ = defaultOutputDevice;
+    }
+    return ret;
+}
+
+DeviceType RendererInClientInner::GetDefaultOutputDevice()
+{
+    return defaultOutputDevice_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

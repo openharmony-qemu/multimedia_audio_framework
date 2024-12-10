@@ -358,9 +358,6 @@ public:
 
     virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) = 0;
-
     virtual int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
 
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) = 0;

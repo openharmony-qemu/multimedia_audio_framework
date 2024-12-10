@@ -102,6 +102,7 @@ public:
 
         std::optional<int32_t> userSettedPreferredFrameSize = std::nullopt;
         bool silentModeAndMixWithOthers = false;
+        DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
     };
 
     virtual ~IAudioStream() = default;
@@ -275,6 +276,10 @@ public:
     virtual void SetSilentModeAndMixWithOthers(bool on) = 0;
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+
+    virtual DeviceType GetDefaultOutputDevice() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
