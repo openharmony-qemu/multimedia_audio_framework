@@ -1071,7 +1071,7 @@ bool RendererInClientInner::FlushAudioStream()
 
     // clear multichannel render buffer
     if (converter_) {
-        ret = converter->Flush();
+        ret = converter_->Flush();
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Flush mcr buffer failed.");
         }
