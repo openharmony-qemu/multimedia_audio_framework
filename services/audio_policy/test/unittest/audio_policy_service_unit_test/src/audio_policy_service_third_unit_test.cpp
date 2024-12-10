@@ -36,7 +36,7 @@ static AudioPolicyServer* GetServerPtr()
 {
     return AudioPolicyServiceUnitTest::GetServerPtr();
 }
-#ifdef BLUE_YELLOW_DIFF 
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test OnDeviceInfoUpdated.
 * @tc.number: OnDeviceInfoUpdated_001

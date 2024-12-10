@@ -354,7 +354,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadSplitModule_001, TestSize.Level1)
         splitArgTwo, networkIdTwo);
     EXPECT_EQ(ERR_INVALID_HANDLE, result);
 }
-#ifdef BLUE_YELLOW_DIFF
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test SetDefaultOutputDevice.
 * @tc.number: SetDefaultOutputDevice_001
