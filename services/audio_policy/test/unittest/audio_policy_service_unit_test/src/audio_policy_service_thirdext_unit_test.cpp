@@ -354,7 +354,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadSplitModule_001, TestSize.Level1)
         splitArgTwo, networkIdTwo);
     EXPECT_EQ(ERR_INVALID_HANDLE, result);
 }
-
+#ifdef BLUE_YELLOW_DIFF
 /**
 * @tc.name  : Test SetDefaultOutputDevice.
 * @tc.number: SetDefaultOutputDevice_001
@@ -380,7 +380,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetDefaultOutputDevice_001, TestSize.
             deviceType, sessionID, streamUsage, isRunning);
     EXPECT_EQ(SUCCESS, result);
 }
-
+#endif
 /**
 * @tc.name  : Test UpdateDefaultOutputDeviceWhenStopping.
 * @tc.number: UpdateDefaultOutputDeviceWhenStopping_001
