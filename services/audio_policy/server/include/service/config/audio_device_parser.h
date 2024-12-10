@@ -44,7 +44,7 @@ enum DeviceNodeName {
 
 class AudioDeviceParser : public Parser {
 public:
-    static constexpr char DEVICE_CONFIG_FILE[] = "system/etc/audio/audio_device_privacy.xml";
+    static constexpr char DEVICE_CONFIG_FILE[] = "/system/etc/audio/audio_device_privacy.xml";
 
     bool LoadConfiguration() final;
     bool Parse() final;
