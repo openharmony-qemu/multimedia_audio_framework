@@ -426,6 +426,9 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+
     int32_t SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback);
 
     int32_t UnsetAudioDeviceAnahsCallback();
@@ -452,6 +455,8 @@ public:
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
 
     int32_t SetVoiceRingtoneMute(bool isMute);
+
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);

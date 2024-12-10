@@ -1883,6 +1883,47 @@ int32_t AudioPolicyProxy::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt re
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetPreferredDevice(const PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(static_cast<int32_t>(preferredType));
+    bool result = desc->Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(result, -1, "Desc Marshalling() faild");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PREFERRED_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+void AudioPolicyProxy::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    if (!ret) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+    }
+
+    data.WriteString(networkId);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_REMOTE_INFO), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SendRequest failed, error: %{public}d", error);
+    }
+    return;
+}
+
 int32_t AudioPolicyProxy::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
 {
     MessageParcel data;

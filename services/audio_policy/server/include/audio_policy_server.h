@@ -37,6 +37,7 @@
 
 #include "audio_info.h"
 #include "audio_policy_service.h"
+#include "audio_policy_utils.h"
 #include "audio_stream_removed_callback.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_stub.h"
@@ -46,6 +47,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
 #include "audio_interrupt_service.h"
+#include "audio_device_manager.h"
 #include "audio_policy_dump.h"
 
 namespace OHOS {
@@ -445,6 +447,11 @@ public:
     int32_t TriggerFetchDevice(
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
 
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
+
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) override;
+
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioDeviceAnahsCallback() override;
@@ -620,6 +627,8 @@ private:
     void AddSystemAbilityListeners();
 
     AudioPolicyService& audioPolicyService_;
+    AudioPolicyUtils &audioPolicyUtils_;
+    AudioDeviceManager &audioDeviceManager_;
     std::shared_ptr<AudioInterruptService> interruptService_;
 
     int32_t volumeStep_;

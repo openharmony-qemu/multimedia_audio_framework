@@ -319,6 +319,11 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) override;
 
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
+
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) override;
+
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioDeviceAnahsCallback() override;

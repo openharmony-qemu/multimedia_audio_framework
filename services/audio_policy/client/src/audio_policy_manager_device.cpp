@@ -431,6 +431,14 @@ int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt 
     return gsp->TriggerFetchDevice(reason);
 }
 
+int32_t AudioPolicyManager::SetPreferredDevice(const PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetPreferredDevice(preferredType, desc);
+}
+
 int32_t AudioPolicyManager::SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -467,6 +475,16 @@ int32_t AudioPolicyManager::MoveToNewPipe(const uint32_t sessionId, const AudioP
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->MoveToNewPipe(sessionId, pipeType);
+}
+
+void AudioPolicyManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp != nullptr) {
+        gsp->SaveRemoteInfo(networkId, deviceType);
+    } else {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

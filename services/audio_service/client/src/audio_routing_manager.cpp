@@ -128,5 +128,16 @@ int32_t AudioRoutingManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt
 {
     return AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
 }
+
+int32_t AudioRoutingManager::SetPreferredDevice(const PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc);
+}
+
+void AudioRoutingManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    return AudioPolicyManager::GetInstance().SaveRemoteInfo(networkId, deviceType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

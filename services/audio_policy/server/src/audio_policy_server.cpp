@@ -73,6 +73,8 @@ std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
+      audioPolicyUtils_(AudioPolicyUtils::GetInstance()),
+      audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
       audioPolicyDump_(AudioPolicyDump::GetInstance())
@@ -3083,6 +3085,27 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
         return ERROR;
     }
     return audioPolicyService_.TriggerFetchDevice(reason);
+}
+
+int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("No permission");
+        return ERROR;
+    }
+    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc);
+}
+
+void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("No permission");
+        return;
+    }
+    audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }
 
 int32_t AudioPolicyServer::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
