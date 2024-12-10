@@ -18,6 +18,7 @@
 #include <list>
 #include <string>
 #include <memory>
+#include <vector>
 #include <unordered_map>
 #include "audio_info.h"
 #include "audio_device_info.h"
@@ -90,6 +91,7 @@ public:
     int32_t RemoveSelectedDefaultOutputDevice(const uint32_t sessionID);
     shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 
 private:
     AudioDeviceManager();
@@ -127,6 +129,10 @@ private:
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
         vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void ReorderAudioDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
+        const std::string &remoteInfoNetworkId, DeviceType remoteInfoDeviceType);
     bool UpdateExistDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     void AddBtToOtherList(const shared_ptr<AudioDeviceDescriptor> &devDesc);
@@ -171,6 +177,8 @@ private:
     DeviceType selectedCallDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
     std::mutex selectDefaultOutputDeviceMutex_;
     std::mutex currentActiveDevicesMutex_;
+    std::string remoteInfoNetworkId_ = "";
+    DeviceType remoteInfoDeviceType_ = DEVICE_TYPE_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS
