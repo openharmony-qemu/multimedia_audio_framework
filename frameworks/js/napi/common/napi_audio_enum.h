@@ -80,7 +80,8 @@ public:
         TYPE_MESSAGE = 10,
         TYPE_REMOTE_CAST = 11,
         TYPE_VOICE_TRANSCRIPTION = 12,
-        TYPE_CAMCORDER = 13
+        TYPE_CAMCORDER = 13,
+        TYPE_UNPROCESSED = 14
     };
 
     enum AudioDataCallbackResult {

@@ -750,6 +750,8 @@ static void ThreadCaptureData(void *userdata)
     struct Userdata *u = userdata;
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
     pa_thread_mq_install(&u->threadCapMq);
+    // set audio thread priority
+    ScheduleThreadInServer(getpid(), gettid());
 
     pa_memchunk chunk;
     int32_t ret = 0;
@@ -780,11 +782,14 @@ static void ThreadCaptureData(void *userdata)
             // For voice wake-up, it is necessary to read data from HDI quickly and frequently. No sleep is needed here.
             if ((cost < u->blockUsec) && (u->attrs.sourceType != SOURCE_TYPE_WAKEUP)) {
                 ThreadCaptureSleep(u->blockUsec - cost);
+            } else {
+                AUDIO_WARNING_LOG("capture frame cost :%{public}" PRIu64, cost);
             }
         } else {
             ThreadCaptureSleep(u->blockUsec);
         }
     }
+    UnscheduleThreadInServer(getpid(), gettid());
     AUDIO_INFO_LOG("ThreadCaptureData quit pid %{public}d, tid %{public}d", getpid(), gettid());
 }
 
