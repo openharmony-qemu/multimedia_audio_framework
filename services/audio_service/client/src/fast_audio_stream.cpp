@@ -919,7 +919,6 @@ int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOuputDev
 
 DeviceType FastAudioStream::GetDefaultOutputDevice()
 {
-    AUDIO_WARNING_LOG("not supported in fast audio stream");
     return DEVICE_TYPE_NONE;
 }
 } // namespace AudioStandard
