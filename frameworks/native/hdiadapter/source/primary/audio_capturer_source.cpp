@@ -873,8 +873,7 @@ int32_t AudioCapturerSourceInner::ProcessCaptureBlockingEc(FrameDesc *fdescEc, u
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
-    FrameDesc *fdesc, uint64_t &replyBytes,
+int32_t AudioCapturerSourceInner::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes,
     FrameDesc *fdescEc, uint64_t &replyBytesEc)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
@@ -892,9 +891,7 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
         return ProcessCaptureBlockingEc(fdescEc, replyBytesEc);
     }
 
-    struct AudioFrameLen frameLen = {};
-    frameLen.frameLen = fdesc->frameLen;
-    frameLen.frameEcLen = fdescEc->frameLen;
+    struct AudioFrameLen frameLen = {fdesc->frameLen, fdescEc->frameLen};
     struct AudioCaptureFrameInfo frameInfo = {};
 
     int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
@@ -910,6 +907,16 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
             AUDIO_ERR_LOG("memcpy error");
         } else {
             replyBytes = (attr_.sourceType == SOURCE_TYPE_EC) ? 0 : fdesc->frameLen;
+            DumpFileUtil::WriteDumpFile(dumpFile_, fdesc->frame, replyBytes);
+            BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(fdesc->frame), replyBytes, replyBytes};
+            AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate),
+                AudioEncodingType::ENCODING_PCM, static_cast<AudioSampleFormat>(attr_.format),
+                static_cast<AudioChannel>(attr_.channel));
+            VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
+            if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+                Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+                    static_cast<void*>(fdesc->frame), replyBytes);
+            }
         }
     }
     if (frameInfo.frameEc != nullptr) {
