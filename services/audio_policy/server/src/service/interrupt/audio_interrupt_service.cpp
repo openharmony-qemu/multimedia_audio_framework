@@ -1003,46 +1003,54 @@ bool AudioInterruptService::IsSameAppInShareMode(const AudioInterrupt incomingIn
     return incomingInterrupt.pid == activeInterrupt.pid;
 }
 
-void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt,
-    AudioFocusEntry &focusEntry)
+bool AudioInterruptService::CheckAudioSessionExistence(const AudioInterrupt &incomingInterrupt,
+    AudioFocusEntry &focusEntry, std::shared_ptr<AudioSession> incomingSession)
 {
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
-        return;
+        return false;
     }
     if (!sessionService_->IsAudioSessionActivated(incomingInterrupt.pid)) {
         AUDIO_INFO_LOG("No active audio session for the pid of incomming stream");
-        return;
+        return false;
     }
     if (focusEntry.actionOn != CURRENT) {
         AUDIO_INFO_LOG("The interrupt event is not for the existed stream.");
-        return;
+        return false;
     }
-
-    std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
     if (incomingSession == nullptr) {
         AUDIO_ERR_LOG("incomingSession is nullptr!");
-        return;
+        return false;
     }
-    AudioConcurrencyMode concurrencyMode = (incomingSession->GetSessionStrategy()).concurrencyMode;
+    return true;
+}
+
+void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt,
+    AudioFocusEntry &focusEntry)
+{
+    AudioConcurrencyMode concurrencyMode = incomingInterrupt.sessionStrategy.concurrencyMode;
+    std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
+    if (CheckAudioSessionExistence(incomingInterrupt, focusEntry, incomingSession)) {
+        concurrencyMode = (incomingSession->GetSessionStrategy()).concurrencyMode;
+    }
     switch (concurrencyMode) {
         case AudioConcurrencyMode::DUCK_OTHERS:
             if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
                 focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
                 focusEntry.hintType == INTERRUPT_HINT_STOP) {
-                AUDIO_INFO_LOG("The concurrency mode of incoming session is DUCK_OTHERS. Use INTERRUPT_HINT_DUCK.");
+                AUDIO_INFO_LOG("The concurrency mode is DUCK_OTHERS. Use INTERRUPT_HINT_DUCK.");
                 focusEntry.hintType = INTERRUPT_HINT_DUCK;
             }
             break;
         case AudioConcurrencyMode::PAUSE_OTHERS:
             if (focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
                 focusEntry.hintType == INTERRUPT_HINT_STOP) {
-                AUDIO_INFO_LOG("The concurrency mode of incoming session is PAUSE_OTHERS. Use INTERRUPT_HINT_PAUSE.");
+                AUDIO_INFO_LOG("The concurrency mode is PAUSE_OTHERS. Use INTERRUPT_HINT_PAUSE.");
                 focusEntry.hintType = INTERRUPT_HINT_PAUSE;
             }
             break;
         default:
-            AUDIO_INFO_LOG("The concurrency mode of incoming session is %{public}d. No need to update hint type",
+            AUDIO_INFO_LOG("The concurrency mode is %{public}d. No need to update hint type",
                 static_cast<int32_t>(concurrencyMode));
             break;
     }
