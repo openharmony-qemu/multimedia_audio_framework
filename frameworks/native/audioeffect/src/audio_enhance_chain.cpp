@@ -208,7 +208,7 @@ int32_t AudioEnhanceChain::SetEnhanceParamToHandle(AudioEffectHandle handle)
     return (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
 }
 
-void AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle,
+int32_t AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle,
     const std::string &enhance, const std::string &property)
 {
     std::lock_guard<std::mutex> lock(chainMutex_);
@@ -220,7 +220,7 @@ void AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLi
     replyInfo.data = &maxSampleRate;
     replyInfo.size = sizeof(maxSampleRate);
     ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &replyInfo);
-    if (ret) {
+    if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get algo maxSampleRate failed!");
     }
     if (algoSupportedConfig_.sampleRate != maxSampleRate) {
@@ -239,23 +239,24 @@ void AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLi
     cmdInfo.size = sizeof(algoSupportedConfig_);
     
     ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail", sceneType_.c_str());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
+        sceneType_.c_str());
 
-    CHECK_AND_RETURN_LOG(SetEnhanceParamToHandle(handle) == 0, "[%{public}s] %{public}s lib EFFECT_CMD_SET_PARAM fail",
-        sceneType_.c_str(), libHandle->name);
+    CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(handle) == SUCCESS, ERROR,
+        "[%{public}s] %{public}s lib EFFECT_CMD_SET_PARAM fail", sceneType_.c_str(), libHandle->name);
 
-    if (SetPropertyToHandle(handle, property) != SUCCESS) {
-        AUDIO_INFO_LOG("[%{public}s] %{public}s effect EFFECT_CMD_SET_PROPERTY fail",
-            sceneType_.c_str(), enhance.c_str());
-    }
+    CHECK_AND_RETURN_RET_LOG(SetPropertyToHandle(handle, property) == SUCCESS, ERROR,
+        "[%{public}s] %{public}s effect EFFECT_CMD_SET_PROPERTY fail", sceneType_.c_str(), enhance.c_str());
 
     ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s], either one of libs EFFECT_CMD_INIT fail", sceneType_.c_str());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s], either one of libs EFFECT_CMD_INIT fail",
+        sceneType_.c_str());
     
     setConfigFlag_ = true;
     enhanceNames_.emplace_back(enhance);
     standByEnhanceHandles_.emplace_back(handle);
     enhanceLibHandles_.emplace_back(libHandle);
+    return SUCCESS;
 }
 
 bool AudioEnhanceChain::IsEmptyEnhanceHandles()

@@ -47,6 +47,7 @@ const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_
 };
 const std::string MAINKEY_DEVICE_STATUS = "device_status";
 const std::string SUBKEY_FOLD_STATE = "fold_state";
+const std::string DB_INITED = "ENHANCE_PROPERTY_MAP_DB_INITED";
 }
 
 static int32_t FindEnhanceLib(const std::string &enhance,
@@ -165,13 +166,44 @@ void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectCh
     sceneTypeAndModeToEnhanceChainNameMap_ = managerParam.sceneTypeToChainNameMap;
     // Construct enhancePropertyMap_ that stores effect's property
     enhancePropertyMap_ = managerParam.effectDefaultProperty;
+    InitEnhancePropertyMapToDb();
+}
+
+void AudioEnhanceChainManager::InitEnhancePropertyMapToDb()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool DbInited = false;
+    ErrCode ret = settingProvider.GetBoolValue(DB_INITED, DbInited);
+    if (ret == SUCCESS && DbInited) {
+        return;
+    }
+    std::string deviceTypeName = "";
+    std::string key = "";
+    for (const auto &deviceType : INPUT_DEVICE_TYPE_SET) {
+        GetDeviceTypeName(deviceType, deviceTypeName);
+        for (const auto &[enhance, prop] : enhancePropertyMap_) {
+            key = enhance + "_&_" + deviceTypeName;
+            ret = settingProvider.PutStringValue(key, prop);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("fail, InitEnhancePropertyMapToDb, ErrCode: %{public}d", ret);
+                return;
+            }
+        }
+    }
+    ret = settingProvider.PutBoolValue(DB_INITED, true);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("fail, InitEnhancePropertyMapToDb, ErrCode: %{public}d", ret);
+        return;
+    }
+
+    AUDIO_INFO_LOG("success, InitEnhancePropertyMapToDb");
 }
 
 void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceType)
 {
     std::string deviceTypeName = "";
     GetDeviceTypeName(deviceType, deviceTypeName);
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     for (const auto &[enhance, prop] : enhancePropertyMap_) {
         std::string property = "";
         if (deviceTypeName == "") {
@@ -323,6 +355,8 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     }
     std::string effectChainName = GetEnhanceChainNameBySceneCode(sceneKeyCode, defaultFlag);
     if (AddAudioEnhanceChainHandles(audioEnhanceChain, effectChainName) != SUCCESS) {
+        sceneTypeToEnhanceChainCountMap_.erase(sceneKeyCode);
+        sceneTypeToEnhanceChainMap_.erase(sceneKeyCode);
         AUDIO_ERR_LOG("%{public}u create failed.", sceneKeyCode);
         return ERROR;
     }
@@ -439,8 +473,12 @@ int32_t AudioEnhanceChainManager::AddAudioEnhanceChainHandles(std::shared_ptr<Au
         CHECK_AND_CONTINUE_LOG(ret == 0, "EnhanceToLibraryEntryMap[%{public}s] createEffect fail",
             enhance.c_str());
         auto propIter = enhancePropertyMap_.find(enhance);
-        audioEnhanceChain->AddEnhanceHandle(handle, enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle,
+        ret = audioEnhanceChain->AddEnhanceHandle(handle, enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle,
             enhance, propIter == enhancePropertyMap_.end() ? "" : propIter->second);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("AddEnhanceHandle fail");
+            enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle->releaseEffect(handle);
+        }
     }
 
     if (audioEnhanceChain->IsEmptyEnhanceHandles()) {
@@ -722,7 +760,7 @@ int32_t AudioEnhanceChainManager::SetVolumeInfo(const AudioVolumeType &volumeTyp
     if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0 || sceneTypeToEnhanceChainMap_.size() == 0) {
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("success, volumeType: %{public}d, systemVol: %{public}f", volumeType_, systemVol_);
+    AUDIO_DEBUG_LOG("success, volumeType: %{public}d, systemVol: %{public}f", volumeType_, systemVol_);
     return SUCCESS;
 }
 
@@ -749,21 +787,26 @@ int32_t AudioEnhanceChainManager::SetStreamVolumeInfo(const uint32_t &sessionId,
     if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0 || sceneTypeToEnhanceChainMap_.size() == 0) {
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("success, sessionId: %{public}d, streamVol: %{public}f", sessionId_, streamVol_);
+    AUDIO_DEBUG_LOG("success, sessionId: %{public}d, streamVol: %{public}f", sessionId_, streamVol_);
     return SUCCESS;
 }
 
 int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
     DeviceType deviceType)
 {
+    int32_t ret = 0;
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     for (const auto &property : propertyArray.property) {
         enhancePropertyMap_.insert_or_assign(property.name, property.category);
-        SetAudioEnhancePropertyToChains(property);
         std::string deviceTypeName = "";
         GetDeviceTypeName(deviceType, deviceTypeName);
         std::string key = property.name + "_&_" + deviceTypeName;
-        WriteEnhancePropertyToDb(key, property.category);
+        ret = WriteEnhancePropertyToDb(key, property.category);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("fail, WriteEnhancePropertyToDb, ErrCode: %{public}d", ret);
+            continue;
+        }
+        SetAudioEnhancePropertyToChains(property);
     }
     return AUDIO_OK;
 }
@@ -811,7 +854,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhancePropertyToChains(AudioEnhancePr
 
 int32_t AudioEnhanceChainManager::WriteEnhancePropertyToDb(const std::string &key, const std::string &property)
 {
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = settingProvider.PutStringValue(key, property);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Write Enhance Property to Database failed");
     AUDIO_INFO_LOG("success, write Enhance_&_DeviceType:%{public}s is Property:%{public}s to Database",
