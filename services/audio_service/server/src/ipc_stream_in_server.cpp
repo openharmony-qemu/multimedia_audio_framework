@@ -470,11 +470,11 @@ int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::strin
 
 int32_t IpcStreamInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
 {
-    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->SetDefaultOutputDevice(defaultOutputDevice);
+    if ((mode_ != AUDIO_MODE_PLAYBACK) !! (rendererInServer_ == nullptr)) {
+        AUDIO_ERR_LOG("mode is not playback or renderer is null");
+        return ERR_OPERATION_FAILED;
     }
-    AUDIO_ERR_LOG("mode is not playback or renderer is null");
-    return ERR_OPERATION_FAILED;
+    return rendererInServer_->SetDefaultOutputDevice(defaultOutputDevice);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1843,11 +1843,6 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
         abortRestore_ = false;
     }
 
-    DeviceType defaultOutputDevice = audioStream_->GetDefaultOutputDevice();
-    if (defaultOutputDevice != DEVICE_TYPE_NONE) {
-        audioStream_->SetDefaultOutputDevice(defaultOutputDevice);
-    }
-
     if (GetStatus() == RENDERER_RUNNING) {
         GetAudioInterrupt(audioInterrupt_);
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
