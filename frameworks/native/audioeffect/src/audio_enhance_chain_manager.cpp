@@ -794,7 +794,7 @@ int32_t AudioEnhanceChainManager::SetStreamVolumeInfo(const uint32_t &sessionId,
 int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
     DeviceType deviceType)
 {
-    int32_t ret = 0;
+    int32_t ret = SUCCESS;
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     for (const auto &property : propertyArray.property) {
         enhancePropertyMap_.insert_or_assign(property.name, property.category);
@@ -808,18 +808,18 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEffectPrope
         }
         SetAudioEnhancePropertyToChains(property);
     }
-    return AUDIO_OK;
+    return SUCCESS;
 }
 
 int32_t AudioEnhanceChainManager::SetAudioEnhancePropertyToChains(AudioEffectPropertyV3 property)
 {
-    int32_t ret = AUDIO_OK;
+    int32_t ret = SUCCESS;
     for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
         if (enhanceChain) {
             AUDIO_DEBUG_LOG("effectClass->name %{public}s effectProp->category %{public}s",
                 property.name.c_str(), property.category.c_str());
             ret = enhanceChain->SetEnhanceProperty(property.name, property.category);
-            CHECK_AND_CONTINUE_LOG(ret == AUDIO_OK, "set property failed[%{public}d]", ret);
+            CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "set property failed[%{public}d]", ret);
         }
     }
     return ret;
@@ -828,7 +828,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhancePropertyToChains(AudioEffectPro
 int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
     DeviceType deviceType)
 {
-    int32_t ret = 0;
+    int32_t ret = SUCCESS;
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     for (const auto &property : propertyArray.property) {
         enhancePropertyMap_.insert_or_assign(property.enhanceClass, property.enhanceProp);
@@ -842,19 +842,19 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEnhanceProp
         }
         SetAudioEnhancePropertyToChains(property);
     }
-    return 0;
+    return SUCCESS;
 }
 
 int32_t AudioEnhanceChainManager::SetAudioEnhancePropertyToChains(AudioEnhanceProperty property)
 {
-    int32_t ret = AUDIO_OK;
+    int32_t ret = SUCCESS;
     for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
         if (enhanceChain) {
             ret = enhanceChain->SetEnhanceProperty(property.enhanceClass, property.enhanceProp);
-            CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "set property failed");
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "set property failed");
         }
     }
-    return  ret;
+    return ret;
 }
 
 int32_t AudioEnhanceChainManager::WriteEnhancePropertyToDb(const std::string &key, const std::string &property)
