@@ -27,7 +27,7 @@
 namespace OHOS {
 namespace AudioStandard {
 #ifdef USE_CONFIG_POLICY
-static constexpr char CONFIG_FILE[] = "/etc/audio/audio_param_config.xml";
+static constexpr char CONFIG_FILE[] = "etc/audio/audio_param_config.xml";
 #endif
 
 class AudioParamParser {

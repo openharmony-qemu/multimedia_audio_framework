@@ -26,7 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 #ifdef USE_CONFIG_POLICY
-static constexpr char AUDIO_EFFECT_CONFIG_FILE[] = "/etc/audio/audio_effect_config.xml";
+static constexpr char AUDIO_EFFECT_CONFIG_FILE[] = "etc/audio/audio_effect_config.xml";
 #endif
 static const std::string EFFECT_CONFIG_NAME[5] = {"libraries", "effects", "effectChains", "preProcess", "postProcess"};
 static constexpr int32_t FILE_CONTENT_ERROR = -2;
