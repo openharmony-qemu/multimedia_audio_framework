@@ -23,7 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr int32_t AUDIO_DEVICE_INFO_SIZE_LIMIT = 30;
+constexpr size_t AUDIO_DEVICE_INFO_SIZE_LIMIT = 30;
 constexpr int32_t INVALID_GROUP_ID = -1;
 namespace {
 const char* LOCAL_NETWORK_ID = "LocalDevice";
