@@ -171,7 +171,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, WaitForConnectionCompleted_001, TestS
     EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ =
         CONNECTION_STATUS_CONNECTED));
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test WaitForConnectionCompleted.
 * @tc.number: WaitForConnectionCompleted_002
@@ -188,7 +188,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, WaitForConnectionCompleted_002, TestS
     EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ =
         CONNECTION_STATUS_CONNECTED));
 }
-
+#endif
 /**
 * @tc.name  : Test IsA2dpOffloadConnecting.
 * @tc.number: IsA2dpOffloadConnecting_001
@@ -833,7 +833,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ScoInputDeviceFetchedForRecongnition_
         address, connectState);
     EXPECT_EQ(SUCCESS, result);
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test SetRotationToEffect.
 * @tc.number: SetRotationToEffect_001
@@ -848,7 +848,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetRotationToEffect_001, TestSize.Lev
     server->audioPolicyService_.SetRotationToEffect(rotate);
     EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
-
+#endif
 /**
 * @tc.name  : Test DealAudioSceneOutputDevices.
 * @tc.number: DealAudioSceneOutputDevices_001

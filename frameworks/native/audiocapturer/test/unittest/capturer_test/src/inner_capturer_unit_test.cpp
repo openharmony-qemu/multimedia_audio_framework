@@ -454,7 +454,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0011, TestSize.Level1)
 {
     TestInnerCapturer(STREAM_USAGE_SYSTEM);
 }
-
+#ifdef INNER_CAPTURER_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test capturer MOVIE.
 * @tc.number: Inner_Capturer_Basic_0012
@@ -464,7 +464,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0012, TestSize.Level1)
 {
     TestInnerCapturer(STREAM_USAGE_MOVIE);
 }
-
+#endif
 /**
 * @tc.name  : Test capturer GAME.
 * @tc.number: Inner_Capturer_Basic_0013

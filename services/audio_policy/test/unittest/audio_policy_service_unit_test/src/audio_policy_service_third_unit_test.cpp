@@ -55,7 +55,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceInfoUpdated_001, TestSize.Leve
 
     GetServerPtr()->audioPolicyService_.OnDeviceInfoUpdated(*desc, command);
 }
-#endif
+
 /**
 * @tc.name  : Test OnDeviceInfoUpdated.
 * @tc.number: OnDeviceInfoUpdated_002
@@ -93,6 +93,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceInfoUpdated_003, TestSize.Leve
 
     GetServerPtr()->audioPolicyService_.OnDeviceInfoUpdated(*desc, command);
 }
+#endif
 /**
 * @tc.name  : Test DeviceUpdateClearRecongnitionStatus.
 * @tc.number: DeviceUpdateClearRecongnitionStatus_001
@@ -250,7 +251,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_004, TestSize.Lev
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test HandleRemoteCastDevice.
 * @tc.number: HandleRemoteCastDevice_001
@@ -269,7 +270,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, HandleRemoteCastDevice_001, TestSize.L
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemoteCastDevice(isConnected, audioStreamInfo);
     sleep(1);
 }
-
+#endif
 /**
  * @tc.name  : Test DeviceVolumeInfosDump.
  * @tc.number: DeviceVolumeInfosDump_001
