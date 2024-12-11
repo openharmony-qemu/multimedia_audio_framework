@@ -1004,7 +1004,7 @@ bool AudioInterruptService::IsSameAppInShareMode(const AudioInterrupt incomingIn
 }
 
 bool AudioInterruptService::CheckAudioSessionExistence(const AudioInterrupt &incomingInterrupt,
-    AudioFocusEntry &focusEntry, std::shared_ptr<AudioSession> incomingSession)
+    AudioFocusEntry &focusEntry)
 {
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
@@ -1018,6 +1018,7 @@ bool AudioInterruptService::CheckAudioSessionExistence(const AudioInterrupt &inc
         AUDIO_INFO_LOG("The interrupt event is not for the existed stream.");
         return false;
     }
+    std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
     if (incomingSession == nullptr) {
         AUDIO_ERR_LOG("incomingSession is nullptr!");
         return false;
@@ -1029,8 +1030,9 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
     AudioFocusEntry &focusEntry)
 {
     AudioConcurrencyMode concurrencyMode = incomingInterrupt.sessionStrategy.concurrencyMode;
-    std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
-    if (CheckAudioSessionExistence(incomingInterrupt, focusEntry, incomingSession)) {
+    
+    if (CheckAudioSessionExistence(incomingInterrupt, focusEntry)) {
+        std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
         concurrencyMode = (incomingSession->GetSessionStrategy()).concurrencyMode;
     }
     switch (concurrencyMode) {
