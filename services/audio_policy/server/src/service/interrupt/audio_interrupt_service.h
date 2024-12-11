@@ -238,6 +238,8 @@ private:
         &audioFocusInfoList);
 
     AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId);
+    
+    bool CheckAudioSessionExistence(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
