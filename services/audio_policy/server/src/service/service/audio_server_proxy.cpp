@@ -203,6 +203,16 @@ void AudioServerProxy::SetOffloadModeProxy(uint32_t sessionId, int32_t state, bo
     gsp->SetOffloadMode(sessionId, state, isAppBack);
     IPCSkeleton::SetCallingIdentity(identity);
 }
+
+void AudioServerProxy::CheckHibernateStateProxy(bool hibernate)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->CheckHibernateState(hibernate);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 void AudioServerProxy::RestoreSessionProxy(const int32_t &sessionID, bool isOutput)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

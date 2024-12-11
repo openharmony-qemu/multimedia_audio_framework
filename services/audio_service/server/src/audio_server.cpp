@@ -50,6 +50,7 @@
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
+#include "fast_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "playback_capturer_manager.h"
 #include "config/audio_param_parser.h"
@@ -303,6 +304,7 @@ void AudioServer::OnStart()
 #endif
 
     RegisterAudioCapturerSourceCallback();
+    RegisterAudioRendererSinkCallback();
 
     std::unique_ptr<AudioParamParser> audioParamParser = make_unique<AudioParamParser>();
     if (audioParamParser == nullptr) {
@@ -1056,7 +1058,7 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
         GetEncryptStr(networkId).c_str(), connected);
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
     if (audioRendererSinkInstance != nullptr && connected) {
-        audioRendererSinkInstance->RegisterParameterCallback(this);
+        audioRendererSinkInstance->RegisterAudioSinkCallback(this);
     }
 }
 
@@ -1823,6 +1825,21 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
     }
 }
 
+void AudioServer::RegisterAudioRendererSinkCallback()
+{
+    // Only watch primary and fast sink for now, watch other sinks later.
+    IAudioRendererSink *primarySink = IAudioRendererSink::GetInstance("primary", "");
+    IAudioRendererSink *fastSink = FastAudioRendererSink::GetInstance();
+    for (auto sinkInstance : {
+        primarySink,
+        fastSink
+    }) {
+        if (sinkInstance) {
+            sinkInstance->RegisterAudioSinkCallback(this);
+        }
+    }
+}
+
 int32_t AudioServer::SetCaptureSilentState(bool state)
 {
     if (!PermissionUtil::VerifyIsAudio()) {
@@ -2027,6 +2044,19 @@ int32_t AudioServer::UnsetOffloadMode(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
         callingUid);
     return AudioService::GetInstance()->UnsetOffloadMode(sessionId);
+}
+
+void AudioServer::OnAudioSinkStateChange(uint32_t sinkId, bool started)
+{
+    AudioService::GetInstance()->UpdateAudioSinkState(sinkId, started);
+    return;
+}
+
+void AudioServer::CheckHibernateState(bool hibernate)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+    return AudioService::GetInstance()->CheckHibernateState(hibernate);
 }
 
 sptr<IRemoteObject> AudioServer::CreateIpcOfflineStream(int32_t &errorCode)

@@ -108,6 +108,7 @@ public:
     void SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag) override;
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
+    void CheckHibernateState(bool onHibernate) override;
     void RestoreSession(const int32_t &sessionID, bool isOutput) override;
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;

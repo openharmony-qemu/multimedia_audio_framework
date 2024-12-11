@@ -87,9 +87,9 @@ std::string AudioRendererFileSink::GetAudioParameter(const AudioParamKey key, co
     return "";
 }
 
-void AudioRendererFileSink::RegisterParameterCallback(IAudioSinkCallback* callback)
+void AudioRendererFileSink::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_ERR_LOG("AudioRendererFileSink RegisterParameterCallback not supported.");
+    AUDIO_ERR_LOG("AudioRendererFileSink RegisterAudioSinkCallback not supported.");
 }
 
 void AudioRendererFileSink::SetAudioMonoState(bool audioMono)

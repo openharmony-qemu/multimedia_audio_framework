@@ -2029,5 +2029,9 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
     return SUCCESS;
 }
 
+void AudioPolicyService::CheckHibernateState(bool hibernate)
+{
+    AudioServerProxy::GetInstance().CheckHibernateStateProxy(hibernate);
+}
 } // namespace AudioStandard
 } // namespace OHOS

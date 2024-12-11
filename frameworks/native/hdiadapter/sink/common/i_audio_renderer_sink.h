@@ -43,6 +43,7 @@ class IAudioSinkCallback {
 public:
     virtual void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) = 0;
+    virtual void OnAudioSinkStateChange(uint32_t sinkId, bool started) = 0;
 };
 
 typedef void OnRenderCallback(const RenderCallbackType type, int8_t *userdata);
@@ -80,7 +81,7 @@ public:
 
     virtual void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) = 0;
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;
-    virtual void RegisterParameterCallback(IAudioSinkCallback* callback) = 0;
+    virtual void RegisterAudioSinkCallback(IAudioSinkCallback* callback) = 0;
 
     virtual void SetAudioMonoState(bool audioMono) = 0;
     virtual void SetAudioBalanceValue(float audioBalance) = 0;

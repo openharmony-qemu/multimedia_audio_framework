@@ -103,7 +103,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
 
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
@@ -646,15 +646,15 @@ int32_t RemoteFastAudioRendererSinkInner::GetLatency(uint32_t *latency)
     return SUCCESS;
 }
 
-void RemoteFastAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void RemoteFastAudioRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
     AUDIO_INFO_LOG("register params callback");
     callback_ = callback;
 
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "RegisterParameterCallback: Audio adapter is null.");
+    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "RegisterAudioSinkCallback: Audio adapter is null.");
     int32_t ret = audioAdapter_->RegExtraParamObserver();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterParameterCallback failed, ret %{public}d.", ret);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterAudioSinkCallback failed, ret %{public}d.", ret);
 #endif
 }
 

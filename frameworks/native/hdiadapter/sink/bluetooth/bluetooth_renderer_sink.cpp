@@ -111,7 +111,7 @@ public:
     int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
     float GetMaxAmplitude() override;
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
@@ -291,9 +291,9 @@ std::string BluetoothRendererSinkInner::GetAudioParameter(const AudioParamKey ke
     return "";
 }
 
-void BluetoothRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void BluetoothRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_ERR_LOG("BluetoothRendererSink RegisterParameterCallback not supported.");
+    AUDIO_ERR_LOG("BluetoothRendererSink RegisterAudioSinkCallback not supported.");
 }
 
 void BluetoothRendererSinkInner::DeInit()

@@ -177,6 +177,10 @@ public:
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
 
+    void OnAudioSinkStateChange(uint32_t sinkId, bool started) override;
+
+    void CheckHibernateState(bool hibernate) override;
+
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
 
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
@@ -211,6 +215,7 @@ private:
     void AudioServerDied(pid_t pid, pid_t uid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
+    void RegisterAudioRendererSinkCallback();
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,

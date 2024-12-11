@@ -36,7 +36,7 @@ const int32_t SHIFT_LEFT_16 = 16;
 const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_MIN = 0;
 const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
-const uint8_t TESTSIZE = 23;
+const uint8_t TESTSIZE = 24;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 uint32_t Convert2Uint32(const uint8_t *ptr)
@@ -507,6 +507,24 @@ void AudioServerUnsetOffloadTest(const uint8_t *rawData, size_t size)
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UNSET_OFFLOAD_MODE),
         data, reply, option);
 }
+
+void AudioServerCheckHibernateStateTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    bool hibernate = *reinterpret_cast<const bool*>(rawData);
+    data.WriteBool(hibernate);
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_HIBERNATE_STATE),
+        data, reply, option);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -533,7 +551,8 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioServerSetAudioSceneTest,
     OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest,
     OHOS::AudioStandard::AudioServerSetOffloadModeTest,
-    OHOS::AudioStandard::AudioServerUnsetOffloadTest
+    OHOS::AudioStandard::AudioServerUnsetOffloadTest,
+    OHOS::AudioStandard::AudioServerCheckHibernateStateTest
 };
 
 /* Fuzzer entry point */

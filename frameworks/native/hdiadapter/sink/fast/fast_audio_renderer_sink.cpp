@@ -61,6 +61,8 @@ const int64_t VOIP_MAX_HANDLE_COST_IN_NANOSEC = 20000000; // 20ms = 20ns * 1000 
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int INVALID_FD = -1;
 const unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
+const std::string MMAP_PRIMARY_HAL_NAME = "mmap primary";
+const std::string MMAP_VOIP_HAL_NAME = "mmap voip";
 }
 
 class FastAudioRendererSinkInner : public FastAudioRendererSink {
@@ -91,7 +93,7 @@ public:
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
@@ -127,6 +129,7 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
+    void UpdateSinkState(bool started);
 
 private:
     IAudioSinkAttr attr_ = {};
@@ -143,6 +146,8 @@ private:
     struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     uint32_t renderId_ = 0;
+    uint32_t sinkId_ = 0;
+    std::string halName_ = "";
 
     size_t bufferSize_ = 0;
     uint32_t bufferTotalFrameSize_ = 0;
@@ -151,6 +156,7 @@ private:
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
     std::mutex mutex_;
+    IAudioSinkCallback *callback_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -288,6 +294,16 @@ int32_t FastAudioRendererSinkInner::InitAudioManager()
     }
 
     return 0;
+}
+
+// UpdateSinkState must be called with FastAudioRendererSinkInner::mutex_ held
+void FastAudioRendererSinkInner::UpdateSinkState(bool started)
+{
+    if (callback_) {
+        callback_->OnAudioSinkStateChange(sinkId_, started);
+    } else {
+        AUDIO_WARNING_LOG("AudioSinkCallback is nullptr");
+    }
 }
 
 uint32_t PcmFormatToBits(HdiAdapterFormat format)
@@ -483,6 +499,7 @@ int32_t FastAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     AUDIO_INFO_LOG("FastAudioRendererSinkInner::Init");
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;  // Set sound card information
+    halName_ = attr_.audioStreamFlag == AUDIO_FLAG_MMAP ? MMAP_PRIMARY_HAL_NAME : MMAP_VOIP_HAL_NAME;
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
     CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_NOT_STARTED, "Init audio manager Fail");
@@ -515,6 +532,7 @@ int32_t FastAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
         ERR_NOT_STARTED, "Create render failed, Audio Port: %{public}d", audioPort_.portId);
 
     rendererInited_ = true;
+    GetRenderId(sinkId_);
 
     return SUCCESS;
 }
@@ -637,6 +655,7 @@ int32_t FastAudioRendererSinkInner::CheckPositionTime()
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "audioRenderer_ is nullptr when trying to stop");
     int32_t ret = audioRender_->Stop(audioRender_);
+    UpdateSinkState(false);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop failed! ret: %{public}d.", ret);
     return ERROR;
 }
@@ -646,7 +665,7 @@ int32_t FastAudioRendererSinkInner::Start(void)
     std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("FastAudioRendererSinkInner::Start");
     AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Start", XCOLLIE_TIME_OUT_SECONDS);
-    AUDIO_INFO_LOG("FastAudioRendererSinkInner::Start");
+    AUDIO_INFO_LOG("FastAudioRendererSinkInner::Start, sinkId %{public}u", sinkId_);
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
 
@@ -657,6 +676,7 @@ int32_t FastAudioRendererSinkInner::Start(void)
         ret = audioRender_->Start(audioRender_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED,
             "FastAudioRendererSink::Start failed!");
+        UpdateSinkState(true);
         int32_t err = CheckPositionTime();
         CHECK_AND_RETURN_RET_LOG(err == SUCCESS, ERR_NOT_STARTED,
             "FastAudioRendererSink::CheckPositionTime failed!");
@@ -779,9 +799,15 @@ std::string FastAudioRendererSinkInner::GetAudioParameter(const AudioParamKey ke
     return value;
 }
 
-void FastAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void FastAudioRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_ERR_LOG("FastAudioRendererSink RegisterParameterCallback not supported.");
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (callback_) {
+        AUDIO_INFO_LOG("AudioSinkCallback registered");
+    } else {
+        callback_ = callback;
+        AUDIO_INFO_LOG("Register AudioSinkCallback");
+    }
 }
 
 void FastAudioRendererSinkInner::SetAudioMonoState(bool audioMono)
@@ -832,7 +858,7 @@ int32_t FastAudioRendererSinkInner::Stop(void)
     std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("FastAudioRendererSinkInner::Stop");
     AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Stop", XCOLLIE_TIME_OUT_SECONDS);
-    AUDIO_INFO_LOG("Stop.");
+    AUDIO_INFO_LOG("Stop, sinkId %{public}u", sinkId_);
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "Stop failed audioRender_ null");
@@ -842,6 +868,7 @@ int32_t FastAudioRendererSinkInner::Stop(void)
 
     if (started_) {
         int32_t ret = audioRender_->Stop(audioRender_);
+        UpdateSinkState(false);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
             "Stop failed! ret: %{public}d.", ret);
     }
