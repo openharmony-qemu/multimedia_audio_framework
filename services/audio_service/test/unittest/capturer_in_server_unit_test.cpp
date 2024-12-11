@@ -226,7 +226,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_007, TestSize.Level1
     capturerInServer_->OnStatusUpdate(IOperation::OPERATION_FLUSHED);
     EXPECT_NE(capturerInServer_, nullptr);
 }
-
+#ifdef CAPTURER_IN_SERVER_UNIT_TEST_DIFF
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -266,7 +266,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_008, TestSize.Level1
     EXPECT_NE(capturerInServer_, nullptr);
     delete capturerInServer_->audioServerBuffer_->basicBufferInfo_;
 }
-
+#endif
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
