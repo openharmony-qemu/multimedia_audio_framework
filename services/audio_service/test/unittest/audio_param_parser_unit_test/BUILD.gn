@@ -1,0 +1,81 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+
+module_output_path = "multimedia_audio_framework/audio_server"
+
+config("module_private_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    "../../../common/include",
+    "../../../client/include",
+    "../../../server/include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../../../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
+  ]
+}
+
+ohos_unittest("audio_param_parser_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  cflags = [ "-fno-access-control" ]
+
+  sources = [ "./src/audio_param_parser_unit_test.cpp" ]
+
+  include_dirs = [
+    "../../../server/include",
+    "../../../../audio_service/common/include",
+    "../../../../audio_service/common",
+    "./include",
+    "../../../../../frameworks/native/hdiadapter/source/common",
+    "../../../../../frameworks/native/playbackcapturer/include",
+    "../../../../../frameworks/native/hdiadapter/common",
+    "../../../../../frameworks/native/audioutils/include",
+    "../../../../../frameworks/native/hdiadapter/common/include",
+    "../../../../../frameworks/native/hdiadapter/sink/common",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../frameworks/native/audioinnercall/include",
+    "../../../../../frameworks/native/hdiadapter/sink/common",
+    "../../../../../services/audio_service/server/include",
+    "../../../../../services/audio_service/server/include/config",
+    "../../../../../services/audio_policy/client/include",
+    "../../../../../frameworks/native/audiopolicy/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+  cflags_cc = [ "-std=c++20" ]
+
+  deps = [
+    "../../../../../services/audio_service:audio_service_static",
+    "../../../../audio_service:audio_process_service_static",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtokensetproc_shared",
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
