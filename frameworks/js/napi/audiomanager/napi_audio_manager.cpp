@@ -126,8 +126,8 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
-        DECLARE_NAPI_FUNCTION("getEffectManager", GetEffectManager),
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+        DECLARE_NAPI_FUNCTION("getEffectManager", GetEffectManager),
         DECLARE_NAPI_FUNCTION("getSessionManager", GetSessionManager),
 #endif
         DECLARE_NAPI_FUNCTION("getRoutingManager", GetRoutingManager),
@@ -247,6 +247,7 @@ napi_value NapiAudioManager::GetAudioManager(napi_env env, napi_callback_info in
     return NapiAudioManager::CreateAudioManagerWrapper(env);
 }
 
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 napi_value NapiAudioManager::GetEffectManager(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -260,6 +261,7 @@ napi_value NapiAudioManager::GetEffectManager(napi_env env, napi_callback_info i
 
     return NapiAudioEffectMgr::CreateEffectManagerWrapper(env);
 }
+#endif
 
 napi_value NapiAudioManager::GetStreamManager(napi_env env, napi_callback_info info)
 {
