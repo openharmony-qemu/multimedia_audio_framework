@@ -297,7 +297,7 @@ vector<UsbAudioDevice> AudioUsbManager::GetUsbAudioDevices()
     vector<UsbAudioDevice> result;
     auto ret = UsbSrvClient::GetInstance().GetDevices(deviceList);
     if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("GetDevices failed. ret = %{public}d. size = %{public}zu", ret, deviceList.size());
+        AUDIO_ERR_LOG("GetDevices failed. ret=%{public}d. size=%{public}zu", ret, deviceList.size());
         return result;
     }
     for (auto &usbDevice : deviceList) {
