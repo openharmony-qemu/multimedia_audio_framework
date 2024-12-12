@@ -520,5 +520,6 @@ HWTEST(ProRendererStreamImplUnitTest, GetLatency_001, TestSize.Level1)
     uint64_t latency;
     int32_t ret = rendererStreamImpl->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
