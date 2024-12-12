@@ -320,10 +320,12 @@ HWTEST(ProRendererStreamImplUnitTest, ffloadSetVolume_001, TestSize.Level1)
  */
 HWTEST(ProRendererStreamImplUnitTest, GetAudioTime_001, TestSize.Level1)
 {
-    AudioProcessConfig processConfig;
+    AudioProcessConfig processConfig = InitProcessConfig();
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->InitParams();
+
     uint64_t framePos;
     int64_t sec, nanoSec;
     int32_t ret = rendererStreamImpl->GetAudioTime(framePos, sec, nanoSec);
@@ -478,10 +480,11 @@ HWTEST(ProRendererStreamImplUnitTest, GetCurrentTimeStamp_001, TestSize.Level1)
  */
 HWTEST(ProRendererStreamImplUnitTest, GetStreamFramesWritte_001, TestSize.Level1)
 {
-    AudioProcessConfig processConfig;
+    AudioProcessConfig processConfig = InitProcessConfig();
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->InitParams();
 
     uint64_t framesWritten;
     int32_t ret = rendererStreamImpl->GetStreamFramesWritten(framesWritten);
@@ -512,10 +515,11 @@ HWTEST(ProRendererStreamImplUnitTest, GetCurrentPosition_001, TestSize.Level1)
 */
 HWTEST(ProRendererStreamImplUnitTest, GetLatency_001, TestSize.Level1)
 {
-    AudioProcessConfig processConfig;
+    AudioProcessConfig processConfig = InitProcessConfig();
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->InitParams();
 
     uint64_t latency;
     int32_t ret = rendererStreamImpl->GetLatency(latency);

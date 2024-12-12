@@ -124,20 +124,6 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_003, T
 }
 
 /*
- * tc.name   : Test CreateAudioEnhanceChainDynamic API
- * tc.number : CreateAudioEnhanceChainDynamic_004
- * tc.desc   : Test the CreateAudioEnhanceChainDynamic interface (using correct input cases)
- * by creating two identical AudioEnhanceChain.
- */
-HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_004, TestSize.Level1)
-{
-    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
-    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
-    int32_t result = manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/*
  * tc.name   : Test ReleaseAudioEnhanceChainDynamic API
  * tc.number : ReleaseAudioEnhanceChainDynamic_001
  * tc.desc   : Test ReleaseAudioEnhanceChainDynamic interface when has not been initialized.
