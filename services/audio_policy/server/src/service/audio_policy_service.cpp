@@ -71,6 +71,7 @@ static const unsigned int BUFFER_CALC_20MS = 20;
 static const unsigned int BUFFER_CALC_1000MS = 1000;
 static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
 static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
+static const int64_t WAIT_SET_MUTE_LATENCY_TIME_EXT_US = 200000; // 200ms
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
@@ -2234,6 +2235,7 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererCha
     vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::MuteSinkPortForSwtichDevice");
+    SetDeviceInfos(rendererChangeInfo->outputDeviceInfo.deviceType, outputDevices.front()->deviceType_);
     if (outputDevices.size() != 1) {
         // mute primary when play music and ring
         if (IsStreamActive(STREAM_MUSIC)) {
@@ -2477,7 +2479,16 @@ void AudioPolicyService::MuteSinkPort(const std::string &portName, int32_t durat
         audioPolicyManager_.SetSinkMute(portName, true, isSync);
     }
     IPCSkeleton::SetCallingIdentity(identity);
-    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
+    // primary set device earpiece od speaker need longer latency.
+    int64_t muteLatencyTime = WAIT_SET_MUTE_LATENCY_TIME_US;
+    if ((portName == PRIMARY_SPEAKER || portName == USB_SPEAKER) && (oldOutputDevice_ != newOutputDevice_) &&
+        (oldOutputDevice_ == DEVICE_TYPE_USB_HEADSET || oldOutputDevice_ == DEVICE_TYPE_USB_ARM_HEADSET) &&
+        (newOutputDevice_ == DEVICE_TYPE_EARPIECE || newOutputDevice_ == DEVICE_TYPE_SPEAKER)) {
+        oldOutputDevice_ = DEVICE_TYPE_NONE;
+        newOutputDevice_ = DEVICE_TYPE_NONE;
+        muteLatencyTime = WAIT_SET_MUTE_LATENCY_TIME_EXT_US;
+    }
+    usleep(muteLatencyTime); // sleep fix data cache pop.
 
     // Muted and then unmute.
     thread switchThread(&AudioPolicyService::UnmutePortAfterMuteDuration, this, duration, portName, DEVICE_TYPE_NONE);
@@ -9236,5 +9247,10 @@ int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incoming
     return SUCCESS;
 }
 
+void AudioPolicyService::SetDeviceInfos(DeviceType oldOutputDevice, DeviceType newOutputDevice)
+{
+    oldOutputDevice_ = oldOutputDevice;
+    newOutputDevice_ = newOutputDevice;
+}
 } // namespace AudioStandard
 } // namespace OHOS

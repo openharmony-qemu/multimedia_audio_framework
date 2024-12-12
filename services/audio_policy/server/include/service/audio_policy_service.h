@@ -1078,6 +1078,7 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
+    void SetDeviceInfos(DeviceType oldOutputDevice, DeviceType newOutputDevice);
 private:
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -1264,6 +1265,8 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 
     bool isBTReconnecting_ = false;
+    DeviceType oldOutputDevice_ = DEVICE_TYPE_NONE;
+    DeviceType newOutputDevice_ = DEVICE_TYPE_NONE;
 };
 
 class AudioA2dpOffloadManager final : public Bluetooth::AudioA2dpPlayingStateChangedListener,
