@@ -120,6 +120,7 @@ void AudioEnhanceChainManager::ResetInfo()
     enhanceToLibraryEntryMap_.clear();
     enhanceToLibraryNameMap_.clear();
     enhancePropertyMap_.clear();
+    defaultPropertyMap_.clear();
     captureIdToDeviceMap_.clear();
     captureIdToDeviceNameMap_.clear();
     renderIdToDeviceMap_.clear();
@@ -166,37 +167,7 @@ void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectCh
     sceneTypeAndModeToEnhanceChainNameMap_ = managerParam.sceneTypeToChainNameMap;
     // Construct enhancePropertyMap_ that stores effect's property
     enhancePropertyMap_ = managerParam.effectDefaultProperty;
-    InitEnhancePropertyMapToDb();
-}
-
-void AudioEnhanceChainManager::InitEnhancePropertyMapToDb()
-{
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    bool DbInited = false;
-    ErrCode ret = settingProvider.GetBoolValue(DB_INITED, DbInited);
-    if (ret == SUCCESS && DbInited) {
-        return;
-    }
-    std::string deviceTypeName = "";
-    std::string key = "";
-    for (const auto &deviceType : INPUT_DEVICE_TYPE_SET) {
-        GetDeviceTypeName(deviceType, deviceTypeName);
-        for (const auto &[enhance, prop] : enhancePropertyMap_) {
-            key = enhance + "_&_" + deviceTypeName;
-            ret = settingProvider.PutStringValue(key, prop);
-            if (ret != SUCCESS) {
-                AUDIO_ERR_LOG("fail, InitEnhancePropertyMapToDb, ErrCode: %{public}d", ret);
-                return;
-            }
-        }
-    }
-    ret = settingProvider.PutBoolValue(DB_INITED, true);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("fail, InitEnhancePropertyMapToDb, ErrCode: %{public}d", ret);
-        return;
-    }
-
-    AUDIO_INFO_LOG("success, InitEnhancePropertyMapToDb");
+    defaultPropertyMap_ = managerParam.effectDefaultProperty;
 }
 
 void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceType)
@@ -213,9 +184,19 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
         std::string key = enhance + "_&_" + deviceTypeName;
         ErrCode ret = settingProvider.GetStringValue(key, property);
         if (ret == SUCCESS) {
-            enhancePropertyMap_.insert_or_assign(enhance, property);
+            prop = property;
             AUDIO_INFO_LOG("Get Effect_&_DeviceType:%{public}s is Property:%{public}s",
                 key.c_str(), property.c_str());
+        } else {
+            ret = settingProvider.PutStringValue(key, defaultPropertyMap_[enhance]);
+            if(ret != SUCCESS) {
+                AUDIO_ERR_LOG("set to default Property:%{public}s, failed, ErrCode : %{public}d",
+                    defaultPropertyMap_[enhance].c_str(), ret);
+                return;
+            }
+            prop = defaultPropertyMap_[enhance];
+            AUDIO_INFO_LOG("Get prop failed,Effect_&_DeviceType:%{public}s is set to default Property:%{public}s",
+                key.c_str(), prop.c_str());
         }
     }
 }

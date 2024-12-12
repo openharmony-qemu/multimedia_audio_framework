@@ -101,6 +101,7 @@ private:
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> enhanceToLibraryEntryMap_;
     std::map<std::string, std::string> enhanceToLibraryNameMap_;
     std::unordered_map<std::string, std::string> enhancePropertyMap_;
+    std::unordered_map<std::string, std::string> defaultPropertyMap_;
     std::map<uint32_t, DeviceType> captureIdToDeviceMap_;
     std::map<uint32_t, std::string> captureIdToDeviceNameMap_;
     std::map<uint32_t, DeviceType> renderIdToDeviceMap_;
