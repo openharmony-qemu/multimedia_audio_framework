@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef AUDIO_PARAM_PARSER_TEST_H
+#define AUDIO_PARAM_PARSER_TEST_H
+
 #include "gtest/gtest.h"
 #include "audio_param_parser.h"
 
@@ -33,3 +36,4 @@ protected:
 };
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // AUDIO_PARAM_PARSER_TEST_H
