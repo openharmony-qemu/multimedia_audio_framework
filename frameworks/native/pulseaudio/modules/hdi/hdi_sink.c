@@ -3039,6 +3039,25 @@ static void ResetFadeoutPause(pa_sink_input *i, pa_sink_input_state_t state)
     }
 }
 
+static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t state, struct Userdata *u)
+{
+    if (state == PA_SINK_INPUT_RUNNING)
+    {
+        const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
+        const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+        const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+        float volume = GetCurVolume(sessionID, streamType, deviceClass);
+        bool isZeroVolume = IsSameVolume(volume, 0.0f);
+        AUDIO_INFO_LOG(
+            "lxlx session %{public}u stream %{public}s zerovol %{public}d", sessionID, streamType, isZeroVolume);
+        if (!isZeroVolume)
+        {
+            u->primary.sinkAdapter->RendererSinkSetPriPaPower(u->primary.sinkAdapter);
+        }
+    }
+}
+
 static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 {
     struct Userdata *u = NULL;
@@ -3063,9 +3082,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     }
     pa_assert_se(u = i->sink->userdata);
 
-    if (state == PA_SINK_INPUT_RUNNING) {
-        u->primary.sinkAdapter->RendererSinkSetPriPaPower(u->primary.sinkAdapter);
-    }
+    RendererSinkSetPriPaPower(i, state, u);
 
     char str[SPRINTF_STR_LEN] = {0};
     GetSinkInputName(i, str, SPRINTF_STR_LEN);
