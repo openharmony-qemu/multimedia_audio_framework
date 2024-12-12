@@ -110,6 +110,34 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_002, T
     manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
 }
 
+/*
+ * tc.name   : Test CreateAudioEnhanceChainDynamic API
+ * tc.number : CreateAudioEnhanceChainDynamic_003
+ * tc.desc   : Test CreateAudioEnhanceChainDynamic when no algo on audio_framework.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_003, TestSize.Level1)
+{
+
+    manager_->ResetInfo();
+    uint32_t invalidKeyCode = INVALID_SCENEKEY_CODE;
+    int32_t result = manager_->CreateAudioEnhanceChainDynamic(invalidKeyCode, deviceAttr);
+    EXPECT_EQ(result, ERROR);
+}
+
+/*
+ * tc.name   : Test CreateAudioEnhanceChainDynamic API
+ * tc.number : CreateAudioEnhanceChainDynamic_004
+ * tc.desc   : Test the CreateAudioEnhanceChainDynamic interface (using correct input cases) by creating two identical AudioEnhanceChain.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_004, TestSize.Level1)
+{
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    int32_t result = manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    EXPECT_EQ(result, SUCCESS);
+
+}
+
 
 /*
  * tc.name   : Test ReleaseAudioEnhanceChainDynamic API
@@ -138,6 +166,19 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, ReleaseAudioEnhanceChainDynamic_002, 
     EXPECT_EQ(result, SUCCESS);
 }
 
+/*
+ * tc.name   : Test ReleaseAudioEnhanceChainDynamic API
+ * tc.number : ReleaseAudioEnhanceChainDynamic_003
+ * tc.desc   : Test ReleaseAudioEnhanceChainDynamic interface after correctly creating two enhanceChain.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, ReleaseAudioEnhanceChainDynamic_003, TestSize.Level1)
+{
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    int32_t result = manager_->ReleaseAudioEnhanceChainDynamic(validKeyCode);
+    EXPECT_EQ(result, SUCCESS);
+}
 
 /*
  * tc.name   : Test ExistAudioEnhanceChain API
@@ -434,6 +475,39 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetInputDevice_002, TestSize.Level1)
 }
 
 /*
+ * tc.name   : Test SetInputDevice API
+ * tc.number : SetInputDevice_003
+ * tc.desc   : Ensures the function recognizes different input device setting and returns success without redundancy.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetInputDevice_003, TestSize.Level1)
+{
+    uint32_t captureId = 13;
+    DeviceType deviceType = DEVICE_TYPE_MIC;
+
+    manager_->SetInputDevice(captureId, deviceType);
+    deviceType = DEVICE_TYPE_USB_HEADSET;
+    int32_t result = manager_->SetInputDevice(captureId, deviceType);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test SetInputDevice API
+ * tc.number : SetInputDevice_004
+ * tc.desc   : Ensure that the function, when handling input devices, is able to correctly identify and return failure when setting an incorrect input device
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetInputDevice_004, TestSize.Level1)
+{
+    uint32_t captureId = 13;
+    DeviceType deviceType = DEVICE_TYPE_MIC;
+
+    manager_->SetInputDevice(captureId, deviceType);
+    deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    int32_t result = manager_->SetInputDevice(captureId, deviceType);
+    EXPECT_EQ(result, ERROR);
+}
+
+
+/*
  * tc.name   : Test SetOutputDevice API
  * tc.number : SetOutputDevice_001
  * tc.desc   : Ensures the function sets a new output device correctly and returns success.
@@ -508,6 +582,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetVolumeInfo_003, TestSize.Level1)
 HWTEST_F(AudioEnhanceChainManagerUnitTest, SetMicrophoneMuteInfo_001, TestSize.Level1)
 {
     bool isMute = true;
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
     int32_t result = manager_->SetMicrophoneMuteInfo(isMute);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -520,9 +596,12 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetMicrophoneMuteInfo_001, TestSize.L
 HWTEST_F(AudioEnhanceChainManagerUnitTest, SetMicrophoneMuteInfo_002, TestSize.Level1)
 {
     bool isMute = false;
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
     int32_t result = manager_->SetMicrophoneMuteInfo(isMute);
     EXPECT_EQ(result, SUCCESS);
 }
+
 
 /*
  * tc.name   : Test SetStreamVolumeInfo API
@@ -599,6 +678,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_004, TestSize
     EXPECT_EQ(result, 0);
 }
 
+
 /*
  * tc.name   : Test GetAudioEnhanceProperty API
  * tc.number : GetAudioEnhanceProperty_001
@@ -633,6 +713,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_002, TestSize
     EXPECT_EQ(propertyArray.property[1].enhanceProp, "property5");
     EXPECT_EQ(result, AUDIO_OK);
 }
+
 
 /*
  * tc.name   : Test ApplyAudioEnhanceChainDefault API
@@ -674,6 +755,20 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, InitEnhanceBuffer_002, TestSize.Level
     manager_->enhanceBuffer_->ecBuffer.resize(0);
     manager_->enhanceBuffer_->micRefBuffer.resize(0);
     int32_t result = manager_->InitEnhanceBuffer();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test SendInitCommand API
+ * tc.number : SendInitCommand_001
+ * tc.desc   : Test ISendInitCommand interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SendInitCommand_001, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
+    
+    int32_t result = manager_->SendInitCommand();
     EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard
