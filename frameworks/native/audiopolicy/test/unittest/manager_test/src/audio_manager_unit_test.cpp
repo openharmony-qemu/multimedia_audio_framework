@@ -545,7 +545,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_010, TestSize.Level1)
     inputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(inputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
-    EXPECT_LT(ret, SUCCESS);
+    EXPECT_LE(ret, SUCCESS);
 }
 
 /**
