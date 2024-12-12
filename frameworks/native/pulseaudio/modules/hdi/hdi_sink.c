@@ -3041,8 +3041,7 @@ static void ResetFadeoutPause(pa_sink_input *i, pa_sink_input_state_t state)
 
 static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t state, struct Userdata *u)
 {
-    if (state == PA_SINK_INPUT_RUNNING)
-    {
+    if (state == PA_SINK_INPUT_RUNNING) {
         const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
@@ -3051,8 +3050,7 @@ static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t st
         bool isZeroVolume = IsSameVolume(volume, 0.0f);
         AUDIO_INFO_LOG(
             "lxlx session %{public}u stream %{public}s zerovol %{public}d", sessionID, streamType, isZeroVolume);
-        if (!isZeroVolume)
-        {
+        if (!isZeroVolume) {
             u->primary.sinkAdapter->RendererSinkSetPriPaPower(u->primary.sinkAdapter);
         }
     }
