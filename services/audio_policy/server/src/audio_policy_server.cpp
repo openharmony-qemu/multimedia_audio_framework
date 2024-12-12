@@ -1582,7 +1582,7 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
     return ERR_UNKNOWN;
 }
 
-void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent)
+void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent)
 {
     if (interruptService_ != nullptr) {
         interruptService_->ProcessRemoteInterrupt(sessionIds, interruptEvent);
@@ -2167,8 +2167,6 @@ AudioPolicyServer::RemoteParameterCallback::RemoteParameterCallback(sptr<AudioPo
 void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const std::string networkId,
     const AudioParamKey key, const std::string& condition, const std::string& value)
 {
-    AUDIO_INFO_LOG("key:%{public}d, condition:%{public}s, value:%{public}s",
-        key, condition.c_str(), value.c_str());
     CHECK_AND_RETURN_LOG(server_ != nullptr, "AudioPolicyServer is nullptr");
     switch (key) {
         case VOLUME:
@@ -3267,8 +3265,6 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
         AUDIO_ERR_LOG("InjectInterruption callerUid is Error: not cast_engine");
         return ERROR;
     }
-    AUDIO_ERR_LOG("wbr InjectInterruption networkId: %{public}s, eventType: %{public}s, forceType: %{public}d, hintType: %{public}d",
-        networkId.c_str(), event.eventType, event.forceType, event.hintType);
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
     std::set<int32_t> sessionIds = AduioStreamCollector::GetAudioStreamCollector().GetSessionIdByDeviceType(DEVICE_TYPE_REMOTE_CAST);
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};

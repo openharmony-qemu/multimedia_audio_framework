@@ -749,7 +749,7 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdByDeviceType(DeviceType devi
     std::set<int32_t> sessionIdSet;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        AUDIO_ERR_LOG("wbr changeInfo, deviceType: %{public}d, networkId: %{public}s, sessionId: %{public}d,
+        AUDIO_ERR_LOG("changeInfo, deviceType: %{public}d, networkId: %{public}s, sessionId: %{public}d,
             rendererState: %{public}d.", changeInfo->outputDeviceInfo.deviceType_, changeInfo->outputDeviceInfo.networkId_.c_str(),
             changeInfo->sessionId, changeInfo->rendererState);
         if ( changeInfo->outputDeviceInfo.deviceType_ == deviceType) {
@@ -758,7 +758,8 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdByDeviceType(DeviceType devi
     }
     return sessionIdSet;
 }
-void AudioStreamCollector::GetSessionIdPauseByRemote(InterruptHint hintType)
+
+int32_t AudioStreamCollector::GetSessionIdPauseByRemote(InterruptHint hintType)
 {
     int32_t sessionIdVec = -1;
     std::lock_guard<std::mutex> lock(streamInfoMutex_);
