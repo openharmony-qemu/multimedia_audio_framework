@@ -3049,7 +3049,7 @@ static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t st
         float volume = GetCurVolume(sessionID, streamType, deviceClass);
         bool isZeroVolume = IsSameVolume(volume, 0.0f);
         AUDIO_INFO_LOG(
-            "lxlx session %{public}u stream %{public}s zerovol %{public}d", sessionID, streamType, isZeroVolume);
+            "session %{public}u, stream type %{public}s, zero volume %{public}d", sessionID, streamType, isZeroVolume);
         if (!isZeroVolume) {
             u->primary.sinkAdapter->RendererSinkSetPriPaPower(u->primary.sinkAdapter);
         }
