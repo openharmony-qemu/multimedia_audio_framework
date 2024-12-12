@@ -1171,10 +1171,10 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_029, TestSize.Level1)
 /**
  * @tc.name  : Test NoneMixEngine API
  * @tc.type  : FUNC
- * @tc.number: NoneMixEngine_031
+ * @tc.number: NoneMixEngine_030
  * @tc.desc  : Test NoneMixEngine::Pause
  */
-HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_031, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_030, TestSize.Level1)
 {
     auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
     EXPECT_NE(ptrNoneMixEngine, nullptr);
