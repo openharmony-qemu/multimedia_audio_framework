@@ -104,6 +104,7 @@ public:
     void AudioSessionInfoDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeBySessionId(int32_t sessionId);
+    void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
