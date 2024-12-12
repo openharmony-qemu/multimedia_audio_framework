@@ -117,7 +117,6 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_002, T
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_003, TestSize.Level1)
 {
-
     manager_->ResetInfo();
     uint32_t invalidKeyCode = INVALID_SCENEKEY_CODE;
     int32_t result = manager_->CreateAudioEnhanceChainDynamic(invalidKeyCode, deviceAttr);
