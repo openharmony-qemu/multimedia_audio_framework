@@ -1068,6 +1068,14 @@ bool RendererInClientInner::FlushAudioStream()
         AUDIO_ERR_LOG("Flush call server failed:%{public}u", ret);
         return false;
     }
+
+    // clear multichannel render buffer
+    if (converter_) {
+        ret = converter_->Flush();
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("Flush mcr buffer failed.");
+        }
+    }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return notifiedOperation_ == FLUSH_STREAM; // will be false when got notified.
