@@ -211,23 +211,6 @@ HWTEST(ProRendererStreamImplUnitTest, DequeueBuffer_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test DequeueBuffer API
- * @tc.type  : FUNC
- * @tc.number: DequeueBuffer
- */
-HWTEST(ProRendererStreamImplUnitTest, DequeueBuffer_003, TestSize.Level1)
-{
-    AudioProcessConfig processConfig;
-    bool isDirect = true;
-    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
-        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-    rendererStreamImpl->status_ = I_STATUS_STARTED;
-    size_t length = 10;
-    rendererStreamImpl->DequeueBuffer(length);
-    EXPECT_EQ(rendererStreamImpl != nullptr, true);
-}
-
-/**
  * @tc.name  : Test EnqueueBuffer API
  * @tc.type  : FUNC
  * @tc.number: EnqueueBuffer

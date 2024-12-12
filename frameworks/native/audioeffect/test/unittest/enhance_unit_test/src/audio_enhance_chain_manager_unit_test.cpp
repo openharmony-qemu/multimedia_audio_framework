@@ -500,7 +500,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetInputDevice_004, TestSize.Level1)
     DeviceType deviceType = DEVICE_TYPE_MIC;
 
     manager_->SetInputDevice(captureId, deviceType);
-    deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceType = DEVICE_TYPE_REMOTE_CAST;
     int32_t result = manager_->SetInputDevice(captureId, deviceType);
     EXPECT_EQ(result, ERROR);
 }

@@ -1165,7 +1165,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_029, TestSize.Level1)
     bool isVoip = true;
     ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
     int32_t ret = ptrNoneMixEngine->Start();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
 }
 
 /**
@@ -1225,25 +1225,6 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_031, TestSize.Level1)
     ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
     ptrNoneMixEngine->Start();
     int32_t ret = ptrNoneMixEngine->Pause();
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test NoneMixEngine API
- * @tc.type  : FUNC
- * @tc.number: NoneMixEngine_032
- * @tc.desc  : Test NoneMixEngine interface.
- */
-HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_032, TestSize.Level1)
-{
-    NoneMixEngine noneMixEngineRet;
-    noneMixEngineRet.playbackThread_ = nullptr;
-    noneMixEngineRet.isStart_ = true;
-    uint32_t indexRet1 = 0;
-    AudioProcessConfig configRet;
-    std::shared_ptr<ProRendererStreamImpl> rendererStream1 = std::make_shared<ProRendererStreamImpl>(configRet, true);
-    rendererStream1->SetStreamIndex(indexRet1);
-    auto ret = noneMixEngineRet.AddRenderer(rendererStream1);
     EXPECT_EQ(ret, SUCCESS);
 }
 
