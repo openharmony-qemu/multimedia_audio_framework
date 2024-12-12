@@ -56,7 +56,7 @@ static AudioProcessConfig InitProcessConfig()
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
-   return config;
+    return config;
 }
 /**
  * @tc.name  : Test GetDirectSampleRate API
@@ -225,7 +225,7 @@ HWTEST(ProRendererStreamImplUnitTest, DequeueBuffer_003, TestSize.Level1)
     size_t length = 10;
     rendererStreamImpl->DequeueBuffer(length);
     EXPECT_EQ(rendererStreamImpl != nullptr, true);
- }
+}
 
 /**
  * @tc.name  : Test EnqueueBuffer API

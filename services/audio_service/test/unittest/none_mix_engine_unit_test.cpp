@@ -1161,7 +1161,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_029, TestSize.Level1)
     ptrNoneMixEngine->uFormat_ = HdiAdapterFormat::SAMPLE_S16;
     ptrNoneMixEngine->isVoip_ = true;
     streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
-    ptrNoneMixEngine->uSampleRate_ = AudioSamplingRate::SAMPLE_RATE_16000;   
+    ptrNoneMixEngine->uSampleRate_ = AudioSamplingRate::SAMPLE_RATE_16000;
     bool isVoip = true;
     ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
     int32_t ret = ptrNoneMixEngine->Start();
@@ -1239,13 +1239,12 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_032, TestSize.Level1)
     NoneMixEngine noneMixEngineRet;
     noneMixEngineRet.playbackThread_ = nullptr;
     noneMixEngineRet.isStart_ = true;
-    uint32_t indexRet1 = 0;    
+    uint32_t indexRet1 = 0;
     AudioProcessConfig configRet;
     std::shared_ptr<ProRendererStreamImpl> rendererStream1 = std::make_shared<ProRendererStreamImpl>(configRet, true);
     rendererStream1->SetStreamIndex(indexRet1);
     auto ret = noneMixEngineRet.AddRenderer(rendererStream1);
     EXPECT_EQ(ret, SUCCESS);
-
 }
 
 } // namespace AudioStandard

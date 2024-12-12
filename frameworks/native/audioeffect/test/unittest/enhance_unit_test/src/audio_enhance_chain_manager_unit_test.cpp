@@ -127,7 +127,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_003, T
 /*
  * tc.name   : Test CreateAudioEnhanceChainDynamic API
  * tc.number : CreateAudioEnhanceChainDynamic_004
- * tc.desc   : Test the CreateAudioEnhanceChainDynamic interface (using correct input cases) by creating two identical AudioEnhanceChain.
+ * tc.desc   : Test the CreateAudioEnhanceChainDynamic interface (using correct input cases)
+ * by creating two identical AudioEnhanceChain.
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_004, TestSize.Level1)
 {
@@ -135,9 +136,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_004, T
     manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
     int32_t result = manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
     EXPECT_EQ(result, SUCCESS);
-
 }
-
 
 /*
  * tc.name   : Test ReleaseAudioEnhanceChainDynamic API
@@ -493,7 +492,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetInputDevice_003, TestSize.Level1)
 /*
  * tc.name   : Test SetInputDevice API
  * tc.number : SetInputDevice_004
- * tc.desc   : Ensure that the function, when handling input devices, is able to correctly identify and return failure when setting an incorrect input device
+ * tc.desc   : Ensure that the function, when handling input devices,
+ * is able to correctly identify and return failure when setting an incorrect input device
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, SetInputDevice_004, TestSize.Level1)
 {
