@@ -328,8 +328,8 @@ HWTEST(ProRendererStreamImplUnitTest, GetAudioTime_001, TestSize.Level1)
 
     uint64_t framePos;
     int64_t sec, nanoSec;
-    int32_t ret = rendererStreamImpl->GetAudioTime(framePos, sec, nanoSec);
-    EXPECT_EQ(ret, SUCCESS);
+    bool ret = rendererStreamImpl->GetAudioTime(framePos, sec, nanoSec);
+    EXPECT_EQ(ret, true);
 }
 
 /**

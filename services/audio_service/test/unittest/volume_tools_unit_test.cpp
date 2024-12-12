@@ -136,7 +136,7 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_006, TestSize.Level1)
     int32_t volStart = 1;
     int32_t volEnd = 1;
     ChannelVolumes ret = VolumeTools::GetChannelVolumes(channel, volStart, volEnd);
-    EXPECT_NE(ret.volStart[0], volStart);
+    EXPECT_EQ(ret.volStart[0], volStart);
 }
 
 /**
