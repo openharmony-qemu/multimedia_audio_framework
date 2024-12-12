@@ -175,7 +175,7 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
     std::string deviceTypeName = "";
     GetDeviceTypeName(deviceType, deviceTypeName);
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    for (const auto &[enhance, prop] : enhancePropertyMap_) {
+    for (auto &[enhance, prop] : enhancePropertyMap_) {
         std::string property = "";
         if (deviceTypeName == "") {
             AUDIO_ERR_LOG("DeviceTypeName Null");
@@ -189,7 +189,7 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
                 key.c_str(), property.c_str());
         } else {
             ret = settingProvider.PutStringValue(key, defaultPropertyMap_[enhance]);
-            if(ret != SUCCESS) {
+            if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("set to default Property:%{public}s, failed, ErrCode : %{public}d",
                     defaultPropertyMap_[enhance].c_str(), ret);
                 return;
