@@ -33,6 +33,7 @@ namespace AudioStandard {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_OVERFLOW_NUM = 100;
 static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
+static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -686,6 +687,21 @@ void AudioCapturerInterruptCallbackImpl::UpdateAudioStream(const std::shared_ptr
     audioStream_ = audioStream;
 }
 
+void AudioCapturerInterruptCallbackImpl::StartSwitch()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    switching_ = true;
+    AUDIO_INFO_LOG("SwitchStream start, block interrupt callback");
+}
+
+void AudioCapturerInterruptCallbackImpl::FinishSwitch()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    switching_ = false;
+    switchStreamCv_.notify_all();
+    AUDIO_INFO_LOG("SwitchStream finish, notify interrupt callback");
+}
+
 void AudioCapturerInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     AUDIO_INFO_LOG("NotifyEvent: Hint: %{public}d, eventType: %{public}d",
@@ -738,8 +754,17 @@ void AudioCapturerInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
 
 void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
 
+    if (switching_) {
+        AUDIO_INFO_LOG("Wait for SwitchStream");
+        bool ret = switchStreamCv_.wait_for(lock, std::chrono::microseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
+            [this] {return !switching_;});
+        if (!ret) {
+            switching_ = false;
+            AUDIO_WARNING_LOG("Wait for SwitchStream time out, could handle interrupt event with old stream");
+        }
+    }
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
     AUDIO_INFO_LOG("InterruptForceType: %{public}d", forceType);
@@ -1211,8 +1236,16 @@ void AudioCapturerPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
     }
 
     uint32_t newSessionId = 0;
+    std::shared_ptr<AudioCapturerInterruptCallbackImpl> interruptCbImpl = nullptr;
+    if (audioInterruptCallback_ != nullptr) {
+        interruptCbImpl = std::static_pointer_cast<AudioCapturerInterruptCallbackImpl>(audioInterruptCallback_);
+        interruptCbImpl->StartSwitch();
+    }
     if (!SwitchToTargetStream(targetClass, newSessionId)) {
         AUDIO_ERR_LOG("Switch to target stream failed");
+    }
+    if (interruptCbImpl) {
+        interruptCbImpl->FinishSwitch();
     }
     int32_t ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(newSessionId,
         inputDeviceChangeCallback_);
