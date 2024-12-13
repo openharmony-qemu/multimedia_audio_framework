@@ -2217,13 +2217,13 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
         eventDes, EVENT_DES_SIZE, &type, &forceType, &hint, &audioCategory);
     CHECK_AND_RETURN_LOG(ret >= PARAMS_INTERRUPT_NUM, "[InterruptOnChange]: Failed parse condition");
 
-    std::set<int32_t> sessionIdMedia = AduioStreamCollector::GetAudioStreamCollector().
+    std::set<int32_t> sessionIdMedia = AudioStreamCollector::GetAudioStreamCollector().
         GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_MEDIA);
-    std::set<int32_t> sessionIdMovie = AduioStreamCollector::GetAudioStreamCollector().
+    std::set<int32_t> sessionIdMovie = AudioStreamCollector::GetAudioStreamCollector().
         GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_MOVIE);
-    std::set<int32_t> sessionIdGame = AduioStreamCollector::GetAudioStreamCollector().
+    std::set<int32_t> sessionIdGame = AudioStreamCollector::GetAudioStreamCollector().
         GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_GAME);
-    std::set<int32_t> sessionIdAudioBook = AduioStreamCollector::GetAudioStreamCollector().
+    std::set<int32_t> sessionIdAudioBook = AudioStreamCollector::GetAudioStreamCollector().
         GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_AUDIOBOOK);
     std::set<int32_t> sessionIds = {};
     sessionIds.insert(sessionIdMedia.begin(), sessionIdMedia.end());
@@ -3266,7 +3266,8 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
-    std::set<int32_t> sessionIds = AduioStreamCollector::GetAudioStreamCollector().GetSessionIdByDeviceType(DEVICE_TYPE_REMOTE_CAST);
+    std::set<int32_t> sessionIds =
+        AudioStreamCollector::GetAudioStreamCollector().GetSessionIdByDeviceType(DEVICE_TYPE_REMOTE_CAST);
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
     ProcessRemoteInterrupt(sessionIds, interruptEvent);
     return SUCCESS;

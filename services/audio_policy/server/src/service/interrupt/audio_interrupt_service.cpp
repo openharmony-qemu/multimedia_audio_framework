@@ -1121,31 +1121,31 @@ void AudioInterruptService::ProcessRemoteInterrupt(std::set<int32_t> sessionIds,
     }
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
         for (auto sessionId : sessionIds) {
-            if (sessionId == static_cast<int32_t> (iterActive->first.sessionId)) {
-                switch (interruptEvent.hintType) {
-                    case INTERRUPT_HINT_STOP:
-                        InterruptEvent.hintType = InterruptEvent.hintType;
-                        if (GetClientTypeBySessionId((iterActive->first).sessionId) == CLIENT_TYPE_GAME) {
-                            iterActive->second = PAUSEDBYREMOTE;
-                            break;
-                        }
+            if (sessionId != static_cast<int32_t> (iterActive->first.sessionId)) {
+                continue;
+            }
+            switch (interruptEvent.hintType) {
+                case INTERRUPT_HINT_STOP:
+                    if (GetClientTypeBySessionId((iterActive->first).sessionId) == CLIENT_TYPE_GAME) {
+                        iterActive->second = PAUSEDBYREMOTE;
+                        break;
+                    }
+                    iterActive = tmpFocusInfoList.erase(iterActive);
+                    break;
+                case INTERRUPT_HINT_PAUSE:
+                    if (iterActive->second == ACTIVE || iterActive->second == DUCK) {
+                        iterActive->second = PAUSEDBYREMOTE;
+                    }
+                    break;
+                case INTERRUPT_HINT_RESUME:
+                    if (iterActive->second == PAUSEDBYREMOTE) {
                         iterActive = tmpFocusInfoList.erase(iterActive);
-                        break;
-                    case INTERRUPT_HINT_PAUSE:
-                        if (iterActive->second == ACTIVE || iterActive->second == DUCK) {
-                            iterActive->second = PAUSEDBYREMOTE;
-                        }
-                        break;
-                    case INTERRUPT_HINT_RESUME:
-                        if (iterActive->second == PAUSEDBYREMOTE) {
-                            iterActive = tmpFocusInfoList.erase(iterActive);
-                        }
-                    default:
-                        break;
-                }
-                if (handler_ != nullptr) {
-                    handler_->SendInterruptEventWithSessionIdCallback(interruptEvent, sessionId);
-                }
+                    }
+                default:
+                    break;
+            }
+            if (handler_ != nullptr) {
+                handler_->SendInterruptEventWithSessionIdCallback(interruptEvent, sessionId);
             }
         }
         ++iterActive;
@@ -1722,7 +1722,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         iterActive != audioFocusInfoList.end() && iterNew != newAudioFocuInfoList.end();) {
         AudioFocuState oldState = iterActive->second;
         if (oldState == PAUSEDBYREMOTE) {
-            AUDIO_INFO_LOG("old State is PAUSEDBYREMOTE")
+            AUDIO_INFO_LOG("old State is PAUSEDBYREMOTE");
             ++iterActive;
             ++iterNew;
             continue;
