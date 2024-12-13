@@ -2167,6 +2167,8 @@ AudioPolicyServer::RemoteParameterCallback::RemoteParameterCallback(sptr<AudioPo
 void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const std::string networkId,
     const AudioParamKey key, const std::string& condition, const std::string& value)
 {
+    AUDIO_INFO_LOG("key:%{public}d, condition:%{public}s, value:%{public}s",
+        key, condition.c_str(), value.c_str());
     CHECK_AND_RETURN_LOG(server_ != nullptr, "AudioPolicyServer is nullptr");
     switch (key) {
         case VOLUME:
