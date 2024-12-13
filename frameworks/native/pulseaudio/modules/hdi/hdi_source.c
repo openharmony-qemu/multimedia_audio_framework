@@ -778,11 +778,7 @@ static void ThreadCaptureData(void *userdata)
                 continue;
             }
             cost = pa_rtclock_now() - now;
-            AUDIO_DEBUG_LOG("capture frame cost :%{public}" PRIu64, cost);
-            // For voice wake-up, it is necessary to read data from HDI quickly and frequently. No sleep is needed here.
-            if ((cost < u->blockUsec) && (u->attrs.sourceType != SOURCE_TYPE_WAKEUP)) {
-                ThreadCaptureSleep(u->blockUsec - cost);
-            } else {
+            if (cost > u->blockUsec) {
                 AUDIO_WARNING_LOG("capture frame cost :%{public}" PRIu64, cost);
             }
         } else {
