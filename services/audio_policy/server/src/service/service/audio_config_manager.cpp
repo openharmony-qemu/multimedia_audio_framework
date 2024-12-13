@@ -182,7 +182,8 @@ int32_t AudioConfigManager::GetMaxRendererInstances()
         if (configInfo.name_ == "normal" && configInfo.value_ != "") {
             AUDIO_INFO_LOG("Max output normal instance is %{public}s", configInfo.value_.c_str());
             int32_t convertValue = 0;
-            CHECK_AND_RETURN_RET_LOG(StringConverter(configInfo.value_, convertValue), ERR_INVALID_PARAM,
+            CHECK_AND_RETURN_RET_LOG(StringConverter(configInfo.value_, convertValue), 
+                DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
                 "convert invalid configInfo.value_: %{public}s", configInfo.value_.c_str());
             return convertValue;
         }
