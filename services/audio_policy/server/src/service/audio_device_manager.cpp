@@ -40,7 +40,7 @@ static std::string GetEncryptAddr(const std::string &addr)
             auto pos = macHead.length();
             auto end = addr.find(';', macHead.length());
             auto num = end == string::npos ? addr.substr(pos) : addr.substr(pos, end - pos);
-            return string("c**=") + num + "**";
+            return string("c**") + num + "**";
         }
         return "";
     }
@@ -423,7 +423,7 @@ std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioD
             iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
-        } else if (iter->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        } else if (IsUsb(iter->getType())) {
             devices.append(":" + GetEncryptAddr(iter->macAddress_));
         }
         devices.append(" ");

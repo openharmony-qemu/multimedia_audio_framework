@@ -74,13 +74,12 @@ public:
 
     void Init(IDeviceStatusObserver *observer);
     void Deinit();
-    void RefreshUsbAudioDevices();
     void SubscribeEvent();
 
 private:
     void HandleUsbAudioDeviceAttach(const UsbAudioDevice &device);
     void HandleUsbAudioDeviceDetach(const UsbAudioDevice &device);
-    void SetDeviceStatusObserver(IDeviceStatusObserver *observer);
+    void RefreshUsbAudioDevices();
     void NotifyDevice(const UsbAudioDevice &device, const bool isConnected);
 
     vector<UsbAudioDevice> audioDevices_;
@@ -89,7 +88,6 @@ private:
     bool initialized_{false};
 
     mutex mutex_;
-    mutex initLock_;
     IDeviceStatusObserver *observer_{nullptr};
 };
 
