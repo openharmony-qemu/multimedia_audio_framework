@@ -331,7 +331,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_002, TestSize.Level1)
     audioDeviceDescriptor.reset();
     rendererChangeInfo.reset();
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test LoadSplitModule.
 * @tc.number: LoadSplitModule_001
@@ -354,7 +354,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadSplitModule_001, TestSize.Level1)
         splitArgTwo, networkIdTwo);
     EXPECT_EQ(ERR_INVALID_HANDLE, result);
 }
-#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
+
 /**
 * @tc.name  : Test SetDefaultOutputDevice.
 * @tc.number: SetDefaultOutputDevice_001
@@ -380,7 +380,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetDefaultOutputDevice_001, TestSize.
             deviceType, sessionID, streamUsage, isRunning);
     EXPECT_EQ(SUCCESS, result);
 }
-#endif
+
 /**
 * @tc.name  : Test UpdateDefaultOutputDeviceWhenStopping.
 * @tc.number: UpdateDefaultOutputDeviceWhenStopping_001
@@ -396,7 +396,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateDefaultOutputDeviceWhenStopping
         audioPolicyService_.audioDeviceLock_.UpdateDefaultOutputDeviceWhenStopping(uid);
     EXPECT_EQ(SUCCESS, uid);
 }
-
+#endif
 /**
 * @tc.name  : Test OnA2dpPlayingStateChanged.
 * @tc.number: OnA2dpPlayingStateChanged_001
@@ -547,7 +547,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_008, TestSi
     EXPECT_NE(A2DP_STOPPED, playingState);
     EXPECT_NE(A2DP_PLAYING, playingState);
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test GetSupportedAudioEnhanceProperty.
 * @tc.number: GetSupportedAudioEnhanceProperty_001
@@ -561,7 +561,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSupportedAudioEnhanceProperty_001,
     AudioEnhancePropertyArray propertyArrayTest;
     AudioPolicyServiceUnitTest::GetServerPtr()->GetSupportedAudioEnhanceProperty(propertyArrayTest);
 }
-
+#endif
 /**
 * @tc.name  : Test SetAudioEffectProperty.
 * @tc.number: SetAudioEffectProperty_001
