@@ -355,11 +355,6 @@ void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, boo
 
 void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
 {
-    // In case if KvStore didnot connect during bootup
-    if (!isLoaded_) {
-        InitKVStoreInternal();
-    }
-
     int32_t volumeLevel =
         volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
