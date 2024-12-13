@@ -1829,10 +1829,20 @@ void AudioServer::RegisterAudioRendererSinkCallback()
 {
     // Only watch primary and fast sink for now, watch other sinks later.
     IAudioRendererSink *primarySink = IAudioRendererSink::GetInstance("primary", "");
+    IAudioRendererSink *usbSink = IAudioRendererSink::GetInstance("usb", "");
+    IAudioRendererSink *offloadSink = IAudioRendererSink::GetInstance("offload", "");
+    IAudioRendererSink *a2dpSink = IAudioRendererSink::GetInstance("a2dp", "");
+    IAudioRendererSink *a2dpFastSink = IAudioRendererSink::GetInstance("a2dp_fast", "");
     IAudioRendererSink *fastSink = FastAudioRendererSink::GetInstance();
+    IAudioRendererSink *fastVoipSink = FastAudioRendererSink::GetVoipInstance();
     for (auto sinkInstance : {
         primarySink,
-        fastSink
+        usbSink,
+        offloadSink,
+        a2dpSink,
+        a2dpFastSink,
+        fastSink,
+        fastVoipSink
     }) {
         if (sinkInstance) {
             sinkInstance->RegisterAudioSinkCallback(this);
