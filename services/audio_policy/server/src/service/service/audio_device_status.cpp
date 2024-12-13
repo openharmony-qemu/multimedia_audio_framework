@@ -462,6 +462,12 @@ int32_t AudioDeviceStatus::HandleSpecialDeviceType(DeviceType &devType, bool &is
             GetEncryptAddr(address).c_str(), role,
             audioConnectedDevice_.HasHifi(role), audioConnectedDevice_.HasArm(role));
         if (isConnected) {
+            // Usb-c maybe reported repeatedly, the devType remains unchanged
+            auto exists = audioConnectedDevice_.GetUsbDeviceDescriptor(address, role);
+            if (exists) {
+                devType = exists->deviceType_;
+                return SUCCESS;
+            }
             if (audioConnectedDevice_.HasHifi(role) || NoNeedChangeUsbDevice(address)) {
                 devType = DEVICE_TYPE_USB_ARM_HEADSET;
             }
