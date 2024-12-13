@@ -2207,7 +2207,7 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
 void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::string networkId,
     const std::string& condition)
 {
-    AUDIO_ERR_LOG("InterruptOnChange : networkId: %{public}s, condition: %{public}s.", networkId.c_str(),
+    AUDIO_INFO_LOG("InterruptOnChange : networkId: %{public}s, condition: %{public}s.", networkId.c_str(),
         condition.c_str());
     char eventDes[EVENT_DES_SIZE];
     InterruptType type = INTERRUPT_TYPE_BEGIN;
@@ -2220,7 +2220,7 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
     CHECK_AND_RETURN_LOG(ret >= PARAMS_INTERRUPT_NUM, "[InterruptOnChange]: Failed parse condition");
 
     std::set<int32_t> sessionIdMedia = AudioStreamCollector::GetAudioStreamCollector().
-        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_MEDIA);
+        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_MUSIC);
     std::set<int32_t> sessionIdMovie = AudioStreamCollector::GetAudioStreamCollector().
         GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_MOVIE);
     std::set<int32_t> sessionIdGame = AudioStreamCollector::GetAudioStreamCollector().
