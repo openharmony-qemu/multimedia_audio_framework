@@ -2215,7 +2215,7 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
     InterruptHint hint = INTERRUPT_HINT_NONE;
     int32_t audioCategory = 0;
 
-    int ret = sscanf_s(condition.c_str(), "%[^;];EVENT_TYPE=%d;FORCE_TYPE=%d;HINT_TYPE=%d;%[^;];AUDIOCATEGORY=%d;",
+    int ret = sscanf_s(condition.c_str(), "%[^;];EVENT_TYPE=%d;FORCE_TYPE=%d;HINT_TYPE=%d;AUDIOCATEGORY=%d;",
         eventDes, EVENT_DES_SIZE, &type, &forceType, &hint, &audioCategory);
     CHECK_AND_RETURN_LOG(ret >= PARAMS_INTERRUPT_NUM, "[InterruptOnChange]: Failed parse condition");
 
