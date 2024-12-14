@@ -232,6 +232,7 @@ private:
     void ResetRingerModeMute(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
 
     std::mutex runnerMutex_;
+    std::mutex handleMapMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
 
