@@ -715,6 +715,59 @@ AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
     return streamType;
 }
 
+std::set<int32_t> AudioStreamCollector::GetSessionIdByStreamUsage(StreamUsage streamUsage)
+{
+    std::set<int32_t> sessionIdSet;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->rendererInfo.streamUsage == streamUsage &&
+            changeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_SPEAKER &&
+            changeInfo->outputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
+            sessionIdSet.insert(changeInfo->sessionId);
+        }
+    }
+    return sessionIdSet;
+}
+
+std::set<int32_t> AudioStreamCollector::GetSessionIdBySourceType(SourceType sourceType)
+{
+    std::set<int32_t> sessionIdSet;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioCapturerChangeInfos_) {
+        if (changeInfo->capturerInfo.sourceType == sourceType &&
+            changeInfo->inputDeviceInfo.deviceType_ == DEVICE_TYPE_MIC &&
+            changeInfo->inputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
+            sessionIdSet.insert(changeInfo->sessionId);
+        }
+    }
+    return sessionIdSet;
+}
+
+std::set<int32_t> AudioStreamCollector::GetSessionIdByDeviceType(DeviceType deviceType)
+{
+    std::set<int32_t> sessionIdSet;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->outputDeviceInfo.deviceType_ == deviceType) {
+            sessionIdSet.insert(changeInfo->sessionId);
+        }
+    }
+    return sessionIdSet;
+}
+
+int32_t AudioStreamCollector::GetSessionIdPauseByRemote(InterruptHint hintType)
+{
+    int32_t sessionIdVec = -1;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_REMOTE_CAST &&
+            changeInfo->rendererState == RendererState::RENDERER_RUNNING) {
+            return changeInfo->sessionId;
+        }
+    }
+    return sessionIdVec;
+}
+
 bool AudioStreamCollector::IsOffloadAllowed(const int32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
