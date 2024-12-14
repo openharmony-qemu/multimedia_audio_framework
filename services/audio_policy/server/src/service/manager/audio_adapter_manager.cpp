@@ -730,7 +730,6 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
         LoadVolumeMap();
         LoadMuteStatusMap();
         UpdateSafeVolume();
-        UpdateSafeVolumeAfterTimer();
     }
 
     auto iter = VOLUME_TYPE_LIST.begin();
@@ -1254,41 +1253,6 @@ void AudioAdapterManager::UpdateSafeVolume()
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
                 volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
                 isBtBoot_ = false;
-            }
-            break;
-        default:
-            AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_);
-            break;
-    }
-}
-
-void AudioAdapterManager::UpdateSafeVolumeAfterTimer()
-{
-    auto currentActiveOutputDeviceDescriptor =
-        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
-    switch (currentActiveDevice_) {
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) > safeVolume_ &&
-                safeStatusBt_ == SAFE_ACTIVE) {
-                AUDIO_INFO_LOG("wired device restore safe volume after music timer");
-                volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
-                volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
-            }
-            break;
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-            if (currentActiveOutputDeviceDescriptor->deviceCategory_ == BT_CAR ||
-                currentActiveOutputDeviceDescriptor->deviceCategory_ == BT_SOUNDBOX) {
-                break;
-            }
-            if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) > safeVolume_ &&
-                safeStatus_ == SAFE_ACTIVE) {
-                AUDIO_INFO_LOG("blutooth device restore safe volume after music timer");
-                volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
-                volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
             }
             break;
         default:

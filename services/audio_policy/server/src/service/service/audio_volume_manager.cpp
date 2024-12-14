@@ -207,8 +207,6 @@ void AudioVolumeManager::SetVolumeForSwitchDevice(DeviceType deviceType, const s
     // Load volume from KvStore and set volume for each stream type
     audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
 
-    SetSafeVolumeStatusForDeviceSwitch();
-
     // The volume of voice_call needs to be adjusted separately
     if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
@@ -664,7 +662,7 @@ void AudioVolumeManager::RestoreSafeVolume(AudioStreamType streamType, int32_t s
     }
 
     AUDIO_INFO_LOG("restore safe volume.");
-    audioPolicyManager_.UpdateSafeVolumeAfterTimer();
+    SetSystemVolumeLevel(streamType, safeVolume);
     SetSafeVolumeCallback(streamType);
 }
 
@@ -693,8 +691,11 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
         std::lock_guard<std::mutex> lock(notifyMutex_);
         CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = false;
-        userSelect_ = true;
-        SetDeviceSafeVolumeStatus();
+        safeStatus_ = SAFE_INACTIVE;
+        safeStatusBt_ = SAFE_INACTIVE;
+        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
+        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
+        CreateCheckMusicActiveThread();
         DealWithEventVolume(RESTORE_VOLUME_NOTIFICATION_ID);
         SetSafeVolumeCallback(STREAM_MUSIC);
     } else if (action == AUDIO_INCREASE_VOLUME_EVENT) {
@@ -702,8 +703,10 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
         std::lock_guard<std::mutex> lock(notifyMutex_);
         CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
         increaseNIsShowing_ = false;
-        userSelect_ = true;
-        SetDeviceSafeVolumeStatus();
+        safeStatus_ = SAFE_INACTIVE;
+        safeStatusBt_ = SAFE_INACTIVE;
+        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
+        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
         CreateCheckMusicActiveThread();
         DealWithEventVolume(INCREASE_VOLUME_NOTIFICATION_ID);
         SetSafeVolumeCallback(STREAM_MUSIC);
@@ -735,26 +738,6 @@ void AudioVolumeManager::SetDeviceSafeVolumeStatus()
         default:
             AUDIO_INFO_LOG("safeVolume unsupported device:%{public}d", curOutputDeviceType);
             break;
-    }
-}
-
-void AudioVolumeManager::SetSafeVolumeStatusForDeviceSwitch()
-{
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    SafeStatus safeStatusBt = audioPolicyManager_.GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
-    SafeStatus safeStatus = audioPolicyManager_.GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
-    if (IsBlueTooth(curOutputDeviceType) && safeStatus == SAFE_INACTIVE && safeStatusBt_ == SAFE_ACTIVE) {
-        AUDIO_INFO_LOG("set bluetooth device to safe inactive status when switch device.");
-        safeStatusBt_ = SAFE_INACTIVE;
-        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, SAFE_INACTIVE);
-        CreateCheckMusicActiveThread();
-    } else if (IsWiredHeadSet(curOutputDeviceType) && safeStatusBt == SAFE_INACTIVE && safeStatus_ == SAFE_ACTIVE) {
-        AUDIO_INFO_LOG("set wired device to safe inactive status when switch device.");
-        safeStatus_ = SAFE_INACTIVE;
-        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, SAFE_INACTIVE);
-        CreateCheckMusicActiveThread();
-    } else {
-        AUDIO_DEBUG_LOG("current device not set safe volume status when switch device.");
     }
 }
 
