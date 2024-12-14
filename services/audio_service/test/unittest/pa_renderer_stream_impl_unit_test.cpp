@@ -802,5 +802,32 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_049, TestSize.Level1)
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
 }
+/**
+ * @tc.name  : Test Drain.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_050
+ * @tc.desc  : Test Drain.
+ */
+HWTEST_F(PaRendererStreamUnitTest, PaRenderer_050, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    unit->paStream_ = nullptr;
+    int32_t ret = unit->Drain();
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test SetRate.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_051
+ * @tc.desc  : Test SetRate.
+ */
+HWTEST_F(PaRendererStreamUnitTest, PaRenderer_051, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    unit->paStream_ = nullptr;
+    int32_t rate = RENDER_RATE_NORMAL;
+    EXPECT_EQ(unit->SetRate(rate), ERR_ILLEGAL_STATE);
+}
 }
 }
