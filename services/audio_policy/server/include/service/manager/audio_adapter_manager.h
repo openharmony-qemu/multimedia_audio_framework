@@ -196,8 +196,6 @@ public:
     void SetOffloadSessionId(uint32_t sessionId);
 
     void ResetOffloadSessionId();
-
-    void UpdateSafeVolumeAfterTimer();
 private:
     friend class PolicyCallbackImpl;
 
