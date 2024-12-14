@@ -778,9 +778,7 @@ static void ThreadCaptureData(void *userdata)
                 continue;
             }
             cost = pa_rtclock_now() - now;
-            if (cost > u->blockUsec) {
-                AUDIO_WARNING_LOG("capture frame cost :%{public}" PRIu64, cost);
-            }
+            AUDIO_DEBUG_LOG("capture frame cost :%{public}" PRIu64, cost);
         } else {
             ThreadCaptureSleep(u->blockUsec);
         }
