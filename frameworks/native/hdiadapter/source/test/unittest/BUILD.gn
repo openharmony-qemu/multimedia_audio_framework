@@ -120,6 +120,7 @@ ohos_unittest("audio_capturer_source_unit_test") {
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/common/include/",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/primary/",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/fast/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/bluetooth/",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include/",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/devicemanager/interface/",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/common/",
@@ -138,6 +139,7 @@ ohos_unittest("audio_capturer_source_unit_test") {
     "../../../../audioutils:audio_utils",
     "../../../devicemanager:audio_device_manager",
     "../../../source:audio_capturer_source",
+    "../../../source:bluetooth_capturer_source",
     "../../../source:fast_audio_capturer_source",
   ]
 
