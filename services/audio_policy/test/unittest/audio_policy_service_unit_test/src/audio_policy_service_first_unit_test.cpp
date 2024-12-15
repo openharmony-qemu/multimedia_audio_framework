@@ -37,6 +37,9 @@ const int32_t ROUTER_MAP_ID3 = 1003;
 const int32_t ROUTER_MAP_ID4 = 1004;
 const int32_t ROUTER_MAP_ID5 = 1005;
 const int32_t ROUTER_MAP_ID6 = 1006;
+const int32_t DEFAULT_SYSTEM_ABILITY_ID = -1000;
+const int32_t VALUE_ZERO = 0;
+const int32_t DEFAULT_VOLUME_LEVEL = 7;
 const int32_t G_UNKNOWN_PID = -1;
 const uint32_t CHANNELS = 2;
 const uint32_t RATE = 4;
@@ -73,6 +76,7 @@ AudioPolicyServer* AudioPolicyServiceUnitTest::GetServerPtr()
     if (!g_hasServerInit) {
         AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::GetServerPtr  server.OnStart()");
         server.OnStart();
+        server.OnDump();
         server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
@@ -81,6 +85,8 @@ AudioPolicyServer* AudioPolicyServiceUnitTest::GetServerPtr()
         server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
         server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        server.OnAddSystemAbility(DEFAULT_SYSTEM_ABILITY_ID, "");
+        server.OnAddSystemAbility(MEMORY_MANAGER_SA_ID, "");
         g_hasServerInit = true;
     }
     return &server;
@@ -146,6 +152,14 @@ static const std::vector<DeviceType> deviceTypes = {
     DEVICE_TYPE_DEFAULT,
     DEVICE_TYPE_USB_ARM_HEADSET
 };
+
+static const std::vector<StreamSetState> streamSetStates = {
+    STREAM_PAUSE,
+    STREAM_RESUME,
+    STREAM_MUTE,
+    STREAM_UNMUTE
+};
+
 static const std::vector<bool>isConnecteds = {
     true,
     false
@@ -2515,5 +2529,95 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandlePowerStateChanged_001, TestSize.Level
     GetServerPtr()->audioPolicyService_.HandlePowerStateChanged(state);
 }
 
+/**
+* @tc.name  : Test GetSystemVolumeInDb.
+* @tc.number: GetSystemVolumeInDb_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, GetSystemVolumeInDb_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSystemVolumeInDb_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+    int32_t volumeLevel = DEFAULT_VOLUME_LEVEL;
+    DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    for (const auto& volumeType : audioStreamTypes) {
+        AUDIO_INFO_LOG("GetSystemVolumeInDb_001 volumeType : %{public}d", static_cast<uint32_t>(volumeType));
+        GetServerPtr()->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+    }
+
+    for (const auto& streamType : audioStreamTypes) {
+        int32_t res = GetServerPtr()->SetSystemVolumeLevelLegacy(streamType, volumeLevel);
+    }
+    GetServerPtr()->volumeApplyToAll_ = true;
+    for (const auto& streamType : audioStreamTypes) {
+        int32_t res = GetServerPtr()->SetSystemVolumeLevelLegacy(streamType, volumeLevel);
+    }
+    for (const auto& volumeType : audioStreamTypes) {
+        int32_t res = GetServerPtr()->AdjustSystemVolumeByStep(volumeType, VOLUME_UP);
+    }
+    for (const auto& volumeType : audioStreamTypes) {
+        int32_t res = GetServerPtr()->AdjustSystemVolumeByStep(volumeType, VOLUME_DOWN);
+    }
+    int32_t uid = getuid();
+    for (const auto& streamSetState : streamSetStates) {
+        int32_t res = GetServerPtr()->UpdateStreamState(uid, streamSetState, STREAM_USAGE_MUSIC);
+    }
+
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    int32_t maxVolumeLevel = GetServerPtr()->audioPolicyService_.GetMaxVolumeLevel(volumeType);
+    int32_t minVolumeLevel = GetServerPtr()->audioPolicyService_.GetMinVolumeLevel(volumeType);
+    EXPECT_GE(minVolumeLevel, VALUE_ZERO);
+}
+
+/**
+* @tc.name  : Test SetRingerMode.
+* @tc.number: SetRingerMode_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, SetRingerMode_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest SetRingerMode_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+    int32_t volumeLevel = DEFAULT_VOLUME_LEVEL;
+    for (const auto& ringMode : audioRingerModes) {
+        int32_t res = GetServerPtr()->SetRingerMode(ringMode);
+        EXPECT_EQ(SUCCESS, res);
+    }
+}
+
+/**
+* @tc.name  : Test SetStreamMuteLegacy.
+* @tc.number: SetStreamMuteLegacy_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, SetStreamMuteLegacy_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest SetStreamMuteLegacy_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+    for (const auto& streamType : audioStreamTypes) {
+        int32_t res = GetServerPtr()->SetStreamMuteLegacy(streamType, true);
+        EXPECT_EQ(SUCCESS, res);
+    }
+    for (const auto& streamType : audioStreamTypes) {
+        int32_t res = GetServerPtr()->SetStreamMuteLegacy(streamType, false);
+        EXPECT_EQ(SUCCESS, res);
+    }
+}
+
+/**
+* @tc.name  : Test GetNetworkIdByGroupId.
+* @tc.number: GetNetworkIdByGroupId_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, GetNetworkIdByGroupId_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetNetworkIdByGroupId_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+    int32_t groupId = 0;
+    string networkId = "";
+    networkId = LOCAL_NETWORK_ID;
+    int32_t res = GetServerPtr()->GetNetworkIdByGroupId(groupId, networkId);
+    EXPECT_EQ(ERROR, res);
+}
 } // namespace AudioStandard
 } // namespace OHOS
