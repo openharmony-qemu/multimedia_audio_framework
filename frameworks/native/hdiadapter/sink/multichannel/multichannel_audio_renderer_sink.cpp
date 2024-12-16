@@ -186,6 +186,7 @@ MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &
 MultiChannelRendererSinkInner::~MultiChannelRendererSinkInner()
 {
     AUDIO_INFO_LOG("~MultiChannelRendererSinkInner");
+    AudioPerformDetect::GetInstance().DeleteSinkTypeDetect(SinkType::MULTICHANNEL);
 }
 
 MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(const std::string &halName)
@@ -560,6 +561,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
+    AudioPerformDetect::GetInstance().RecordTimeStamp(SinkType::MULTICHANNEL, ClockTime::GetCurNano());
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     if (logMode_) {
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);

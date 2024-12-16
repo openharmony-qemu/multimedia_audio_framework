@@ -640,6 +640,7 @@ enum HdiRenderOffset : uint32_t {
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

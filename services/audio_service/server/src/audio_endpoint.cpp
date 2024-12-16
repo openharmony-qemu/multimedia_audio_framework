@@ -549,6 +549,7 @@ void AudioEndpointInner::Release()
         endpointWorkThread_.join();
         AUDIO_DEBUG_LOG("AudioEndpoint join work thread end");
     }
+    AudioPerformDetect::GetInstance().DeleteSinkTypeDetect(SinkType::FAST);
 
     stopUpdateThread_.store(true);
     updateThreadCV_.notify_all();
@@ -1594,6 +1595,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
             ProcessData(audioDataList, dstStreamData);
         }
     }
+    AudioPerformDetect::GetInstance().RecordTimeStamp(SinkType::FAST, ClockTime::GetCurNano());
 
     if (isInnerCapEnabled_) {
         ProcessToDupStream(audioDataList, dstStreamData);

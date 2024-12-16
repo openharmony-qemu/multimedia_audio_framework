@@ -98,6 +98,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
         outputDeviceChangeCallback->RemoveCallback();
         outputDeviceChangeCallback->UnsetAudioRendererObj();
     }
+    AudioPerformDetect::GetInstance().DeleteStreamDetect(sessionID_);
     std::shared_ptr<AudioRendererConcurrencyCallbackImpl> cb = audioConcurrencyCallback_;
     if (cb != nullptr) {
         cb->UnsetAudioRendererObj();
@@ -737,6 +738,7 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("AudioRenderer::Write");
     MockPcmData(buffer, bufferSize);
+    AudioPerformDetect::GetInstance().RecordFrameState(sessionID_, buffer, bufferSize);
     int32_t size = audioStream_->Write(buffer, bufferSize);
     if (size > 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), size);
