@@ -538,7 +538,7 @@ HWTEST(ProRendererStreamImplUnitTest, SetAudioEffectMode_001, TestSize.Level1)
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     rendererStreamImpl->InitParams();
 
-    int32_t effectMode = 1; 
+    int32_t effectMode = 1;
     int32_t result = rendererStreamImpl->SetAudioEffectMode(effectMode);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -556,7 +556,7 @@ HWTEST(ProRendererStreamImplUnitTest, GetAudioEffectMode_001, TestSize.Level1)
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     rendererStreamImpl->InitParams();
 
-    int32_t effectMode; 
+    int32_t effectMode;
     int32_t result = rendererStreamImpl->GetAudioEffectMode(effectMode);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -567,14 +567,14 @@ HWTEST(ProRendererStreamImplUnitTest, GetAudioEffectMode_001, TestSize.Level1)
  *@tc.number: SetPrivacyType
 */
 HWTEST(ProRendererStreamImplUnitTest, SetPrivacyType_001, TestSize.Level1)
-{ 
+{
     AudioProcessConfig processConfig = InitProcessConfig();
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     rendererStreamImpl->InitParams();
 
-    int32_t privacyType = 1; 
+    int32_t privacyType = 1;
     int32_t result = rendererStreamImpl->SetPrivacyType(privacyType);
     EXPECT_EQ(result, SUCCESS);
     int32_t rePrivacyType;
@@ -600,7 +600,8 @@ HWTEST(ProRendererStreamImplUnitTest, GetOffloadApproximatelyCacheTime_001, Test
     uint64_t paWriteIndex = 0;
     uint64_t cacheTimeDsp = 0;
     uint64_t cacheTimePa = 0;
-    int32_t result = rendererStreamImpl->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+    int32_t result = rendererStreamImpl->GetOffloadApproximatelyCacheTime(timestamp,
+        paWriteIndex, cacheTimeDsp, cacheTimePa);
     ASSERT_EQ(result, SUCCESS);
 }
 

@@ -234,7 +234,7 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../services/audio_service:audio_service_static",
   ]
 
-  cflags = [ 
+  cflags = [
     "-DDEBUG_DIRECT_USE_HDI",
     "-fno-access-control",
   ]

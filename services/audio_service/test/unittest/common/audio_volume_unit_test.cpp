@@ -32,7 +32,6 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
-    
 };
 
 void AudioVolumeUnitTest::SetUpTestCase(void)
@@ -174,7 +173,6 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_001, TestSize.Level1)
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
     auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
     EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
-
 }
 
 /**
