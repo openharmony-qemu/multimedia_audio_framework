@@ -310,7 +310,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo16Bit_004, TestSize.Level1)
 
     for (size_t i = 0; i < 10; i++) {
         float vol = GetVolume(volumeStep, i + 1, bufferInfo.volumeBg);
-        int16_t sampleValue = static_cast<int16_t>((buffer[i] << AUDIO_SAMPLE_16BIT_LENGTH) * vol);
+        int16_t sampleValue = static_cast<int16_t>((buffer[i] >> AUDIO_SAMPLE_16BIT_LENGTH) * vol);
         EXPECT_EQ(dst[i], sampleValue);
     }
 }

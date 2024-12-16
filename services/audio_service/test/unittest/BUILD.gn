@@ -219,10 +219,10 @@ ohos_unittest("audio_service_unit_test") {
     "./client/audio_stream_manager_unit_test.cpp",
     "./client/audio_system_manager_unit_test.cpp",
     "./client/fast_audio_stream_unit_test.cpp",
-    "./common/volume_tools_unit_test.cpp",
-    "./server/audio_server_unit_test.cpp",
     "./common/audio_common_converter_unit_test.cpp",
     "./common/audio_volume_unit_test.cpp",
+    "./common/volume_tools_unit_test.cpp",
+    "./server/audio_server_unit_test.cpp",
   ]
 
   deps = [

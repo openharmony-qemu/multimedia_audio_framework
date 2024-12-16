@@ -549,7 +549,7 @@ HWTEST(ProRendererStreamImplUnitTest, SetAudioEffectMode_001, TestSize.Level1)
  *@tc.number: GetAudioEffectMode
 */
 HWTEST(ProRendererStreamImplUnitTest, GetAudioEffectMode_001, TestSize.Level1)
-{ 
+{
     AudioProcessConfig processConfig = InitProcessConfig();
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
