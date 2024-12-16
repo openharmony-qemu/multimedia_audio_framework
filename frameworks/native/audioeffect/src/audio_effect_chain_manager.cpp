@@ -1576,5 +1576,39 @@ int32_t AudioEffectChainManager::EffectVolumeUpdateInner(std::shared_ptr<AudioEf
     }
     return ret;
 }
+
+int32_t InitEffectBuffer(const std::string &sessionID)
+{
+    if (sessionIDToEffectInfoMap_.find(sessionID) == sessionIDToEffectInfoMap_.end()) {
+        return SUCCESS;
+    }
+    std::string sceneTypeTemp = sessionIDToEffectInfoMap_[sessionID].sceneType;
+    if (IsEffectChianRunning(sceneTypeTemp, sessionID)) {
+        return InitAudioEffectChainDynamic(sceneTypeTemp);
+    }
+    return SUCCESS;
+}
+
+bool IsEffectChianRunning(const std::string &sceneType, const std::string &sessionID)
+{
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
+    auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    for (auto it = sessionIDToEffectInfoMap_.begin(); it != sessionIDToEffectInfoMap_.end(); ++it) {
+        if (it->first == sessionID || it->second.sceneMode == "EFFECT_NONE") {
+            continue;
+        }
+        std::string sceneTypeTemp = it->second.sceneType;
+        std::string sceneTypeAndDeviceKeyTemp = sceneTypeTemp + "_&_" + GetDeviceTypeName();
+        CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKeyTemp) > 0 &&
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp] != nullptr, ERROR, "null audioEffectChain");
+        auto audioEffectChainTemp = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp];
+        if (audioEffectChainTemp == audioEffectChain) {
+            return false;
+        }
+    }
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS
