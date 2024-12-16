@@ -827,6 +827,16 @@ bool AudioPolicyServer::IsVolumeUnadjustable()
     return audioPolicyService_.IsVolumeUnadjustable();
 }
 
+bool AudioPolicyServer::CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel)
+{
+    if ((volumeLevel - volumeStep_) == 0 && !VolumeUtils::IsPCVolumeEnable() && (volumeType == STREAM_VOICE_ASSISTANT
+        || volumeType == STREAM_VOICE_CALL || volumeType == STREAM_ALARM || volumeType == STREAM_ACCESSIBILITY ||
+        volumeType == STREAM_VOICE_COMMUNICATION)) {
+        return false;
+    }
+    return true;
+}
+
 int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -850,6 +860,11 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt < maxRet, ERR_OPERATION_FAILED, "volumeLevelInInt is biggest");
         volumeLevelInInt = volumeLevelInInt + volumeStep_;
     } else {
+        if (!CheckCanMuteVolumeTypeByStep(streamInFocus, volumeLevelInInt)) {
+            // This type can not set to mute, but don't return error
+            AUDIO_INFO_LOG("SetSystemVolumeLevel this type can not set mute");
+            return SUCCESS;
+        }
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt > minRet, ERR_OPERATION_FAILED, "volumeLevelInInt is smallest");
         volumeLevelInInt = volumeLevelInInt - volumeStep_;
     }
@@ -879,6 +894,11 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt < maxRet, ERR_OPERATION_FAILED, "volumeLevelInInt is biggest");
         volumeLevelInInt = volumeLevelInInt + volumeStep_;
     } else {
+        if (!CheckCanMuteVolumeTypeByStep(volumeType, volumeLevelInInt)) {
+            // This type can not set to mute, but don't return error
+            AUDIO_INFO_LOG("SetSystemVolumeLevel this type can not set mute");
+            return SUCCESS;
+        }
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt > minRet, ERR_OPERATION_FAILED, "volumeLevelInInt is smallest");
         volumeLevelInInt = volumeLevelInInt - volumeStep_;
     }
