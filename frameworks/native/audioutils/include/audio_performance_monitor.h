@@ -22,40 +22,47 @@ namespace OHOS {
 namespace AudioStandard {
 
 static const uint64_t AUDIO_MS_PER_NS = 1000000;
-const uint32_t MIN_NOT_SILENCE_VALUE = 1;
-const uint32_t MAX_NOT_SILENCE_VALUE = 2;
 
 enum SinkType : uint32_t {
     SINKTYPE_PRIMARY = 0,
     SINKTYPE_DIRECT = 1,
     SINKTYPE_MULTICHANNEL = 2,
     SINKTYPE_FAST = 3,
-    SINKTYPE_MAX_SINK_TYPE = 4,
+    MAX_SINK_TYPE = 4,
 };
 
 const std::map<SinkType, uint64_t> MAX_WRITE_INTERVAL {
-    {SinkType::SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},     //100ms
-    {SinkType::SINKTYPE_DIRECT, 100 * AUDIO_MS_PER_NS},      //100ms
-    {SinkType::SINKTYPE_MULTICHANNEL, 100 * AUDIO_MS_PER_NS},//100ms
-    {SinkType::SINKTYPE_FAST, 8 * AUDIO_MS_PER_NS},          //8ms
+    {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},     //100ms
+    {SINKTYPE_DIRECT, 100 * AUDIO_MS_PER_NS},      //100ms
+    {SINKTYPE_MULTICHANNEL, 100 * AUDIO_MS_PER_NS},//100ms
+    {SINKTYPE_FAST, 8 * AUDIO_MS_PER_NS},          //8ms
 };
 
-class AudioPerformDetect {
+const uint32_t MIN_NOT_SILENCE_VALUE = 1;
+const uint32_t MAX_NOT_SILENCE_VALUE = 2;
+const uint32_t MIN_SILENCE_VALUE = 1;
+const uint32_t MAX_SILENCE_VALUE = 2;
+
+struct FrameRecord
+{
+    uint64_t silenceCount = MAX_SILENCE_VALUE + 1;
+    uint64_t notSilenceCount = MAX_NOT_SILENCE_VALUE + 1;
+};
+
+class AudioPerformanceMonitor {
 public:
-    static AudioPerformDetect& GetInstance();
+    static AudioPerformanceMonitor& GetInstance();
 
-    int32_t DeleteStreamDetect(uint32_t streamId);
-    int32_t DeleteSinkTypeDetect(SinkType sinkType);
-    void RecordFrameState(uint32_t streamId, bool isSilence);
+    void RecordSlienceState(uint32_t performMonitorIndex, bool isSilence);
+    void RecordLastWrittenTime(uint32_t streamId, int64_t lastWrittenTime);
     void RecordTimeStamp(SinkType sinkType, uint64_t curTimeStamp);
+    int32_t DeleteMonitorBySinkType(SinkType sinkType);
 
-private:
-    std::map<uint32_t, uint64_t> laggyDetectMap_{}; //streamId, noSilenceCount
+    std::map<uint32_t, FrameRecord> laggyDetectMap_{}; //AudioPerformanceMonitorIndex, FrameRecord
     std::map<SinkType, uint64_t> overTimeDetectMap_{}; //SinkType, lastWrittenTimeStamp
 
 private:
-    void DetectHalWriteOverTime(SinkType sinkType, uint64_t timeStamp);
-    void DetectFrameLaggy(uint32_t streamId, bool isSilence);
+    void JudgeIfNeedReportLaggyEvent(uint32_t index, bool curState);
     void ReportEvent();
 };
 

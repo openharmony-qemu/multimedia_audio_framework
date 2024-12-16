@@ -44,6 +44,8 @@
 #include "media_monitor_manager.h"
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
+
 #ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
@@ -549,7 +551,7 @@ void AudioEndpointInner::Release()
         endpointWorkThread_.join();
         AUDIO_DEBUG_LOG("AudioEndpoint join work thread end");
     }
-    AudioPerformDetect::GetInstance().DeleteSinkTypeDetect(SinkType::FAST);
+    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_FAST);
 
     stopUpdateThread_.store(true);
     updateThreadCV_.notify_all();
@@ -1318,6 +1320,8 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             // Status is RUNNING
             int64_t current = ClockTime::GetCurNano();
             int64_t lastWrittenTime = tempBuffer->GetLastWrittenTime();
+            uint32_t streamId = processList_[i]->GetAudioSessionId();
+            AudioPerformanceMonitor::GetInstance().RecordLastWrittenTime(streamId, lastWrittenTime);
             if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS) {
                 Trace trace("AudioEndpoint::MarkClientStandby");
                 AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", tempBuffer->GetSessionId());
@@ -1595,7 +1599,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
             ProcessData(audioDataList, dstStreamData);
         }
     }
-    AudioPerformDetect::GetInstance().RecordTimeStamp(SinkType::FAST, ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, ClockTime::GetCurNano());
 
     if (isInnerCapEnabled_) {
         ProcessToDupStream(audioDataList, dstStreamData);
