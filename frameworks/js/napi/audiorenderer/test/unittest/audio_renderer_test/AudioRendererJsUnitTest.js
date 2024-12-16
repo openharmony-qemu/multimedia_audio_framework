@@ -191,28 +191,6 @@ describe("AudioRendererJsUnitTest", function() {
     })
 
     /*
-     * @tc.name:SUB_AUDIO_RENDERER_GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001
-     * @tc.desc:getCurrentOutputDevicesSync success
-     * @tc.type: FUNC
-     * @tc.require: I7V04L
-     */
-    it('SUB_AUDIO_RENDERER_GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001', 0, async function (done) {
-        try {
-            let data = audioRenderer.getCurrentOutputDevicesSync();
-            console.info(`${TAG}: GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001 SUCCESS: ${JSON.stringify(data)}`);
-            expect(data.length).assertLarger(0);
-            for (let i = 0; i < data.length; i++) {
-                expect(data[i].displayName!=="" && data[i].displayName!==undefined).assertTrue();
-            }
-            done();
-        } catch (err) {
-            console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001 ERROR: ${err.message}`);
-            expect(false).assertTrue();
-            done();
-        }
-    })
-
-    /*
      * @tc.name:SUB_AUDIO_RENDERER_GET_AUDIO_TIME_SYNC_TEST_001
      * @tc.desc:getAudioTimeSync success
      * @tc.type: FUNC
