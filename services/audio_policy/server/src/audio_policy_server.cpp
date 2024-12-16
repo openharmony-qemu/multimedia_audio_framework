@@ -3130,6 +3130,19 @@ void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType 
         AUDIO_ERR_LOG("No permission");
         return;
     }
+    std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor =
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, ROUTER_TYPE_USER_SELECT).front();
+    std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor =
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
+        ROUTER_TYPE_USER_SELECT).front();
+    if (networkId == newMediaDescriptor->networkId_ && deviceType == newMediaDescriptor->deviceType_) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
+            std::make_shared<AudioDeviceDescriptor>());
+    }
+    if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            std::make_shared<AudioDeviceDescriptor>());
+    }
     audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }
 
