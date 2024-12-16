@@ -672,7 +672,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
 {
     AUDIO_INFO_LOG("AudioServer::GetUsbParameter Entry. condition=%{public}s", condition.c_str());
     string address = GetField(condition, "address", ' ');
-    int32_t deviceRoleNum = -1;
+    int32_t deviceRoleNum = static_cast<int32_t>(DEVICE_ROLE_NONE);
     std::string usbInfoStr;
     CHECK_AND_RETURN_RET_LOG(StringConverter(GetField(condition, "role", ' '), deviceRoleNum), usbInfoStr,
         "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
