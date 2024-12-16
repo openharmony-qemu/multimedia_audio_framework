@@ -1583,13 +1583,13 @@ int32_t AudioEffectChainManager::InitEffectBuffer(const std::string &sessionID)
         return SUCCESS;
     }
     std::string sceneTypeTemp = sessionIDToEffectInfoMap_[sessionID].sceneType;
-    if (IsEffectChianRunning(sceneTypeTemp, sessionID)) {
+    if (IsEffectChainRunning(sceneTypeTemp, sessionID)) {
         return InitAudioEffectChainDynamic(sceneTypeTemp);
     }
     return SUCCESS;
 }
 
-bool AudioEffectChainManager::IsEffectChianRunning(const std::string &sceneType, const std::string &sessionID)
+bool AudioEffectChainManager::IsEffectChainRunning(const std::string &sceneType, const std::string &sessionID)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&

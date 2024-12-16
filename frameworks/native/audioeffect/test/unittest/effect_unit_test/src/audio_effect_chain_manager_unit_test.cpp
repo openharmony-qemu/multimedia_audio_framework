@@ -2449,5 +2449,49 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneTypeToChains_001, 
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = nullptr;
     AudioEffectChainManager::GetInstance()->SetSpatializationSceneTypeToChains();
 }
+
+/**
+* @tc.name   : Test InitEffectBuffer
+* @tc.number : InitEffectBuffer_001
+* @tc.desc   : Test InitEffectBuffer interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, InitEffectBuffer_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    std::string sceneTypeAndDeviceKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+
+    string sessionID = "123456";
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
+    int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID);
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name   : Test IsEffectChainRunning
+* @tc.number : IsEffectChainRunning_001
+* @tc.desc   : Test IsEffectChainRunning interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsEffectChainRunning_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    std::string sceneTypeAndDeviceKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+
+    string sessionID = "123456";
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
+    bool result = AudioEffectChainManager::GetInstance()->IsEffectChainRunning(sceneType, sessionID);
+    EXPECT_EQ(true, result);
+}
 } // namespace AudioStandard
 } // namespace OHOS

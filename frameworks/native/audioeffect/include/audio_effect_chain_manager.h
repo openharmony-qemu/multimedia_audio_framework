@@ -171,7 +171,7 @@ private:
     void SendAudioParamToHDI(HdiSetParamCommandCode code, const std::string &value, DeviceType device);
     void SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value);
     std::string GetDeviceTypeName();
-    bool IsEffectChianRunning(const std::string &sceneType, const std::string &sessionID);
+    bool IsEffectChainRunning(const std::string &sceneType, const std::string &sessionID);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
