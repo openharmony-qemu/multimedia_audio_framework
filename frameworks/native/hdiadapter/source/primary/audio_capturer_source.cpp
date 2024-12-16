@@ -1548,7 +1548,8 @@ int32_t AudioCapturerSourceInner::UpdateUsbAttrs(const std::string &usbInfoStr)
         sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
 
     // usb default config
-    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
+    CHECK_AND_RETURN_RET_LOG(StringConverter(sampleRateStr, attr_.sampleRate), ERR_INVALID_PARAM,
+        "convert invalid sampleRate: %{public}s", sampleRateStr.c_str());
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
     attr_.isBigEndian = false;

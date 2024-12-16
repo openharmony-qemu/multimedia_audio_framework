@@ -678,11 +678,14 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
 {
     AUDIO_INFO_LOG("AudioServer::GetUsbParameter Entry. condition=%{public}s", condition.c_str());
     string address = GetField(condition, "address", ' ');
-    DeviceRole role = static_cast<DeviceRole>(stoi(GetField(condition, "role", ' ')));
+    int32_t deviceRoleNum = static_cast<int32_t>(DEVICE_ROLE_NONE);
+    std::string usbInfoStr;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(GetField(condition, "role", ' '), deviceRoleNum), usbInfoStr,
+        "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
+    DeviceRole role = static_cast<DeviceRole>(deviceRoleNum);
     IAudioRendererSink *rendererSink = IAudioRendererSink::GetInstance("usb", "");
     CHECK_AND_RETURN_RET_LOG(rendererSink, "", "rendererSink is nullptr");
     std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
-    std::string usbInfoStr;
     if (role == OUTPUT_DEVICE) {
         rendererSink->SetAddress(address);
         auto it = usbInfoMap_.find(address);

@@ -1367,7 +1367,8 @@ int32_t AudioRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfoStr)
         sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
 
     // usb default config
-    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
+    CHECK_AND_RETURN_RET_LOG(StringConverter(sampleRateStr, attr_.sampleRate), ERR_INVALID_PARAM,
+        "convert invalid sampleRate: %{public}s", sampleRateStr.c_str());
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
 
@@ -1401,16 +1402,19 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
         address_end - address_begin - std::strlen("address="));
 
-    StringParser(sampleRateStr, attr_.sampleRate);
-    StringParser(channeltStr, attr_.channel);
-    
+    CHECK_AND_RETURN_RET_LOG(StringConverter(sampleRateStr, attr_.sampleRate), ERR_INVALID_PARAM,
+        "convert invalid sampleRate: %{public}s", sampleRateStr.c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverter(channeltStr, attr_.channel), ERR_INVALID_PARAM,
+        "convert invalid channel: %{public}s", channeltStr.c_str());
+
     attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
     } else {
         uint32_t bufferSizeValue = 0;
-        StringParser(bufferSize, bufferSizeValue);
+        CHECK_AND_RETURN_RET_LOG(StringConverter(bufferSize, bufferSizeValue), ERR_INVALID_PARAM,
+            "convert invalid bufferSize: %{public}s", bufferSize.c_str());
         formatByte = bufferSizeValue * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
             / attr_.channel / attr_.sampleRate;
     }

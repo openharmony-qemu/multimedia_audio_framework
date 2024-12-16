@@ -24,6 +24,7 @@
 #include "usb_srv_client.h"
 #include "audio_usb_manager.h"
 #include "audio_policy_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
