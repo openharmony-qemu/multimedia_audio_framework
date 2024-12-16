@@ -532,29 +532,11 @@ void RendererInClientInner::FirstFrameProcess()
     }
  
     // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_) {
-        try {
-            auto audioSystemManager = AudioSystemManager::GetInstance();
-            if (audioSystemManager != nullptr) {
-                ipcStream_->RegisterThreadPriority(gettid(),
-                    audioSystemManager->GetSelfBundleName(clientConfig_.appInfo.appUid));
-                needSetThreadPriority_ = false;
-            } else {
-                AUDIO_ERR_LOG("Error: Failed to get AudioSystemManager instance!");
-            }
-        } catch (const std::exception& e) {
-            AUDIO_ERR_LOG("Exception caught in setting thread priority: %s", e.what());
-        }
-    }
- 
-    if (!hasFirstFrameWrited_) {
-        try {
-            OnFirstFrameWriting();
-            hasFirstFrameWrited_ = true;
-        } catch (const std::exception& e) {
-            AUDIO_ERR_LOG("Exception caught in OnFirstFrameWriting: %s", e.what());
-        }
-    }
+    if (needSetThreadPriority_.exchange(false)) {
+        ipcStream_->RegisterThreadPriority(gettid(),
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+
+    if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
 }
 
 int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached,
