@@ -25,6 +25,8 @@
 #include "audio_stream_info.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
+#include "system_ability_definition.h"
+#include "iservice_registry.h"
 
 using namespace testing::ext;
 
@@ -38,6 +40,8 @@ static std::shared_ptr<AudioServer> audioServer;
 void AudioServerUnitTest::SetUpTestCase(void)
 {
     audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServer->OnStart();
+    audioServer->OnDump();
 }
 
 void AudioServerUnitTest::TearDownTestCase(void)
@@ -67,6 +71,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerOnAddSystemAbility_001, TestSize.Level1
 
     int32_t id = -1;
     audioServer->OnAddSystemAbility(id, "");
+    audioServer->OnAddSystemAbility(AUDIO_POLICY_SERVICE_ID, "");
+    audioServer->OnAddSystemAbility(RES_SCHED_SYS_ABILITY_ID, "");
+    audioServer->OnAddSystemAbility(MEMORY_MANAGER_SA_ID, "");
     audioServer->RecognizeAudioEffectType("", "", "");
     EXPECT_GT(0, id);
 }
@@ -275,9 +282,15 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
 
     audioServer->SetAudioParameter("A2dpSuspended", "");
     audioServer->SetAudioParameter("AUDIO_EXT_PARAM_KEY_LOWPOWER", "");
+    audioServer->SetAudioParameter("bt_headset_nrec", "");
+    audioServer->SetAudioParameter("bt_wbs", "");
+    audioServer->SetAudioParameter("AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG", "");
+    audioServer->SetAudioParameter("mmi", "");
+    audioServer->SetAudioParameter("perf_info", "");
     audioServer->GetAudioParameter("");
     audioServer->GetAudioParameter("AUDIO_EXT_PARAM_KEY_LOWPOWER");
     audioServer->GetAudioParameter("perf_info");
+    audioServer->GetAudioParameter("getSmartPAPOWER");
     audioServer->GetAudioParameter("Is_Fast_Blocked_For_AppName#");
     auto result = audioServer->GetUsbParameter("address=card2;device=0 role=1");
     audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE, "address=card=2;device=0 role=0");
@@ -304,6 +317,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetTransactionId_001, TestSize.Level1)
     EXPECT_EQ(0, ret);
 
     ret = audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(0, ret);
+
+    ret = audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::OUTPUT_DEVICE);
     EXPECT_EQ(0, ret);
 }
 
@@ -418,15 +434,19 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckStreamInfoFormat_001, TestSize.Lev
     config.rendererInfo.streamUsage = STREAM_USAGE_INVALID;
     ret = audioServer->CheckRendererFormat(config);
     EXPECT_FALSE(ret);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    ret = audioServer->CheckRendererFormat(config);
+    EXPECT_TRUE(ret);
 }
 
 /**
  * @tc.name  : Test CheckConfigFormat API
  * @tc.type  : FUNC
- * @tc.number: AudioServerCheckRecorderFormat_001
+ * @tc.number: AudioServerCheckConfigFormat_001
  * @tc.desc  : Test CheckConfigFormat interface.
  */
-HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderFormat_001, TestSize.Level1)
+HWTEST_F(AudioServerUnitTest, AudioServerCheckConfigFormat_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config = {};
@@ -443,6 +463,39 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderFormat_001, TestSize.Level
     config.streamInfo.format = INVALID_WIDTH;
     ret = audioServer->CheckConfigFormat(config);
     EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckConfigFormat API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCheckConfigFormat_002
+ * @tc.desc  : Test CheckConfigFormat interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCheckConfigFormat_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.streamInfo.channels = MONO;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_U8;
+    config.streamInfo.samplingRate = SAMPLE_RATE_8000;
+    bool ret = audioServer->CheckConfigFormat(config);
+    EXPECT_TRUE(ret);
+
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC_REF;
+    ret = audioServer->CheckConfigFormat(config);
+    EXPECT_FALSE(ret);
+    config.capturerInfo.sourceType = SOURCE_TYPE_INVALID;
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
+    ret = audioServer->CheckConfigFormat(config);
+    EXPECT_FALSE(ret);
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    ret = audioServer->CheckConfigFormat(config);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -475,6 +528,25 @@ HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_001, TestSize.Level1)
     config.audioMode = static_cast<AudioMode>(-1);
     bool ret = audioServer->PermissionChecker(config);
     EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test PermissionChecker API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerPermissionChecker_002
+ * @tc.desc  : Test PermissionChecker interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+    bool ret = audioServer->PermissionChecker(config);
+    EXPECT_TRUE(ret);
+    config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
+    ret = audioServer->PermissionChecker(config);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -618,6 +690,94 @@ HWTEST_F(AudioServerUnitTest, AudioServerRestoreSession_001, TestSize.Level1)
     audioServer->RestoreSession(-1, true);
 
     audioServer->RestoreSession(-1, false);
+}
+
+/**
+ * @tc.name  : Test RegiestPolicyProvider API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerRegiestPolicyProvider_001
+ * @tc.desc  : Test RegiestPolicyProvider interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerRegiestPolicyProvider_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    EXPECT_NE(nullptr, samgr);
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = audioServer->RegiestPolicyProvider(object);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    EXPECT_NE(nullptr, object);
+    ret = audioServer->RegiestPolicyProvider(object);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test CreateAudioProcess API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCreateAudioProcess_001
+ * @tc.desc  : Test CreateAudioProcess interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    int32_t errorCode = 0;
+    audioServer->CreateAudioProcess(config, errorCode);
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    audioServer->CreateAudioProcess(config, errorCode);
+    EXPECT_EQ(errorCode, 0);
+}
+
+/**
+ * @tc.name  : Test ResetRecordConfig API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerResetRecordConfig_001
+ * @tc.desc  : Test ResetRecordConfig interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerResetRecordConfig_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    audioServer->ResetRecordConfig(config);
+    config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
+    audioServer->ResetRecordConfig(config);
+}
+
+/**
+ * @tc.name  : Test CreateAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCreateAudioStream_001
+ * @tc.desc  : Test CreateAudioStream interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    sptr<IRemoteObject> remoteObject = nullptr;
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::VASSISTANT_UID);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID);
+    EXPECT_EQ(nullptr, remoteObject);
+    config.audioMode = AUDIO_MODE_RECORD;
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID);
+    EXPECT_EQ(nullptr, remoteObject);
+    bool ret = audioServer->IsFastBlocked(1);
+    EXPECT_EQ(false, ret);
+    config.audioMode = static_cast<AudioMode>(-1);
+    ret = audioServer->IsNormalIpcStream(config);
+    EXPECT_EQ(false, ret);
+    AudioParamKey key = NONE;
+    audioServer->OnAudioSinkParamChange("", key, "", "");
+    audioServer->OnAudioSourceParamChange("", key, "", "");
+    audioServer->OnWakeupClose();
+    audioServer->OnCapturerState(true, 1);
+    audioServer->OnCapturerState(false, 1);
+    int32_t res = audioServer->SetParameterCallback(remoteObject);
+    EXPECT_EQ(res, ERR_INVALID_PARAM);
+    res = audioServer->SetWakeupSourceCallback(remoteObject);
+    EXPECT_EQ(res, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
