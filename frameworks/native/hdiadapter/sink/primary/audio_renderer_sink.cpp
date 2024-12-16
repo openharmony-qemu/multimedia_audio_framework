@@ -45,6 +45,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 
@@ -322,7 +323,7 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
         AUDIO_WARNING_LOG("runningLockManager is null, playback can not work well!");
     }
 #endif
-    AudioPerformDetect::GetInstance().DeleteMonitorBySinkType(SINKTYPE_PRIMARY);
+    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_PRIMARY);
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
@@ -808,7 +809,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
-    AudioPerformDetect::GetInstance().RecordTimeStamp(SINKTYPE_PRIMARY, ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_PRIMARY, ClockTime::GetCurNano());
 
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrame failed ret: %{public}x", ret);
 

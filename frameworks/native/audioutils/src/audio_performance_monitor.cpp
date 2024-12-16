@@ -25,13 +25,13 @@ namespace AudioStandard {
 
 AudioPerformanceMonitor& AudioPerformanceMonitor::GetInstance()
 {
-    static AudioPerformDetect mgr;
+    static AudioPerformanceMonitor mgr;
     return mgr;
 }
 
 int32_t AudioPerformanceMonitor::DeleteSinkTypeDetect(SinkType sinkType)
 {
-    CHECK_AND_RETURN_RET_LOG(sinkType >= SinkType::PRIMARY && sinkType < SinkType::MAX_SINK_TYPE, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(sinkType >= SINKTYPE_PRIMARY && sinkType < SinkType::MAX_SINK_TYPE, ERR_INVALID_PARAM,
         "invalid sinkType: %{public}d", sinkType);
     if (overTimeDetectMap_.find(sinkType) == overTimeDetectMap_.end()) {
         AUDIO_WARNING_LOG("cursinkType %{public}d not find in detectMap!", sinkType);

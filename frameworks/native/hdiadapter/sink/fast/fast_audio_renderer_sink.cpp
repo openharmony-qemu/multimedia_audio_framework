@@ -40,6 +40,7 @@
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
 #include "audio_utils.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 
@@ -185,7 +186,7 @@ FastAudioRendererSinkInner::~FastAudioRendererSinkInner()
 {
     AUDIO_INFO_LOG("In");
     FastAudioRendererSinkInner::DeInit();
-    AudioPerformDetect::GetInstance().DeleteMonitorBySinkType(SINKTYPE_DIRECT);
+    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_DIRECT);
 }
 
 IMmapAudioRendererSink *FastAudioRendererSink::GetInstance()
@@ -597,7 +598,7 @@ int32_t FastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     }
     writeLen = len;
 
-    AudioPerformDetect::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, ClockTime::GetCurNano());
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("Render len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms curWritePos[%{public}d] dataBefore"
         "<%{public}" PRIu64 "> dataAfter<%{public}" PRIu64 ">", len, stamp, curWritePos_, dataBefore, dataAfter);
