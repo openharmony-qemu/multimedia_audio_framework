@@ -532,12 +532,13 @@ void RendererInClientInner::FirstFrameProcess()
     }
  
     // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_.exchange(false)) {
+    if (needSetThreadPriority_) {
         ipcStream_->RegisterThreadPriority(gettid(),
             AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+        needSetThreadPriority_ = false;
     }
 
-    if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
+    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
 }
 
 int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached,
