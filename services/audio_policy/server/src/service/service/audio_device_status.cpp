@@ -60,7 +60,9 @@ static std::string GetEncryptAddr(const std::string &addr)
 static std::string GetField(const std::string &src, const char* field, const char sep)
 {
     auto str = std::string(field) + '=';
-    auto pos = src.find(str) + str.length();
+    auto pos = src.find(str);
+    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
+    pos += str.length();
     auto end = src.find(sep, pos);
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
