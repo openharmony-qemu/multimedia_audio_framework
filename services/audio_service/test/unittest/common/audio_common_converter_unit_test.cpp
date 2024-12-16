@@ -48,7 +48,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo32Bit_001, TestSize.Level1)
     for (size_t i = 0; i < 10; ++i) {
         buffer[i] = i;
     }
-    bufferInfo.buffer = buffer.get();
+    bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_8BIT;
     bufferInfo.frameSize = 10;
     bufferInfo.channelCount = 1;
@@ -197,11 +197,11 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo32Bit_005, TestSize.Level1)
  */
 HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo16Bit_001, TestSize.Level1)
 {
-    std::unique_ptr<int8_t[]> = std::make_unique<int8_t[]>(10);
+    std::unique_ptr<int8_t[]> buffer = std::make_unique<int8_t[]>(10);
     for (size_t i = 0; i < 10; ++i) {
         buffer[i] = i;
     }
-    bufferInfo.buffer = buffer.get();
+    bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_8BIT;
     bufferInfo.frameSize = 10;
     bufferInfo.channelCount = 1;
@@ -310,7 +310,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo16Bit_004, TestSize.Level1)
 
     for (size_t i = 0; i < 10; i++) {
         float vol = GetVolume(volumeStep, i + 1, bufferInfo.volumeBg);
-        int16_t sampleValue = staic_cast<int16_t>((buffer[i] << AUDIO_SAMPLE_16BIT_LENGTH) * vol);
+        int16_t sampleValue = static_cast<int16_t>((buffer[i] << AUDIO_SAMPLE_16BIT_LENGTH) * vol);
         EXPECT_EQ(dst[i], sampleValue);
     }
 }
