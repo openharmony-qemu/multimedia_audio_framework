@@ -535,6 +535,7 @@ void RendererInClientInner::FirstFrameProcess()
     if (needSetThreadPriority_.exchange(false)) {
         ipcStream_->RegisterThreadPriority(gettid(),
             AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+    }
 
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
 }
