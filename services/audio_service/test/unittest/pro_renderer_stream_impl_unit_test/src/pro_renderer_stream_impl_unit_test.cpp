@@ -525,5 +525,99 @@ HWTEST(ProRendererStreamImplUnitTest, GetLatency_001, TestSize.Level1)
     int32_t ret = rendererStreamImpl->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
 }
+ /**
+ *@tc.name  : Test SetAudioEffectMode API
+ *@tc.type  : FUNC
+ *@tc.number: SetAudioEffectMode
+*/
+HWTEST(ProRendererStreamImplUnitTest, SetAudioEffectMode_001, TestSize.Level1)
+{ 
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->InitParams();
+
+    int32_t effectMode = 1; 
+    int32_t result = rendererStreamImpl->SetAudioEffectMode(effectMode);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+ /**
+ *@tc.name  : Test GetAudioEffectMode API
+ *@tc.type  : FUNC
+ *@tc.number: GetAudioEffectMode
+*/
+HWTEST(ProRendererStreamImplUnitTest, GetAudioEffectMode_001, TestSize.Level1)
+{ 
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->InitParams();
+
+    int32_t effectMode; 
+    int32_t result = rendererStreamImpl->GetAudioEffectMode(effectMode);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+ /**
+ *@tc.name  : Test SetPrivacyType API
+ *@tc.type  : FUNC
+ *@tc.number: SetPrivacyType
+*/
+HWTEST(ProRendererStreamImplUnitTest, SetPrivacyType_001, TestSize.Level1)
+{ 
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->InitParams();
+
+    int32_t privacyType = 1; 
+    int32_t result = rendererStreamImpl->SetPrivacyType(privacyType);
+    EXPECT_EQ(result, SUCCESS);
+    int32_t rePrivacyType;
+    result = rendererStreamImpl->GetPrivacyType(rePrivacyType);
+    
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(privacyType, rePrivacyType);
+}
+ /**
+ *@tc.name  : Test GetOffloadApproximatelyCacheTime API
+ *@tc.type  : FUNC
+ *@tc.number: GetOffloadApproximatelyCacheTime
+*/
+HWTEST(ProRendererStreamImplUnitTest, GetOffloadApproximatelyCacheTime_001, TestSize.Level1)
+{ 
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->InitParams();
+
+    uint64_t timestamp = 0;
+    uint64_t paWriteIndex = 0;
+    uint64_t cacheTimeDsp = 0;
+    uint64_t cacheTimePa = 0;
+    int32_t result = rendererStreamImpl->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+    ASSERT_EQ(result, SUCCESS);
+}
+
+ /**
+ *@tc.name  : Test UpdateSpatializationState API
+ *@tc.type  : FUNC
+ *@tc.number: UpdateSpatializationState
+*/
+HWTEST(ProRendererStreamImplUnitTest, UpdateSpatializationState_001, TestSize.Level1)
+{ 
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->InitParams();
+    int32_t result = rendererStreamImpl->UpdateSpatializationState(true, true);
+    ASSERT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

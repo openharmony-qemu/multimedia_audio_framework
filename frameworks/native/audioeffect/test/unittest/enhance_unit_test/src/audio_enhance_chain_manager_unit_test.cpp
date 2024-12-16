@@ -613,7 +613,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_001, TestSize
 
     AudioEnhancePropertyArray propertyArray;
     int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /*
@@ -644,7 +644,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_003, TestSize
     AudioEnhancePropertyArray propertyArray;
     propertyArray.property.push_back({"invalidEffect", "property1"});
     int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /*
@@ -660,9 +660,55 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_004, TestSize
     AudioEnhancePropertyArray propertyArray;
     propertyArray.property.push_back({"effect1", "property1"});
     int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, SUCCESS);
 }
 
+/*
+ * tc.name   : Test SetAudioEnhanceProperty API
+ * tc.number : SetAudioEnhanceProperty_005
+ * tc.desc   : Ensures the function handles an empty AudioEffectPropertyArrayV3  correctly.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_005, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test SetAudioEnhanceProperty API
+ * tc.number : SetAudioEnhanceProperty_006
+ * tc.desc   : Tests setting a AudioEffectPropertyV3 with invalid enhanceClass and valid enhanceProp.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_006, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    propertyArray.property.push_back({"invalidEffect", "property1"});
+    int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test SetAudioEnhanceProperty API
+ * tc.number : SetAudioEnhanceProperty_007
+ * tc.desc   : Tests setting a AudioEffectPropertyV3 with both valid enhanceClass and enhanceProp.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_007, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    propertyArray.property.push_back({"effect1", "property1"});
+    int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
+    EXPECT_EQ(result, SUCCESS);
+}
 
 /*
  * tc.name   : Test GetAudioEnhanceProperty API
@@ -674,7 +720,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_001, TestSize
     AudioEnhancePropertyArray propertyArray;
     int32_t result = manager_->GetAudioEnhanceProperty(propertyArray);
     EXPECT_EQ(propertyArray.property.size(), 3);
-    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /*
@@ -696,9 +742,43 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_002, TestSize
     EXPECT_EQ(propertyArray.property[0].enhanceProp, "property4");
     EXPECT_EQ(propertyArray.property[1].enhanceClass, "effect2");
     EXPECT_EQ(propertyArray.property[1].enhanceProp, "property5");
-    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_EQ(result, SUCCESS);
 }
 
+/*
+ * tc.name   : Test GetAudioEnhanceProperty API
+ * tc.number : GetAudioEnhanceProperty_003
+ * tc.desc   : Ensures the function correctly retrieves an empty property list if no properties are set.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_003, TestSize.Level1)
+{
+    AudioEffectPropertyArrayV3 propertyArray;
+    int32_t result = manager_->GetAudioEnhanceProperty(propertyArray);
+    EXPECT_EQ(propertyArray.property.size(), 3);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test GetAudioEnhanceProperty API
+ * tc.number : GetAudioEnhanceProperty_004
+ * tc.desc   : Tests retrieving a property list when properties are set.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_004, TestSize.Level1)
+{
+    AudioEffectPropertyArrayV3 propertiesToSet;
+    propertiesToSet.property.push_back({"effect1", "property4"});
+    propertiesToSet.property.push_back({"effect2", "property5"});
+
+    manager_->SetAudioEnhanceProperty(propertiesToSet);
+    AudioEffectPropertyArrayV3 propertyArray;
+    int32_t result = manager_->GetAudioEnhanceProperty(propertyArray);
+    EXPECT_EQ(propertyArray.property.size(), 3);
+    EXPECT_EQ(propertyArray.property[0].name, "effect1");
+    EXPECT_EQ(propertyArray.property[0].category, "property4");
+    EXPECT_EQ(propertyArray.property[1].name, "effect2");
+    EXPECT_EQ(propertyArray.property[1].category, "property5");
+    EXPECT_EQ(result, SUCCESS);
+}
 
 /*
  * tc.name   : Test ApplyAudioEnhanceChainDefault API
@@ -756,5 +836,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SendInitCommand_001, TestSize.Level1)
     int32_t result = manager_->SendInitCommand();
     EXPECT_EQ(result, SUCCESS);
 }
+
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -202,6 +202,7 @@ ohos_unittest("audio_service_unit_test") {
 
   include_dirs = [
     "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/common/src",
     "../../../../services/audio_service/server/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
@@ -220,6 +221,8 @@ ohos_unittest("audio_service_unit_test") {
     "./client/fast_audio_stream_unit_test.cpp",
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
+    "./common/audio_common_converter_unit_test.cpp",
+    "./common/audio_volume_unit_test.cpp",
   ]
 
   deps = [
@@ -231,7 +234,11 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../services/audio_service:audio_service_static",
   ]
 
-  cflags = [ "-fno-access-control" ]
+  cflags = [ 
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
   cflags_cc = [ "-std=c++20" ]
 
   external_deps = [
