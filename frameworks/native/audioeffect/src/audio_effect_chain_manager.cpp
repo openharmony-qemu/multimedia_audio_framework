@@ -1577,7 +1577,7 @@ int32_t AudioEffectChainManager::EffectVolumeUpdateInner(std::shared_ptr<AudioEf
     return ret;
 }
 
-int32_t InitEffectBuffer(const std::string &sessionID)
+int32_t AudioEffectChainManager::InitEffectBuffer(const std::string &sessionID)
 {
     if (sessionIDToEffectInfoMap_.find(sessionID) == sessionIDToEffectInfoMap_.end()) {
         return SUCCESS;
@@ -1589,7 +1589,7 @@ int32_t InitEffectBuffer(const std::string &sessionID)
     return SUCCESS;
 }
 
-bool IsEffectChianRunning(const std::string &sceneType, const std::string &sessionID)
+bool AudioEffectChainManager::IsEffectChianRunning(const std::string &sceneType, const std::string &sessionID)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&
