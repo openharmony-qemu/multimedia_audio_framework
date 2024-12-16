@@ -63,7 +63,7 @@ void OfflineAudioEffectChainUnitTest::SetUpTestCase(void)
     vector<string> names;
     names = g_manager->GetOfflineAudioEffectChains();
     if (names.size() > 0) {
-        g_normalName = names[0];
+        g_normalName = names[names.size() - 1];
     }
 }
 
