@@ -251,6 +251,10 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "FEATURE_DTMF_TONE" ]
   }
 
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
+  }
+
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
