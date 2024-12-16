@@ -713,6 +713,7 @@ int32_t RendererInServer::Pause()
             ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
+        WriterRenderStreamStandbySysEvent();
     }
     standByCounter_ = 0;
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
@@ -847,6 +848,7 @@ int32_t RendererInServer::Stop()
             ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
+        WriterRenderStreamStandbySysEvent();
     }
     {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
