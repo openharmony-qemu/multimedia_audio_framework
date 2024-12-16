@@ -222,7 +222,7 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_001, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
 
-    const BufferDesc bufferDesc = { nullptr, 0, 0};
+    const BufferDesc bufferDesc = {nullptr, 0, 0};
     int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
     EXPECT_EQ(ret, ERR_WRITE_BUFFER);
 }
@@ -241,7 +241,7 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_002, TestSize.Level1)
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     
     rendererStreamImpl->InitParams();
-    const BufferDesc bufferDesc = { nullptr, 0, 0};
+    const BufferDesc bufferDesc = {nullptr, 0, 0};
     int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -400,7 +400,7 @@ HWTEST(ProRendererStreamImplUnitTest, ConvertSrcToFloat_001, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
 
-    const BufferDesc bufferDesc = { nullptr, 0, 0};
+    const BufferDesc bufferDesc = {nullptr, 0, 0};
     rendererStreamImpl->bufferInfo_.format = AudioSampleFormat::SAMPLE_F32LE;
     rendererStreamImpl->ConvertSrcToFloat(bufferDesc);
     EXPECT_EQ(rendererStreamImpl != nullptr, true);
@@ -418,7 +418,7 @@ HWTEST(ProRendererStreamImplUnitTest, ConvertSrcToFloat_002, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
 
-    const BufferDesc bufferDesc = { nullptr, 0, 0};
+    const BufferDesc bufferDesc = {nullptr, 0, 0};
     rendererStreamImpl->ConvertSrcToFloat(bufferDesc);
     EXPECT_EQ(rendererStreamImpl != nullptr, true);
 }
@@ -531,7 +531,7 @@ HWTEST(ProRendererStreamImplUnitTest, GetLatency_001, TestSize.Level1)
  *@tc.number: SetAudioEffectMode
 */
 HWTEST(ProRendererStreamImplUnitTest, SetAudioEffectMode_001, TestSize.Level1)
-{ 
+{
     AudioProcessConfig processConfig = InitProcessConfig();
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
@@ -589,7 +589,7 @@ HWTEST(ProRendererStreamImplUnitTest, SetPrivacyType_001, TestSize.Level1)
  *@tc.number: GetOffloadApproximatelyCacheTime
 */
 HWTEST(ProRendererStreamImplUnitTest, GetOffloadApproximatelyCacheTime_001, TestSize.Level1)
-{ 
+{
     AudioProcessConfig processConfig = InitProcessConfig();
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
@@ -611,7 +611,7 @@ HWTEST(ProRendererStreamImplUnitTest, GetOffloadApproximatelyCacheTime_001, Test
  *@tc.number: UpdateSpatializationState
 */
 HWTEST(ProRendererStreamImplUnitTest, UpdateSpatializationState_001, TestSize.Level1)
-{ 
+{
     AudioProcessConfig processConfig = InitProcessConfig();
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
