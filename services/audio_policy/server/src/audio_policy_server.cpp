@@ -1076,7 +1076,6 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
     }
 
     int32_t ret = audioPolicyService_.SetSystemVolumeLevel(streamType, volumeLevel);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set system volume level!");
     if (ret == SUCCESS) {
         // Update mute state according to volume level
         if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
