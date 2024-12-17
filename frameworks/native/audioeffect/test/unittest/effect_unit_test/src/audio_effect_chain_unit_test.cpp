@@ -117,6 +117,29 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_003, TestSize.Level1)
 /**
  * @tc.name  : Test AudioEffectChain API
  * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_004
+ * @tc.desc  : Test AudioEffectChain::SetStreamUsage()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+    EXPECT_NE(audioEffectChain, nullptr);
+    std::int32_t streamUsage = 1;
+    audioEffectChain->SetStreamUsage(streamUsage);
+    EXPECT_EQ(audioEffectChain->streamUsage_, STREAM_USAGE_MUSIC);
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
  * @tc.number: AudioEffectChain_005
  * @tc.desc  : Test AudioEffectChain::SetEffectProperty()
  */
@@ -171,6 +194,53 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_006, TestSize.Level1)
 /**
  * @tc.name  : Test AudioEffectChain API
  * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_007
+ * @tc.desc  : Test AudioEffectChain::StoreOldEffectChainInfo()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_007, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+    EXPECT_NE(audioEffectChain, nullptr);
+    AudioEffectConfig ioBufferConfig = {};
+    std::string sceneMode = "123";
+    audioEffectChain->StoreOldEffectChainInfo(sceneMode, ioBufferConfig);
+    EXPECT_EQ(audioEffectChain->ioBufferConfig_.inputCfg.channels, 2);
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_008
+ * @tc.desc  : Test AudioEffectChain::SetFinalVolumeState()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_008, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+    EXPECT_NE(audioEffectChain, nullptr);
+    bool state = 1;
+    audioEffectChain->SetFinalVolumeState(state);
+    EXPECT_EQ(audioEffectChain->sendFinalVolumeState_, 1);
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
  * @tc.number: AudioEffectChain_009
  * @tc.desc  : Test AudioEffectChain::ApplyEffectChain()
  */
@@ -195,6 +265,29 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_009, TestSize.Level1)
     audioEffectChain->standByEffectHandles_.clear();
 
     audioEffectChain->ApplyEffectChain(&bufIn, &bufOut, frameLen, procInfo);
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_011
+ * @tc.desc  : Test AudioEffectChain::SetFinalVolume()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_011, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+    EXPECT_NE(audioEffectChain, nullptr);
+    float volume = 0.5;
+    audioEffectChain->SetFinalVolume(volume);
+    EXPECT_EQ(audioEffectChain->finalVolume_, 0.5);
 }
 
 /**
@@ -288,10 +381,10 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_015, TestSize.Level1)
 /**
  * @tc.name  : Test AudioEffectChain API
  * @tc.type  : FUNC
- * @tc.number: AudioEffectChain_017
+ * @tc.number: AudioEffectChain_016
  * @tc.desc  : Test AudioEffectChain::SetHeadTrackingDisabled()
  */
-HWTEST(AudioEffectChainUnitTest, AudioEffectChain_017, TestSize.Level1)
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_016, TestSize.Level1)
 {
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneType = "SCENE_MUSIC";
@@ -308,6 +401,77 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_017, TestSize.Level1)
     audioEffectChain->standByEffectHandles_.clear();
 
     audioEffectChain->SetHeadTrackingDisabled();
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_017
+ * @tc.desc  : Test AudioEffectChain::CrossFadeProcess()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_017, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+    EXPECT_NE(audioEffectChain, nullptr);
+    float bufOut 0.0;
+    uint32_t frameLen = 0;
+    audioEffectChain->CrossFadeProcess(&bufOut, frameLen);
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_018
+ * @tc.desc  : Test AudioEffectChain::CrossFadeProcess()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_018, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+    EXPECT_NE(audioEffectChain, nullptr);
+    float bufOut 0.0;
+    uint32_t frameLen = 0;
+    audioEffectChain->fadingCounts_ = 1;
+    audioEffectChain->CrossFadeProcess(&bufOut, frameLen);
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_019
+ * @tc.desc  : Test AudioEffectChain::CrossFadeProcess()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_019, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+    EXPECT_NE(audioEffectChain, nullptr);
+    float bufOut 0.0;
+    uint32_t frameLen = 0;
+    audioEffectChain->fadingCounts_ = -1;
+    audioEffectChain->CrossFadeProcess(&bufOut, frameLen);
 }
 
 /**
