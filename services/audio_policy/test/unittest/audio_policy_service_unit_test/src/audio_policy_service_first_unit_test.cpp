@@ -18,6 +18,7 @@
 #include <thread>
 #include <memory>
 #include <vector>
+#include "audio_info.h"
 using namespace testing::ext;
 
 namespace OHOS {
@@ -2618,6 +2619,153 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetNetworkIdByGroupId_001, TestSize.Level1)
     networkId = LOCAL_NETWORK_ID;
     int32_t res = GetServerPtr()->GetNetworkIdByGroupId(groupId, networkId);
     EXPECT_EQ(ERROR, res);
+}
+
+/**
+* @tc.name  : Test MoveToNewOutputDevice.
+* @tc.number: MoveToNewOutputDevice_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, MoveToNewOutputDevice_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest MoveToNewOutputDevice_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDescs.push_back(deviceDesc);
+    std::vector<SinkInput> sinkInputs;
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+   
+    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.MoveToNewOutputDevice(rendererChangeInfo, deviceDescs,
+        sinkInputs, reason);
+    EXPECT_EQ(DEVICE_TYPE_SPEAKER, rendererChangeInfo->outputDeviceInfo.deviceType_);
+}
+
+/**
+* @tc.name  : Test IsFastFromA2dpToA2dp.
+* @tc.number: IsFastFromA2dpToA2dp_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, IsFastFromA2dpToA2dp_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest IsFastFromA2dpToA2dp_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
+    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsFastFromA2dpToA2dp(audioDeviceDescriptor,
+        rendererChangeInfo, reason);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test IsFastFromA2dpToA2dp.
+* @tc.number: IsFastFromA2dpToA2dp_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, IsFastFromA2dpToA2dp_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest IsFastFromA2dpToA2dp_002 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    rendererChangeInfo->rendererInfo.originalFlag = AUDIO_FLAG_MMAP;
+    rendererChangeInfo->outputDeviceInfo.deviceId_ = 1;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
+    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsFastFromA2dpToA2dp(audioDeviceDescriptor,
+        rendererChangeInfo, reason);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test NotifyRecreateDirectStream.
+* @tc.number: NotifyRecreateDirectStream_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest NotifyRecreateDirectStream_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
+    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.NotifyRecreateDirectStream(rendererChangeInfo,
+        reason);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test NotifyRecreateDirectStream.
+* @tc.number: NotifyRecreateDirectStream_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest NotifyRecreateDirectStream_002 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    rendererChangeInfo->outputDeviceInfo.deviceId_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WAKEUP;
+
+    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.NotifyRecreateDirectStream(rendererChangeInfo,
+        reason);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test NotifyRecreateDirectStream.
+* @tc.number: NotifyRecreateDirectStream_003
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest NotifyRecreateDirectStream_003 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WAKEUP;
+
+    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.NotifyRecreateDirectStream(rendererChangeInfo,
+        reason);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test NotifyRecreateDirectStream.
+* @tc.number: NotifyRecreateDirectStream_004
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest NotifyRecreateDirectStream_004 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_UNKNOWN;
+    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    rendererChangeInfo->rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererChangeInfo->rendererInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererChangeInfo->rendererInfo.format = SAMPLE_S24LE;
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+
+    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.NotifyRecreateDirectStream(rendererChangeInfo,
+        reason);
+    EXPECT_TRUE(ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS
