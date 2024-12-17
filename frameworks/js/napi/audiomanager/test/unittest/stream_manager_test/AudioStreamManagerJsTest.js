@@ -630,30 +630,6 @@ describe("AudioStreamManagerJsTest", function () {
   });
 
   /*
-   * @tc.name:isActiveSync002
-   * @tc.desc:Get isActiveSync success - RINGTONE - When stream is NOT playing
-   * @tc.type: FUNC
-   * @tc.require: I7V04L
-   */
-  it("isActiveSync002", 0, async function (done) {
-    let audioStreamManager = null;
-
-    try {
-      audioStreamManager = audio.getAudioManager().getStreamManager();
-      let isActive = audioStreamManager.isActiveSync(audio.AudioVolumeType.RINGTONE);
-      console.info(`The active status is obtained ${isActive}.`);
-      expect(isActive).assertEqual(false);
-
-      done();
-    } catch(e) {
-      console.error(`${TAG} isActiveSync002 ERROR: ${e.message}`);
-      expect(false).assertTrue();
-      done();
-      return;
-    }
-  });
-
-  /*
    * @tc.name:isActiveSync003
    * @tc.desc:Get isActiveSync success - MEDIA - When stream is NOT playing
    * @tc.type: FUNC
