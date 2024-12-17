@@ -2479,11 +2479,11 @@ HWTEST(AudioEffectChainManagerUnitTest, InitEffectBuffer_001, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test IsEffectChainRunning
-* @tc.number : IsEffectChainRunning_001
-* @tc.desc   : Test IsEffectChainRunning interface.
+* @tc.name   : Test IsEffectChainStop
+* @tc.number : IsEffectChainStop_001
+* @tc.desc   : Test IsEffectChainStop interface.
 */
-HWTEST(AudioEffectChainManagerUnitTest, IsEffectChainRunning_001, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, IsEffectChainStop_001, TestSize.Level1)
 {
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
@@ -2496,12 +2496,12 @@ HWTEST(AudioEffectChainManagerUnitTest, IsEffectChainRunning_001, TestSize.Level
     AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
-    bool result = AudioEffectChainManager::GetInstance()->IsEffectChainRunning(sceneType, sessionID1);
+    bool result = AudioEffectChainManager::GetInstance()->IsEffectChainStop(sceneType, sessionID1);
     EXPECT_EQ(true, result);
 
     string sessionID2 = "111111";
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID2, DEFAULT_INFO);
-    int32_t result = AudioEffectChainManager::GetInstance()->IsEffectChainRunning(sceneType, sessionID2);
+    int32_t result = AudioEffectChainManager::GetInstance()->IsEffectChainStop(sceneType, sessionID2);
     EXPECT_EQ(false, result);
 }
 } // namespace AudioStandard

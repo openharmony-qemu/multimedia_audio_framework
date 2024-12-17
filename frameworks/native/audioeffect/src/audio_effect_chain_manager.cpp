@@ -1597,7 +1597,6 @@ int32_t AudioEffectChainManager::InitEffectBufferInner(const std::string &sessio
     if (IsEffectChainStop(sceneTypeTemp, sessionID)) {
         return InitAudioEffectChainDynamicInner(sceneTypeTemp);
     }
-    AUDIO_INFO_LOG("no need to init effect buffer");
     return SUCCESS;
 }
 
