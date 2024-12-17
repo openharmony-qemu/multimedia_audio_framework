@@ -2472,7 +2472,7 @@ HWTEST(AudioEffectChainManagerUnitTest, InitEffectBuffer_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, result);
 
     string sessionID2 = "111111";
-    int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
+    result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID2, DEFAULT_INFO);
     result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
     EXPECT_EQ(SUCCESS, result);
