@@ -100,9 +100,13 @@ const char* DUAL_TONE_STREAM = "DualToneStream";
 const char* NORMAL_STREAM = "NormalStream";
 }
 
+
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;
+
+//Maximun number of SupportedTones
+constexpr uint32_t MAX_SUPPORTED_TONEINFO_SIZE= 65535;
 
 // Maximun number of segments in a tone descriptor
 constexpr uint32_t TONEINFO_MAX_SEGMENTS = 12;
