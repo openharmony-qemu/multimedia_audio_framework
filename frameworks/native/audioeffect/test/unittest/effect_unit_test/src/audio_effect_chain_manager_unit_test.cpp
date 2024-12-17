@@ -2474,7 +2474,7 @@ HWTEST(AudioEffectChainManagerUnitTest, InitEffectBuffer_001, TestSize.Level1)
     string sessionID2 = "111111";
     int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID2, DEFAULT_INFO);
-    int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
+    result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
     EXPECT_EQ(SUCCESS, result);
 }
 
@@ -2501,7 +2501,7 @@ HWTEST(AudioEffectChainManagerUnitTest, IsEffectChainStop_001, TestSize.Level1)
 
     string sessionID2 = "111111";
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID2, DEFAULT_INFO);
-    int32_t result = AudioEffectChainManager::GetInstance()->IsEffectChainStop(sceneType, sessionID2);
+    result = AudioEffectChainManager::GetInstance()->IsEffectChainStop(sceneType, sessionID2);
     EXPECT_EQ(false, result);
 }
 } // namespace AudioStandard
