@@ -78,6 +78,7 @@ static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 const int32_t UID_AUDIO = 1041;
 const int32_t DATA_LINK_CONNECTED = 11;
+static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 
 #ifdef BLUETOOTH_ENABLE
 static sptr<IStandardAudioService> g_btProxy = nullptr;
@@ -1979,7 +1980,14 @@ bool AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pi
     if (uid == BOOTUP_MUSIC_UID) {
         return true;
     }
-    return OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
+    bool allowed = false;
+    allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
+    if (!allowed) {
+        usleep(WATI_PLAYBACK_TIME); //wait for 200ms
+        AUDIO_INFO_LOG("IsAudioPlaybackAllowed Try again after 200ms");
+        allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
+    }
+    return allowed;
 #endif
     return true;
 }
