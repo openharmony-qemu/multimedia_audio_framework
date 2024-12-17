@@ -3226,6 +3226,9 @@ static void ProcessRenderUseTimingMultiChannel(struct Userdata *u, pa_usec_t now
 
     // Fill the buffer up the latency size
     pa_memchunk chunk;
+    chunk.memblock = NULL;
+    chunk.length = 0;
+    chunk.index = 0;
 
     // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
     SinkRenderMultiChannel(u->sink, u->sink->thread_info.max_request, &chunk);
