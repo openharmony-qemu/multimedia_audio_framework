@@ -636,9 +636,8 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
         }
         if (!hasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo, reason)) {
             hasDirectChangeDevice = true;
-            continue;
         }
-        if (NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason)) { continue; }
+        NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason);
         MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs, reason);
     }
     FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
