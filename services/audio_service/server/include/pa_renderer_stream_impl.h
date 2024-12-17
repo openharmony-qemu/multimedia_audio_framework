@@ -140,7 +140,7 @@ private:
     std::mutex fadingMutex_;
     std::condition_variable fadingCondition_;
     float clientVolume_ = 1.0f;
-    bool initEffectFlag_ = false;
+    bool initEffectFlag_ = true;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
 

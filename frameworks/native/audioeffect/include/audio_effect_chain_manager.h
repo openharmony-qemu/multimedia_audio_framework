@@ -146,6 +146,7 @@ public:
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     void UpdateStreamUsage();
+    int32_t InitEffectBuffer(const std::string &sessionID);
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -170,6 +171,9 @@ private:
     void SendAudioParamToHDI(HdiSetParamCommandCode code, const std::string &value, DeviceType device);
     void SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value);
     std::string GetDeviceTypeName();
+    bool IsEffectChainStop(const std::string &sceneType, const std::string &sessionID);
+    int32_t InitEffectBufferInner(const std::string &sessionID);
+    int32_t InitAudioEffectChainDynamicInner(const std::string &sceneType);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);

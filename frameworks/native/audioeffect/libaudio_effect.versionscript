@@ -74,6 +74,7 @@
     *UpdateExtraSceneType*;
     *SendInitCommand*;
     *EnhanceChainManagerSendInitCommand*;
+    *InitEffectBuffer*;
   local:
     *;
 };
