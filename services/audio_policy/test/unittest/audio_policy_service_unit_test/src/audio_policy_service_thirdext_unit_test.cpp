@@ -17,6 +17,7 @@
 #include "audio_policy_service_thirdext_unit_test.h"
 #include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
+#include "audio_errors.h"
 #include <thread>
 #include <memory>
 #include <vector>
@@ -1135,6 +1136,51 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, NotifyCapturerRemoved_002, TestSize.L
     uint64_t sessionId = 0;
     server->audioPolicyService_.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_EQ(SUCCESS, server->audioPolicyService_.NotifyCapturerRemoved(sessionId));
+}
+
+/**
+* @tc.name  : Test ActivateConcurrencyFromServer.
+* @tc.number: ActivateConcurrencyFromServer_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateConcurrencyFromServer_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    int32_t result = server->audioPolicyService_.ActivateConcurrencyFromServer(pipeType);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, result);
+}
+
+/**
+* @tc.name  : Test IsAllowedPlayback.
+* @tc.number: IsAllowedPlayback_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    const int32_t uid = 0;
+    const int32_t pid = 0;
+    EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
+}
+
+/**
+* @tc.name  : Test IsAllowedPlayback.
+* @tc.number: IsAllowedPlayback_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    const int32_t uid = 1003;
+    const int32_t pid = 0;
+    EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
 }
 } // namespace AudioStandard
 } // namespace OHOS
