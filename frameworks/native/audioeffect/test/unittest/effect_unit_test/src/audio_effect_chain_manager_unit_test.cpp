@@ -2464,11 +2464,17 @@ HWTEST(AudioEffectChainManagerUnitTest, InitEffectBuffer_001, TestSize.Level1)
     std::shared_ptr<AudioEffectChain> audioEffectChain =
         AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
 
-    string sessionID = "123456";
+    string sessionID1 = "123456";
     AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
+    int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID1);
+    EXPECT_EQ(SUCCESS, result);
+
+    string sessionID2 = "111111";
+    int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID2, DEFAULT_INFO);
+    int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
     EXPECT_EQ(SUCCESS, result);
 }
 
@@ -2486,12 +2492,17 @@ HWTEST(AudioEffectChainManagerUnitTest, IsEffectChainRunning_001, TestSize.Level
     std::shared_ptr<AudioEffectChain> audioEffectChain =
         AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
 
-    string sessionID = "123456";
+    string sessionID1 = "123456";
     AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    bool result = AudioEffectChainManager::GetInstance()->IsEffectChainRunning(sceneType, sessionID);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
+    bool result = AudioEffectChainManager::GetInstance()->IsEffectChainRunning(sceneType, sessionID1);
     EXPECT_EQ(true, result);
+
+    string sessionID2 = "111111";
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID2, DEFAULT_INFO);
+    int32_t result = AudioEffectChainManager::GetInstance()->IsEffectChainRunning(sceneType, sessionID2);
+    EXPECT_EQ(false, result);
 }
 } // namespace AudioStandard
 } // namespace OHOS

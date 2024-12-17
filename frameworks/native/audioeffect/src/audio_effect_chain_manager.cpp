@@ -599,7 +599,11 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
 int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(const std::string &sceneType)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
-    AUDIO_INFO_LOG("begin InitAudioEffectChainDynamic");
+    return InitAudioEffectChainDynamicInner(sceneType);
+}
+
+int32_t AudioEffectChainManager::InitAudioEffectChainDynamicInner(const std::string &sceneType)
+{
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
@@ -612,6 +616,7 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(const std::string &
     }
     if (audioEffectChain != nullptr) {
         audioEffectChain->InitEffectChain();
+        AUDIO_INFO_LOG("init effect buffer");
     }
 
     return SUCCESS;
@@ -1579,17 +1584,24 @@ int32_t AudioEffectChainManager::EffectVolumeUpdateInner(std::shared_ptr<AudioEf
 
 int32_t AudioEffectChainManager::InitEffectBuffer(const std::string &sessionID)
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    return InitEffectBufferInner(sessionID);
+}
+
+int32_t AudioEffectChainManager::InitEffectBufferInner(const std::string &sessionID)
+{
     if (sessionIDToEffectInfoMap_.find(sessionID) == sessionIDToEffectInfoMap_.end()) {
         return SUCCESS;
     }
     std::string sceneTypeTemp = sessionIDToEffectInfoMap_[sessionID].sceneType;
-    if (IsEffectChainRunning(sceneTypeTemp, sessionID)) {
-        return InitAudioEffectChainDynamic(sceneTypeTemp);
+    if (IsEffectChainStop(sceneTypeTemp, sessionID)) {
+        return InitAudioEffectChainDynamicInner(sceneTypeTemp);
     }
+    AUDIO_INFO_LOG("no need to init effect buffer");
     return SUCCESS;
 }
 
-bool AudioEffectChainManager::IsEffectChainRunning(const std::string &sceneType, const std::string &sessionID)
+bool AudioEffectChainManager::IsEffectChainStop(const std::string &sceneType, const std::string &sessionID)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&
