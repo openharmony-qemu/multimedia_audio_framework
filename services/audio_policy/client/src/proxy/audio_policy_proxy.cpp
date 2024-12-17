@@ -317,7 +317,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferr
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get out devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
         deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
@@ -345,8 +345,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferr
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get preferred input devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
-        deviceInfo, "Using tainted data as loop bound");
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
@@ -373,7 +373,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetOutputD
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get preferred input devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
         deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
@@ -401,7 +401,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetInputDe
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get preferred input devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
         deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
@@ -683,7 +683,7 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetAudioFocusInfoList, error: %d", error);
     int32_t ret = reply.ReadInt32();
     int32_t size = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_INTERRUPT_INFO_SIZE_LIMIT,
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_INTERRUPT_INFO_SIZE_LIMIT,
         ERROR, "Using tainted data focusInfoSize：%{public}d as loop bound", size);
     focusInfoList = {};
     if (ret < 0) {
@@ -1382,7 +1382,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailab
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, audioDeviceDescriptors, "GetAvailableDevices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
         audioDeviceDescriptors, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         std::shared_ptr<AudioDeviceDescriptor> desc =
