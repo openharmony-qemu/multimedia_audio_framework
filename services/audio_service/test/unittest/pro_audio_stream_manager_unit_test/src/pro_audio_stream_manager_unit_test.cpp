@@ -67,7 +67,7 @@ static AudioProcessConfig GetInnerCapConfig()
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_001, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config = GetInnerCapConfig();
@@ -85,7 +85,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_001, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_002, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -113,7 +113,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_002, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_003, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -141,7 +141,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_003, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_004, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -172,7 +172,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_004, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_005, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -203,7 +203,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_005, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_006, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -235,7 +235,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_006, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_007, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -267,7 +267,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_007, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_008, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     uint32_t streamIndex = 0;
@@ -282,7 +282,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_008, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_009, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -312,7 +312,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_009, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_010, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -343,7 +343,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_010, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_011, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     uint32_t streamIndex = 0;
@@ -358,7 +358,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_011, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_012, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -388,7 +388,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_012, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_013, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -419,7 +419,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_013, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_014, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     uint32_t streamIndex = 0;
@@ -434,7 +434,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_014, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_015, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -464,7 +464,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_015, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_016, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -495,7 +495,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_016, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_017, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -521,7 +521,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_017, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_018, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     uint32_t streamIndex = SESSIONID;
@@ -536,7 +536,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_018, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_019, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     int32_t appUid = CAPTURER_FLAG;
@@ -551,7 +551,7 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_019, TestSize.Level1
 */
 HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_020, TestSize.Level1)
 {
-    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(ManagerType::DIRECT_PLAYBACK);
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
     AudioProcessConfig config;
@@ -570,4 +570,4 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_020, TestSize.Level1
     EXPECT_NE(ERROR, result);
 }
 }
-}
+}
