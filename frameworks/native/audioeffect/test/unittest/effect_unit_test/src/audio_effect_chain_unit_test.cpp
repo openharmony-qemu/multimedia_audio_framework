@@ -421,7 +421,7 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_017, TestSize.Level1)
     audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
 #endif
     EXPECT_NE(audioEffectChain, nullptr);
-    float bufOut 0.0;
+    float bufOut = 0.0;
     uint32_t frameLen = 0;
     audioEffectChain->CrossFadeProcess(&bufOut, frameLen);
 }
@@ -444,7 +444,7 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_018, TestSize.Level1)
     audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
 #endif
     EXPECT_NE(audioEffectChain, nullptr);
-    float bufOut 0.0;
+    float bufOut = 0.0;
     uint32_t frameLen = 0;
     audioEffectChain->fadingCounts_ = 1;
     audioEffectChain->CrossFadeProcess(&bufOut, frameLen);
@@ -468,7 +468,7 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_019, TestSize.Level1)
     audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
 #endif
     EXPECT_NE(audioEffectChain, nullptr);
-    float bufOut 0.0;
+    float bufOut = 0.0;
     uint32_t frameLen = 0;
     audioEffectChain->fadingCounts_ = -1;
     audioEffectChain->CrossFadeProcess(&bufOut, frameLen);
