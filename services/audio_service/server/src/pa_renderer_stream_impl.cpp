@@ -214,7 +214,9 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
         initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
             initEffectFlag_ = true;
@@ -265,7 +267,9 @@ int32_t PaRendererStreamImpl::Flush()
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
         initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
             initEffectFlag_ = true;
@@ -326,7 +330,9 @@ int32_t PaRendererStreamImpl::Stop()
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
         initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
             initEffectFlag_ = true;
@@ -365,7 +371,9 @@ int32_t PaRendererStreamImpl::Release()
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
         initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
             initEffectFlag_ = true;
