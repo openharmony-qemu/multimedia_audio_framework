@@ -217,8 +217,8 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
         if (audioEffectChainManager != nullptr) {
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
-        initEffectFlag_ = true;
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
@@ -268,8 +268,8 @@ int32_t PaRendererStreamImpl::Flush()
         if (audioEffectChainManager != nullptr) {
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
-        initEffectFlag_ = true;
     }
 
     pa_operation_unref(operation);
@@ -329,8 +329,8 @@ int32_t PaRendererStreamImpl::Stop()
         if (audioEffectChainManager != nullptr) {
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
-        initEffectFlag_ = true;
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
@@ -368,8 +368,8 @@ int32_t PaRendererStreamImpl::Release()
         if (audioEffectChainManager != nullptr) {
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
-        initEffectFlag_ = true;
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
