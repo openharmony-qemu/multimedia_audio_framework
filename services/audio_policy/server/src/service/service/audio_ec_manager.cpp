@@ -654,6 +654,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
         }
     }
 
+#ifndef IS_EMULATOR
     // need change to use profile for all devices later
     if (primaryMicModuleInfo_.OpenMicSpeaker == "1") {
         uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(
@@ -661,6 +662,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
         targetInfo.bufferSize_ = BUFFER_CALC_20MS * targetInfo.sampleRate_ / static_cast<uint32_t>(MS_PER_S)
             * targetInfo.channelLayout_ * sampleFormatBits;
     }
+#endif
 
     return SUCCESS;
 }
