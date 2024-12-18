@@ -4338,42 +4338,49 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
         auto moduleInfoList = a2dpModulesPos->second;
         for (auto &moduleInfo : moduleInfoList) {
             std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-            if (IOHandles_.find(moduleInfo.name) != IOHandles_.end()) {
-                moduleInfo.channels = to_string(streamInfo.channels);
-                moduleInfo.rate = to_string(streamInfo.samplingRate);
-                moduleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
-                moduleInfo.bufferSize = to_string(bufferSize);
-                moduleInfo.renderInIdleState = "1";
-                moduleInfo.sinkLatency = "0";
+            CHECK_AND_CONTINUE_LOG(IOHandles_.find(moduleInfo.name) != IOHandles_.end(),
+                "Cannot find module %{public}s", moduleInfo.name.c_str());
+            moduleInfo.channels = to_string(streamInfo.channels);
+            moduleInfo.rate = to_string(streamInfo.samplingRate);
+            moduleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
+            moduleInfo.bufferSize = to_string(bufferSize);
+            moduleInfo.renderInIdleState = "1";
+            moduleInfo.sinkLatency = "0";
 
-                // First unload the existing bt sink
-                AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
-                std::string currentActivePort = GetSinkPortName(GetCurrentOutputDeviceType());
-                AudioIOHandle activateDeviceIOHandle = IOHandles_[BLUETOOTH_SPEAKER];
-                MuteDefaultSinkPort();
-                audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-                audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+            // First unload the existing bt sink
+            AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
+            std::string currentActivePort = GetSinkPortName(GetCurrentOutputDeviceType());
+            AudioIOHandle activateDeviceIOHandle = IOHandles_[BLUETOOTH_SPEAKER];
+            MuteDefaultSinkPort();
+            audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+            audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
 
-                // Load bt sink module again with new configuration
-                AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
-                AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-                CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-                IOHandles_[moduleInfo.name] = ioHandle;
-                std::string portName = GetSinkPortName(deviceType);
-                audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
-                audioPolicyManager_.SuspendAudioDevice(portName, false);
-
-                auto isPresent = [&macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
-                    return descriptor->macAddress_ == macAddress;
-                };
-
-                sptr<AudioDeviceDescriptor> audioDescriptor
-                    = new(std::nothrow) AudioDeviceDescriptor(deviceType, OUTPUT_DEVICE);
-                audioDescriptor->SetDeviceInfo(deviceName, macAddress);
-                audioDescriptor->SetDeviceCapability(streamInfo, 0);
-                std::replace_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent, audioDescriptor);
-                break;
+            // Load bt sink module again with new configuration
+            AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
+            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+            if (ioHandle == OPEN_PORT_FAILURE) {
+                audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+                AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
+                return;
             }
+            IOHandles_[moduleInfo.name] = ioHandle;
+            std::string portName = GetSinkPortName(deviceType);
+            if (!IsVoiceCallRelatedScene()) {
+                audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
+            }
+            audioPolicyManager_.SuspendAudioDevice(portName, false);
+            audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+
+            auto isPresent = [&macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
+                return descriptor->macAddress_ == macAddress;
+            };
+
+            sptr<AudioDeviceDescriptor> audioDescriptor
+                = new(std::nothrow) AudioDeviceDescriptor(deviceType, OUTPUT_DEVICE);
+            audioDescriptor->SetDeviceInfo(deviceName, macAddress);
+            audioDescriptor->SetDeviceCapability(streamInfo, 0);
+            std::replace_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent, audioDescriptor);
+            break;
         }
     }
 }
@@ -9212,5 +9219,12 @@ int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incoming
     return SUCCESS;
 }
 
+bool AudioPolicyService::IsVoiceCallRelatedScene()
+{
+    return audioScene_ == AUDIO_SCENE_RINGING ||
+        audioScene_ == AUDIO_SCENE_PHONE_CALL ||
+        audioScene_ == AUDIO_SCENE_PHONE_CHAT ||
+        audioScene_ == AUDIO_SCENE_VOICE_RINGING;
+}
 } // namespace AudioStandard
 } // namespace OHOS
