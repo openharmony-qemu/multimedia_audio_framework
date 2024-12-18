@@ -133,11 +133,12 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_005, TestSize.Level1)
 HWTEST_F(VolumeToolsUnitTest, VolumeTools_006, TestSize.Level1)
 {
     AudioChannel channel = MONO;
-    float volStart = -1.0f;
-    float volEnd = 1.0f;
+    int32_t volStart = 1;
+    int32_t volEnd = 1;
     ChannelVolumes ret = VolumeTools::GetChannelVolumes(channel, volStart, volEnd);
-    EXPECT_NE(ret.volStart[0], volStart);
+    EXPECT_EQ(ret.volStart[0], volStart);
 }
+
 /**
  * @tc.name  : Test GetChannelVolumes.
  * @tc.type  : FUNC
@@ -147,8 +148,8 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_006, TestSize.Level1)
 HWTEST_F(VolumeToolsUnitTest, VolumeTools_007, TestSize.Level1)
 {
     AudioChannel channel = MONO;
-    float volStart = 1.0f;
-    float volEnd = -1.0f;
+    float volStart = -1.0f;
+    float volEnd = 1.0f;
     ChannelVolumes ret = VolumeTools::GetChannelVolumes(channel, volStart, volEnd);
     EXPECT_NE(ret.volStart[0], volStart);
 }
@@ -162,6 +163,20 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_008, TestSize.Level1)
 {
     AudioChannel channel = MONO;
     float volStart = 1.0f;
+    float volEnd = -1.0f;
+    ChannelVolumes ret = VolumeTools::GetChannelVolumes(channel, volStart, volEnd);
+    EXPECT_NE(ret.volStart[0], volStart);
+}
+/**
+ * @tc.name  : Test GetChannelVolumes.
+ * @tc.type  : FUNC
+ * @tc.number: VolumeTools_009
+ * @tc.desc  : Test GetChannelVolumes.
+ */
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_009, TestSize.Level1)
+{
+    AudioChannel channel = MONO;
+    float volStart = 1.0f;
     float volEnd = 1.0f;
     ChannelVolumes ret = VolumeTools::GetChannelVolumes(channel, volStart, volEnd);
     EXPECT_EQ(ret.volStart[0], 65536);
@@ -170,10 +185,10 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_008, TestSize.Level1)
 /**
  * @tc.name  : Test GetChannelVolumes.
  * @tc.type  : FUNC
- * @tc.number: VolumeTools_009
+ * @tc.number: VolumeTools_010
  * @tc.desc  : Test GetChannelVolumes.
  */
-HWTEST_F(VolumeToolsUnitTest, VolumeTools_009, TestSize.Level1)
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_010, TestSize.Level1)
 {
     BufferDesc desc = {};
     ChannelVolumes volMaps;
@@ -185,10 +200,10 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_009, TestSize.Level1)
 /**
  * @tc.name  : Test GetChannelVolumes.
  * @tc.type  : FUNC
- * @tc.number: VolumeTools_010
+ * @tc.number: VolumeTools_011
  * @tc.desc  : Test GetChannelVolumes.
  */
-HWTEST_F(VolumeToolsUnitTest, VolumeTools_010, TestSize.Level1)
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_011, TestSize.Level1)
 {
     uint8_t *buffer = nullptr;
     BufferDesc desc;
@@ -206,10 +221,10 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_010, TestSize.Level1)
 /**
  * @tc.name  : Test Process.
  * @tc.type  : FUNC
- * @tc.number: PaRenderer_011
+ * @tc.number: PaRenderer_012
  * @tc.desc  : Test Process.
  */
-HWTEST_F(VolumeToolsUnitTest, VolumeTools_011, TestSize.Level1)
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_012, TestSize.Level1)
 {
     uint8_t *buffer = nullptr;
     BufferDesc desc;
@@ -227,10 +242,10 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_011, TestSize.Level1)
 /**
  * @tc.name  : Test Process.
  * @tc.type  : FUNC
- * @tc.number: PaRenderer_012
+ * @tc.number: PaRenderer_013
  * @tc.desc  : Test Process.
  */
-HWTEST_F(VolumeToolsUnitTest, VolumeTools_012, TestSize.Level1)
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_013, TestSize.Level1)
 {
     uint8_t *buffer = new uint8_t[(MIN_FRAME_SIZE) * 3 * STEREO];
     for (size_t i = 0; i < (MIN_FRAME_SIZE) * 3 * STEREO; ++i) {

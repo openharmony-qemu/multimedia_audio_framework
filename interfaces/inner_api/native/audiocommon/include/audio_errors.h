@@ -146,6 +146,19 @@ const int32_t ERR_EXCEED_MAX_STREAM_CNT = BASE_AUDIO_ERR_OFFSET - 28;
 
 /**exceed max audio stream cnt per uid*/
 const int32_t ERR_EXCEED_MAX_STREAM_CNT_PER_UID = BASE_AUDIO_ERR_OFFSET - 29;
+
+/**null pointer*/
+const int32_t ERR_NULL_POINTER = BASE_AUDIO_ERR_OFFSET - 30;
+ 
+/**multimode subscription failed*/
+const int32_t ERR_MMI_SUBSCRIBE = BASE_AUDIO_ERR_OFFSET - 31;
+ 
+/**multimode creation failed*/
+const int32_t ERR_MMI_CREATION = BASE_AUDIO_ERR_OFFSET - 32;
+
+/** set volume failed for not complying with safe volume regulation */
+const int32_t ERR_SET_VOL_FAILED_BY_SAFE_VOL = BASE_AUDIO_ERR_OFFSET - 33;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard

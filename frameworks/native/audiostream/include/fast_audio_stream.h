@@ -182,6 +182,9 @@ public:
 
     bool GetSilentModeAndMixWithOthers() override;
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+
+    DeviceType GetDefaultOutputDevice() override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);

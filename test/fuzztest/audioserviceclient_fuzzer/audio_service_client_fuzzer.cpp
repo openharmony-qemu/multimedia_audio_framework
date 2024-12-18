@@ -30,13 +30,43 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t LIMITSIZE = 4;
-bool g_hasClientInit = false;
 shared_ptr<AudioProcessInClient> g_AudioProcessInClient = nullptr;
-const uint64_t COMMON_UINT64_NUM = 2;
-const size_t BUFFERSIZE = 2;
+static const uint8_t *RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
 
-void GetAudioProcessInClient(const uint8_t *rawData, size_t size)
+/*
+* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
+* tips: only support basic type
+*/
+template<class T>
+T GetData()
+{
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
+    }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
+
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
+
+void GetAudioProcessInClient()
 {
     if (g_AudioProcessInClient != nullptr) {
         return;
@@ -44,11 +74,9 @@ void GetAudioProcessInClient(const uint8_t *rawData, size_t size)
     AudioProcessConfig config;
     config.appInfo.appPid = getpid();
     config.appInfo.appUid = getuid();
-
     config.audioMode = AUDIO_MODE_RECORD;
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
-
     config.streamInfo.channels = STEREO;
     config.streamInfo.encoding = ENCODING_PCM;
     config.streamInfo.format = SAMPLE_S16LE;
@@ -58,235 +86,105 @@ void GetAudioProcessInClient(const uint8_t *rawData, size_t size)
         return;
     }
     g_AudioProcessInClient->Start();
+
+    int32_t vol = GetData<int32_t>();
+    g_AudioProcessInClient->SetVolume(vol);
+
+    uint32_t sessionID = GetData<uint32_t>();
+    g_AudioProcessInClient->GetSessionID(sessionID);
+
+    size_t bufferSize = GetData<size_t>();
+    g_AudioProcessInClient->GetBufferSize(bufferSize);
+
+    uint32_t frameCount = GetData<uint32_t>();
+    g_AudioProcessInClient->GetFrameCount(frameCount);
+
+    uint64_t latency = GetData<uint32_t>();
+    g_AudioProcessInClient->GetLatency(latency);
+
+    float volume = GetData<float>();
+    g_AudioProcessInClient->SetVolume(volume);
+    g_AudioProcessInClient->GetVolume();
+    g_AudioProcessInClient->SetDuckVolume(volume);
+    g_AudioProcessInClient->GetUnderflowCount();
+    g_AudioProcessInClient->GetOverflowCount();
+
+    uint32_t flowCount = GetData<uint32_t>();
+    g_AudioProcessInClient->SetUnderflowCount(flowCount);
+    g_AudioProcessInClient->SetOverflowCount(flowCount);
+    g_AudioProcessInClient->GetFramesWritten();
+    g_AudioProcessInClient->GetFramesRead();
+
+    int32_t frameSize = GetData<int32_t>();
+    g_AudioProcessInClient->SetPreferredFrameSize(frameSize);
 }
 
-void AudioClientSetVolumeTest(const uint8_t *rawData, size_t size)
+void AudioClientUpdateLatencyTimestampTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    if (g_AudioProcessInClient != nullptr) {
         return;
     }
-    int32_t vol = *reinterpret_cast<const int32_t*>(rawData);
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->SetVolume(vol);
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    g_AudioProcessInClient = AudioProcessInClient::Create(config);
+    if (g_AudioProcessInClient== nullptr) {
+        return;
     }
-}
 
-void AudioClientGetSessionIDTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t sessionID = *reinterpret_cast<const uint32_t*>(rawData);
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetSessionID(sessionID);
-    }
-}
-
-void AudioClientGetBufferSizeTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    size_t bufferSize = BUFFERSIZE;
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetBufferSize(bufferSize);
-    }
-}
-
-void AudioClientGetFrameCountTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t frameCount = *reinterpret_cast<const uint32_t*>(rawData);
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetFrameCount(frameCount);
-    }
-}
-
-void AudioClientGetLatencyTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint64_t latency = COMMON_UINT64_NUM;
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetLatency(latency);
-    }
-}
-
-void AudioClientSetVolumeFloatTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    float volume = *reinterpret_cast<const float*>(rawData);
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->SetVolume(volume);
-    }
-}
-
-void AudioClientGetVolumeTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetVolume();
-    }
-}
-
-void AudioClientSetDuckVolumeTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    float volume = *reinterpret_cast<const float*>(rawData);
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->SetDuckVolume(volume);
-    }
-}
-
-void AudioClientGetUnderflowCountTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetUnderflowCount();
-    }
-}
-
-void AudioClientGetOverflowCountTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetOverflowCount();
-    }
-}
-
-void AudioClientSetUnderflowCountTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t underflowCount = *reinterpret_cast<const uint32_t*>(rawData);
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->SetUnderflowCount(underflowCount);
-    }
-}
-
-void AudioClientSetOverflowCountTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t overflowCount = *reinterpret_cast<const uint32_t*>(rawData);
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->SetOverflowCount(overflowCount);
-    }
-}
-
-void AudioClientGetFramesWrittenTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetFramesWritten();
-    }
-}
-
-void AudioClientGetFramesReadTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->GetFramesRead();
-    }
-}
-
-void AudioClientSetPreferredFrameSizeTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t frameSize = *(reinterpret_cast<const int32_t*>(rawData));
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->SetPreferredFrameSize(frameSize);
-    }
-}
-
-void AudioClientUpdateLatencyTimestampTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    bool isRenderer = *(reinterpret_cast<const bool*>(rawData));
+    bool isRenderer = GetData<bool>();
     std::string timestamp = "123456";
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->UpdateLatencyTimestamp(timestamp, isRenderer);
-    }
+    g_AudioProcessInClient->UpdateLatencyTimestamp(timestamp, isRenderer);
+    g_AudioProcessInClient->Pause();
+    g_AudioProcessInClient->Resume();
+    g_AudioProcessInClient->Stop();
 }
 
-void AudioClientPauseTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->Pause();
-    }
-}
+typedef void (*TestFuncs[2])();
 
-void AudioClientResumeTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->Resume();
-    }
-}
+TestFuncs g_testFuncs = {
+    GetAudioProcessInClient,
+    AudioClientUpdateLatencyTimestampTest,
+};
 
-void AudioClientStopTest(const uint8_t *rawData, size_t size)
+bool FuzzTest(const uint8_t* rawData, size_t size)
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
+    if (rawData == nullptr) {
+        return false;
     }
-    if (g_AudioProcessInClient) {
-        g_AudioProcessInClient->Stop();
+
+    // initialize data
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
+
+    return true;
 }
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    /* Run your code on data */
-    OHOS::AudioStandard::GetAudioProcessInClient(data, size);
-    OHOS::AudioStandard::AudioClientSetVolumeTest(data, size);
-    OHOS::AudioStandard::AudioClientGetSessionIDTest(data, size);
-    OHOS::AudioStandard::AudioClientGetBufferSizeTest(data, size);
-    OHOS::AudioStandard::AudioClientGetFrameCountTest(data, size);
-    OHOS::AudioStandard::AudioClientGetLatencyTest(data, size);
-    OHOS::AudioStandard::AudioClientSetVolumeFloatTest(data, size);
-    OHOS::AudioStandard::AudioClientGetVolumeTest(data, size);
-    OHOS::AudioStandard::AudioClientSetDuckVolumeTest(data, size);
-    OHOS::AudioStandard::AudioClientGetUnderflowCountTest(data, size);
-    OHOS::AudioStandard::AudioClientGetOverflowCountTest(data, size);
-    OHOS::AudioStandard::AudioClientSetUnderflowCountTest(data, size);
-    OHOS::AudioStandard::AudioClientSetOverflowCountTest(data, size);
-    OHOS::AudioStandard::AudioClientGetFramesWrittenTest(data, size);
-    OHOS::AudioStandard::AudioClientGetFramesReadTest(data, size);
-    OHOS::AudioStandard::AudioClientSetPreferredFrameSizeTest(data, size);
-    OHOS::AudioStandard::AudioClientUpdateLatencyTimestampTest(data, size);
-    OHOS::AudioStandard::AudioClientPauseTest(data, size);
-    OHOS::AudioStandard::AudioClientResumeTest(data, size);
-    OHOS::AudioStandard::AudioClientStopTest(data, size);
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
 }

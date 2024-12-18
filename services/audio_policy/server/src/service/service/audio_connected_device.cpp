@@ -355,5 +355,17 @@ bool AudioConnectedDevice::HasHifi(const DeviceRole role)
     }) != connectedDevices_.cend();
 }
 
+std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetUsbDeviceDescriptor(const std::string &address,
+    const DeviceRole role)
+{
+    auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [&address, role](const auto &item) {
+        return IsUsb(item->deviceType_) && item->macAddress_ == address && item->deviceRole_ == role;
+    });
+    if (it != connectedDevices_.cend()) {
+        return *it;
+    }
+    return nullptr;
+}
+
 }
 }

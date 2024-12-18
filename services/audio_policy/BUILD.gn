@@ -87,7 +87,7 @@ config("audio_policy_public_config") {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
 
-  if (avsession_part_enable == true) {
+  if (avsession_part_enable == true && !(use_libfuzzer || use_clang_coverage)) {
     cflags += [ "-DAVSESSION_ENABLE" ]
   }
 
@@ -203,12 +203,19 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/service/audio_a2dp_offload_flag.cpp",
     "server/src/service/service/audio_a2dp_offload_manager.cpp",
     "server/src/service/service/audio_active_device.cpp",
+    "server/src/service/service/audio_capturer_session.cpp",
     "server/src/service/service/audio_config_manager.cpp",
     "server/src/service/service/audio_connected_device.cpp",
+    "server/src/service/service/audio_device_common.cpp",
+    "server/src/service/service/audio_device_lock.cpp",
+    "server/src/service/service/audio_device_status.cpp",
+    "server/src/service/service/audio_ec_manager.cpp",
     "server/src/service/service/audio_iohandle_map.cpp",
     "server/src/service/service/audio_microphone_descriptor.cpp",
     "server/src/service/service/audio_offload_stream.cpp",
+    "server/src/service/service/audio_policy_dump.cpp",
     "server/src/service/service/audio_policy_utils.cpp",
+    "server/src/service/service/audio_recovery_device.cpp",
     "server/src/service/service/audio_router_map.cpp",
     "server/src/service/service/audio_scene_manager.cpp",
     "server/src/service/service/audio_server_proxy.cpp",
@@ -242,6 +249,10 @@ audio_ohos_library("audio_policy_service") {
   if (audio_framework_feature_dtmf_tone) {
     sources += [ "server/src/service/config/audio_tone_parser.cpp" ]
     defines += [ "FEATURE_DTMF_TONE" ]
+  }
+
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
   }
 
   public_configs = [ ":audio_policy_public_config" ]

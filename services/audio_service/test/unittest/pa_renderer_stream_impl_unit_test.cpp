@@ -31,6 +31,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t CAPTURER_FLAG = 10;
+static std::shared_ptr<PaAdapterManager> adapterManager;
 
 class PaRendererStreamUnitTest : public ::testing::Test {
 public:
@@ -65,7 +66,7 @@ static AudioProcessConfig GetInnerCapConfig()
 
 std::shared_ptr<PaRendererStreamImpl> PaRendererStreamUnitTest::CreatePaRendererStreamImpl()
 {
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = 123456;
@@ -100,7 +101,7 @@ HWTEST_F(PaRendererStreamUnitTest, GetCurrentTimeStamp_001, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, GetCurrentTimeStamp_002, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     uint64_t timestamp = 0;
@@ -146,7 +147,7 @@ HWTEST_F(PaRendererStreamUnitTest, GetEffectModeName_004, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_006, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -165,7 +166,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_006, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_007, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -185,7 +186,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_007, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_008, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -204,7 +205,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_008, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_009, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -240,7 +241,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_010, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_011, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -291,7 +292,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_015, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_016, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -312,7 +313,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_016, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_017, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -355,7 +356,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_018, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_019, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -379,7 +380,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_019, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_021, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -524,7 +525,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_029, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_030, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -564,7 +565,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_031, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_032, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -605,7 +606,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_033, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_034, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -614,21 +615,6 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_034, TestSize.Level1)
     int32_t effectMode = 0;
     int32_t ret = unit->SetAudioEffectMode(effectMode);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test SetLowPowerVolume.
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_035
- * @tc.desc  : Test SetLowPowerVolume.
- */
-HWTEST_F(PaRendererStreamUnitTest, PaRenderer_035, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    float powerVolume = 0.0f;
-    unit->paStream_ = nullptr;
-    int32_t ret = unit->SetLowPowerVolume(powerVolume);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
 /**
@@ -669,7 +655,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_037, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_038, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -703,7 +689,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_039, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_040, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -736,7 +722,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_041, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_042, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -770,7 +756,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_043, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_044, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -806,7 +792,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_048, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTest, PaRenderer_049, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -816,6 +802,33 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_049, TestSize.Level1)
     unit->firstGetLatency_= true;
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
+}
+/**
+ * @tc.name  : Test Drain.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_050
+ * @tc.desc  : Test Drain.
+ */
+HWTEST_F(PaRendererStreamUnitTest, PaRenderer_050, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    unit->paStream_ = nullptr;
+    int32_t ret = unit->Drain();
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test SetRate.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_051
+ * @tc.desc  : Test SetRate.
+ */
+HWTEST_F(PaRendererStreamUnitTest, PaRenderer_051, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    unit->paStream_ = nullptr;
+    int32_t rate = RENDER_RATE_NORMAL;
+    EXPECT_EQ(unit->SetRate(rate), ERR_ILLEGAL_STATE);
 }
 }
 }

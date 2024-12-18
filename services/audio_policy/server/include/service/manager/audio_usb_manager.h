@@ -53,7 +53,7 @@ struct UsbAudioDevice {
     string name_;
     inline bool operator==(const UsbAudioDevice &o) const
     {
-        return name_ == o.name_ && usbAddr_ == o.usbAddr_;
+        return usbAddr_ == o.usbAddr_;
     }
 };
 
@@ -74,13 +74,12 @@ public:
 
     void Init(IDeviceStatusObserver *observer);
     void Deinit();
-    void RefreshUsbAudioDevices();
     void SubscribeEvent();
 
 private:
     void HandleUsbAudioDeviceAttach(const UsbAudioDevice &device);
     void HandleUsbAudioDeviceDetach(const UsbAudioDevice &device);
-    void SetDeviceStatusObserver(IDeviceStatusObserver *observer);
+    void RefreshUsbAudioDevices();
     void NotifyDevice(const UsbAudioDevice &device, const bool isConnected);
 
     vector<UsbAudioDevice> audioDevices_;
@@ -89,7 +88,6 @@ private:
     bool initialized_{false};
 
     mutex mutex_;
-    mutex initLock_;
     IDeviceStatusObserver *observer_{nullptr};
 };
 

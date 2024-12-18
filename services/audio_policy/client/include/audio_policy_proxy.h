@@ -142,6 +142,8 @@ public:
 
     AudioStreamType GetStreamInFocus(const int32_t zoneID = 0) override;
 
+    AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID = 0) override;
+
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
 
     bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
@@ -177,8 +179,6 @@ public:
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
-
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
@@ -319,6 +319,11 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) override;
 
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
+
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) override;
+
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioDeviceAnahsCallback() override;
@@ -339,8 +344,11 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) override;
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
+
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
+
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
 

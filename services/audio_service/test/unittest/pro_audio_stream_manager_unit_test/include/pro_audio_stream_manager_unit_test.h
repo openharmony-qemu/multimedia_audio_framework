@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,30 +13,27 @@
  * limitations under the License.
  */
 
-#ifndef CALLBACK_HANDLER_H
-#define CALLBACK_HANDLER_H
+#ifndef PRO_AUDIO_STREAM_MANAGER_UNIT_TEST_H
+#define PRO_AUDIO_STREAM_MANAGER_UNIT_TEST_H
 
-#include <cinttypes>
-#include <memory>
+#include <functional>
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class IHandler {
+class ProAudioStreamManagerUnitTest : public testing::Test {
 public:
-    virtual ~IHandler() = default;
-    virtual void OnHandle(uint32_t code, int64_t data) = 0;
+    // SetUpTestCase: Called before all test cases
+    static void SetUpTestCase(void);
+    // TearDownTestCase: Called after all test case
+    static void TearDownTestCase(void);
+    // SetUp: Called before each test cases
+    void SetUp(void);
+    // TearDown: Called after each test cases
+    void TearDown(void);
 };
-
-class CallbackHandler {
-public:
-    virtual ~CallbackHandler() = default;
-    static std::shared_ptr<CallbackHandler> GetInstance(std::shared_ptr<IHandler> iHandler);
-
-    virtual void SendCallbackEvent(uint32_t code, int64_t data) = 0;
-
-    virtual void ReleaseEventRunner() = 0;
-};
-} // namespace AudioStandard
-} // namespace OHOS
-#endif // CALLBACK_HANDLER_H
+}
+}
+#endif

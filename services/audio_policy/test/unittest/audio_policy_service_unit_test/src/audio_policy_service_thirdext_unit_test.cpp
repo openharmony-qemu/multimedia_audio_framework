@@ -15,7 +15,9 @@
 
 #include "audio_policy_service_first_unit_test.h"
 #include "audio_policy_service_thirdext_unit_test.h"
+#include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
+#include "audio_errors.h"
 #include <thread>
 #include <memory>
 #include <vector>
@@ -163,14 +165,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, WaitForConnectionCompleted_001, TestS
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest WaitForConnectionCompleted_001 start");
     EXPECT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.WaitForConnectionCompleted();
-    EXPECT_FALSE(!(audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED));
+    EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ =
+        CONNECTION_STATUS_CONNECTED));
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test WaitForConnectionCompleted.
 * @tc.number: WaitForConnectionCompleted_002
@@ -180,14 +182,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, WaitForConnectionCompleted_002, TestS
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest WaitForConnectionCompleted_001 start");
     EXPECT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
     audioA2dpOffloadManager_.WaitForConnectionCompleted();
-    EXPECT_FALSE(!(audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED));
+    EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ =
+        CONNECTION_STATUS_CONNECTED));
 }
-
+#endif
 /**
 * @tc.name  : Test IsA2dpOffloadConnecting.
 * @tc.number: IsA2dpOffloadConnecting_001
@@ -197,10 +199,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_001, TestSize
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnecting_001 start");
     EXPECT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
     audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
 
     bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(0);
@@ -216,10 +217,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_002, TestSize
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnecting_001 start");
     EXPECT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
     audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
 
     bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(1);
@@ -235,10 +235,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_003, TestSize
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnecting_001 start");
     EXPECT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
 
     bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(0);
@@ -291,7 +290,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_001, TestSize.Level1)
     outputDevices.push_back(std::move(audioDeviceDescriptor));
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-    server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
+    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
 
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor1 = std::make_shared<AudioDeviceDescriptor>();
@@ -300,7 +299,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_001, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptor2->deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
     outputDevices.push_back(std::move(audioDeviceDescriptor2));
-    server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
+    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
     audioDeviceDescriptor.reset();
     audioDeviceDescriptor1.reset();
@@ -324,16 +323,16 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_002, TestSize.Level1)
     outputDevices.push_back(std::move(audioDeviceDescriptor));
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
+    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
 
-    server->audioPolicyService_.enableDualHalToneState_ = true;
-    server->audioPolicyService_.UpdateRoute(rendererChangeInfo, outputDevices);
+    server->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
+    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
     audioDeviceDescriptor.reset();
     rendererChangeInfo.reset();
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test LoadSplitModule.
 * @tc.number: LoadSplitModule_001
@@ -376,7 +375,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetDefaultOutputDevice_001, TestSize.
         AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
             deviceType, sessionID, streamUsage, isRunning);
     EXPECT_EQ(SUCCESS, result);
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.hasEarpiece_ = true;
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
     result =
         AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
             deviceType, sessionID, streamUsage, isRunning);
@@ -394,10 +393,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateDefaultOutputDeviceWhenStopping
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
 
     int32_t uid = getuid();
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.UpdateDefaultOutputDeviceWhenStopping(uid);
+    AudioPolicyServiceUnitTest::GetServerPtr()->
+        audioPolicyService_.audioDeviceLock_.UpdateDefaultOutputDeviceWhenStopping(uid);
     EXPECT_EQ(SUCCESS, uid);
 }
-
+#endif
 /**
 * @tc.name  : Test OnA2dpPlayingStateChanged.
 * @tc.number: OnA2dpPlayingStateChanged_001
@@ -407,15 +407,15 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_001, TestSi
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnA2dpPlayingStateChanged_001 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
     const std::string deviceAddress = "test";
     int32_t playingState = A2DP_STOPPED;
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
     EXPECT_EQ(A2DP_STOPPED, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_CONNECTED, audioA2dpOffloadManager_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_CONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -427,14 +427,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_002, TestSi
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnA2dpPlayingStateChanged_002 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
     const std::string deviceAddress = "test";
     int32_t playingState = A2DP_STOPPED;
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED, audioA2dpOffloadManager_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -446,14 +446,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_003, TestSi
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnA2dpPlayingStateChanged_003 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
     const std::string deviceAddress = "test";
     int32_t playingState = A2DP_PLAYING;
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED, audioA2dpOffloadManager_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -465,14 +465,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_004, TestSi
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnA2dpPlayingStateChanged_004 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
     const std::string deviceAddress = "test";
     int32_t playingState = A2DP_PLAYING;
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED, audioA2dpOffloadManager_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -484,14 +484,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_005, TestSi
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnA2dpPlayingStateChanged_005 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
     const std::string deviceAddress = "";
     int32_t playingState = A2DP_PLAYING;
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_CONNECTED, audioA2dpOffloadManager_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_CONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -503,14 +503,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_006, TestSi
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnA2dpPlayingStateChanged_006 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
     const std::string deviceAddress = "";
     int32_t playingState = A2DP_PLAYING;
-    audioA2dpOffloadManager_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_CONNECTED, audioA2dpOffloadManager_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_CONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -522,13 +522,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_007, TestSi
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnA2dpPlayingStateChanged_007 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
     const std::string deviceAddress = "";
     int32_t playingState = A2DP_STOPPED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED, audioA2dpOffloadManager_.currentOffloadConnectionState_);
+    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
+        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -540,8 +540,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_008, TestSi
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnA2dpPlayingStateChanged_008 start");
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
-    AudioA2dpOffloadManager audioA2dpOffloadManager_(
-        &(AudioPolicyServiceUnitTest::GetServerPtr())->audioPolicyService_);
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
 
     const std::string deviceAddress = "";
     int32_t playingState = A2DP_INVALID;
@@ -549,7 +548,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_008, TestSi
     EXPECT_NE(A2DP_STOPPED, playingState);
     EXPECT_NE(A2DP_PLAYING, playingState);
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test GetSupportedAudioEnhanceProperty.
 * @tc.number: GetSupportedAudioEnhanceProperty_001
@@ -563,7 +562,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSupportedAudioEnhanceProperty_001,
     AudioEnhancePropertyArray propertyArrayTest;
     AudioPolicyServiceUnitTest::GetServerPtr()->GetSupportedAudioEnhanceProperty(propertyArrayTest);
 }
-
+#endif
 /**
 * @tc.name  : Test SetAudioEffectProperty.
 * @tc.number: SetAudioEffectProperty_001
@@ -736,8 +735,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
     EXPECT_NE(nullptr, server);
     int32_t sessionID = SESSION_ID;
     int32_t state = STATE;
-    server->audioPolicyService_.UpdateSessionConnectionState(sessionID, state);
-    EXPECT_NE(nullptr, server->audioPolicyService_.GetAudioServerProxy());
+    server->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(sessionID, state);
+    EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
 /**
@@ -752,19 +751,19 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsRingerOrAlarmerDualDevicesRange_001
     EXPECT_NE(nullptr, server);
 
     InternalDeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    bool ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    bool ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_WIRED_HEADSET;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_WIRED_HEADPHONES;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 }
 
@@ -780,43 +779,19 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsRingerOrAlarmerDualDevicesRange_002
     EXPECT_NE(nullptr, server);
 
     InternalDeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    bool ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    bool ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_USB_HEADSET;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_DP;
-    ret = server->audioPolicyService_.IsRingerOrAlarmerDualDevicesRange(deviceType);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test IsA2dpOrArmUsbDevice.
-* @tc.number: IsA2dpOrArmUsbDevice_001
-* @tc.desc  : Test AudioPolicyServic interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOrArmUsbDevice_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOrArmUsbDevice_001 start");
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    InternalDeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    bool ret = server->audioPolicyService_.IsA2dpOrArmUsbDevice(deviceType);
-    EXPECT_EQ(true, ret);
-
-    deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
-    ret = server->audioPolicyService_.IsA2dpOrArmUsbDevice(deviceType);
-    EXPECT_EQ(true, ret);
-
-    deviceType = DEVICE_TYPE_DP;
-    ret = server->audioPolicyService_.IsA2dpOrArmUsbDevice(deviceType);
+    ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(false, ret);
 }
 
@@ -832,14 +807,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateEffectBtOffloadSupported_001, T
     EXPECT_NE(nullptr, server);
     bool isSupported = false;
     server->audioPolicyService_.UpdateEffectBtOffloadSupported(isSupported);
-    EXPECT_NE(nullptr, server->audioPolicyService_.GetAudioServerProxy());
+    EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
 /**
-* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
-* @tc.number: ScoInputDeviceFetchedForRecongnition_001
-* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interfaces.
-*/
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_001
+ * @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interfaces.
+ */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, ScoInputDeviceFetchedForRecongnition_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ScoInputDeviceFetchedForRecongnition_001 start");
@@ -849,16 +824,17 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ScoInputDeviceFetchedForRecongnition_
 
     bool handleFlag = false;
     ConnectState connectState = DEACTIVE_CONNECTED;
-    int32_t result =
-        server->audioPolicyService_.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
+    int32_t result = server->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(handleFlag,
+        address, connectState);
     EXPECT_EQ(SUCCESS, result);
 
     handleFlag = true;
     connectState = VIRTUAL_CONNECTED;
-    result = server->audioPolicyService_.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
+    result = server->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(handleFlag,
+        address, connectState);
     EXPECT_EQ(SUCCESS, result);
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test SetRotationToEffect.
 * @tc.number: SetRotationToEffect_001
@@ -871,9 +847,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetRotationToEffect_001, TestSize.Lev
     EXPECT_NE(nullptr, server);
     uint32_t rotate = ROTATE;
     server->audioPolicyService_.SetRotationToEffect(rotate);
-    EXPECT_NE(nullptr, server->audioPolicyService_.GetAudioServerProxy());
+    EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
-
+#endif
 /**
 * @tc.name  : Test DealAudioSceneOutputDevices.
 * @tc.number: DealAudioSceneOutputDevices_001
@@ -917,8 +893,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs1;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo1 = std::make_shared<AudioRendererChangeInfo>();
-    bool result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SelectRingerOrAlarmDevices(
-        descs1, rendererChangeInfo1);
+    bool result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs1, rendererChangeInfo1);
     EXPECT_EQ(false, result);
 
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs2;
@@ -928,8 +904,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo2 = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo2->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
     rendererChangeInfo2->sessionId = TEST_SESSIONID;
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SelectRingerOrAlarmDevices(
-        descs2, rendererChangeInfo2);
+    result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs2, rendererChangeInfo2);
     EXPECT_EQ(true, result);
 
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs3;
@@ -939,11 +915,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo3 = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo3->rendererInfo.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
     rendererChangeInfo3->sessionId = TEST_SESSIONID;
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.enableDualHalToneState_ = true;
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
     AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioPolicyManager_.SetRingerMode(
         RINGER_MODE_VIBRATE);
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SelectRingerOrAlarmDevices(
-        descs3, rendererChangeInfo3);
+    result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs3, rendererChangeInfo3);
     EXPECT_EQ(true, result);
 
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs4;
@@ -953,9 +929,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestS
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo4 = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo4->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
     rendererChangeInfo4->sessionId = TEST_SESSIONID;
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.enableDualHalToneState_ = true;
-    result = AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.SelectRingerOrAlarmDevices(
-        descs4, rendererChangeInfo4);
+    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
+    result = AudioPolicyServiceUnitTest::GetServerPtr()
+        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs4, rendererChangeInfo4);
     EXPECT_EQ(false, result);
 
     rendererChangeInfo1.reset();
@@ -1009,6 +985,202 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetPreferredDevice_001, TestSize.Leve
     result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         ERR_PFTYPE, audioDeviceDescriptorSptr2);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
+}
+
+/**
+* @tc.name  : Test IsA2dpOffloadConnecting.
+* @tc.number: IsA2dpOffloadConnecting_004
+* @tc.desc  : Test AudioPolicyServic interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnecting_004 start");
+    EXPECT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
+
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+    audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
+
+    bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(0);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test IsA2dpOffloadConnecting.
+* @tc.number: IsA2dpOffloadConnecting_005
+* @tc.desc  : Test AudioPolicyServic interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnecting_005 start");
+    EXPECT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
+    AudioA2dpOffloadManager audioA2dpOffloadManager_;
+
+    audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_TIMEOUT;
+    audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
+
+    bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(0);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test IsA2dpOffloadConnected.
+* @tc.number: IsA2dpOffloadConnected_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
+}
+
+/**
+* @tc.name  : Test IsA2dpOffloadConnected.
+* @tc.number: IsA2dpOffloadConnected_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    ASSERT_NE(nullptr, server->audioPolicyService_.audioA2dpOffloadManager_);
+    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
+}
+
+/**
+* @tc.name  : Test SetA2dpOffloadFlag.
+* @tc.number: SetA2dpOffloadFlag_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, SetA2dpOffloadFlag_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetA2dpOffloadFlag_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    BluetoothOffloadState state = NO_A2DP_DEVICE;
+    server->audioPolicyService_.SetA2dpOffloadFlag(state);
+}
+/**
+* @tc.name  : Test SetA2dpOffloadFlag.
+* @tc.number: SetA2dpOffloadFlag_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, SetA2dpOffloadFlag_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetA2dpOffloadFlag_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    ASSERT_NE(nullptr, server->audioPolicyService_.audioA2dpOffloadManager_);
+    BluetoothOffloadState state = NO_A2DP_DEVICE;
+    server->audioPolicyService_.SetA2dpOffloadFlag(state);
+}
+
+/**
+* @tc.name  : Test GetA2dpOffloadFlag.
+* @tc.number: GetA2dpOffloadFlag_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetA2dpOffloadFlag_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetA2dpOffloadFlag_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    EXPECT_EQ(NO_A2DP_DEVICE, server->audioPolicyService_.GetA2dpOffloadFlag());
+}
+
+/**
+* @tc.name  : Test GetA2dpOffloadFlag.
+* @tc.number: GetA2dpOffloadFlag_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetA2dpOffloadFlag_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetA2dpOffloadFlag_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    ASSERT_NE(nullptr, server->audioPolicyService_.audioA2dpOffloadManager_);
+    BluetoothOffloadState flag = server->audioPolicyService_.GetA2dpOffloadFlag();
+    EXPECT_EQ(NO_A2DP_DEVICE, server->audioPolicyService_.GetA2dpOffloadFlag());
+}
+
+/**
+* @tc.name  : Test NotifyCapturerRemoved.
+* @tc.number: NotifyCapturerRemoved_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, NotifyCapturerRemoved_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest NotifyCapturerRemoved_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    uint64_t sessionId = 0;
+    EXPECT_EQ(SUCCESS, server->audioPolicyService_.NotifyCapturerRemoved(sessionId));
+}
+
+/**
+* @tc.name  : Test ActivateConcurrencyFromServer.
+* @tc.number: NotifyCapturerRemoved_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, NotifyCapturerRemoved_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest NotifyCapturerRemoved_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    uint64_t sessionId = 0;
+    server->audioPolicyService_.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_EQ(SUCCESS, server->audioPolicyService_.NotifyCapturerRemoved(sessionId));
+}
+
+/**
+* @tc.name  : Test ActivateConcurrencyFromServer.
+* @tc.number: ActivateConcurrencyFromServer_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateConcurrencyFromServer_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    int32_t result = server->audioPolicyService_.ActivateConcurrencyFromServer(pipeType);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, result);
+}
+
+/**
+* @tc.name  : Test IsAllowedPlayback.
+* @tc.number: IsAllowedPlayback_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    const int32_t uid = 0;
+    const int32_t pid = 0;
+    EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
+}
+
+/**
+* @tc.name  : Test IsAllowedPlayback.
+* @tc.number: IsAllowedPlayback_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    const int32_t uid = 1003;
+    const int32_t pid = 0;
+    EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
 }
 } // namespace AudioStandard
 } // namespace OHOS

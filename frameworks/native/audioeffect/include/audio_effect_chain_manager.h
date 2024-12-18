@@ -141,10 +141,12 @@ public:
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
     void UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation);
     uint32_t GetSceneTypeToChainCount(const std::string &sceneType);
-
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     void UpdateStreamUsage();
+    int32_t InitEffectBuffer(const std::string &sessionID);
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -169,6 +171,9 @@ private:
     void SendAudioParamToHDI(HdiSetParamCommandCode code, const std::string &value, DeviceType device);
     void SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value);
     std::string GetDeviceTypeName();
+    bool IsEffectChainStop(const std::string &sceneType, const std::string &sessionID);
+    int32_t InitEffectBufferInner(const std::string &sessionID);
+    int32_t InitAudioEffectChainDynamicInner(const std::string &sceneType);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -183,6 +188,7 @@ private:
     int32_t SetHdiParam(const AudioEffectScene &sceneType);
     int32_t ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t EffectVolumeUpdateInner(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
+    void InitHdiStateInner();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
@@ -213,7 +219,7 @@ private:
     bool spkOffloadEnabled_ = false;
     bool initializedLogFlag_ = true;
     bool btOffloadSupported_ = false;
-    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     bool isDefaultEffectChainExisted_ = false;
     int32_t defaultEffectChainCount_ = 0;
     int32_t maxEffectChainCount_ = 1;

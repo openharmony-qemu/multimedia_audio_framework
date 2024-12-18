@@ -438,23 +438,6 @@ int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, ui
     return ret;
 }
 
-int32_t IpcStreamProxy::OffloadSetVolume(float volume)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-
-    data.WriteFloat(volume);
-    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_OFFLOAD_VOLUME, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
-    ret = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
-
-    return ret;
-}
-
 int32_t IpcStreamProxy::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
 {
     MessageParcel data;
@@ -501,7 +484,7 @@ int32_t IpcStreamProxy::SetSilentModeAndMixWithOthers(bool on)
     return ret;
 }
 
-int32_t IpcStreamProxy::SetClientVolume(bool isStreamVolumeChange, bool isMediaServiceAndOffloadEnable)
+int32_t IpcStreamProxy::SetClientVolume()
 {
     MessageParcel data;
     MessageParcel reply;
@@ -509,8 +492,6 @@ int32_t IpcStreamProxy::SetClientVolume(bool isStreamVolumeChange, bool isMediaS
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
-    data.WriteBool(isStreamVolumeChange);
-    data.WriteBool(isMediaServiceAndOffloadEnable);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_CLIENT_VOLUME, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set client volume failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
@@ -530,6 +511,20 @@ int32_t IpcStreamProxy::SetMute(bool isMute)
     return reply.ReadInt32();
 }
 
+int32_t IpcStreamProxy::SetDuckFactor(float duckFactor)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteFloat(duckFactor);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_DUCK_FACTOR, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set duck failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
 int32_t IpcStreamProxy::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
 {
     MessageParcel data;
@@ -544,6 +539,19 @@ int32_t IpcStreamProxy::RegisterThreadPriority(uint32_t tid, const std::string &
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
     return ret;
+}
+
+int32_t IpcStreamProxy::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(defaultOutputDevice);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_DEFAULT_OUTPUT_DEVICE, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

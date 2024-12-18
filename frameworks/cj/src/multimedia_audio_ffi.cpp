@@ -414,19 +414,6 @@ void FfiMMAARMOnWithFlags(int64_t id, int32_t callbackType, void (*callback)(), 
     mgr->RegisterDeviceChangeCallback(callbackType, callback, flags, errorCode);
 }
 
-// this func spells errors will be removed
-void FfiMMAARMWOnithCapturerInfo(int64_t id, int32_t callbackType, void (*callback)(), CAudioCapturerInfo capturerInfo,
-    int32_t *errorCode)
-{
-    auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
-    if (!mgr) {
-        AUDIO_ERR_LOG("register failed, invalid id of AudioRoutingManager");
-        *errorCode = CJ_ERR_SYSTEM;
-        return;
-    }
-    mgr->RegisterPreferredInputDeviceChangeCallback(callbackType, callback, capturerInfo, errorCode);
-}
-
 void FfiMMAARMOnWithCapturerInfo(int64_t id, int32_t callbackType, void (*callback)(), CAudioCapturerInfo capturerInfo,
     int32_t *errorCode)
 {

@@ -203,6 +203,16 @@ void AudioServerProxy::SetOffloadModeProxy(uint32_t sessionId, int32_t state, bo
     gsp->SetOffloadMode(sessionId, state, isAppBack);
     IPCSkeleton::SetCallingIdentity(identity);
 }
+
+void AudioServerProxy::CheckHibernateStateProxy(bool hibernate)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->CheckHibernateState(hibernate);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 void AudioServerProxy::RestoreSessionProxy(const int32_t &sessionID, bool isOutput)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -368,6 +378,27 @@ void AudioServerProxy::SetParameterCallbackProxy(const sptr<IRemoteObject>& obje
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->SetParameterCallback(object);
     IPCSkeleton::SetCallingIdentity(identity);
+}
+
+int32_t AudioServerProxy::SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
+    const DeviceType& deviceType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->SetAudioEffectProperty(propertyArray, deviceType);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return ret;
+}
+
+int32_t AudioServerProxy::GetAudioEffectPropertyProxy(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->GetAudioEffectProperty(propertyArray);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return ret;
 }
 
 int32_t AudioServerProxy::SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray)

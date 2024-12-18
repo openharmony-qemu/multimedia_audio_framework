@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_effect_log.h"
 #include "audio_utils.h"
+#include "audio_dump_pcm.h"
 #include "securec.h"
 #include "media_monitor_manager.h"
 
@@ -103,12 +104,14 @@ void AudioEffectChain::SetEffectMode(const std::string &mode)
 
 void AudioEffectChain::SetExtraSceneType(const std::string &extraSceneType)
 {
-    extraEffectChainType_ = static_cast<uint32_t>(std::stoi(extraSceneType));
+    CHECK_AND_RETURN_LOG(StringConverter(extraSceneType, extraEffectChainType_),
+        "convert invalid extraSceneType: %{public}s", extraSceneType.c_str());
 }
 
 void AudioEffectChain::SetFoldState(const std::string &foldState)
 {
-    foldState_ = static_cast<uint32_t>(std::stoi(foldState));
+    CHECK_AND_RETURN_LOG(StringConverter(foldState, foldState_),
+        "convert invalid foldState: %{public}s", foldState.c_str());
 }
 
 void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
@@ -191,7 +194,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[SPATIALIZATION_SCENE_TYPE_INDEX] = spatializationSceneType_;
     data[SPATIALIZATION_ENABLED_INDEX] = spatializationEnabled_;
     data[STREAM_USAGE_INDEX] = streamUsage_;
-    data[FOLD_STATE_INDEX] = foldState_;
+    data[FOLD_STATE_INDEX] = static_cast<int32_t>(foldState_);
     AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
         "spatializationSceneType: %{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d",
@@ -314,7 +317,6 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     if (IsEmptyEffectHandles()) {
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error in apply effect");
         DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
-        DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
         return;
     }
 
@@ -354,7 +356,6 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     CrossFadeProcess(bufOut, frameLen);
 
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
-    DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
 }
 
 void AudioEffectChain::UpdateBufferConfig(uint32_t &channels, uint64_t &channelLayout)
@@ -418,7 +419,7 @@ uint32_t AudioEffectChain::GetLatency()
 void AudioEffectChain::DumpEffectProcessData(std::string fileName, void *buffer, size_t len)
 {
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(fileName, buffer, len);
+        AudioCacheMgr::GetInstance().CacheData(fileName, buffer, len);
     }
 }
 

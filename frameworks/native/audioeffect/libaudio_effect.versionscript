@@ -71,6 +71,10 @@
     *EffectRotationUpdate*;
     *SetVolumeInfo*;
     *SetMicrophoneMuteInfo*;
+    *UpdateExtraSceneType*;
+    *SendInitCommand*;
+    *EnhanceChainManagerSendInitCommand*;
+    *InitEffectBuffer*;
   local:
     *;
 };

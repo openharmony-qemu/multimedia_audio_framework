@@ -70,6 +70,7 @@ struct AudioEnhanceDeviceAttr {
 struct AudioEnhanceParamAdapter {
     uint32_t muteInfo;
     uint32_t volumeInfo;
+    uint32_t foldState;
     std::string preDevice;
     std::string postDevice;
     std::string sceneType;
@@ -81,7 +82,7 @@ public:
     AudioEnhanceChain(const std::string &scene, const AudioEnhanceParamAdapter &algoParam,
         const AudioEnhanceDeviceAttr &deviceAttr, const bool defaultFlag);
     ~AudioEnhanceChain();
-    void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
+    int32_t AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
         const std::string &property);
     bool IsEmptyEnhanceHandles();
     void GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferConfig &ecConfig, AudioBufferConfig &micRefConfig);
@@ -94,6 +95,8 @@ public:
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
     bool IsDefaultChain();
     int32_t SetInputDevice(const std::string &inputDevice, const std::string &deviceName);
+    int32_t SetFoldState(uint32_t foldState);
+    int32_t InitCommand();
 
 private:
     void InitAudioEnhanceChain();

@@ -66,6 +66,7 @@ public:
     bool HasArm(const DeviceRole role);
     bool HasHifi(const DeviceRole role);
     bool IsArmDevice(const std::string &address, const DeviceRole role);
+    std::shared_ptr<AudioDeviceDescriptor> GetUsbDeviceDescriptor(const std::string &address, const DeviceRole role);
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}

@@ -185,6 +185,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel) const
     parcel.WriteString(networkId_);
     parcel.WriteString(displayName_);
     parcel.WriteInt32(deviceCategory_);
+    parcel.WriteInt32(connectState_);
     return true;
 }
 
@@ -291,6 +292,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
     networkId_ = parcel.ReadString();
     displayName_ = parcel.ReadString();
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
+    connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
 }
 
 void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
@@ -343,6 +345,15 @@ bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &device
         deviceRole_ == deviceInfo.deviceRole_ &&
         macAddress_ == deviceInfo.macAddress_ &&
         networkId_ == deviceInfo.networkId_;
+}
+
+bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const
+{
+    return ((deviceDescriptor.deviceRole_ == INPUT_DEVICE && deviceRole_ == OUTPUT_DEVICE) ||
+        (deviceDescriptor.deviceRole_ == OUTPUT_DEVICE && deviceRole_ == INPUT_DEVICE)) &&
+        deviceDescriptor.deviceType_ == deviceType_ &&
+        deviceDescriptor.macAddress_ == macAddress_ &&
+        deviceDescriptor.networkId_ == networkId_;
 }
 
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(DeviceType deviceType)

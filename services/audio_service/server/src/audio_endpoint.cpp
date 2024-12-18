@@ -42,7 +42,8 @@
 #include "linear_pos_time_model.h"
 #include "policy_handler.h"
 #include "media_monitor_manager.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
+#include "audio_dump_pcm.h"
 #ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
@@ -62,7 +63,6 @@ namespace {
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
-    static const int32_t HALF_FACTOR = 2;
 }
 
 enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
@@ -236,7 +236,6 @@ private:
     void DeinitLatencyMeasurement();
     void CheckPlaySignal(uint8_t *buffer, size_t bufferSize);
     void CheckRecordSignal(uint8_t *buffer, size_t bufferSize);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
@@ -1083,6 +1082,8 @@ bool AudioEndpointInner::StopDevice()
 int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
     InitLatencyMeasurement();
+    // Prevents the audio from immediately stopping at 0 volume on start
+    delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME;
     AUDIO_PRERELEASE_LOGI("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
@@ -1510,6 +1511,7 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
             } else {
                 AUDIO_INFO_LOG("Volume from zero to none-zero, start device success.");
                 isStarted_ = true;
+                needReSyncPosition_ = true;
             }
             zeroVolumeStopDevice_ = false;
         }
@@ -1540,6 +1542,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         } else {
             streamData.volumeStart = curReadSpan->volumeStart;
         }
+        Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
+            " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()));
         streamData.volumeEnd = curReadSpan->volumeEnd;
         streamData.streamInfo = processList_[i]->GetStreamInfo();
         streamData.isInnerCaped = processList_[i]->GetInnerCapState();
@@ -1595,12 +1599,12 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
         ProcessToDupStream(audioDataList, dstStreamData);
     }
 
-    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
-        dstStreamData.bufferDesc.bufLength);
-    DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_.format, dstStreamInfo_.channels);
+    VolumeTools::DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_, logUtilsTag_, volumeDataCount_);
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
+        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
+            dstStreamData.bufferDesc.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
             static_cast<void *>(dstStreamData.bufferDesc.buffer), dstStreamData.bufferDesc.bufLength);
     }
 
@@ -1628,17 +1632,6 @@ void AudioEndpointInner::ProcessToDupStream(const std::vector<AudioStreamData> &
     } else {
         MixToDupStream(audioDataList);
     }
-}
-
-void AudioEndpointInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void AudioEndpointInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -1872,6 +1865,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
         case IDEL:
             if (ClockTime::GetCurNano() > delayStopTime_) {
                 targetStatus = RUNNING;
+                updateThreadCV_.notify_all();
                 break;
             }
             if (isDeviceRunningInIdel_) {
@@ -2011,10 +2005,10 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     BufferDesc readBuf;
     int32_t ret = dstAudioBuffer_->GetReadbuffer(curReadPos, readBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get read buffer fail, ret %{public}d.", ret);
-    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
-    DfxOperation(readBuf, dstStreamInfo_.format, dstStreamInfo_.channels);
+    VolumeTools::DfxOperation(readBuf, dstStreamInfo_, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
+        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
             static_cast<void *>(readBuf.buffer), readBuf.bufLength);
     }
     WriteToProcessBuffers(readBuf);

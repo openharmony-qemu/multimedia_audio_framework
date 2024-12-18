@@ -71,6 +71,8 @@ public:
     int32_t DisableDualToneList(uint32_t sessionId);
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode(uint32_t sessionId);
+    void UpdateAudioSinkState(uint32_t sinkId, bool started);
+    void CheckHibernateState(bool onHibernate);
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
     std::shared_ptr<CapturerInServer> GetCapturerBySessionID(const uint32_t &session);
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
@@ -82,6 +84,7 @@ public:
     bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, int32_t maxStreamCntPerUid);
     void GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum);
     void CleanAppUseNumMap(int32_t appUid);
+    bool HasBluetoothEndpoint();
 
 private:
     AudioService();
@@ -134,6 +137,10 @@ private:
     int32_t currentRendererStreamCnt_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     std::map<int32_t, std::int32_t> appUseNumMap_;
+    std::mutex allRunningSinksMutex_;
+    std::condition_variable allRunningSinksCV_;
+    std::set<uint32_t> allRunningSinks_;
+    bool onHibernate_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -29,13 +29,13 @@ const std::string AUDIO_RESTORE_VOLUME_EVENT = "AUDIO_RESTORE_VOLUME_EVENT";
 const std::string AUDIO_INCREASE_VOLUME_EVENT = "AUDIO_INCREASE_VOLUME_EVENT";
 const std::string SAVE_VOLUME_SYS_ABILITY_NAME = "audio_service";
 
-constexpr const char *SAFE_VOLUME_ICON_ID = "safe_volume_notification_icon";
-constexpr const char *SAFE_VOLUME_MUSIC_TIMER_TITTLE_ID = "ohos_id_notification_restore_volume_tittle";
-constexpr const char *SAFE_VOLUME_INCREASE_VOLUME_TITTLE_ID = "ohos_id_notification_increase_volume_tittle";
-constexpr const char *SAFE_VOLUME_MUSIC_TIMER_TEXT_ID = "ohos_id_notification_restore_volume_context";
-constexpr const char *SAFE_VOLUME_INCREASE_VOLUME_TEXT_ID = "ohos_id_notification_increase_volume_context";
-constexpr const char *SAFE_VOLUME_RESTORE_VOL_BUTTON_ID = "ohos_id_notification_restore_volume_button";
-constexpr const char *SAFE_VOLUME_INCREASE_VOL_BUTTON_ID = "ohos_id_notification_increase_volume_button";
+const std::string SAFE_VOLUME_ICON_ID = "safe_volume_notification_icon";
+const std::string SAFE_VOLUME_MUSIC_TIMER_TITTLE_ID = "ohos_id_notification_restore_volume_tittle";
+const std::string SAFE_VOLUME_INCREASE_VOLUME_TITTLE_ID = "ohos_id_notification_increase_volume_tittle";
+const std::string SAFE_VOLUME_MUSIC_TIMER_TEXT_ID = "ohos_id_notification_restore_volume_context";
+const std::string SAFE_VOLUME_INCREASE_VOLUME_TEXT_ID = "ohos_id_notification_increase_volume_context";
+const std::string SAFE_VOLUME_RESTORE_VOL_BUTTON_ID = "ohos_id_notification_restore_volume_button";
+const std::string SAFE_VOLUME_INCREASE_VOL_BUTTON_ID = "ohos_id_notification_increase_volume_button";
 
 const int32_t ICON_WIDTH = 220;
 const int32_t ICON_HEIGHT = 220;

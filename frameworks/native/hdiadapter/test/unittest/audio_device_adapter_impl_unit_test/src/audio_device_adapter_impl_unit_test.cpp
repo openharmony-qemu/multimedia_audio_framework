@@ -583,6 +583,7 @@ void AudioDeviceAdapterImplUnitTest::TearDown(void) {}
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, HandleRenderParamEvent_001, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     sptr<IAudioRender> render;
     DevicePortInfo portInfo;
     portInfo.devAdpCb = nullptr;
@@ -600,6 +601,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, HandleRenderParamEvent_001, TestSize.Leve
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, HandleRenderParamEvent_002, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     const char *condition = "condition";
     const char *value = "value";
     int32_t result = audioDeviceAdapterImpl->HandleRenderParamEvent(audioDeviceAdapterImpl, VOLUME, condition, value);
@@ -613,6 +615,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, HandleRenderParamEvent_002, TestSize.Leve
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, HandleCaptureParamEvent_001, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     sptr<IAudioCapture> capture;
     DevicePortInfo portInfo;
     portInfo.devAdpCb = nullptr;
@@ -630,6 +633,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, HandleCaptureParamEvent_001, TestSize.Lev
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, HandleCaptureParamEvent_002, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     const char *condition = "condition";
     const char *value = "value";
     int32_t result = audioDeviceAdapterImpl->HandleCaptureParamEvent(audioDeviceAdapterImpl, VOLUME, condition, value);
@@ -643,7 +647,36 @@ HWTEST(AudioDeviceAdapterImplUnitTest, HandleCaptureParamEvent_002, TestSize.Lev
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, HandleStateChangeEvent_001, TestSize.Level1)
 {
-    const char *condition = "condition";
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
+    const char *condition = "ERR_EVENT;DEVICE_TYPE=SPK";
+    const char *value = nullptr;
+    int32_t result = audioDeviceAdapterImpl->HandleStateChangeEvent(audioDeviceAdapterImpl, VOLUME, condition, value);
+    EXPECT_NE(SUCCESS, result);
+}
+
+/**
+* @tc.name   : Test HandleStateChangeEvent API
+* @tc.number : HandleStateChangeEvent_002
+* @tc.desc   : Test HandleStateChangeEvent interface.
+*/
+HWTEST(AudioDeviceAdapterImplUnitTest, HandleStateChangeEvent_002, TestSize.Level1)
+{
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
+    const char *condition = "ERR_EVENT;DEVICE_TYPE=1";
+    const char *value = nullptr;
+    int32_t result = audioDeviceAdapterImpl->HandleStateChangeEvent(audioDeviceAdapterImpl, VOLUME, condition, value);
+    EXPECT_NE(SUCCESS, result);
+}
+
+/**
+* @tc.name   : Test HandleStateChangeEvent API
+* @tc.number : HandleStateChangeEvent_003
+* @tc.desc   : Test HandleStateChangeEvent interface.
+*/
+HWTEST(AudioDeviceAdapterImplUnitTest, HandleStateChangeEvent_003, TestSize.Level1)
+{
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
+    const char *condition = "ERR_EVENT;DEVICE_TYPE=2";
     const char *value = nullptr;
     int32_t result = audioDeviceAdapterImpl->HandleStateChangeEvent(audioDeviceAdapterImpl, VOLUME, condition, value);
     EXPECT_NE(SUCCESS, result);
@@ -656,6 +689,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, HandleStateChangeEvent_001, TestSize.Leve
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, ParamEventCallback_001, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     AudioParamKey key = PARAM_KEY_STATE;
     AudioExtParamKey extKey = AudioExtParamKey(key);
     const char *condition = "condition";
@@ -673,6 +707,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, ParamEventCallback_001, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, ParamEventCallback_002, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     AudioParamKey key = VOLUME;
     AudioExtParamKey extKey = AudioExtParamKey(key);
     const char *condition = "condition";
@@ -690,6 +725,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, ParamEventCallback_002, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, ParamEventCallback_003, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     AudioParamKey key = INTERRUPT;
     AudioExtParamKey extKey = AudioExtParamKey(key);
     const char *condition = "condition";
@@ -707,6 +743,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, ParamEventCallback_003, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, ParamEventCallback_004, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     AudioParamKey key = NONE;
     AudioExtParamKey extKey = AudioExtParamKey(key);
     const char *condition = "condition";
@@ -724,6 +761,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, ParamEventCallback_004, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, RegExtraParamObserver_001, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     audioDeviceAdapterImpl->isParamCbReg_ = true;
     int32_t result = audioDeviceAdapterImpl->RegExtraParamObserver();
     EXPECT_EQ(SUCCESS, result);
@@ -736,6 +774,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, RegExtraParamObserver_001, TestSize.Level
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, RegExtraParamObserver_002, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     audioDeviceAdapterImpl->isParamCbReg_ = false;
     int32_t result = audioDeviceAdapterImpl->RegExtraParamObserver();
     EXPECT_NE(SUCCESS, result);
@@ -748,6 +787,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, RegExtraParamObserver_002, TestSize.Level
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, CreateRender_001, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     audioDeviceAdapterImpl->audioAdapter_ = new IAudioAdapterFork();
     AudioDeviceDescriptor devDesc;
     AudioSampleAttributes attr;
@@ -765,6 +805,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, CreateRender_001, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, CreateRender_002, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     audioDeviceAdapterImpl->audioAdapter_ = new IAudioAdapterFork();
     DevicePortInfo portInfo;
     AudioDeviceDescriptor devDesc;
@@ -784,6 +825,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, CreateRender_002, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, DestroyRender_001, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     sptr<IAudioRender> audioRender = new IAudioRenderFork();
     uint32_t renderId = 0;
     audioDeviceAdapterImpl->DestroyRender(audioRender, renderId);
@@ -797,6 +839,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, DestroyRender_001, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, DestroyRender_002, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     DevicePortInfo portInfo;
     sptr<IAudioRender> audioRender = new IAudioRenderFork();
     uint32_t renderId = 0;
@@ -812,6 +855,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, DestroyRender_002, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, CreateCapture_001, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     audioDeviceAdapterImpl->audioAdapter_ = new IAudioAdapterFork();
     DevicePortInfo portInfo;
     AudioDeviceDescriptor devDesc;
@@ -831,6 +875,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, CreateCapture_001, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, CreateCapture_002, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     audioDeviceAdapterImpl->audioAdapter_ = new IAudioAdapterFork();
     AudioDeviceDescriptor devDesc;
     AudioSampleAttributes attr;
@@ -848,6 +893,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, CreateCapture_002, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, DestroyCapture_001, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     sptr<IAudioCapture> audioCapture = new IAudioCaptureFork();
     uint32_t captureId = 0;
     audioDeviceAdapterImpl->DestroyCapture(audioCapture, captureId);
@@ -861,6 +907,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, DestroyCapture_001, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, DestroyCapture_002, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     sptr<IAudioCapture> audioCapture = new IAudioCaptureFork();
     DevicePortInfo portInfo;
     uint32_t captureId = 0;
@@ -876,6 +923,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, DestroyCapture_002, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, Release_001, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     audioDeviceAdapterImpl->audioAdapter_ = nullptr;
     int32_t result = audioDeviceAdapterImpl->Release();
     EXPECT_EQ(SUCCESS, result);
@@ -888,6 +936,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, Release_001, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, Release_002, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     audioDeviceAdapterImpl->audioAdapter_ = new IAudioAdapterFork();
     int32_t result = audioDeviceAdapterImpl->Release();
     EXPECT_NE(SUCCESS, result);
@@ -900,6 +949,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, Release_002, TestSize.Level1)
 */
 HWTEST(AudioDeviceAdapterImplUnitTest, Release_003, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceAdapterImpl != nullptr);
     audioDeviceAdapterImpl->audioAdapter_ = new IAudioAdapterFork();
     audioDeviceAdapterImpl->routeHandle_ = 0;
     int32_t result = audioDeviceAdapterImpl->Release();

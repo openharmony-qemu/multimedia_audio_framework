@@ -35,6 +35,7 @@
 #include "audio_spatialization_manager.h"
 #include "audio_spatialization_state_change_listener_stub.h"
 #include "i_standard_spatialization_state_change_listener.h"
+#include "audio_combine_denoising_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -170,6 +171,8 @@ public:
 
     AudioStreamType GetStreamInFocus(const int32_t zoneID = 0);
 
+    AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID = 0);
+
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
     int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
@@ -240,8 +243,6 @@ public:
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos);
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId);
-
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo);
@@ -425,6 +426,9 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+
     int32_t SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback);
 
     int32_t UnsetAudioDeviceAnahsCallback();
@@ -452,8 +456,11 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning);
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);

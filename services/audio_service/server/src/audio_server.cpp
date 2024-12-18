@@ -50,10 +50,13 @@
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
+#include "fast_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "playback_capturer_manager.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
+#include "offline_stream_in_server.h"
+#include "audio_dump_pcm.h"
 
 #define PA
 #ifdef PA
@@ -122,9 +125,9 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_REMOTE_CAST,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
-    SOURCE_TYPE_CAMCORDER
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED
 };
-
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
@@ -142,6 +145,7 @@ static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_REMOTE_CAST,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
 };
 
 static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
@@ -153,6 +157,7 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
     SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
 };
 
 static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
@@ -168,7 +173,9 @@ static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
 static std::string GetField(const std::string &src, const char* field, const char sep)
 {
     auto str = std::string(field) + '=';
-    auto pos = src.find(str) + str.length();
+    auto pos = src.find(str);
+    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
+    pos += str.length();
     auto end = src.find(sep, pos);
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
@@ -179,6 +186,7 @@ static void UpdateArmInstance(IAudioCapturerSource *&audioCapturerSourceInstance
     audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
     audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
     auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
     primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
 }
 
@@ -241,6 +249,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         std::string dumpString = "check fast list :bundle name is" + bundleName + " result is " + result + "\n";
         return write(fd, dumpString.c_str(), dumpString.size());
     }
+
     std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
@@ -273,10 +282,15 @@ void AudioServer::OnStart()
         AUDIO_ERR_LOG("start err");
         WriteServiceStartupError();
     }
-    int32_t fastControlFlag = 0;
+    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
-    if (fastControlFlag == 1) {
-        isFastControlled_ = true;
+    if (fastControlFlag == 0) {
+        isFastControlled_ = false;
+    }
+    int32_t audioCacheState = 0;
+    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+    if (audioCacheState != 0) {
+        AudioCacheMgr::GetInstance().Init();
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
@@ -292,6 +306,7 @@ void AudioServer::OnStart()
 #endif
 
     RegisterAudioCapturerSourceCallback();
+    RegisterAudioRendererSinkCallback();
 
     std::unique_ptr<AudioParamParser> audioParamParser = make_unique<AudioParamParser>();
     if (audioParamParser == nullptr) {
@@ -371,9 +386,8 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(params);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor SetMediaParameters failed.");
-    return true;
+    CHECK_AND_RETURN_RET_LOG(params.size() > 0, false, "params is empty!");
+    return AudioCacheMgr::GetInstance().SetDumpParameter(params);
 }
 
 int32_t AudioServer::SetExtraParameters(const std::string& key,
@@ -430,6 +444,21 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     return SUCCESS;
 }
 
+void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
+{
+    auto parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
+    IAudioRendererSink* bluetoothSinkInstance = IAudioRendererSink::GetInstance("a2dp", "");
+    CHECK_AND_RETURN_LOG(bluetoothSinkInstance != nullptr, "has no valid sink");
+    bluetoothSinkInstance->SetAudioParameter(parmKey, "", renderValue);
+
+    if (AudioService::GetInstance()->HasBluetoothEndpoint()) {
+        IAudioRendererSink* fastBluetoothSinkInstance = IAudioRendererSink::GetInstance("a2dp_fast", "");
+        CHECK_AND_RETURN_LOG(fastBluetoothSinkInstance != nullptr, "has no valid fast sink");
+        fastBluetoothSinkInstance->SetAudioParameter(parmKey, "", renderValue);
+        AUDIO_INFO_LOG("HasBlueToothEndpoint");
+    }
+}
+
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
@@ -447,19 +476,16 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     AudioServer::audioParameters[key] = value;
 
     // send it to hal
-    AudioParamKey parmKey = AudioParamKey::NONE;
     if (key == "A2dpSuspended") {
-        parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
-        IAudioRendererSink* bluetoothSinkInstance = IAudioRendererSink::GetInstance("a2dp", "");
-        CHECK_AND_RETURN_LOG(bluetoothSinkInstance != nullptr, "has no valid sink");
         std::string renderValue = key + "=" + value + ";";
-        bluetoothSinkInstance->SetAudioParameter(parmKey, "", renderValue);
+        SetA2dpAudioParameter(renderValue);
         return;
     }
 
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_LOG(audioRendererSinkInstance != nullptr, "has no valid sink");
 
+    AudioParamKey parmKey = AudioParamKey::NONE;
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
         HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SMARTPA_LOWPOWER",
@@ -523,9 +549,8 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().GetMediaParameters(subKeys, result);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor GetMediaParameters failed");
-    return true;
+    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "subKeys is empty!");
+    return AudioCacheMgr::GetInstance().GetDumpParameter(subKeys, result);
 }
 
 int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
@@ -655,30 +680,39 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
 {
     AUDIO_INFO_LOG("AudioServer::GetUsbParameter Entry. condition=%{public}s", condition.c_str());
     string address = GetField(condition, "address", ' ');
-    DeviceRole role = static_cast<DeviceRole>(stoi(GetField(condition, "role", ' ')));
+    int32_t deviceRoleNum = static_cast<int32_t>(DEVICE_ROLE_NONE);
+    std::string usbInfoStr;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(GetField(condition, "role", ' '), deviceRoleNum), usbInfoStr,
+        "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
+    DeviceRole role = static_cast<DeviceRole>(deviceRoleNum);
     IAudioRendererSink *rendererSink = IAudioRendererSink::GetInstance("usb", "");
     CHECK_AND_RETURN_RET_LOG(rendererSink, "", "rendererSink is nullptr");
     std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
-    std::string usbInfoStr;
     if (role == OUTPUT_DEVICE) {
         rendererSink->SetAddress(address);
-        usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
-        AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
-        usbInfoMap_[address] = usbInfoStr;
+        auto it = usbInfoMap_.find(address);
+        if (it == usbInfoMap_.end()) {
+            usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
+            usbInfoMap_[address] = usbInfoStr;
+        } else {
+            usbInfoStr = it->second;
+        }
         rendererSink->Preload(usbInfoStr);
     } else if (role == INPUT_DEVICE) {
         IAudioCapturerSource *capturerSource = IAudioCapturerSource::GetInstance("usb", "");
         CHECK_AND_RETURN_RET_LOG(capturerSource, "", "capturerSource is nullptr");
         capturerSource->SetAddress(address);
-        if (usbInfoMap_.count(address) != 0) {
-            usbInfoStr = usbInfoMap_[address];
-        } else {
+        auto it = usbInfoMap_.find(address);
+        if (it == usbInfoMap_.end()) {
             usbInfoStr = rendererSink->GetAudioParameter(USB_DEVICE, infoCond);
+            usbInfoMap_[address] = usbInfoStr;
+        } else {
+            usbInfoStr = it->second;
         }
-        AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
     } else {
         usbInfoMap_.erase(address);
     }
+    AUDIO_INFO_LOG("infoCond=%{public}s, usbInfoStr=%{public}s", infoCond.c_str(), usbInfoStr.c_str());
     return usbInfoStr;
 }
 
@@ -808,6 +842,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
         auto primarySink = IAudioRendererSink::GetInstance("primary", "");
+        CHECK_AND_RETURN_RET_LOG(primarySink, ERROR, "primarySink is nullptr");
         primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
     } else {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
@@ -828,7 +863,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
         if (activeOutputDevice == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
-            activeOutputDevices[0] = DEVICE_TYPE_NONE;
+            activeOutputDevices[0] = DEVICE_TYPE_SPEAKER;
         }
         audioRendererSinkInstance->SetAudioScene(audioScene, activeOutputDevices);
     }
@@ -1028,7 +1063,7 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
         GetEncryptStr(networkId).c_str(), connected);
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
     if (audioRendererSinkInstance != nullptr && connected) {
-        audioRendererSinkInstance->RegisterParameterCallback(this);
+        audioRendererSinkInstance->RegisterAudioSinkCallback(this);
     }
 }
 
@@ -1795,6 +1830,31 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
     }
 }
 
+void AudioServer::RegisterAudioRendererSinkCallback()
+{
+    // Only watch primary and fast sink for now, watch other sinks later.
+    IAudioRendererSink *primarySink = IAudioRendererSink::GetInstance("primary", "");
+    IAudioRendererSink *usbSink = IAudioRendererSink::GetInstance("usb", "");
+    IAudioRendererSink *offloadSink = IAudioRendererSink::GetInstance("offload", "");
+    IAudioRendererSink *a2dpSink = IAudioRendererSink::GetInstance("a2dp", "");
+    IAudioRendererSink *a2dpFastSink = IAudioRendererSink::GetInstance("a2dp_fast", "");
+    IAudioRendererSink *fastSink = FastAudioRendererSink::GetInstance();
+    IAudioRendererSink *fastVoipSink = FastAudioRendererSink::GetVoipInstance();
+    for (auto sinkInstance : {
+        primarySink,
+        usbSink,
+        offloadSink,
+        a2dpSink,
+        a2dpFastSink,
+        fastSink,
+        fastVoipSink
+    }) {
+        if (sinkInstance) {
+            sinkInstance->RegisterAudioSinkCallback(this);
+        }
+    }
+}
+
 int32_t AudioServer::SetCaptureSilentState(bool state)
 {
     if (!PermissionUtil::VerifyIsAudio()) {
@@ -1999,6 +2059,37 @@ int32_t AudioServer::UnsetOffloadMode(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
         callingUid);
     return AudioService::GetInstance()->UnsetOffloadMode(sessionId);
+}
+
+void AudioServer::OnAudioSinkStateChange(uint32_t sinkId, bool started)
+{
+    AudioService::GetInstance()->UpdateAudioSinkState(sinkId, started);
+    return;
+}
+
+void AudioServer::CheckHibernateState(bool hibernate)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+    return AudioService::GetInstance()->CheckHibernateState(hibernate);
+}
+
+sptr<IRemoteObject> AudioServer::CreateIpcOfflineStream(int32_t &errorCode)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), nullptr, "refused for %{public}d", callingUid);
+    sptr<OfflineStreamInServer> stream = OfflineStreamInServer::GetOfflineStream(errorCode);
+    CHECK_AND_RETURN_RET_LOG(stream, nullptr, "Create IpcOfflineStream failed.");
+    sptr<IRemoteObject> remoteObject = stream->AsObject();
+    return remoteObject;
+}
+
+int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effectChains)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "refused for %{public}d", callingUid);
+    return OfflineStreamInServer::GetOfflineAudioEffectChains(effectChains);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -30,6 +30,8 @@ const int32_t LIMITSIZE = 4;
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
+const uint8_t TESTSIZE = 4;
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 void AudioBluetoothManagerFuzzTest(const uint8_t *rawData, size_t size)
 {
@@ -109,13 +111,26 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
 } // namespace AudioStandard
 } // namesapce OHOS
 
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+    OHOS::AudioStandard::AudioBluetoothManagerFuzzTest,
+    OHOS::AudioStandard::AudioA2dpManagerFuzzTest,
+    OHOS::AudioStandard::AudioHfpManagerFuzzTest,
+    OHOS::AudioStandard::FetchOutputDeviceForTrackInternalFuzzTest
+};
+
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioBluetoothManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioA2dpManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioHfpManagerFuzzTest(data, size);
-    OHOS::AudioStandard::FetchOutputDeviceForTrackInternalFuzzTest(data, size);
+    if (data == nullptr || size <= 1) {
+        return 0;
+    }
+    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
+    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+        return 0;
+    }
+    data = data + 1;
+    size = size - 1;
+    g_testPtrs[firstByte](data, size);
     return 0;
 }

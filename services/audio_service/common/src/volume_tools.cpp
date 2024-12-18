@@ -22,6 +22,7 @@
 #include "volume_tools_c.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
+#include "audio_utils.h"
 
 namespace {
 static const int32_t UINT8_SHIFT = 0x80;
@@ -32,6 +33,8 @@ static const uint32_t SHIFT_SIXTEEN = 16;
 static const uint32_t ARRAY_INDEX_TWO = 2;
 static const size_t MIN_FRAME_SIZE = 1;
 static const size_t MAX_FRAME_SIZE = 100000; // max to about 2s for 48khz
+static const uint32_t INT_32_MAX = 0x7fffffff;
+static const int32_t HALF_FACTOR = 2;
 }
 namespace OHOS {
 namespace AudioStandard {
@@ -321,7 +324,7 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     int16_t *raw16 = reinterpret_cast<int16_t *>(buffer.buffer);
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            volMaps.volStart[channelIdx] += (*raw16 >= 0 ? *raw16: (-*raw16));
+            volMaps.volStart[channelIdx] += (*raw16 >= 0 ? *raw16 : (-*raw16));
             raw16++;
         }
         raw16 += (split - 1) * channel;
@@ -346,7 +349,6 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     const size_t byteSizePerData = VolumeTools::GetByteSize(format);
-    size_t offset = 8; // convert a 24-bit number to a 16-bit number
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -367,9 +369,9 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
             int32_t sample = static_cast<int32_t>(ReadInt24LE(raw8));
-            uint32_t sampleAbs = sample >= 0 ? static_cast<uint32_t>(sample)
-                : static_cast<uint32_t>(-sample) >> offset;
-            volMaps.volStart[channelIdx] +=  static_cast<int32_t>(sampleAbs);
+            uint32_t sampleAbs = (sample >= 0 ? static_cast<uint32_t>(sample) : static_cast<uint32_t>(-sample)) >>
+                SHIFT_EIGHT;
+            volMaps.volStart[channelIdx] += static_cast<int32_t>(sampleAbs);
             raw8 += byteSizePerData;
         }
         raw8 += (split - 1) * channel * byteSizePerData;
@@ -394,7 +396,6 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     const size_t byteSizePerData = VolumeTools::GetByteSize(format);
-    size_t offset = 16; // convert a 32-bit number to a 16-bit number
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
@@ -414,8 +415,8 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     int32_t *raw32 = reinterpret_cast<int32_t *>(buffer.buffer);
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            uint32_t sampleAbs = *raw32 >= 0 ? static_cast<uint32_t>(*raw32)
-                : static_cast<uint32_t>(-*raw32) >> offset;
+            uint32_t sampleAbs = (*raw32 >= 0 ? static_cast<uint32_t>(*raw32) : static_cast<uint32_t>(-*raw32)) >>
+                SHIFT_SIXTEEN;
             volSums[channelIdx] += static_cast<int32_t>(sampleAbs);
             raw32++;
         }
@@ -462,7 +463,7 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     float *raw32 = reinterpret_cast<float *>(buffer.buffer);
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            volSums[channelIdx] += (*raw32 >= 0 ? *raw32: (-*raw32));
+            volSums[channelIdx] += (*raw32 >= 0 ? *raw32 : (-*raw32));
             raw32++;
         }
         raw32 += (split - 1) * channel;
@@ -511,6 +512,28 @@ ChannelVolumes VolumeTools::CountVolumeLevel(const BufferDesc &buffer, AudioSamp
 
     return channelVols;
 }
+
+void VolumeTools::DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
+    int64_t &volumeDataCount, size_t split)
+{
+    size_t byteSizePerData = GetByteSize(streamInfo.format);
+    size_t frameLen = byteSizePerData * static_cast<size_t>(streamInfo.channels) *
+        static_cast<size_t>(streamInfo.samplingRate) * 0.02; // 0.02s
+    int32_t minVolume = INT_32_MAX;
+    for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
+        BufferDesc temp = {buffer.buffer + frameLen * index, std::min(buffer.bufLength - frameLen * index, frameLen),
+            std::min(buffer.dataLength - frameLen * index, frameLen)};
+        ChannelVolumes vols = CountVolumeLevel(temp, streamInfo.format, streamInfo.channels, split);
+        if (streamInfo.channels == MONO) {
+            minVolume = std::min(minVolume, vols.volStart[0]);
+        } else {
+            minVolume = std::min(minVolume, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+        }
+        AudioLogUtils::ProcessVolumeData(logTag, vols, volumeDataCount);
+    }
+    Trace::Count(logTag, minVolume);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
 

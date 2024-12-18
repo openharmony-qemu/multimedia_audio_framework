@@ -223,3 +223,11 @@ int32_t GetSceneTypeCode(const char *sceneType, uint32_t *sceneTypeCode)
     *sceneTypeCode = static_cast<uint32_t>(item->first);
     return SUCCESS;
 }
+
+int32_t EnhanceChainManagerSendInitCommand()
+{
+    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
+        ERROR, "null audioEnhanceChainManager");
+    return audioEnhanceChainMananger->SendInitCommand();
+}

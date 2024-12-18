@@ -71,6 +71,8 @@
 #define FRAME_DURATION_DEFAULT 20
 #define MILLISECOND_PER_SECOND 1000
 #define HDI_POST 100
+#define MAX_SEND_COMMAND_LATANCY 10000
+#define RTPOLL_RUN_WAKEUP_INTERVAL_USEC 500000
 
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -207,23 +209,14 @@ static void FreeSceneMapsAndResampler(struct Userdata *u)
     }
 }
 
-static void UserdataFree(struct Userdata *u)
+static void FreeThread(struct Userdata *u)
 {
-    if (u == NULL) {
-        AUDIO_INFO_LOG("Userdata is null, free done");
-        return;
-    }
-    if (u->source) {
-        pa_source_unlink(u->source);
-    }
-
     if (u->thread) {
         pa_asyncmsgq_send(u->threadMq.inq, NULL, PA_MESSAGE_SHUTDOWN, NULL, 0, NULL);
         pa_thread_free(u->thread);
     }
 
     if (u->threadCap) {
-        pa_atomic_store(&u->quitCaptureFlag, 1);
         pa_thread_free(u->threadCap);
     }
     if (u->CaptureMq) {
@@ -232,6 +225,28 @@ static void UserdataFree(struct Userdata *u)
 
     pa_thread_mq_done(&u->threadMq);
     pa_thread_mq_done(&u->threadCapMq);
+    if (u->eventFd != 0) {
+        close(u->eventFd);
+        u->eventFd = 0;
+    }
+    if (u->rtpollItem) {
+        pa_rtpoll_item_free(u->rtpollItem);
+        u->rtpollItem = NULL;
+    }
+}
+
+static void UserdataFree(struct Userdata *u)
+{
+    if (u == NULL) {
+        AUDIO_INFO_LOG("Userdata is null, free done");
+        return;
+    }
+    pa_atomic_store(&u->quitCaptureFlag, 1);
+    if (u->source) {
+        pa_source_unlink(u->source);
+    }
+
+    FreeThread(u);
 
     if (u->source) {
         pa_source_unref(u->source);
@@ -283,6 +298,17 @@ static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offse
     return pa_source_process_msg(o, code, data, offset, chunk);
 }
 
+static void SendInitCommandToAlgo()
+{
+    pa_usec_t now = pa_rtclock_now();
+    int32_t ret = EnhanceChainManagerSendInitCommand();
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "send init command failed");
+    pa_usec_t cost = pa_rtclock_now() - now;
+    if (cost > MAX_SEND_COMMAND_LATANCY) { // send command cost more than 10 ms
+        AUDIO_WARNING_LOG("send int command cost time:%{public}" PRIu64, cost);
+    }
+}
+
 /* Called from the IO thread. */
 static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     pa_suspend_cause_t newSuspendCause)
@@ -296,9 +322,6 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     if ((s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) &&
         PA_SOURCE_IS_OPENED(newState)) {
         u->timestamp = pa_rtclock_now();
-        if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
-            u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
-        }
         if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
             if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("HDI capturer start failed");
@@ -315,6 +338,7 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
                 u->isCapturerStarted = false;
                 AUDIO_DEBUG_LOG("Stopped HDI capturer");
                 StopAuxCapture(u);
+                SendInitCommandToAlgo();
             }
         } else if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
             AUDIO_DEBUG_LOG("Idle to Running starting HDI capturing device");
@@ -712,19 +736,32 @@ static int32_t AudioEnhanceExistAndProcess(pa_memchunk *chunk, struct Userdata *
     return 0;
 }
 
+static void ThreadCaptureSleep(pa_usec_t sleepTime)
+{
+    struct timespec req, rem;
+    req.tv_sec = 0;
+    req.tv_nsec = (int64_t)(sleepTime * MILLISECOND_PER_SECOND);
+    clock_nanosleep(CLOCK_REALTIME, 0, &req, &rem);
+    AUDIO_DEBUG_LOG("ThreadCaptureData sleep:%{public}" PRIu64, sleepTime);
+}
+
 static void ThreadCaptureData(void *userdata)
 {
     struct Userdata *u = userdata;
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
     pa_thread_mq_install(&u->threadCapMq);
+    // set audio thread priority
+    ScheduleThreadInServer(getpid(), gettid());
 
     pa_memchunk chunk;
     int32_t ret = 0;
     pa_usec_t now = 0;
+    pa_usec_t cost = 0;
 
     while (!pa_atomic_load(&u->quitCaptureFlag)) {
-        now = pa_rtclock_now();
         if (pa_atomic_load(&u->captureFlag) == 1) {
+            AUTO_CTRACE("ThreadCaptureDataLoop");
+            now = pa_rtclock_now();
             chunk.length = u->bufferSize;
             AUDIO_DEBUG_LOG("HDI Source: chunk.length = u->bufferSize: %{public}zu", chunk.length);
             chunk.memblock = pa_memblock_new(u->core->mempool, chunk.length);
@@ -734,50 +771,42 @@ static void ThreadCaptureData(void *userdata)
                 continue;
             }
             pa_asyncmsgq_post(u->CaptureMq, NULL, HDI_POST, NULL, 0, &chunk, NULL);
-            AUDIO_DEBUG_LOG("capture frame cost :%{public}" PRIu64, pa_rtclock_now() - now);
+            eventfd_t writEvent = 1;
+            int32_t writeRes = eventfd_write(u->eventFd, writEvent);
+            if (writeRes != 0) {
+                AUDIO_ERR_LOG("Failed to write from eventfd");
+                continue;
+            }
+            cost = pa_rtclock_now() - now;
+            AUDIO_DEBUG_LOG("capture frame cost :%{public}" PRIu64, cost);
         } else {
-            struct timespec req, rem;
-            req.tv_sec = 0;
-            req.tv_nsec = 20000000; // 20000000 nanoseconds = 20ms
-            clock_nanosleep(CLOCK_REALTIME, 0, &req, &rem);
+            ThreadCaptureSleep(u->blockUsec);
         }
     }
-    AUDIO_INFO_LOG("[SL]: ThreadCaptureData quit pid %{public}d, tid %{public}d", getpid(), gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
+    AUDIO_INFO_LOG("ThreadCaptureData quit pid %{public}d, tid %{public}d", getpid(), gettid());
 }
 
-static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
+static void PaRtpollProcessFunc(struct Userdata *u)
 {
-    bool flag = (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) ?
-        (u->source->thread_info.state == PA_SOURCE_RUNNING && u->isCapturerStarted) :
-        (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->isCapturerStarted);
-    if (!flag) {
-        pa_atomic_store(&u->captureFlag, 0);
-        pa_rtpoll_set_timer_disabled(u->rtpoll);
-        return true;
+    AUTO_CTRACE("PaRtpollProcessFunc");
+
+    eventfd_t value;
+    int32_t readRet = eventfd_read(u->eventFd, &value);
+    if (readRet != 0) {
+        AUDIO_ERR_LOG("Failed to read from eventfd");
+        return;
     }
 
     pa_memchunk chunk;
     int32_t code = 0;
     pa_usec_t now = pa_rtclock_now();
-    AUDIO_DEBUG_LOG("HDI Source: now: %{public}" PRIu64 " timerElapsed: %{public}d", now, timerElapsed);
 
-    if (timerElapsed) {
-        uint32_t length = pa_usec_to_bytes(now - u->timestamp, &u->source->sample_spec);
-        if (length > 0) {
-            pa_atomic_store(&u->captureFlag, 1);
-            pa_assert_se(pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
-            if (code == HDI_POST) {
-                AudioEnhanceExistAndProcess(&chunk, u);
-            }
-            pa_asyncmsgq_done(u->CaptureMq, 0);
-
-            u->timestamp += pa_bytes_to_usec(length, &u->source->sample_spec);
-            AUDIO_DEBUG_LOG("length:%{public}u timestamp add:%{public}" PRIu64" to %{public}" PRIu64" ",
-                length, pa_bytes_to_usec(length, &u->source->sample_spec), u->timestamp);
-        }
-    } else {
-        pa_atomic_store(&u->captureFlag, 0);
+    pa_assert_se(pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
+    if (code == HDI_POST) {
+        AudioEnhanceExistAndProcess(&chunk, u);
     }
+    pa_asyncmsgq_done(u->CaptureMq, 0);
 
     int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE];
     size_t count = 0;
@@ -795,15 +824,13 @@ static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
     }
 
     pa_usec_t costTime = pa_rtclock_now() - now;
-    AUDIO_DEBUG_LOG("enhance process and post costTime:%{public}" PRIu64 " ", costTime);
-    pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + costTime);
-    return true;
+    AUDIO_DEBUG_LOG("enhance process and post costTime:%{public}" PRIu64, costTime);
+    return;
 }
 
-static void ThreadFuncCapturerTimer(void *userdata)
+static void ThreadFuncProcessTimer(void *userdata)
 {
     struct Userdata *u = userdata;
-    bool timerElapsed = false;
 
     // set audio thread priority
     ScheduleThreadInServer(getpid(), gettid());
@@ -812,18 +839,26 @@ static void ThreadFuncCapturerTimer(void *userdata)
     pa_thread_mq_install(&u->threadMq);
     u->timestamp = pa_rtclock_now();
 
-    if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
-        u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
-    }
-
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
     while (true) {
-        AUTO_CTRACE("FuncCapturerLoop");
-        bool result = PaRtpollSetTimerFunc(u, timerElapsed);
-        if (!result) {
-            AUDIO_ERR_LOG("PaRtpollSetTimerFunc failed");
-            break;
+        bool flag = (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) ?
+            (u->source->thread_info.state == PA_SOURCE_RUNNING && u->isCapturerStarted) :
+            (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->isCapturerStarted);
+        if (flag) {
+            pa_atomic_store(&u->captureFlag, 1);
+        } else {
+            pa_atomic_store(&u->captureFlag, 0);
+        }
+
+        pa_rtpoll_set_timer_relative(u->rtpoll, RTPOLL_RUN_WAKEUP_INTERVAL_USEC);
+        if (u->rtpollItem) {
+            struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
+            if (pollFd == NULL) {
+                AUDIO_ERR_LOG("get pollFd failed");
+                break;
+            }
+            pollFd->events = flag ? POLLIN : 0;
         }
         /* Hmm, nothing to do. Let's sleep */
         int ret = pa_rtpoll_run(u->rtpoll);
@@ -834,15 +869,14 @@ static void ThreadFuncCapturerTimer(void *userdata)
             pa_asyncmsgq_post(u->threadMq.outq, PA_MSGOBJECT(u->core), PA_CORE_MESSAGE_UNLOAD_MODULE, u->module,
                 0, NULL, NULL);
             pa_asyncmsgq_wait_for(u->threadMq.inq, PA_MESSAGE_SHUTDOWN);
-            return;
+            break;
         }
-
-        timerElapsed = pa_rtpoll_timer_elapsed(u->rtpoll);
-
         if (ret == 0) {
-            AUDIO_INFO_LOG("Thread OS_ReadHdi shutting down, pid %{public}d, tid %{public}d", getpid(), gettid());
-            return;
+            AUDIO_INFO_LOG("Thread OS_ProcessCapData shutting down, pid %{public}d, tid %{public}d",
+                getpid(), gettid());
+            break;
         }
+        PaRtpollProcessFunc(u);
     }
     UnscheduleThreadInServer(getpid(), gettid());
 }
@@ -865,21 +899,7 @@ static int PaHdiCapturerInit(struct Userdata *u)
         return ret;
     }
 
-    // No start test for remote device and a2dp in device.
-    if (strcmp(GetDeviceClass(u->sourceAdapter->deviceClass), DEVICE_CLASS_REMOTE) &&
-        strcmp(GetDeviceClass(u->sourceAdapter->deviceClass), DEVICE_CLASS_A2DP)) {
-        ret = u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("Audio capturer start failed!");
-            goto fail;
-        }
-        StartAuxCapture(u);
-        u->isCapturerStarted = true;
-    }
-    return ret;
-
-fail:
-    PaHdiCapturerExit(u);
+    u->isCapturerStarted = false;
     return ret;
 }
 
@@ -901,11 +921,6 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
     pa_source_new_data_init(&data);
     data.driver = __FILE__;
     data.module = m;
-
-    // if sourcetype is wakeup, source suspend after init
-    if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
-        data.suspend_cause = PA_SUSPEND_IDLE;
-    }
 
     pa_source_new_data_set_name(&data, pa_modargs_get_value(ma, "source_name", DEFAULT_SOURCE_NAME));
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING,
@@ -1195,8 +1210,15 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
 
     pa_atomic_store(&u->captureFlag, 0);
     pa_atomic_store(&u->quitCaptureFlag, 0);
+    u->eventFd = eventfd(0, EFD_NONBLOCK);
+    u->rtpollItem = pa_rtpoll_item_new(u->rtpoll, PA_RTPOLL_NEVER, 1);
+    struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
+    CHECK_AND_RETURN_RET_LOG(pollFd != NULL, -1, "get pollfd failed");
+    pollFd->fd = u->eventFd;
+    pollFd->events = 0;
+    pollFd->revents = 0;
 
-    if (!(u->thread = pa_thread_new("OS_ReadHdi", ThreadFuncCapturerTimer, u))) {
+    if (!(u->thread = pa_thread_new("OS_ProcessCapData", ThreadFuncProcessTimer, u))) {
         AUDIO_ERR_LOG("Failed to create hdi-source-record thread!");
         return -1;
     }

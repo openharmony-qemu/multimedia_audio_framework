@@ -140,6 +140,9 @@ public:
 
     virtual AudioStreamType GetStreamInFocus(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
+    virtual AudioStreamType GetStreamInFocusByUid(
+        const int32_t uid, const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+
     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
@@ -184,8 +187,6 @@ public:
     virtual int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) = 0;
 
     virtual int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) = 0;
-
-    virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
 
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) = 0;
@@ -332,6 +333,9 @@ public:
 
     virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
+    virtual int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc) = 0;
+
     virtual int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAudioDeviceAnahsCallback() = 0;
@@ -352,8 +356,13 @@ public:
 
     virtual int32_t SetVoiceRingtoneMute(bool isMute) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) = 0;
+    virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
+
+    virtual int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
+
+    virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) = 0;
+
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
 
     virtual int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
 

@@ -115,12 +115,6 @@ int32_t AudioStreamManager::GetCurrentCapturerChangeInfos(
     return AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
-bool AudioStreamManager::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
-{
-    AUDIO_DEBUG_LOG("IsAudioRendererLowLatencySupported");
-    return AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
-}
-
 static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
     int32_t i, AudioSceneEffectInfo &audioSceneEffectInfo)
 {

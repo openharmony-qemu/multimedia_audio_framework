@@ -52,6 +52,11 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
+
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
 }
 
 group("fuzztest") {

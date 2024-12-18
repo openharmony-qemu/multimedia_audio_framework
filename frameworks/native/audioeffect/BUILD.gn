@@ -25,6 +25,7 @@ config("audio_effect_config") {
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../services/audio_service/client/include",
+    "../../../services/audio_service/common/include",
     "../../../services/audio_service/test/example",
     "../../../services/audio_policy/server/include/service/manager",
   ]
@@ -75,6 +76,7 @@ audio_ohos_library("audio_effect") {
 
   deps = [
     "../../../services/audio_policy:audio_setting_provider",
+    "../../../services/audio_service:audio_common",
     "../audioutils:audio_utils",
   ]
 

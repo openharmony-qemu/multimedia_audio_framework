@@ -63,6 +63,7 @@ public:
     void SetVoiceVolumeProxy(float volume);
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
+    void CheckHibernateStateProxy(bool hibernate);
     void RestoreSessionProxy(const int32_t &sessionID, bool isOutput);
     int32_t GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE);
@@ -85,6 +86,9 @@ public:
     const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam);
     int32_t RegiestPolicyProviderProxy(const sptr<IRemoteObject> &object);
     void SetParameterCallbackProxy(const sptr<IRemoteObject>& object);
+    int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE);
+    int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray);
     void SetRotationToEffectProxy(const uint32_t rotate);

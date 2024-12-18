@@ -85,19 +85,22 @@ public:
     virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) = 0; // renderer only
 
-    virtual int32_t OffloadSetVolume(float volume) = 0; // renderer only
-
     virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) = 0; // rendererOnly
 
     virtual int32_t GetStreamManagerType() = 0;
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 
-    virtual int32_t SetClientVolume(bool isStreamVolumeChange, bool isMediaServiceAndOffloadEnable) = 0;
+    virtual int32_t SetClientVolume() = 0;
 
     virtual int32_t SetMute(bool isMute) = 0;
 
+    virtual int32_t SetDuckFactor(float duckFactor) = 0;
+
     virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+
     // IPC code.
     enum IpcStreamMsg : uint32_t {
         ON_REGISTER_STREAM_LISTENER = 0,
@@ -125,13 +128,14 @@ public:
         ON_SET_OFFLOAD_MODE,
         ON_UNSET_OFFLOAD_MODE,
         ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME,
-        ON_SET_OFFLOAD_VOLUME,
         ON_UPDATE_SPATIALIZATION_STATE,
         ON_GET_STREAM_MANAGER_TYPE,
         ON_SET_SILENT_MODE_AND_MIX_WITH_OTHERS,
         ON_SET_CLIENT_VOLUME,
         ON_SET_MUTE,
+        ON_SET_DUCK_FACTOR,
         ON_REGISTER_THREAD_PRIORITY,
+        ON_SET_DEFAULT_OUTPUT_DEVICE,
         IPC_STREAM_MAX_MSG
     };
 

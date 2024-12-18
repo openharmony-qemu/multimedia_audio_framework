@@ -14,7 +14,7 @@
  */
 
 #include "audio_endpoint_plus_unit_test.h"
-
+#include "pa_adapter_manager.h"
 #include "accesstoken_kit.h"
 #include "audio_device_info.h"
 #include "audio_endpoint.h"
@@ -54,7 +54,11 @@ void AudioEndpointPlusUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
-const size_t BIGNUMBER = 2808348670;
+static const size_t BIGNUMBER = 2808348670;
+static const size_t NUMFIVE = 5;
+static constexpr uint32_t MORE_SESSIONID = MAX_SESSIONID + 1;
+static const int32_t CAPTURER_FLAG = 10;
+static const uint32_t SESSIONID = 123456;
 
 /*
  * @tc.name  : Test AudioEndpointInner API
@@ -69,7 +73,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_001, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     audioEndpointInner->endpointStatus_.store(AudioEndpoint::EndpointStatus::RUNNING);
 
@@ -89,7 +93,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_002, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     audioEndpointInner->endpointStatus_.store(AudioEndpoint::EndpointStatus::IDEL);
 
@@ -109,12 +113,13 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_003, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     int64_t checkTime = 0;
     uint64_t curWritePos = 0;
 
-    audioEndpointInner->CheckAllBufferReady(checkTime, curWritePos);
+    auto result = audioEndpointInner->CheckAllBufferReady(checkTime, curWritePos);
+    EXPECT_EQ(result, true);
 }
 
 /*
@@ -130,7 +135,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_004, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     int64_t checkTime = 0;
     uint64_t curWritePos = 0;
@@ -145,7 +150,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_004, TestSize.Level1)
     processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     audioEndpointInner->processBufferList_.push_back(processBuffer);
 
-    audioEndpointInner->CheckAllBufferReady(checkTime, curWritePos);
+    auto result = audioEndpointInner->CheckAllBufferReady(checkTime, curWritePos);
+    EXPECT_EQ(result, true);
 }
 
 /*
@@ -161,7 +167,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_005, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     int64_t checkTime = 0;
     uint64_t curWritePos = 0;
@@ -192,7 +198,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_006, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData audioStreamData;
@@ -217,7 +223,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_007, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData audioStreamData;
@@ -242,7 +248,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData dstData;
@@ -267,7 +273,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_009, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData dstData;
@@ -292,7 +298,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_010, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData dstData;
@@ -319,7 +325,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_011, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData dstData;
@@ -348,7 +354,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_012, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData dstData;
@@ -377,7 +383,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_013, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioStreamData srcData;
     AudioStreamData dstData;
@@ -400,7 +406,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_014, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioStreamData srcData;
     AudioStreamData dstData;
@@ -425,7 +431,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_015, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioStreamData srcData;
     AudioStreamData dstData;
@@ -450,7 +456,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_016, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioStreamData srcData;
     AudioStreamData dstData;
@@ -475,7 +481,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_017, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioStreamData srcData;
     AudioStreamData dstData;
@@ -500,7 +506,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_018, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     std::vector<AudioStreamData> audioDataList;
     AudioStreamData audioStreamData;
@@ -522,7 +528,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_019, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     uint64_t posInFrame = 0;
     audioEndpointInner->dstSpanSizeInframe_ = 1;
@@ -543,7 +549,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_020, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     uint64_t posInFrame = 400;
     audioEndpointInner->dstSpanSizeInframe_ = 1;
@@ -564,7 +570,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_021, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     uint64_t posInFrame = 401;
     audioEndpointInner->dstSpanSizeInframe_ = 1;
@@ -587,7 +593,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_022, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     uint64_t posInFrame = 401;
     audioEndpointInner->dstSpanSizeInframe_ = 1;
@@ -610,7 +616,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_023, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     uint64_t posInFrame = 401;
     audioEndpointInner->dstSpanSizeInframe_ = 1;
@@ -632,7 +638,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_024, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     uint8_t buffer = 1;
     size_t bufferSize = 1;
@@ -640,7 +646,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_024, TestSize.Level1)
 
     audioEndpointInner->CheckPlaySignal(&buffer, bufferSize);
 }
-
+#ifdef AUDIO_ENDPOINT_INNER_UNIT_TEST_DIFF
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
@@ -654,7 +660,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_025, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     uint8_t buffer = 1;
     size_t bufferSize = BIGNUMBER;
@@ -668,7 +674,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_025, TestSize.Level1)
 
     audioEndpointInner->CheckPlaySignal(&buffer, bufferSize);
 }
-
+#endif
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
@@ -682,7 +688,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_026, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     uint8_t buffer = 1;
     size_t bufferSize = BIGNUMBER;
@@ -710,7 +716,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_027, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     uint8_t buffer = 1;
     size_t bufferSize = BIGNUMBER;
@@ -738,7 +744,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_028, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     BufferDesc writeBuf;
     BufferDesc readBuf;
@@ -762,7 +768,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_029, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     BufferDesc writeBuf;
     BufferDesc readBuf;
@@ -786,7 +792,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_030, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     BufferDesc writeBuf;
     BufferDesc readBuf;
@@ -810,7 +816,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_031, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
-    EXPECT_NE(nullptr, audioEndpointInner);
+    ASSERT_NE(audioEndpointInner, nullptr);
 
     BufferDesc writeBuf;
     BufferDesc readBuf;
@@ -819,6 +825,271 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_031, TestSize.Level1)
     audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
 
     audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_032
+ * @tc.desc  : Test AudioEndpointInner::CheckRecordSignal()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_032, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    uint8_t* buffer = new uint8_t[NUMFIVE];
+    size_t bufferSize = NUMFIVE;
+    audioEndpointInner->latencyMeasEnabled_ = true;
+    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    EXPECT_NE(nullptr, audioEndpointInner->signalDetectAgent_);
+    audioEndpointInner->signalDetected_ = true;
+
+    audioEndpointInner->CheckRecordSignal(buffer, bufferSize);
+    delete[] buffer;
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_033
+ * @tc.desc  : Test AudioEndpointInner::CheckRecordSignal()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_033, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    uint8_t* buffer = new uint8_t[NUMFIVE];
+    size_t bufferSize = NUMFIVE;
+    audioEndpointInner->latencyMeasEnabled_ = true;
+    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    EXPECT_NE(nullptr, audioEndpointInner->signalDetectAgent_);
+    audioEndpointInner->signalDetected_ = false;
+
+    audioEndpointInner->CheckRecordSignal(buffer, bufferSize);
+    delete[] buffer;
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_034
+ * @tc.desc  : Test AudioEndpointInner::WriteToSpecialProcBuf()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_034, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t spanSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    const std::shared_ptr<OHAudioBuffer> procBuf = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+    procBuf->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+
+    EXPECT_NE(nullptr, procBuf);
+
+    BufferDesc readBuf2;
+    const BufferDesc readBuf = readBuf2;
+    BufferDesc convertedBuffer2;
+    const BufferDesc convertedBuffer = convertedBuffer2;
+    bool muteFlag = true;
+
+    audioEndpointInner->WriteToSpecialProcBuf(procBuf, readBuf, convertedBuffer, muteFlag);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_035
+ * @tc.desc  : Test AudioEndpointInner::PrepareNextLoop()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_035, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    uint64_t curWritePos = 0;
+    int64_t wakeUpTime = 0;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t spanSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    audioEndpointInner->dstAudioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+    audioEndpointInner->dstAudioBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+
+    auto result = audioEndpointInner->PrepareNextLoop(curWritePos, wakeUpTime);
+    EXPECT_EQ(result, false);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_036
+ * @tc.desc  : Test AudioEndpointInner::GetMaxAmplitude()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_036, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    auto result = audioEndpointInner->GetMaxAmplitude();
+
+    EXPECT_EQ(audioEndpointInner->startUpdate_, true);
+    EXPECT_NEAR(result, 0.0, 0.001);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_037
+ * @tc.desc  : Test AudioEndpointInner::ProcessToDupStream()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    AudioStreamData dstStreamData;
+    dstStreamData.isInnerCaped = true;
+    const std::vector<AudioStreamData> audioDataList = {dstStreamData};
+    audioEndpointInner->endpointType_ = AudioEndpoint::EndpointType::TYPE_VOIP_MMAP;
+
+    EXPECT_EQ(audioDataList.size(), 1);
+
+    audioEndpointInner->dupBufferSize_ = 3;
+
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    AudioProcessConfig config;
+    config.appInfo.appUid = CAPTURER_FLAG;
+    config.appInfo.appPid = CAPTURER_FLAG;
+    config.streamInfo.format = SAMPLE_S32LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    config.streamType = AudioStreamType::STREAM_MUSIC;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    config.originalSessionId = MORE_SESSIONID;
+    uint32_t sessionId = SESSIONID;
+    pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
+    audioEndpointInner->dupStream_ = adapterManager->CreateRendererStream(config, stream);
+
+    audioEndpointInner->ProcessToDupStream(audioDataList, dstStreamData);
+
+    EXPECT_EQ(dstStreamData.bufferDesc.bufLength, audioEndpointInner->dupBufferSize_);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_039
+ * @tc.desc  : Test AudioEndpointInner::GetAllReadyProcessData()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_039, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    AudioStreamData dstStreamData;
+    std::vector<AudioStreamData> audioDataList = {dstStreamData};
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t spanSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(processBuffer, nullptr);
+
+    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    EXPECT_NE(processBuffer->basicBufferInfo_, nullptr);
+
+    audioEndpointInner->processBufferList_.push_back(processBuffer);
+
+    audioEndpointInner->GetAllReadyProcessData(audioDataList);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_040
+ * @tc.desc  : Test AudioEndpointInner::WaitAllProcessReady()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_040, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    uint64_t curWritePos = 0;
+
+    audioEndpointInner->WaitAllProcessReady(curWritePos);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_041
+ * @tc.desc  : Test AudioEndpointInner::ProcessToEndpointDataHandle()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_041, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t spanSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    audioEndpointInner->dstAudioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(audioEndpointInner->dstAudioBuffer_, nullptr);
+
+    audioEndpointInner->dstAudioBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    EXPECT_NE(audioEndpointInner->dstAudioBuffer_->basicBufferInfo_, nullptr);
+
+    uint64_t curWritePos = 0;
+    auto result = audioEndpointInner->ProcessToEndpointDataHandle(curWritePos);
+    EXPECT_EQ(result, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

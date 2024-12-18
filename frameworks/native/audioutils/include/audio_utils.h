@@ -27,6 +27,7 @@
 #include <queue>
 #include <climits>
 #include <condition_variable>
+#include <charconv>
 #include "securec.h"
 
 #include "audio_info.h"
@@ -73,6 +74,8 @@ static constexpr unsigned int AUDIO_XCOLLIE_FLAG_RECOVERY = (1 << 1); // die whe
 
 class Util {
 public:
+    static bool IsScoSupportSource(const SourceType sourceType);
+
     static bool IsDualToneStreamType(const AudioStreamType streamType);
 
     static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
@@ -110,8 +113,10 @@ private:
 class ClockTime {
 public:
     static int64_t GetCurNano();
+    static int64_t GetRealNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);
     static int32_t RelativeSleep(int64_t nanoTime);
+    static std::string NanoTimeToString(int64_t nanoTime);
 };
 
 /**
@@ -195,6 +200,10 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 }
 
 template <typename T>
+bool StringConverter(const std::string &str, T &result);
+
+bool SetSysPara(const std::string& key, int32_t value);
+template <typename T>
 bool GetSysPara(const char *key, T &value);
 
 enum AudioDumpFileType {
@@ -209,14 +218,8 @@ const char* DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
 const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
 const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
-const char* DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
-const char* DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
 const char* DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
-const char* DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
-const char* DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
-const char* DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
 const char* DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
-const char* DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";
 const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
 const char* DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
 const uint32_t PARAM_VALUE_LENTH = 150;
@@ -238,7 +241,7 @@ template <typename...Args>
 void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
 {
     char buf[STRING_BUFFER_SIZE] = {0};
-    int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
+    int len = ::sprintf_s(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
     if (len <= 0) {
         return;
     }
@@ -310,9 +313,10 @@ T *ObjectRefMap<T>::IncreaseRef(T *obj)
 template <typename T>
 void ObjectRefMap<T>::DecreaseRef(T *obj)
 {
-    std::lock_guard<std::mutex> lock(allObjLock);
+    std::unique_lock<std::mutex> lock(allObjLock);
     if (refMap.count(obj) && --refMap[obj] == 0) {
         refMap.erase(obj);
+        lock.unlock();
         delete obj;
         obj = nullptr;
     }
