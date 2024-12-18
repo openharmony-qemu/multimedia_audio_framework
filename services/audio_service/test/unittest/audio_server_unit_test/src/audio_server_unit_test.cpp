@@ -619,5 +619,151 @@ HWTEST_F(AudioServerUnitTest, AudioServerRestoreSession_001, TestSize.Level1)
 
     audioServer->RestoreSession(-1, false);
 }
+
+/**
+ * @tc.name  : Test SetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetAudioEffectProperty_001
+ * @tc.desc  : Test SetAudioEffectProperty interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+        .name = "testName1",
+        .category = "testCategory1",
+    };
+
+    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+        .name = "testName2",
+        .category = "testCategory2",
+    };
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+
+    int32_t ret = audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetAudioEffectProperty_002
+ * @tc.desc  : Test SetAudioEnhanceChainProperty interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+        .name = "testName1",
+        .category = "testCategory1",
+    };
+
+    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+        .name = "testName2",
+        .category = "testCategory2",
+    };
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+
+    int32_t ret = audioServer->SetAudioEnhanceChainProperty(audioEffectPropertyArrayV3, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetAudioEffectProperty_003
+ * @tc.desc  : Test SetAudioEffectChainProperty interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+        .name = "testName1",
+        .category = "testCategory1",
+    };
+
+    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+        .name = "testName2",
+        .category = "testCategory2",
+    };
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+
+    int32_t ret = audioServer->SetAudioEffectChainProperty(audioEffectPropertyArrayV3);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetAudioEffectProperty_001
+ * @tc.desc  : Test GetAudioEffectProperty interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+
+    int32_t ret = audioServer->GetAudioEffectProperty(audioEffectPropertyArrayV3);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetAudioEffectProperty_002
+ * @tc.desc  : Test GetAudioEnhancePropertyArray interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+
+    int32_t ret = audioServer->GetAudioEnhancePropertyArray(audioEffectPropertyArrayV3, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetAudioEffectProperty_003
+ * @tc.desc  : Test GetAudioEffectPropertyArray interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+
+    int32_t ret = audioServer->GetAudioEffectPropertyArray(audioEffectPropertyArrayV3);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test LoadAudioEffectLibraries API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerLoadAudioEffectLibraries_001
+ * @tc.desc  : Test LoadAudioEffectLibraries interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerLoadAudioEffectLibraries_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<Library> libraries;
+    std::vector<Effect> effects;
+    std::vector<Effect> successEffectList;
+    int32_t ret = audioServer->LoadAudioEffectLibraries(libraries, effects, successEffectList);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
