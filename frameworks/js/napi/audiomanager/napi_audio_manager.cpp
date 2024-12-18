@@ -28,7 +28,9 @@
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "audio_utils.h"
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
+#endif
 #include "napi_audio_manager_callbacks.h"
 #include "napi_audio_ringermode_callback.h"
 #include "napi_audio_manager_interrupt_callback.h"
