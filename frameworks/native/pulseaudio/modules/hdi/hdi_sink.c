@@ -2834,6 +2834,9 @@ static void ResetFadeoutPause(pa_sink_input *i, pa_sink_input_state_t state)
 static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t state, struct Userdata *u)
 {
     if (state == PA_SINK_INPUT_RUNNING) {
+        if (u->primary.sinkAdapter == NULL) {
+            return;
+        }
         const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
