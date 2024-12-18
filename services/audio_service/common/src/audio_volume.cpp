@@ -461,7 +461,7 @@ void AudioVolume::SetStopFadeoutState(uint32_t streamIndex, uint32_t fadeoutStat
     stopFadeoutState_.insert_or_assign(streamIndex, fadeoutState);
 }
 
-uint32_t AudioVolume::GetStopFadeoutState(uint32_t streamIndex
+uint32_t AudioVolume::GetStopFadeoutState(uint32_t streamIndex)
 {
     std::shared_lock<std::shared_mutex> lock(fadoutMutex_);
     auto it = stopFadeoutState_.find(streamIndex);
