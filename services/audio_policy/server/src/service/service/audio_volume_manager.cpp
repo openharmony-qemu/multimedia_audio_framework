@@ -314,6 +314,8 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
         } else {
             AUDIO_ERR_LOG("AudioVolumeManager::SetSystemVolumeLevel set abs volume failed");
         }
+#else
+    (void)result;
 #endif
     }
     int32_t sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel);
@@ -396,7 +398,7 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
 
 int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel)
 {
-    int32_t sVolumeLevel = volumeLevel;
+    int32_t sVolumeLevel = 0;
     if (isBtFirstBoot_) {
         sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
         AUDIO_INFO_LOG("Btfirstboot set volume use safe volume");
@@ -542,8 +544,8 @@ int32_t AudioVolumeManager::CheckActiveMusicTime()
 {
     AUDIO_INFO_LOG("enter");
     int32_t safeVolume = audioPolicyManager_.GetSafeVolumeLevel();
-    bool activeMusic = false;
-    bool isUpSafeVolume = false;
+    bool activeMusic;
+    bool isUpSafeVolume;
     while (!safeVolumeExit_) {
         activeMusic = audioSceneManager_.IsStreamActive(STREAM_MUSIC);
         isUpSafeVolume = GetSystemVolumeLevel(STREAM_MUSIC) > safeVolume ? true : false;
