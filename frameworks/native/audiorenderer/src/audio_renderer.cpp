@@ -1578,8 +1578,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
             newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, info.params,
                 info.eStreamType, appInfo_.appPid);
             CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
-            initResult = SetSwitchInfo(info, newAudioStream);
-            CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
+            CHECK_AND_RETURN_RET_LOG(SetSwitchInfo(info, newAudioStream) == SUCCESS, false, "Init ipc strean failed");
         }
 
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
