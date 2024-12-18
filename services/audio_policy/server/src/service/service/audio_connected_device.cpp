@@ -292,16 +292,19 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
 
 DeviceType AudioConnectedDevice::FindConnectedHeadset()
 {
-    DeviceType retType = DEVICE_TYPE_NONE;
-    for (const auto& devDesc: connectedDevices_) {
-        if ((devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) ||
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
+        [](const sptr<AudioDeviceDescriptor> &devDesc) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
+        return ((devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_DP) ||
-            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET)) {
-            retType = devDesc->deviceType_;
-            break;
-        }
+            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET));
+    });
+
+    DeviceType retType = DEVICE_TYPE_NONE;
+    if (itr != connectedDevices_.end()) {
+        retType = (*itr)->deviceType_;
     }
     return retType;
 }
@@ -332,13 +335,11 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
 
 bool AudioConnectedDevice::IsArmDevice(const std::string& address, const DeviceRole role)
 {
-    for (auto& item : connectedDevices_) {
-        if (item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET &&
-            item->macAddress_ == address && item->deviceRole_ == role) {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(connectedDevices_.begin(), connectedDevices_.end(),
+        [](const auto& item) {
+            return (item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET &&
+                item->macAddress_ == address && item->deviceRole_ == role);
+        });
 }
 
 bool AudioConnectedDevice::HasArm(const DeviceRole role)

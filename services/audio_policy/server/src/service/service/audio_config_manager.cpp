@@ -61,13 +61,11 @@ void AudioConfigManager::OnAudioPolicyXmlParsingCompleted(
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
     adapterInfoMap_ = adapterInfoMap;
 
-    for (auto &adapterInfo : adapterInfoMap_) {
-        for (auto &deviceInfos : (adapterInfo.second).deviceInfos_) {
-            if (deviceInfos.type_ == EARPIECE_TYPE_NAME) {
-                hasEarpiece_ = true;
-                break;
-            }
-        }
+    for (const auto &adapterInfo : adapterInfoMap_) {
+        hasEarpiece_ = std::any_of((adapterInfo.second).deviceInfos_.begin(), (adapterInfo.second).deviceInfos_.end(),
+            [](const auto& deviceInfos) {
+                return deviceInfos.type_ == EARPIECE_TYPE_NAME;
+            });
         if (hasEarpiece_) {
             break;
         }
@@ -178,15 +176,17 @@ void AudioConfigManager::OnGlobalConfigsParsed(GlobalConfigs &globalConfigs)
 
 int32_t AudioConfigManager::GetMaxRendererInstances()
 {
-    for (auto &configInfo : globalConfigs_.outputConfigInfos_) {
-        if (configInfo.name_ == "normal" && configInfo.value_ != "") {
-            AUDIO_INFO_LOG("Max output normal instance is %{public}s", configInfo.value_.c_str());
-            int32_t convertValue = 0;
-            CHECK_AND_RETURN_RET_LOG(StringConverter(configInfo.value_, convertValue),
-                DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
-                "convert invalid configInfo.value_: %{public}s", configInfo.value_.c_str());
-            return convertValue;
-        }
+    auto configIter = std::find_if(globalConfigs_.outputConfigInfos_.begin(), globalConfigs_.outputConfigInfos_.end(),
+        [](const auto& configInfo) {
+            return configInfo.name_ == "normal" && configInfo.value_ != "";
+        });
+    if (configIter != globalConfigs_.outputConfigInfos_.end()) {
+        AUDIO_INFO_LOG("Max output normal instance is %{public}s", (*configIter)->value_.c_str());
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter((*configIter)->value_, convertValue),
+            DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
+            "convert invalid configInfo.value_: %{public}s", (*configIter)->value_.c_str());
+        return convertValue;
     }
     return DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES;
 }
