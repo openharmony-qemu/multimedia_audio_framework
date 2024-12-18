@@ -36,6 +36,7 @@ sptr<OfflineStreamInServer> OfflineStreamInServer::GetOfflineStream(int32_t &err
 }
 
 // static method
+#ifdef FEATURE_OFFLINE_EFFECT
 int32_t OfflineStreamInServer::GetOfflineAudioEffectChains(std::vector<std::string> &effectChains)
 {
     return OfflineAudioEffectServerChain::GetOfflineAudioEffectChains(effectChains);
@@ -80,6 +81,7 @@ void OfflineStreamInServer::ReleaseOfflineEffectChain()
     CHECK_AND_RETURN_LOG(effectChain_, "effectChain not init");
     effectChain_->Release();
 }
+#endif
 
 int32_t OfflineStreamInServer::AllocSharedMemory(uint32_t inSize, uint32_t outSize)
 {

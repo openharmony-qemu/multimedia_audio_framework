@@ -66,6 +66,7 @@ int32_t IpcOfflineStreamStub::OnRemoteRequest(uint32_t code, MessageParcel &data
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
 
+#ifdef FEATURE_OFFLINE_EFFECT
 int32_t IpcOfflineStreamStub::HandleCreateOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
 {
     std::string chainName = data.ReadString();
@@ -112,6 +113,31 @@ int32_t IpcOfflineStreamStub::HandleReleaseOfflineEffectChain(MessageParcel &dat
     ReleaseOfflineEffectChain();
     return SUCCESS;
 }
+#else
+int32_t IpcOfflineStreamStub::HandleCreateOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
+{
+    return ERR_NOT_SUPPORTED;
+}
 
+int32_t IpcOfflineStreamStub::HandleConfigureOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
+{
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t IpcOfflineStreamStub::HandlePrepareOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
+{
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t IpcOfflineStreamStub::HandleProcessOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
+{
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t IpcOfflineStreamStub::HandleReleaseOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
+{
+    return ERR_NOT_SUPPORTED;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

@@ -32,6 +32,7 @@ class IpcOfflineStream : public IRemoteBroker {
 public:
     virtual ~IpcOfflineStream() = default;
 
+#ifdef FEATURE_OFFLINE_EFFECT
     virtual int32_t CreateOfflineEffectChain(const std::string &chainName) = 0;
 
     virtual int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo) = 0;
@@ -42,6 +43,7 @@ public:
     virtual int32_t ProcessOfflineEffectChain(uint32_t inSize, uint32_t outSize) = 0;
 
     virtual void ReleaseOfflineEffectChain() = 0;
+#endif
 
     // IPC code.
     enum IpcOfflineStreamMsg : uint32_t {

@@ -239,6 +239,10 @@ ohos_shared_library("audio_client") {
     defines += [ "TEST_COVERAGE" ]
   }
 
+  if (audio_framework_feature_offline_effect) {
+    defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
   cflags = [ "-Os" ]
@@ -362,7 +366,6 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    "../../frameworks/native/offlineaudioeffect:offline_audio_effect",
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
@@ -398,6 +401,13 @@ audio_ohos_library("audio_process_service") {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
   }
+
+  if (audio_framework_feature_offline_effect) {
+    deps +=
+        [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
+    defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
@@ -448,8 +458,10 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
-  public_deps =
-      [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
+  if (audio_framework_feature_offline_effect) {
+    public_deps =
+        [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
+  }
 
   external_deps = [
     "ability_base:want",

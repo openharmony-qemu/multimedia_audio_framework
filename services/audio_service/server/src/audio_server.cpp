@@ -2089,7 +2089,10 @@ int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effec
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
+#ifdef FEATURE_OFFLINE_EFFECT
     return OfflineStreamInServer::GetOfflineAudioEffectChains(effectChains);
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS
