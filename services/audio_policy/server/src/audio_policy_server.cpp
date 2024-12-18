@@ -1057,6 +1057,28 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
     }
 }
 
+void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel)
+{
+    if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
+        audioPolicyService_.SetStreamMute(streamType, true);
+    } else if (volumeLevel > 0 && GetStreamMuteInternal(streamType)) {
+        audioPolicyService_.SetStreamMute(streamType, false);
+    }
+}
+
+void AudioPolicyServer::ProcUpdateRingerMode()
+{
+    int32_t curRingVolumeLevel = GetSystemVolumeLevelInternal(STREAM_RING);
+    AudioRingerMode ringerMode = (curRingVolumeLevel > 0) ? RINGER_MODE_NORMAL :
+        (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT);
+    if (!supportVibrator_) {
+        AUDIO_INFO_LOG("The device does not support vibration");
+    }
+    AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
+    / Update ringer mode but no need to update volume again.
+    SetRingerModeInternal(ringerMode, true);
+}
+
 int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
     bool updateRingerMode = false;
@@ -1077,22 +1099,8 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
     int32_t ret = audioPolicyService_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (ret == SUCCESS) {
-        // Update mute state according to volume level
-        if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
-            audioPolicyService_.SetStreamMute(streamType, true);
-        } else if (volumeLevel > 0 && GetStreamMuteInternal(streamType)) {
-            audioPolicyService_.SetStreamMute(streamType, false);
-        }
         if (updateRingerMode) {
-            int32_t curRingVolumeLevel = GetSystemVolumeLevelInternal(STREAM_RING);
-            AudioRingerMode ringerMode = (curRingVolumeLevel > 0) ? RINGER_MODE_NORMAL :
-                (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT);
-            if (!supportVibrator_) {
-                AUDIO_INFO_LOG("The device does not support vibration");
-            }
-            AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
-            // Update ringer mode but no need to update volume again.
-            SetRingerModeInternal(ringerMode, true);
+            ProcUpdateRingerMode();
         }
         SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
     } else if (ret == ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
