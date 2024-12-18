@@ -1103,6 +1103,24 @@ static size_t GetbqlAlinLength(struct playback_stream *ps)
     return bqlAlin;
 }
 
+static bool DoStopDrainFadeout(pa_sink_input *sinkIn, uint32_t streamIndex)
+{
+    playback_stream *ps = sinkIn->userdata;
+    CHECK_AND_RETURN_LOG(ps != NULL, "playback_stream is null");
+    if (ps->drain_request) {
+        uint32_t sinkStopFadeout = GetStopFadeoutState(streamIndex);
+        if (sinkStopFadeout == DO_FADE) {
+            const size_t bqlAlin = GetbqlAlinLength(ps);
+            if (bqlAlin > 0 && bqlAlin == infoIn->chunk.length) {
+                AUDIO_INFO_LOG("drain_request bqlalin:%{public}zu", bqlAlin);
+                RemoveStopFadeoutState(streamIndex);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_sink *si)
 {
     CHECK_AND_RETURN_LOG(sinkIn != NULL, "sinkIn is null");
@@ -1118,18 +1136,8 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
 
     uint32_t streamIndex = sinkIn->index;
     uint32_t sinkFadeoutPause = GetFadeoutState(streamIndex);
-    playback_stream *ps = sinkIn->userdata;
-    CHECK_AND_RETURN_LOG(ps != NULL, "playback_stream is null");
-    if (ps->drain_request) {
-        uint32_t sinkStopFadeout = GetStopFadeoutState(streamIndex);
-        if (sinkStopFadeout == DO_FADE) {
-            const size_t bqlAlin = GetbqlAlinLength(ps);
-            if (bqlAlin > 0 && bqlAlin <= infoIn->chunk.length) {
-                AUDIO_INFO_LOG("drain_request bqlalin:%{public}zu,",bqlAlin);
-                sinkFadeoutPause = DO_FADE;
-                RemoveStopFadeoutState(streamIndex);
-            }
-        }
+    if (DoStopDrainFadeout(sinkIn, streamIndex)) {
+        sinkFadeoutPause = DO_FADE;
     }
 
     if (sinkFadeoutPause == DONE_FADE && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
