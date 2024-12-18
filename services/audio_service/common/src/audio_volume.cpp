@@ -454,6 +454,29 @@ void AudioVolume::RemoveFadeoutState(uint32_t streamIndex)
     std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
     fadeoutState_.erase(streamIndex);
 }
+
+void AudioVolume::SetStopFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    stopFadeoutState_.insert_or_assign(streamIndex, fadeoutState);
+}
+
+uint32_t AudioVolume::GetStopFadeoutState(uint32_t streamIndex
+{
+    std::shared_lock<std::shared_mutex> lock(fadoutMutex_);
+    auto it = stopFadeoutState_.find(streamIndex);
+    if (it != stopFadeoutState_.end()) {
+        return it->second;
+    }
+    AUDIO_WARNING_LOG("No such streamIndex in map!");
+    return INVALID_STATE;
+}
+
+void AudioVolume::RemoveStopFadeoutState(uint32_t streamIndex)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    stopFadeoutState_.erase(streamIndex);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -516,6 +539,16 @@ void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
 uint32_t GetFadeoutState(uint32_t streamIndex)
 {
     return AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+}
+
+uint32_t GetStopFadeoutState(uint32_t streamIndex)
+{
+    return AudioVolume::GetInstance()->GetStopFadeoutState(streamIndex);
+}
+
+void RemoveStopFadeoutState(uint32_t streamIndex)
+{
+    AudioVolume::GetInstance()->RemoveStopFadeoutState(streamIndex);
 }
 #ifdef __cplusplus
 }

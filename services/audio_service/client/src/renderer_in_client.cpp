@@ -817,6 +817,14 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
         return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
     });
 
+    // clear cbBufferQueue
+    if (renderMode_ == RENDER_MODE_CALLBACK && stopFlag) {
+        cbBufferQueue_.Clear();
+        if (memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_) != EOK) {
+            AUDIO_ERR_LOG("memset_s buffer failed");
+        };
+    }
+
     if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
