@@ -1950,21 +1950,23 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t session
     }
 
     bool muteFlag = true;
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, true, "error for g_adProxy null");
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_RESUME:
             muteFlag = false;
-            [[fallthrough]];
+            policyServer_->UpdateDefaultOutputDeviceWhenStarting(sessionId);
+            break;
         case INTERRUPT_HINT_PAUSE:
         case INTERRUPT_HINT_STOP:
-            AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
-            gsp->SetNonInterruptMute(sessionId, muteFlag);
+            policyServer_->UpdateDefaultOutputDeviceWhenStopping(sessionId);
             break;
         default:
-            break;
+            return false;
     }
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, true, "error for g_adProxy null");
+    AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
+    gsp->SetNonInterruptMute(sessionId, muteFlag);
     IPCSkeleton::SetCallingIdentity(identity);
     return false;
 }
