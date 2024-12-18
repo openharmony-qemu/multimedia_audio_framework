@@ -28,7 +28,7 @@
 #include "audio_utils.h"
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
-#endi
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
