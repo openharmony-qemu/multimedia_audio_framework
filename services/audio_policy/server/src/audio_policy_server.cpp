@@ -3396,5 +3396,15 @@ int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
     AUDIO_INFO_LOG("Set VoiceRingtone is %{public}d", isMute);
     return audioPolicyService_.SetVoiceRingtoneMute(isMute);
 }
+
+void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
+{
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);
+}
+
+void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID)
+{
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS
