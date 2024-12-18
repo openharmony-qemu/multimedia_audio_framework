@@ -181,11 +181,11 @@ int32_t AudioConfigManager::GetMaxRendererInstances()
             return configInfo.name_ == "normal" && configInfo.value_ != "";
         });
     if (configIter != globalConfigs_.outputConfigInfos_.end()) {
-        AUDIO_INFO_LOG("Max output normal instance is %{public}s", (*configIter)->value_.c_str());
+        AUDIO_INFO_LOG("Max output normal instance is %{public}s", configIter->value_.c_str());
         int32_t convertValue = 0;
-        CHECK_AND_RETURN_RET_LOG(StringConverter((*configIter)->value_, convertValue),
+        CHECK_AND_RETURN_RET_LOG(StringConverter(configIter->value_, convertValue),
             DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
-            "convert invalid configInfo.value_: %{public}s", (*configIter)->value_.c_str());
+            "convert invalid configInfo.value_: %{public}s", configIter->value_.c_str());
         return convertValue;
     }
     return DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES;

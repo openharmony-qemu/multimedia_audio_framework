@@ -73,21 +73,27 @@ int32_t AudioRouteMap::AddFastRouteMapInfo(int32_t uid, std::string device, Devi
 void AudioRouteMap::RemoveDeviceInRouterMap(std::string networkId)
 {
     std::lock_guard<std::mutex> lock(routerMapMutex_);
-    routerMap_.erase(std::remove_if(routerMap_.begin(), routerMap_.end(),
-        [&networkId](const auto &router) {
-            return (*router)->second.first == networkId;
-        }),
-        routerMap_.end());
+    std::unordered_map<int32_t, std::pair<std::string, int32_t>>::iterator it;
+    for (it = routerMap_.begin();it != routerMap_.end();) {
+        if (it->second.first == networkId) {
+            it = routerMap_.erase(it);
+        } else {
+            it++;
+        }
+    }
 }
 
 void AudioRouteMap::RemoveDeviceInFastRouterMap(std::string networkId)
 {
     std::lock_guard<std::mutex> lock(fastRouterMapMutex_);
-    fastRouterMap_.erase(std::remove_if(fastRouterMap_.begin(), fastRouterMap_.end(),
-        [&networkId](const auto &router) {
-            return (*router)->second.first == networkId;
-        }),
-        fastRouterMap_.end());
+    std::unordered_map<int32_t, std::pair<std::string, DeviceRole>>::iterator it;
+    for (it = fastRouterMap_.begin();it != fastRouterMap_.end();) {
+        if (it->second.first == networkId) {
+            it = fastRouterMap_.erase(it);
+        } else {
+            it++;
+        }
+    }
 }
 
 void AudioRouteMap::GetNetworkIDInFastRouterMap(int32_t uid, DeviceRole role, std::string& newworkId)

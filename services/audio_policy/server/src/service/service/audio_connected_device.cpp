@@ -292,8 +292,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
 
 DeviceType AudioConnectedDevice::FindConnectedHeadset()
 {
-    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
-        [](const sptr<AudioDeviceDescriptor> &devDesc) {
+    const auto& itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
+        [](const std::shared_ptr<AudioDeviceDescriptor> &devDesc) {
         CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
         return ((devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
@@ -336,7 +336,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
 bool AudioConnectedDevice::IsArmDevice(const std::string& address, const DeviceRole role)
 {
     return std::any_of(connectedDevices_.begin(), connectedDevices_.end(),
-        [](const auto& item) {
+        [&address, &role](const auto& item) {
             return (item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET &&
                 item->macAddress_ == address && item->deviceRole_ == role);
         });
