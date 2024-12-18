@@ -1179,7 +1179,7 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         InitSwitchInfo(targetClass, info);
 
         // release old stream and restart audio stream
-        switchResult = audioStream_->ReleaseAudioStream();
+        switchResult = audioStream_->ReleaseAudioStream(true, true);
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, info.params,
