@@ -1499,7 +1499,6 @@ std::string AudioDump::GetVersionType()
 {
     return versionType_;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
 

@@ -37,10 +37,12 @@ enum SinkType : uint32_t {
 };
 
 std::map<SinkType, uint64_t> MAX_WRITE_INTERVAL {
-    {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},     //100ms
-    {SINKTYPE_DIRECT, 100 * AUDIO_MS_PER_NS},      //100ms
-    {SINKTYPE_MULTICHANNEL, 100 * AUDIO_MS_PER_NS},//100ms
-    {SINKTYPE_FAST, 8 * AUDIO_MS_PER_NS},          //8ms
+    {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},      //100ms
+    {SINKTYPE_DIRECT, 100 * AUDIO_MS_PER_NS},       //100ms
+    {SINKTYPE_MULTICHANNEL, 100 * AUDIO_MS_PER_NS}, //100ms
+    {SINKTYPE_REMOTE, 100 * AUDIO_MS_PER_NS},       //100ms
+    {SINKTYPE_BLUETOOTH, 100 * AUDIO_MS_PER_NS},    //100ms
+    {SINKTYPE_FAST, 8 * AUDIO_MS_PER_NS},           //8ms
 };
 
 // invalid --> silence frame in pulseaudio, not write data in one endpoint loop

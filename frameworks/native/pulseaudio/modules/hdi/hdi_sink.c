@@ -1303,7 +1303,6 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
                 RecordPaSlienceState(sessionID, true);
                 pa_sink_input_handle_ohos_underrun(sinkIn);
-
             } else {
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
                 RecordPaSlienceState(sessionID, false);
@@ -1425,7 +1424,6 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
                 PrepareMultiChannelFading(sinkIn, infoIn, si);
                 CheckMultiChannelFadeinIsDone(si, sinkIn);
             }
-
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
             pa_assert(infoIn->chunk.length > 0);
