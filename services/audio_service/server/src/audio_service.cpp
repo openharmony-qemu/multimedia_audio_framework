@@ -27,6 +27,7 @@
 #include "ipc_stream_in_server.h"
 #include "audio_capturer_source.h"
 #include "audio_volume.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -248,6 +249,11 @@ void AudioService::RemoveRenderer(uint32_t sessionId)
         return;
     }
     allRendererMap_.erase(sessionId);
+    if (!AudioPerformanceMonitor::GetInstance().jankDetectMap_.count(sessionId)) {
+        AUDIO_WARNING_LOG("sessionId %{public}d not in jankDetectMap!", sessionId);
+        return;
+    }
+    AudioPerformanceMonitor::GetInstance().jankDetectMap_.erase(sessionId);
     RemoveIdFromMuteControlSet(sessionId);
 }
 

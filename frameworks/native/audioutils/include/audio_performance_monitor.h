@@ -17,53 +17,64 @@
 
 #include <cstdint>
 #include <map>
+#include <queue>
 
 namespace OHOS {
 namespace AudioStandard {
 
-static const uint64_t AUDIO_MS_PER_NS = 1000000;
+const uint64_t AUDIO_MS_PER_NS = 1000000;
+const int32_t OVERTIME_EVENT = 0;
+const int32_t SILENCE_EVENT = 1;
 
 enum SinkType : uint32_t {
     SINKTYPE_PRIMARY = 0,
     SINKTYPE_DIRECT = 1,
     SINKTYPE_MULTICHANNEL = 2,
     SINKTYPE_FAST = 3,
-    MAX_SINK_TYPE = 4,
+    SINKTYPE_REMOTE = 4,
+    SINKTYPE_BLUETOOTH = 5,
+    MAX_SINK_TYPE = 6,
 };
 
-const std::map<SinkType, uint64_t> MAX_WRITE_INTERVAL {
+std::map<SinkType, uint64_t> MAX_WRITE_INTERVAL {
     {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},     //100ms
     {SINKTYPE_DIRECT, 100 * AUDIO_MS_PER_NS},      //100ms
     {SINKTYPE_MULTICHANNEL, 100 * AUDIO_MS_PER_NS},//100ms
     {SINKTYPE_FAST, 8 * AUDIO_MS_PER_NS},          //8ms
 };
 
-const uint32_t MIN_NOT_SILENCE_VALUE = 1;
-const uint32_t MAX_NOT_SILENCE_VALUE = 2;
-const uint32_t MIN_SILENCE_VALUE = 1;
-const uint32_t MAX_SILENCE_VALUE = 2;
+// invalid --> silence frame in pulseaudio, not write data in one endpoint loop
+const uint32_t MIN_INVALID_VALUE = 1;
+const uint32_t MAX_INVALID_VALUE = 2;
+const uint32_t MIN_VALID_VALUE = 1;
+const uint32_t MAX_VALID_VALUE = 2;
+const size_t MAX_RECORD_QUEUE_SIZE = 20;
 
-struct FrameRecord
+struct FrameRecordInfo
 {
-    uint64_t silenceCount = MAX_SILENCE_VALUE + 1;
-    uint64_t notSilenceCount = MAX_NOT_SILENCE_VALUE + 1;
+    uint64_t inValidStateCount = MAX_INVALID_VALUE + 1;
+    uint64_t validStateCount = MAX_VALID_VALUE + 1;
+    //only used in endpoint
+    int64_t lastWrittenTime = -1;
+    std::queue<bool> historyStateQueue{};
 };
 
 class AudioPerformanceMonitor {
 public:
     static AudioPerformanceMonitor& GetInstance();
 
-    void RecordSlienceState(uint32_t performMonitorIndex, bool isSilence);
-    void RecordLastWrittenTime(uint32_t streamId, int64_t lastWrittenTime);
+    void RecordSilenceState(uint32_t performMonitorIndex, bool isSilence);
+    void RecordLastWrittenTime(uint32_t sessionId, int64_t lastWrittenTime);
+
     void RecordTimeStamp(SinkType sinkType, uint64_t curTimeStamp);
     int32_t DeleteMonitorBySinkType(SinkType sinkType);
 
-    std::map<uint32_t, FrameRecord> laggyDetectMap_{}; //AudioPerformanceMonitorIndex, FrameRecord
+    std::map<uint32_t, FrameRecordInfo> jankDetectMap_{}; //AudioPerformanceMonitorIndex, FrameRecord
     std::map<SinkType, uint64_t> overTimeDetectMap_{}; //SinkType, lastWrittenTimeStamp
 
 private:
-    void JudgeIfNeedReportLaggyEvent(uint32_t index, bool curState);
-    void ReportEvent();
+    void JudgeNoise(uint32_t index, bool curState);
+    void ReportEvent(uint32_t sessionId, );
 };
 
 } // namespace AudioStandard

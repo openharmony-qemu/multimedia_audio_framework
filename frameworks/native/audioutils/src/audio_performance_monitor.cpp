@@ -18,6 +18,9 @@
 
 #include "audio_performance_monitor.h"
 #include "audio_performance_monitor_c.h"
+#include <memory>
+#include "audio_errors.h"
+#include "media_monitor_manager.h"
 #include "audio_log.h"
 
 namespace OHOS {
@@ -29,33 +32,45 @@ AudioPerformanceMonitor& AudioPerformanceMonitor::GetInstance()
     return mgr;
 }
 
-int32_t AudioPerformanceMonitor::DeleteSinkTypeDetect(SinkType sinkType)
+int32_t AudioPerformanceMonitor::DeleteOvertimeMonitor(SinkType sinkType)
 {
-    CHECK_AND_RETURN_RET_LOG(sinkType >= SINKTYPE_PRIMARY && sinkType < SinkType::MAX_SINK_TYPE, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(overTimeDetectMap_.find(sinkType) != overTimeDetectMap_.end(), ERR_INVALID_PARAM,
         "invalid sinkType: %{public}d", sinkType);
-    if (overTimeDetectMap_.find(sinkType) == overTimeDetectMap_.end()) {
-        AUDIO_WARNING_LOG("cursinkType %{public}d not find in detectMap!", sinkType);
-        return ERROR;
-    }
-
     overTimeDetectMap_.erase(sinkType);
     return SUCCESS;
 }
 
-void AudioPerformanceMonitor::RecordSlienceState(uint32_t performMonitorIndex, bool isSilence)
+int32_t AudioPerformanceMonitor::DeletejankMonitor(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_LOG(laggyDetectMap_.find(performMonitorIndex) != laggyDetectMap_.end(),
-        "performMonitorIndex %{public}d not find in detectMap!", performMonitorIndex);
-    JudgeIfNeedReportLaggyEvent(performMonitorIndex, isSilence);
+    CHECK_AND_RETURN_RET_LOG(jankDetectMap_.find(sessionId) != jankDetectMap_.end(), ERR_INVALID_INDEX,
+        "invalid sessionId: %{public}d", sessionId);
+    jankDetectMap_.erase(sessionId);
+    return SUCCESS;
 }
 
-void AudioPerformanceMonitor::RecordLastWrittenTime(uint32_t streamId, int64_t lastWrittenTime)
+void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence)
 {
-    static int64_t recordWrittenTime = 0;
-    CHECK_AND_RETURN_LOG(laggyDetectMap_.find(streamId) != laggyDetectMap_.end(),
-        "streamId %{public}d not find in detectMap!", streamId);
-    JudgeIfNeedReportLaggyEvent(streamId, recordWrittenTime == lastWrittenTime);
-    recordWrittenTime = lastWrittenTime;
+    if (jankDetectMap_.find(sessionId) == jankDetectMap_.end()) {
+        AUDIO_INFO_LOG("start record silence state of sessionId : %{public}d", sessionId);
+        jankDetectMap_[sessionId] = FrameRecordInfo();
+    }
+        jankDetectMap_[sessionId].historyStateQueue.push(isSilence);
+        if (jankDetectMap_[sessionId].historyStateQueue.size() > MAX_RECORD_QUEUE_SIZE) {
+            jankDetectMap_[sessionId].historyStateQueue.pop();
+        }
+    JudgeNoise(sessionId, isSilence);
+}
+
+void AudioPerformanceMonitor::RecordLastWrittenTime(uint32_t sessionId, int64_t lastWrittenTime)
+{
+    if (jankDetectMap_.find(sessionId) == jankDetectMap_.end()) {
+        AUDIO_INFO_LOG("start record last writtenTime of sessionId : %{public}d", sessionId);
+        jankDetectMap_[sessionId] = FrameRecordInfo();
+        jankDetectMap_[sessionId].lastWrittenTime = lastWrittenTime;
+        return;
+    }
+    JudgeNoise(sessionId, jankDetectMap_[sessionId].lastWrittenTime == lastWrittenTime);
+    jankDetectMap_[sessionId].lastWrittenTime = lastWrittenTime;
 }
 
 void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTimeStamp)
@@ -63,50 +78,45 @@ void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTim
     CHECK_AND_RETURN_LOG(sinkType >= SinkType::SINKTYPE_PRIMARY && sinkType < SinkType::MAX_SINK_TYPE,
         "invalid sinkType: %{public}d", sinkType);
     if (overTimeDetectMap_.find(sinkType) == overTimeDetectMap_.end()) {
-        AUDIO_INFO_LOG("AudioSinkType %{public}d write data first time!", sinkType);
+        AUDIO_INFO_LOG("AudioSinkType %{public}d write data first time", sinkType);
     } else {
         if (curTimeStamp - overTimeDetectMap_[sinkType] > MAX_WRITE_INTERVAL[sinkType]) {
             AUDIO_WARNING_LOG("SinkType %{public}d write time interval %{public}" PRIu64 " ns! overTime!",
                 sinkType, (curTimeStamp - overTimeDetectMap_[sinkType]));
-            ReportEvent();
+            ReportEvent(OVERTIME_EVENT);
         }
     }
     overTimeDetectMap_[sinkType] = curTimeStamp;
 }
 
 
-void AudioPerformanceMonitor::JudgeIfNeedReportLaggyEvent(uint32_t index, bool inValidState)
+void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isValidData)
 {
-    if (inValidState) {
-        if (MIN_NOT_SILENCE_VALUE <= laggyDetectMap_[index].notSilenceCount &&
-            laggyDetectMap_[index].notSilenceCount <= MAX_NOT_SILENCE_VALUE) {
-            //凸
-            ReportEvent();
+    if (isValidData) {
+        if (MIN_INVALID_VALUE <= jankDetectMap_[sessionId].silenceCount &&
+            jankDetectMap_[sessionId].silenceCount <= MAX_INVALID_VALUE) {
+            // valid --> invalid --> valid
+            ReportEvent(SILENCE_EVENT);
+            jankDetectMap_[sessionId] = FrameRecordInfo();
+            return;
         }
-        laggyDetectMap_[index].notSilenceCount = 0;
-        
-        if (laggyDetectMap_[index].silenceCount + 1 == UINT64_MAX) {
-            laggyDetectMap_[index].silenceCount = MAX_SILENCE_VALUE + 1;
-        } else {
-            laggyDetectMap_[index].silenceCount++;
-        }
+        jankDetectMap_[sessionId].inValidStateCount = 0;
+        jankDetectMap_[sessionId].validStateCount++;
     } else {
-        if (MIN_SILENCE_VALUE <= laggyDetectMap_[index].silenceCount &&
-            laggyDetectMap_[index].silenceCount <= MAX_SILENCE_VALUE) {
-            //凹
-            ReportEvent();
-        }
-        laggyDetectMap_[index].silenceCount = 0;
-
-        if (laggyDetectMap_[index].notSilenceCount + 1 == UINT64_MAX) {
-            laggyDetectMap_[index].notSilenceCount = MAX_NOT_SILENCE_VALUE + 1;
-        } else {
-            laggyDetectMap_[index].notSilenceCount++;
-        }
+        jankDetectMap_[sessionId].inValidStateCount++;
+        jankDetectMap_[sessionId].validStateCount = 0;
     }
 }
 
-void AudioPerformanceMonitor::ReportEvent() {}
+void AudioPerformanceMonitor::ReportEvent(int32_t reasonCode)
+{
+    AUDIO_INFO_LOG("start report");
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::JANK_PLAYBACK,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("REASON", reasonCode);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
 
 } // namespace AudioStandard
 } // namespace OHOS
@@ -117,30 +127,9 @@ extern "C" {
 
 using namespace OHOS::AudioStandard;
 
-static uint32_t monitorIndex = 0;
-const uint32_t MAX_MONITOR_INDEX = 1024;
-
-void CreatePerformanceMonitor(void *userdata)
+void RecordPaSilenceState(uint32_t sessionId, bool isSilence)
 {
-    std::map<uint32_t, FrameRecord> &recordMap = AudioPerformanceMonitor::GetInstance().laggyDetectMap_;
-    CHECK_AND_RETURN_LOG(recordMap.find(monitorIndex) == recordMap.end(),
-        "CreatePerformanceMonitor fail! monitorIndex already exist!");
-    recordMap[monitorIndex] = FrameRecord;
-    userdata->performMonitorIndex = monitorIndex++;
-    monitorIndex = monitorIndex % MAX_MONITOR_INDEX;
-}
-
-void DeletePerformanceMonitor(void *userdata)
-{
-    std::map<uint32_t, FrameRecord> &recordMap = AudioPerformanceMonitor::GetInstance().laggyDetectMap_;
-    CHECK_AND_RETURN_LOG(recordMap.find(userdata->performMonitorIndex) != recordMap.end(),
-        "DeletePerformanceMonitor fail! monitorIndex not in record map!");
-    recordMap.erase(userdata->performMonitorIndex);
-}
-
-void RecordPaSlienceState(void *userdata, bool isSilence)
-{
-    AudioPerformanceMonitor::GetInstance().RecordSlienceState(userdata->performMonitorIndex, isSilence);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence);
 }
 
 #ifdef __cplusplus

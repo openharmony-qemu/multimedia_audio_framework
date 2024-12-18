@@ -40,7 +40,9 @@
 #include "volume_tools.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
+#include "audio_utils.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -214,6 +216,7 @@ BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatenc
 BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
 {
     BluetoothRendererSinkInner::DeInit();
+    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_BLUETOOTH);
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
@@ -558,6 +561,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         Trace trace("audioRender_->RenderFrame");
         int64_t stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
+        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_BLUETOOTH, ClockTime::GetCurNano());
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
         if (logMode_ || stamp >= STAMP_THRESHOLD_MS) {
             AUDIO_PRERELEASE_LOGW("A2dp RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms " \

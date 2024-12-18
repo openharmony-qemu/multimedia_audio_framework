@@ -16,15 +16,12 @@
 #define AUDIO_PERFORMANCE_MONITOR_C_H
 
 #include <inttypes.h>
-#include <securec.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void CreatePerformanceMonitor(void *userdata);
-void DeletePerformanceMonitor(void *userdata);
-void RecordPaSlienceState(void *userdata, bool isSilence);
+void RecordPaSilenceState(uint32_t sessionId, bool isSilence);
 
 #ifdef __cplusplus
 }
