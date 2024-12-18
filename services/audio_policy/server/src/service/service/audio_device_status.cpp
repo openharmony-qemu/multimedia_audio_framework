@@ -551,41 +551,43 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_A2DP, moduleInfoList);
     CHECK_AND_RETURN_LOG(ret, "GetModuleListByType failed");
     for (auto &moduleInfo : moduleInfoList) {
-        if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
-            moduleInfo.channels = to_string(streamInfo.channels);
-            moduleInfo.rate = to_string(streamInfo.samplingRate);
-            moduleInfo.format = AudioPolicyUtils::GetInstance().ConvertToHDIAudioFormat(streamInfo.format);
-            moduleInfo.bufferSize = to_string(bufferSize);
-            moduleInfo.renderInIdleState = "1";
-            moduleInfo.sinkLatency = "0";
+        CHECK_AND_CONTINUE_LOG(audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name),
+            "Cannot find module %{public}s", moduleInfo.name.c_str());
+        moduleInfo.channels = to_string(streamInfo.channels);
+        moduleInfo.rate = to_string(streamInfo.samplingRate);
+        moduleInfo.format = AudioPolicyUtils::GetInstance().ConvertToHDIAudioFormat(streamInfo.format);
+        moduleInfo.bufferSize = to_string(bufferSize);
+        moduleInfo.renderInIdleState = "1";
+        moduleInfo.sinkLatency = "0";
 
-            // First unload the existing bt sink
-            AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
-            std::string currentActivePort
-                = AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType());
-            AudioIOHandle activateDeviceIOHandle;
-            audioIOHandleMap_.GetModuleIdByKey(BLUETOOTH_SPEAKER, activateDeviceIOHandle);
-            audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
-                AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
-            audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-            audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+        // First unload the existing bt sink
+        AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
+        std::string currentActivePort
+            = AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType());
+        AudioIOHandle activateDeviceIOHandle;
+        audioIOHandleMap_.GetModuleIdByKey(BLUETOOTH_SPEAKER, activateDeviceIOHandle);
+        audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
+            AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
+        audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+        audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
 
-            // Load bt sink module again with new configuration
-            AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
-            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-            if (ioHandle == OPEN_PORT_FAILURE) {
-                audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
-                AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
-                return;
-            }
-            audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
-            std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
-            audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
-            audioPolicyManager_.SuspendAudioDevice(portName, false);
+        // Load bt sink module again with new configuration
+        AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
+        AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+        if (ioHandle == OPEN_PORT_FAILURE) {
             audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
-            audioConnectedDevice_.UpdateConnectDevice(deviceType, macAddress, deviceName, streamInfo);
-            break;
+            AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
+            return;
         }
+        audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
+        std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
+        if (!audioSceneManager_.IsVoiceCallRelatedScene()) {
+            audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
+        }
+        audioPolicyManager_.SuspendAudioDevice(portName, false);
+        audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+        audioConnectedDevice_.UpdateConnectDevice(deviceType, macAddress, deviceName, streamInfo);
+        break;
     }
 }
 
