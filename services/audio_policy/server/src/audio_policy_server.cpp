@@ -1075,7 +1075,7 @@ void AudioPolicyServer::ProcUpdateRingerMode()
         AUDIO_INFO_LOG("The device does not support vibration");
     }
     AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
-    / Update ringer mode but no need to update volume again.
+    // Update ringer mode but no need to update volume again.
     SetRingerModeInternal(ringerMode, true);
 }
 
