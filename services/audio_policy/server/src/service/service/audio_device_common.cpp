@@ -403,8 +403,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         auto it = audioConnectedDevice_.GetConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
             updatedDesc.macAddress_, updatedDesc.deviceRole_);
         if (it == nullptr) {
-            flag = false;
-            continue;
+            break;
         }
         if (it->deviceType_ == DEVICE_TYPE_DP) { hasDpDevice_ = false; }
         if (audioStateManager_.GetPreferredMediaRenderDevice() != nullptr &&

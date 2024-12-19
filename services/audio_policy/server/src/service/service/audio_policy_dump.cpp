@@ -479,12 +479,13 @@ void AudioPolicyDump::XmlParsedDataMapDump(std::string &dumpString)
             AppendFormat(dumpString, " -DeviceClassInfo : format:%s, channels:%s, bufferSize:%s, fixedLatency:%s, "
                 " sinkLatency:%s, renderInIdleState:%s, OpenMicSpeaker:%s, fileName:%s, networkId:%s, "
                 "deviceType:%s, sceneName:%s, sourceType:%s, offloadEnable:%s\n",
-                deviceClassInfoIter.format.c_str(), deviceClassInfoIter.channels.c_str(), deviceClassInfoIter.bufferSize.c_str(),
+                deviceClassInfoIter.format.c_str(), deviceClassInfoIter.channels.c_str(),
+                deviceClassInfoIter.bufferSize.c_str(),
                 deviceClassInfoIter.fixedLatency.c_str(), deviceClassInfoIter.sinkLatency.c_str(),
                 deviceClassInfoIter.renderInIdleState.c_str(), deviceClassInfoIter.OpenMicSpeaker.c_str(),
-                deviceClassInfoIter.fileName.c_str(), deviceClassInfoIter.networkId.c_str(), deviceClassInfoIter.deviceType.c_str(),
-                deviceClassInfoIter.sceneName.c_str(), deviceClassInfoIter.sourceType.c_str(),
-                deviceClassInfoIter.offloadEnable.c_str());
+                deviceClassInfoIter.fileName.c_str(), deviceClassInfoIter.networkId.c_str(),
+                deviceClassInfoIter.deviceType.c_str(), deviceClassInfoIter.sceneName.c_str(),
+                deviceClassInfoIter.sourceType.c_str(), deviceClassInfoIter.offloadEnable.c_str());
         }
         AppendFormat(dumpString, "-----EndOfXmlParsedDataMap-----\n");
     }
