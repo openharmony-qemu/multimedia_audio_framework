@@ -110,6 +110,8 @@ public:
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
+
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
