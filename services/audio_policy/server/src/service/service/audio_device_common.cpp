@@ -152,7 +152,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         }
     } else {
         vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
-        for (auto &desc : descs) {
+        for (const auto &desc : descs) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
             deviceList.push_back(devDesc);
         }
@@ -192,7 +192,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         deviceList.push_back(devDesc);
     } else {
         vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteCaptureDevices();
-        for (auto &desc : descs) {
+        for (const auto &desc : descs) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
             deviceList.push_back(devDesc);
         }
@@ -403,7 +403,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         auto it = audioConnectedDevice_.GetConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
             updatedDesc.macAddress_, updatedDesc.deviceRole_);
         if (it == nullptr) {
-            break;
+            flag = false;
+            continue;
         }
         if (it->deviceType_ == DEVICE_TYPE_DP) { hasDpDevice_ = false; }
         if (audioStateManager_.GetPreferredMediaRenderDevice() != nullptr &&
