@@ -119,7 +119,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
     if (streamUsage == STREAM_USAGE_ULTRASONIC &&
-        AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningStreamUsage() == STREAM_USAGE_INVALID) {
+        AudioStreamCollector::GetAudioStreamCollector().GetRunningStreamUsageNoUltrasonic() == STREAM_USAGE_INVALID) {
         AUDIO_INFO_LOG("Stream ULTRASONIC always choose spk");
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
         return descs;
@@ -190,7 +190,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     RouterType routerType = ROUTER_TYPE_NONE;
     AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
     if (sourceType == SOURCE_TYPE_ULTRASONIC &&
-        AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningSourceType() == SOURCE_TYPE_INVALID) {
+        AudioStreamCollector::GetAudioStreamCollector().GetRunningSourceTypeNoUltrasonic() == SOURCE_TYPE_INVALID) {
         AUDIO_INFO_LOG("Source ULTRASONIC always choose mic");
         return AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     }
