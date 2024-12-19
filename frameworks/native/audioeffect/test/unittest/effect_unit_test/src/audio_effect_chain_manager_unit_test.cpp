@@ -2492,6 +2492,7 @@ HWTEST(AudioEffectChainManagerUnitTest, IsEffectChainStop_001, TestSize.Level1)
     std::shared_ptr<AudioEffectChain> audioEffectChain =
         AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
 
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
     string sessionID1 = "123456";
     AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
