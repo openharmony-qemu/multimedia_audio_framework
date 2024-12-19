@@ -317,7 +317,7 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
         capturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
         capturePublicDevices_);
-    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECONGNITION, "capture recon privacy device",
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECOGNITION, "capture recognition privacy device",
         reconCapturePrivacyDevices_);
 }
 
@@ -856,16 +856,6 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
     return audioDeviceDescriptors;
 }
 
-void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isConnnected)
-{
-    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
-    for (const auto &desc : connectedDevices_) {
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->macAddress_ == macAddress) {
-            desc->isScoRealConnected_ = isConnnected;
-        }
-    }
-}
-
 bool AudioDeviceManager::GetScoState()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
@@ -1065,7 +1055,7 @@ void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDe
 {
     RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
-    RemoveMatchDeviceInArray(devDesc, "capture recon privacy device", reconCapturePrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "capture recognition privacy device", reconCapturePrivacyDevices_);
 }
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
