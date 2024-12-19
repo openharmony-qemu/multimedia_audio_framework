@@ -211,7 +211,6 @@ private:
     uint64_t fullTokenId_ = 0;
     bool streamTrackerRegistered_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
-    float cacheVolume_ = 1.0f;
     bool silentModeAndMixWithOthers_ = false;
 
     std::mutex setPreferredFrameSizeMutex_;

@@ -47,6 +47,8 @@ public:
 
     virtual int32_t Release(bool isSwitchStream = false) = 0;
 
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
     virtual ~AudioProcess() = default;
 };
 
@@ -83,6 +85,7 @@ public:
         ON_RELEASE,
         ON_REGISTER_PROCESS_CB,
         ON_REGISTER_THREAD_PRIORITY,
+        ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS,
         PROCESS_MAX_MSG
     };
 

@@ -115,6 +115,8 @@ public:
     
     bool Init(const AudioProcessConfig &config);
 
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -1730,6 +1732,12 @@ void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &
             "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
         AUDIO_PRERELEASE_LOGW("wakeUpTime is too late...");
     }
+}
+
+int32_t AudioProcessInClientInner::SetSilentModeAndMixWithOthers(bool on)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
+    return processProxy_->SetSilentModeAndMixWithOthers(on);
 }
 } // namespace AudioStandard
 } // namespace OHOS

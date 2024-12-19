@@ -44,11 +44,13 @@ public:
 
     virtual BufferDesc &GetConvertedBuffer() = 0;
 
-    virtual bool GetMuteFlag() = 0;
+    virtual bool GetMuteState() = 0;
 
     virtual AudioProcessConfig GetAudioProcessConfig() = 0;
 
     virtual void WriteDumpFile(void *buffer, size_t bufferSize) = 0;
+
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 
     virtual ~IAudioProcessStream() = default;
 };

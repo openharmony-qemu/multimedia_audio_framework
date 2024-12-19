@@ -84,6 +84,8 @@ int AudioProcessStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return HandleRegisterProcessCb(data, reply);
         case ON_REGISTER_THREAD_PRIORITY:
             return HandleRegisterThreadPriority(data, reply);
+        case ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS:
+            return HandleSetSlientModeAndMixWithOther(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -172,6 +174,13 @@ int32_t AudioProcessStub::HandleRegisterThreadPriority(MessageParcel &data, Mess
     uint32_t tid = data.ReadUint32();
     std::string bundleName = data.ReadString();
     reply.WriteInt32(RegisterThreadPriority(tid, bundleName));
+    return AUDIO_OK;
+}
+
+int32_t AudioProcessStub::HandleSetSlientModeAndMixWithOther(MessageParcel &data, MessageParcel &reply)
+{
+    bool on = data.ReadBool();
+    reply.WriteInt32(SetSilentModeAndMixWithOthers(on));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

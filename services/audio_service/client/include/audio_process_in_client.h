@@ -108,6 +108,8 @@ public:
     virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
+
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
