@@ -115,6 +115,7 @@ public:
         ConnectState connectState);
     std::vector<SourceOutput> GetSourceOutputs();
     void BluetoothScoDisconectForRecongnition();
+    void SetFirstScreenOn(bool firstScreenOn);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -242,6 +243,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     bool isOpenRemoteDevice = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
+    bool isFirstScreenOn = false;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

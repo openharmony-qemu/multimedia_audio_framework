@@ -206,6 +206,8 @@ public:
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
 
+    void SetFirstScreenOn(bool firstScreenOn);
+
     int32_t ResumeStreamState();
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
