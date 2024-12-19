@@ -111,7 +111,7 @@ void AudioDeviceStatus::DeInit()
 void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role)
 {
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    AudioStreamDeviceChangeReasonExt reason;
     // fill device change action for callback
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
 
@@ -290,13 +290,12 @@ int32_t AudioDeviceStatus::RehandlePnpDevice(DeviceType deviceType, DeviceRole d
     // Maximum number of attempts, preventing situations where hal has not yet finished coming online.
     int32_t maxRetries = 3;
     int32_t retryCount = 0;
-    int32_t ret = ERROR;
     bool isConnected = true;
     while (retryCount < maxRetries) {
         retryCount++;
         AUDIO_INFO_LOG("rehandle device[%{public}d], retry count[%{public}d]", deviceType, retryCount);
 
-        ret = HandleSpecialDeviceType(deviceType, isConnected, address, deviceRole);
+        int32_t ret = HandleSpecialDeviceType(deviceType, isConnected, address, deviceRole);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Rehandle special device type failed");
         if (deviceType == DEVICE_TYPE_USB_HEADSET) {
             AUDIO_INFO_LOG("Hifi device, don't load module");
@@ -898,7 +897,7 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     std::vector<shared_ptr<AudioDeviceDescriptor>> bluetoothDevices =
         audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    for (auto &dec : bluetoothDevices) {
+    for (const auto &dec : bluetoothDevices) {
         if (dec->deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
             std::shared_ptr<AudioDeviceDescriptor> tempDec = std::make_shared<AudioDeviceDescriptor>(*dec);
             audioDeviceDescriptors.push_back(move(tempDec));
