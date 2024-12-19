@@ -28,7 +28,9 @@
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "audio_utils.h"
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
+#endif
 #include "napi_audio_manager_callbacks.h"
 #include "napi_audio_ringermode_callback.h"
 #include "napi_audio_manager_interrupt_callback.h"
@@ -340,7 +342,9 @@ napi_value NapiAudioManager::SetVolume(napi_env env, napi_callback_info info)
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
+#endif
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
