@@ -22,8 +22,8 @@ using namespace testing::ext;
 using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
-AudioChannelLayout mode = CH_LAYOUT_MONO;
-int32_t channels = 2;
+const AudioChannelLayout MODE = CH_LAYOUT_MONO;
+const int32_t CHANNELS = 2;
 class Test : public ::testing::Test {
 protected:
 void SetUp() override {}
@@ -60,7 +60,7 @@ HWTEST(AudioDownMixStereoTest, InitMixer_001, TestSize.Level0)
 {
     std::unique_ptr<AudioDownMixStereo> audioDownMixStereo = std::make_unique<AudioDownMixStereo>();
     audioDownMixStereo->mixer_ = nullptr;
-    int32_t ret = audioDownMixStereo->InitMixer(mode, channels);
+    int32_t ret = audioDownMixStereo->InitMixer(MODE, CHANNELS);
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
@@ -73,7 +73,7 @@ HWTEST(AudioDownMixStereoTest, InitMixer_001, TestSize.Level0)
 HWTEST(AudioDownMixStereoTest, InitMixer_002, TestSize.Level0)
 {
     std::unique_ptr<AudioDownMixStereo> audioDownMixStereo = std::make_unique<AudioDownMixStereo>();
-    int32_t ret = audioDownMixStereo->InitMixer(mode, channels);
+    int32_t ret = audioDownMixStereo->InitMixer(MODE, CHANNELS);
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
