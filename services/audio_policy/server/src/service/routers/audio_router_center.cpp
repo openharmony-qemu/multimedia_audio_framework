@@ -118,20 +118,18 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
+    if (streamUsage == STREAM_USAGE_ULTRASONIC &&
+        AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningStreamUsage() == STREAM_USAGE_INVALID) {
+        AUDIO_INFO_LOG("Stream ULTRASONIC always choose spk");
+        descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+        return descs;
+    }
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
         if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
             ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice())) {
-            auto isPresent = [] (const unique_ptr<RouterBase> &router) {
-                return router->name_ == "package_filter_router";
-            };
-            auto itr = find_if(mediaRenderRouters_.begin(), mediaRenderRouters_.end(), isPresent);
-            if (itr != mediaRenderRouters_.end()) {
-                desc = (*itr)->GetMediaRenderDevice(streamUsage, clientUID);
-                routerType = (*itr)->GetRouterType();
-            }
             if (desc->deviceType_ == DEVICE_TYPE_NONE) {
                 StreamUsage callStreamUsage =
                     AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
@@ -175,14 +173,6 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
     if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
         (audioScene == AUDIO_SCENE_VOICE_RINGING && isVoipStream)) {
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
-        auto isPresent = [] (const unique_ptr<RouterBase> &router) {
-            return router->name_ == "package_filter_router";
-        };
-        auto itr = find_if(mediaRenderRouters_.begin(), mediaRenderRouters_.end(), isPresent);
-        if (itr != mediaRenderRouters_.end()) {
-            desc = (*itr)->GetMediaRenderDevice(streamUsage, clientUID);
-            routerType = (*itr)->GetRouterType();
-        }
         if (desc->deviceType_ == DEVICE_TYPE_NONE) {
             AUDIO_INFO_LOG("Ring follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
                 callStreamUsage);
@@ -199,6 +189,11 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
     RouterType routerType = ROUTER_TYPE_NONE;
     AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+    if (sourceType == SOURCE_TYPE_ULTRASONIC &&
+        AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningSourceType() == SOURCE_TYPE_INVALID) {
+        AUDIO_INFO_LOG("Source ULTRASONIC always choose mic");
+        return AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
+    }
     if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
         if (audioScene != AUDIO_SCENE_DEFAULT) {
             desc = FetchCallCaptureDevice(sourceType, clientUID, routerType);

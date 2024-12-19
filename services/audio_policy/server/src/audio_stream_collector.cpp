@@ -1336,6 +1336,30 @@ bool AudioStreamCollector::IsCallStreamUsage(StreamUsage usage)
     return false;
 }
 
+StreamUsage AudioStreamCollector::GetLastestRunningStreamUsage()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->rendererState == RENDERER_RUNNING &&
+            changeInfo->rendererInfo.streamUsage != STREAM_USAGE_ULTRASONIC) {
+            return changeInfo->rendererInfo.streamUsage;
+        }
+    }
+    return STREAM_USAGE_INVALID;
+}
+
+SourceType AudioStreamCollector::GetLastestRunningSourceType()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioCapturerChangeInfos_) {
+        if (changeInfo->capturerState == CAPTURER_RUNNING &&
+            changeInfo->capturerInfo.sourceType != SOURCE_TYPE_ULTRASONIC) {
+            return changeInfo->capturerInfo.sourceType;
+        }
+    }
+    return SOURCE_TYPE_INVALID;
+}
+
 StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

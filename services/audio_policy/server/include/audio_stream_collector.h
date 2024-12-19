@@ -75,6 +75,8 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
+    StreamUsage GetLastestRunningStreamUsage();
+    SourceType GetLastestRunningSourceType();
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     int32_t ResumeStreamState();
