@@ -187,7 +187,7 @@ MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &
 MultiChannelRendererSinkInner::~MultiChannelRendererSinkInner()
 {
     AUDIO_INFO_LOG("~MultiChannelRendererSinkInner");
-    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_MULTICHANNEL);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_MULTICHANNEL);
 }
 
 MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(const std::string &halName)

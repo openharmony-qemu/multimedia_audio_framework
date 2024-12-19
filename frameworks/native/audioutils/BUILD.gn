@@ -37,7 +37,7 @@ ohos_shared_library("audio_utils") {
 
   sources = [
     "./src/audio_channel_blend.cpp",
-    "./src/audio_performance_monitor.cpp"
+    "./src/audio_performance_monitor.cpp",
     "./src/audio_speed.cpp",
     "./src/audio_utils.cpp",
     "./src/volume_ramp.cpp",
@@ -50,6 +50,8 @@ ohos_shared_library("audio_utils") {
     "access_token:libprivacy_sdk",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hitrace:hitrace_meter",

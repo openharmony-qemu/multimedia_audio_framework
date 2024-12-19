@@ -550,7 +550,7 @@ void AudioEndpointInner::Release()
         endpointWorkThread_.join();
         AUDIO_DEBUG_LOG("AudioEndpoint join work thread end");
     }
-    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_FAST);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_FAST);
 
     stopUpdateThread_.store(true);
     updateThreadCV_.notify_all();

@@ -186,7 +186,7 @@ FastAudioRendererSinkInner::~FastAudioRendererSinkInner()
 {
     AUDIO_INFO_LOG("In");
     FastAudioRendererSinkInner::DeInit();
-    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_DIRECT);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_DIRECT);
 }
 
 IMmapAudioRendererSink *FastAudioRendererSink::GetInstance()

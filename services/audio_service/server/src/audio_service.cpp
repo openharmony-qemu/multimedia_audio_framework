@@ -249,12 +249,8 @@ void AudioService::RemoveRenderer(uint32_t sessionId)
         return;
     }
     allRendererMap_.erase(sessionId);
-    if (!AudioPerformanceMonitor::GetInstance().jankDetectMap_.count(sessionId)) {
-        AUDIO_WARNING_LOG("sessionId %{public}d not in jankDetectMap!", sessionId);
-        return;
-    }
-    AudioPerformanceMonitor::GetInstance().jankDetectMap_.erase(sessionId);
     RemoveIdFromMuteControlSet(sessionId);
+    AudioPerformanceMonitor::GetInstance().DeletejankMonitor(sessionId);
 }
 
 void AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)

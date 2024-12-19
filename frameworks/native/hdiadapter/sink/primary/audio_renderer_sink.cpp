@@ -323,7 +323,7 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
         AUDIO_WARNING_LOG("runningLockManager is null, playback can not work well!");
     }
 #endif
-    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_PRIMARY);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_PRIMARY);
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)

@@ -373,6 +373,7 @@ void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
 bool AudioCacheMgrInner::GetDumpParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
+    AUDIO_INFO_LOG("received dump parameter: %{public}s", subKeys[0].c_str());
     // vector size check had done before call this function
     // audioCacheState 0:close, 1:open, 2:init
     if (subKeys[0] == GET_STATUS_KEY) {
@@ -403,6 +404,7 @@ bool AudioCacheMgrInner::SetDumpParameter(const std::vector<std::pair<std::strin
 {
     // vector size check had done before call this function
     // audioCacheState 0:close, 1:open, 2:init
+    AUDIO_INFO_LOG("received dump parameter: %{public}s", params[0].first.c_str());
     int32_t audioCacheState = 0;
     GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
     if (params[0].first == SET_OPEN_KEY) {

@@ -216,7 +216,7 @@ BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatenc
 BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
 {
     BluetoothRendererSinkInner::DeInit();
-    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_BLUETOOTH);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_BLUETOOTH);
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 

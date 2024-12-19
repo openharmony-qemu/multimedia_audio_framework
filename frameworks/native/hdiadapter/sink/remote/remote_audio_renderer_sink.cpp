@@ -187,7 +187,7 @@ RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
     if (rendererInited_.load()) {
         RemoteAudioRendererSinkInner::DeInit();
     }
-    AudioPerformanceMonitor::GetInstance().DeleteMonitorBySinkType(SINKTYPE_REMOTE);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_REMOTE);
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink destruction.");
 }
 

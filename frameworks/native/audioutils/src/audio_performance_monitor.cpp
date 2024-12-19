@@ -32,20 +32,18 @@ AudioPerformanceMonitor& AudioPerformanceMonitor::GetInstance()
     return mgr;
 }
 
-int32_t AudioPerformanceMonitor::DeleteOvertimeMonitor(SinkType sinkType)
+void AudioPerformanceMonitor::DeleteOvertimeMonitor(SinkType sinkType)
 {
-    CHECK_AND_RETURN_RET_LOG(overTimeDetectMap_.find(sinkType) != overTimeDetectMap_.end(), ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_LOG(overTimeDetectMap_.find(sinkType) != overTimeDetectMap_.end(),
         "invalid sinkType: %{public}d", sinkType);
     overTimeDetectMap_.erase(sinkType);
-    return SUCCESS;
 }
 
-int32_t AudioPerformanceMonitor::DeletejankMonitor(uint32_t sessionId)
+void AudioPerformanceMonitor::DeletejankMonitor(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(jankDetectMap_.find(sessionId) != jankDetectMap_.end(), ERR_INVALID_INDEX,
+    CHECK_AND_RETURN_LOG(jankDetectMap_.find(sessionId) != jankDetectMap_.end(),
         "invalid sessionId: %{public}d", sessionId);
     jankDetectMap_.erase(sessionId);
-    return SUCCESS;
 }
 
 void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence)
@@ -80,7 +78,7 @@ void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTim
     if (overTimeDetectMap_.find(sinkType) == overTimeDetectMap_.end()) {
         AUDIO_INFO_LOG("AudioSinkType %{public}d write data first time", sinkType);
     } else {
-        if (curTimeStamp - overTimeDetectMap_[sinkType] > MAX_WRITE_INTERVAL[sinkType]) {
+        if (curTimeStamp - overTimeDetectMap_[sinkType] > MAX_WRITTEN_INTERVAL[sinkType]) {
             AUDIO_WARNING_LOG("SinkType %{public}d write time interval %{public}" PRIu64 " ns! overTime!",
                 sinkType, (curTimeStamp - overTimeDetectMap_[sinkType]));
             ReportEvent(OVERTIME_EVENT);
@@ -93,8 +91,8 @@ void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTim
 void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isValidData)
 {
     if (isValidData) {
-        if (MIN_INVALID_VALUE <= jankDetectMap_[sessionId].silenceCount &&
-            jankDetectMap_[sessionId].silenceCount <= MAX_INVALID_VALUE) {
+        if (MIN_INVALID_VALUE <= jankDetectMap_[sessionId].inValidStateCount &&
+            jankDetectMap_[sessionId].inValidStateCount <= MAX_INVALID_VALUE) {
             // valid --> invalid --> valid
             ReportEvent(SILENCE_EVENT);
             jankDetectMap_[sessionId] = FrameRecordInfo();

@@ -36,15 +36,6 @@ enum SinkType : uint32_t {
     MAX_SINK_TYPE = 6,
 };
 
-std::map<SinkType, uint64_t> MAX_WRITE_INTERVAL {
-    {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},      //100ms
-    {SINKTYPE_DIRECT, 100 * AUDIO_MS_PER_NS},       //100ms
-    {SINKTYPE_MULTICHANNEL, 100 * AUDIO_MS_PER_NS}, //100ms
-    {SINKTYPE_REMOTE, 100 * AUDIO_MS_PER_NS},       //100ms
-    {SINKTYPE_BLUETOOTH, 100 * AUDIO_MS_PER_NS},    //100ms
-    {SINKTYPE_FAST, 8 * AUDIO_MS_PER_NS},           //8ms
-};
-
 // invalid --> silence frame in pulseaudio, not write data in one endpoint loop
 const uint32_t MIN_INVALID_VALUE = 1;
 const uint32_t MAX_INVALID_VALUE = 2;
@@ -67,16 +58,26 @@ public:
 
     void RecordSilenceState(uint32_t performMonitorIndex, bool isSilence);
     void RecordLastWrittenTime(uint32_t sessionId, int64_t lastWrittenTime);
+    void DeletejankMonitor(uint32_t sessionId);
 
     void RecordTimeStamp(SinkType sinkType, uint64_t curTimeStamp);
-    int32_t DeleteMonitorBySinkType(SinkType sinkType);
+    void DeleteOvertimeMonitor(SinkType sinkType);
 
-    std::map<uint32_t, FrameRecordInfo> jankDetectMap_{}; //AudioPerformanceMonitorIndex, FrameRecord
-    std::map<SinkType, uint64_t> overTimeDetectMap_{}; //SinkType, lastWrittenTimeStamp
+    std::map<uint32_t, FrameRecordInfo> jankDetectMap_{}; // AudioPerformanceMonitorIndex, FrameRecordInfo
+    std::map<SinkType, uint64_t> overTimeDetectMap_{}; // SinkType, lastWrittenTimeStamp
 
 private:
     void JudgeNoise(uint32_t index, bool curState);
-    void ReportEvent(uint32_t sessionId, );
+    void ReportEvent(int32_t reasonCode);
+
+    std::map<SinkType, uint64_t> MAX_WRITTEN_INTERVAL {
+        {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},      // 100ms
+        {SINKTYPE_DIRECT, 100 * AUDIO_MS_PER_NS},       // 100ms
+        {SINKTYPE_MULTICHANNEL, 100 * AUDIO_MS_PER_NS}, // 100ms
+        {SINKTYPE_REMOTE, 100 * AUDIO_MS_PER_NS},       // 100ms
+        {SINKTYPE_BLUETOOTH, 100 * AUDIO_MS_PER_NS},    // 100ms
+        {SINKTYPE_FAST, 8 * AUDIO_MS_PER_NS},           // 8ms
+    };
 };
 
 } // namespace AudioStandard
