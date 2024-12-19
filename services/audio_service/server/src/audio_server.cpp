@@ -232,6 +232,7 @@ void *AudioServer::paDaemonThread(void *arg)
     AUDIO_INFO_LOG("Calling ohos_pa_main\n");
     ohos_pa_main(PA_ARG_COUNT, argv);
     AUDIO_INFO_LOG("Exiting ohos_pa_main\n");
+    UnscheduleThreadInServer(getpid(), gettid());
     _exit(-1);
 }
 #endif
