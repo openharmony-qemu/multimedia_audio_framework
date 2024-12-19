@@ -226,6 +226,8 @@ void *AudioServer::paDaemonThread(void *arg)
     char *argv[] = {
         (char*)"pulseaudio",
     };
+    // set audio thread priority
+    ScheduleThreadInServer(getpid(), gettid());
     paDaemonTid_ = static_cast<uint32_t>(gettid());
     AUDIO_INFO_LOG("Calling ohos_pa_main\n");
     ohos_pa_main(PA_ARG_COUNT, argv);
