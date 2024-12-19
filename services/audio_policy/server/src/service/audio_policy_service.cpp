@@ -7866,7 +7866,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
 void AudioPolicyService::DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc)
 {
     if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE ||
-        desc.connectState_ == DEACTIVE_CONNECTED || !desc.isEnable_)) {
+        desc.connectState_ == DEACTIVE_CONNECTED || desc.connectState_ == SUSPEND_CONNECTED || !desc.isEnable_)) {
         BluetoothScoDisconectForRecongnition();
         Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
     }
