@@ -638,3 +638,31 @@ ohos_unittest("capturer_in_server_unit_test") {
     "samgr:samgr_proxy",
   ]
 }
+
+ohos_unittest("audio_dump_pcm_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../server/include",
+    "../../common/include",
+    "../../../../frameworks/native/audioschedule/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  sources = [ "audio_dump_pcm_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "pulseaudio:pulse",
+  ]
+}
