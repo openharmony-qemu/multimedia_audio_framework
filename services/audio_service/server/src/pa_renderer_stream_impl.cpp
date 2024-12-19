@@ -280,7 +280,7 @@ int32_t PaRendererStreamImpl::Flush()
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::Drain()
+int32_t PaRendererStreamImpl::Drain(bool stopFlag)
 {
     AUDIO_INFO_LOG("Enter");
     PaLockGuard lock(mainloop_);
@@ -296,6 +296,10 @@ int32_t PaRendererStreamImpl::Drain()
         return ERR_OPERATION_FAILED;
     }
     streamDrainStatus_ = 0;
+    if (stopFlag && !offloadEnable_) {
+        AudioVolume::GetInstance()->SetStopFadeoutState(sinkInputIndex_, DO_FADE);
+        isDoFadeOut = true;
+    }
     operation = pa_stream_drain(paStream_, PAStreamDrainSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
     return SUCCESS;
@@ -311,8 +315,8 @@ int32_t PaRendererStreamImpl::Stop()
         return ERR_ILLEGAL_STATE;
     }
 
-    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
-    if (!offloadEnable_) {
+    if (!isDoFadeOut && !offloadEnable_) {
+        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
         palock.Unlock();
         {
             std::unique_lock<std::mutex> lock(fadingMutex_);
@@ -321,6 +325,7 @@ int32_t PaRendererStreamImpl::Stop()
         }
         palock.Relock();
     }
+    isDoFadeOut = false;
 
     pa_operation *operation = pa_stream_cork(paStream_, 1, PaRendererStreamImpl::PAStreamAsyncStopSuccessCb,
         reinterpret_cast<void *>(this));
@@ -387,6 +392,8 @@ int32_t PaRendererStreamImpl::Release()
     }
 
     AudioVolume::GetInstance()->RemoveFadeoutState(sinkInputIndex_);
+    AudioVolume::GetInstance()->RemoveStopFadeoutState(sinkInputIndex_);
+    isDoFadeOut = false;
 
     PaLockGuard lock(mainloop_);
     if (paStream_) {
