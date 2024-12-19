@@ -632,7 +632,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
         }
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = audioActiveDevice_.UpdateDevice(descs.front(), reason, rendererChangeInfo);
-            needUpdateActiveDevice = (isUpdateActiveDevice)? false : true;
+            needUpdateActiveDevice = !isUpdateActiveDevice;
         }
         if (!hasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo, reason)) {
             hasDirectChangeDevice = true;
