@@ -1091,27 +1091,27 @@ static void DoFading(void *data, int32_t length, uint32_t format, uint32_t chann
     }
 }
 
-static size_t GetbqlAlinLength(struct playback_stream *ps)
+static size_t GetbqlAlinLength(struct playback_stream *ps, pa_sink_input *sinkIn)
 {
     const bool b = (bool)ps->sink_input->thread_info.resampler;
     const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
     const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
     const size_t bql = pa_memblockq_get_length(ps->memblockq);
     const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
-    const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
+    const size_t bqlRend = pa_memblockq_get_length(sinkIn->thread_info.render_memblockq);
     const size_t bqlAlin = pa_frame_align(bqlResamp + bqlRend, &sampleSpecOut);
     return bqlAlin;
 }
 
-static bool DoStopDrainFadeout(pa_sink_input *sinkIn, uint32_t streamIndex)
+static bool DoStopDrainFadeout(pa_sink_input *sinkIn, uint32_t streamIndex, int32_t length)
 {
     playback_stream *ps = sinkIn->userdata;
-    CHECK_AND_RETURN_LOG(ps != NULL, "playback_stream is null");
+    CHECK_AND_RETURN_RET_LOG(ps != NULL, false, "playback_stream is null");
     if (ps->drain_request) {
         uint32_t sinkStopFadeout = GetStopFadeoutState(streamIndex);
         if (sinkStopFadeout == DO_FADE) {
-            const size_t bqlAlin = GetbqlAlinLength(ps);
-            if (bqlAlin > 0 && bqlAlin == infoIn->chunk.length) {
+            const size_t bqlAlin = GetbqlAlinLength(ps, sinkIn);
+            if (bqlAlin > 0 && bqlAlin == length) {
                 AUDIO_INFO_LOG("drain_request bqlalin:%{public}zu", bqlAlin);
                 RemoveStopFadeoutState(streamIndex);
                 return true;
@@ -1136,7 +1136,7 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
 
     uint32_t streamIndex = sinkIn->index;
     uint32_t sinkFadeoutPause = GetFadeoutState(streamIndex);
-    if (DoStopDrainFadeout(sinkIn, streamIndex)) {
+    if (DoStopDrainFadeout(sinkIn, streamIndex, infoIn->chunk.length)) {
         sinkFadeoutPause = DO_FADE;
     }
 
@@ -2438,7 +2438,7 @@ static size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool 
         ps->memblockq) / 1.5, &sampleSpecIn), &sampleSpecOut), &sampleSpecOut); // 1.5 for half
     size_t sizeTgt = PA_MIN(sizeFrame, tlengthHalfResamp);
 
-    const size_t bqlAlin = GetbqlAlinLength(ps);
+    const size_t bqlAlin = GetbqlAlinLength(ps, i);
 
     if (ps->drain_request) {
         if (i->thread_info.render_memblockq->maxrewind != 0) {
