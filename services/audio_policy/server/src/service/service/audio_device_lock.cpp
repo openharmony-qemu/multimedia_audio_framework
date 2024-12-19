@@ -397,16 +397,13 @@ int32_t AudioDeviceLock::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRe
         audioConnectedDevice_.GetDevicesInner(OUTPUT_DEVICES_FLAG);
     DeviceType activeDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     DeviceRole activeDeviceRole = OUTPUT_DEVICE;
+    std::string activeDeviceMac = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
 
     const auto& itr = std::find_if(outputDevices.begin(), outputDevices.end(),
-        [](const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        [&activeDeviceType, &activeDeviceRole, &activeDeviceMac](const std::shared_ptr<AudioDeviceDescriptor> &desc) {
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
-            if (activeDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
-                desc->macAddress_ != audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
-                // This A2DP device is not the active A2DP device. Skip it.
-                continue;
-            }
-            return true;
+            // This A2DP device is not the active A2DP device. Skip it.
+            return activeDeviceType != DEVICE_TYPE_BLUETOOTH_A2DP || desc->macAddress_ == activeDeviceMac;
         }
         return false;
     });
