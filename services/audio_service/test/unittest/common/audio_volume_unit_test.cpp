@@ -219,11 +219,10 @@ HWTEST_F(AudioVolumeUnitTest, GetStreamVolumeFade_001, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, SetFadeoutState_001, TestSize.Level1)
 {
     uint32_t streamIndex = 1;
-    uint32_t fadeoutState = 1;
+    uint32_t fadeoutState = DO_FADE;
     AudioVolume::GetInstance()->SetFadeoutState(streamIndex, fadeoutState);
     uint32_t getFadeoutState = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
     EXPECT_EQ(getFadeoutState, fadeoutState);
 }
-
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
