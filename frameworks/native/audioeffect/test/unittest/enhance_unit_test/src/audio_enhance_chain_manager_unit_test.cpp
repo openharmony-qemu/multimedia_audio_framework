@@ -124,6 +124,25 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_003, T
 }
 
 /*
+ * tc.name   : Test CreateAudioEnhanceChainDynamic API
+ * tc.number : CreateAudioEnhanceChainDynamic_004
+ * tc.desc   : Test CreateAudioEnhanceChainDynamic interface(using correct input case).
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_004, TestSize.Level1)
+{
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validKeyCode, audioEnhanceChain);
+    manager_->sceneTypeToEnhanceChainCountMap_.insert_or_assign(validKeyCode, 1);
+    int32_t result = manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    EXPECT_EQ(result, ERROR);
+}
+
+/*
  * tc.name   : Test ReleaseAudioEnhanceChainDynamic API
  * tc.number : ReleaseAudioEnhanceChainDynamic_001
  * tc.desc   : Test ReleaseAudioEnhanceChainDynamic interface when has not been initialized.
@@ -298,6 +317,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, AudioEnhanceChainGetAlgoConfig_002, T
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, IsEmptyEnhanceChain_001, TestSize.Level1)
 {
+    manager_->isInitialized_ = true;
     bool result = manager_->IsEmptyEnhanceChain();
     EXPECT_EQ(result, true);
 }
@@ -314,6 +334,49 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, IsEmptyEnhanceChain_002, TestSize.Lev
     manager_->IsEmptyEnhanceChain();
 }
 
+/*
+ * tc.name   : Test IsEmptyEnhanceChain API
+ * tc.number : IsEmptyEnhanceChain_003
+ * tc.desc   : Ensures the function returns false when there is at least one audio enhance chain.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, IsEmptyEnhanceChain_003, TestSize.Level1)
+{
+    manager_->isInitialized_ = false;
+    bool result = manager_->IsEmptyEnhanceChain();
+    EXPECT_EQ(result, true);
+}
+
+/*
+ * tc.name   : Test IsEmptyEnhanceChain API
+ * tc.number : IsEmptyEnhanceChain_004
+ * tc.desc   : Ensures the function returns false when there is at least one audio enhance chain.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, IsEmptyEnhanceChain_005, TestSize.Level1)
+{
+    manager_->isInitialized_ = true;
+    manager_->sceneTypeAndModeToEnhanceChainNameMap_.clear();
+    bool result = manager_->IsEmptyEnhanceChain();
+    EXPECT_EQ(result, true);
+}
+
+/*
+ * tc.name   : Test IsEmptyEnhanceChain API
+ * tc.number : IsEmptyEnhanceChain_004
+ * tc.desc   : Ensures the function returns false when there is at least one audio enhance chain.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, IsEmptyEnhanceChain_006, TestSize.Level1)
+{
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    manager_->isInitialized_ = true;
+    manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validKeyCode, audioEnhanceChain);
+    bool result = manager_->IsEmptyEnhanceChain();
+    EXPECT_EQ(result, true);
+}
 
 /*
  * tc.name   : Test InitEnhanceBuffer API

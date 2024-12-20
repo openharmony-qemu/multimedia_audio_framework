@@ -18,6 +18,8 @@
 #include "audio_errors.h"
 #include "pro_renderer_stream_impl_unit_test.h"
 #include "pro_renderer_stream_impl.h"
+#include "renderer_in_server.h"
+#include "ipc_stream_in_server.h"
 
 using namespace testing::ext;
 
@@ -81,9 +83,9 @@ HWTEST(ProRendererStreamImplUnitTest, GetDirectSampleRate_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test OnAddSystemAbility API
+ * @tc.name  : Test Start API
  * @tc.type  : FUNC
- * @tc.number: AudioServerOnAddSystemAbility_001
+ * @tc.number:Start_001
  */
 HWTEST(ProRendererStreamImplUnitTest, Start_001, TestSize.Level1)
 {
@@ -97,9 +99,28 @@ HWTEST(ProRendererStreamImplUnitTest, Start_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test Start API
+ * @tc.type  : FUNC
+ * @tc.number: Start_002
+ */
+HWTEST(ProRendererStreamImplUnitTest, Start_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->status_ = I_STATUS_PAUSED;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterStatusCallback(rendererInServer);
+    int32_t ret = rendererStreamImpl->Start();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test Pause API
  * @tc.type  : FUNC
- * @tc.number: Pause
+ * @tc.number: Pause_001
  */
 HWTEST(ProRendererStreamImplUnitTest, Pause_001, TestSize.Level1)
 {
@@ -109,6 +130,26 @@ HWTEST(ProRendererStreamImplUnitTest, Pause_001, TestSize.Level1)
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     rendererStreamImpl->status_ = I_STATUS_PAUSED;
     rendererStreamImpl->isFirstFrame_ = false;
+    int32_t ret = rendererStreamImpl->Pause();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Pause API
+ * @tc.type  : FUNC
+ * @tc.number: Pause_002
+ */
+HWTEST(ProRendererStreamImplUnitTest, Pause_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->status_ = I_STATUS_STARTED;
+    rendererStreamImpl->isFirstFrame_ = true;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterStatusCallback(rendererInServer);
     int32_t ret = rendererStreamImpl->Pause();
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -131,6 +172,26 @@ HWTEST(ProRendererStreamImplUnitTest, Flush_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test Flush API
+ * @tc.type  : FUNC
+ * @tc.number: Flush
+ */
+HWTEST(ProRendererStreamImplUnitTest, Flush_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->readQueue_.push(1);
+    rendererStreamImpl->isDrain_ = true;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterStatusCallback(rendererInServer);
+    int32_t ret = rendererStreamImpl->Flush();
+    EXPECT_EQ(ret, SUCCESS);
+}
+ 
+/**
  * @tc.name  : Test Drain API
  * @tc.type  : FUNC
  * @tc.number: Drain
@@ -143,6 +204,84 @@ HWTEST(ProRendererStreamImplUnitTest, Drain_001, TestSize.Level1)
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     rendererStreamImpl->readQueue_.push(1);
     int32_t ret = rendererStreamImpl->Drain();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Drain API
+ * @tc.type  : FUNC
+ * @tc.number: Drain
+ */
+HWTEST(ProRendererStreamImplUnitTest, Drain_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterStatusCallback(rendererInServer);
+    rendererStreamImpl->readQueue_.push(1);
+    int32_t ret = rendererStreamImpl->Drain();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Drain API
+ * @tc.type  : FUNC
+ * @tc.number: Stop
+ */
+HWTEST(ProRendererStreamImplUnitTest, Stop_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->isFirstFrame_ = false;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterStatusCallback(rendererInServer);
+
+    int32_t ret = rendererStreamImpl->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Drain API
+ * @tc.type  : FUNC
+ * @tc.number: Stop
+ */
+HWTEST(ProRendererStreamImplUnitTest, Stop_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->isFirstFrame_ = true;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterStatusCallback(rendererInServer);
+
+    int32_t ret = rendererStreamImpl->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Drain API
+ * @tc.type  : FUNC
+ * @tc.number: Release
+ */
+HWTEST(ProRendererStreamImplUnitTest, Release_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterStatusCallback(rendererInServer);
+
+    int32_t ret = rendererStreamImpl->Release();
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -189,8 +328,8 @@ HWTEST(ProRendererStreamImplUnitTest, DequeueBuffer_001, TestSize.Level1)
 
     rendererStreamImpl->status_ = I_STATUS_IDLE;
     size_t length = 10;
-    rendererStreamImpl->DequeueBuffer(length);
-    EXPECT_EQ(rendererStreamImpl != nullptr, true);
++   BufferDesc bufferDesc = rendererStreamImpl->DequeueBuffer(length);
++   EXPECT_EQ(bufferDesc.buffer, nullptr);
 }
 
 /**
@@ -205,9 +344,12 @@ HWTEST(ProRendererStreamImplUnitTest, DequeueBuffer_002, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
 
+    std::vector<char> buffer(10, 'a');
+    rendererStreamImpl->sinkBuffer_.push_back(buffer);
+    rendererStreamImpl->status_ = I_STATUS_STARTED;
     size_t length = 10;
-    rendererStreamImpl->DequeueBuffer(length);
-    EXPECT_EQ(rendererStreamImpl != nullptr, true);
+    BufferDesc bufferDesc = rendererStreamImpl->DequeueBuffer(length);
+    EXPECT_NE(bufferDesc.buffer, nullptr);
 }
 
 /**
@@ -619,6 +761,144 @@ HWTEST(ProRendererStreamImplUnitTest, UpdateSpatializationState_001, TestSize.Le
     rendererStreamImpl->InitParams();
     int32_t result = rendererStreamImpl->UpdateSpatializationState(true, true);
     ASSERT_EQ(result, SUCCESS);
+}
+
+/**
+ *@tc.name  : Test BlockStream API
+ *@tc.type  : FUNC
+ *@tc.number: BlockStream
+*/
+HWTEST(ProRendererStreamImplUnitTest, BlockStream_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->BlockStream();
+    ASSERT_EQ(rendererStreamImpl->isBlock_, true);
+}
+
+/**
+ *@tc.name  : Test PeekAPI
+ *@tc.type  : FUNC
+ *@tc.number: Peek
+*/
+HWTEST(ProRendererStreamImplUnitTest, Peek_001, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    std::vector<char> audioBuffer;
+    int32_t index = 0;
+
+    rendererStreamImpl->isBlock_ = false;
+    EXPECT_EQ(rendererStreamImpl->Peek(&audioBuffer, index), ERR_WRITE_BUFFER);
+}
+
+/**
+ *@tc.name  : Test GetByteSizePerFrame API
+ *@tc.type  : FUNC
+ *@tc.number: GetByteSizePerFrame
+*/
+HWTEST(ProRendererStreamImplUnitTest, GetByteSizePerFrame_001, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+
+    rendererStreamImpl->byteSizePerFrame_= 10;
+    size_t byteSizePerFrame = 0;
+    rendererStreamImpl->GetByteSizePerFrame(byteSizePerFrame);
+    EXPECT_EQ(byteSizePerFrame, 10);
+}
+
+/**
+ *@tc.name  : Test GetSpanSizePerFrame API
+ *@tc.type  : FUNC
+ *@tc.number: GetSpanSizePerFrame
+*/
+HWTEST(ProRendererStreamImplUnitTest, GetSpanSizePerFrame_001, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+
+    rendererStreamImpl->spanSizeInFrame_= 10;
+    size_t spanSizeInFrame = 0;
+    rendererStreamImpl->GetSpanSizePerFrame(spanSizeInFrame);
+    EXPECT_EQ(spanSizeInFrame, 10);
+}
+
+/**
+ *@tc.name  : Test RegisterStatusCallback API
+ *@tc.type  : FUNC
+ *@tc.number: RegisterStatusCallback
+*/
+HWTEST(ProRendererStreamImplUnitTest, RegisterStatusCallback_001, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterStatusCallback(rendererInServer);
+    EXPECT_NE(rendererStreamImpl->statusCallback_.lock(), nullptr);
+    
+}
+/**
+ *@tc.name  : Test RegisterWriteCallback API
+ *@tc.type  : FUNC
+ *@tc.number: RegisterWriteCallback
+*/
+HWTEST(ProRendererStreamImplUnitTest, RegisterWriteCallback_001, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterWriteCallback(rendererInServer);
+    EXPECT_NE(rendererStreamImpl->writeCallback_.lock(), nullptr);
+}
+
+/**
+ *@tc.name  : Test AbortCallback API
+ *@tc.type  : FUNC
+ *@tc.number: AbortCallback
+*/
+HWTEST(ProRendererStreamImplUnitTest, AbortCallback_001, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+
+    rendererStreamImpl->abortFlag_ = 0;
+    rendererStreamImpl->AbortCallback(10);
+
+    EXPECT_EQ(rendererStreamImpl->abortFlag_, 10);
+}
+
+/**
+ *@tc.name  : Test GetWritableSize API
+ *@tc.type  : FUNC
+ *@tc.number: GetWritableSize
+*/
+HWTEST(ProRendererStreamImplUnitTest, GetWritableSize_001, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+
+    size_t writableSize = rendererStreamImpl->GetWritableSize();
+
+    EXPECT_EQ(writableSize, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
