@@ -1868,7 +1868,7 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     return result;
 }
 
-void AudioPolicyService::SetFirstScreenOn(bool isFirstScreenOn)
+void AudioDeviceCommon::SetFirstScreenOn(bool isFirstScreenOn)
 {
     isFirstScreenOn_ = isFirstScreenOn;
 }
