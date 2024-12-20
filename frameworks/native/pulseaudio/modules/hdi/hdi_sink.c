@@ -1934,7 +1934,10 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     unsampledChunk.length = inBufferLen;
     unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
     void *dst = pa_memblock_acquire(unsampledChunk.memblock);
-    pa_assert(dst);
+    if (dst == NULL) {
+        AUDIO_ERROR_LOG("ResampleAfterEffectChain: pa_memblock_acquire dst fail! skip resampler_run!");
+        return;
+    }
     int ret = memcpy_s(dst, inBufferLen, u->bufferAttr->bufOut, inBufferLen);
     if (ret != 0) {
         float *dstFloat = (float *)dst;
@@ -1945,7 +1948,10 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     pa_memblock_release(unsampledChunk.memblock);
     pa_resampler_run(resampler, &unsampledChunk, &sampledChunk);
     void *src = pa_memblock_acquire(sampledChunk.memblock);
-    pa_assert(src);
+    if (src == NULL) {
+        AUDIO_ERROR_LOG("ResampleAfterEffectChain: pa_memblock_acquire src fail! resampler_run fail!");
+        return;
+    }
     ret = memcpy_s(u->bufferAttr->bufOut, outBufferLen, src, outBufferLen);
     if (ret != 0) {
         float *srcFloat = (float *)src;
