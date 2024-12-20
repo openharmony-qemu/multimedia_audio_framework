@@ -335,8 +335,8 @@ HWTEST(ProRendererStreamImplUnitTest, DequeueBuffer_001, TestSize.Level1)
 
     rendererStreamImpl->status_ = I_STATUS_IDLE;
     size_t length = 10;
-+   BufferDesc bufferDesc = rendererStreamImpl->DequeueBuffer(length);
-+   EXPECT_EQ(bufferDesc.buffer, nullptr);
+    BufferDesc bufferDesc = rendererStreamImpl->DequeueBuffer(length);
+    EXPECT_EQ(bufferDesc.buffer, nullptr);
 }
 
 /**
