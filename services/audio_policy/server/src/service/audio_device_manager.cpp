@@ -1366,15 +1366,15 @@ void AudioDeviceManager::Dump(std::string &dumpString)
         AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
             AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
     }
-    AppendFormat(dumpString, "current default output device: %s\n",
-        AudioInfoDumpUtils::GetDeviceTypeName(selectedCallDefaultOutputDevice_).c_str());
+    AppendFormat(dumpString, "current media default output device: %s\n",
+        AudioInfoDumpUtils::GetDeviceTypeName(selectedMediaDefaultOutputDevice_).c_str());
 
     AppendFormat(dumpString, " CallDefaultOutputDevices:\n");
     for (auto it : callDefaultOutputDevices_) {
         AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
             AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
     }
-    AppendFormat(dumpString, "current default output device: %s\n",
+    AppendFormat(dumpString, "current call default output device: %s\n",
         AudioInfoDumpUtils::GetDeviceTypeName(selectedCallDefaultOutputDevice_).c_str());
 }
 // LCOV_EXCL_STOP
