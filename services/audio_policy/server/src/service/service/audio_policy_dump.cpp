@@ -106,7 +106,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyDump::GetDumpDevi
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs = GetDumpDevices(deviceFlag);
 
-    for (auto &desc : deviceDescs) {
+    for (const auto &desc : deviceDescs) {
         std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
         dumpString += "\n";
         AppendFormat(dumpString, "  - device name:%s\n",
@@ -462,29 +462,30 @@ void AudioPolicyDump::XmlParsedDataMapDump(std::string &dumpString)
 
     for (auto &[adapterType, deviceClassInfos] : deviceClassInfo) {
         AppendFormat(dumpString, " - DeviceClassInfo type %d\n", adapterType);
-        for (auto &deviceClassInfo : deviceClassInfos) {
+        for (const auto &deviceClassInfoIter : deviceClassInfos) {
             AppendFormat(dumpString, " - Data : className:%s, name:%s, adapter:%s, id:%s, lib:%s, role:%s, rate:%s\n",
-                deviceClassInfo.className.c_str(), deviceClassInfo.name.c_str(),
-                deviceClassInfo.adapterName.c_str(), deviceClassInfo.id.c_str(),
-                deviceClassInfo.lib.c_str(), deviceClassInfo.role.c_str(), deviceClassInfo.rate.c_str());
+                deviceClassInfoIter.className.c_str(), deviceClassInfoIter.name.c_str(),
+                deviceClassInfoIter.adapterName.c_str(), deviceClassInfoIter.id.c_str(),
+                deviceClassInfoIter.lib.c_str(), deviceClassInfoIter.role.c_str(), deviceClassInfoIter.rate.c_str());
 
-            for (auto rate : deviceClassInfo.supportedRate_) {
+            for (auto rate : deviceClassInfoIter.supportedRate_) {
                 AppendFormat(dumpString, "     - rate:%u\n", rate);
             }
 
-            for (auto supportedChannel : deviceClassInfo.supportedChannels_) {
+            for (auto supportedChannel : deviceClassInfoIter.supportedChannels_) {
                 AppendFormat(dumpString, "     - supportedChannel:%u\n", supportedChannel);
             }
 
             AppendFormat(dumpString, " -DeviceClassInfo : format:%s, channels:%s, bufferSize:%s, fixedLatency:%s, "
                 " sinkLatency:%s, renderInIdleState:%s, OpenMicSpeaker:%s, fileName:%s, networkId:%s, "
                 "deviceType:%s, sceneName:%s, sourceType:%s, offloadEnable:%s\n",
-                deviceClassInfo.format.c_str(), deviceClassInfo.channels.c_str(), deviceClassInfo.bufferSize.c_str(),
-                deviceClassInfo.fixedLatency.c_str(), deviceClassInfo.sinkLatency.c_str(),
-                deviceClassInfo.renderInIdleState.c_str(), deviceClassInfo.OpenMicSpeaker.c_str(),
-                deviceClassInfo.fileName.c_str(), deviceClassInfo.networkId.c_str(), deviceClassInfo.deviceType.c_str(),
-                deviceClassInfo.sceneName.c_str(), deviceClassInfo.sourceType.c_str(),
-                deviceClassInfo.offloadEnable.c_str());
+                deviceClassInfoIter.format.c_str(), deviceClassInfoIter.channels.c_str(),
+                deviceClassInfoIter.bufferSize.c_str(),
+                deviceClassInfoIter.fixedLatency.c_str(), deviceClassInfoIter.sinkLatency.c_str(),
+                deviceClassInfoIter.renderInIdleState.c_str(), deviceClassInfoIter.OpenMicSpeaker.c_str(),
+                deviceClassInfoIter.fileName.c_str(), deviceClassInfoIter.networkId.c_str(),
+                deviceClassInfoIter.deviceType.c_str(), deviceClassInfoIter.sceneName.c_str(),
+                deviceClassInfoIter.sourceType.c_str(), deviceClassInfoIter.offloadEnable.c_str());
         }
         AppendFormat(dumpString, "-----EndOfXmlParsedDataMap-----\n");
     }
@@ -492,12 +493,11 @@ void AudioPolicyDump::XmlParsedDataMapDump(std::string &dumpString)
 
 static void StreamEffectSceneInfoDump(string &dumpString, const ProcessNew &processNew, const string processType)
 {
-    int32_t count;
     AppendFormat(dumpString, "- %zu %s supported :\n", processNew.stream.size(), processType.c_str());
 
     for (Stream x : processNew.stream) {
         AppendFormat(dumpString, "  %s stream scene = %s \n", processType.c_str(), x.scene.c_str());
-        count = 0;
+        int32_t count = 0;
         for (StreamEffectMode mode : x.streamEffectMode) {
             count++;
             AppendFormat(dumpString, "  - modeName%d = %s \n", count, mode.mode.c_str());

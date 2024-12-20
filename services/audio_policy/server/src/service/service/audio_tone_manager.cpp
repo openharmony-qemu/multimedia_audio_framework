@@ -39,6 +39,10 @@ bool AudioToneManager::LoadToneDtmfConfig()
 {
     AUDIO_INFO_LOG("Enter");
     std::unique_ptr<AudioToneParser> audioToneParser = std::make_unique<AudioToneParser>();
+    if (audioToneParser == nullptr) {
+        AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Tone Load Configuration failed");
+    }
+    CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
     if (audioToneParser->LoadConfig(toneDescriptorMap_)) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::LOAD_CONFIG_ERROR,
