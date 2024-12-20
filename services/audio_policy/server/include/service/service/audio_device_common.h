@@ -243,7 +243,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     bool isOpenRemoteDevice = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
-    bool isFirstScreenOn = false;
+    bool isFirstScreenOn_ = false;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;
