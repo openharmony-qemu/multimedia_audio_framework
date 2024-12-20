@@ -765,9 +765,9 @@ void AudioPolicyService::SetDataShareReady(std::atomic<bool> isDataShareReady)
     audioPolicyManager_.SetDataShareReady(std::atomic_load(&isDataShareReady));
 }
 
-void AudioPolicyService::SetFirstScreenOn(bool isFirstScreenOn)
+void AudioPolicyService::SetFirstScreenOn()
 {
-    audioDeviceCommon_.SetFirstScreenOn(isFirstScreenOn);
+    audioDeviceCommon_.SetFirstScreenOn();
 }
 
 void AudioPolicyService::RegisterNameMonitorHelper()

@@ -654,7 +654,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
     } else if (action == "usual.event.SCREEN_ON") {
         AUDIO_INFO_LOG("receive SCREEN_ON action, control audio focus if need");
-        audioPolicyService_.SetFirstScreenOn(true);
+        audioPolicyService_.SetFirstScreenOn();
         if (powerStateListener_ == nullptr) {
             AUDIO_ERR_LOG("powerStateListener_ is nullptr");
             return;
