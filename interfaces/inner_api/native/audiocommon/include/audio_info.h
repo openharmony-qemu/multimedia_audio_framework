@@ -147,7 +147,7 @@ public:
         parcel.WriteUint32(repeatCnt);
         parcel.WriteUint32(repeatSegment);
         CHECK_AND_RETURN_RET_LOG(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS+1,
-            lSupportedToneList, "Using tainted data  [segmentCnt：%{public}d] as loop bound", segmentCnt);
+            false, "Using tainted data  [segmentCnt：%{public}d] as loop bound", segmentCnt);
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Marshalling(parcel);
         }
@@ -158,8 +158,8 @@ public:
         segmentCnt = parcel.ReadUint32();
         repeatCnt = parcel.ReadUint32();
         repeatSegment = parcel.ReadUint32();
-        CHECK_AND_RETURN_RET_LOG(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS+1,
-            lSupportedToneList, "Using tainted data  [segmentCnt：%{public}d] as loop bound", segmentCnt);
+        CHECK_AND_RETURN_LOG(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS+1,
+            "Using tainted data  [segmentCnt：%{public}d] as loop bound", segmentCnt);
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Unmarshalling(parcel);
         }
