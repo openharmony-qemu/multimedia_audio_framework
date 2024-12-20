@@ -165,6 +165,71 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, ReleaseAudioEnhanceChainDynamic_003, 
 }
 
 /*
+ * tc.name   : Test ReleaseAudioEnhanceChainDynamic API
+ * tc.number : ReleaseAudioEnhanceChainDynamic_004
+ * tc.desc   : Test ReleaseAudioEnhanceChainDynamic interface after correctly creating two enhanceChain.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, ReleaseAudioEnhanceChainDynamic_004, TestSize.Level1)
+{
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    manager_->sceneTypeAndModeToEnhanceChainNameMap_.clear();
+    int32_t result = manager_->ReleaseAudioEnhanceChainDynamic(validKeyCode);
+    EXPECT_EQ(result, ERROR);
+}
+
+/*
+ * tc.name   : Test ReleaseAudioEnhanceChainDynamic API
+ * tc.number : ReleaseAudioEnhanceChainDynamic_005
+ * tc.desc   : Test ReleaseAudioEnhanceChainDynamic interface after correctly creating two enhanceChain.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, ReleaseAudioEnhanceChainDynamic_005, TestSize.Level1)
+{
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    manager_->sceneTypeToEnhanceChainCountMap_= {{VALID_SCENEKEY_CODE, 2}};
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validKeyCode, audioEnhanceChain);
+    int32_t result = manager_->ReleaseAudioEnhanceChainDynamic(validKeyCode);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test ReleaseAudioEnhanceChainDynamic API
+ * tc.number : ReleaseAudioEnhanceChainDynamic_006
+ * tc.desc   : Test ReleaseAudioEnhanceChainDynamic interface after correctly creating two enhanceChain.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, ReleaseAudioEnhanceChainDynamic_006, TestSize.Level1)
+{
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    manager_->sceneTypeToEnhanceChainCountMap_= {{VALID_SCENEKEY_CODE, 1}};
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validKeyCode, audioEnhanceChain);
+    int32_t result = manager_->ReleaseAudioEnhanceChainDynamic(validKeyCode);
+    EXPECT_EQ(result, SUCCESS);
+}
+/*
+ * tc.name   : Test ReleaseAudioEnhanceChainDynamic API
+ * tc.number : ReleaseAudioEnhanceChainDynamic_007
+ * tc.desc   : Test ReleaseAudioEnhanceChainDynamic interface after correctly creating two enhanceChain.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, ReleaseAudioEnhanceChainDynamic_007, TestSize.Level1)
+{
+    uint32_t validKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    manager_->sceneTypeAndModeToEnhanceChainNameMap_.clear();
+    int32_t result = manager_->ReleaseAudioEnhanceChainDynamic(validKeyCode);
+    EXPECT_EQ(result, ERROR);
+}
+
+/*
  * tc.name   : Test ExistAudioEnhanceChain API
  * tc.number : ExistAudioEnhanceChain_001
  * tc.desc   : Test ExistAudioEnhanceChain interface with a nonexistent ehanceChain.
@@ -602,6 +667,26 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetStreamVolumeInfo_001, TestSize.Lev
 }
 
 /*
+ * tc.name   : Test SetStreamVolumeInfo API
+ * tc.number : SetStreamVolumeInfo_002
+ * tc.desc   : Ensures the function correctly sets the stream volume for a valid session.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetStreamVolumeInfo_002, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    float streamVolume = 0.5f;
+     uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validSceneKeyCode, audioEnhanceChain);
+    manager_->sceneTypeAndModeToEnhanceChainNameMap_.insert_or_assign("test", "test");
+    int32_t result = manager_->SetStreamVolumeInfo(sessionId, streamVolume);
+    EXPECT_EQ(result, SUCCESS);
+}
+/*
  * tc.name   : Test SetAudioEnhanceProperty API
  * tc.number : SetAudioEnhanceProperty_001
  * tc.desc   : Ensures the function handles an empty property array correctly.
@@ -804,6 +889,34 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyAudioEnhanceChainDefault_001, Te
 }
 
 /*
+ * tc.name   : Test ApplyAudioEnhanceChainDefault API
+ * tc.number : ApplyAudioEnhanceChainDefault_002
+ * tc.desc   : Tests retrieving a property list when properties are set.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyAudioEnhanceChainDefault_002, TestSize.Level1)
+{
+    AudioEnhancePropertyArray propertiesToSet;
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
+    manager_->InitEnhanceBuffer();
+    manager_->SetAudioEnhanceProperty(propertiesToSet);
+    manager_->enhanceBuffer_ = std::make_unique<EnhanceBuffer>();
+    manager_->enhanceBuffer_->micBufferIn.resize(1024);
+    manager_->enhanceBuffer_->micBufferOut.resize(1024);
+    manager_->enhanceBuffer_->ecBuffer.resize(1024);
+    manager_->enhanceBuffer_->micRefBuffer.resize(1024);
+    uint32_t captureId = 1;
+    uint32_t length = 1024;
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    manager_->captureId2DefaultChain_.insert_or_assign(captureId, audioEnhanceChain);
+    int32_t result = manager_->ApplyAudioEnhanceChainDefault(captureId, length);
+    EXPECT_EQ(result, ERROR);
+}
+/*
  * tc.name   : Test InitEnhanceBuffer API
  * tc.number : InitEnhanceBuffer_002
  * tc.desc   : Test InitEnhanceBuffer interface
@@ -837,6 +950,162 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SendInitCommand_001, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
 }
 
+/*
+ * tc.name   : Test DeleteEnhanceChainInner API
+ * tc.number : DeleteEnhanceChainInner_001
+ * tc.desc   : Test DeleteEnhanceChainInner interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, DeleteEnhanceChainInner_001 , TestSize.Level1)
+{
+    uint32_t invalidSceneKeyCode = VALID_SCENEKEY_CODE * 16;
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    int32_t result = manager_->DeleteEnhanceChainInner(audioEnhanceChain, invalidSceneKeyCode);
+    EXPECT_EQ(result, ERROR);
+}
 
+/*
+ * tc.name   : Test DeleteEnhanceChainInner API
+ * tc.number : DeleteEnhanceChainInner_002
+ * tc.desc   : Test DeleteEnhanceChainInner interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, DeleteEnhanceChainInner_002, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    int32_t result = manager_->DeleteEnhanceChainInner(audioEnhanceChain, validSceneKeyCode);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test DeleteEnhanceChainInner API
+ * tc.number : DeleteEnhanceChainInner_003
+ * tc.desc   : Test DeleteEnhanceChainInner interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, DeleteEnhanceChainInner_003, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    std::string scene = "SCENE_RECORD";
+    manager_->priorSceneSet_.insert(scene);
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    int32_t result = manager_->DeleteEnhanceChainInner(audioEnhanceChain, validSceneKeyCode);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test SetAudioEnhancePropertyToChains API
+ * tc.number : SetAudioEnhancePropertyToChains_001
+ * tc.desc   : Test SetAudioEnhancePropertyToChains interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhancePropertyToChains_001, TestSize.Level1)
+{
+    AudioEnhanceProperty propert;
+    propert.enhanceClass = "effect1";
+    propert.enhanceProp = "property1";
+    int32_t result = manager_->SetAudioEnhancePropertyToChains(propert);
+    EXPECT_EQ(result, SUCCESS);
+
+}
+
+/*
+ * tc.name   : Test SetAudioEnhancePropertyToChains API
+ * tc.number : SetAudioEnhancePropertyToChains_002
+ * tc.desc   : Test SetAudioEnhancePropertyToChains interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhancePropertyToChains_002, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    AudioEnhanceProperty propert;
+    propert.enhanceClass = "effect1";
+    propert.enhanceProp = "property1";
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain ;
+    
+    manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validSceneKeyCode, audioEnhanceChain);
+    int32_t result = manager_->SetAudioEnhancePropertyToChains(propert);
+     EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test SetAudioEnhancePropertyToChains API
+ * tc.number : SetAudioEnhancePropertyToChains_003
+ * tc.desc   : Test SetAudioEnhancePropertyToChains interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhancePropertyToChains_003, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    AudioEnhanceProperty propert;
+    propert.enhanceClass = "effect1";
+    propert.enhanceProp = "property1";
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validSceneKeyCode, audioEnhanceChain);
+    int32_t result = manager_->SetAudioEnhancePropertyToChains(propert);
+     EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test SetAudioEnhancePropertyToChains API
+ * tc.number : SetAudioEnhancePropertyToChains_004
+ * tc.desc   : Test SetAudioEnhancePropertyToChains interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhancePropertyToChains_004, TestSize.Level1)
+{
+    AudioEffectPropertyV3 propert;
+    propert.name = "effect1";
+    propert.category = "property1";
+    int32_t result = manager_->SetAudioEnhancePropertyToChains(propert);
+     EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test SetAudioEnhancePropertyToChains API
+ * tc.number : SetAudioEnhancePropertyToChains_005
+ * tc.desc   : Test SetAudioEnhancePropertyToChains interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhancePropertyToChains_005, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    AudioEffectPropertyV3 propert;
+    propert.name = "effect1";
+    propert.category = "property1";
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain ;
+    manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validSceneKeyCode, audioEnhanceChain);
+    int32_t result = manager_->SetAudioEnhancePropertyToChains(propert);
+     EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test SetAudioEnhancePropertyToChains API
+ * tc.number : SetAudioEnhancePropertyToChains_006
+ * tc.desc   : Test SetAudioEnhancePropertyToChains interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhancePropertyToChains_006, TestSize.Level1)
+{
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    AudioEffectPropertyV3 propert;
+    propert.name = "effect1";
+    propert.category = "property1";
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validSceneKeyCode, audioEnhanceChain);
+    int32_t result = manager_->SetAudioEnhancePropertyToChains(propert);
+     EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
