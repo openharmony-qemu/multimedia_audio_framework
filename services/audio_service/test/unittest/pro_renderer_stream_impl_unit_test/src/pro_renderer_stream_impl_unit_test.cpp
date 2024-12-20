@@ -111,7 +111,8 @@ HWTEST(ProRendererStreamImplUnitTest, Start_002, TestSize.Level1)
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     rendererStreamImpl->status_ = I_STATUS_PAUSED;
     std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
-    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
     rendererStreamImpl->RegisterStatusCallback(rendererInServer);
     int32_t ret = rendererStreamImpl->Start();
     EXPECT_EQ(ret, SUCCESS);
@@ -148,7 +149,8 @@ HWTEST(ProRendererStreamImplUnitTest, Pause_002, TestSize.Level1)
     rendererStreamImpl->status_ = I_STATUS_STARTED;
     rendererStreamImpl->isFirstFrame_ = true;
     std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
-    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
     rendererStreamImpl->RegisterStatusCallback(rendererInServer);
     int32_t ret = rendererStreamImpl->Pause();
     EXPECT_EQ(ret, SUCCESS);
@@ -185,7 +187,8 @@ HWTEST(ProRendererStreamImplUnitTest, Flush_002, TestSize.Level1)
     rendererStreamImpl->readQueue_.push(1);
     rendererStreamImpl->isDrain_ = true;
     std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
-    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
     rendererStreamImpl->RegisterStatusCallback(rendererInServer);
     int32_t ret = rendererStreamImpl->Flush();
     EXPECT_EQ(ret, SUCCESS);
@@ -219,7 +222,8 @@ HWTEST(ProRendererStreamImplUnitTest, Drain_002, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
-    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
     rendererStreamImpl->RegisterStatusCallback(rendererInServer);
     rendererStreamImpl->readQueue_.push(1);
     int32_t ret = rendererStreamImpl->Drain();
@@ -239,7 +243,8 @@ HWTEST(ProRendererStreamImplUnitTest, Stop_001, TestSize.Level1)
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     rendererStreamImpl->isFirstFrame_ = false;
     std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
-    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
     rendererStreamImpl->RegisterStatusCallback(rendererInServer);
 
     int32_t ret = rendererStreamImpl->Stop();
@@ -259,7 +264,8 @@ HWTEST(ProRendererStreamImplUnitTest, Stop_002, TestSize.Level1)
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     rendererStreamImpl->isFirstFrame_ = true;
     std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
-    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
     rendererStreamImpl->RegisterStatusCallback(rendererInServer);
 
     int32_t ret = rendererStreamImpl->Stop();
@@ -278,7 +284,8 @@ HWTEST(ProRendererStreamImplUnitTest, Release_001, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
-    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
     rendererStreamImpl->RegisterStatusCallback(rendererInServer);
 
     int32_t ret = rendererStreamImpl->Release();
@@ -443,7 +450,7 @@ HWTEST(ProRendererStreamImplUnitTest, UnsetOffloadMode_001, TestSize.Level1)
  *@tc.type  : FUNC
  *@tc.number: OffloadSetVolume
  */
-HWTEST(ProRendererStreamImplUnitTest, ffloadSetVolume_001, TestSize.Level1)
+HWTEST(ProRendererStreamImplUnitTest, OffloadSetVolume_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     bool isDirect = true;
@@ -844,10 +851,10 @@ HWTEST(ProRendererStreamImplUnitTest, RegisterStatusCallback_001, TestSize.Level
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
-    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
     rendererStreamImpl->RegisterStatusCallback(rendererInServer);
     EXPECT_NE(rendererStreamImpl->statusCallback_.lock(), nullptr);
-    
 }
 /**
  *@tc.name  : Test RegisterWriteCallback API
@@ -861,7 +868,8 @@ HWTEST(ProRendererStreamImplUnitTest, RegisterWriteCallback_001, TestSize.Level0
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
     std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
-    std::shared_ptr<RendererInServer> rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
     rendererStreamImpl->RegisterWriteCallback(rendererInServer);
     EXPECT_NE(rendererStreamImpl->writeCallback_.lock(), nullptr);
 }

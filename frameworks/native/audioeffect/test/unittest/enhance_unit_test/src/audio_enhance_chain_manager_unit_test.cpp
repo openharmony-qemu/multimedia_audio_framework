@@ -135,7 +135,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_004, T
     AudioEnhanceParamAdapter algoParam;
     AudioEnhanceDeviceAttr deviceAttr;
     bool defaultFlag = false;
-    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain =
+        std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
     manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validKeyCode, audioEnhanceChain);
     manager_->sceneTypeToEnhanceChainCountMap_.insert_or_assign(validKeyCode, 1);
     int32_t result = manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
@@ -371,7 +372,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, IsEmptyEnhanceChain_006, TestSize.Lev
     AudioEnhanceParamAdapter algoParam;
     AudioEnhanceDeviceAttr deviceAttr;
     bool defaultFlag = false;
-    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain =
+        std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
     manager_->isInitialized_ = true;
     manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validKeyCode, audioEnhanceChain);
     bool result = manager_->IsEmptyEnhanceChain();
