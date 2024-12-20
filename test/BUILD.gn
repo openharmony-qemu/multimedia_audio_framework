@@ -33,6 +33,7 @@ group("audio_unit_test") {
     "../frameworks/native/audioeffect/test/unittest/effect_unit_test:audio_effect_chain_manager_unit_test",
     "../frameworks/native/audioeffect/test/unittest/enhance_unit_test:audio_enhance_chain_adapter_unit_test",
     "../frameworks/native/audioeffect/test/unittest/enhance_unit_test:audio_enhance_chain_manager_unit_test",
+    "../frameworks/native/audioeffect/test/unittest/enhance_unit_test:audio_enhance_chain_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/group_manager_test:audio_group_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/manager_test:audio_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/policy_test:audio_policy_unit_test",
