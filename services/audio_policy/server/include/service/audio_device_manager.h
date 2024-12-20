@@ -92,6 +92,7 @@ public:
     shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    void Dump(std::string &dumpString);
 
 private:
     AudioDeviceManager();

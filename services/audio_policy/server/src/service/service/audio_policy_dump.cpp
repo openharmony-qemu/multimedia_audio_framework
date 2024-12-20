@@ -97,6 +97,7 @@ void AudioPolicyDump::DevicesInfoDump(std::string &dumpString)
     AppendFormat(dumpString, "\nHighest priority input device: %s \n",
         AudioInfoDumpUtils::GetDeviceTypeName(priorityInputDevice_).c_str());
 
+    audioDeviceManager_.Dump(dumpString);
     GetMicrophoneDescriptorsDump(dumpString);
     GetOffloadStatusDump(dumpString);
 }

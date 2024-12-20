@@ -1357,6 +1357,26 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallRenderDevic
     }
     return devDesc;
 }
+
+void AudioDeviceManager::Dump(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    AppendFormat(dumpString, " MediaDefaultOutputDevices:\n");
+    for (auto it : mediaDefaultOutputDevices_) {
+        AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
+            AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
+    }
+    AppendFormat(dumpString, "current media default output device: %s\n",
+        AudioInfoDumpUtils::GetDeviceTypeName(selectedMediaDefaultOutputDevice_).c_str());
+
+    AppendFormat(dumpString, " CallDefaultOutputDevices:\n");
+    for (auto it : callDefaultOutputDevices_) {
+        AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
+            AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
+    }
+    AppendFormat(dumpString, "current call default output device: %s\n",
+        AudioInfoDumpUtils::GetDeviceTypeName(selectedCallDefaultOutputDevice_).c_str());
+}
 // LCOV_EXCL_STOP
 }
 }
