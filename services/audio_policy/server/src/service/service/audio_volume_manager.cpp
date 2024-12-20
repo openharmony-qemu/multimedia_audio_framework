@@ -364,7 +364,7 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
                 break;
         }
     }
-    if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP || curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
         isBtFirstBoot_ = false;
     }
     return sVolumeLevel;
