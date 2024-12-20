@@ -1473,7 +1473,6 @@ int32_t AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     res = audioStream->SetDefaultOutputDevice(info.defaultOutputDevice);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "set default output device failed");
     audioStream->SetRenderMode(info.renderMode);
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
