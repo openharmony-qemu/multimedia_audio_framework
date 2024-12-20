@@ -1930,12 +1930,13 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     size_t inBufferLen = (size_t)u->bufferAttr->frameLen * inSpec->channels * sizeof(float);
     size_t outBufferLen = (size_t)u->bufferAttr->frameLen * outSpec->channels * sizeof(float);
     pa_memchunk unsampledChunk;
-    pa_memchunk sampledChunk;
     unsampledChunk.length = inBufferLen;
     unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
     void *dst = pa_memblock_acquire(unsampledChunk.memblock);
     if (dst == NULL) {
         AUDIO_ERROR_LOG("ResampleAfterEffectChain: pa_memblock_acquire dst fail! skip resampler_run!");
+        pa_memblock_release(unsampledChunk.memblock);
+        pa_memblock_unref(unsampledChunk.memblock);
         return;
     }
     int ret = memcpy_s(dst, inBufferLen, u->bufferAttr->bufOut, inBufferLen);
@@ -1946,10 +1947,14 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
         }
     }
     pa_memblock_release(unsampledChunk.memblock);
+    pa_memchunk sampledChunk;
     pa_resampler_run(resampler, &unsampledChunk, &sampledChunk);
     void *src = pa_memblock_acquire(sampledChunk.memblock);
     if (src == NULL) {
         AUDIO_ERROR_LOG("ResampleAfterEffectChain: pa_memblock_acquire src fail! resampler_run fail!");
+        pa_memblock_release(sampledChunk.memblock);
+        pa_memblock_unref(unsampledChunk.memblock);
+        pa_memblock_unref(sampledChunk.memblock);
         return;
     }
     ret = memcpy_s(u->bufferAttr->bufOut, outBufferLen, src, outBufferLen);
