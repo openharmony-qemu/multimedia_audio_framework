@@ -1533,6 +1533,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         } else {
             streamData.volumeStart = curReadSpan->volumeStart;
         }
+        Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
+            " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()));
         streamData.volumeEnd = curReadSpan->volumeEnd;
         streamData.streamInfo = processList_[i]->GetStreamInfo();
         streamData.isInnerCaped = processList_[i]->GetInnerCapState();
