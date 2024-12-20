@@ -37,8 +37,6 @@ static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10ms
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3ms
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
-static const int32_t INVALID_APP_UID = -1;
-static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
 AudioService *AudioService::GetInstance()
@@ -1007,15 +1005,15 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
     return false;
 }
  
-int32_t AudioService::GetCreatedAudioStreamMostUid()
+void AudioService::GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum)
 {
-    int32_t mostAppUid = INVALID_APP_UID;
-    int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
     for (auto it = appUseNumMap_.begin(); it != appUseNumMap_.end(); it++) {
-        mostAppNum = it->second > mostAppNum ? it->second : mostAppNum;
-        mostAppUid = it->first;
+        if (it->second > mostAppNum) {
+            mostAppNum = it->second;
+            mostAppUid = it->first;
+        }
     }
-    return mostAppUid;
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

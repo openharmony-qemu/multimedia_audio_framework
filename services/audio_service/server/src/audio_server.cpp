@@ -72,6 +72,8 @@ const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
+static const int32_t INVALID_APP_UID = -1;
+static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -1220,11 +1222,14 @@ int32_t AudioServer::CheckMaxRendererInstances()
     }
  
     if (AudioService::GetInstance()->GetCurrentRendererStreamCnt() >= maxRendererInstances) {
-        int32_t mostAppUid = AudioService::GetInstance()->GetCreatedAudioStreamMostUid();
+        int32_t mostAppUid = INVALID_APP_UID;
+        int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
+        AudioService::GetInstance()->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
             Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
         bean->Add("CLIENT_UID", mostAppUid);
+        bean->Add("STREAM_NUM", mostAppNum);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
         return ERR_EXCEED_MAX_STREAM_CNT;
