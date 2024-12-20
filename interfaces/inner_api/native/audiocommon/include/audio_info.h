@@ -33,6 +33,7 @@
 #include <audio_session_info.h>
 #include <audio_stream_info.h>
 #include <audio_asr.h>
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
