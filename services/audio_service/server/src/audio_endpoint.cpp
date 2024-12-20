@@ -1042,6 +1042,7 @@ bool AudioEndpointInner::DelayStopDevice()
     } else {
         CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
             false, "Sink stop failed.");
+        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, INIT_LASTWRITTEN_TIME);
     }
     isStarted_ = false;
     return true;

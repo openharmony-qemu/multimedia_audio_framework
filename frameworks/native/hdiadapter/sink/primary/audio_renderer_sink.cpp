@@ -1243,7 +1243,7 @@ int32_t AudioRendererSinkInner::Stop(void)
         return ERR_OPERATION_FAILED;
     }
     started_ = false;
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_PRIMARY, INIT_LASTWRITTEN_TIME);
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 
     return SUCCESS;
@@ -1269,7 +1269,7 @@ int32_t AudioRendererSinkInner::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_PRIMARY, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

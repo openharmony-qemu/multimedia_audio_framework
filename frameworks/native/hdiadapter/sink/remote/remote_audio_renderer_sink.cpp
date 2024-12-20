@@ -574,6 +574,7 @@ int32_t RemoteAudioRendererSinkInner::Stop(void)
         int32_t ret = audioRender.second->Stop();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop fail, ret %{public}d.", ret);
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_REMOTE, INIT_LASTWRITTEN_TIME);
     started_.store(false);
     return SUCCESS;
 }
@@ -594,6 +595,7 @@ int32_t RemoteAudioRendererSinkInner::Pause(void)
         int32_t ret = audioRender.second->Pause();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Pause fail, ret %{public}d.", ret);
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_REMOTE, INIT_LASTWRITTEN_TIME);
     paused_.store(true);
     return SUCCESS;
 }

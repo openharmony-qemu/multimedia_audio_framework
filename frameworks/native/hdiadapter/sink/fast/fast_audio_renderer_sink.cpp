@@ -876,7 +876,7 @@ int32_t FastAudioRendererSinkInner::Stop(void)
             "Stop failed! ret: %{public}d.", ret);
     }
     started_ = false;
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -896,7 +896,7 @@ int32_t FastAudioRendererSinkInner::Pause(void)
             "Pause failed!");
     }
     paused_ = true;
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

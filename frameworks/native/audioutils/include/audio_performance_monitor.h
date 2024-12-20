@@ -25,6 +25,14 @@ namespace AudioStandard {
 const uint64_t AUDIO_MS_PER_NS = 1000000;
 const int32_t OVERTIME_EVENT = 0;
 const int32_t SILENCE_EVENT = 1;
+const int64_t INIT_LASTWRITTEN_TIME = -1;
+
+// invalid means: silence frame in pulseaudio, not write data in one endpoint loop
+const uint32_t MIN_INVALID_VALUE = 1;
+const uint32_t MAX_INVALID_VALUE = 2;
+const uint32_t MIN_VALID_VALUE = 1;
+const uint32_t MAX_VALID_VALUE = 2;
+const size_t MAX_RECORD_QUEUE_SIZE = 20;
 
 enum SinkType : uint32_t {
     SINKTYPE_PRIMARY = 0,
@@ -36,19 +44,12 @@ enum SinkType : uint32_t {
     MAX_SINK_TYPE = 6,
 };
 
-// invalid --> silence frame in pulseaudio, not write data in one endpoint loop
-const uint32_t MIN_INVALID_VALUE = 1;
-const uint32_t MAX_INVALID_VALUE = 2;
-const uint32_t MIN_VALID_VALUE = 1;
-const uint32_t MAX_VALID_VALUE = 2;
-const size_t MAX_RECORD_QUEUE_SIZE = 20;
-
 struct FrameRecordInfo
 {
     uint64_t inValidStateCount = MAX_INVALID_VALUE + 1;
     uint64_t validStateCount = MAX_VALID_VALUE + 1;
     //only used in endpoint
-    int64_t lastWrittenTime = -1;
+    int64_t lastWrittenTime = INIT_LASTWRITTEN_TIME;
     std::queue<bool> historyStateQueue{};
 };
 
@@ -68,7 +69,7 @@ public:
 
 private:
     void JudgeNoise(uint32_t index, bool curState);
-    void ReportEvent(int32_t reasonCode);
+    void ReportEvent(int32_t reasonCode, std::string printStr);
 
     std::map<SinkType, uint64_t> MAX_WRITTEN_INTERVAL {
         {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},      // 100ms

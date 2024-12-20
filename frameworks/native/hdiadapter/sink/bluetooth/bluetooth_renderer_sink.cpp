@@ -836,7 +836,7 @@ int32_t BluetoothRendererSinkInner::Stop(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -860,7 +860,7 @@ int32_t BluetoothRendererSinkInner::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

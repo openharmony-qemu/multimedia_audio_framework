@@ -67,7 +67,7 @@ void AudioPerformanceMonitor::RecordLastWrittenTime(uint32_t sessionId, int64_t 
         jankDetectMap_[sessionId].lastWrittenTime = lastWrittenTime;
         return;
     }
-    JudgeNoise(sessionId, jankDetectMap_[sessionId].lastWrittenTime == lastWrittenTime);
+    JudgeNoise(sessionId, jankDetectMap_[sessionId].lastWrittenTime != lastWrittenTime);
     jankDetectMap_[sessionId].lastWrittenTime = lastWrittenTime;
 }
 
@@ -75,13 +75,18 @@ void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTim
 {
     CHECK_AND_RETURN_LOG(sinkType >= SinkType::SINKTYPE_PRIMARY && sinkType < SinkType::MAX_SINK_TYPE,
         "invalid sinkType: %{public}d", sinkType);
-    if (overTimeDetectMap_.find(sinkType) == overTimeDetectMap_.end()) {
+    if (curTimeStamp == INIT_LASTWRITTEN_TIME) {
+        overTimeDetectMap_[sinkType] = curTimeStamp;
+        return;
+    }
+    if (overTimeDetectMap_.find(sinkType) == overTimeDetectMap_.end() ||
+        overTimeDetectMap_[sinkType] == INIT_LASTWRITTEN_TIME) {
         AUDIO_INFO_LOG("AudioSinkType %{public}d write data first time", sinkType);
     } else {
         if (curTimeStamp - overTimeDetectMap_[sinkType] > MAX_WRITTEN_INTERVAL[sinkType]) {
-            AUDIO_WARNING_LOG("SinkType %{public}d write time interval %{public}" PRIu64 " ns! overTime!",
-                sinkType, (curTimeStamp - overTimeDetectMap_[sinkType]));
-            ReportEvent(OVERTIME_EVENT);
+            std::string printStr = "SinkType " + static_cast<uint32_t>(sinkType) + " write time interval " +
+                curTimeStamp - overTimeDetectMap_[sinkType] + " ns! overTime!";
+            ReportEvent(OVERTIME_EVENT, printStr);
         }
     }
     overTimeDetectMap_[sinkType] = curTimeStamp;
@@ -93,8 +98,13 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isValidData)
     if (isValidData) {
         if (MIN_INVALID_VALUE <= jankDetectMap_[sessionId].inValidStateCount &&
             jankDetectMap_[sessionId].inValidStateCount <= MAX_INVALID_VALUE) {
-            // valid --> invalid --> valid
-            ReportEvent(SILENCE_EVENT);
+            std::string printStr = "record state for last " + MAX_RECORD_QUEUE_SIZE + " times: \n";
+            //for example: valid -> valid -> invalid -> valid -> invalid, will print "--_-_";
+            while (jankDetectMap_[sessionId].historyStateQueue.size() != 0) {
+                printStr += jankDetectMap_[sessionId].historyStateQueue.front()?"-":"_";
+                jankDetectMap_[sessionId].historyStateQueue.pop();
+            }
+            ReportEvent(SILENCE_EVENT, printStr);
             jankDetectMap_[sessionId] = FrameRecordInfo();
             return;
         }
@@ -106,9 +116,9 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isValidData)
     }
 }
 
-void AudioPerformanceMonitor::ReportEvent(int32_t reasonCode)
+void AudioPerformanceMonitor::ReportEvent(int32_t reasonCode, std::string printStr)
 {
-    AUDIO_INFO_LOG("start report");
+    AUDIO_INFO_LOG("start report reasonCode %{public}d, jank info: %{public}s", reasonCode, printStr);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::JANK_PLAYBACK,
         Media::MediaMonitor::EventType::FAULT_EVENT);
