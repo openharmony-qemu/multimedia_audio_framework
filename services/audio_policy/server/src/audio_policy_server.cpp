@@ -66,6 +66,7 @@ std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
+      audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter())
 {
@@ -2790,6 +2791,40 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
         return ERROR;
     }
     return audioPolicyService_.TriggerFetchDevice(reason);
+}
+
+int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
+    const sptr<AudioDeviceDescriptor> &desc)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("No permission");
+        return ERROR;
+    }
+    return audioPolicyService_.SetPreferredDevice(preferredType, desc);
+}
+
+void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("No permission");
+        return;
+    }
+    std::unique_ptr<AudioDeviceDescriptor> newMediaDescriptor = std::move(
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, ROUTER_TYPE_USER_SELECT).front());
+    std::unique_ptr<AudioDeviceDescriptor> newCallDescriptor = std::move(
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
+        ROUTER_TYPE_USER_SELECT).front());
+    if (networkId == newMediaDescriptor->networkId_ && deviceType == newMediaDescriptor->deviceType_) {
+        audioPolicyService_.SetPreferredDevice(AUDIO_MEDIA_RENDER,
+            new(std::nothrow) AudioDeviceDescriptor());
+    }
+    if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_) {
+        audioPolicyService_.SetPreferredDevice(AUDIO_CALL_RENDER,
+            new(std::nothrow) AudioDeviceDescriptor());
+    }
+    audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }
 
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)

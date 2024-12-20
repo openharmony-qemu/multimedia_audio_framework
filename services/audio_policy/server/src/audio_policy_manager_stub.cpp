@@ -167,6 +167,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "LOAD_SPLIT_MODULE",
     "SET_DEFAULT_OUTPUT_DEVICE",
     "SET_VOICE_RINGTONE_MUTE",
+    "SET_PREFERRED_DEVICE",
+    "SAVE_REMOTE_INFO",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1347,6 +1349,12 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOICE_RINGTONE_MUTE):
             SetVoiceRingtoneMuteInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PREFERRED_DEVICE):
+            SetPreferredDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_REMOTE_INFO):
+            SaveRemoteInfoInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1947,6 +1955,21 @@ void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, Mes
     AudioStreamDeviceChangeReasonExt reason(static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum>(data.ReadInt32()));
     int32_t result = TriggerFetchDevice(reason);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetPreferredDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    PreferredType preferredType = static_cast<PreferredType>(data.ReadInt32());
+    sptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::Unmarshalling(data);
+    int32_t result = SetPreferredDevice(preferredType, desc);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SaveRemoteInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string networkId = data.ReadString();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    SaveRemoteInfo(networkId, deviceType);
 }
 
 void AudioPolicyManagerStub::MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply)

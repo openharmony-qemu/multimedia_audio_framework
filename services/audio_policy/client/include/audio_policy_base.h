@@ -323,6 +323,9 @@ public:
 
     virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
+    virtual int32_t SetPreferredDevice(const PreferredType preferredType,
+        const sptr<AudioDeviceDescriptor> &desc) = 0;
+
     virtual int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) = 0;
@@ -332,6 +335,8 @@ public:
     virtual int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) = 0;
 
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
+
+    virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) = 0;

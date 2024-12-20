@@ -409,6 +409,8 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
+    int32_t SetPreferredDevice(const PreferredType preferredType, const sptr<AudioDeviceDescriptor> &desc);
+
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
 
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID,
@@ -428,6 +430,8 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
+
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 

@@ -74,6 +74,8 @@ public:
     int32_t SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback);
     int32_t UnsetAudioDeviceRefinerCallback();
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    int32_t SetPreferredDevice(const PreferredType preferredType, const sptr<AudioDeviceDescriptor> &desc);
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 private:
     int32_t GetCallingPid();
 };

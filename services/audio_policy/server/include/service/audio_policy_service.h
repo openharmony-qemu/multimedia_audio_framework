@@ -266,6 +266,8 @@ public:
 
     void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
 
+    int32_t SetPreferredDevice(const PreferredType preferredType, const sptr<AudioDeviceDescriptor> &desc);
+
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
         bool hasBTPermission);
 
@@ -985,7 +987,6 @@ private:
 
     void SetDefaultDeviceLoadFlag(bool isLoad);
 
-    int32_t SetPreferredDevice(const PreferredType preferredType, const sptr<AudioDeviceDescriptor> &desc);
     int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
 
     void CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
