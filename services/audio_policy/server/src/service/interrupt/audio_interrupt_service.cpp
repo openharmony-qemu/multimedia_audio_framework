@@ -1983,6 +1983,8 @@ int32_t AudioInterruptService::ArchiveToNewAudioInterruptZone(const int32_t &fro
 void AudioInterruptService::DispatchInterruptEventWithSessionId(uint32_t sessionId,
     InterruptEventInternal &interruptEvent)
 {
+    CHECK_AND_RETURN_LOG(sessionId >= MIN_SESSIONID && sessionId <= MAX_SESSIONID,
+        "EntryPoint Taint Mark:arg sessionId: %{public}u is tained", sessionId);
     std::lock_guard<std::mutex> lock(mutex_);
 
     // call all clients

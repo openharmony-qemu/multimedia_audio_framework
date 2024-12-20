@@ -123,6 +123,8 @@ std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAudioCapturerMicrop
         "Get audio capturer microphonedescriptors failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        micDescs, "Using tainted data [size：%{public}d] as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         micDescs.push_back(MicrophoneDescriptor::Unmarshalling(reply));
     }
@@ -146,6 +148,8 @@ std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAvailableMicrophone
         "Get available microphonedescriptors failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        micDescs, "Using tainted data [size：%{public}d] as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         micDescs.push_back(MicrophoneDescriptor::Unmarshalling(reply));
     }
