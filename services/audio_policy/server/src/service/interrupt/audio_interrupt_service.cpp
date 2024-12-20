@@ -970,24 +970,20 @@ bool AudioInterruptService::CheckAudioSessionExistence(const AudioInterrupt &inc
 {
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
-        return;
         return false;
     }
     if (!sessionService_->IsAudioSessionActivated(incomingInterrupt.pid)) {
         AUDIO_INFO_LOG("No active audio session for the pid of incomming stream");
-        return;
         return false;
     }
     if (focusEntry.actionOn != CURRENT) {
         AUDIO_INFO_LOG("The interrupt event is not for the existed stream.");
-        return;
         return false;
     }
 
     std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
     if (incomingSession == nullptr) {
         AUDIO_ERR_LOG("incomingSession is nullptr!");
-        return;
         return false;
     }
     return true;
