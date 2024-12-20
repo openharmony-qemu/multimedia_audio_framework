@@ -612,8 +612,8 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
         }
         runningStreamCount++;
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-        if (!isFirstScreenOn) {
-            AUDIO_WARNING_LOG("not screen on, choose spk.");
+        if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
+            AUDIO_WARNING_LOG("pc not screen on, choose spk.");
             descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
         } else {
             descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
