@@ -612,7 +612,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
         }
         runningStreamCount++;
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-        if (!isFirstScreenOn) {
+        if (!isFirstScreenOn && rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_ENFORCED_TONE) {
             AUDIO_WARNING_LOG("not screen on, choose spk.");
             descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
         } else {
