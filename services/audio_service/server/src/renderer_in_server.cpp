@@ -813,18 +813,18 @@ int32_t RendererInServer::Drain(bool stopFlag)
         fadeoutFlag_ = DO_FADINGOUT;
     }
     DrainAudioBuffer();
-    int ret = stream_->Drain();
+    int ret = stream_->Drain(stopFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
-            dupStream_->Drain();
+            dupStream_->Drain(stopFlag);
         }
     }
     if (isDualToneEnabled_) {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
-            dualToneStream_->Drain();
+            dualToneStream_->Drain(stopFlag);
         }
     }
     return SUCCESS;

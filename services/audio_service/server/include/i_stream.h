@@ -67,7 +67,7 @@ public:
     virtual int32_t Start() = 0;
     virtual int32_t Pause(bool isStandby = false) = 0;
     virtual int32_t Flush() = 0;
-    virtual int32_t Drain() = 0;
+    virtual int32_t Drain(bool stopFlag = false) = 0;
     virtual int32_t Stop() = 0;
     virtual int32_t Release() = 0;
     virtual void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) = 0;

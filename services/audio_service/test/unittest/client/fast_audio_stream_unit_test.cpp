@@ -46,7 +46,6 @@ HWTEST(FastSystemStreamUnitTest, GetVolume_001, TestSize.Level1)
 
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolume_001 start");
     fastAudioStream->silentModeAndMixWithOthers_ = true;
-    fastAudioStream->cacheVolume_ = 0.5f;
     float result = fastAudioStream->GetVolume();
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolume_001 result:%{public}f", result);
     EXPECT_GT(result, 0);

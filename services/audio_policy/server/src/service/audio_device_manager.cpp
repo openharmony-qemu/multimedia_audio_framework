@@ -810,33 +810,35 @@ void AudioDeviceManager::ReorderAudioDevices(
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
     const std::string &remoteInfoNetworkId, DeviceType remoteInfoDeviceType)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> speakerDevices;
-    for (auto &device : audioDeviceDescriptors) {
-        if (device->deviceType_ == DEVICE_TYPE_SPEAKER) {
-            speakerDevices.push_back(std::move(device));
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> nonLocalSpeakerDevices;
+    for (auto &desc : audioDeviceDescriptors) {
+        if (desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ != LOCAL_NETWORK_ID) {
+            nonLocalSpeakerDevices.push_back(std::move(desc));
         }
     }
     audioDeviceDescriptors.erase(std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
         [](const auto &device) {return device == nullptr;}), audioDeviceDescriptors.end());
-    std::sort(speakerDevices.begin(), speakerDevices.end(),
-        [](const auto &a, const auto &b) {return a->deviceId_ > b->deviceId_;});
-    audioDeviceDescriptors.insert(audioDeviceDescriptors.begin(),
-        std::make_move_iterator(speakerDevices.begin()), std::make_move_iterator(speakerDevices.end()));
+    std::sort(nonLocalSpeakerDevices.begin(), nonLocalSpeakerDevices.end(),
+        [](const auto &a, const auto &b) {return a->deviceId_ < b->deviceId_;});
+    audioDeviceDescriptors.insert(audioDeviceDescriptors.end(),
+        std::make_move_iterator(nonLocalSpeakerDevices.begin()),
+        std::make_move_iterator(nonLocalSpeakerDevices.end()));
 
     if (remoteInfoNetworkId != "" && remoteInfoDeviceType == DEVICE_TYPE_REMOTE_CAST) {
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> remoteCastDevices;
-        for (auto &device : audioDeviceDescriptors) {
-            if (device->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
-                remoteCastDevices.push_back(std::move(device));
+        for (auto &desc : audioDeviceDescriptors) {
+            if (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
+                remoteCastDevices.push_back(std::move(desc));
             }
         }
         audioDeviceDescriptors.erase(std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
             [](const auto &device) {return device == nullptr;}), audioDeviceDescriptors.end());
         std::sort(remoteCastDevices.begin(), remoteCastDevices.end(),
-            [](const auto &a, const auto &b) {return a->deviceId_ > b->deviceId_;});
+            [](const auto &a, const auto &b) {return a->deviceId_ < b->deviceId_;});
 
-        audioDeviceDescriptors.insert(audioDeviceDescriptors.begin(),
-            std::make_move_iterator(remoteCastDevices.begin()), std::make_move_iterator(remoteCastDevices.end()));
+        audioDeviceDescriptors.insert(audioDeviceDescriptors.end(),
+            std::make_move_iterator(remoteCastDevices.begin()),
+            std::make_move_iterator(remoteCastDevices.end()));
     }
 }
 

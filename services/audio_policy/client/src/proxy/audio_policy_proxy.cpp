@@ -1939,7 +1939,6 @@ void AudioPolicyProxy::SaveRemoteInfo(const std::string &networkId, DeviceType d
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("SendRequest failed, error: %{public}d", error);
     }
-    return;
 }
 
 int32_t AudioPolicyProxy::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)

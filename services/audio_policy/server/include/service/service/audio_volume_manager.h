@@ -115,7 +115,6 @@ private:
     void SetDeviceSafeVolumeStatus();
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel);
-    bool CheckMixActiveMusicTime(int32_t safeVolume);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
     void UpdateVolumeForLowLatency();
