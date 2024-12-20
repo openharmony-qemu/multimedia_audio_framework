@@ -116,7 +116,7 @@ void InitializeDeviceChannels(CDeviceDescriptor *device, const AudioDeviceDescri
         return;
     }
     int32_t iter = 0;
-    device->channelCounts.size = channelSize;
+    device->channelCounts.size = static_cast<int64_t>(channelSize);
     device->channelCounts.head = channels;
     if (memset_s(channels, mallocSize, 0, mallocSize) != EOK) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -147,7 +147,7 @@ void InitializeDeviceRates(CDeviceDescriptor *device, const AudioDeviceDescripto
         return;
     }
     int32_t iter = 0;
-    device->sampleRates.size = rateSize;
+    device->sampleRates.size = static_cast<int64_t>(rateSize);
     device->sampleRates.head = rates;
     if (memset_s(rates, mallocSize, 0, mallocSize) != EOK) {
         *errorCode = CJ_ERR_SYSTEM;
