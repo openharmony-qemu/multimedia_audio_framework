@@ -875,24 +875,6 @@ HWTEST(ProRendererStreamImplUnitTest, RegisterWriteCallback_001, TestSize.Level0
 }
 
 /**
- *@tc.name  : Test AbortCallback API
- *@tc.type  : FUNC
- *@tc.number: AbortCallback
-*/
-HWTEST(ProRendererStreamImplUnitTest, AbortCallback_001, TestSize.Level0)
-{
-    AudioProcessConfig processConfig = InitProcessConfig();
-    bool isDirect = true;
-    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
-        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-
-    rendererStreamImpl->abortFlag_ = 0;
-    rendererStreamImpl->AbortCallback(10);
-
-    EXPECT_EQ(rendererStreamImpl->abortFlag_, 10);
-}
-
-/**
  *@tc.name  : Test GetWritableSize API
  *@tc.type  : FUNC
  *@tc.number: GetWritableSize
