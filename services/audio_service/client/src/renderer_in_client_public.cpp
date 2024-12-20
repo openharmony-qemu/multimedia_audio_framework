@@ -1577,9 +1577,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
         return ret;
     }
 
-    if (defaultOutputDevice_ != DEVICE_TYPE_NONE) {
-        SetDefaultOutputDevice(defaultOutputDevice_);
-    }
+    SetDefaultOutputDevice(defaultOutputDevice_);
 
     switch (oldState) {
         case RUNNING:
