@@ -217,7 +217,7 @@ private:
     bool NotifyRecreateDirectStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason);
     vector<std::shared_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
-        std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+        std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
     // fetchInput
     void FetchInputDeviceInner(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
