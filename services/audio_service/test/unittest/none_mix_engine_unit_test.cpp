@@ -1281,5 +1281,45 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_033, TestSize.Level1)
     int32_t ret = ptrNoneMixEngine->Pause();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_034
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_034, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    AudioSamplingRate sampleRateRet = AudioSamplingRate::SAMPLE_RATE_48000;
+    auto ret = noneMixEngineRet.GetDirectVoipSampleRate(sampleRateRet);
+    EXPECT_EQ(ret, AudioSamplingRate::SAMPLE_RATE_48000);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_009
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_009, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    HdiAdapterFormat formatRet = HdiAdapterFormat::SAMPLE_S16;
+    auto ret = noneMixEngineRet.GetDirectFormatByteSize(formatRet);
+    EXPECT_EQ(ret, sizeof(int16_t));
+
+    formatRet = HdiAdapterFormat::SAMPLE_S32;
+    ret = noneMixEngineRet.GetDirectFormatByteSize(formatRet);
+    EXPECT_EQ(ret, sizeof(int32_t));
+
+    formatRet = HdiAdapterFormat::SAMPLE_F32;
+    ret = noneMixEngineRet.GetDirectFormatByteSize(formatRet);
+    EXPECT_EQ(ret, sizeof(int32_t));
+
+    formatRet = HdiAdapterFormat::INVALID_WIDTH;
+    ret = noneMixEngineRet.GetDirectFormatByteSize(formatRet);
+    EXPECT_EQ(ret, sizeof(int32_t));
+}
 } // namespace AudioStandard
 } // namespace OHOS

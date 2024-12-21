@@ -46,7 +46,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo32Bit_001, TestSize.Level1)
 {
     std::unique_ptr<int8_t[]> buffer = std::make_unique<int8_t[]>(10);
     for (size_t i = 0; i < 10; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<int8_t>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_8BIT;
@@ -76,7 +76,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo32Bit_002, TestSize.Level1)
 {
     std::unique_ptr<int16_t[]> buffer = std::make_unique<int16_t[]>(10);
     for (size_t i = 0; i < 10; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<int16_t>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_16BIT;
@@ -106,7 +106,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo32Bit_003, TestSize.Level1)
 {
     std::unique_ptr<int8_t[]> buffer = std::make_unique<int8_t[]>(10 * 3);
     for (size_t i = 0; i < 10 * 3; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<int8_t>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_24BIT;
@@ -138,7 +138,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo32Bit_004, TestSize.Level1)
 {
     std::unique_ptr<int32_t[]> buffer = std::make_unique<int32_t[]>(10);
     for (size_t i = 0; i < 10; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<int32_t>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_32BIT;
@@ -169,7 +169,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo32Bit_005, TestSize.Level1)
 {
     std::unique_ptr<float[]> buffer = std::make_unique<float[]>(10);
     for (size_t i = 0; i < 10; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<float>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_32F_BIT;
@@ -199,7 +199,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo16Bit_001, TestSize.Level1)
 {
     std::unique_ptr<int8_t[]> buffer = std::make_unique<int8_t[]>(10);
     for (size_t i = 0; i < 10; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<int8_t>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_8BIT;
@@ -231,7 +231,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo16Bit_002, TestSize.Level1)
 {
     std::unique_ptr<int16_t[]> buffer = std::make_unique<int16_t[]>(10);
     for (size_t i = 0; i < 10; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<int16_t>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_16BIT;
@@ -262,7 +262,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo16Bit_003, TestSize.Level1)
 {
     std::unique_ptr<int8_t[]> buffer = std::make_unique<int8_t[]>(10 * 3);
     for (size_t i = 0; i < 10 * 3; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<int8_t>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_24BIT;
@@ -294,7 +294,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo16Bit_004, TestSize.Level1)
 {
     std::unique_ptr<int32_t[]> buffer = std::make_unique<int32_t[]>(10);
     for (size_t i = 0; i < 10; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<int32_t>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_32BIT;
@@ -325,7 +325,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo16Bit_005, TestSize.Level1)
 {
     std::unique_ptr<float[]> buffer = std::make_unique<float[]>(10);
     for (size_t i = 0; i < 10; ++i) {
-        buffer[i] = i;
+        buffer[i] = static_cast<float>(i);
     }
     bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_32F_BIT;
