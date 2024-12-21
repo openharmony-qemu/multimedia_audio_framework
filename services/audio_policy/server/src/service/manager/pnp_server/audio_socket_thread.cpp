@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <string>
 #include "osal_time.h"
+#include "audio_utils.h"
 #include "audio_errors.h"
 #include "securec.h"
 #include "singleton.h"
@@ -87,19 +88,19 @@ int AudioSocketThread::AudioPnpUeventOpen(int *fd)
 
     if (setsockopt(socketFd, SOL_SOCKET, SO_RCVBUF, &buffSize, sizeof(buffSize)) != 0) {
         AUDIO_ERR_LOG("setsockopt SO_RCVBUF failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
     if (setsockopt(socketFd, SOL_SOCKET, SO_PASSCRED, &on, sizeof(on)) != 0) {
         AUDIO_ERR_LOG("setsockopt SO_PASSCRED failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
     if (::bind(socketFd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         AUDIO_ERR_LOG("bind socket failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
