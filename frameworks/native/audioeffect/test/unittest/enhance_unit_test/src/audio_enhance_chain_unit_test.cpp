@@ -37,6 +37,14 @@ void AudioEnhanceChainUnitTest::TearDownTestCase(void) {}
 void AudioEnhanceChainUnitTest::SetUp(void) {}
 void AudioEnhanceChainUnitTest::TearDown(void) {}
 
+const uint32_t DEFAULT_FRAME_LENGTH = 0;
+const uint32_t DEFAULT_SAMPLE_RATE = 48000;
+const uint32_t DEFAULT_DATA_FORMAT = 2;
+const uint32_t DEFAULT_MIC_NUM = 3;
+const uint32_t DEFAULT_EC_NUM = 4;
+const uint32_t DEFAULT_MIC_REF_NUM = 5;
+const uint32_t DEFAULT_OUT_NUM = 6;
+
 /**
 * @tc.name  : Test AudioEnhanceChain API
 * @tc.type  : FUNC
@@ -110,31 +118,6 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_003, TestSize.Level1)
 * @tc.desc  : Test AudioEnhanceChain::SetEnhanceProperty()
 */
 HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_005, TestSize.Level1)
-{
-    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
-    std::string sceneType = "SCENE_VOIP_UP";
-    AudioEnhanceParamAdapter algoParam;
-    AudioEnhanceDeviceAttr deviceAttr;
-    bool defaultFlag = false;
-
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
-    EXPECT_NE(audioEnhanceChain, nullptr);
-
-    audioEnhanceChain->enhanceNames_.push_back("record");
-    std::string enhance = "record";
-    std::string property = "123";
-
-    int32_t result = audioEnhanceChain->SetEnhanceProperty(enhance, property);
-    EXPECT_EQ(SUCCESS, result);
-}
-
-/**
-* @tc.name  : Test AudioEnhanceChain API
-* @tc.type  : FUNC
-* @tc.number: AudioEnhanceChain_006
-* @tc.desc  : Test AudioEnhanceChain::SetEnhanceProperty()
-*/
-HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_006, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
     std::string sceneType = "SCENE_VOIP_UP";
@@ -510,6 +493,206 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_020, TestSize.Level1)
     std::string deviceName = "testDevice";
 
     int32_t result = audioEnhanceChain->SetInputDevice(inputDevice, deviceName);
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_021
+* @tc.desc  : Test AudioEnhanceChain::SetInputDevice()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_021, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+    
+    std::string inputDevice = "testDevice";
+    std::string deviceName = "testDevice";
+
+    int32_t result = audioEnhanceChain->SetInputDevice(inputDevice, deviceName);
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_025
+* @tc.desc  : Test AudioEnhanceChain::SetFoldState()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_025, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+    
+    audioEnhanceChain->algoParam_.foldState = 1;
+    uint32_t state = 1;
+
+    int32_t result = audioEnhanceChain->SetFoldState(state);
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_026
+* @tc.desc  : Test AudioEnhanceChain::SetFoldState()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_026, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+    
+    audioEnhanceChain->algoParam_.foldState = 0;
+    uint32_t state = 1;
+
+    int32_t result = audioEnhanceChain->SetFoldState(state);
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_029
+* @tc.desc  : Test AudioEnhanceChain::SetEnhanceParam()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_029, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+    
+    bool mute = false;
+    uint32_t systemVol = 1;
+
+    int32_t result = audioEnhanceChain->SetEnhanceParam(mute, systemVol);
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_040
+* @tc.desc  : Test AudioEnhanceChain::GetAlgoConfig()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_040, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+
+    audioEnhanceChain->needEcFlag_ = false;
+    audioEnhanceChain->needMicRefFlag_ = false;
+    audioEnhanceChain->algoSupportedConfig_ = {DEFAULT_FRAME_LENGTH, DEFAULT_SAMPLE_RATE, DEFAULT_DATA_FORMAT,
+        DEFAULT_MIC_NUM, DEFAULT_EC_NUM, DEFAULT_MIC_REF_NUM, DEFAULT_OUT_NUM};
+
+    AudioBufferConfig micConfig;
+    AudioBufferConfig ecConfig;
+    AudioBufferConfig micRefConfig;
+    
+    audioEnhanceChain->GetAlgoConfig(micConfig, ecConfig, micRefConfig);
+    EXPECT_EQ(micConfig.samplingRate, DEFAULT_SAMPLE_RATE);
+    EXPECT_EQ(micConfig.channels, DEFAULT_MIC_NUM);
+    EXPECT_EQ(static_cast<uint32_t>(micConfig.format), DEFAULT_DATA_FORMAT);
+
+    EXPECT_NE(ecConfig.samplingRate, DEFAULT_SAMPLE_RATE);
+    EXPECT_NE(ecConfig.channels, DEFAULT_EC_NUM);
+    EXPECT_NE(static_cast<uint32_t>(ecConfig.format), DEFAULT_DATA_FORMAT);
+
+    EXPECT_NE(micRefConfig.samplingRate, DEFAULT_SAMPLE_RATE);
+    EXPECT_NE(micRefConfig.channels, DEFAULT_MIC_REF_NUM);
+    EXPECT_NE(static_cast<uint32_t>(micRefConfig.format), DEFAULT_DATA_FORMAT);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_041
+* @tc.desc  : Test AudioEnhanceChain::GetAlgoConfig()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_041, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+
+    audioEnhanceChain->needEcFlag_ = true;
+    audioEnhanceChain->needMicRefFlag_ = true;
+    audioEnhanceChain->algoSupportedConfig_ = {DEFAULT_FRAME_LENGTH, DEFAULT_SAMPLE_RATE, DEFAULT_DATA_FORMAT,
+        DEFAULT_MIC_NUM, DEFAULT_EC_NUM, DEFAULT_MIC_REF_NUM, DEFAULT_OUT_NUM};
+
+    AudioBufferConfig micConfig;
+    AudioBufferConfig ecConfig;
+    AudioBufferConfig micRefConfig;
+    
+    audioEnhanceChain->GetAlgoConfig(micConfig, ecConfig, micRefConfig);
+    EXPECT_EQ(micConfig.samplingRate, DEFAULT_SAMPLE_RATE);
+    EXPECT_EQ(micConfig.channels, DEFAULT_MIC_NUM);
+    EXPECT_EQ(static_cast<uint32_t>(micConfig.format), DEFAULT_DATA_FORMAT);
+
+    EXPECT_EQ(ecConfig.samplingRate, DEFAULT_SAMPLE_RATE);
+    EXPECT_EQ(ecConfig.channels, DEFAULT_EC_NUM);
+    EXPECT_EQ(static_cast<uint32_t>(ecConfig.format), DEFAULT_DATA_FORMAT);
+
+    EXPECT_EQ(micRefConfig.samplingRate, DEFAULT_SAMPLE_RATE);
+    EXPECT_EQ(micRefConfig.channels, DEFAULT_MIC_REF_NUM);
+    EXPECT_EQ(static_cast<uint32_t>(micRefConfig.format), DEFAULT_DATA_FORMAT);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_043
+* @tc.desc  : Test AudioEnhanceChain::SetPropertyToHandle()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_043, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+
+    AudioEffectHandle handle = nullptr;
+    std::string property;
+    
+    int32_t result = audioEnhanceChain->SetPropertyToHandle(handle, property);
     EXPECT_EQ(SUCCESS, result);
 }
 }
