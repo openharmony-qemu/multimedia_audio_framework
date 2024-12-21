@@ -642,7 +642,8 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
 }
 
 vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetDeviceDescriptorInner(
-    std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo) {
+    std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+{
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
