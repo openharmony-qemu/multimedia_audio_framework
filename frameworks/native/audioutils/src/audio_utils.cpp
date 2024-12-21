@@ -940,7 +940,7 @@ void CloseFd(int fd)
     if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         AUDIO_WARNING_LOG("special fd: %{public}d will be closed", fd);
     }
-    tmpFd = fd;
+    int tmpFd = fd;
     close(fd);
     AUDIO_DEBUG_LOG("fd: %{public}% closed successfuly!", tmpFd);
 }
