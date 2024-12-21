@@ -606,9 +606,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             continue;
         }
         runningStreamCount++;
-        vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-            audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
-            rendererChangeInfo->clientUID);
+        vector<std::shared_ptr<AudioDeviceDescriptor>> descs = GetDeviceDescriptorInner(rendererChangeInfo);
         if (HandleDeviceChangeForFetchOutputDevice(descs.front(), rendererChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE &&
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
@@ -636,6 +634,19 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
         MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs, reason);
     }
     FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
+}
+
+vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetDeviceDescriptorInner(
+    std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+{
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
+        descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+    } else {
+        descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
+            rendererChangeInfo->clientUID);
+    }
+    return descs;
 }
 
 void AudioDeviceCommon::FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount)
@@ -1856,6 +1867,11 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
 #endif
     return result;
+}
+
+void AudioDeviceCommon::SetFirstScreenOn()
+{
+    isFirstScreenOn_ = true;
 }
 
 }
