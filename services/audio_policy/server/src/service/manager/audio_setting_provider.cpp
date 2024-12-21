@@ -20,6 +20,7 @@
 
 #include "iservice_registry.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -353,9 +354,13 @@ std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShar
     } else if (currentuserId > 0 && tableType == "secure") {
         SettingSystemUrlProxy =
             SETTING_USER_SECURE_URI_PROXY + std::to_string(currentuserId) + "?Proxy=true";
+        WatchTimeout guard("DataShare::DataShareHelper::Creator:CreateDataShareHelper.SettingSystemUrlProxy");
         helper = DataShare::DataShareHelper::Creator(remoteObj_, SettingSystemUrlProxy, SETTINGS_DATA_EXT_URI);
+        guard.CheckCurrTimeout();
     } else {
+        WatchTimeout guard("DataShare::DataShareHelper::Creator:CreateDataShareHelper.SETTING_URI_PROXY");
         helper = DataShare::DataShareHelper::Creator(remoteObj_, SETTING_URI_PROXY, SETTINGS_DATA_EXT_URI);
+        guard.CheckCurrTimeout();
     }
     if (helper == nullptr) {
         AUDIO_WARNING_LOG("helper is nullptr, uri=%{public}s", SettingSystemUrlProxy.c_str());
