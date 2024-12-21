@@ -344,7 +344,7 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
             case DEVICE_TYPE_BLUETOOTH_A2DP:
             case DEVICE_TYPE_BLUETOOTH_SCO:
                 if (curOutputDeviceCategory == BT_SOUNDBOX || curOutputDeviceCategory == BT_CAR) {
-                    break;
+                    return sVolumeLevel;
                 }
                 if (isBtFirstBoot_) {
                     sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
@@ -364,7 +364,9 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
                 break;
         }
     }
-    isBtFirstBoot_ = false;
+    if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP || curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        isBtFirstBoot_ = false;
+    }
     return sVolumeLevel;
 }
 
