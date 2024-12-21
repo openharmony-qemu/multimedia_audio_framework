@@ -1299,10 +1299,10 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_034, TestSize.Level1)
 /**
  * @tc.name  : Test NoneMixEngine API
  * @tc.type  : FUNC
- * @tc.number: NoneMixEngine_009
+ * @tc.number: NoneMixEngine_035
  * @tc.desc  : Test NoneMixEngine interface.
  */
-HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_009, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_035, TestSize.Level1)
 {
     NoneMixEngine noneMixEngineRet;
     HdiAdapterFormat formatRet = HdiAdapterFormat::SAMPLE_S16;
