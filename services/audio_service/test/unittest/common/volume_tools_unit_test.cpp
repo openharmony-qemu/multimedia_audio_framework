@@ -258,7 +258,7 @@ HWTEST(VolumeToolsUnitTest, CountVolumeLevel_003, TestSize.Level1)
         buffer[i] = static_cast<int8_t>(i);
     }
     size_t split = 1;
-    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 10 * MAX_FRAME_SIZE,10 * MAX_FRAME_SIZE};
+    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 10 * MAX_FRAME_SIZE, 10 * MAX_FRAME_SIZE};
     ChannelVolumes ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_U8, MONO, split);
     EXPECT_EQ(ret.volStart[0], 0);
 
