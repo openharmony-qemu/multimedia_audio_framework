@@ -27,6 +27,7 @@
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "futex_tool.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -83,7 +84,10 @@ int32_t AudioSharedMemoryImpl::Init()
     CHECK_AND_RETURN_RET_LOG((size_ > 0 && size_ < MAX_MMAP_BUFFER_SIZE), ERR_INVALID_PARAM,
         "Init falied: size out of range: %{public}zu", size_);
     bool isFromRemote = false;
-    if (fd_ > 0) {
+    if (fd_ >= 0) {
+        if (fd_ == STDIN_FILENO || fd_ == STDOUT_FILENO || fd_ == STDERR_FILENO) {
+            AUDIO_WARNING_LOG("fd is special fd: %{public}d", fd_);
+        }
         isFromRemote = true;
         int size = AshmemGetSize(fd_); // hdi fd may not support
         if (size < 0 || static_cast<size_t>(size) != size_) {
@@ -91,7 +95,10 @@ int32_t AudioSharedMemoryImpl::Init()
         }
     } else {
         fd_ = AshmemCreate(name_.c_str(), size_);
-        CHECK_AND_RETURN_RET_LOG((fd_ > 0), ERR_OPERATION_FAILED, "Init falied: fd %{public}d", fd_);
+        if (fd_ == STDIN_FILENO || fd_ == STDOUT_FILENO || fd_ == STDERR_FILENO) {
+            AUDIO_WARNING_LOG("fd is special fd: %{public}d", fd_);
+        }
+        CHECK_AND_RETURN_RET_LOG((fd_ >= 0), ERR_OPERATION_FAILED, "Init falied: fd %{public}d", fd_);
     }
 
     void *addr = mmap(nullptr, size_, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
@@ -112,8 +119,8 @@ void AudioSharedMemoryImpl::Close()
         AUDIO_DEBUG_LOG("%{public}s munmap done", name_.c_str());
     }
 
-    if (fd_ > 0) {
-        (void)close(fd_);
+    if (fd_ >= 0) {
+        (void)CloseFd(fd_);
         fd_ = INVALID_FD;
         AUDIO_DEBUG_LOG("%{public}s close fd done", name_.c_str());
     }
@@ -195,7 +202,7 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::ReadFromParcel(MessageParc
         AUDIO_ERR_LOG("ReadFromParcel failed");
         memory = nullptr;
     }
-    close(fd);
+    CloseFd(fd);
     return memory;
 }
 
@@ -376,8 +383,8 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::ReadFromParcel(MessageParcel &parc
     } else {
         AUDIO_DEBUG_LOG("Read some data done.");
     }
-    close(dataFd);
-    close(infoFd);
+    CloseFd(dataFd);
+    CloseFd(infoFd);
     AUDIO_DEBUG_LOG("ReadFromParcel done.");
     return buffer;
 }
