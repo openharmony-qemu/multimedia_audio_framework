@@ -143,6 +143,9 @@ public:
         parcel.WriteUint32(segmentCnt);
         parcel.WriteUint32(repeatCnt);
         parcel.WriteUint32(repeatSegment);
+        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            return false;
+        }
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Marshalling(parcel);
         }
@@ -153,6 +156,9 @@ public:
         segmentCnt = parcel.ReadUint32();
         repeatCnt = parcel.ReadUint32();
         repeatSegment = parcel.ReadUint32();
+        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            return;
+        }
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Unmarshalling(parcel);
         }
