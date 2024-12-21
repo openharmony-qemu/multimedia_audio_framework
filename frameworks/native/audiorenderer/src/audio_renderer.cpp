@@ -1843,6 +1843,7 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
         abortRestore_ = false;
     }
 
+    InitAudioInterruptCallback();
     if (GetStatus() == RENDERER_RUNNING) {
         GetAudioInterrupt(audioInterrupt_);
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
