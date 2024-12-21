@@ -165,7 +165,7 @@ void AudioPolicyUtils::ClearScoDeviceSuspendState(std::string macAddress)
     AUDIO_DEBUG_LOG("Clear sco suspend state %{public}s", GetEncryptAddr(macAddress).c_str());
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetDevicesByFilter(
         DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_ROLE_NONE, macAddress, "", SUSPEND_CONNECTED);
-    for (auto &desc : descs) {
+    for (const auto &desc : descs) {
         desc->connectState_ = DEACTIVE_CONNECTED;
     }
 }
@@ -463,6 +463,82 @@ AudioModuleInfo AudioPolicyUtils::ConstructRemoteAudioModuleInfo(std::string net
     audioModuleInfo.bufferSize = "3840";
 
     return audioModuleInfo;
+}
+
+DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
+{
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_DP:
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+        case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+            return DeviceRole::OUTPUT_DEVICE;
+        case DeviceType::DEVICE_TYPE_MIC:
+        case DeviceType::DEVICE_TYPE_WAKEUP:
+            return DeviceRole::INPUT_DEVICE;
+        default:
+            return DeviceRole::DEVICE_ROLE_NONE;
+    }
+}
+
+DeviceRole AudioPolicyUtils::GetDeviceRole(const std::string &role)
+{
+    if (role == ROLE_SINK) {
+        return DeviceRole::OUTPUT_DEVICE;
+    } else if (role == ROLE_SOURCE) {
+        return DeviceRole::INPUT_DEVICE;
+    } else {
+        return DeviceRole::DEVICE_ROLE_NONE;
+    }
+}
+
+DeviceRole AudioPolicyUtils::GetDeviceRole(AudioPin pin) const
+{
+    switch (pin) {
+        case OHOS::AudioStandard::AUDIO_PIN_NONE:
+            return DeviceRole::DEVICE_ROLE_NONE;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_SPEAKER:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB_EXT:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_DAUDIO_DEFAULT:
+            return DeviceRole::OUTPUT_DEVICE;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_MIC:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
+            return DeviceRole::INPUT_DEVICE;
+        default:
+            return DeviceRole::DEVICE_ROLE_NONE;
+    }
+}
+
+DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
+{
+    DeviceType devType = DeviceType::DEVICE_TYPE_NONE;
+    if (deviceName == "Speaker") {
+        devType = DeviceType::DEVICE_TYPE_SPEAKER;
+    } else if (deviceName == "Built_in_mic") {
+        devType = DeviceType::DEVICE_TYPE_MIC;
+    } else if (deviceName == "Built_in_wakeup") {
+        devType = DeviceType::DEVICE_TYPE_WAKEUP;
+    } else if (deviceName == "fifo_output" || deviceName == "fifo_input") {
+        devType = DEVICE_TYPE_BLUETOOTH_SCO;
+    } else if (deviceName == "file_sink") {
+        devType = DEVICE_TYPE_FILE_SINK;
+    } else if (deviceName == "file_source") {
+        devType = DEVICE_TYPE_FILE_SOURCE;
+    }
+    return devType;
 }
 
 }

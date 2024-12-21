@@ -19,8 +19,11 @@
 
 #include "audio_errors.h"
 #include "offline_audio_effect_manager.h"
+#include "offline_audio_effect_server_chain.h"
+#include "audio_stream_info.h"
 
 using namespace testing::ext;
+using namespace testing;
 using namespace std;
 namespace OHOS {
 namespace AudioStandard {
@@ -63,7 +66,7 @@ void OfflineAudioEffectChainUnitTest::SetUpTestCase(void)
     vector<string> names;
     names = g_manager->GetOfflineAudioEffectChains();
     if (names.size() > 0) {
-        g_normalName = names[0];
+        g_normalName = names[names.size() - 1];
     }
 }
 
@@ -85,6 +88,17 @@ void OfflineAudioEffectChainUnitTest::TearDown(void)
     }
 }
 
+class OfflineAudioEffectServerChainUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+void OfflineAudioEffectServerChainUnitTest::SetUpTestCase(void) {}
+void OfflineAudioEffectServerChainUnitTest::TearDownTestCase(void) {}
+void OfflineAudioEffectServerChainUnitTest::SetUp(void) {}
+void OfflineAudioEffectServerChainUnitTest::TearDown(void) {}
 /**
  * @tc.name  : Test GetOfflineAudioEffectChains API
  * @tc.type  : FUNC
@@ -185,6 +199,74 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_003, TestSize.
         delete []inBuffer;
         delete []outBuffer;
     }
+}
+
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, Create_001, TestSize.Level1)
+{
+    std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
+        std::make_shared<OfflineAudioEffectServerChain>("test");
+    int32_t ret = serverChain->Create();
+    EXPECT_EQ(ret, ERROR);
+}
+
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetParam_001, TestSize.Level1)
+{
+    std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
+        std::make_shared<OfflineAudioEffectServerChain>("test");
+
+    AudioStreamInfo inInfo;
+    inInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    inInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    inInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    inInfo.channels = AudioChannel::MONO;
+    AudioStreamInfo outInfo;
+    outInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    outInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    outInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    outInfo.channels = AudioChannel::MONO;
+    int32_t ret = serverChain->SetParam(inInfo, outInfo);
+    EXPECT_EQ(ret, ERROR);
+}
+
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetEffectBufferSize_001, TestSize.Level1)
+{
+    std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
+        std::make_shared<OfflineAudioEffectServerChain>("test");
+    uint32_t inBufferSize;
+    uint32_t outBufferSize;
+    int32_t ret = serverChain->GetEffectBufferSize(inBufferSize, outBufferSize);
+    EXPECT_EQ(ret, ERROR);
+}
+
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetEffectBufferSize_002, TestSize.Level1)
+{
+    std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
+        std::make_shared<OfflineAudioEffectServerChain>("test");
+    serverChain->inBufferSize_= 1;
+    uint32_t inBufferSize;
+    uint32_t outBufferSize;
+    int32_t ret = serverChain->GetEffectBufferSize(inBufferSize, outBufferSize);
+    EXPECT_EQ(ret, ERROR);
+}
+
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetEffectBufferSize_003, TestSize.Level1)
+{
+    std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
+        std::make_shared<OfflineAudioEffectServerChain>("test");
+    serverChain->inBufferSize_ = 1;
+    serverChain->outBufferSize_ = 1;
+    uint32_t inBufferSize;
+    uint32_t outBufferSize;
+    int32_t ret = serverChain->GetEffectBufferSize(inBufferSize, outBufferSize);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, Release_001, TestSize.Level1)
+{
+    std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
+        std::make_shared<OfflineAudioEffectServerChain>("test");
+    int32_t ret = serverChain->Release();
+    EXPECT_EQ(ret, ERROR);
 }
 } // namespace AudioStandard
 } // namespace OHOS

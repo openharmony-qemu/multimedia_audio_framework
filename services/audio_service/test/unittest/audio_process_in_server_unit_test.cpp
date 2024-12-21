@@ -94,10 +94,10 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_001, TestSize.Level1)
     auto ret = audioProcessInServer->GetSessionId(sessionIdRet);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(audioProcessInServer->GetSessionId(), sessionIdRet);
-    ret = audioProcessInServer->GetMuteFlag();
+    ret = audioProcessInServer->GetMuteState();
     EXPECT_EQ(ret, false);
     audioProcessInServer->SetNonInterruptMute(muteFlagRet);
-    EXPECT_EQ(audioProcessInServer->GetMuteFlag(), true);
+    EXPECT_EQ(audioProcessInServer->GetMuteState(), true);
 }
 
 /**

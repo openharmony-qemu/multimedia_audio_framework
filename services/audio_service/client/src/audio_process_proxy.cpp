@@ -214,5 +214,31 @@ int32_t AudioProcessProxy::RegisterThreadPriority(uint32_t tid, const std::strin
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
     return ret;
 }
+
+int32_t AudioProcessProxy::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(defaultOutputDevice);
+    int ret = Remote()->SendRequest(IAudioProcessMsg::ON_SET_DEFAULT_OUTPUT_DEVICE, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
+int32_t AudioProcessProxy::SetSilentModeAndMixWithOthers(bool on)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteBool(on);
+    int ret = Remote()->SendRequest(IAudioProcessMsg::ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

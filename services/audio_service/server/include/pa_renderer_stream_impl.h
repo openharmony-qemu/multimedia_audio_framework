@@ -30,7 +30,7 @@ public:
     int32_t Start() override;
     int32_t Pause(bool isStandby = false) override;
     int32_t Flush() override;
-    int32_t Drain() override;
+    int32_t Drain(bool stopFlag = false) override;
     int32_t Stop() override;
     int32_t Release() override;
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
@@ -140,7 +140,8 @@ private:
     std::mutex fadingMutex_;
     std::condition_variable fadingCondition_;
     float clientVolume_ = 1.0f;
-    bool initEffectFlag_ = false;
+    bool initEffectFlag_ = true;
+    bool isDoFadeOut = false;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
 

@@ -70,7 +70,7 @@ public:
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
-    void WriterRenderStreamStandbySysEvent();
+    void CheckAndWriterRenderStreamStandbySysEvent(bool standbyEnable);
 
     int32_t Init();
     int32_t ConfigServerBuffer();
@@ -97,6 +97,7 @@ public:
     int32_t SetClientVolume();
     int32_t SetMute(bool isMute);
     int32_t SetDuckFactor(float duckFactor);
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice);
 
     void OnDataLinkConnectionUpdate(IOperation operation);
     int32_t GetActualStreamManagerType() const noexcept;
@@ -175,6 +176,9 @@ private:
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     int32_t renderEmptyCountForInnerCap_ = 0;
+
+    // only read & write in CheckAndWriterRenderStreamStandbySysEvent
+    bool lastWriteStandbyEnableStatus_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -25,7 +25,7 @@ namespace AudioStandard {
 namespace {
 static const std::string OFFLINE_SERVER_BUFFER_IN = "offline_server_buffer_in";
 static const std::string OFFLINE_SERVER_BUFFER_OUT = "offline_server_buffer_out";
-static constexpr int32_t MAXIMUM_BUFFER_SIZE = 7680 * 4;
+static constexpr int32_t MAXIMUM_BUFFER_SIZE = 1000000; // 1,000,000
 }
 // static method
 sptr<OfflineStreamInServer> OfflineStreamInServer::GetOfflineStream(int32_t &errCode)

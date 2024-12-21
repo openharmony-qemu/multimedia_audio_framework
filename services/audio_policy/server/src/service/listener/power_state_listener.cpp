@@ -85,6 +85,7 @@ void PowerStateListener::OnSyncSleep(bool OnForceSleep)
 {
     CHECK_AND_RETURN_LOG(OnForceSleep, "OnSyncSleep not force sleep");
 
+    AUDIO_INFO_LOG("OnSyncSleep, try to control audio focus");
     ControlAudioFocus(true);
 }
 
@@ -92,6 +93,7 @@ void PowerStateListener::OnSyncWakeup(bool OnForceSleep)
 {
     CHECK_AND_RETURN_LOG(OnForceSleep, "OnSyncWakeup not force sleep");
 
+    AUDIO_INFO_LOG("OnSyncWakeup, try to release audio focus");
     ControlAudioFocus(false);
 }
 
@@ -101,6 +103,8 @@ void PowerStateListener::ControlAudioFocus(bool applyFocus)
         AUDIO_ERR_LOG("audioPolicyServer_ is nullptr");
         return;
     }
+    std::lock_guard<std::mutex> lock(focusMutex_);
+    AUDIO_INFO_LOG("control audio focus, want: %{public}d, last: %{public}d", applyFocus, isAudioFocusApplied_);
 
     AudioInterrupt audioInterrupt;
     PowerListerMethods::InitAudioInterruptInfo(audioInterrupt);
@@ -168,12 +172,16 @@ void SyncHibernateListener::OnSyncHibernate()
 {
     AUDIO_INFO_LOG("OnSyncHibernate in hibernate");
     ControlAudioFocus(true);
+    CHECK_AND_RETURN_LOG(audioPolicyServer_, "audioPolicyServer_ is nullptr");
+    audioPolicyServer_->CheckHibernateState(true);
 }
  
 void SyncHibernateListener::OnSyncWakeup(bool hibernateResult)
 {
     AUDIO_INFO_LOG("OnSyncWakeup in hibernate");
     ControlAudioFocus(false);
+    CHECK_AND_RETURN_LOG(audioPolicyServer_, "audioPolicyServer_ is nullptr");
+    audioPolicyServer_->CheckHibernateState(false);
 }
  
 void SyncHibernateListener::ControlAudioFocus(bool isHibernate)

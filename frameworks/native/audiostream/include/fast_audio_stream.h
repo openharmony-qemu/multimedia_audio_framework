@@ -182,6 +182,9 @@ public:
 
     bool GetSilentModeAndMixWithOthers() override;
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+
+    DeviceType GetDefaultOutputDevice() override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
@@ -210,7 +213,6 @@ private:
     uint64_t fullTokenId_ = 0;
     bool streamTrackerRegistered_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
-    float cacheVolume_ = 1.0f;
     bool silentModeAndMixWithOthers_ = false;
 
     std::mutex setPreferredFrameSizeMutex_;

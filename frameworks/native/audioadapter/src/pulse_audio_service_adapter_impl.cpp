@@ -528,13 +528,6 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
     return SUCCESS;
 }
 
-int32_t PulseAudioServiceAdapterImpl::SetVolumeDb(AudioStreamType streamType, float volumeDb)
-{
-    AUDIO_DEBUG_LOG("SetVolumeDb: streamType [%{public}d] : volumeDb [%{public}f]", streamType, volumeDb);
-
-    return SUCCESS;
-}
-
 int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setMute)
 {
     CHECK_AND_RETURN_RET_LOG(mContext != nullptr, ERROR, "mContext is nullptr");

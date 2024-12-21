@@ -36,6 +36,7 @@ static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
+static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
 static const int32_t MEDIA_SERVICE_UID = 1013;
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
@@ -992,6 +993,50 @@ int32_t AudioService::UnsetOffloadMode(uint32_t sessionId)
     int32_t ret = renderer->UnsetOffloadMode();
     lock.unlock();
     return ret;
+}
+
+void AudioService::UpdateAudioSinkState(uint32_t sinkId, bool started)
+{
+    std::unique_lock<std::mutex> lock(allRunningSinksMutex_);
+    if (started) {
+        CHECK_AND_RETURN_LOG(allRunningSinks_.find(sinkId) == allRunningSinks_.end(),
+            "Sink %{public}u already started", sinkId);
+        allRunningSinks_.insert(sinkId);
+        AUDIO_INFO_LOG("Sink %{public}u started", sinkId);
+    } else {
+        CHECK_AND_RETURN_LOG(allRunningSinks_.find(sinkId) != allRunningSinks_.end(),
+            "Sink %{public}u already stopped or not started", sinkId);
+        allRunningSinks_.erase(sinkId);
+        AUDIO_INFO_LOG("Sink %{public}u stopped", sinkId);
+        if (allRunningSinks_.empty()) {
+            allRunningSinksCV_.notify_all();
+            AUDIO_INFO_LOG("All sinks stop, continue to hibernate");
+        }
+    }
+    return;
+}
+
+void AudioService::CheckHibernateState(bool onHibernate)
+{
+    std::unique_lock<std::mutex> lock(allRunningSinksMutex_);
+    onHibernate_ = onHibernate;
+    if (onHibernate) {
+        bool ret = true;
+        if (allRunningSinks_.empty()) {
+            AUDIO_INFO_LOG("No running sinks, continue to hibernate");
+            return;
+        }
+        AUDIO_INFO_LOG("Wait for all sinks to stop");
+        ret = allRunningSinksCV_.wait_for(lock, std::chrono::milliseconds(BLOCK_HIBERNATE_CALLBACK_IN_MS),
+            [this] {return (allRunningSinks_.empty() || !onHibernate_);});
+        if (!ret) {
+            AUDIO_ERR_LOG("On hibernate timeout, some sinks still running");
+        }
+        return;
+    } else {
+        allRunningSinksCV_.notify_all();
+        AUDIO_INFO_LOG("Wake up from hibernate");
+    }
 }
 
 int32_t AudioService::UpdateSourceType(SourceType sourceType)

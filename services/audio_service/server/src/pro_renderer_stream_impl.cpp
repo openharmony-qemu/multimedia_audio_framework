@@ -234,7 +234,7 @@ int32_t ProRendererStreamImpl::Flush()
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::Drain()
+int32_t ProRendererStreamImpl::Drain(bool stopFlag)
 {
     Trace trace("ProRendererStreamImpl::Drain::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("Enter");

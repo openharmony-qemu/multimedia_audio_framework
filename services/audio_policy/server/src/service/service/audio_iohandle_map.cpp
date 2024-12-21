@@ -28,6 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
+static const int64_t WAIT_SET_MUTE_LATENCY_TIME_EXT_US = 200000; // 200ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
 
@@ -170,7 +171,16 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
         // Mute by pa.
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, true, isSync);
     }
-    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
+    // primary set device earpiece od speaker need longer latency.
+    int64_t muteLatencyTime = WAIT_SET_MUTE_LATENCY_TIME_US;
+    if ((portName == PRIMARY_SPEAKER || portName == USB_SPEAKER) && (oldOutputDevice_ != newOutputDevice_) &&
+        (oldOutputDevice_ == DEVICE_TYPE_USB_HEADSET || oldOutputDevice_ == DEVICE_TYPE_USB_ARM_HEADSET) &&
+        (newOutputDevice_ == DEVICE_TYPE_EARPIECE || newOutputDevice_ == DEVICE_TYPE_SPEAKER)) {
+        oldOutputDevice_ = DEVICE_TYPE_NONE;
+        newOutputDevice_ = DEVICE_TYPE_NONE;
+        muteLatencyTime = WAIT_SET_MUTE_LATENCY_TIME_EXT_US;
+    }
+    usleep(muteLatencyTime); // sleep fix data cache pop.
 
     // Muted and then unmute.
     std::thread switchThread(&AudioIOHandleMap::UnmutePortAfterMuteDuration, this, duration, portName,
@@ -180,7 +190,7 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
 
 void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)
 {
-    if (networkID != LOCAL_NETWORK_ID || (networkID == LOCAL_NETWORK_ID && sinkName != PRIMARY_SPEAKER)) {
+    if (networkID != LOCAL_NETWORK_ID || sinkName != PRIMARY_SPEAKER) {
         // PA may move the sink to default when unloading module.
         MuteSinkPort(PRIMARY_SPEAKER, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
     }
@@ -221,6 +231,12 @@ void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, std::st
     } else {
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
     }
+}
+
+void AudioIOHandleMap::SetDeviceInfos(DeviceType oldOutputDevice, DeviceType newOutputDevice)
+{
+    oldOutputDevice_ = oldOutputDevice;
+    newOutputDevice_ = newOutputDevice;
 }
 }
 }

@@ -202,6 +202,7 @@ ohos_unittest("audio_service_unit_test") {
 
   include_dirs = [
     "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/common/src",
     "../../../../services/audio_service/server/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
@@ -218,6 +219,9 @@ ohos_unittest("audio_service_unit_test") {
     "./client/audio_stream_manager_unit_test.cpp",
     "./client/audio_system_manager_unit_test.cpp",
     "./client/fast_audio_stream_unit_test.cpp",
+    "./common/audio_common_converter_unit_test.cpp",
+    "./common/audio_down_mix_stereo_unit_test.cpp",
+    "./common/audio_volume_unit_test.cpp",
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
   ]
@@ -231,7 +235,11 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../services/audio_service:audio_service_static",
   ]
 
-  cflags = [ "-fno-access-control" ]
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
   cflags_cc = [ "-std=c++20" ]
 
   external_deps = [
@@ -631,5 +639,33 @@ ohos_unittest("capturer_in_server_unit_test") {
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("audio_dump_pcm_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../server/include",
+    "../../common/include",
+    "../../../../frameworks/native/audioschedule/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  sources = [ "audio_dump_pcm_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "pulseaudio:pulse",
   ]
 }

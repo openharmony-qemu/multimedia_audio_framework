@@ -174,7 +174,7 @@ static void FreeEffectBuffer(struct Userdata *u);
 static void ResetBufferAttr(struct Userdata *u);
 
 // BEGIN Utility functions
-#define FLOAT_EPS 1e-9f
+#define FLOAT_EPS 1e-6f
 #define MEMBLOCKQ_MAXLENGTH (16*1024*16)
 #define OFFSET_BIT_24 3
 #define BIT_DEPTH_TWO 2
@@ -221,9 +221,9 @@ static void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 static float CapMax(float v)
 {
     float value = v;
-    if (v > 1.0f) {
+    if (v >= 1.0f) {
         value = 1.0f - FLOAT_EPS;
-    } else if (v < -1.0f) {
+    } else if (v <= -1.0f) {
         value = -1.0f + FLOAT_EPS;
     }
     return value;
@@ -1091,6 +1091,36 @@ static void DoFading(void *data, int32_t length, uint32_t format, uint32_t chann
     }
 }
 
+static size_t GetbqlAlinLength(struct playback_stream *ps, pa_sink_input *sinkIn)
+{
+    const bool b = (bool)ps->sink_input->thread_info.resampler;
+    const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
+    const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
+    const size_t bql = pa_memblockq_get_length(ps->memblockq);
+    const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
+    const size_t bqlRend = pa_memblockq_get_length(sinkIn->thread_info.render_memblockq);
+    const size_t bqlAlin = pa_frame_align(bqlResamp + bqlRend, &sampleSpecOut);
+    return bqlAlin;
+}
+
+static bool DoStopDrainFadeout(pa_sink_input *sinkIn, uint32_t streamIndex, int32_t length)
+{
+    playback_stream *ps = sinkIn->userdata;
+    CHECK_AND_RETURN_RET_LOG(ps != NULL, false, "playback_stream is null");
+    if (ps->drain_request) {
+        uint32_t sinkStopFadeout = GetStopFadeoutState(streamIndex);
+        if (sinkStopFadeout == DO_FADE) {
+            const size_t bqlAlin = GetbqlAlinLength(ps, sinkIn);
+            if (bqlAlin > 0 && bqlAlin == length) {
+                AUDIO_INFO_LOG("drain_request bqlalin:%{public}zu", bqlAlin);
+                RemoveStopFadeoutState(streamIndex);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_sink *si)
 {
     CHECK_AND_RETURN_LOG(sinkIn != NULL, "sinkIn is null");
@@ -1106,6 +1136,10 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
 
     uint32_t streamIndex = sinkIn->index;
     uint32_t sinkFadeoutPause = GetFadeoutState(streamIndex);
+    if (DoStopDrainFadeout(sinkIn, streamIndex, infoIn->chunk.length)) {
+        sinkFadeoutPause = DO_FADE;
+    }
+
     if (sinkFadeoutPause == DONE_FADE && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
         silenceData(infoIn, si);
         AUDIO_PRERELEASE_LOGI("after pause fadeout done, silenceData");
@@ -1835,37 +1869,47 @@ static void UpdateStreamAvailableMap(struct Userdata *u, const char *sceneType)
 }
 
 /* For ResampleAffterEffectChain, update input channellayout and sample spec */
-static pa_resampler *UpdateResamplerIchannelMap(const char *sinkSceneType, struct Userdata *u)
+static pa_resampler *UpdateResamplerInChannelMap(const char *sinkSceneType, struct Userdata *u)
 {
     pa_resampler *resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sinkSceneType);
     if (resampler == NULL) {
         return NULL;
     }
-    pa_channel_map ichannelmap;
-    ichannelmap.channels = u->bufferAttr->numChanOut;
-    ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &ichannelmap);
-    if (!pa_channel_map_valid(&ichannelmap)) {
+    pa_channel_map inChannelMap;
+    inChannelMap.channels = u->bufferAttr->numChanOut;
+    ConvertChLayoutToPaChMap(u->bufferAttr->outChanLayout, &inChannelMap);
+    if (!pa_channel_map_valid(&inChannelMap)) {
         AUDIO_ERR_LOG("UpdateResampler: invalid channelmap, channels [%{public}d], channellayout [%{public}" PRIu64 "]",
             u->bufferAttr->numChanOut, u->bufferAttr->outChanLayout);
-        ichannelmap.channels = DEFAULT_NUM_CHANNEL;
-        ConvertChLayoutToPaChMap(DEFAULT_CHANNELLAYOUT, &ichannelmap);
+        inChannelMap.channels = DEFAULT_NUM_CHANNEL;
+        ConvertChLayoutToPaChMap(DEFAULT_CHANNELLAYOUT, &inChannelMap);
     }
-    if ((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &ichannelmap))) {
+    if ((!pa_channel_map_equal(pa_resampler_input_channel_map(resampler), &inChannelMap))) {
         // for now, use sample_spec from sink
-        pa_sample_spec ispec = *(pa_resampler_input_sample_spec(resampler));
-        ispec.channels = (uint8_t)u->bufferAttr->numChanOut;
-        AUDIO_INFO_LOG("UpdateResampler: sceneType [%{public}s], input channels[%{public}d], sample rate[%{public}d],"
-            "format[%{public}d]", (char *)sinkSceneType, ichannelmap.channels, ispec.rate, ispec.format);
-        pa_sample_spec sink_spec = *(pa_resampler_output_sample_spec(resampler));
-        pa_channel_map sink_channelmap = *(pa_resampler_output_channel_map(resampler));
-        pa_resampler_free(resampler);
+        pa_sample_spec inSpec = *(pa_resampler_input_sample_spec(resampler));
+        inSpec.channels = (uint8_t)u->bufferAttr->numChanOut;
+        AUDIO_INFO_LOG("UpdateResampler: sceneType [%{public}s], input channels [%{public}d], "
+            "sample rate [%{public}d], format[%{public}d]. "
+            "new input channels [%{public}d], sample rate [%{public}d], format[%{public}d]",
+            (char *)sinkSceneType, pa_resampler_input_sample_spec(resampler)->channels,
+            pa_resampler_input_sample_spec(resampler)->rate, pa_resampler_input_sample_spec(resampler)->format,
+            inChannelMap.channels, inSpec.rate, inSpec.format);
+        pa_sample_spec sinkSpec = *(pa_resampler_output_sample_spec(resampler));
+        pa_channel_map sinkChannelMap = *(pa_resampler_output_channel_map(resampler));
+        char *dupSceneType = strdup(sinkSceneType);
+        if (dupSceneType == NULL) {
+            AUDIO_ERR_LOG("UpdateResampler: [%{public}s], allocate new char fail! return old resampler!",
+                sinkSceneType);
+            return resampler;
+        }
+        pa_hashmap_remove_and_free(u->sceneToResamplerMap, sinkSceneType);
         resampler = pa_resampler_new(
             u->sink->core->mempool,
-            &ispec, &ichannelmap,
-            &sink_spec, &sink_channelmap,
+            &inSpec, &inChannelMap,
+            &sinkSpec, &sinkChannelMap,
             u->sink->core->lfe_crossover_freq,
             PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
-        pa_hashmap_put(u->sceneToResamplerMap, (void *)sinkSceneType, (void *)resampler);
+        pa_hashmap_put(u->sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
     }
     return resampler;
 }
@@ -1877,14 +1921,14 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     if (pa_safe_streq(sinkSceneType, "EFFECT_NONE")) {
         return;
     }
-    pa_resampler *resampler = UpdateResamplerIchannelMap(sinkSceneType, u);
+    pa_resampler *resampler = UpdateResamplerInChannelMap(sinkSceneType, u);
     if (resampler == NULL) {
         return;
     }
-    const pa_sample_spec *ispec = pa_resampler_input_sample_spec(resampler);
-    const pa_sample_spec *ospec = pa_resampler_output_sample_spec(resampler);
-    size_t inBufferLen = (size_t)u->bufferAttr->frameLen * ispec->channels * sizeof(float);
-    size_t outBufferLen = (size_t)u->bufferAttr->frameLen * ospec->channels * sizeof(float);
+    const pa_sample_spec *inSpec = pa_resampler_input_sample_spec(resampler);
+    const pa_sample_spec *outSpec = pa_resampler_output_sample_spec(resampler);
+    size_t inBufferLen = (size_t)u->bufferAttr->frameLen * inSpec->channels * sizeof(float);
+    size_t outBufferLen = (size_t)u->bufferAttr->frameLen * outSpec->channels * sizeof(float);
     pa_memchunk unsampledChunk;
     pa_memchunk sampledChunk;
     unsampledChunk.length = inBufferLen;
@@ -1894,7 +1938,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     int ret = memcpy_s(dst, inBufferLen, u->bufferAttr->bufOut, inBufferLen);
     if (ret != 0) {
         float *dstFloat = (float *)dst;
-        for (int i = 0; i < ispec->channels * u->bufferAttr->frameLen; i++) {
+        for (int i = 0; i < inSpec->channels * u->bufferAttr->frameLen; i++) {
             dstFloat[i] = u->bufferAttr->bufOut[i];
         }
     }
@@ -1905,7 +1949,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     ret = memcpy_s(u->bufferAttr->bufOut, outBufferLen, src, outBufferLen);
     if (ret != 0) {
         float *srcFloat = (float *)src;
-        for (int i = 0; i < u->bufferAttr->frameLen * ospec->channels; i++) {
+        for (int i = 0; i < u->bufferAttr->frameLen * outSpec->channels; i++) {
             u->bufferAttr->bufOut[i] = srcFloat[i];
         }
     }
@@ -2016,12 +2060,48 @@ static void ResetBufferAttr(struct Userdata *u)
     }
 }
 
+static void SceneToResamplerMapAddNewScene(pa_hashmap *sceneToResamplerMap, const char *sceneType, pa_sink *si)
+{
+    pa_sample_spec sinkSpec = si->sample_spec;
+    pa_channel_map sinkChannelMap = si->channel_map;
+    sinkSpec.format = PA_SAMPLE_FLOAT32LE;
+    // for now, use sample_spec from sink
+    AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
+        ", format[%{public}d]", (char *)sceneType, sinkSpec.channels, sinkSpec.rate, sinkSpec.format);
+    pa_resampler *resampler = pa_resampler_new(
+        si->core->mempool, &sinkSpec, &sinkChannelMap,
+        &sinkSpec, &sinkChannelMap, si->core->lfe_crossover_freq,
+        PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+    char* newSceneType = strdup(sceneType);
+    if (newSceneType == NULL) {
+        AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
+        return;
+    }
+    pa_hashmap_put(sceneToResamplerMap, (void *)newSceneType, (void *)resampler);
+}
+
+static void UpdateResamplerOutChannelMap(pa_hashmap *sceneToResamplerMap, const char *sceneType, pa_sink *si)
+{
+    // for now, use sample_spec from sink
+    pa_sample_spec sinkSpec = si->sample_spec;
+    pa_channel_map sinkChannelMap = si->channel_map;
+    sinkSpec.format = PA_SAMPLE_FLOAT32LE;
+    char *dupSceneType = strdup(sceneType);
+    if (dupSceneType == NULL) {
+        AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
+        return;
+    }
+    pa_hashmap_remove_and_free(sceneToResamplerMap, sceneType);
+    pa_resampler *resampler = pa_resampler_new(
+        si->core->mempool, &sinkSpec, &sinkChannelMap,
+        &sinkSpec, &sinkChannelMap, si->core->lfe_crossover_freq,
+        PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
+    pa_hashmap_put(sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
+}
+
 static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashmap *sceneToCountMap, pa_sink *si)
 {
     // sample rate and channellayout from audio effect chain -> resampler -> sample rate and channellayout for the sink
-    pa_sample_spec sink_spec = si->sample_spec;
-    pa_channel_map sink_channelmap = si->channel_map;
-    sink_spec.format = PA_SAMPLE_FLOAT32LE;
     const void* sceneType = NULL;
     void* count = NULL;
     while ((pa_hashmap_iterate(sceneToCountMap, &count, &sceneType))) {
@@ -2031,32 +2111,20 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
         pa_resampler* resampler = NULL;
         resampler = (pa_resampler*)pa_hashmap_get(sceneToResamplerMap, sceneType);
         if (resampler == NULL) {
-            // for now, use sample_spec from sink
-            AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
-                ", format[%{public}d]", (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
-            resampler = pa_resampler_new(
-                si->core->mempool, &sink_spec, &sink_channelmap,
-                &sink_spec, &sink_channelmap, si->core->lfe_crossover_freq,
-                PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
-            char* newSceneType = strdup(sceneType);
-            if (newSceneType == NULL) {
-                AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
+            SceneToResamplerMapAddNewScene(sceneToResamplerMap, sceneType, si);
+        } else {
+            pa_sample_spec sinkSpec = si->sample_spec;
+            sinkSpec.format = PA_SAMPLE_FLOAT32LE;
+            if (pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sinkSpec) &&
+                pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &si->channel_map)) {
                 continue;
             }
-            pa_hashmap_put(sceneToResamplerMap, (void *)newSceneType, (void *)resampler);
-        } else {
-            if (!pa_sample_spec_equal(pa_resampler_output_sample_spec(resampler), &sink_spec) ||
-                !pa_channel_map_equal(pa_resampler_output_channel_map(resampler), &sink_channelmap)) {
-                AUDIO_INFO_LOG("SceneToResamplerMap: [%{public}s], new output channels[%{public}d], "
-                    "sample rate[%{public}d], format[%{public}d]",
-                    (char *)sceneType, sink_spec.channels, sink_spec.rate, sink_spec.format);
-                pa_resampler_free(resampler);
-                resampler = pa_resampler_new(
-                    si->core->mempool, &sink_spec, &sink_channelmap,
-                    &sink_spec, &sink_channelmap, si->core->lfe_crossover_freq,
-                    PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
-                pa_hashmap_put(sceneToResamplerMap, (void *)sceneType, (void *)resampler);
-            }
+            AUDIO_INFO_LOG("SceneToResamplerMap: [%{public}s], output channels [%{public}d], sample rate [%{public}d],"
+                " format[%{public}d]. new output channels [%{public}d], sample rate [%{public}d], format[%{public}d].",
+                (char *)sceneType, pa_resampler_output_sample_spec(resampler)->channels,
+                pa_resampler_output_sample_spec(resampler)->rate, pa_resampler_output_sample_spec(resampler)->format,
+                sinkSpec.channels, sinkSpec.rate, sinkSpec.format);
+            UpdateResamplerOutChannelMap(sceneToResamplerMap, sceneType, si);
         }
     }
     // delete entries that are not in scenemap
@@ -2369,10 +2437,8 @@ static size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool 
     size_t tlengthHalfResamp = pa_frame_align(pa_usec_to_bytes(pa_bytes_to_usec(pa_memblockq_get_tlength(
         ps->memblockq) / 1.5, &sampleSpecIn), &sampleSpecOut), &sampleSpecOut); // 1.5 for half
     size_t sizeTgt = PA_MIN(sizeFrame, tlengthHalfResamp);
-    const size_t bql = pa_memblockq_get_length(ps->memblockq);
-    const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
-    const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
-    const size_t bqlAlin = pa_frame_align(bqlResamp + bqlRend, &sampleSpecOut);
+
+    const size_t bqlAlin = GetbqlAlinLength(ps, i);
 
     if (ps->drain_request) {
         if (i->thread_info.render_memblockq->maxrewind != 0) {
@@ -3005,6 +3071,26 @@ static void ResetFadeoutPause(pa_sink_input *i, pa_sink_input_state_t state)
     }
 }
 
+static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t state, struct Userdata *u)
+{
+    if (state == PA_SINK_INPUT_RUNNING) {
+        if (u->primary.sinkAdapter == NULL) {
+            return;
+        }
+        const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
+        const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+        const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+        float volume = GetCurVolume(sessionID, streamType, deviceClass);
+        bool isZeroVolume = IsSameVolume(volume, 0.0f);
+        AUDIO_INFO_LOG(
+            "session %{public}u, stream %{public}s, zerovol %{public}d", sessionID, streamType, isZeroVolume);
+        if (!isZeroVolume) {
+            u->primary.sinkAdapter->RendererSinkSetPriPaPower(u->primary.sinkAdapter);
+        }
+    }
+}
+
 static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 {
     struct Userdata *u = NULL;
@@ -3029,9 +3115,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     }
     pa_assert_se(u = i->sink->userdata);
 
-    if (state == PA_SINK_INPUT_RUNNING) {
-        u->primary.sinkAdapter->RendererSinkSetPriPaPower(u->primary.sinkAdapter);
-    }
+    RendererSinkSetPriPaPower(i, state, u);
 
     char str[SPRINTF_STR_LEN] = {0};
     GetSinkInputName(i, str, SPRINTF_STR_LEN);
@@ -3177,6 +3261,9 @@ static void ProcessRenderUseTimingMultiChannel(struct Userdata *u, pa_usec_t now
 
     // Fill the buffer up the latency size
     pa_memchunk chunk;
+    chunk.memblock = NULL;
+    chunk.length = 0;
+    chunk.index = 0;
 
     // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
     SinkRenderMultiChannel(u->sink, u->sink->thread_info.max_request, &chunk);
@@ -4025,9 +4112,6 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
 
 static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
-    // set audio thread priority
-    ScheduleThreadInServer(getpid(), gettid());
-
     pa_sink_new_data data;
     pa_module *m;
     pa_sink *sink = NULL;
@@ -4082,7 +4166,7 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     return sink;
 
 fail:
-    UnscheduleThreadInServer(getpid(), gettid());
+    AUDIO_ERR_LOG("PaHdiSinkInit fail");
     return NULL;
 }
 

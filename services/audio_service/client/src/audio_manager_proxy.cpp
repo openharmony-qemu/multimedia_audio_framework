@@ -1374,5 +1374,21 @@ int32_t AudioManagerProxy::GetOfflineAudioEffectChains(vector<string> &effectCha
     }
     return reply.ReadInt32();
 }
+
+void AudioManagerProxy::CheckHibernateState(bool onHibernate)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "AudioManagerProxy: WriteInterfaceToken failed");
+    data.WriteBool(onHibernate);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_HIBERNATE_STATE), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "CheckHibernateState failed, error: %{public}d", error);
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -61,7 +61,6 @@ public:
     float GetMaxAmplitude(const int32_t deviceId);
     void UpdateInputDeviceInfo(DeviceType deviceType);
     std::string GetActiveBtDeviceMac();
-    int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     void SetActiveBtDeviceMac(const std::string macAddress);
     void SetActiveBtInDeviceMac(const std::string macAddress);
     int32_t SetDeviceActive(DeviceType deviceType, bool active);

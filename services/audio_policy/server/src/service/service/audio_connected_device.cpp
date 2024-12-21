@@ -138,8 +138,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
     return nullptr;
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(
-    std::string networkId, DeviceType deviceType, std::string macAddress, DeviceRole deviceRole)
+void AudioConnectedDevice::GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
+    std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
     auto isPresent =
         [&networkId, &deviceType, &macAddress, &deviceRole] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
@@ -150,10 +150,11 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
         return false;
     };
     auto it = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
-    if (it != connectedDevices_.end()) {
-        return *it;
+    while (it != connectedDevices_.end()) {
+        descForCb.push_back(*it);
+        it = std::find_if(std::next(it), connectedDevices_.end(), isPresent);
     }
-    return nullptr;
+    return;
 }
 
 void AudioConnectedDevice::DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress,
@@ -292,16 +293,19 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
 
 DeviceType AudioConnectedDevice::FindConnectedHeadset()
 {
-    DeviceType retType = DEVICE_TYPE_NONE;
-    for (const auto& devDesc: connectedDevices_) {
-        if ((devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) ||
+    const auto& itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
+        [](const std::shared_ptr<AudioDeviceDescriptor> &devDesc) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
+        return ((devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_DP) ||
-            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET)) {
-            retType = devDesc->deviceType_;
-            break;
-        }
+            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET));
+    });
+
+    DeviceType retType = DEVICE_TYPE_NONE;
+    if (itr != connectedDevices_.end()) {
+        retType = (*itr)->deviceType_;
     }
     return retType;
 }
@@ -332,13 +336,11 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
 
 bool AudioConnectedDevice::IsArmDevice(const std::string& address, const DeviceRole role)
 {
-    for (auto& item : connectedDevices_) {
-        if (item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET &&
-            item->macAddress_ == address && item->deviceRole_ == role) {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(connectedDevices_.begin(), connectedDevices_.end(),
+        [&address, &role](const auto& item) {
+            return (item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET &&
+                item->macAddress_ == address && item->deviceRole_ == role);
+        });
 }
 
 bool AudioConnectedDevice::HasArm(const DeviceRole role)
@@ -353,6 +355,18 @@ bool AudioConnectedDevice::HasHifi(const DeviceRole role)
     return std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [role](const auto& item) {
         return item->deviceType_ == DEVICE_TYPE_USB_HEADSET && item->deviceRole_ == role;
     }) != connectedDevices_.cend();
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetUsbDeviceDescriptor(const std::string &address,
+    const DeviceRole role)
+{
+    auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [&address, role](const auto &item) {
+        return IsUsb(item->deviceType_) && item->macAddress_ == address && item->deviceRole_ == role;
+    });
+    if (it != connectedDevices_.cend()) {
+        return *it;
+    }
+    return nullptr;
 }
 
 }

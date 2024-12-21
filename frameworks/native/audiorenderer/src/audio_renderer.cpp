@@ -1472,6 +1472,7 @@ int32_t AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     audioStream->SetCapturerInfo(info.capturerInfo);
     int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
+    audioStream->SetDefaultOutputDevice(info.defaultOutputDevice);
     audioStream->SetRenderMode(info.renderMode);
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
@@ -1545,13 +1546,13 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     bool switchResult = false;
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
+        std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
         std::lock_guard<std::shared_mutex> lock(rendererMutex_);
         isSwitching_ = true;
         RendererState previousState = GetStatus();
         AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
         if (previousState == RENDERER_RUNNING) {
-            switchResult = audioStream_->StopAudioStream();
-            CHECK_AND_RETURN_RET_LOG(switchResult, false, "StopAudioStream failed.");
+            CHECK_AND_RETURN_RET_LOG(audioStream_->StopAudioStream(), false, "StopAudioStream failed.");
         }
         IAudioStream::SwitchInfo info;
         InitSwitchInfo(targetClass, info);
@@ -1576,8 +1577,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
             newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, info.params,
                 info.eStreamType, appInfo_.appPid);
             CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
-            initResult = SetSwitchInfo(info, newAudioStream);
-            CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
+            CHECK_AND_RETURN_RET_LOG(SetSwitchInfo(info, newAudioStream) == SUCCESS, false, "Init ipc strean failed");
         }
 
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
@@ -1587,12 +1587,12 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
             switchResult = newAudioStream->StartAudioStream(CMD_FROM_CLIENT, reason);
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
         }
+        oldAudioStream = audioStream_;
         audioStream_ = newAudioStream;
         UpdateRendererAudioStream(audioStream_);
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
-        SetDefaultOutputDevice(selectedDefaultOutputDevice_);
     }
     WriteSwitchStreamLogMsg();
     return switchResult;
@@ -1842,7 +1842,7 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
         abortRestore_ = false;
     }
 
-    SetDefaultOutputDevice(selectedDefaultOutputDevice_);
+    InitAudioInterruptCallback();
     if (GetStatus() == RENDERER_RUNNING) {
         GetAudioInterrupt(audioInterrupt_);
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
@@ -1985,13 +1985,7 @@ int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
         AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end(), rendererInfo_.streamUsage) !=
         AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end());
     CHECK_AND_RETURN_RET_LOG(isSupportedStreamUsage, ERR_NOT_SUPPORTED, "stream usage not supported");
-    selectedDefaultOutputDevice_ = deviceType;
-    uint32_t currentSessionID = 0;
-    audioStream_->GetAudioSessionID(currentSessionID);
-    int32_t ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType, currentSessionID,
-        rendererInfo_.streamUsage, GetStatus() == RENDERER_RUNNING);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select default output device failed");
-    return SUCCESS;
+    return audioStream_->SetDefaultOutputDevice(deviceType);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

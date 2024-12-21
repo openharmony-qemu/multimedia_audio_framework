@@ -29,6 +29,8 @@
     *SetNonInterruptMute*;
     *SetOffloadMode*;
     *UnsetOffloadMode*;
+    *UpdateAudioSinkState*;
+    *CheckHibernateState*;
     *GetMaxRendererInstances*;
     *ProcessCbProxy*;
     *GetCapturerBySessionID*;

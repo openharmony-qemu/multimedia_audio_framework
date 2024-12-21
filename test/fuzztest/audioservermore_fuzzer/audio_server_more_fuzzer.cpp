@@ -479,7 +479,7 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     bool isAppBack = GetData<bool>();
     bool headTrackingEnabled = GetData<bool>();
     renderer->UpdateSpatializationState(isAppBack, headTrackingEnabled);
-    renderer->WriterRenderStreamStandbySysEvent();
+    renderer->CheckAndWriterRenderStreamStandbySysEvent(GetData<bool>());
     uint64_t timeStamp = COMMON_UINT64_NUM;
     renderer->GetOffloadApproximatelyCacheTime(timeStamp, timeStamp, timeStamp, timeStamp);
     BufferDesc desc;

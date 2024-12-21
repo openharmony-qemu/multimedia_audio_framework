@@ -159,6 +159,8 @@ private:
     void SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetPreferredDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SaveRemoteInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply);
@@ -185,7 +187,6 @@ private:
     void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
     void IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply);
     void SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply);
-    void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

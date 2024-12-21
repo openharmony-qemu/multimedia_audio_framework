@@ -86,9 +86,9 @@ void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
     AudioService::GetInstance()->UpdateMuteControlSet(sessionId_, muteFlag);
 }
 
-bool AudioProcessInServer::GetMuteFlag()
+bool AudioProcessInServer::GetMuteState()
 {
-    return muteFlag_;
+    return muteFlag_ || silentModeAndMixWithOthers_;
 }
 
 uint32_t AudioProcessInServer::GetSessionId()
@@ -493,5 +493,19 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_, buffer, bufferSize);
     }
 }
+
+int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
+        processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
+}
+
+int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
+{
+    silentModeAndMixWithOthers_ = on;
+    AUDIO_INFO_LOG("%{public}d", on);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

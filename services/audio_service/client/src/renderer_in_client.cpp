@@ -562,6 +562,11 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
 
 void RendererInClientInner::FirstFrameProcess()
 {
+    if (ipcStream_ == nullptr) {
+        AUDIO_ERR_LOG("Error: ipcStream_ is not initialized!");
+        return;
+    }
+ 
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_.exchange(false)) {
         ipcStream_->RegisterThreadPriority(gettid(),
@@ -852,6 +857,14 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
     });
+
+    // clear cbBufferQueue
+    if (renderMode_ == RENDER_MODE_CALLBACK && stopFlag) {
+        cbBufferQueue_.Clear();
+        if (memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_) != EOK) {
+            AUDIO_ERR_LOG("memset_s buffer failed");
+        };
+    }
 
     if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",

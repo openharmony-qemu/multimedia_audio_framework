@@ -129,6 +129,8 @@ int32_t OfflineAudioEffectServerChain::GetOfflineAudioEffectChains(std::vector<s
     std::lock_guard<std::mutex> maplock(g_chainMutex);
     for (auto item : g_chainName2infoMap) {
         chainNamesVector.emplace_back(item.first);
+        AUDIO_DEBUG_LOG("effectName: %{public}s libName: %{public}s effectId: %{public}s", item.first.c_str(),
+            item.second.first.c_str(), item.second.second.c_str());
     }
     AUDIO_INFO_LOG("GetOfflineAudioEffectChains done");
     return SUCCESS;
@@ -189,9 +191,9 @@ int32_t OfflineAudioEffectServerChain::SetParam(AudioStreamInfo inInfo, AudioStr
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
         "%{public}s effect COMMAND_SET_CONFIG failed, errCode is %{public}d", chainName_.c_str(), ret);
 
-    inBufferSize_ = GetByteSize(inInfo.format) * inInfo.samplingRate * inInfo.channels *
+    inBufferSize_ = static_cast<uint32_t>(GetByteSize(inInfo.format)) * inInfo.samplingRate * inInfo.channels *
         MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
-    outBufferSize_ = GetByteSize(outInfo.format) * outInfo.samplingRate * outInfo.channels *
+    outBufferSize_ = static_cast<uint32_t>(GetByteSize(outInfo.format)) * outInfo.samplingRate * outInfo.channels *
         MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
     return SUCCESS;
 }
@@ -231,9 +233,9 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
     struct AudioEffectBuffer input;
     struct AudioEffectBuffer output;
 
-    input = {inSize / GetFormatByteSize(offlineConfig_.inputCfg.format),
+    input = {static_cast<int32_t>(inSize) / GetFormatByteSize(offlineConfig_.inputCfg.format),
         GetFormatByteSize(offlineConfig_.inputCfg.format),
-        reinterpret_cast<int8_t *>(serverBufferIn_->GetBase()), inSize};
+        reinterpret_cast<int8_t *>(serverBufferIn_->GetBase()), static_cast<int32_t>(inSize)};
     output = {};
 
     std::lock_guard<std::mutex> lock(offlineChainMutex_);

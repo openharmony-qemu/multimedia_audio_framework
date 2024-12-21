@@ -29,7 +29,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-    static constexpr char AUDIO_TONE_CONFIG_FILE[] = "system/etc/audio/audio_tone_dtmf_config.xml";
+    static constexpr char AUDIO_TONE_CONFIG_FILE[] = "/system/etc/audio/audio_tone_dtmf_config.xml";
 
 class AudioToneParser {
 public:

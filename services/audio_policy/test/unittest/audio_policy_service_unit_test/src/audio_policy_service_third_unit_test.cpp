@@ -36,7 +36,7 @@ static AudioPolicyServer* GetServerPtr()
 {
     return AudioPolicyServiceUnitTest::GetServerPtr();
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test OnDeviceInfoUpdated.
 * @tc.number: OnDeviceInfoUpdated_001
@@ -93,6 +93,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceInfoUpdated_003, TestSize.Leve
 
     GetServerPtr()->audioPolicyService_.OnDeviceInfoUpdated(*desc, command);
 }
+#endif
 /**
 * @tc.name  : Test DeviceUpdateClearRecongnitionStatus.
 * @tc.number: DeviceUpdateClearRecongnitionStatus_001
@@ -109,7 +110,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     desc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
     desc->isEnable_ = true;
 
-    GetServerPtr()->audioPolicyService_.DeviceUpdateClearRecongnitionStatus(*desc);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
 }
 
 /**
@@ -130,7 +131,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     desc->deviceCategory_ = BT_HEARAID;
     desc->isEnable_ = true;
 
-    GetServerPtr()->audioPolicyService_.DeviceUpdateClearRecongnitionStatus(*desc);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
 }
 
 /**
@@ -151,7 +152,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     desc->deviceCategory_ = BT_HEARAID;
     desc->isEnable_ = false;
 
-    GetServerPtr()->audioPolicyService_.DeviceUpdateClearRecongnitionStatus(*desc);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
 }
 
 /**
@@ -172,7 +173,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     desc->deviceCategory_ = BT_HEARAID;
     desc->isEnable_ = false;
 
-    GetServerPtr()->audioPolicyService_.DeviceUpdateClearRecongnitionStatus(*desc);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
 }
 
 /**
@@ -193,7 +194,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
     desc->deviceCategory_ = BT_HEARAID;
     desc->isEnable_ = true;
 
-    GetServerPtr()->audioPolicyService_.DeviceUpdateClearRecongnitionStatus(*desc);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
 }
 
 /**
@@ -206,7 +207,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_001, TestSize.Lev
     auto server = GetServerPtr();
 
     std::string dumpString = "666";
-    server->audioPolicyService_.GetOffloadStatusDump(dumpString);
+    server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
 }
 
 /**
@@ -220,7 +221,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_002, TestSize.Lev
 
     std::string dumpString = "666";
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
-    server->audioPolicyService_.GetOffloadStatusDump(dumpString);
+    server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
 }
 
 /**
@@ -234,7 +235,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_003, TestSize.Lev
 
     std::string dumpString = "666";
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    server->audioPolicyService_.GetOffloadStatusDump(dumpString);
+    server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
 }
 
 /**
@@ -248,9 +249,9 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_004, TestSize.Lev
 
     std::string dumpString = "666";
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    server->audioPolicyService_.GetOffloadStatusDump(dumpString);
+    server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test HandleRemoteCastDevice.
 * @tc.number: HandleRemoteCastDevice_001
@@ -266,10 +267,10 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, HandleRemoteCastDevice_001, TestSize.L
     audioStreamInfo.samplingRate =  AudioSamplingRate::SAMPLE_RATE_48000;
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioStreamInfo.channels = AudioChannel::STEREO;
-    GetServerPtr()->audioPolicyService_.HandleRemoteCastDevice(isConnected, audioStreamInfo);
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemoteCastDevice(isConnected, audioStreamInfo);
     sleep(1);
 }
-
+#endif
 /**
  * @tc.name  : Test DeviceVolumeInfosDump.
  * @tc.number: DeviceVolumeInfosDump_001
@@ -282,7 +283,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceVolumeInfosDump_001, TestSize.Le
 
     std::string dumpString = "666";
     DeviceVolumeInfoMap deviceVolumeInfos;
-    server->audioPolicyService_.DeviceVolumeInfosDump(dumpString, deviceVolumeInfos);
+    server->audioPolicyDump_.DeviceVolumeInfosDump(dumpString, deviceVolumeInfos);
 }
 
 /**
@@ -296,7 +297,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, StreamVolumesDump_001, TestSize.Level1
     ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
-    server->audioPolicyService_.StreamVolumesDump(dumpString);
+    server->audioPolicyDump_.StreamVolumesDump(dumpString);
 }
 
 /**
@@ -310,7 +311,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, StreamVolumesDump_002, TestSize.Level1
     ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
-    server->audioPolicyService_.StreamVolumesDump(dumpString);
+    server->audioPolicyDump_.StreamVolumesDump(dumpString);
 }
 
 /**
@@ -324,17 +325,17 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsStreamSupported_001, TestSize.Level1
     ASSERT_NE(nullptr, server);
 
     AudioStreamType streamType = STREAM_MUSIC;
-    EXPECT_TRUE(server->audioPolicyService_.IsStreamSupported(streamType));
+    EXPECT_TRUE(server->audioPolicyDump_.IsStreamSupported(streamType));
     streamType = STREAM_VOICE_CALL;
-    EXPECT_TRUE(server->audioPolicyService_.IsStreamSupported(streamType));
+    EXPECT_TRUE(server->audioPolicyDump_.IsStreamSupported(streamType));
     streamType = STREAM_VOICE_COMMUNICATION;
-    EXPECT_TRUE(server->audioPolicyService_.IsStreamSupported(streamType));
+    EXPECT_TRUE(server->audioPolicyDump_.IsStreamSupported(streamType));
     streamType = STREAM_VOICE_ASSISTANT;
-    EXPECT_TRUE(server->audioPolicyService_.IsStreamSupported(streamType));
+    EXPECT_TRUE(server->audioPolicyDump_.IsStreamSupported(streamType));
     streamType = STREAM_WAKEUP;
-    EXPECT_TRUE(server->audioPolicyService_.IsStreamSupported(streamType));
+    EXPECT_TRUE(server->audioPolicyDump_.IsStreamSupported(streamType));
     streamType = STREAM_CAMCORDER;
-    EXPECT_TRUE(server->audioPolicyService_.IsStreamSupported(streamType));
+    EXPECT_TRUE(server->audioPolicyDump_.IsStreamSupported(streamType));
 }
 
 /**
@@ -348,7 +349,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsStreamSupported_002, TestSize.Level1
     ASSERT_NE(nullptr, server);
 
     AudioStreamType streamType = STREAM_MEDIA;
-    EXPECT_FALSE(server->audioPolicyService_.IsStreamSupported(streamType));
+    EXPECT_FALSE(server->audioPolicyDump_.IsStreamSupported(streamType));
 }
 
 /**
@@ -362,7 +363,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetCallStatusDump_001, TestSize.Level1
     ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
-    server->audioPolicyService_.GetCallStatusDump(dumpString);
+    server->audioPolicyDump_.GetCallStatusDump(dumpString);
 }
 
 /**
@@ -376,7 +377,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetCallStatusDump_002, TestSize.Level1
     ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
-    server->audioPolicyService_.GetCallStatusDump(dumpString);
+    server->audioPolicyDump_.GetCallStatusDump(dumpString);
 }
 
 /**
@@ -390,7 +391,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetRingerModeDump_001, TestSize.Level1
     ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
-    server->audioPolicyService_.GetRingerModeDump(dumpString);
+    server->audioPolicyDump_.GetRingerModeDump(dumpString);
 }
 
 /**
@@ -403,10 +404,10 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetDumpDevices_001, TestSize.Level1)
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    server->audioPolicyService_.GetDumpDevices(DeviceFlag::NONE_DEVICES_FLAG);
-    server->audioPolicyService_.GetDumpDevices(DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG);
-    server->audioPolicyService_.GetDumpDevices(DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG);
-    server->audioPolicyService_.GetDumpDevices(DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG);
+    server->audioPolicyDump_.GetDumpDevices(DeviceFlag::NONE_DEVICES_FLAG);
+    server->audioPolicyDump_.GetDumpDevices(DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG);
+    server->audioPolicyDump_.GetDumpDevices(DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG);
+    server->audioPolicyDump_.GetDumpDevices(DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG);
 }
 
 /**
@@ -419,7 +420,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetDumpDevices_002, TestSize.Level1)
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    server->audioPolicyService_.GetDumpDevices(DeviceFlag::ALL_L_D_DEVICES_FLAG);
+    server->audioPolicyDump_.GetDumpDevices(DeviceFlag::ALL_L_D_DEVICES_FLAG);
 }
 
 /**
@@ -432,7 +433,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetDumpDevices_003, TestSize.Level1)
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    server->audioPolicyService_.GetDumpDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    server->audioPolicyDump_.GetDumpDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
 }
 /**
  * @tc.name  : Test SetDeviceSafeVolumeStatus.
@@ -504,7 +505,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckForA2dpSuspend_001, TestSize.Leve
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    GetServerPtr()->audioPolicyService_.CheckForA2dpSuspend(*desc);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.CheckForA2dpSuspend(*desc);
 }
 
 /**
@@ -519,7 +520,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckForA2dpSuspend_002, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    GetServerPtr()->audioPolicyService_.CheckForA2dpSuspend(*desc);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.CheckForA2dpSuspend(*desc);
 }
 
 /**

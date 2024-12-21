@@ -91,6 +91,8 @@ public:
     int32_t SetDuckFactor(float duckFactor) override;
 
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
+
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 private:
     static inline BrokerDelegator<IpcStreamProxy> delegator_;
 };

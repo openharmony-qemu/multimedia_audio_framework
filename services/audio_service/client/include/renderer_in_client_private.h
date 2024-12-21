@@ -194,6 +194,8 @@ public:
 
     bool RestoreAudioStream(bool needStoreState = true) override;
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    DeviceType GetDefaultOutputDevice() override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -412,6 +414,7 @@ private:
 
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
     std::atomic_bool writeCallbackFuncThreadStatusFlag_ { false };
+    DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

@@ -74,6 +74,7 @@ const char *g_audioServerCodeStrs[] = {
     "SET_ASR_NOISE_SUPPRESSION_MODE",
     "SET_OFFLOAD_MODE",
     "UNSET_OFFLOAD_MODE",
+    "CHECK_HIBERNATE_STATE",
     "GET_ASR_NOISE_SUPPRESSION_MODE",
     "SET_ASR_WHISPER_DETECTION_MODE",
     "GET_ASR_WHISPER_DETECTION_MODE",
@@ -176,6 +177,13 @@ int AudioManagerStub::HandleUnsetOffloadMode(MessageParcel &data, MessageParcel 
     uint32_t sessionId = data.ReadUint32();
     int32_t result = UnsetOffloadMode(sessionId);
     reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCheckHibernateState(MessageParcel &data, MessageParcel &reply)
+{
+    bool onHibernate = data.ReadBool();
+    CheckHibernateState(onHibernate);
     return AUDIO_OK;
 }
 
@@ -867,6 +875,8 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleUpdateSpatialDeviceType(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME):
             return HandleOffloadSetVolume(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_HIBERNATE_STATE):
+            return HandleCheckHibernateState(data, reply);
         default:
             return HandleThirdPartCode(code, data, reply, option);
     }

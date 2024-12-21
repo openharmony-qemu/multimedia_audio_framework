@@ -100,6 +100,9 @@ public:
 
     virtual int32_t NotifyCapturerRemoved(uint64_t sessionId) = 0;
 
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning) = 0;
+
     virtual ~IPolicyProvider() = default;
 
     static bool GetVolumeIndex(AudioVolumeType streamType, DeviceGroup deviceGroup, size_t &index)

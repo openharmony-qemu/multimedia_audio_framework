@@ -27,6 +27,7 @@
 #include <queue>
 #include <climits>
 #include <condition_variable>
+#include <charconv>
 #include "securec.h"
 
 #include "audio_info.h"
@@ -199,7 +200,7 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 }
 
 template <typename T>
-void StringParser(std::string& param, T& result);
+bool StringConverter(const std::string &str, T &result);
 
 bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>

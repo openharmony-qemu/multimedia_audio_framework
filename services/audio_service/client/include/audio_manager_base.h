@@ -469,6 +469,8 @@ public:
 
     virtual int32_t UnsetOffloadMode(uint32_t sessionId) = 0;
 
+    virtual void CheckHibernateState(bool onHibernate) = 0;
+
     /**
      * Create IpcOfflineStream for audio edition.
      *
@@ -535,6 +537,7 @@ private:
     int HandleSetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetOffloadMode(MessageParcel &data, MessageParcel &reply);
     int HandleUnsetOffloadMode(MessageParcel &data, MessageParcel &reply);
+    int HandleCheckHibernateState(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);

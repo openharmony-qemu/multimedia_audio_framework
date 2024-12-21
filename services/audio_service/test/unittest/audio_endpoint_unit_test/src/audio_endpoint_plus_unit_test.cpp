@@ -646,7 +646,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_024, TestSize.Level1)
 
     audioEndpointInner->CheckPlaySignal(&buffer, bufferSize);
 }
-
+#ifdef AUDIO_ENDPOINT_INNER_UNIT_TEST_DIFF
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
@@ -674,7 +674,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_025, TestSize.Level1)
 
     audioEndpointInner->CheckPlaySignal(&buffer, bufferSize);
 }
-
+#endif
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC

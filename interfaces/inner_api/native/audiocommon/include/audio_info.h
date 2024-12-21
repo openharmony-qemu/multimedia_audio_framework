@@ -103,7 +103,8 @@ const char* NORMAL_STREAM = "NormalStream";
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;
-
+//Maximun number of SupportedTones
+constexpr uint32_t MAX_SUPPORTED_TONEINFO_SIZE = 65535;
 // Maximun number of segments in a tone descriptor
 constexpr uint32_t TONEINFO_MAX_SEGMENTS = 12;
 constexpr uint32_t TONEINFO_INF = 0xFFFFFFFF;
@@ -145,6 +146,9 @@ public:
         parcel.WriteUint32(segmentCnt);
         parcel.WriteUint32(repeatCnt);
         parcel.WriteUint32(repeatSegment);
+        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            return false;
+        }
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Marshalling(parcel);
         }
@@ -155,6 +159,9 @@ public:
         segmentCnt = parcel.ReadUint32();
         repeatCnt = parcel.ReadUint32();
         repeatSegment = parcel.ReadUint32();
+        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            return;
+        }
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Unmarshalling(parcel);
         }

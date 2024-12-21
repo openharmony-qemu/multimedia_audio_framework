@@ -114,7 +114,7 @@ void GetAudioParameterFuzzTest()
 void RegisterParameterCallbackFuzzTest()
 {
     IAudioSinkCallback *callback_ = nullptr;
-    GetAdaptorBlueToothSink()->RegisterParameterCallback(callback_);
+    GetAdaptorBlueToothSink()->RegisterAudioSinkCallback(callback_);
 }
 
 void InitFuzzTest()

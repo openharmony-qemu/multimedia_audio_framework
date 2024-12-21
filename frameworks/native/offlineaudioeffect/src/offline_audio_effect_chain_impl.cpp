@@ -80,6 +80,8 @@ int32_t OfflineAudioEffectChainImpl::Prepare()
     std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
     int32_t ret = offlineStreamInClient_->PrepareOfflineEffectChain(clientBufferIn_, clientBufferOut_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "prepare failed, errCode is %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(clientBufferIn_ && clientBufferOut_, ERR_ILLEGAL_STATE, "buffer not prepared");
     inBufferBase_ = clientBufferIn_->GetBase();
     outBufferBase_ = clientBufferOut_->GetBase();
     return ret;
@@ -91,8 +93,8 @@ int32_t OfflineAudioEffectChainImpl::Process(uint8_t *inBuffer, int32_t inSize, 
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
     CHECK_AND_RETURN_RET_LOG(inBufferBase_ && outBufferBase_ && clientBufferIn_ && clientBufferOut_,
         ERR_ILLEGAL_STATE, "buffer not prepared");
-    int32_t inBufferSize = clientBufferIn_->GetSize();
-    int32_t outBufferSize = clientBufferOut_->GetSize();
+    int32_t inBufferSize = static_cast<int32_t>(clientBufferIn_->GetSize());
+    int32_t outBufferSize = static_cast<int32_t>(clientBufferOut_->GetSize());
     CHECK_AND_RETURN_RET_LOG(inSize > 0 && inSize <= inBufferSize && outSize > 0 && outSize <= outBufferSize,
         ERR_INVALID_PARAM, "buffer size invalid");
     CHECK_AND_RETURN_RET_LOG(inBuffer && outBuffer, ERR_INVALID_PARAM, "buffer ptr invalid");

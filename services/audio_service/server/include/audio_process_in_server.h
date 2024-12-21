@@ -85,7 +85,7 @@ public:
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
 
     void SetNonInterruptMute(const bool muteFlag);
-    bool GetMuteFlag() override;
+    bool GetMuteState() override;
     uint32_t GetSessionId();
 
     // for inner-cap
@@ -98,6 +98,10 @@ public:
 
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
 public:
     const AudioProcessConfig processConfig_;
 
@@ -108,6 +112,7 @@ private:
 
 private:
     std::atomic<bool> muteFlag_ = false;
+    std::atomic<bool> silentModeAndMixWithOthers_ = false;
     bool isInnerCapped_ = false;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
 

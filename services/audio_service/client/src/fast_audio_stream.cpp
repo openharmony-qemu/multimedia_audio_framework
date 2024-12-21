@@ -233,22 +233,15 @@ int32_t FastAudioStream::SetVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetVolume failed: null process");
     int32_t ret = SUCCESS;
-    cacheVolume_ = volume;
-    if (!silentModeAndMixWithOthers_) {
-        ret = processClient_->SetVolume(volume);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVolume error.");
-    }
+    ret = processClient_->SetVolume(volume);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVolume error.");
     return ret;
 }
 
 float FastAudioStream::GetVolume()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 1.0f, "SetVolume failed: null process"); // 1.0f for default
-    if (silentModeAndMixWithOthers_) {
-        return cacheVolume_;
-    } else {
-        return processClient_->GetVolume();
-    }
+    return processClient_->GetVolume();
 }
 
 int32_t FastAudioStream::SetMute(bool mute)
@@ -269,12 +262,10 @@ int32_t FastAudioStream::SetDuckVolume(float volume)
 
 void FastAudioStream::SetSilentModeAndMixWithOthers(bool on)
 {
-    if (!silentModeAndMixWithOthers_ && on) {
-        SetVolume(0.0);
-    } else if (silentModeAndMixWithOthers_ && !on) {
-        SetVolume(cacheVolume_);
-    }
+    AUDIO_PRERELEASE_LOGI("%{public}d", on);
     silentModeAndMixWithOthers_ = on;
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "processClient is null.");
+    processClient_->SetSilentModeAndMixWithOthers(on);
 }
 
 bool FastAudioStream::GetSilentModeAndMixWithOthers()
@@ -909,6 +900,17 @@ bool FastAudioStream::GetHighResolutionEnabled()
 {
     AUDIO_WARNING_LOG("not supported in fast audio stream");
     return false;
+}
+
+int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOuputDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
+    return processClient_->SetDefaultOutputDevice(defaultOuputDevice);
+}
+
+DeviceType FastAudioStream::GetDefaultOutputDevice()
+{
+    return DEVICE_TYPE_NONE;
 }
 } // namespace AudioStandard
 } // namespace OHOS
