@@ -351,7 +351,7 @@ void FastAudioRendererSinkInner::ReleaseMmapBuffer()
         AUDIO_WARNING_LOG("ReleaseMmapBuffer buffer already null.");
     }
     if (privFd_ != INVALID_FD) {
-        ClosFd(privFd_);
+        CloseFd(privFd_);
         privFd_ = INVALID_FD;
     }
 #endif

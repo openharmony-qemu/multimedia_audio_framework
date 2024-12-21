@@ -832,7 +832,7 @@ void CloseFd(int fd)
     }
     int tmpFd = fd;
     close(fd);
-    AUDIO_DEBUG_LOG("fd: %{public}% closed successfuly!", tmpFd);
+    AUDIO_DEBUG_LOG("fd: %{public}d closed successfuly!", tmpFd);
 }
 
 static void MemcpyToI32FromI16(int16_t *src, int32_t *dst, size_t count)
