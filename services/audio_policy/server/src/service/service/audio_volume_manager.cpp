@@ -201,6 +201,11 @@ int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
     return audioPolicyManager_.GetSystemVolumeLevel(streamType);
 }
 
+int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
+{
+    return audioPolicyManager_.GetSystemVolumeLevelNoMuteState(streamType);
+}
+
 void AudioVolumeManager::SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName)
 {
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceType));

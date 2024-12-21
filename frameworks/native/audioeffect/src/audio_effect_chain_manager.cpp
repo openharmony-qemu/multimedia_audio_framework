@@ -1261,7 +1261,7 @@ int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropert
                 AUDIO_DEBUG_LOG("effectClass->name %{public}s effectProp->category %{public}s",
                     property.name.c_str(), property.category.c_str());
                 ret = effectChain->SetEffectProperty(property.name, property.category);
-                CHECK_AND_CONTINUE_LOG(ret = AUDIO_OK, "set property failed[%{public}d]", ret);
+                CHECK_AND_CONTINUE_LOG(ret == AUDIO_OK, "set property failed[%{public}d]", ret);
             }
         }
     }
