@@ -127,12 +127,11 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
 
     AudioCapturerOptions capturerOptions = *sCapturerOptions_;
 
-    std::string cacheDir = "/data/storage/el2/base/temp";
     /* NapiAudioCapturer not support other capturerFlags, only support flag 0 */
     if (capturerOptions.capturerInfo.capturerFlags != 0) {
         capturerOptions.capturerInfo.capturerFlags = 0;
     }
-    napiCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
+    napiCapturer->audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
 
     if (napiCapturer->audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("Capturer Create failed");

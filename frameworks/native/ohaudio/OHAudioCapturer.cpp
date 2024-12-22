@@ -224,8 +224,7 @@ OHAudioCapturer::~OHAudioCapturer()
 
 bool OHAudioCapturer::Initialize(const AudioCapturerOptions& capturerOptions)
 {
-    std::string cacheDir = "/data/storage/el2/base/temp";
-    audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
+    audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
     return audioCapturer_ != nullptr;
 }
 
