@@ -806,10 +806,12 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
         return ERR_OPERATION_FAILED;
     }
+    bool mute = GetStreamMuteInternal(streamType);
     if (streamType == STREAM_ALL) {
         for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
-            AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d ", audioStreamType);
-            int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi);
+            AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d, mute = %{public}d, level = %{public}d",
+                audioStreamType, mute, volumeLevel);
+            int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi, mute);
             if (setResult != SUCCESS) {
                 return setResult;
             }
@@ -819,7 +821,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
     return SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi);
 }
 
-int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
+int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
+    bool mute)
 {
     bool updateRingerMode = false;
     if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
@@ -840,9 +843,9 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set system volume level!");
 
     // Update mute state according to volume level
-    if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
+    if (volumeLevel == 0 && !mute) {
         audioPolicyService_.SetStreamMute(streamType, true);
-    } else if (volumeLevel > 0 && GetStreamMuteInternal(streamType)) {
+    } else if (volumeLevel > 0 && mute) {
         audioPolicyService_.SetStreamMute(streamType, false);
     }
 
