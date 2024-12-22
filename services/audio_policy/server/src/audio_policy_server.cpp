@@ -42,7 +42,7 @@ namespace AudioStandard {
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
-constexpr int32_t EVENT_DES_SIZE = 60;
+constexpr int32_t EVENT_DES_SIZE = 80;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
 constexpr int32_t API_VERSION_14 = 14; // for deprecated since 9
@@ -1316,6 +1316,13 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
     return ERR_UNKNOWN;
 }
 
+void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent)
+{
+    if (interruptService_ != nullptr) {
+        interruptService_->ProcessRemoteInterrupt(sessionIds, interruptEvent);
+    }
+}
+
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
     const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
@@ -1897,18 +1904,36 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
 void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::string networkId,
     const std::string& condition)
 {
+    AUDIO_INFO_LOG("InterruptOnChange : networkId: %{public}s, condition: %{public}s.", networkId.c_str(),
+        condition.c_str());
     char eventDes[EVENT_DES_SIZE];
     InterruptType type = INTERRUPT_TYPE_BEGIN;
     InterruptForceType forceType = INTERRUPT_SHARE;
     InterruptHint hint = INTERRUPT_HINT_NONE;
+    int32_t audioCategory = 0;
 
-    int ret = sscanf_s(condition.c_str(), "%[^;];EVENT_TYPE=%d;FORCE_TYPE=%d;HINT_TYPE=%d;", eventDes,
-        EVENT_DES_SIZE, &type, &forceType, &hint);
+    int ret = sscanf_s(condition.c_str(), "%[^;];EVENT_TYPE=%d;FORCE_TYPE=%d;HINT_TYPE=%d;AUDIOCATEGORY=%d;",
+        eventDes, EVENT_DES_SIZE, &type, &forceType, &hint, &audioCategory);
     CHECK_AND_RETURN_LOG(ret >= PARAMS_INTERRUPT_NUM, "[InterruptOnChange]: Failed parse condition");
 
+     std::set<int32_t> sessionIdMedia = AudioStreamCollector::GetAudioStreamCollector().
+        GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    std::set<int32_t> sessionIdMovie = AudioStreamCollector::GetAudioStreamCollector().
+        GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_MOVIE);
+    std::set<int32_t> sessionIdGame = AudioStreamCollector::GetAudioStreamCollector().
+        GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_GAME);
+    std::set<int32_t> sessionIdAudioBook = AudioStreamCollector::GetAudioStreamCollector().
+        GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_AUDIOBOOK);
+    std::set<int32_t> sessionIds = {};
+    sessionIds.insert(sessionIdMedia.begin(), sessionIdMedia.end());
+    sessionIds.insert(sessionIdMovie.begin(), sessionIdMovie.end());
+    sessionIds.insert(sessionIdGame.begin(), sessionIdGame.end());
+    sessionIds.insert(sessionIdAudioBook.begin(), sessionIdAudioBook.end());
+
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
-    CHECK_AND_RETURN_LOG(server_->audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
-    server_->audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEvent);
+    if (server_ != nullptr) {
+        server_->ProcessRemoteInterrupt(sessionIds, interruptEvent);
+    }
 }
 
 void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string networkId,
@@ -2827,8 +2852,11 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
+    std::set<int32_t> sessionIds =
+        AudioStreamCollector::GetAudioStreamCollector().GetSessionIdByDeviceType(DEVICE_TYPE_REMOTE_CAST);
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
-    return audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEvent);
+    ProcessRemoteInterrupt(sessionIds, interruptEvent);
+    return SUCCESS;
 }
 
 bool AudioPolicyServer::CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy)

@@ -36,6 +36,7 @@ enum AudioFocuState {
     PAUSE = 2,
     STOP = 3,
     PLACEHOLDER = 4,
+    PAUSEDBYREMOTE = 5,
 };
 
 enum InterruptMode {
