@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 AudioSettingProvider* AudioSettingProvider::instance_;
 std::mutex AudioSettingProvider::mutex_;
-bool AudioSettingProvider::isDataShareReady_;
+std::atomic<bool> AudioSettingProvider::isDataShareReady_ = false;
 sptr<IRemoteObject> AudioSettingProvider::remoteObj_;
 
 const std::string SETTING_COLUMN_KEYWORD = "KEYWORD";
@@ -330,12 +330,15 @@ int32_t AudioSettingProvider::GetCurrentUserId()
 
 void AudioSettingProvider::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
-    isDataShareReady_ = isDataShareReady;
+    AUDIO_INFO_LOG("Receive event DATA_SHARE_READY");
+    isDataShareReady_.store(isDataShareReady);
 }
 
 std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShareHelper(
     std::string tableType)
 {
+    CHECK_AND_RETURN_RET_LOG(isDataShareReady_.load(), nullptr,
+        "DATA_SHARE_READY not received, create DataShareHelper failed");
 #ifdef SUPPORT_USER_ACCOUNT
     int32_t currentuserId = GetCurrentUserId();
     if (currentuserId < MIN_USER_ACCOUNT) {
