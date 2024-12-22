@@ -96,7 +96,7 @@ int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDevic
 
 int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, float volume)
 {
-    AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig.streamType);
+    AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
