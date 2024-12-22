@@ -818,7 +818,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
         }
         return SUCCESS;
     }
-    return SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi);
+    return SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi, mute);
 }
 
 int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
