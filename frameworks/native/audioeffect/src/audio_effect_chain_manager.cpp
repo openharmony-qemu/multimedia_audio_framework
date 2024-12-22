@@ -423,7 +423,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
             }
             float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
             float systemVolumeTemp = audioEffectVolume->GetSystemVolume(
-                    sessionIDToEffectInfoMap_[*s].systemVolumeType);
+                sessionIDToEffectInfoMap_[*s].systemVolumeType);
             volumeMax = fmax((streamVolumeTemp * systemVolumeTemp), volumeMax);
         }
     }
