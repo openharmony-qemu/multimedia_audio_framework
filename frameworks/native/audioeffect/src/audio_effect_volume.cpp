@@ -44,7 +44,7 @@ std::shared_ptr<AudioEffectVolume> AudioEffectVolume::GetInstance()
     return effectVolume;
 }
 
-void SetSystemVolume(const int32_t systemVolumeType, const float systemVolume);
+void SetSystemVolume(const int32_t systemVolumeType, const float systemVolume)
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
     AUDIO_DEBUG_LOG("systemVolumeType: %{public}d, systemVolume: %{public}f", systemVolumeType, systemVolume);
