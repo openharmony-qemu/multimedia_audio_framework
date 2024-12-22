@@ -19,17 +19,17 @@
 #include "audio_effect_volume.h"
 #include "audio_effect_log.h"
 
+#include "audio_utils.h"
+
 namespace OHOS {
 namespace AudioStandard {
 AudioEffectVolume::AudioEffectVolume()
 {
     AUDIO_DEBUG_LOG("created!");
     SceneTypeToVolumeMap_.clear();
-    SceneTypeToSystemVolumeMap_ = {
-        {"SCENE_RING", 1.0f},
-        {"SCENE_SPEECH", 1.0f},
-        {"SCENE_MUSIC", 1.0f},
-        {"SCENE_OTHERS", 1.0f},
+    SystemVolumeMap_.clear();
+    SystemVolumeMap_ = {
+        {STREAM_MUSIC, 0.5f},
     };
 }
 
@@ -44,21 +44,21 @@ std::shared_ptr<AudioEffectVolume> AudioEffectVolume::GetInstance()
     return effectVolume;
 }
 
-void AudioEffectVolume::SetSystemVolume(const std::string sceneType, const float systemVolume)
+void SetSystemVolume(const int32_t systemVolumeType, const float systemVolume);
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
-    AUDIO_DEBUG_LOG("systemVolume: %{public}f", systemVolume);
-    SceneTypeToSystemVolumeMap_[sceneType] = systemVolume;
+    AUDIO_DEBUG_LOG("systemVolumeType: %{public}d, systemVolume: %{public}f", systemVolumeType, systemVolume);
+    SystemVolumeMap_[systemVolumeType] = systemVolume;
 }
 
-float AudioEffectVolume::GetSystemVolume(const std::string sceneType)
+float AudioEffectVolume::GetSystemVolume(const int32_t systemVolumeType)
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
-    auto it = SceneTypeToSystemVolumeMap_.find(sceneType);
-    if (it == SceneTypeToSystemVolumeMap_.end()) {
-        return SceneTypeToSystemVolumeMap_["SCENE_MUSIC"];
+    auto it = SystemVolumeMap_.find(systemVolumeType);
+    if (it == SystemVolumeMap_.end()) {
+        return SystemVolumeMap_[STREAM_MUSIC];
     } else {
-        return SceneTypeToSystemVolumeMap_[sceneType];
+        return SystemVolumeMap_[systemVolumeType];
     }
 }
 
