@@ -356,7 +356,7 @@ void FastAudioRendererSinkInner::ReleaseMmapBuffer()
     }
 #endif
     if (bufferFd_ != INVALID_FD) {
-        ClosFd(bufferFd_);
+        CloseFd(bufferFd_);
         bufferFd_ = INVALID_FD;
     }
 }
