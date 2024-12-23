@@ -53,7 +53,7 @@
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
-+#include "offline_stream_in_server.h"
+#include "offline_stream_in_server.h"
 
 #define PA
 #ifdef PA
