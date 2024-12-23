@@ -1620,6 +1620,7 @@ bool AudioInterruptService::EvaluateWhetherContinue(const AudioInterrupt &incomi
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::SimulateFocusEntry(const int32_t zoneId)
 {
+    AUDIO_INFO_LOG("Simulate a new focus list to check whether any streams need to be restored");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList;
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
@@ -1650,11 +1651,11 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
             if (EvaluateWhetherContinue(incoming, inprocessing, focusEntry, bConcurrency)) { continue; }
             auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
             if (pos == HINT_STATE_MAP.end()) { continue; }
-            if (focusEntry.actionOn == CURRENT && pos->second > iter->second) {
-                iter->second = pos->second;
-            } else {
+            if (focusEntry.actionOn == CURRENT) {
+                iter->second = (pos->second > iter->second) ? pos->second : iter->second;
+            } else if (focusEntry.actionOn == INCOMING) {
                 AudioFocuState newState = pos->second;
-                incomingState = newState > incomingState ? newState : incomingState;
+                incomingState = (newState > incomingState) ? newState : incomingState;
             }
         }
 
