@@ -2853,7 +2853,7 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
     }
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
     std::set<int32_t> sessionIds =
-        AudioStreamCollector::GetAudioStreamCollector().GetSessionIdByDeviceType(DEVICE_TYPE_REMOTE_CAST);
+        AudioStreamCollector::GetAudioStreamCollector().GetSessionIdsOnRemoteDeviceByDeviceType(DEVICE_TYPE_REMOTE_CAST);
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
     ProcessRemoteInterrupt(sessionIds, interruptEvent);
     return SUCCESS;
