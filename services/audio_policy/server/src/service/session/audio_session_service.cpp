@@ -185,7 +185,7 @@ void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
             AppendFormat(dumpString, "    - pid: %d, AudioSession is empty.\n", pid);
         } else {
             AudioSessionState sessionState = audioSession->GetSessionState();
-            AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %d.\n", pid,
+            AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n", pid,
                 static_cast<uint32_t>(sessionState));
         }
     }

@@ -345,7 +345,7 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> callDevices
         = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    for (auto &desc : callDevices) {
+    for (const auto &desc : callDevices) {
         std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
         deviceList.push_back(devDesc);
     }

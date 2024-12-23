@@ -393,7 +393,7 @@ int32_t AudioOffloadStream::LoadOffloadModule()
     isOffloadOpened_.store(true);
     offloadCloseCondition_.notify_all();
     {
-        std::lock_guard<std::mutex> lock(offloadOpenMutex_);
+        std::lock_guard<std::mutex> lk(offloadOpenMutex_);
         if (audioIOHandleMap_.CheckIOHandleExist(OFFLOAD_PRIMARY_SPEAKER)) {
             AUDIO_INFO_LOG("offload is open");
             return SUCCESS;
@@ -415,7 +415,7 @@ int32_t AudioOffloadStream::UnloadOffloadModule()
     offloadCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_S),
         [this] () { return isOffloadOpened_.load(); });
     {
-        std::lock_guard<std::mutex> lock(offloadOpenMutex_);
+        std::lock_guard<std::mutex> lk(offloadOpenMutex_);
         if (isOffloadOpened_.load()) {
             AUDIO_INFO_LOG("offload restart");
             return ERROR;

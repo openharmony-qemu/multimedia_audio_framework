@@ -160,12 +160,11 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     rendererNapi->streamUsage_ = sRendererOptions_->rendererInfo.streamUsage;
 
     AudioRendererOptions rendererOptions = *sRendererOptions_;
-    std::string cacheDir = "";
     /* NapiAudioRenderer not support other rendererFlags, only support flag 0 */
     if (rendererOptions.rendererInfo.rendererFlags != 0) {
         rendererOptions.rendererInfo.rendererFlags = 0;
     }
-    rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
+    rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
 
     if (rendererNapi->audioRenderer_ == nullptr) {
         CreateRendererFailed();

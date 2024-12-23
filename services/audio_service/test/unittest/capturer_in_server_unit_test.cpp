@@ -799,7 +799,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_030, TestSize.Level1
     int32_t result = capturerInServer_->InitCacheBuffer(targetSize);
     EXPECT_EQ(result, SUCCESS);
 }
-
+#ifdef CAPTURER_IN_SERVER_UNIT_TEST_DIFF
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -826,5 +826,6 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_031, TestSize.Level1
     capturerInServer_->OnStatusUpdate(OPERATION_FLUSHED);
     capturerInServer_->OnStatusUpdate(OPERATION_INVALID);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

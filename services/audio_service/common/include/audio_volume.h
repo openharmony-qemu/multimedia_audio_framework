@@ -68,6 +68,10 @@ public:
     uint32_t GetFadeoutState(uint32_t streamIndex);
     void RemoveFadeoutState(uint32_t streamIndex);
 
+    void SetStopFadeoutState(uint32_t streamIndex, uint32_t fadeoutState);
+    uint32_t GetStopFadeoutState(uint32_t streamIndex);
+    void RemoveStopFadeoutState(uint32_t streamIndex);
+
 private:
     AudioVolume();
 
@@ -81,6 +85,7 @@ private:
 
     std::shared_mutex fadoutMutex_ {};
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
+    std::unordered_map<uint32_t, uint32_t> stopFadeoutState_{};
 };
 
 class StreamVolume {

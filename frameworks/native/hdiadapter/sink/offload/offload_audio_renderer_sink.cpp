@@ -172,6 +172,8 @@ private:
     std::mutex renderMutex_;
     std::unique_ptr<std::thread> threadVolume_ = nullptr;
     std::atomic<bool> brkThreadVolume_ = false;
+    std::mutex brkMutex_;
+    std::condition_variable brkCondition_;
     std::mutex volumeInnerMutex_;
     float leftActualVolume_ = 0.0f;
     float rightActualVolume_ = 0.0f;
@@ -791,6 +793,7 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 
     if (threadVolume_ != nullptr) {
         brkThreadVolume_ = true;
+        brkCondition_.notify_all();
         if (threadVolume_->joinable()) {
             threadVolume_->join();
         }
@@ -805,7 +808,6 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 void OffloadAudioRendererSinkInner::ThreadSetVolume(float destLeft, float destRight)
 {
     pthread_setname_np(pthread_self(), "OS_OffloadSetVolume");
-    Trace trace("OffloadSink::ThreadSetVolume");
     float leftVolume = 0.0f;
     float rightVolume = 0.0f;
     GetVolume(leftVolume, rightVolume);
@@ -818,7 +820,7 @@ void OffloadAudioRendererSinkInner::ThreadSetVolume(float destLeft, float destRi
         SetVolumeInner(destLeft, destRight);
     } else {
         int32_t count = 10; // 10 count for set volume
-        int32_t sleepUs = 20 * 1000; // 20 * 1000 us set volume cycle
+        int32_t waitTimeMs = 20; // 20 ms set volume cycle
         float differLf = leftDiffer / count;
         float differRt = rightDiffer / count;
         for (int32_t i = count - 1; i >= 0; --i) {
@@ -828,7 +830,12 @@ void OffloadAudioRendererSinkInner::ThreadSetVolume(float destLeft, float destRi
             float left = destLeft + differLf * i;
             float right = destRight + differRt * i;
             SetVolumeInner(left, right);
-            usleep(sleepUs);
+            if (i == 0) { // last no wait
+                break;
+            }
+            std::unique_lock<std::mutex> lock(brkMutex_);
+            brkCondition_.wait_for(lock, std::chrono::milliseconds(waitTimeMs),
+                [this] { return brkThreadVolume_.load(); });
         }
     }
 }

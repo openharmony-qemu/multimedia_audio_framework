@@ -23,7 +23,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-
+static const size_t MAX_FRAME_SIZE = 100000;
 class VolumeToolsUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -143,6 +143,29 @@ HWTEST(VolumeToolsUnitTest, Process_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test Process API
+ * @tc.type  : FUNC
+ * @tc.number: Process_002
+ * @tc.desc  : Test Process interface.
+ */
+HWTEST(VolumeToolsUnitTest, Process_002, TestSize.Level1)
+{
+    std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
+    size_t len = 10;
+    std::unique_ptr<float[]> buffer = std::make_unique<float[]>(len);
+    for (size_t i = 0; i < 10; ++i) {
+        buffer[i] = static_cast<float>(i);
+    }
+    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 0, 0};
+    ChannelVolumes channelVols = {};
+    channelVols.channel = MONO;
+    channelVols.volStart[0] = 0;
+    channelVols.volEnd[0] = 0;
+    int32_t ret = volumeTools->Process(bufferDesc, SAMPLE_F32LE, channelVols);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
  * @tc.name  : Test GetVolDb API
  * @tc.type  : FUNC
  * @tc.number: GetVolDb_001
@@ -191,6 +214,169 @@ HWTEST(VolumeToolsUnitTest, CountVolumeLevel_001, TestSize.Level1)
     EXPECT_EQ(ret.channel, CHANNEL_6);
     ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_U8, static_cast<AudioChannel>(CHANNEL_16 + 1));
     EXPECT_EQ(ret.channel, (CHANNEL_16 + 1));
+}
+
+/**
+ * @tc.name  : Test CountVolumeLevel API
+ * @tc.type  : FUNC
+ * @tc.number: CountVolumeLevel_002
+ * @tc.desc  : Test CountVolumeLevel interface.
+ */
+HWTEST(VolumeToolsUnitTest, CountVolumeLevel_002, TestSize.Level1)
+{
+    std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
+    BufferDesc bufferDesc = {nullptr, 0, 0};
+    size_t split = 0;
+    ChannelVolumes ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_U8, MONO, split);
+    EXPECT_EQ(ret.channel, MONO);
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_S16LE, STEREO, split);
+    EXPECT_EQ(ret.channel, STEREO);
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_S24LE, CHANNEL_3, split);
+    EXPECT_EQ(ret.channel, CHANNEL_3);
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_S32LE, CHANNEL_4, split);
+    EXPECT_EQ(ret.channel, CHANNEL_4);
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_F32LE, CHANNEL_5, split);
+    EXPECT_EQ(ret.channel, CHANNEL_5);
+    ret = volumeTools->CountVolumeLevel(bufferDesc, INVALID_WIDTH, CHANNEL_6, split);
+    EXPECT_EQ(ret.channel, CHANNEL_6);
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_U8, static_cast<AudioChannel>(CHANNEL_16 + 1), split);
+    EXPECT_EQ(ret.channel, (CHANNEL_16 + 1));
+}
+
+/**
+ * @tc.name  : Test CountVolumeLevel API
+ * @tc.type  : FUNC
+ * @tc.number: CountVolumeLevel_003
+ * @tc.desc  : Test CountVolumeLevel interface.
+ */
+HWTEST(VolumeToolsUnitTest, CountVolumeLevel_003, TestSize.Level1)
+{
+    std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
+    size_t len = 10;
+    std::unique_ptr<int8_t[]> buffer = std::make_unique<int8_t[]>(len);
+    for (size_t i = 0; i < len; ++i) {
+        buffer[i] = static_cast<int8_t>(i);
+    }
+    size_t split = 1;
+    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 10 * MAX_FRAME_SIZE, 10 * MAX_FRAME_SIZE};
+    ChannelVolumes ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_U8, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
+
+    size_t size = volumeTools->GetByteSize(SAMPLE_U8);
+    size_t channel = MONO;
+    bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), len * size * channel, len * size * channel};
+    split = 11;
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_U8, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
+}
+
+/**
+ * @tc.name  : Test CountVolumeLevel API
+ * @tc.type  : FUNC
+ * @tc.number: CountVolumeLevel_004
+ * @tc.desc  : Test CountVolumeLevel interface.
+ */
+HWTEST(VolumeToolsUnitTest, CountVolumeLevel_004, TestSize.Level1)
+{
+    std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
+    size_t len = 10;
+    std::unique_ptr<int16_t[]> buffer = std::make_unique<int16_t[]>(len);
+    for (size_t i = 0; i < 10; ++i) {
+        buffer[i] = static_cast<int16_t>(i);
+    }
+    
+    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 10 * MAX_FRAME_SIZE, 10 * MAX_FRAME_SIZE};
+    size_t split = 1;
+    ChannelVolumes ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_S16LE, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
+
+    size_t size = volumeTools->GetByteSize(SAMPLE_S16LE);
+    size_t channel = MONO;
+    bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), len * size * channel, len * size * channel};
+    split = 11;
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_S16LE, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
+}
+
+/**
+ * @tc.name  : Test CountVolumeLevel API
+ * @tc.type  : FUNC
+ * @tc.number: CountVolumeLevel_006
+ * @tc.desc  : Test CountVolumeLevel interface.
+ */
+HWTEST(VolumeToolsUnitTest, CountVolumeLevel_006, TestSize.Level1)
+{
+    std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
+    size_t len = 10;
+    std::unique_ptr<int8_t[]> buffer = std::make_unique<int8_t[]>(len * 3);
+    for (size_t i = 0; i < 30; ++i) {
+        buffer[i] = static_cast<int8_t>(i);
+    }
+    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 10 * MAX_FRAME_SIZE, 10 * MAX_FRAME_SIZE};
+    size_t split = 1;
+    ChannelVolumes ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_S24LE, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
+
+    size_t size = volumeTools->GetByteSize(SAMPLE_S24LE);
+    size_t channel = MONO;
+    bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), len * size * channel, len * size * channel};
+    split = 11;
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_S24LE, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
+}
+
+/**
+ * @tc.name  : Test CountVolumeLevel API
+ * @tc.type  : FUNC
+ * @tc.number: CountVolumeLevel_007
+ * @tc.desc  : Test CountVolumeLevel interface.
+ */
+HWTEST(VolumeToolsUnitTest, CountVolumeLevel_007, TestSize.Level1)
+{
+    std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
+    size_t len = 10;
+    std::unique_ptr<int32_t[]> buffer = std::make_unique<int32_t[]>(len);
+    for (size_t i = 0; i < 10; ++i) {
+        buffer[i] = static_cast<int32_t>(i);
+    }
+    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 10 * MAX_FRAME_SIZE, 10 * MAX_FRAME_SIZE};
+    size_t split = 1;
+    ChannelVolumes ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_S32LE, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
+    
+    size_t size = volumeTools->GetByteSize(SAMPLE_S32LE);
+    size_t channel = MONO;
+    bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), len * size * channel, len * size * channel};
+    split = 11;
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_S32LE, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
+}
+
+/**
+ * @tc.name  : Test CountVolumeLevel API
+ * @tc.type  : FUNC
+ * @tc.number: CountVolumeLevel_008
+ * @tc.desc  : Test CountVolumeLevel interface.
+ */
+HWTEST(VolumeToolsUnitTest, CountVolumeLevel_008, TestSize.Level1)
+{
+    std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
+    size_t len = 10;
+    std::unique_ptr<float[]> buffer = std::make_unique<float[]>(len);
+    for (size_t i = 0; i < 10; ++i) {
+        buffer[i] = static_cast<float>(i);
+    }
+    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 10 * MAX_FRAME_SIZE, 10 * MAX_FRAME_SIZE};
+    size_t split = 1;
+    ChannelVolumes ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_F32LE, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
+    
+    size_t size = volumeTools->GetByteSize(SAMPLE_F32LE);
+    size_t channel = MONO;
+    bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), len * size * channel, len * size * channel};
+    split = 11;
+    ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_F32LE, MONO, split);
+    EXPECT_EQ(ret.volStart[0], 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

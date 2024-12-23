@@ -50,6 +50,8 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
 private:
     static inline BrokerDelegator<AudioProcessProxy> delegator_;
 };

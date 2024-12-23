@@ -195,6 +195,44 @@ ohos_unittest("none_mix_engine_unit_test") {
   ]
 }
 
+ohos_unittest("audio_thread_task_unit_test") {
+  module_out_path = module_output_path
+
+  install_enable = false
+
+  include_dirs = [
+    "../../../../frameworks/native/audioutils/include",
+    "../../../../frameworks/native/hdiadapter/common/include",
+    "../../../../frameworks/native/hdiadapter/sink",
+    "../../../../frameworks/native/hdiadapter/sink/primary",
+    "../../../../frameworks/native/hdiadapter/sink/common",
+    "../../../../frameworks/native/hdiadapter/sink/fast",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/server/include",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  sources = [ "audio_thread_task_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+}
+
 ohos_unittest("audio_service_unit_test") {
   module_out_path = module_output_path
 
@@ -220,6 +258,7 @@ ohos_unittest("audio_service_unit_test") {
     "./client/audio_system_manager_unit_test.cpp",
     "./client/fast_audio_stream_unit_test.cpp",
     "./common/audio_common_converter_unit_test.cpp",
+    "./common/audio_down_mix_stereo_unit_test.cpp",
     "./common/audio_volume_unit_test.cpp",
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
@@ -562,7 +601,9 @@ ohos_unittest("audio_process_in_client_unit_test") {
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gtest",
+    "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
@@ -636,5 +677,33 @@ ohos_unittest("capturer_in_server_unit_test") {
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("audio_dump_pcm_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../server/include",
+    "../../common/include",
+    "../../../../frameworks/native/audioschedule/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  sources = [ "audio_dump_pcm_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "pulseaudio:pulse",
   ]
 }

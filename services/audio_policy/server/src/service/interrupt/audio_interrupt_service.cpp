@@ -105,10 +105,6 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
 
     // load configuration
     std::unique_ptr<AudioFocusParser> parser = make_unique<AudioFocusParser>();
-    if (parser == nullptr) {
-        WriteServiceStartupError();
-    }
-
     int32_t ret = parser->LoadConfig(focusCfgMap_);
     if (ret != SUCCESS) {
         WriteServiceStartupError();
@@ -1624,6 +1620,7 @@ bool AudioInterruptService::EvaluateWhetherContinue(const AudioInterrupt &incomi
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::SimulateFocusEntry(const int32_t zoneId)
 {
+    AUDIO_INFO_LOG("Simulate a new focus list to check whether any streams need to be restored");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList;
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
@@ -1654,11 +1651,11 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
             if (EvaluateWhetherContinue(incoming, inprocessing, focusEntry, bConcurrency)) { continue; }
             auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
             if (pos == HINT_STATE_MAP.end()) { continue; }
-            if (focusEntry.actionOn == CURRENT && pos->second > iter->second) {
-                iter->second = pos->second;
-            } else {
+            if (focusEntry.actionOn == CURRENT) {
+                iter->second = (pos->second > iter->second) ? pos->second : iter->second;
+            } else if (focusEntry.actionOn == INCOMING) {
                 AudioFocuState newState = pos->second;
-                incomingState = newState > incomingState ? newState : incomingState;
+                incomingState = (newState > incomingState) ? newState : incomingState;
             }
         }
 
@@ -1987,6 +1984,8 @@ int32_t AudioInterruptService::ArchiveToNewAudioInterruptZone(const int32_t &fro
 void AudioInterruptService::DispatchInterruptEventWithSessionId(uint32_t sessionId,
     InterruptEventInternal &interruptEvent)
 {
+    CHECK_AND_RETURN_LOG(sessionId >= MIN_SESSIONID && sessionId <= MAX_SESSIONID,
+        "EntryPoint Taint Mark:arg sessionId: %{public}u is tained", sessionId);
     std::lock_guard<std::mutex> lock(mutex_);
 
     // call all clients
@@ -2040,21 +2039,23 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t session
     }
 
     bool muteFlag = true;
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, true, "error for g_adProxy null");
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_RESUME:
             muteFlag = false;
-            [[fallthrough]];
+            policyServer_->UpdateDefaultOutputDeviceWhenStarting(sessionId);
+            break;
         case INTERRUPT_HINT_PAUSE:
         case INTERRUPT_HINT_STOP:
-            AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
-            gsp->SetNonInterruptMute(sessionId, muteFlag);
+            policyServer_->UpdateDefaultOutputDeviceWhenStopping(sessionId);
             break;
         default:
-            break;
+            return false;
     }
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, true, "error for g_adProxy null");
+    AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
+    gsp->SetNonInterruptMute(sessionId, muteFlag);
     IPCSkeleton::SetCallingIdentity(identity);
     return false;
 }

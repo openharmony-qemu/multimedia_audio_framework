@@ -45,6 +45,7 @@ if (!audio_framework_feature_offline_effect) {
 
     external_deps = [
       "c_utils:utils",
+      "drivers_interface_audio:libeffect_proxy_1.0",
       "googletest:gmock",
       "googletest:gtest",
       "hilog:libhilog",

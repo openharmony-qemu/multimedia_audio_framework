@@ -1091,6 +1091,36 @@ static void DoFading(void *data, int32_t length, uint32_t format, uint32_t chann
     }
 }
 
+static size_t GetbqlAlinLength(struct playback_stream *ps, pa_sink_input *sinkIn)
+{
+    const bool b = (bool)ps->sink_input->thread_info.resampler;
+    const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
+    const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
+    const size_t bql = pa_memblockq_get_length(ps->memblockq);
+    const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
+    const size_t bqlRend = pa_memblockq_get_length(sinkIn->thread_info.render_memblockq);
+    const size_t bqlAlin = pa_frame_align(bqlResamp + bqlRend, &sampleSpecOut);
+    return bqlAlin;
+}
+
+static bool DoStopDrainFadeout(pa_sink_input *sinkIn, uint32_t streamIndex, int32_t length)
+{
+    playback_stream *ps = sinkIn->userdata;
+    CHECK_AND_RETURN_RET_LOG(ps != NULL, false, "playback_stream is null");
+    if (ps->drain_request) {
+        uint32_t sinkStopFadeout = GetStopFadeoutState(streamIndex);
+        if (sinkStopFadeout == DO_FADE) {
+            const size_t bqlAlin = GetbqlAlinLength(ps, sinkIn);
+            if (bqlAlin > 0 && bqlAlin == length) {
+                AUDIO_INFO_LOG("drain_request bqlalin:%{public}zu", bqlAlin);
+                RemoveStopFadeoutState(streamIndex);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_sink *si)
 {
     CHECK_AND_RETURN_LOG(sinkIn != NULL, "sinkIn is null");
@@ -1106,6 +1136,10 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
 
     uint32_t streamIndex = sinkIn->index;
     uint32_t sinkFadeoutPause = GetFadeoutState(streamIndex);
+    if (DoStopDrainFadeout(sinkIn, streamIndex, infoIn->chunk.length)) {
+        sinkFadeoutPause = DO_FADE;
+    }
+
     if (sinkFadeoutPause == DONE_FADE && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
         silenceData(infoIn, si);
         AUDIO_PRERELEASE_LOGI("after pause fadeout done, silenceData");
@@ -2403,10 +2437,8 @@ static size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool 
     size_t tlengthHalfResamp = pa_frame_align(pa_usec_to_bytes(pa_bytes_to_usec(pa_memblockq_get_tlength(
         ps->memblockq) / 1.5, &sampleSpecIn), &sampleSpecOut), &sampleSpecOut); // 1.5 for half
     size_t sizeTgt = PA_MIN(sizeFrame, tlengthHalfResamp);
-    const size_t bql = pa_memblockq_get_length(ps->memblockq);
-    const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
-    const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
-    const size_t bqlAlin = pa_frame_align(bqlResamp + bqlRend, &sampleSpecOut);
+
+    const size_t bqlAlin = GetbqlAlinLength(ps, i);
 
     if (ps->drain_request) {
         if (i->thread_info.render_memblockq->maxrewind != 0) {
@@ -3042,6 +3074,9 @@ static void ResetFadeoutPause(pa_sink_input *i, pa_sink_input_state_t state)
 static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t state, struct Userdata *u)
 {
     if (state == PA_SINK_INPUT_RUNNING) {
+        if (u->primary.sinkAdapter == NULL) {
+            return;
+        }
         const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
@@ -4077,9 +4112,6 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
 
 static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
-    // set audio thread priority
-    ScheduleThreadInServer(getpid(), gettid());
-
     pa_sink_new_data data;
     pa_module *m;
     pa_sink *sink = NULL;
@@ -4134,7 +4166,7 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     return sink;
 
 fail:
-    UnscheduleThreadInServer(getpid(), gettid());
+    AUDIO_ERR_LOG("PaHdiSinkInit fail");
     return NULL;
 }
 

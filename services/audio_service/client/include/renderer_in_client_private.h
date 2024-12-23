@@ -217,6 +217,7 @@ private:
     int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
+    void WatchingWriteCallbackFunc();
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
@@ -412,6 +413,7 @@ private:
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
 
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
+    std::atomic_bool writeCallbackFuncThreadStatusFlag_ { false };
     DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
 };
 

@@ -164,7 +164,7 @@ void AudioPolicyClientProxy::OnRingerModeUpdated(const AudioRingerMode &ringerMo
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyClientProxy::OnRingerModeUpdated: WriteInterfaceToken failed");
         return;
@@ -183,7 +183,7 @@ void AudioPolicyClientProxy::OnMicStateUpdated(const MicStateChangeEvent &micSta
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;

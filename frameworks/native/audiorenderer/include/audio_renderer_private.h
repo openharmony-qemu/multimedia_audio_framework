@@ -172,10 +172,11 @@ private:
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     int32_t InitAudioConcurrencyCallback();
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
-    void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
+    void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &newAudioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
         const AudioStreamDeviceChangeReasonExt reason);
+    bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
@@ -187,6 +188,13 @@ private:
     void UpdateAudioInterruptStrategy(float volume) const;
     bool IsAllowedStartBackgroud();
     bool GetStartStreamResult(StateChangeCmdType cmdType);
+    void UpdateFramesWritten();
+    RendererState GetStatusInner();
+    void SetAudioPrivacyTypeInner(AudioPrivacyType privacyType);
+    int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
+    float GetVolumeInner() const;
+    uint32_t GetUnderflowCountInner() const;
+    std::shared_ptr<IAudioStream> GetInnerStream() const;
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -206,6 +214,7 @@ private:
     std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
     bool isSwitching_ = false;
     mutable std::shared_mutex rendererMutex_;
+    mutable std::shared_mutex streamMutex_;
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;

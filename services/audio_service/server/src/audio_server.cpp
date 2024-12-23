@@ -226,10 +226,13 @@ void *AudioServer::paDaemonThread(void *arg)
     char *argv[] = {
         (char*)"pulseaudio",
     };
+    // set audio thread priority
+    ScheduleThreadInServer(getpid(), gettid());
     paDaemonTid_ = static_cast<uint32_t>(gettid());
     AUDIO_INFO_LOG("Calling ohos_pa_main\n");
     ohos_pa_main(PA_ARG_COUNT, argv);
     AUDIO_INFO_LOG("Exiting ohos_pa_main\n");
+    UnscheduleThreadInServer(getpid(), gettid());
     _exit(-1);
 }
 #endif
@@ -1835,7 +1838,11 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     // Only watch primary and fast sink for now, watch other sinks later.
     IAudioRendererSink *primarySink = IAudioRendererSink::GetInstance("primary", "");
     IAudioRendererSink *usbSink = IAudioRendererSink::GetInstance("usb", "");
+    IAudioRendererSink *directSink = IAudioRendererSink::GetInstance("direct", "");
+    IAudioRendererSink *dpSink = IAudioRendererSink::GetInstance("dp", "");
+    IAudioRendererSink *voipSink = IAudioRendererSink::GetInstance("voip", "");
     IAudioRendererSink *offloadSink = IAudioRendererSink::GetInstance("offload", "");
+    IAudioRendererSink *mchSink = IAudioRendererSink::GetInstance("multichannel", "");
     IAudioRendererSink *a2dpSink = IAudioRendererSink::GetInstance("a2dp", "");
     IAudioRendererSink *a2dpFastSink = IAudioRendererSink::GetInstance("a2dp_fast", "");
     IAudioRendererSink *fastSink = FastAudioRendererSink::GetInstance();
@@ -1843,7 +1850,11 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     for (auto sinkInstance : {
         primarySink,
         usbSink,
+        directSink,
+        dpSink,
+        voipSink,
         offloadSink,
+        mchSink,
         a2dpSink,
         a2dpFastSink,
         fastSink,

@@ -315,6 +315,11 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
     return audioVolumeManager_.GetSystemVolumeLevel(streamType);
 }
 
+int32_t AudioPolicyService::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
+{
+    return audioVolumeManager_.GetSystemVolumeLevelNoMuteState(streamType);
+}
+
 float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
 {
     return audioPolicyManager_.GetSystemVolumeDb(streamType);
@@ -763,6 +768,11 @@ bool AudioPolicyService::IsDataShareReady()
 void AudioPolicyService::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
     audioPolicyManager_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
+void AudioPolicyService::SetFirstScreenOn()
+{
+    audioDeviceCommon_.SetFirstScreenOn();
 }
 
 void AudioPolicyService::RegisterNameMonitorHelper()
