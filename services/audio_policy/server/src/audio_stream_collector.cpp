@@ -668,8 +668,8 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceByStreamUsage
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->rendererInfo.streamUsage == streamUsage &&
-            changeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_SPEAKER &&
-            changeInfo->outputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
+            changeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_SPEAKER &&
+            changeInfo->outputDeviceInfo.networkId != LOCAL_NETWORK_ID) {
             sessionIdSet.insert(changeInfo->sessionId);
         }
     }
@@ -682,8 +682,8 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceBySourceType(
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
         if (changeInfo->capturerInfo.sourceType == sourceType &&
-            changeInfo->inputDeviceInfo.deviceType_ == DEVICE_TYPE_MIC &&
-            changeInfo->inputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
+            changeInfo->inputDeviceInfo.deviceType == DEVICE_TYPE_MIC &&
+            changeInfo->inputDeviceInfo.networkId != LOCAL_NETWORK_ID) {
             sessionIdSet.insert(changeInfo->sessionId);
         }
     }
@@ -695,7 +695,7 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceByDeviceType(
     std::set<int32_t> sessionIdSet;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->outputDeviceInfo.deviceType_ == deviceType) {
+        if (changeInfo->outputDeviceInfo.deviceType == deviceType) {
             sessionIdSet.insert(changeInfo->sessionId);
         }
     }
@@ -707,7 +707,7 @@ int32_t AudioStreamCollector::GetSessionIdsPauseOnRemoteDeviceByRemote(Interrupt
     int32_t sessionIdVec = -1;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_REMOTE_CAST &&
+        if (changeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_REMOTE_CAST &&
             changeInfo->rendererState == RendererState::RENDERER_RUNNING) {
             return changeInfo->sessionId;
         }
