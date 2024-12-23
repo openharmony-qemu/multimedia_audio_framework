@@ -1175,7 +1175,7 @@ int32_t AudioManagerProxy::GetOfflineAudioEffectChains(vector<string> &effectCha
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetOfflineAudioEffectChains failed, error: %{public}d", error);
     int32_t vecSize = reply.ReadInt32();
-   CHECK_AND_RETURN_RET_LOG(vecSize >= 0 && vecSize <= MAX_OFFLINE_EFFECT_CHAIN_NUM, AUDIO_ERR,
+    CHECK_AND_RETURN_RET_LOG(vecSize >= 0 && vecSize <= MAX_OFFLINE_EFFECT_CHAIN_NUM, AUDIO_ERR,
         "invalid offline effect chain num:%{public}d", vecSize);
     for (int i = 0; i < vecSize; i++) {
         effectChains.emplace_back(reply.ReadString());
