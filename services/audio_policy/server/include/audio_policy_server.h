@@ -641,6 +641,10 @@ private:
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();
 
+    // for updating default device selection state when game audio stream is muted
+    void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
+    void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
+
     AudioPolicyService& audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
     AudioDeviceManager &audioDeviceManager_;
