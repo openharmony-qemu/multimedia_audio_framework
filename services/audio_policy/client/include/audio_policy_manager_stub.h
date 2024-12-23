@@ -155,6 +155,8 @@ private:
     void SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetPreferredDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SaveRemoteInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInnerInternal(MessageParcel &data, MessageParcel &reply);
     void MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);

@@ -2100,6 +2100,14 @@ int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt 
     return gsp->TriggerFetchDevice(reason);
 }
 
+int32_t AudioPolicyManager::SetPreferredDevice(const PreferredType preferredType,
+    const sptr<AudioDeviceDescriptor> &desc)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetPreferredDevice(preferredType, desc);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;
@@ -2156,6 +2164,16 @@ int32_t AudioPolicyManager::SetDefaultOutputDevice(const DeviceType deviceType, 
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+}
+
+void AudioPolicyManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp != nullptr) {
+        gsp->SaveRemoteInfo(networkId, deviceType);
+    } else {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+    }
 }
 
 int32_t AudioPolicyManager::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
