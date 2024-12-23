@@ -336,7 +336,7 @@ HWTEST_F(AudioVolumeUnitTest, SetFadeoutState_002, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, GetStreamVolume_001, TestSize.Level1)
 {
-     float volumeStream = AudioVolume::GetInstance()->GetStreamVolume(1);
+    float volumeStream = AudioVolume::GetInstance()->GetStreamVolume(1);
     EXPECT_EQ(volumeStream, 1.0f);
 }
 
