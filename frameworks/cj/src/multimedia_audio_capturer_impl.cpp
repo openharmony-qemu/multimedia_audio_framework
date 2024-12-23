@@ -32,8 +32,7 @@ int32_t MMAAudioCapturerImpl::CreateAudioCapturer(CAudioCapturerOptions options)
 {
     AudioCapturerOptions capturerOptions;
     Convert2AudioCapturerOptions(capturerOptions, options);
-    std::string cacheDir = "/data/storage/el2/base/temp";
-    audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
+    audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
     if (audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("Create AudioCapturer failed.");
         return ERR_INVALID_INSTANCE_CODE;

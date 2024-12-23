@@ -43,7 +43,7 @@ public:
     void DestroyCallbacks();
     void DestroyNAPICallbacks();
 
-    std::unique_ptr<AudioRenderer> audioRenderer_;
+    std::shared_ptr<AudioRenderer> audioRenderer_;
     std::mutex writeCallbackMutex_;
     std::condition_variable writeCallbackCv_;
 
