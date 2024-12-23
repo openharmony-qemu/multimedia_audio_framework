@@ -119,6 +119,21 @@ HWTEST_F(AudioVolumeUnitTest, SetStreamVolume_001, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
+ * @tc.number: SetStreamVolume_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetStreamVolume_002, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    AudioVolume::GetInstance()->streamVolume_.clear();
+    AudioVolume::GetInstance()->SetStreamVolume(sessionId, 1.0f);
+    auto it = AudioVolume::GetInstance()->streamVolume_.find(sessionId);
+    EXPECT_EQ(it == AudioVolume::GetInstance()->streamVolume_.end(), true);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
  * @tc.number: SetStreamVolumeDuckFactor_001
  * @tc.desc  : Test AudioVolume interface.
  */
@@ -178,6 +193,48 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_001, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
+ * @tc.number: SetSystemVolume_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_002, TestSize.Level1)
+{
+    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
+    SystemVolume systemVolume2(STREAM_MUSIC, "speaker", 1.0f, 5, false);
+    AudioVolume::GetInstance()->SetSystemVolume(systemVolume2);
+    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
+    EXPECT_EQ(it->second.volume_, 1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetSystemVolume_003
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_003, TestSize.Level1)
+{
+    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC, "speaker", 0.5f, 5);
+    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
+    EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetSystemVolume_004
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_004, TestSize.Level1)
+{
+    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC, "speaker", 0.5f, 5);
+    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC, "speaker", 1.0f, 5);
+    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
+    EXPECT_EQ(it->second.volume_, 1.0f);
+}
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
  * @tc.number: SetSystemVolumeMute_001
  * @tc.desc  : Test AudioVolume interface.
  */
@@ -188,6 +245,22 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_001, TestSize.Level1)
     bool isMuted = true;
     AudioVolume::GetInstance()->SetSystemVolumeMute(volumeType, deviceClass, isMuted);
     auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
+    EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetSystemVolumeMute_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_002, TestSize.Level1)
+{
+    int32_t volumeType = STREAM_MUSIC;
+    std::string deviceClass = "test";
+    bool isMuted = true;
+    AudioVolume::GetInstance()->SetSystemVolumeMute(volumeType, deviceClass, isMuted);
+    auto it = AudioVolume::GetInstance()->systemVolume_.find("1test");
     EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
 }
 
@@ -209,6 +282,23 @@ HWTEST_F(AudioVolumeUnitTest, GetStreamVolumeFade_001, TestSize.Level1)
     EXPECT_EQ(getFade.second, fadeEnd);
 }
 
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetStreamVolumeFade_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetStreamVolumeFade_001, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    float fadeBegin = 0.5f;
+    float fadeEnd = 1.0f;
+    AudioVolume::GetInstance()->streamVolume_.clear();
+    AudioVolume::GetInstance()->SetStreamVolumeFade(sessionId, fadeBegin, fadeEnd);
+    std::pair<float, float> getFade = AudioVolume::GetInstance()->GetStreamVolumeFade(sessionId);
+    EXPECT_EQ(getFade.first, 1.0f);
+    EXPECT_EQ(getFade.second, 1.0f);
+}
 
 /**
  * @tc.name  : Test AudioVolume API
@@ -224,5 +314,76 @@ HWTEST_F(AudioVolumeUnitTest, SetFadeoutState_001, TestSize.Level1)
     uint32_t getFadeoutState = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
     EXPECT_EQ(getFadeoutState, fadeoutState);
 }
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetFadeoutState_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetFadeoutState_002, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    AudioVolume::GetInstance()->fadeoutState_.clear();
+    uint32_t ret = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+    EXPECT_EQ(ret, INVALID_STATE);
+}
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamVolume_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetStreamVolume_001, TestSize.Level1)
+{
+     float volumeStream = AudioVolume::GetInstance()->GetStreamVolume(1);
+    EXPECT_EQ(volumeStream, 1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: AddStreamVolume_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, AddStreamVolume_001, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    int32_t sample = AudioVolume::GetInstance()->streamVolume_.size();
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid);
+    int32_t ret = AudioVolume::GetInstance()->streamVolume_.size();
+    EXPECT_EQ(ret, sample);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: ConvertStreamTypeStrToInt_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, ConvertStreamTypeStrToInt_001, TestSize.Level1)
+{
+    std::string streamType ="ring";
+    int32_t ret = AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);
+    EXPECT_EQ(ret, 2);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: ConvertStreamTypeStrToInt_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, ConvertStreamTypeStrToInt_002, TestSize.Level1)
+{
+    std::string streamType ="test";
+    int32_t ret = AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);
+    EXPECT_EQ(ret, 1);
+}
+
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
