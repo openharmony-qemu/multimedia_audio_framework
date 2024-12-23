@@ -56,7 +56,7 @@ AudioEffectConfigParser::~AudioEffectConfigParser()
 static int32_t ParseEffectConfigFile(xmlDoc* &doc)
 {
 #ifdef USE_CONFIG_POLICY
-    CfgFiles *cfgFiles = GetCfgFiles(AUDIO_EFFECT_CONFIG_FILE);
+    CfgFiles *cfgFiles = GetOneCfgFile(AUDIO_EFFECT_CONFIG_FILE);
     if (cfgFiles == nullptr) {
         AUDIO_ERR_LOG("Not found audio_effect_config.xml!");
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
