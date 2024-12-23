@@ -1154,4 +1154,12 @@ void pa__done(pa_module*m)
 
     pa_xfree(u);
     m->userdata = NULL;
+
+    for (int32_t i = 0; i < MAX_PARTS; ++i) {
+        if (g_splitArr[i] == NULL) {
+            continue;
+        }
+        free(g_splitArr[i]);
+        g_splitArr[i] = NULL;
+    }
 }
