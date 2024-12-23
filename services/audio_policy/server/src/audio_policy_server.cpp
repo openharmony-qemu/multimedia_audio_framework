@@ -1916,7 +1916,7 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
         eventDes, EVENT_DES_SIZE, &type, &forceType, &hint, &audioCategory);
     CHECK_AND_RETURN_LOG(ret >= PARAMS_INTERRUPT_NUM, "[InterruptOnChange]: Failed parse condition");
 
-     std::set<int32_t> sessionIdMedia = AudioStreamCollector::GetAudioStreamCollector().
+    std::set<int32_t> sessionIdMedia = AudioStreamCollector::GetAudioStreamCollector().
         GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_MUSIC);
     std::set<int32_t> sessionIdMovie = AudioStreamCollector::GetAudioStreamCollector().
         GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_MOVIE);
