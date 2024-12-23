@@ -111,6 +111,7 @@ private:
     bool IsHightResolution() const noexcept;
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(bool isSilent);
+    void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
     void DoFadingOut(BufferDesc& bufferDesc);
     int32_t SetStreamVolumeInfoForEnhanceChain();
