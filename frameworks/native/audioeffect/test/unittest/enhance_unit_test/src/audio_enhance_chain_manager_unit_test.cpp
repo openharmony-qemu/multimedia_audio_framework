@@ -692,6 +692,28 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetVolumeInfo_003, TestSize.Level1)
 }
 
 /*
+ * tc.name   : Test SetVolumeInfo API
+ * tc.number : SetVolumeInfo_004
+ * tc.desc   : Ensures the function sets volume information correctly for system sound stream type.
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetVolumeInfo_004, TestSize.Level1)
+{
+    AudioVolumeType volumeType = STREAM_SYSTEM;
+    float systemVolume = 1.0f;
+    uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene,
+        algoParam, deviceAttr, defaultFlag);
+    manager_->sceneTypeAndModeToEnhanceChainNameMap_[scene] = "test";
+    manager_->sceneTypeToEnhanceChainMap_[validSceneKeyCode] = audioEnhanceChain;
+    int32_t result = manager_->SetVolumeInfo(volumeType, systemVolume);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
  * tc.name   : Test SetMicrophoneMuteInfo API
  * tc.number : SetMicrophoneMuteInfo_001
  * tc.desc   : Ensures the function correctly sets the microphone to mute.
@@ -1179,6 +1201,21 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhancePropertyToChains_006, 
     manager_->sceneTypeToEnhanceChainMap_.insert_or_assign(validSceneKeyCode, audioEnhanceChain);
     int32_t result = manager_->SetAudioEnhancePropertyToChains(propert);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * tc.name   : Test GetDeviceNameByCaptureId API
+ * tc.number : GetDeviceNameByCaptureId_001
+ * tc.desc   : Test GetDeviceNameByCaptureId interface
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, GetDeviceNameByCaptureId_001, TestSize.Level1)
+{
+    uint32_t captureId = 1;
+    std::string deviceName;
+    manager_->captureIdToDeviceNameMap_[captureId] = "test";
+   
+    manager_->GetDeviceNameByCaptureId(captureId, deviceName);
+    EXPECT_EQ(deviceName, "test");
 }
 } // namespace AudioStandard
 } // namespace OHOS
