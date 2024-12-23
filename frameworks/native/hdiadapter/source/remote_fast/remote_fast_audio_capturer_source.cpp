@@ -210,7 +210,7 @@ void RemoteFastAudioCapturerSourceInner::ClearCapture()
 #endif // DEBUG_DIRECT_USE_HDI
 
     if (bufferFd_ != INVALID_FD) {
-        close(bufferFd_);
+        CloseFd(bufferFd_);
         bufferFd_ = INVALID_FD;
     }
 
