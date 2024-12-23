@@ -438,23 +438,6 @@ int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, ui
     return ret;
 }
 
-int32_t IpcStreamProxy::OffloadSetVolume(float volume)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-
-    data.WriteFloat(volume);
-    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_OFFLOAD_VOLUME, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
-    ret = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
-
-    return ret;
-}
-
 int32_t IpcStreamProxy::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
 {
     MessageParcel data;
@@ -524,6 +507,20 @@ int32_t IpcStreamProxy::SetMute(bool isMute)
     data.WriteBool(isMute);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_MUTE, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set mute failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
+int32_t IpcStreamProxy::SetDuckFactor(float duckFactor)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteFloat(duckFactor);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_DUCK_FACTOR, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set duck failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
 

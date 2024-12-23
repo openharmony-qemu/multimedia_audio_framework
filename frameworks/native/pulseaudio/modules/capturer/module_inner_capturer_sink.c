@@ -80,8 +80,6 @@ struct userdata {
     pa_usec_t timestamp;
 
     pa_idxset *formats;
-
-    bool update_volume;
 };
 
 static const char * const VALID_MODARGS[] = {
@@ -231,7 +229,12 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
         const char *streamType = SafeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = SafeProplistGets(input->proplist, "stream.sessionID", "NULL");
         uint32_t sessionID = sessionIDStr != NULL ? atoi(sessionIDStr) : 0;
-        float volumeFloat = GetCurVolume(sessionID, streamType, s->name);
+        float volumeFloat = 1.0f;
+        if (!strcmp(s->name, SINK_NAME_INNER_CAPTURER)) { // inner capturer only stream volume
+            volumeFloat = GetStreamVolume(sessionID);
+        } else {
+            volumeFloat = GetCurVolume(sessionID, streamType, s->name);
+        }
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
     }
@@ -259,9 +262,7 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
     pa_assert(u);
 
     // update use volume
-    if (u->update_volume) {
-        SetSinkVolumeBySinkName(u->sink);
-    }
+    SetSinkVolumeBySinkName(u->sink);
 
     /* This is the configured latency. Sink inputs connected to us
     might not have a single frame more than the maxrequest value
@@ -285,9 +286,7 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
         }
     }
 
-    if (u->update_volume) {
-        UnsetSinkVolume(u->sink);
-    }
+    UnsetSinkVolume(u->sink);
 }
 
 static void ThreadFunc(void *userdata)
@@ -412,13 +411,6 @@ int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
     u->sink->get_formats = SinkGetFormatsCb;
     u->sink->set_formats = SinkSetFormatsCb;
     u->sink->userdata = u;
-
-    // InnerCapturer not need update volume, others need.
-    if (!strcmp(u->sink->name, SINK_NAME_INNER_CAPTURER)) {
-        u->update_volume = false;
-    } else {
-        u->update_volume = true;
-    }
 
     return 0;
 }

@@ -488,7 +488,6 @@ int32_t RendererInServer::WriteData()
             AUDIO_ERR_LOG("The buffer is null!");
             return ERR_INVALID_PARAM;
         }
-        VolumeHandle(bufferDesc);
         Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         if (processConfig_.streamType != STREAM_ULTRASONIC) {
             if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
@@ -591,7 +590,7 @@ int32_t RendererInServer::OnWriteData(size_t length)
 // called with mainloop locking.
 int32_t RendererInServer::UpdateWriteIndex()
 {
-    Trace trace("RendererInServer::UpdateWriteIndex");
+    Trace trace("RendererInServer::UpdateWriteIndex needForceWrite" + std::to_string(needForceWrite_));
     if (managerType_ != PLAYBACK) {
         IStreamManager::GetPlaybackManager(managerType_).TriggerStartIfNecessary();
     }
@@ -939,12 +938,23 @@ int32_t RendererInServer::SetLowPowerVolume(float volume)
         return ERR_INVALID_PARAM;
     }
     lowPowerVolume_ = volume;
+    AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(streamIndex_, volume);
+    if (isInnerCapEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(dupStreamIndex_, volume);
+    }
+    if (isDualToneEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(dualToneStreamIndex_, volume);
+    }
+    if (offloadEnable_) {
+        OffloadSetVolumeInner();
+    }
     return SUCCESS;
 }
 
 int32_t RendererInServer::GetLowPowerVolume(float &volume)
 {
-    return stream_->GetLowPowerVolume(volume);
+    volume = lowPowerVolume_;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::SetAudioEffectMode(int32_t effectMode)
@@ -1013,6 +1023,16 @@ int32_t RendererInServer::InitDupStream()
 
     isInnerCapEnabled_ = true;
 
+    if (audioServerBuffer_ != nullptr) {
+        float clientVolume = audioServerBuffer_->GetStreamVolume();
+        float duckFactor = audioServerBuffer_->GetDuckFactor();
+        bool isMuted = silentModeAndMixWithOthers_;
+        // If some factors are not needed, remove them.
+        AudioVolume::GetInstance()->SetStreamVolume(dupStreamIndex_, clientVolume);
+        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dupStreamIndex_, duckFactor);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMuted);
+        AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(dupStreamIndex_, lowPowerVolume_);
+    }
     if (status_ == I_STATUS_STARTED) {
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
         dupStream_->Start();
@@ -1065,6 +1085,16 @@ int32_t RendererInServer::InitDualToneStream()
 
     isDualToneEnabled_ = true;
 
+    if (audioServerBuffer_ != nullptr) {
+        float clientVolume = audioServerBuffer_->GetStreamVolume();
+        float duckFactor = audioServerBuffer_->GetDuckFactor();
+        bool isMuted = silentModeAndMixWithOthers_;
+        // If some factors are not needed, remove them.
+        AudioVolume::GetInstance()->SetStreamVolume(dualToneStreamIndex_, clientVolume);
+        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dualToneStreamIndex_, duckFactor);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
+        AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(dualToneStreamIndex_, lowPowerVolume_);
+    }
     if (status_ == I_STATUS_STARTED) {
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", dualToneStreamIndex_);
         stream_->GetAudioEffectMode(effectModeWhenDual_);
@@ -1105,12 +1135,6 @@ int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
             dualToneStream_->UpdateMaxLength(350); // 350 for cover offload
         }
     }
-    // monitor
-    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
-    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
-    AUDIO_DEBUG_LOG("sessionId %{public}u monitor volume:%{public}f [volumeType:%{public}d]",
-        streamIndex_, volume, volumeType);
-    AudioVolume::GetInstance()->Monitor(streamIndex_, true);
     return ret;
 }
 
@@ -1138,21 +1162,18 @@ int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, 
     return stream_->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
 }
 
-int32_t RendererInServer::OffloadSetVolume(float volume)
+int32_t RendererInServer::OffloadSetVolumeInner()
 {
-    if (volume < MIN_FLOAT_VOLUME || volume > MAX_FLOAT_VOLUME) {
-        AUDIO_ERR_LOG("invalid volume:%{public}f", volume);
-        return ERR_INVALID_PARAM;
-    }
-
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
-    float systemVol = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
-    AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d systemVol:"
-        "%{public}f]", streamIndex_, volume, volumeType, systemVol);
-    if (IsVolumeSame(MIN_FLOAT_VOLUME, volume, AUDIO_VOLOMUE_EPSILON)) {
-        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.0f);
+    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
+    AUDIO_INFO_LOG("sessionID %{public}u [volumeType:%{public}d volume: %{public}f]",
+        streamIndex_, volumeType, volume);
+    float volumeHistory = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
+    if (!IsVolumeSame(volumeHistory, volume, AUDIO_VOLOMUE_EPSILON)) {
+        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
+        AudioVolume::GetInstance()->Monitor(streamIndex_, true);
     }
-    return stream_->OffloadSetVolume(systemVol * volume);
+    return stream_->OffloadSetVolume(volume);
 }
 
 int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -1193,10 +1214,16 @@ bool RendererInServer::IsHightResolution() const noexcept
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
-    if (silentModeAndMixWithOthers_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
-    } else {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", on);
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, on);
+    if (isInnerCapEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, on);
+    }
+    if (isDualToneEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, on);
+    }
+    if (offloadEnable_) {
+        OffloadSetVolumeInner();
     }
     return SUCCESS;
 }
@@ -1209,20 +1236,50 @@ int32_t RendererInServer::SetClientVolume()
     }
     float clientVolume = audioServerBuffer_->GetStreamVolume();
     int32_t ret = stream_->SetClientVolume(clientVolume);
-    if (IsVolumeSame(MIN_FLOAT_VOLUME, clientVolume, AUDIO_VOLOMUE_EPSILON)) {
-        AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, 0.0f);
-    } else {
-        AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, 1.0f);
+    AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, clientVolume);
+    if (isInnerCapEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolume(dupStreamIndex_, clientVolume);
+    }
+    if (isDualToneEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolume(dualToneStreamIndex_, clientVolume);
+    }
+    if (offloadEnable_) {
+        OffloadSetVolumeInner();
     }
     return ret;
 }
 
 int32_t RendererInServer::SetMute(bool isMute)
 {
-    if (isMute) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, true);
-    } else {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
+    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMute);
+    if (isInnerCapEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMute);
+    }
+    if (isDualToneEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMute);
+    }
+    if (offloadEnable_) {
+        OffloadSetVolumeInner();
+    }
+    return SUCCESS;
+}
+
+int32_t RendererInServer::SetDuckFactor(float duckFactor)
+{
+    if (duckFactor < MIN_FLOAT_VOLUME || duckFactor > MAX_FLOAT_VOLUME) {
+        AUDIO_ERR_LOG("invalid duck volume:%{public}f", duckFactor);
+        return ERR_INVALID_PARAM;
+    }
+    AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(streamIndex_, duckFactor);
+    if (isInnerCapEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dupStreamIndex_, duckFactor);
+    }
+    if (isDualToneEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dualToneStreamIndex_, duckFactor);
+    }
+    if (offloadEnable_) {
+        OffloadSetVolumeInner();
     }
     return SUCCESS;
 }
