@@ -417,6 +417,8 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
 
+    void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -600,6 +602,7 @@ private:
     pid_t lastMicMuteSettingPid_ = 0;
     std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
+    int32_t sessionIdByRemote_ = -1;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

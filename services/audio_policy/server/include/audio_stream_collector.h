@@ -80,6 +80,11 @@ public:
     bool HasVoipRendererStream();
     bool ChangeVoipCapturerStreamToNormal();
     bool IsCallStreamUsage(StreamUsage usage);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage streamUsage);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceBySourceType(SourceType sourceType);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceByDeviceType(DeviceType deviceType);
+    int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
+
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
