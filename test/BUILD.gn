@@ -73,6 +73,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
     "../services/audio_service/test/unittest:audio_service_unit_test",
+    "../services/audio_service/test/unittest:audio_thread_task_unit_test",
     "../services/audio_service/test/unittest:capturer_in_client_unit_test",
     "../services/audio_service/test/unittest:capturer_in_server_unit_test",
     "../services/audio_service/test/unittest:ipc_stream_in_server_unit_test",
