@@ -3869,9 +3869,6 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
 
 static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
-    // set audio thread priority
-    ScheduleThreadInServer(getpid(), gettid());
-
     pa_sink_new_data data;
     pa_module *m;
     pa_sink *sink = NULL;
@@ -3926,7 +3923,7 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     return sink;
 
 fail:
-    UnscheduleThreadInServer(getpid(), gettid());
+    AUDIO_ERR_LOG("PaHdiSinkInit fail");
     return NULL;
 }
 
