@@ -520,6 +520,10 @@ void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConf
     pa_proplist_sets(propList, "scene.type", GetEnhanceSceneName(processConfig.capturerInfo.sourceType).c_str());
     enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
     pa_proplist_sets(propList, "scene.mode", GetEnhanceModeName(enhanceMode_).c_str());
+    if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED) {
+        AUDIO_INFO_LOG("ByPass UID is [%{public}d]", processConfig.appInfo.appUid);
+        pa_proplist_sets(propList, "scene.bypass", "scene.bypass");
+    }
 }
 
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
