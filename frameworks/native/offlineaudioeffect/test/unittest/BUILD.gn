@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/test.gni")
-import("../../../../../audio_framework_test_sources.gni")
 
 module_output_path = "multimedia_audio_framework/offline_audio_effect_manager"
 

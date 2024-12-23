@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
 
 config("offline_audio_effect_config") {
@@ -27,7 +26,7 @@ config("offline_audio_effect_config") {
   ]
 }
 
-audio_ohos_library("offline_audio_effect") {
+ohos_shared_library("offline_audio_effect") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true

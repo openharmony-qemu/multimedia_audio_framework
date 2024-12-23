@@ -327,6 +327,7 @@ int32_t ProRendererStreamImpl::SetRate(int32_t rate)
         default:
             return ERR_INVALID_PARAM;
     }
+    (void)currentRate;
     renderRate_ = rate;
     return SUCCESS;
 }
