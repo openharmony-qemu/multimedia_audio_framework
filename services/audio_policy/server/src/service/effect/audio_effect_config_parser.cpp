@@ -56,9 +56,15 @@ AudioEffectConfigParser::~AudioEffectConfigParser()
 static int32_t ParseEffectConfigFile(xmlDoc* &doc)
 {
 #ifdef USE_CONFIG_POLICY
-    CfgFiles *cfgFiles = GetOneCfgFile(AUDIO_EFFECT_CONFIG_FILE);
-    if (cfgFiles == nullptr) {
-        AUDIO_ERR_LOG("Not found audio_effect_config.xml!");
+    char buf[MAX_PATH_LEN];
+    char *path = GetOneCfgFile(AUDIO_EFFECT_CONFIG_FILE, buf, MAX_PATH_LEN);
+    if (path != nullptr && *path != '\0') {
+        AUDIO_INFO_LOG("effect config file path: %{public}s", path);
+        doc = xmlReadFile(path, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
+    }
+#endif
+    if (doc == nullptr) {
+        AUDIO_ERR_LOG("error: could not parse audio_interrupt_policy_config.xml!");
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::FAULT_EVENT);
@@ -66,24 +72,6 @@ static int32_t ParseEffectConfigFile(xmlDoc* &doc)
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         return FILE_PARSE_ERROR;
     }
-
-    for (int32_t i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; i--) {
-        if (cfgFiles->paths[i] && *(cfgFiles->paths[i]) != '\0') {
-            AUDIO_INFO_LOG("effect config file path:%{public}s", cfgFiles->paths[i]);
-            doc = xmlReadFile(cfgFiles->paths[i], nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
-            break;
-        }
-    }
-    FreeCfgFiles(cfgFiles);
-#endif
-    if (doc == nullptr) {
-        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
-            Media::MediaMonitor::FAULT_EVENT);
-        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_EFFECT_CONFIG);
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-    }
-    CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "load audio effect config fail");
     return 0;
 }
 
