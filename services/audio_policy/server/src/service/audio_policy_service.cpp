@@ -315,6 +315,11 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
     return audioVolumeManager_.GetSystemVolumeLevel(streamType);
 }
 
+int32_t AudioPolicyService::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
+{
+    return audioVolumeManager_.GetSystemVolumeLevelNoMuteState(streamType);
+}
+
 float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
 {
     return audioPolicyManager_.GetSystemVolumeDb(streamType);

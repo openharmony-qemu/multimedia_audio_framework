@@ -101,7 +101,7 @@ void audioAffinityParser::ParserAffinityGroups(xmlNode *node, const DeviceFlag& 
 
     while (currNode) {
         if (XML_ELEMENT_NODE == currNode->type &&
-            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("affinityGroups")))) {
+            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("AffinityGroups")))) {
             ParserAffinityGroupAttribute(currNode, deviceFlag);
         }
         currNode = currNode->next;
@@ -122,7 +122,7 @@ void audioAffinityParser::ParserAffinityGroupAttribute(xmlNode *node, const Devi
     deviceInfo.deviceFlag = deviceFlag;
     while (currNode) {
         if (XML_ELEMENT_NODE == currNode->type &&
-            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("affinityGroup")))) {
+            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("AffinityGroup")))) {
             xmlChar *attrPrimary = xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("isPrimary"));
             if (attrPrimary != nullptr) {
                 deviceInfo.isPrimary = static_cast<uint32_t>(atoi(reinterpret_cast<char *>(attrPrimary)));
@@ -151,7 +151,7 @@ void audioAffinityParser::ParserAffinityGroupDeviceInfos(xmlNode *node, Affinity
 
     while (currNode) {
         if (XML_ELEMENT_NODE == currNode->type &&
-            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("affinity")))) {
+            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("Affinity")))) {
             char *pValue = reinterpret_cast<char *>(
                 xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("networkId")));
             deviceInfo.networkID = pValue;

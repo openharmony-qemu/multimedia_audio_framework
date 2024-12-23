@@ -70,6 +70,7 @@ public:
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
     int32_t DisableSafeMediaVolume();
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
