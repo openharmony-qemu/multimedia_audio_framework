@@ -87,6 +87,8 @@ const char *g_audioServerCodeStrs[] = {
     "SET_ROTATION_TO_EFFECT",
     "UPDATE_SESSION_CONNECTION_STATE",
     "SET_SINGLE_STREAM_MUTE",
+    "CREATE_IPC_OFFLINE_STREAM",
+    "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -726,6 +728,29 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
     }
 }
 
+int AudioManagerStub::HandleCreateIpcOfflineStream(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> process = CreateIpcOfflineStream(errorCode);
+    CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
+        "CREATE_IPC_OFFLINE_STREAM AudioManagerStub CreateIpcOfflineStream failed");
+    reply.WriteRemoteObject(process);
+    reply.WriteInt32(errorCode);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetOfflineAudioEffectChains(MessageParcel &data, MessageParcel &reply)
+{
+    vector<string> effectChains{};
+    int32_t errCode = GetOfflineAudioEffectChains(effectChains);
+    reply.WriteInt32(effectChains.size());
+    for (auto &chainName : effectChains) {
+        reply.WriteString(chainName);
+    }
+    reply.WriteInt32(errCode);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
@@ -781,6 +806,10 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleGetAsrAecMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
             return HandleSetAsrNoiseSuppressionMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_IPC_OFFLINE_STREAM):
+            return HandleCreateIpcOfflineStream(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS):
+            return HandleGetOfflineAudioEffectChains(data, reply);
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }
