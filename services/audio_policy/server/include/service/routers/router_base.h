@@ -65,24 +65,25 @@ public:
         return std::make_shared<AudioDeviceDescriptor>();
     }
 
-    std::shared_ptr<AudioDeviceDescriptor> GetPairCaptureDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &captureDescs)
+    std::shared_ptr<AudioDeviceDescriptor> GetPairDevice(std::shared_ptr<AudioDeviceDescriptor> &targetDevice,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList)
     {
-        for (auto &captureDesc : captureDescs) {
-            if (captureDesc->deviceRole_ != desc->deviceRole_
-                || captureDesc->deviceType_ != desc->deviceType_
-                || captureDesc->networkId_ != desc->networkId_
-                || captureDesc->macAddress_ != desc->macAddress_) {
+        for (auto &device : deviceList) {
+            if (device->deviceRole_ != targetDevice->deviceRole_ ||
+                device->deviceType_ != targetDevice->deviceType_ ||
+                device->networkId_ != targetDevice->networkId_ ||
+                device->macAddress_ != targetDevice->macAddress_) {
                 continue;
             }
-            if (!captureDesc->exceptionFlag_ && captureDesc->isEnable_ &&
-                (captureDesc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
-                 captureDesc->connectState_ != SUSPEND_CONNECTED)) {
-                return std::move(captureDesc);
+            if (!device->exceptionFlag_ && device->isEnable_ &&
+                (device->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
+                device->connectState_ != SUSPEND_CONNECTED) &&
+                device->connectState_ != VIRTUAL_CONNECTED) {
+                return std::move(device);
             }
-            AUDIO_WARNING_LOG("unavailable device state, type[%{public}d] connectState[%{public}d]"
-                "isEnable[%{public}d] exceptionFlag[%{public}d]", captureDesc->deviceType_,
-                captureDesc->connectState_, captureDesc->isEnable_, captureDesc->exceptionFlag_);
+            AUDIO_WARNING_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] " \
+                "isEnable[%{public}d] exceptionFlag[%{public}d]", device->deviceType_, device->connectState_,
+                device->isEnable_, device->exceptionFlag_);
         }
         return std::make_shared<AudioDeviceDescriptor>();
     }
