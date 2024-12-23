@@ -1838,7 +1838,11 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     // Only watch primary and fast sink for now, watch other sinks later.
     IAudioRendererSink *primarySink = IAudioRendererSink::GetInstance("primary", "");
     IAudioRendererSink *usbSink = IAudioRendererSink::GetInstance("usb", "");
+    IAudioRendererSink *directSink = IAudioRendererSink::GetInstance("direct", "");
+    IAudioRendererSink *dpSink = IAudioRendererSink::GetInstance("dp", "");
+    IAudioRendererSink *voipSink = IAudioRendererSink::GetInstance("voip", "");
     IAudioRendererSink *offloadSink = IAudioRendererSink::GetInstance("offload", "");
+    IAudioRendererSink *mchSink = IAudioRendererSink::GetInstance("multichannel", "");
     IAudioRendererSink *a2dpSink = IAudioRendererSink::GetInstance("a2dp", "");
     IAudioRendererSink *a2dpFastSink = IAudioRendererSink::GetInstance("a2dp_fast", "");
     IAudioRendererSink *fastSink = FastAudioRendererSink::GetInstance();
@@ -1846,7 +1850,11 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     for (auto sinkInstance : {
         primarySink,
         usbSink,
+        directSink,
+        dpSink,
+        voipSink,
         offloadSink,
+        mchSink,
         a2dpSink,
         a2dpFastSink,
         fastSink,
