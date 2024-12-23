@@ -35,7 +35,7 @@ int32_t IpcOfflineStreamProxy::CreateOfflineEffectChain(const std::string &chain
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-
+    data.WriteString(chainName);
     int ret = Remote()->SendRequest(IpcOfflineStreamMsg::CREATE_OFFLINE_EFFECT_CHAIN, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "Create failed, error: %{public}d", ret);
 

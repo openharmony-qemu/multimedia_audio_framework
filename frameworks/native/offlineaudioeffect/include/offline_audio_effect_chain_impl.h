@@ -41,15 +41,19 @@ public:
 
     ~OfflineAudioEffectChainImpl();
 
-    int32_t InitIpcChain();
+    int32_t CreateEffectChain();
 private:
+    void InitDump();
+
     std::string chainName_;
-    std::shared_ptr<OfflineStreamInClient> offlineStreamInClient_;
-    std::shared_ptr<AudioSharedMemory> clientBufferIn_;
-    std::shared_ptr<AudioSharedMemory> clientBufferOut_;
-    uint8_t *inBufferBase_;
-    uint8_t *outBufferBase_;
-    std::shared_mutex bufferMutex_;
+    std::shared_ptr<OfflineStreamInClient> offlineStreamInClient_ = nullptr;
+    std::shared_ptr<AudioSharedMemory> clientBufferIn_ = nullptr;
+    std::shared_ptr<AudioSharedMemory> clientBufferOut_ = nullptr;
+    uint8_t *inBufferBase_ = nullptr;
+    uint8_t *outBufferBase_ = nullptr;
+    std::mutex streamClientMutex_;
+    FILE *dumpFileIn_ = nullptr;
+    FILE *dumpFileOut_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

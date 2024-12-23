@@ -38,7 +38,7 @@ std::unique_ptr<OfflineAudioEffectChain> OfflineAudioEffectManager::CreateOfflin
     const std::string &chainName)
 {
     std::unique_ptr<OfflineAudioEffectChainImpl> chain = std::make_unique<OfflineAudioEffectChainImpl>(chainName);
-    int32_t ret = chain->InitIpcChain();
+    int32_t ret = chain->CreateEffectChain();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "create OfflineEffectChain failed, errcode is %{public}d", ret);
     return chain;
 }
