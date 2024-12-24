@@ -698,6 +698,7 @@ int32_t RendererInServer::Start()
             stream_->GetAudioEffectMode(effectModeWhenDual_);
             stream_->SetAudioEffectMode(EFFECT_NONE);
             std::lock_guard<std::mutex> lock(dualToneMutex_);
+            dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
             dualToneStream_->Start();
         }
     }
@@ -734,6 +735,7 @@ int32_t RendererInServer::Pause()
             stream_->SetAudioEffectMode(effectModeWhenDual_);
             std::lock_guard<std::mutex> lock(dualToneMutex_);
             dualToneStream_->Pause();
+            dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
@@ -867,6 +869,7 @@ int32_t RendererInServer::Stop()
             stream_->SetAudioEffectMode(effectModeWhenDual_);
             std::lock_guard<std::mutex> lock(dualToneMutex_);
             dualToneStream_->Stop();
+            dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -977,6 +980,10 @@ int32_t RendererInServer::GetLowPowerVolume(float &volume)
 
 int32_t RendererInServer::SetAudioEffectMode(int32_t effectMode)
 {
+    if (isDualToneEnabled_) {
+        effectModeWhenDual_ = effectMode;
+        return SUCCESS;
+    }
     return stream_->SetAudioEffectMode(effectMode);
 }
 
@@ -1124,6 +1131,7 @@ int32_t RendererInServer::InitDualToneStream()
         stream_->GetAudioEffectMode(effectModeWhenDual_);
         stream_->SetAudioEffectMode(EFFECT_NONE);
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
         dualToneStream_->Start();
     }
     return SUCCESS;
