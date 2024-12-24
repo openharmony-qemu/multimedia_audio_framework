@@ -1482,7 +1482,7 @@ void AudioEffectChainManager::UpdateCurrSceneTypeAndStreamUsageForDsp()
 
 int32_t AudioEffectChainManager::InitEffectBuffer(const std::string &sessionID)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     return InitEffectBufferInner(sessionID);
 }
 
