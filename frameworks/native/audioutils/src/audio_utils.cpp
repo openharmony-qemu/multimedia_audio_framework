@@ -144,6 +144,11 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
     return audioPerSampleLength;
 }
 
+bool Util::IsScoSupportSource(const SourceType sourceType)
+{
+    return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
+}
+
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
 {
     return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
@@ -192,6 +197,18 @@ int64_t ClockTime::GetCurNano()
     return result;
 }
 
+int64_t ClockTime::GetRealNano()
+{
+    int64_t result = -1; // -1 for bad result
+    struct timespec time;
+    clockid_t clockId = CLOCK_REALTIME;
+    int ret = clock_gettime(clockId, &time);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
+        "GetRealNanotime fail, result:%{public}d", ret);
+    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
+    return result;
+}
+
 int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
 {
     int32_t ret = -1; // -1 for bad result.
@@ -208,6 +225,23 @@ int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
     }
 
     return ret;
+}
+
+std::string ClockTime::NanoTimeToString(int64_t nanoTime)
+{
+    struct tm *tm_info;
+    char buffer[80];
+    time_t time_seconds = nanoTime / AUDIO_NS_PER_SECOND;
+
+    tm_info = localtime(&time_seconds);
+    if (tm_info == NULL) {
+        AUDIO_ERR_LOG("get localtime failed!");
+        return "";
+    }
+
+    size_t res = strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
+    CHECK_AND_RETURN_RET_LOG(res != 0, "", "strftime failed!");
+    return std::string(buffer);
 }
 
 int32_t ClockTime::RelativeSleep(int64_t nanoTime)
@@ -762,6 +796,30 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
 }
 
 template <typename T>
+bool StringConverter(const std::string &str, T &result)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
+    return ec == std::errc{} && ptr == str.data() + str.size();
+}
+
+template bool StringConverter(const std::string &str, uint64_t &result);
+template bool StringConverter(const std::string &str, uint32_t &result);
+template bool StringConverter(const std::string &str, int32_t &result);
+template bool StringConverter(const std::string &str, uint8_t &result);
+template bool StringConverter(const std::string &str, int8_t &result);
+
+bool SetSysPara(const std::string &key, int32_t value)
+{
+    auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
+    if (res < 0) {
+        AUDIO_WARNING_LOG("SetSysPara fail, key:%{public}s res:%{public}d", key.c_str(), res);
+        return false;
+    }
+    AUDIO_INFO_LOG("SetSysPara %{public}d success.", value);
+    return true;
+}
+
+template <typename T>
 bool GetSysPara(const char *key, T &value)
 {
     CHECK_AND_RETURN_RET_LOG(key != nullptr, false, "key is nullptr");
@@ -1270,6 +1328,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
             break;
         case SOURCE_TYPE_WAKEUP:
             name = "WAKEUP";
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            name = "SOURCE_TYPE_UNPROCESSED";
             break;
         default:
             name = "UNKNOWN";

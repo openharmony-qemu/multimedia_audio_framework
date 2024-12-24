@@ -40,7 +40,7 @@
 #include "audio_server_death_recipient.h"
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,7 +48,6 @@ namespace AudioStandard {
 namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
-static const int32_t HALF_FACTOR = 2;
 }
 
 class ProcessCbImpl;
@@ -115,6 +114,8 @@ public:
     
     bool Init(const AudioProcessConfig &config);
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -156,7 +157,6 @@ private:
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime);
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     void DoFadeInOut(uint64_t &curWritePos);
 
@@ -671,7 +671,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
-    DfxOperation(readbufDesc, processConfig_.streamInfo.format, processConfig_.streamInfo.channels);
+    VolumeTools::DfxOperation(readbufDesc, processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
 
     ret = memset_s(readbufDesc.buffer, readbufDesc.bufLength, 0, readbufDesc.bufLength);
     if (ret != EOK) {
@@ -896,7 +896,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             writeProcessDataTrace.End();
 
             DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer), offSet);
-            DfxOperation(curCallbackBuffer, processConfig_.streamInfo.format, processConfig_.streamInfo.channels);
+            VolumeTools::DfxOperation(curCallbackBuffer, processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
         }
     }
 
@@ -905,17 +905,6 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
     }
 
     return SUCCESS;
-}
-
-void AudioProcessInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t AudioProcessInClientInner::SetVolume(int32_t vol)
@@ -1478,7 +1467,7 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
         return false;
     }
 
-    int tryCount = 10; // try 10 * 2 = 20ms
+    int tryCount = 50; // try 50 * 2 = 100ms
     SpanStatus targetStatus = SpanStatus::SPAN_READ_DONE;
     while (!tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_WRITTING) && tryCount > 0) {
         tryCount--;
@@ -1733,6 +1722,12 @@ void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &
             "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
         AUDIO_PRERELEASE_LOGW("wakeUpTime is too late...");
     }
+}
+
+int32_t AudioProcessInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "set failed with null ipcProxy.");
+    return processProxy_->SetDefaultOutputDevice(defaultOutputDevice);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -38,8 +38,6 @@ public:
     int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
-    int32_t SetLowPowerVolume(float volume) override;
-    int32_t GetLowPowerVolume(float &powerVolume) override;
     int32_t SetAudioEffectMode(int32_t effectMode) override;
     int32_t GetAudioEffectMode(int32_t &effectMode) override;
     int32_t SetPrivacyType(int32_t privacyType) override;
@@ -70,6 +68,7 @@ public:
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
     int32_t SetClientVolume(float clientVolume) override;
     void BlockStream() noexcept override;
+    bool IsEffectNone(StreamUsage streamUsage);
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -121,11 +120,10 @@ private:
 
     size_t totalBytesWritten_ = 0;
     int32_t renderRate_ = 0;
-    int32_t effectMode_ = -1;
+    int32_t effectMode_ = 1;
     std::string effectSceneName_ = "";
     int32_t privacyType_ = 0;
 
-    float powerVolumeFactor_ = 1.0f;
     bool isStandbyPause_ = false;
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
@@ -142,6 +140,7 @@ private:
     std::mutex fadingMutex_;
     std::condition_variable fadingCondition_;
     float clientVolume_ = 1.0f;
+    bool initEffectFlag_ = true;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
 

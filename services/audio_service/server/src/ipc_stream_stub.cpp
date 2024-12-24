@@ -59,8 +59,6 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleUnsetOffloadMode(data, reply);
         case ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME:
             return HandleGetOffloadApproximatelyCacheTime(data, reply);
-        case ON_SET_OFFLOAD_VOLUME:
-            return HandleOffloadSetVolume(data, reply);
         case ON_UPDATE_SPATIALIZATION_STATE:
             return HandleUpdateSpatializationState(data, reply);
         case ON_GET_STREAM_MANAGER_TYPE:
@@ -71,8 +69,12 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetClientVolume(data, reply);
         case ON_SET_MUTE:
             return HandleSetMute(data, reply);
+        case ON_SET_DUCK_FACTOR:
+            return HandleSetDuckFactor(data, reply);
         case ON_REGISTER_THREAD_PRIORITY:
             return HandleRegisterThreadPriority(data, reply);
+        case ON_SET_DEFAULT_OUTPUT_DEVICE:
+            return HandleSetDefaultOutputDevice(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -360,14 +362,6 @@ int32_t IpcStreamStub::HandleGetOffloadApproximatelyCacheTime(MessageParcel &dat
     return AUDIO_OK;
 }
 
-int32_t IpcStreamStub::HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply)
-{
-    float volume = data.ReadFloat();
-    reply.WriteInt32(OffloadSetVolume(volume));
-
-    return AUDIO_OK;
-}
-
 int32_t IpcStreamStub::HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply)
 {
     bool spatializationEnabled = data.ReadBool();
@@ -393,9 +387,7 @@ int32_t IpcStreamStub::HandleSetSilentModeAndMixWithOthers(MessageParcel &data, 
 
 int32_t IpcStreamStub::HandleSetClientVolume(MessageParcel &data, MessageParcel &reply)
 {
-    bool isStreamVolumeChange = data.ReadBool();
-    bool isMediaServiceAndOffloadEnable = data.ReadBool();
-    reply.WriteInt32(SetClientVolume(isStreamVolumeChange, isMediaServiceAndOffloadEnable));
+    reply.WriteInt32(SetClientVolume());
     return AUDIO_OK;
 }
 
@@ -406,11 +398,25 @@ int32_t IpcStreamStub::HandleSetMute(MessageParcel &data, MessageParcel &reply)
     return AUDIO_OK;
 }
 
+int32_t IpcStreamStub::HandleSetDuckFactor(MessageParcel &data, MessageParcel &reply)
+{
+    float duckFactor = data.ReadFloat();
+    reply.WriteInt32(SetDuckFactor(duckFactor));
+    return AUDIO_OK;
+}
+
 int32_t IpcStreamStub::HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t tid = data.ReadUint32();
     std::string bundleName = data.ReadString();
     reply.WriteInt32(RegisterThreadPriority(tid, bundleName));
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t deviceType = data.ReadInt32();
+    reply.WriteInt32(SetDefaultOutputDevice(static_cast<OHOS::AudioStandard::DeviceType>(deviceType)));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

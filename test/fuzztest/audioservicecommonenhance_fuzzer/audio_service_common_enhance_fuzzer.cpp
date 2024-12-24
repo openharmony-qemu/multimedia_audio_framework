@@ -18,6 +18,8 @@
 #include <cstdint>
 #include "audio_common_converter.h"
 #include "pro_renderer_stream_impl.h"
+#include "securec.h"
+#include "audio_log.h"
 #include "audio_down_mix_stereo.h"
 #include "audio_log_utils.h"
 #include "audio_volume.h"
@@ -27,7 +29,6 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t LIMITSIZE = 4;
 const int32_t FORMAT_COUNT = 5;
 const int32_t VOLSTART_COUNT = 1;
 const int64_t SILENT_COUNT = 1;
@@ -37,19 +38,48 @@ const uint32_t FRAMESIZE = 5;
 const uint32_t FRAMESIZE_NEW = 1;
 const size_t SIZE_FLOAT = 5;
 const float FLOAT_BUFFER = 5.0f;
-const float FLOAT_VOLUME = 1.0f;
 constexpr int32_t AUDIO_SAMPLE_FORMAT_8BIT = 0;
 constexpr int32_t AUDIO_SAMPLE_FORMAT_16BIT = 1;
 constexpr int32_t AUDIO_SAMPLE_FORMAT_24BIT = 2;
 constexpr int32_t AUDIO_SAMPLE_FORMAT_32BIT = 3;
 constexpr int32_t AUDIO_SAMPLE_FORMAT_32F_BIT = 4;
+static const uint8_t *RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
 
-void AudioCommonConverterFuzzTest(const uint8_t *rawData, size_t size)
+/*
+* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
+* tips: only support basic type
+*/
+template<class T>
+T GetData()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
     }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
 
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
+
+void AudioCommonConverterFuzzTest()
+{
     BufferBaseInfo srcBuffer;
     srcBuffer.frameSize = FRAMESIZE;
     size_t floatBufferSize = SIZE_FLOAT;
@@ -62,50 +92,36 @@ void AudioCommonConverterFuzzTest(const uint8_t *rawData, size_t size)
     std::vector<char> dstBuffer32Bit{'0', '0', '0', '0'};
     std::vector<char> dstBuffer16Bit{'0', '0'};
 
-    srcBufferTo.format = AUDIO_SAMPLE_FORMAT_8BIT;
-    AudioCommonConverter::ConvertBufferTo32Bit(srcBufferTo, dstBuffer32Bit);
-    AudioCommonConverter::ConvertBufferTo16Bit(srcBufferTo, dstBuffer16Bit);
-    srcBufferTo.format = AUDIO_SAMPLE_FORMAT_16BIT;
-    AudioCommonConverter::ConvertBufferTo32Bit(srcBufferTo, dstBuffer32Bit);
-    AudioCommonConverter::ConvertBufferTo16Bit(srcBufferTo, dstBuffer16Bit);
-    srcBufferTo.format = AUDIO_SAMPLE_FORMAT_24BIT;
-    AudioCommonConverter::ConvertBufferTo32Bit(srcBufferTo, dstBuffer32Bit);
-    AudioCommonConverter::ConvertBufferTo16Bit(srcBufferTo, dstBuffer16Bit);
-    srcBufferTo.format = AUDIO_SAMPLE_FORMAT_32BIT;
-    AudioCommonConverter::ConvertBufferTo32Bit(srcBufferTo, dstBuffer32Bit);
-    AudioCommonConverter::ConvertBufferTo16Bit(srcBufferTo, dstBuffer16Bit);
-    srcBufferTo.format = AUDIO_SAMPLE_FORMAT_32F_BIT;
-    AudioCommonConverter::ConvertBufferTo32Bit(srcBufferTo, dstBuffer32Bit);
-    AudioCommonConverter::ConvertBufferTo16Bit(srcBufferTo, dstBuffer16Bit);
-    srcBufferTo.format = FORMAT_COUNT;
+    std::vector<int32_t> formatVec = {
+        AUDIO_SAMPLE_FORMAT_8BIT,
+        AUDIO_SAMPLE_FORMAT_16BIT,
+        AUDIO_SAMPLE_FORMAT_24BIT,
+        AUDIO_SAMPLE_FORMAT_32BIT,
+        AUDIO_SAMPLE_FORMAT_32F_BIT,
+        FORMAT_COUNT,
+    };
+    int32_t formatInt = GetData<int32_t>() % formatVec.size();
+    srcBufferTo.format = formatVec[formatInt];
     AudioCommonConverter::ConvertBufferTo32Bit(srcBufferTo, dstBuffer32Bit);
     AudioCommonConverter::ConvertBufferTo16Bit(srcBufferTo, dstBuffer16Bit);
 }
 
-void AudioDownMixStereoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioDownMixStereoFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     std::shared_ptr<AudioDownMixStereo> audioDownMixStereo = std::make_shared<AudioDownMixStereo>();
 
-    AudioChannelLayout mode = CH_LAYOUT_MONO;
-    int32_t channels = *reinterpret_cast<const int32_t*>(rawData);
+    AudioChannelLayout mode = GetData<AudioChannelLayout>();
+    int32_t channels = GetData<int32_t>();
     audioDownMixStereo->InitMixer(mode, channels);
 
-    int32_t frameLength = *reinterpret_cast<const int32_t*>(rawData);
-    float *input = const_cast<float*>(reinterpret_cast<const float*>(rawData));
-    float *output = const_cast<float*>(reinterpret_cast<const float*>(rawData));
+    int32_t frameLength = GetData<int32_t>();
+    float *input = GetData<float*>();
+    float *output = GetData<float*>();
     audioDownMixStereo->Apply(frameLength, input, output);
 }
 
-void AudioLogUtilsFuzzTest(const uint8_t *rawData, size_t size)
+void AudioLogUtilsFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     std::string logTag = "logTag";
     ChannelVolumes vols;
     int64_t countSilent = SILENT_COUNT;
@@ -117,25 +133,21 @@ void AudioLogUtilsFuzzTest(const uint8_t *rawData, size_t size)
     AudioLogUtils::ProcessVolumeData(logTag, volumes, countSound);
 }
 
-void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     std::shared_ptr<AudioVolume> audioVolume = std::make_shared<AudioVolume>();
-    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t sessionId = GetData<uint32_t>();
     audioVolume->GetHistoryVolume(sessionId);
 
-    float volume = FLOAT_VOLUME;
+    float volume = GetData<float>();
     audioVolume->SetHistoryVolume(sessionId, volume);
     audioVolume->SetStreamVolumeDuckFactor(sessionId, volume);
     audioVolume->SetStreamVolumeLowPowerFactor(sessionId, volume);
     audioVolume->GetStreamVolumeFade(sessionId);
     audioVolume->SetStreamVolumeFade(sessionId, volume, volume);
 
-    int32_t volumeType = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t volumeLevel = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t volumeType = GetData<int32_t>();
+    int32_t volumeLevel = GetData<int32_t>();
     std::string deviceClass = "primary";
     audioVolume->SetSystemVolume(volumeType, deviceClass, volume, volumeLevel);
     audioVolume->SetSystemVolumeMute(volumeType, deviceClass, true);
@@ -143,20 +155,16 @@ void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
     std::string streamType = "streamType";
     audioVolume->ConvertStreamTypeStrToInt(streamType);
 
-    float x = FLOAT_VOLUME;
-    float y = FLOAT_VOLUME;
+    float x = GetData<float>();
+    float y = GetData<float>();
     audioVolume->IsSameVolume(x, y);
 
     std::string dumpString = "dumpString";
     audioVolume->Dump(dumpString);
 }
 
-void AudioFormatConverterFuzzTest(const uint8_t *rawData, size_t size)
+void AudioFormatConverterFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     BufferDesc srcDesc;
     uint8_t srcBuffer[4] = {0};
     srcBuffer[0] = BUFFER_CONSTANT;
@@ -168,17 +176,48 @@ void AudioFormatConverterFuzzTest(const uint8_t *rawData, size_t size)
     FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
     FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
 }
+
+typedef void (*TestFuncs[5])();
+
+TestFuncs g_testFuncs = {
+    AudioCommonConverterFuzzTest,
+    AudioDownMixStereoFuzzTest,
+    AudioLogUtilsFuzzTest,
+    AudioVolumeFuzzTest,
+    AudioFormatConverterFuzzTest,
+};
+
+bool FuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr) {
+        return false;
+    }
+
+    // initialize data
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+    }
+
+    return true;
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    /* Run your code on data */
-    OHOS::AudioStandard::AudioCommonConverterFuzzTest(data, size);
-    OHOS::AudioStandard::AudioDownMixStereoFuzzTest(data, size);
-    OHOS::AudioStandard::AudioLogUtilsFuzzTest(data, size);
-    OHOS::AudioStandard::AudioVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::AudioFormatConverterFuzzTest(data, size);
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
 }

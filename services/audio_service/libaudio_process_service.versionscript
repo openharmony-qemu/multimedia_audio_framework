@@ -29,6 +29,8 @@
     *SetNonInterruptMute*;
     *SetOffloadMode*;
     *UnsetOffloadMode*;
+    *UpdateAudioSinkState*;
+    *CheckHibernateState*;
     *GetMaxRendererInstances*;
     *ProcessCbProxy*;
     *GetCapturerBySessionID*;
@@ -43,6 +45,9 @@
     *Dump*;
     *CleanAppUseNumMap*;
     *GetSharedVolume*;
+    *HasBluetoothEndpoint*;
+    *GetOfflineStream*;
+    *GetOfflineAudioEffectChains*;
   local:
     *;
 };

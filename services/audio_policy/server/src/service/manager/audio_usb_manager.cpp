@@ -24,6 +24,7 @@
 #include "usb_srv_client.h"
 #include "audio_usb_manager.h"
 #include "audio_policy_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -66,6 +67,24 @@ static void FillSoundCard(const string &path, SoundCard &card)
     closedir(dir);
 }
 
+static string Trim(const string &str)
+{
+    static const set<char> WHITE_SPACE{' ', '\r', '\n', '\t'};
+    size_t pos = 0;
+    size_t end = str.length();
+    for (; pos < end; pos++) {
+        if (WHITE_SPACE.find(str[pos]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    for (; end > pos; end--) {
+        if (WHITE_SPACE.find(str[end - 1]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    return str.substr(pos, end - pos);
+}
+
 static vector<SoundCard> GetUsbSoundCards()
 {
     const string baseDir{"/proc/asound"};
@@ -74,12 +93,13 @@ static vector<SoundCard> GetUsbSoundCards()
     DIR *dir = opendir(baseDir.c_str());
     CHECK_AND_RETURN_RET(dir != nullptr, soundCards);
     struct dirent *tmp;
+    int cardNum;
     while ((tmp = readdir(dir)) != nullptr) {
         string file(tmp->d_name);
         if (file.length() <= card.length() || !(file.find(card, 0) == 0)) {continue;}
-        string sIndex = file.substr(card.length());
-        if (!IsNumericStr(sIndex)) {continue;}
-        SoundCard card = {.cardNum_ = stoi(sIndex)};
+        string cardNumStr = file.substr(card.length());
+        if (!StrToInt(cardNumStr, cardNum)) {continue;}
+        SoundCard card = {.cardNum_ = static_cast<uint32_t>(cardNum)};
         FillSoundCard(baseDir + "/" + file, card);
         if (card.usbBus_.empty()) {continue;}
         soundCards.push_back(card);
@@ -99,11 +119,11 @@ static UsbAddr GetUsbAddr(const SoundCard &card)
 {
     size_t pos = card.usbBus_.find('/');
     CHECK_AND_RETURN_RET_LOG(pos != string::npos, {}, "Error Parameter: card.usbbus");
-    string str = card.usbBus_.substr(0, pos);
-    uint8_t busNum = (uint8_t)stoi(str);
-    str = card.usbBus_.substr(pos + 1);
-    uint8_t devAddr = (uint8_t)stoi(str);
-    return {busNum, devAddr};
+    int busNum, devAddr;
+    string busNumStr = Trim(card.usbBus_.substr(0, pos));
+    string devAddrStr = Trim(card.usbBus_.substr(pos + 1));
+    CHECK_AND_RETURN_RET_LOG(StrToInt(busNumStr, busNum) && StrToInt(devAddrStr, devAddr), {}, "StrToInt ERROR");
+    return {static_cast<uint8_t>(busNum), static_cast<uint8_t>(devAddr)};
 }
 
 static bool IsAudioDevice(UsbDevice &usbDevice)
@@ -148,10 +168,10 @@ AudioUsbManager& AudioUsbManager::GetInstance()
 
 void AudioUsbManager::Init(IDeviceStatusObserver *observer)
 {
-    lock_guard<mutex> lock(initLock_);
+    lock_guard<mutex> lock(mutex_);
     if (!initialized_) {
         AUDIO_INFO_LOG("Entry");
-        SetDeviceStatusObserver(observer);
+        observer_ = observer;
         RefreshUsbAudioDevices();
         for (auto &device : audioDevices_) {
             NotifyDevice(device, true);
@@ -162,9 +182,9 @@ void AudioUsbManager::Init(IDeviceStatusObserver *observer)
 
 void AudioUsbManager::Deinit()
 {
-    lock_guard<mutex> lock(initLock_);
+    lock_guard<mutex> lock(mutex_);
     if (initialized_) {
-        SetDeviceStatusObserver(nullptr);
+        observer_ = nullptr;
         if (eventSubscriber_) {
             EventFwk::CommonEventManager::NewUnSubscribeCommonEvent(eventSubscriber_);
             eventSubscriber_.reset();
@@ -177,18 +197,28 @@ void AudioUsbManager::Deinit()
 
 void AudioUsbManager::RefreshUsbAudioDevices()
 {
-    lock_guard<mutex> lock(mutex_);
     audioDevices_ = GetUsbAudioDevices();
     soundCardMap_ = GetUsbSoundCardMap();
+    vector<UsbAddr> toAdd;
+    for (auto it = soundCardMap_.begin(); it != soundCardMap_.end(); it++) {
+        auto devIt = find_if(audioDevices_.begin(), audioDevices_.end(), [it](auto &dev) {
+            return it->first == dev.usbAddr_;
+        });
+        if (devIt == audioDevices_.end()) {
+            toAdd.push_back(it->first);
+        }
+    }
+    AUDIO_INFO_LOG("toAdd size=%{public}zu", toAdd.size());
+    for (auto &addr : toAdd) {
+        audioDevices_.push_back({addr, "UNKNOWN"});
+    }
 }
 
 void AudioUsbManager::SubscribeEvent()
 {
-    lock_guard<mutex> lock(initLock_);
+    AUDIO_INFO_LOG("Entry");
     CHECK_AND_RETURN_LOG(eventSubscriber_ == nullptr, "feventSubscriber_ already exists");
     eventSubscriber_ = SubscribeCommonEvent();
-    CHECK_AND_RETURN_RET(eventSubscriber_ != nullptr,);
-    AUDIO_INFO_LOG("Success");
 }
 
 vector<UsbAudioDevice> AudioUsbManager::GetPlayerDevices()
@@ -211,6 +241,7 @@ void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isCo
     auto it = soundCardMap_.find(device.usbAddr_);
     CHECK_AND_RETURN_LOG(it != soundCardMap_.end(), "Error:No sound card matches usb device");
     auto &card = it->second;
+    CHECK_AND_RETURN_LOG(card.isPlayer_ || card.isCapturer_, "Error:Sound card is not player and not capturer");
     string macAddress = GetDeviceAddr(card);
     AudioStreamInfo streamInfo{};
     string deviceName = device.name_ + "-" + to_string(card.cardNum_);
@@ -228,12 +259,6 @@ void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isCo
         observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
             deviceName, streamInfo, INPUT_DEVICE);
     }
-}
-
-void AudioUsbManager::SetDeviceStatusObserver(IDeviceStatusObserver *observer)
-{
-    lock_guard<mutex> lock(mutex_);
-    observer_ = observer;
 }
 
 vector<UsbAudioDevice> AudioUsbManager::GetCapturerDevices()
@@ -265,7 +290,7 @@ vector<UsbAudioDevice> AudioUsbManager::GetUsbAudioDevices()
     vector<UsbAudioDevice> result;
     auto ret = UsbSrvClient::GetInstance().GetDevices(deviceList);
     if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("GetDevices failed. ret = %{public}d. size = %{public}zu", ret, deviceList.size());
+        AUDIO_ERR_LOG("GetDevices failed. ret=%{public}d. size=%{public}zu", ret, deviceList.size());
         return result;
     }
     for (auto &usbDevice : deviceList) {
@@ -281,19 +306,21 @@ vector<UsbAudioDevice> AudioUsbManager::GetUsbAudioDevices()
 
 void AudioUsbManager::HandleUsbAudioDeviceAttach(const UsbAudioDevice &device)
 {
-    AUDIO_INFO_LOG("Entry. deviceName = %{public}s", device.name_.c_str());
+    AUDIO_INFO_LOG("Entry. deviceName=%{public}s", device.name_.c_str());
     lock_guard<mutex> lock(mutex_);
     soundCardMap_ = GetUsbSoundCardMap();
     auto it = find(audioDevices_.begin(), audioDevices_.end(), device);
     if (it == audioDevices_.end()) {
         audioDevices_.push_back(device);
+    } else {
+        *it = device;
     }
     NotifyDevice(device, true);
 }
 
 void AudioUsbManager::HandleUsbAudioDeviceDetach(const UsbAudioDevice &device)
 {
-    AUDIO_INFO_LOG("Entry. deviceName = %{public}s", device.name_.c_str());
+    AUDIO_INFO_LOG("Entry. deviceName=%{public}s", device.name_.c_str());
     lock_guard<mutex> lock(mutex_);
     NotifyDevice(device, false);
     soundCardMap_.erase(device.usbAddr_);
@@ -306,7 +333,7 @@ void AudioUsbManager::HandleUsbAudioDeviceDetach(const UsbAudioDevice &device)
 void AudioUsbManager::EventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &data)
 {
     string action = data.GetWant().GetAction();
-    AUDIO_INFO_LOG("OnReceiveEvent Entry. action = %{public}s", action.c_str());
+    AUDIO_INFO_LOG("OnReceiveEvent Entry. action=%{public}s", action.c_str());
     string devStr;
     bool isAttach{false};
     if (action == EventFwk::CommonEventSupport::COMMON_EVENT_USB_DEVICE_ATTACHED) {
@@ -322,7 +349,6 @@ void AudioUsbManager::EventSubscriber::OnReceiveEvent(const EventFwk::CommonEven
         AUDIO_ERR_LOG("Error: data.GetData() returns empty");
         return;
     }
-    AUDIO_DEBUG_LOG("devStr = %{public}s", devStr.c_str());
     auto devJson = cJSON_Parse(devStr.c_str());
     if (devJson == nullptr) {
         cJSON_Delete(devJson);

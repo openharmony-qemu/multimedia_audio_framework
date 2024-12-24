@@ -128,11 +128,8 @@ const std::string IAudioStream::GetEffectSceneName(const StreamUsage &streamUsag
     SupportedEffectConfig supportedEffectConfig;
     AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
     std::string streamUsageString = "";
-    for (const auto& pair : STREAM_USAGE_MAP) {
-        if (pair.second == streamUsage) {
-            streamUsageString = pair.first;
-            break;
-        }
+    if (STREAM_USAGE_MAP.find(streamUsage) != STREAM_USAGE_MAP.end()) {
+        streamUsageString = STREAM_USAGE_MAP.find(streamUsage)->second;
     }
     if (supportedEffectConfig.postProcessNew.stream.empty()) {
         AUDIO_WARNING_LOG("empty scene type set!");

@@ -194,6 +194,8 @@ public:
 
     bool RestoreAudioStream(bool needStoreState = true) override;
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    DeviceType GetDefaultOutputDevice() override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -222,7 +224,6 @@ private:
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
     void DfxWriteInterval();
 
     int32_t RegisterSpatializationStateEventListener();
@@ -242,6 +243,8 @@ private:
     int32_t ProcessWriteInner(BufferDesc &bufferDesc);
 
     void InitDirectPipeType();
+
+    bool DrainAudioStreamInner(bool stopFlag = false);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -409,6 +412,7 @@ private:
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
 
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
+    DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

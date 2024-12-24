@@ -32,7 +32,10 @@ void CjAudioCapturerStateChangeCallback::OnCapturerStateChange(
     }
     CArrAudioCapturerChangeInfo arrInfo;
     arrInfo.size = static_cast<int64_t>(audioCapturerChangeInfos.size());
-    int32_t mallocSize = sizeof(CAudioCapturerChangeInfo) * (arrInfo.size);
+    int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioCapturerChangeInfo)) * static_cast<int32_t>(arrInfo.size);
+    if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(CAudioCapturerChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
+        return;
+    }
     auto head = static_cast<CAudioCapturerChangeInfo *>(malloc(mallocSize));
     if (head == nullptr) {
         return;
@@ -68,7 +71,10 @@ void CjAudioRendererStateChangeCallback::OnRendererStateChange(
     }
     CArrAudioRendererChangeInfo arrInfo;
     arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
-    int32_t mallocSize = sizeof(CAudioRendererChangeInfo) * audioRendererChangeInfos.size();
+    int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioRendererChangeInfo)) * static_cast<int32_t>(arrInfo.size);
+    if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(CAudioRendererChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
+        return;
+    }
     auto head = static_cast<CAudioRendererChangeInfo *>(malloc(mallocSize));
     if (head == nullptr) {
         return;

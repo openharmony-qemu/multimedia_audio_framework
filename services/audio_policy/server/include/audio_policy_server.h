@@ -37,6 +37,7 @@
 
 #include "audio_info.h"
 #include "audio_policy_service.h"
+#include "audio_policy_utils.h"
 #include "audio_stream_removed_callback.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_stub.h"
@@ -46,6 +47,8 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
 #include "audio_interrupt_service.h"
+#include "audio_device_manager.h"
+#include "audio_policy_dump.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -79,14 +82,20 @@ const std::vector<AudioStreamType> GET_PC_STREAM_RING_VOLUME_TYPES {
 };
 
 const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
-    STREAM_MUSIC,
     STREAM_VOICE_CALL,
     STREAM_VOICE_ASSISTANT,
     STREAM_ACCESSIBILITY,
     STREAM_RING,
     STREAM_ALARM,
     STREAM_VOICE_RING,
-    STREAM_ULTRASONIC
+    STREAM_ULTRASONIC,
+    // adjust the type of music from the head of list to end, make sure music is updated last.
+    // avoid interference from ring updates on special platform.
+    // when the device is switched to headset,ring and alarm is dualtone type.
+    // dualtone type use fixed volume curve of speaker.
+    // the ring and alarm are classified into the music group.
+    // the music volume becomes abnormal when the db value of music is modified.
+    STREAM_MUSIC
 };
 
 class AudioPolicyServer : public SystemAbility,
@@ -232,6 +241,8 @@ public:
 
     AudioStreamType GetStreamInFocus(const int32_t zoneId = 0) override;
 
+    AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId = 0) override;
+
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
     void OnAudioStreamRemoved(const uint64_t sessionID) override;
@@ -277,14 +288,16 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid, int uid);
 
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
-
     int32_t ResumeStreamState();
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         StreamUsage streamUsage) override;
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
@@ -434,6 +447,11 @@ public:
     int32_t TriggerFetchDevice(
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
 
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
+
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) override;
+
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioDeviceAnahsCallback() override;
@@ -454,8 +472,13 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) override;
+    void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
+
+    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, bool isUpdateUi);
+
+    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel, bool mute);
+
+    void ProcUpdateRingerMode();
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -507,6 +530,9 @@ public:
     void MicrophoneMuteInfoDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
 
+    // for hibernate callback
+    void CheckHibernateState(bool hibernate);
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId);
@@ -553,7 +579,7 @@ private:
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
-    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
@@ -562,6 +588,7 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
+    bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
@@ -578,6 +605,7 @@ private:
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
+    int32_t ProcessVolumeKeyMuteEvents(const int32_t keyType);
 #endif
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
@@ -600,6 +628,7 @@ private:
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
+    void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);
 
     void InitPolicyDumpMap();
     void PolicyDataDump(std::string &dumpString);
@@ -607,8 +636,11 @@ private:
     void InfoDumpHelp(std::string &dumpString);
 
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
+    void AddSystemAbilityListeners();
 
     AudioPolicyService& audioPolicyService_;
+    AudioPolicyUtils &audioPolicyUtils_;
+    AudioDeviceManager &audioDeviceManager_;
     std::shared_ptr<AudioInterruptService> interruptService_;
 
     int32_t volumeStep_;
@@ -625,6 +657,7 @@ private:
     std::mutex systemVolumeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
+    std::mutex subscribeVolumeKey_;
 
     SessionProcessor sessionProcessor_{
         [this] (const uint64_t sessionID, const int32_t zoneID) { this->ProcessSessionRemoved(sessionID, zoneID); },
@@ -644,6 +677,8 @@ private:
     pid_t lastMicMuteSettingPid_ = 0;
     std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
+    AudioPolicyDump &audioPolicyDump_;
+    int32_t sessionIdByRemote_ = -1;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

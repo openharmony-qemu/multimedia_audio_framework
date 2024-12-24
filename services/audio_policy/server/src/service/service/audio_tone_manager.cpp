@@ -43,7 +43,7 @@ bool AudioToneManager::LoadToneDtmfConfig()
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Tone Load Configuration failed");
     }
     CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
-    std::string AUDIO_TONE_CONFIG_FILE = "system/etc/audio/audio_tone_dtmf_config.xml";
+    std::string AUDIO_TONE_CONFIG_FILE = "/system/etc/audio/audio_tone_dtmf_config.xml";
 
     if (audioToneParser->LoadConfig(toneDescriptorMap_)) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(

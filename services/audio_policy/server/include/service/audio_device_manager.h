@@ -18,6 +18,7 @@
 #include <list>
 #include <string>
 #include <memory>
+#include <vector>
 #include <unordered_map>
 #include "audio_info.h"
 #include "audio_device_info.h"
@@ -65,9 +66,6 @@ public:
     shared_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> GetDevicePrivacyMaps();
     vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesByUsage(AudioDeviceUsage usage);
-    shared_ptr<AudioDeviceDescriptor> GetDeviceByMacAddressAndDeviceType(
-        const vector<shared_ptr<AudioDeviceDescriptor>> &descs,
-        const string &macAddress, DeviceType deviceType);
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
         const list<DevicePrivacyInfo> &deviceInfos, const std::shared_ptr<AudioDeviceDescriptor> &dev,
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
@@ -93,6 +91,7 @@ public:
     int32_t RemoveSelectedDefaultOutputDevice(const uint32_t sessionID);
     shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 
 private:
     AudioDeviceManager();
@@ -108,7 +107,6 @@ private:
         vector<shared_ptr<AudioDeviceDescriptor>> &descArray);
 
     void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
     void MakePairedDefaultDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
     void MakePairedDefaultDeviceImpl(const shared_ptr<AudioDeviceDescriptor> &devDesc,
         const shared_ptr<AudioDeviceDescriptor> &connectedDesc);
@@ -131,6 +129,10 @@ private:
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
         vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void ReorderAudioDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
+        const std::string &remoteInfoNetworkId, DeviceType remoteInfoDeviceType);
     bool UpdateExistDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     void AddBtToOtherList(const shared_ptr<AudioDeviceDescriptor> &devDesc);
@@ -175,6 +177,8 @@ private:
     DeviceType selectedCallDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
     std::mutex selectDefaultOutputDeviceMutex_;
     std::mutex currentActiveDevicesMutex_;
+    std::string remoteInfoNetworkId_ = "";
+    DeviceType remoteInfoDeviceType_ = DEVICE_TYPE_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS

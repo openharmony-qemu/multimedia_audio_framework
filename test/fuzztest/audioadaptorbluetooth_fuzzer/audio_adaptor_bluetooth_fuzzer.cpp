@@ -28,271 +28,267 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-const int32_t LIMITSIZE = 4;
 const char *SINK_ADAPTER_NAME = "primary";
 const uint64_t COMMON_UINT64_NUM = 2;
-const int64_t COMMON_INT64_NUM = 2;
+static const uint8_t *RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
 
 IMmapAudioRendererSink *GetAdaptorBlueToothSink()
 {
     return BluetoothRendererSink::GetMmapInstance();
 }
 
-void IsInitedFuzzTest(const uint8_t *rawData, size_t size)
+/*
+* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
+* tips: only support basic type
+*/
+template<class T>
+T GetData()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
     }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
+
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
+
+void IsInitedFuzzTest()
+{
     GetAdaptorBlueToothSink()->IsInited();
 }
 
-void SetVoiceVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void SetVoiceVolumeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    float volume = *reinterpret_cast<const float*>(rawData);
+    float volume = GetData<float>();
     GetAdaptorBlueToothSink()->SetVoiceVolume(volume);
 }
 
-void SetAudioSceneFuzzTest(const uint8_t *rawData, size_t size)
+void SetAudioSceneFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioScene audioScene = *reinterpret_cast<const AudioScene *>(rawData);
-    DeviceType deviceType = *reinterpret_cast<const DeviceType *>(rawData);
+    AudioScene audioScene = GetData<AudioScene>();
+    DeviceType deviceType = GetData<DeviceType>();
     std::vector<DeviceType> activeDevices = {deviceType};
     GetAdaptorBlueToothSink()->SetAudioScene(audioScene, activeDevices);
 }
 
-void SetOutputRoutesFuzzTest(const uint8_t *rawData, size_t size)
+void SetOutputRoutesFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    DeviceType deviceType = *reinterpret_cast<const DeviceType *>(rawData);
+    DeviceType deviceType = GetData<DeviceType>();
     std::vector<DeviceType> outputDevices = {deviceType};
     GetAdaptorBlueToothSink()->SetOutputRoutes(outputDevices);
 }
 
-void SetAudioParameterFuzzTest(const uint8_t *rawData, size_t size)
+void SetAudioParameterFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioParamKey key = *reinterpret_cast<const AudioParamKey *>(rawData);
+    AudioParamKey key = GetData<AudioParamKey>();
     std::string condition = "123456";
     std::string value = "123456";
     GetAdaptorBlueToothSink()->SetAudioParameter(key, condition, value);
 }
 
-void GetAudioParameterFuzzTest(const uint8_t *rawData, size_t size)
+void GetAudioParameterFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    AudioParamKey key = *reinterpret_cast<const AudioParamKey *>(rawData);
+    AudioParamKey key = GetData<AudioParamKey>();
     std::string condition = "123456";
     GetAdaptorBlueToothSink()->GetAudioParameter(key, condition);
 }
 
-void RegisterParameterCallbackFuzzTest(const uint8_t *rawData, size_t size)
+void RegisterParameterCallbackFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     IAudioSinkCallback *callback_ = nullptr;
-    GetAdaptorBlueToothSink()->RegisterParameterCallback(callback_);
+    GetAdaptorBlueToothSink()->RegisterAudioSinkCallback(callback_);
 }
 
-void InitFuzzTest(const uint8_t *rawData, size_t size)
+void InitFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) { // 忽略内存对齐
-        return;
-    }
     IAudioSinkAttr attr = {};
     attr.adapterName = SINK_ADAPTER_NAME;
-    attr.sampleRate = *reinterpret_cast<const uint32_t *>(rawData);
-    attr.channel = *reinterpret_cast<const uint32_t *>(rawData);
-    attr.format = *reinterpret_cast<const HdiAdapterFormat *>(rawData);
+    attr.sampleRate = GetData<uint32_t>();
+    attr.channel = GetData<uint32_t>();
+    attr.format = GetData<HdiAdapterFormat>();
     attr.channelLayout = COMMON_UINT64_NUM;
-    attr.deviceType = *reinterpret_cast<const DeviceType *>(rawData);
-    attr.volume = *reinterpret_cast<const float *>(rawData);
-    attr.openMicSpeaker = *reinterpret_cast<const uint32_t *>(rawData);
+    attr.deviceType = GetData<DeviceType>();
+    attr.volume = GetData<float>();
+    attr.openMicSpeaker = GetData<uint32_t>();
+
     GetAdaptorBlueToothSink()->Init(attr);
 }
 
-void RenderFrameFuzzTest(const uint8_t *rawData, size_t size)
+void RenderFrameFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    char data = *const_cast<char*>(reinterpret_cast<const char*>(rawData));
-    uint64_t len = COMMON_UINT64_NUM;
-    uint64_t writeLen = COMMON_UINT64_NUM;
+    char data = GetData<char>();
+    uint64_t len = GetData<uint64_t>();
+    uint64_t writeLen = GetData<uint64_t>();
     GetAdaptorBlueToothSink()->RenderFrame(data, len, writeLen);
 }
 
-void StartFuzzTest(const uint8_t* rawData, size_t size)
+void StartFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     GetAdaptorBlueToothSink()->Start();
 }
 
-void SetVolumeFuzzTest(const uint8_t* rawData, size_t size)
+void SetVolumeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    float left = *reinterpret_cast<const float*>(rawData);
-    float right = *reinterpret_cast<const float*>(rawData);
+    float left = GetData<float>();
+    float right = GetData<float>();
+
     GetAdaptorBlueToothSink()->SetVolume(left, right);
 }
 
-void GetVolumeFuzzTest(const uint8_t* rawData, size_t size)
+void GetVolumeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     float left, right;
-    if (size >= sizeof(left)) {
-        left = *reinterpret_cast<const float*>(rawData);
+    if (g_dataSize >= sizeof(left)) {
+        left = GetData<float>();
     } else {
         return;
     }
-    if (size >= sizeof(right)) {
-        right = *reinterpret_cast<const float*>(rawData);
+    if (g_dataSize >= sizeof(right)) {
+        right = GetData<float>();
     } else {
         return;
     }
     GetAdaptorBlueToothSink()->GetVolume(left, right);
 }
 
-void GetTransactionIdFuzzTest(const uint8_t* rawData, size_t size)
+void GetTransactionIdFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint64_t transactionId = COMMON_UINT64_NUM;
+    uint64_t transactionId = GetData<uint64_t>();
     GetAdaptorBlueToothSink()->GetTransactionId(&transactionId);
 }
 
-void StopFuzzTest(const uint8_t* rawData, size_t size)
+void StopFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     GetAdaptorBlueToothSink()->Stop();
 }
 
-void PauseFuzzTest(const uint8_t* rawData, size_t size)
+void PauseFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     GetAdaptorBlueToothSink()->Pause();
 }
 
-void ResumeFuzzTest(const uint8_t* rawData, size_t size)
+void ResumeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     GetAdaptorBlueToothSink()->Resume();
 }
 
-void ResetFuzzTest(const uint8_t* rawData, size_t size)
+void ResetFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     GetAdaptorBlueToothSink()->Reset();
 }
 
-void FlushFuzzTest(const uint8_t* rawData, size_t size)
+void FlushFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     GetAdaptorBlueToothSink()->Flush();
 }
 
-void SuspendRenderSinkFuzzTest(const uint8_t* rawData, size_t size)
+void SuspendRenderSinkFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     GetAdaptorBlueToothSink()->SuspendRenderSink();
 }
 
-void RestoreRenderSinkFuzzTest(const uint8_t* rawData, size_t size)
+void RestoreRenderSinkFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     GetAdaptorBlueToothSink()->RestoreRenderSink();
 }
 
-void GetPresentationPositionFuzzTest(const uint8_t* rawData, size_t size)
+void GetPresentationPositionFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint64_t frames = COMMON_UINT64_NUM;
-    int64_t timeSec = COMMON_INT64_NUM;
-    int64_t timeNanoSec = COMMON_INT64_NUM;
+    uint64_t frames = GetData<uint64_t>();
+    int64_t timeSec = GetData<int64_t>();
+    int64_t timeNanoSec = GetData<int64_t>();
     GetAdaptorBlueToothSink()->GetPresentationPosition(frames, timeSec, timeNanoSec);
 }
 
-void ResetOutputRouteForDisconnectFuzzTest(const uint8_t* rawData, size_t size)
+void ResetOutputRouteForDisconnectFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE || size < sizeof(DeviceType)) {
-        return;
-    }
-    DeviceType deviceType = *reinterpret_cast<const DeviceType *>(rawData);
+    DeviceType deviceType = GetData<DeviceType>();
     GetAdaptorBlueToothSink()->ResetOutputRouteForDisconnect(deviceType);
 }
 
-void SetPaPowerFuzzTest(const uint8_t* rawData, size_t size)
+void SetPaPowerFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t flag = *reinterpret_cast<const int32_t *>(rawData);
+    int32_t flag = GetData<int32_t>();
     GetAdaptorBlueToothSink()->SetPaPower(flag);
+}
+
+typedef void (*TestFuncs[23])();
+
+TestFuncs g_testFuncs = {
+    InitFuzzTest,
+    RenderFrameFuzzTest,
+    StartFuzzTest,
+    IsInitedFuzzTest,
+    SetVoiceVolumeFuzzTest,
+    SetAudioSceneFuzzTest,
+    SetOutputRoutesFuzzTest,
+    SetAudioParameterFuzzTest,
+    GetAudioParameterFuzzTest,
+    RegisterParameterCallbackFuzzTest,
+    SetVolumeFuzzTest,
+    GetVolumeFuzzTest,
+    GetTransactionIdFuzzTest,
+    SuspendRenderSinkFuzzTest,
+    RestoreRenderSinkFuzzTest,
+    GetPresentationPositionFuzzTest,
+    ResetOutputRouteForDisconnectFuzzTest,
+    SetPaPowerFuzzTest,
+    PauseFuzzTest,
+    ResumeFuzzTest,
+    ResetFuzzTest,
+    FlushFuzzTest,
+    StopFuzzTest,
+};
+
+bool FuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr) {
+        return false;
+    }
+
+    // initialize data
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+    }
+
+    return true;
 }
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    /* Run your code on data */
-    OHOS::AudioStandard::InitFuzzTest(data, size);
-    OHOS::AudioStandard::StartFuzzTest(data, size);
-    OHOS::AudioStandard::IsInitedFuzzTest(data, size);
-    OHOS::AudioStandard::SetVoiceVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::SetAudioSceneFuzzTest(data, size);
-    OHOS::AudioStandard::SetOutputRoutesFuzzTest(data, size);
-    OHOS::AudioStandard::SetAudioParameterFuzzTest(data, size);
-    OHOS::AudioStandard::GetAudioParameterFuzzTest(data, size);
-    OHOS::AudioStandard::RegisterParameterCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::SetVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::GetVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::GetTransactionIdFuzzTest(data, size);
-    OHOS::AudioStandard::SuspendRenderSinkFuzzTest(data, size);
-    OHOS::AudioStandard::RestoreRenderSinkFuzzTest(data, size);
-    OHOS::AudioStandard::GetPresentationPositionFuzzTest(data, size);
-    OHOS::AudioStandard::ResetOutputRouteForDisconnectFuzzTest(data, size);
-    OHOS::AudioStandard::SetPaPowerFuzzTest(data, size);
-    OHOS::AudioStandard::PauseFuzzTest(data, size);
-    OHOS::AudioStandard::ResumeFuzzTest(data, size);
-    OHOS::AudioStandard::ResetFuzzTest(data, size);
-    OHOS::AudioStandard::FlushFuzzTest(data, size);
-    OHOS::AudioStandard::StopFuzzTest(data, size);
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
 }

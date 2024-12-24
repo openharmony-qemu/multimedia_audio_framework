@@ -34,7 +34,7 @@ using namespace std;
 
 class audioAffinityParser : public Parser {
 public:
-    static constexpr char AFFINITY_CONFIG_FILE[] = "system/etc/audio/audio_affinity_config.xml";
+    static constexpr char AFFINITY_CONFIG_FILE[] = "/system/etc/audio/audio_affinity_config.xml";
 
     bool LoadConfiguration() final;
     bool Parse() final;

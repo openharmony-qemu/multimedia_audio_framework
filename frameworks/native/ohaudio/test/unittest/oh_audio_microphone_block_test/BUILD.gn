@@ -1,0 +1,63 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("../../../../../../config.gni")
+
+module_output_path = "multimedia_audio_framework/audio_ndk"
+
+config("audio_microphone_block_config") {
+  include_dirs = [
+    "../../../../audiocapturer/include",
+    "../../../../audiopolicy/include",
+    "../../../../audiorenderer/include",
+    "../../../../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../../../../interfaces/inner_api/native/audiostream/include",
+    "../../../../../../services/audio_service/client/include",
+    "../../../../../../services/audio_service/test/example",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+config("audio_ohaudio_config") {
+  include_dirs = [
+    "../../../../../../interfaces/kits/c/",
+    "../../../../../../interfaces/kits/c/audio_renderer/",
+    "../../../../../../interfaces/kits/c/audio_capturer/",
+    "../../../../../../interfaces/kits/c/audio_manager/",
+    "../../../../../../interfaces/kits/c/common/",
+  ]
+}
+
+ohos_unittest("audio_oh_microphone_block_test") {
+  module_out_path = module_output_path
+  include_dirs = [ "./include" ]
+
+  configs = [
+    ":audio_microphone_block_config",
+    ":audio_ohaudio_config",
+  ]
+
+  sources = [ "src/oh_audio_microphone_block_unit_test.cpp" ]
+
+  deps = [ "../../../../ohaudio:ohaudio" ]
+
+  external_deps = [ "hilog:libhilog" ]
+}

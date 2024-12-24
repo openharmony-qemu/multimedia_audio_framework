@@ -90,6 +90,10 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     int32_t SetVoiceRingtoneMute(bool isMute);
     void SetVoiceCallVolume(int32_t volume);
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+    void SetDefaultDeviceLoadFlag(bool isLoad);
+    void NotifyVolumeGroup();
+    bool GetLoadFlag();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -145,7 +149,7 @@ private:
     SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
     SafeStatus safeStatus_ = SAFE_UNKNOWN;
 
-    bool isAbsBtFirstBoot_ = true;
+    bool isBtFirstBoot_ = true;
 
     std::vector<sptr<VolumeGroupInfo>> volumeGroups_;
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
@@ -156,11 +160,13 @@ private:
     bool isVoiceRingtoneMute_ = false;
 
     std::mutex notifyMutex_;
-    int32_t streamMusicVol_;
-    bool isSelectRestoreVol_ = false;
-    bool isSelectIncreaseVol_ = false;
+    int32_t streamMusicVol_ = 0;
     bool restoreNIsShowing_ = false;
     bool increaseNIsShowing_ = false;
+
+    std::mutex defaultDeviceLoadMutex_;
+    std::condition_variable loadDefaultDeviceCV_;
+    std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioA2dpDevice& audioA2dpDevice_;

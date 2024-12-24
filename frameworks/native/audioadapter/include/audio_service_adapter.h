@@ -28,14 +28,6 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioServiceAdapterCallback {
 public:
-    /**
-     * @brief computes the volume to be set in audioserver
-     *
-     * @param streamType streamType for which volume will be computed
-     * @return Returns volume level in float
-     */
-    virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType) = 0;
-
     virtual void OnAudioStreamRemoved(const uint64_t sessionID) = 0;
 
     virtual void OnSetVolumeDbCb() = 0;
@@ -122,16 +114,6 @@ public:
      * @return Returns sink infos.
      */
     virtual std::vector<SinkInfo> GetAllSinks() = 0;
-
-    /**
-     * @brief sets audio volume db
-     *
-     * @param streamType the streamType for which volume will be set, streamType defined in{@link audio_info.h}
-     * @param volume the volume level to be set
-     * @return Returns {@link SUCCESS} if volume is set successfully; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     */
-    virtual int32_t SetVolumeDb(AudioStreamType streamType, float volume) = 0;
 
     /**
      * @brief set mute for give output streamType

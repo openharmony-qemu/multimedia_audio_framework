@@ -190,6 +190,16 @@
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
               }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/frameworks/native/offlineaudioeffect:offline_audio_effect",
+              "header": {
+                "header_files": [
+                  "./offlineaudioeffect/include/offline_audio_effect_manager.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
+              }
             }
           ],
           "test": [
@@ -199,8 +209,6 @@
             "//foundation/multimedia/audio_framework/test:audio_benchmark_test",
             "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_test_packages",
-            "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/test/unittest:remote_audio_capturer_source_unit_test",
-            "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/test/unittest:remote_fast_audio_capturer_source_unittest",
             "//foundation/multimedia/audio_framework/frameworks/native/opensles:audio_opensles_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer_test",
             "//foundation/multimedia/audio_framework/services/audio_service:audio_service_test_packages",

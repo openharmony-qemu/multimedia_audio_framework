@@ -34,7 +34,7 @@ using namespace std;
 
 class AudioUsageStrategyParser : public Parser {
 public:
-    static constexpr char DEVICE_CONFIG_FILE[] = "system/etc/audio/audio_usage_strategy.xml";
+    static constexpr char DEVICE_CONFIG_FILE[] = "/system/etc/audio/audio_usage_strategy.xml";
 
     bool LoadConfiguration() final;
     bool Parse() final;
@@ -103,7 +103,8 @@ private:
         {"SOURCE_TYPE_ULTRASONIC", SOURCE_TYPE_ULTRASONIC},
         {"SOURCE_TYPE_VIRTUAL_CAPTURE", SOURCE_TYPE_VIRTUAL_CAPTURE},
         {"SOURCE_TYPE_VOICE_MESSAGE", SOURCE_TYPE_VOICE_MESSAGE},
-        {"SOURCE_TYPE_VOICE_TRANSCRIPTION", SOURCE_TYPE_VOICE_TRANSCRIPTION}
+        {"SOURCE_TYPE_VOICE_TRANSCRIPTION", SOURCE_TYPE_VOICE_TRANSCRIPTION},
+        {"SOURCE_TYPE_UNPROCESSED", SOURCE_TYPE_UNPROCESSED},
     };
 
     xmlDoc *doc_;

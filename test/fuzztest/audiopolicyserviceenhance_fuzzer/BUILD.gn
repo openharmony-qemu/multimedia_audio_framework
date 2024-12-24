@@ -15,6 +15,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../appgallery.gni")
+import("../../../av_session.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
@@ -43,40 +44,61 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
 
   sources = [ "audio_policy_service_enhance_fuzzer.cpp" ]
 
-  defines = []
-  if (audio_framework_feature_dtmf_tone) {
-    defines += [ "FEATURE_DTMF_TONE" ]
-  }
-
   deps = [
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
   ]
 
   external_deps = [
+    "ability_base:session_info",
     "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
     "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
+    "power_manager:power_setting",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  public_external_deps = [ "ffrt:libffrt" ]
+
+  public_external_deps += [
+    "libxml2:libxml2",
+    "openssl:libcrypto_shared",
+  ]
+
   if (accessibility_enable == true) {
     external_deps += [
       "accessibility:accessibility_common",
@@ -84,7 +106,22 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     ]
   }
 
+  if (avsession_part_enable == true) {
+    external_deps += [
+      "ability_base:want",
+      "ability_runtime:wantagent_innerkits",
+      "av_session:avsession_client",
+      "input:libmmi-client",
+    ]
+  }
+
   defines = []
+
+  if (usb_manager_enable) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+  }
+
   if (audio_framework_feature_double_pnp_detect) {
     defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
   }
@@ -133,6 +170,22 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
   if (audio_framework_feature_device_manager) {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+
+  if (accessibility_enable == true) {
+    cflags += [ "-DACCESSIBILITY_ENABLE" ]
+  }
+
+  if (bluetooth_part_enable == true) {
+    cflags += [ "-DBLUETOOTH_ENABLE" ]
+  }
+
+  if (avsession_part_enable == true) {
+    cflags += [ "-DAVSESSION_ENABLE" ]
   }
 }
 

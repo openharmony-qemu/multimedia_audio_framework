@@ -33,6 +33,7 @@ ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
+    "-fno-access-control",
   ]
 
   sources = [ "audio_service_server_src_fuzzer.cpp" ]

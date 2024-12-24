@@ -43,8 +43,8 @@
 #include "parameters.h"
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
-
-#include "audio_log_utils.h"
+#include "audio_dump_pcm.h"
+#include "volume_tools.h"
 
 using namespace std;
 
@@ -179,7 +179,7 @@ public:
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
@@ -205,6 +205,7 @@ public:
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     std::string GetDPDeviceAttrInfo(const std::string &condition);
+    void WriterSmartPAStatusSysEvent(int32_t status);
 
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
@@ -221,10 +222,12 @@ private:
     int32_t logMode_ = 0;
     uint32_t openSpeaker_ = 0;
     uint32_t renderId_ = 0;
+    uint32_t sinkId_ = 0;
     std::string adapterNameCase_ = "";
     struct IAudioManager *audioManager_ = nullptr;
     struct IAudioAdapter *audioAdapter_ = nullptr;
     struct IAudioRender *audioRender_ = nullptr;
+    IAudioSinkCallback *callback_ = nullptr;
     const std::string halName_ = "";
     struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
@@ -266,7 +269,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
@@ -283,6 +285,7 @@ private:
     AudioPortPin GetAudioPortPin() const noexcept;
     int32_t SetAudioRoute(DeviceType outputDevice, AudioRoute route);
     int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &outputDevice);
+    void UpdateSinkState(bool started);
 
     // use static because only register once for primary hal
     static struct HdfRemoteService *hdfRemoteService_;
@@ -434,13 +437,14 @@ std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, c
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s, halName: %{public}s",
         key, condition.c_str(), halName_.c_str());
-    if (condition.starts_with("get_usb_info#C")) {
-        // Init adapter to get parameter before load sink module (need fix)
-        adapterNameCase_ = "usb";
+    // for usb, condition is get_usb_info#CxD0 or need_change_usb_device#CxD0
+    if (key == USB_DEVICE) {
+        if (halName_ == USB_HAL_NAME) {
+            adapterNameCase_ = USB_HAL_NAME;
+        }
         int32_t ret = InitAdapter();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init adapter failed for get usb info param");
-    }
-    if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init usb audio adapter failed. ret=%{public}d", ret);
+    } else if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
         // Init adapter and render to get parameter before load sink module (need fix)
         return GetDPDeviceAttrInfo(condition);
     }
@@ -576,9 +580,15 @@ bool AudioRendererSinkInner::IsInited()
     return sinkInited_;
 }
 
-void AudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void AudioRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_WARNING_LOG("RegisterParameterCallback not supported.");
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    if (callback_) {
+        AUDIO_INFO_LOG("AudioSinkCallback registered");
+    } else {
+        callback_ = callback;
+        AUDIO_INFO_LOG("Register AudioSinkCallback");
+    }
 }
 
 void AudioRendererSinkInner::DeInit()
@@ -754,6 +764,7 @@ int32_t AudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init render failed");
 
     sinkInited_ = true;
+    GetRenderId(sinkId_);
 
     return SUCCESS;
 }
@@ -784,12 +795,13 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void *>(&data), len);
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), len);
     }
 
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
@@ -810,17 +822,6 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 #endif
 
     return SUCCESS;
-}
-
-void AudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void AudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -850,7 +851,8 @@ float AudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t AudioRendererSinkInner::Start(void)
 {
-    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    AUDIO_INFO_LOG("sinkName %{public}s, sinkId %{public}u", halName_.c_str(), sinkId_);
 
     Trace trace("AudioRendererSinkInner::Start");
 #ifdef FEATURE_POWER_MANAGER
@@ -882,13 +884,12 @@ int32_t AudioRendererSinkInner::Start(void)
     InitLatencyMeasurement();
     if (!started_) {
         int32_t ret = audioRender_->Start(audioRender_);
-        if (!ret) {
-            started_ = true;
-            return SUCCESS;
-        } else {
+        if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Start failed!");
             return ERR_NOT_STARTED;
         }
+        UpdateSinkState(true);
+        started_ = true;
     }
     return SUCCESS;
 }
@@ -1210,7 +1211,8 @@ void AudioRendererSinkInner::ReleaseRunningLock()
 
 int32_t AudioRendererSinkInner::Stop(void)
 {
-    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    AUDIO_INFO_LOG("sinkName %{public}s, sinkId %{public}u", halName_.c_str(), sinkId_);
 
     Trace trace("AudioRendererSinkInner::Stop");
 
@@ -1231,6 +1233,7 @@ int32_t AudioRendererSinkInner::Stop(void)
     }
 
     int32_t ret = audioRender_->Stop(audioRender_);
+    UpdateSinkState(false);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Stop failed!");
         return ERR_OPERATION_FAILED;
@@ -1244,6 +1247,7 @@ int32_t AudioRendererSinkInner::Stop(void)
 
 int32_t AudioRendererSinkInner::Pause(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -1267,6 +1271,7 @@ int32_t AudioRendererSinkInner::Pause(void)
 
 int32_t AudioRendererSinkInner::Resume(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -1362,7 +1367,8 @@ int32_t AudioRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfoStr)
         sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
 
     // usb default config
-    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
+    CHECK_AND_RETURN_RET_LOG(StringConverter(sampleRateStr, attr_.sampleRate), ERR_INVALID_PARAM,
+        "convert invalid sampleRate: %{public}s", sampleRateStr.c_str());
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
 
@@ -1396,14 +1402,20 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
         address_end - address_begin - std::strlen("address="));
 
-    if (!sampleRateStr.empty()) attr_.sampleRate = stoi(sampleRateStr);
-    if (!channeltStr.empty()) attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
+    CHECK_AND_RETURN_RET_LOG(StringConverter(sampleRateStr, attr_.sampleRate), ERR_INVALID_PARAM,
+        "convert invalid sampleRate: %{public}s", sampleRateStr.c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverter(channeltStr, attr_.channel), ERR_INVALID_PARAM,
+        "convert invalid channel: %{public}s", channeltStr.c_str());
+
     attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
     } else {
-        formatByte = static_cast<uint32_t>(stoi(bufferSize)) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
+        uint32_t bufferSizeValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(bufferSize, bufferSizeValue), ERR_INVALID_PARAM,
+            "convert invalid bufferSize: %{public}s", bufferSize.c_str());
+        formatByte = bufferSizeValue * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
             / attr_.channel / attr_.sampleRate;
     }
 
@@ -1608,6 +1620,15 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len
     return ret;
 }
 
+void AudioRendererSinkInner::WriterSmartPAStatusSysEvent(int32_t status)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::SMARTPA_STATUS,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("STATUS", status);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 {
     Trace trace("AudioRendererSinkInner::SetPaPower flag:" + std::to_string(flag));
@@ -1624,6 +1645,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         }
         if (ret == 0) {
             g_paStatus = 0;
+            WriterSmartPAStatusSysEvent(g_paStatus);
         }
         return ret;
     } else if (flag == 0 && g_paStatus == 0) {
@@ -1639,6 +1661,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         ret = audioRender_->SetExtraParams(audioRender_, keyValueList1) + ret;
         if (ret == 0) {
             g_paStatus = 1;
+            WriterSmartPAStatusSysEvent(g_paStatus);
         }
         return ret;
     } else if (flag == 1 && g_paStatus == 1) {
@@ -1758,6 +1781,16 @@ int32_t AudioRendererSinkInner::SetAudioRouteInfoForEnhanceChain(const DeviceTyp
         audioEnhanceChainManager->SetOutputDevice(renderId, outputDevice);
     }
     return SUCCESS;
+}
+
+// UpdateSinkState must be called with AudioRendererSinkInner::sinkMutex_ held
+void AudioRendererSinkInner::UpdateSinkState(bool started)
+{
+    if (callback_) {
+        callback_->OnAudioSinkStateChange(sinkId_, started);
+    } else {
+        AUDIO_WARNING_LOG("AudioSinkCallback is nullptr");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

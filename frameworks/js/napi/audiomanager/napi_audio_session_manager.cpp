@@ -165,6 +165,11 @@ napi_value NapiAudioSessionMgr::ActivateAudioSession(napi_env env, napi_callback
         auto obj = reinterpret_cast<NapiAudioSessionMgr*>(context->native);
         ObjectRefMap objectGuard(obj);
         auto *napiSessionMgr = objectGuard.GetPtr();
+        if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
+            context->SignError(NAPI_ERR_SYSTEM);
+            AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
+            return;
+        }
         context->intValue = napiSessionMgr->audioSessionMngr_->ActivateAudioSession(context->audioSessionStrategy);
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM);
@@ -192,6 +197,11 @@ napi_value NapiAudioSessionMgr::DeactivateAudioSession(napi_env env, napi_callba
         auto obj = reinterpret_cast<NapiAudioSessionMgr*>(context->native);
         ObjectRefMap objectGuard(obj);
         auto *napiSessionMgr = objectGuard.GetPtr();
+        if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
+            context->SignError(NAPI_ERR_SYSTEM);
+            AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
+            return;
+        }
         context->intValue = napiSessionMgr->audioSessionMngr_->DeactivateAudioSession();
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM);

@@ -445,35 +445,6 @@ HWTEST_F(AudioEndpointUnitTest, KeepWorkloopRunning_001, TestSize.Level1)
 }
 
 /*
- * @tc.name  : Test DfxOperation API
- * @tc.type  : FUNC
- * @tc.number: DfxOperation_001
- * @tc.desc  : Test DfxOperation interface
- */
-HWTEST_F(AudioEndpointUnitTest, DfxOperation_001, TestSize.Level1)
-{
-    AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner =
-        CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
-    EXPECT_NE(nullptr, audioEndpointInner);
-
-    BufferDesc buffer = {};
-    AudioSampleFormat format = SAMPLE_U8;
-    AudioChannel channel = MONO;
-    audioEndpointInner->DfxOperation(buffer, format, channel);
-    EXPECT_EQ(MONO, channel);
-
-    channel = STEREO;
-    audioEndpointInner->DfxOperation(buffer, format, channel);
-    EXPECT_EQ(STEREO, channel);
-}
-
-/*
  * @tc.name  : Test CheckUpdateState API
  * @tc.type  : FUNC
  * @tc.number: CheckUpdateState_001
@@ -772,6 +743,34 @@ HWTEST_F(AudioEndpointUnitTest, DelayStopDevice_001, TestSize.Level1)
 
     audioEndpointInner->deviceInfo_.deviceRole_ = OUTPUT_DEVICE;
     EXPECT_FALSE(audioEndpointInner->DelayStopDevice());
+}
+
+/*
+ * @tc.name  : Test GetEndpointName API
+ * @tc.type  : FUNC
+ * @tc.number: GetEndpointName_001
+ * @tc.desc  : Test GetEndpointName interface
+ */
+HWTEST_F(AudioEndpointUnitTest, GetEndpointName_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    EXPECT_NE(nullptr, audioEndpointInner);
+    audioEndpointInner->GetEndpointName();
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t ret = audioEndpointInner->SetVolume(streamType, 0.0f);
+    EXPECT_EQ(0, ret);
+    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    ret = audioEndpointInner->ResolveBuffer(buffer);
+    std::string dumpString = "";
+    audioEndpointInner->Dump(dumpString);
+    uint32_t totalSizeInframe = 0;
+    uint32_t spanSizeInframe = 0;
+    ret = audioEndpointInner->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
+    EXPECT_EQ(0, ret);
+    audioEndpointInner->ProcessUpdateAppsUidForPlayback();
+    uint32_t res = 0;
+    res = audioEndpointInner->GetLinkedProcessCount();
+    EXPECT_EQ(0, res);
 }
 } // namespace AudioStandard
 } // namespace OHOS

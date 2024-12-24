@@ -31,11 +31,34 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 
+#include "audio_server_proxy.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr int32_t NS_PER_MS = 1000000;
-constexpr int32_t MS_PER_S = 1000;
+static constexpr int32_t NS_PER_MS = 1000000;
+static constexpr int32_t MS_PER_S = 1000;
+static const char* SETTINGS_DATA_FIELD_VALUE = "VALUE";
+static const char* SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
+static const char* PREDICATES_STRING = "settings.general.device_name";
+static const char* SETTINGS_DATA_BASE_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
+static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
+static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
+
+std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
+    {PRIMARY_SPEAKER, TYPE_PRIMARY},
+    {PRIMARY_MIC, TYPE_PRIMARY},
+    {PRIMARY_WAKEUP_MIC, TYPE_PRIMARY},
+    {BLUETOOTH_SPEAKER, TYPE_A2DP},
+    {BLUETOOTH_MIC, TYPE_A2DP},
+    {USB_SPEAKER, TYPE_USB},
+    {USB_MIC, TYPE_USB},
+    {DP_SINK, TYPE_DP},
+    {FILE_SINK, TYPE_FILE_IO},
+    {FILE_SOURCE, TYPE_FILE_IO},
+    {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
+};
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -53,12 +76,7 @@ static std::string GetEncryptAddr(const std::string &addr)
     return out;
 }
 
-std::map<std::string, AudioSampleFormat> AudioPolicyUtils::formatStrToEnum = {
-    {"s8", SAMPLE_U8},
-    {"s16", SAMPLE_S16LE},
-    {"s24", SAMPLE_S24LE},
-    {"s32", SAMPLE_S32LE},
-};
+int32_t AudioPolicyUtils::startDeviceId = 1;
 
 void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
 {
@@ -255,6 +273,272 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
     } else {
         return GetRemoteModuleName(desc.networkId_, desc.deviceRole_);
     }
+}
+
+std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
+{
+    std::string portName = PORT_NONE;
+    switch (deviceType) {
+        case InternalDeviceType::DEVICE_TYPE_MIC:
+            portName = PRIMARY_MIC;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            portName = USB_MIC;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
+            portName = PRIMARY_WAKEUP;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
+            portName = FILE_SOURCE;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
+            portName = BLUETOOTH_MIC;
+            break;
+        default:
+            portName = PORT_NONE;
+            break;
+    }
+
+    return portName;
+}
+
+std::shared_ptr<DataShare::DataShareHelper> AudioPolicyUtils::CreateDataShareHelperInstance()
+{
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "[Policy Service] Get samgr failed.");
+
+    sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, nullptr, "[Policy Service] audio service remote object is NULL.");
+
+    int64_t startTime = ClockTime::GetCurNano();
+    sptr<IRemoteObject> dataSharedServer = samgr->CheckSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    int64_t cost = ClockTime::GetCurNano() - startTime;
+    if (cost > CALL_IPC_COST_TIME_MS) {
+        AUDIO_WARNING_LOG("Call get DataShare server cost too long: %{public}" PRId64"ms.", cost / AUDIO_US_PER_SECOND);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(dataSharedServer != nullptr, nullptr, "DataShare server is not started!");
+
+    WatchTimeout guard("DataShare::DataShareHelper::Create", CALL_IPC_COST_TIME_MS);
+    std::pair<int, std::shared_ptr<DataShare::DataShareHelper>> res = DataShare::DataShareHelper::Create(remoteObject,
+        SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
+    guard.CheckCurrTimeout();
+    if (res.first == DataShare::E_DATA_SHARE_NOT_READY) {
+        AUDIO_WARNING_LOG("DataShareHelper::Create failed: E_DATA_SHARE_NOT_READY");
+        return nullptr;
+    }
+    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = res.second;
+    CHECK_AND_RETURN_RET_LOG(res.first == DataShare::E_OK && dataShareHelper != nullptr, nullptr, "fail:%{public}d",
+        res.first);
+    return dataShareHelper;
+}
+
+int32_t AudioPolicyUtils::GetDeviceNameFromDataShareHelper(std::string &deviceName)
+{
+    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
+    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "GetDeviceNameFromDataShareHelper NULL");
+
+    std::shared_ptr<Uri> uri = std::make_shared<Uri>(SETTINGS_DATA_BASE_URI);
+    std::vector<std::string> columns;
+    columns.emplace_back(SETTINGS_DATA_FIELD_VALUE);
+    DataShare::DataSharePredicates predicates;
+    predicates.EqualTo(SETTINGS_DATA_FIELD_KEYWORD, PREDICATES_STRING);
+
+    WatchTimeout guard("dataShareHelper->Query:DefaultDeviceName");
+    auto resultSet = dataShareHelper->Query(*uri, predicates, columns);
+    if (resultSet == nullptr) {
+        AUDIO_ERR_LOG("Failed to query device name from dataShareHelper!");
+        dataShareHelper->Release();
+        return ERROR;
+    }
+    guard.CheckCurrTimeout();
+
+    int32_t numRows = 0;
+    resultSet->GetRowCount(numRows);
+    if (numRows <= 0) {
+        AUDIO_ERR_LOG("The result of querying is zero row!");
+        resultSet->Close();
+        dataShareHelper->Release();
+        return ERROR;
+    }
+
+    int columnIndex;
+    resultSet->GoToFirstRow();
+    resultSet->GetColumnIndex(SETTINGS_DATA_FIELD_VALUE, columnIndex);
+    resultSet->GetString(columnIndex, deviceName);
+    AUDIO_INFO_LOG("GetDeviceNameFromDataShareHelper deviceName[%{public}s]", deviceName.c_str());
+
+    resultSet->Close();
+    dataShareHelper->Release();
+    return SUCCESS;
+}
+
+
+void AudioPolicyUtils::UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
+        std::string devicesName = "";
+        int32_t ret  = GetDeviceNameFromDataShareHelper(devicesName);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
+        deviceDescriptor->displayName_ = devicesName;
+    } else {
+        UpdateDisplayNameForRemote(deviceDescriptor);
+    }
+}
+
+void AudioPolicyUtils::UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+#ifdef FEATURE_DEVICE_MANAGER
+    std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
+    int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "init device failed");
+    std::vector<DistributedHardware::DmDeviceInfo> deviceList;
+    if (DistributedHardware::DeviceManager::GetInstance()
+        .GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
+        for (auto deviceInfo : deviceList) {
+            std::string strNetworkId(deviceInfo.networkId);
+            if (strNetworkId == desc->networkId_) {
+                AUDIO_INFO_LOG("remote name [%{public}s]", deviceInfo.deviceName);
+                desc->displayName_ = deviceInfo.deviceName;
+                break;
+            }
+        }
+    };
+#endif
+}
+
+void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
+{
+    Trace trace("AudioPolicyUtils::UpdateEffectDefaultSink:" + std::to_string(deviceType));
+    effectActiveDevice_ = deviceType;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_FILE_SINK:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_DP:
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
+            std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
+            AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+AudioModuleInfo AudioPolicyUtils::ConstructRemoteAudioModuleInfo(std::string networkId, DeviceRole deviceRole,
+    DeviceType deviceType)
+{
+    AudioModuleInfo audioModuleInfo = {};
+    if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
+        audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
+        audioModuleInfo.format = "s16le"; // 16bit little endian
+        audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
+        audioModuleInfo.renderInIdleState = "1";
+    } else if (deviceRole == DeviceRole::INPUT_DEVICE) {
+        audioModuleInfo.lib = "libmodule-hdi-source.z.so";
+        audioModuleInfo.format = "s16le"; // we assume it is bigger endian
+    } else {
+        AUDIO_WARNING_LOG("Invalid flag provided %{public}d", static_cast<int32_t>(deviceType));
+    }
+
+    // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
+    audioModuleInfo.name = GetRemoteModuleName(networkId, deviceRole);
+    audioModuleInfo.networkId = networkId;
+
+    std::stringstream typeValue;
+    typeValue << static_cast<int32_t>(deviceType);
+    audioModuleInfo.deviceType = typeValue.str();
+
+    audioModuleInfo.adapterName = "remote";
+    audioModuleInfo.className = "remote"; // used in renderer_sink_adapter.c
+    audioModuleInfo.fileName = "remote_dump_file";
+
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.bufferSize = "3840";
+
+    return audioModuleInfo;
+}
+
+DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
+{
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_DP:
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+        case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+            return DeviceRole::OUTPUT_DEVICE;
+        case DeviceType::DEVICE_TYPE_MIC:
+        case DeviceType::DEVICE_TYPE_WAKEUP:
+            return DeviceRole::INPUT_DEVICE;
+        default:
+            return DeviceRole::DEVICE_ROLE_NONE;
+    }
+}
+
+DeviceRole AudioPolicyUtils::GetDeviceRole(const std::string &role)
+{
+    if (role == ROLE_SINK) {
+        return DeviceRole::OUTPUT_DEVICE;
+    } else if (role == ROLE_SOURCE) {
+        return DeviceRole::INPUT_DEVICE;
+    } else {
+        return DeviceRole::DEVICE_ROLE_NONE;
+    }
+}
+
+DeviceRole AudioPolicyUtils::GetDeviceRole(AudioPin pin) const
+{
+    switch (pin) {
+        case OHOS::AudioStandard::AUDIO_PIN_NONE:
+            return DeviceRole::DEVICE_ROLE_NONE;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_SPEAKER:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB_EXT:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_DAUDIO_DEFAULT:
+            return DeviceRole::OUTPUT_DEVICE;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_MIC:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
+            return DeviceRole::INPUT_DEVICE;
+        default:
+            return DeviceRole::DEVICE_ROLE_NONE;
+    }
+}
+
+DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
+{
+    DeviceType devType = DeviceType::DEVICE_TYPE_NONE;
+    if (deviceName == "Speaker") {
+        devType = DeviceType::DEVICE_TYPE_SPEAKER;
+    } else if (deviceName == "Built_in_mic") {
+        devType = DeviceType::DEVICE_TYPE_MIC;
+    } else if (deviceName == "Built_in_wakeup") {
+        devType = DeviceType::DEVICE_TYPE_WAKEUP;
+    } else if (deviceName == "fifo_output" || deviceName == "fifo_input") {
+        devType = DEVICE_TYPE_BLUETOOTH_SCO;
+    } else if (deviceName == "file_sink") {
+        devType = DEVICE_TYPE_FILE_SINK;
+    } else if (deviceName == "file_source") {
+        devType = DEVICE_TYPE_FILE_SOURCE;
+    }
+    return devType;
 }
 
 }

@@ -447,7 +447,13 @@ typedef enum {
      *
      * @since 12
      */
-    AUDIOSTREAM_SOURCE_TYPE_VOICE_MESSAGE = 10
+    AUDIOSTREAM_SOURCE_TYPE_VOICE_MESSAGE = 10,
+    /**
+     * Unprocessed source type.
+     *
+     * @since 15
+     */
+    AUDIOSTREAM_SOURCE_TYPE_UNPROCESSED = 14
 } OH_AudioStream_SourceType;
 
 /**

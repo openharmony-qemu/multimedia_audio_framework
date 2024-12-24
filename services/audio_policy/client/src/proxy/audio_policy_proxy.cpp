@@ -93,6 +93,8 @@ std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
         AUDIO_ERR_LOG("get ringermode failed, error: %d", error);
     }
     lListSize = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(lListSize >= 0 && lListSize <= static_cast<int32_t>(MAX_SUPPORTED_TONEINFO_SIZE),
+        lSupportedToneList, "Using tainted data  lListSize：%{public}d as loop bound", lListSize);
     for (int i = 0; i < lListSize; i++) {
         lSupportedToneList.push_back(reply.ReadInt32());
     }
@@ -263,6 +265,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
@@ -285,6 +289,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
@@ -311,6 +317,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferr
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get out devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
@@ -337,6 +345,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferr
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get preferred input devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
@@ -363,6 +373,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetOutputD
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get preferred input devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
@@ -389,6 +401,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetInputDe
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get preferred input devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        deviceInfo, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
@@ -521,8 +535,8 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioRendererFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    uint32_t validSize = 20; // Use 20 as limit.
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_DEVICE_INFO_SIZE_LIMIT,
+        -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
         bool audioDeviceTmp = audioDeviceDescriptor->Marshalling(data);
@@ -565,8 +579,8 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioCapturerFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    uint32_t validSize = 20; // Use 20 as limit.
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_DEVICE_INFO_SIZE_LIMIT,
+        -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
         bool audioDeviceTmp = audioDeviceDescriptor->Marshalling(data);
@@ -669,6 +683,8 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetAudioFocusInfoList, error: %d", error);
     int32_t ret = reply.ReadInt32();
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_INTERRUPT_INFO_SIZE_LIMIT,
+        ERROR, "Using tainted data focusInfoSize：%{public}d as loop bound", size);
     focusInfoList = {};
     if (ret < 0) {
         return ret;
@@ -772,6 +788,24 @@ AudioStreamType AudioPolicyProxy::GetStreamInFocus(const int32_t zoneID)
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_IN_FOCUS), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get stream in focus failed, error: %d", error);
+    }
+    return static_cast<AudioStreamType>(reply.ReadInt32());
+}
+
+AudioStreamType AudioPolicyProxy::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, STREAM_DEFAULT, "WriteInterfaceToken failed");
+    data.WriteInt32(zoneID);
+    data.WriteInt32(uid);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_IN_FOCUS_BY_UID), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get stream in focus by uid failed, error: %d", error);
     }
     return static_cast<AudioStreamType>(reply.ReadInt32());
 }
@@ -1111,23 +1145,6 @@ int32_t AudioPolicyProxy::GetNetworkIdByGroupId(int32_t groupId, std::string &ne
     return ret;
 }
 
-bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, IPC_PROXY_ERR, "WriteInterfaceToken failed");
-    audioStreamInfo.Marshalling(data);
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
-        "IsAudioRendererLowLatencySupported, error: %d", error);
-
-    return reply.ReadBool();
-}
-
 int32_t AudioPolicyProxy::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
     MessageParcel data;
@@ -1365,6 +1382,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailab
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, audioDeviceDescriptors, "GetAvailableDevices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        audioDeviceDescriptors, "Using tainted data size：%{public}d as loop bound", size);
     for (int32_t i = 0; i < size; i++) {
         std::shared_ptr<AudioDeviceDescriptor> desc =
             std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply));
@@ -1808,11 +1827,11 @@ AudioSpatializationSceneType AudioPolicyProxy::GetSpatializationSceneType()
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_DEFAULT, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_MUSIC, "WriteInterfaceToken failed");
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_DEFAULT,
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_MUSIC,
         "SendRequest failed, error: %{public}d", error);
     return static_cast<AudioSpatializationSceneType>(reply.ReadInt32());
 }
@@ -1882,6 +1901,47 @@ int32_t AudioPolicyProxy::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt re
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetPreferredDevice(const PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(static_cast<int32_t>(preferredType));
+    bool result = desc->Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(result, -1, "Desc Marshalling() faild");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PREFERRED_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+void AudioPolicyProxy::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    if (!ret) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+    }
+
+    data.WriteString(networkId);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_REMOTE_INFO), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SendRequest failed, error: %{public}d", error);
+    }
+    return;
+}
+
 int32_t AudioPolicyProxy::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
@@ -1947,6 +2007,78 @@ int32_t AudioPolicyProxy::ActivateAudioConcurrency(const AudioPipeType &pipeType
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool res = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(res, ERROR, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORT_AUDIO_EFFECT_PROPERTY_V3), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Supported Audio Effect Property, error: %d", error);
+    int32_t result = reply.ReadInt32();
+    int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "get audio supported effect property array size invalid");
+    for (int32_t i = 0; i < size; i++) {
+        AudioEffectPropertyV3 prop = {};
+        prop.Unmarshalling(reply);
+        // write and read must keep same order
+        propertyArray.property.push_back(prop);
+    }
+    return result;
+}
+
+int32_t AudioPolicyProxy::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool res = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(res, ERROR, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_EFFECT_PROPERTY_V3), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Effect Property, error: %d", error);
+    int32_t result = reply.ReadInt32();
+    int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "get audio effect property array size invalid");
+    for (int32_t i = 0; i < size; i++) {
+        AudioEffectPropertyV3 prop = {};
+        prop.Unmarshalling(reply);
+        // write and read must keep same order
+        propertyArray.property.push_back(prop);
+    }
+    return result;
+}
+
+int32_t AudioPolicyProxy::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    data.WriteInt32(size);
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "set audio effect property array size invalid");
+    for (int32_t i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(data);
+    }
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_EFFECT_PROPERTY_V3), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
 {
     MessageParcel data;
@@ -1961,6 +2093,8 @@ int32_t AudioPolicyProxy::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyA
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Supported Audio Enhance Property, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "get audio supported enhance property array size invalid");
     for (int32_t i = 0; i < size; i++) {
         // write and read must keep same order
         AudioEnhanceProperty prop = {};
@@ -1984,6 +2118,8 @@ int32_t AudioPolicyProxy::GetSupportedAudioEffectProperty(AudioEffectPropertyArr
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Supported Audio Effect Property, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "get audio supported effect property array size invalid");
     for (int32_t i = 0; i < size; i++) {
         AudioEffectProperty prop = {};
         prop.Unmarshalling(reply);
@@ -2007,6 +2143,8 @@ int32_t AudioPolicyProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &pro
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Enhance Property, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "get audio enhance property array size invalid");
     for (int32_t i = 0; i < size; i++) {
         // write and read must keep same order
         AudioEnhanceProperty prop = {};
@@ -2030,6 +2168,8 @@ int32_t AudioPolicyProxy::GetAudioEffectProperty(AudioEffectPropertyArray &prope
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Effect Property, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "get audio effect property array size invalid");
     for (int32_t i = 0; i < size; i++) {
         AudioEffectProperty prop = {};
         prop.Unmarshalling(reply);
@@ -2050,6 +2190,8 @@ int32_t AudioPolicyProxy::SetAudioEnhanceProperty(const AudioEnhancePropertyArra
 
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
     data.WriteInt32(size);
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "set audio enhance property array size invalid");
     for (int32_t i = 0; i < size; i++) {
         // write and read must keep same order
         propertyArray.property[i].Marshalling(data);
@@ -2071,6 +2213,8 @@ int32_t AudioPolicyProxy::SetAudioEffectProperty(const AudioEffectPropertyArray 
 
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
     data.WriteInt32(size);
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "set audio effect property array size invalid");
     for (int32_t i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(data);
     }
@@ -2095,26 +2239,6 @@ int32_t AudioPolicyProxy::InjectInterruption(const std::string networkId, Interr
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPTION), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteInt32(static_cast<int32_t>(deviceType));
-    data.WriteUint32(sessionID);
-    data.WriteInt32(static_cast<int32_t>(streamUsage));
-    data.WriteBool(isRunning);
-
-    int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEFAULT_OUTPUT_DEVICE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
 }

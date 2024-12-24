@@ -21,6 +21,7 @@
 #include "napi_audio_manager.h"
 #include "napi_audio_routing_manager.h"
 #include "napi_audio_stream_manager.h"
+#include "napi_audio_effect_manager.h"
 #include "napi_audio_volume_group_manager.h"
 #include "napi_audio_volume_manager.h"
 #include "napi_audio_interrupt_manager.h"
@@ -40,6 +41,7 @@ static napi_value Init(napi_env env, napi_value exports)
     NapiTonePlayer::Init(env, exports);
 #endif
     NapiAudioStreamMgr::Init(env, exports);
+    NapiAudioEffectMgr::Init(env, exports);
     NapiAudioRoutingManager::Init(env, exports);
     NapiAudioVolumeGroupManager::Init(env, exports);
     NapiAudioVolumeManager::Init(env, exports);

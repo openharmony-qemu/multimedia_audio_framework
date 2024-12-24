@@ -168,12 +168,16 @@ void SyncHibernateListener::OnSyncHibernate()
 {
     AUDIO_INFO_LOG("OnSyncHibernate in hibernate");
     ControlAudioFocus(true);
+    CHECK_AND_RETURN_LOG(audioPolicyServer_, "audioPolicyServer_ is nullptr");
+    audioPolicyServer_->CheckHibernateState(true);
 }
  
 void SyncHibernateListener::OnSyncWakeup(bool hibernateResult)
 {
     AUDIO_INFO_LOG("OnSyncWakeup in hibernate");
     ControlAudioFocus(false);
+    CHECK_AND_RETURN_LOG(audioPolicyServer_, "audioPolicyServer_ is nullptr");
+    audioPolicyServer_->CheckHibernateState(false);
 }
  
 void SyncHibernateListener::ControlAudioFocus(bool isHibernate)

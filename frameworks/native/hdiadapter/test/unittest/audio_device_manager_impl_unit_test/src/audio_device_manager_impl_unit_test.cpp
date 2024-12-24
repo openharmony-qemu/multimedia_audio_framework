@@ -265,6 +265,7 @@ void AudioDeviceManagerImplUnitTest::TearDown(void) {}
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_001, TestSize.Level1)
 {
+    ASSERT_TRUE(&audioDeviceManagerFactory);
     int32_t result = audioDeviceManagerFactory.DestoryDeviceManager(LOCAL_DEV_MGR);
     EXPECT_EQ(SUCCESS, result);
 }
@@ -276,7 +277,9 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_001, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_002, TestSize.Level1)
 {
+    ASSERT_TRUE(&audioDeviceManagerFactory);
     std::shared_ptr<IAudioDeviceManager> audioManager = std::make_shared<IAudioDeviceManagerInner>();
+    ASSERT_TRUE(audioManager != nullptr);
     audioDeviceManagerFactory.allHdiDevMgr_.emplace(LOCAL_DEV_MGR, audioManager);
     int32_t result = audioDeviceManagerFactory.DestoryDeviceManager(LOCAL_DEV_MGR);
     EXPECT_EQ(SUCCESS, result);
@@ -289,9 +292,9 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_002, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_003, TestSize.Level1)
 {
-    audioDeviceManagerFactory.CreatDeviceManager(DEV_MGR_UNKNOW);
-    AudioDeviceManagerFactory *managerFactory = &audioDeviceManagerFactory;
-    EXPECT_NE(nullptr, managerFactory);
+    ASSERT_TRUE(&audioDeviceManagerFactory);
+    std::shared_ptr<IAudioDeviceManager> audioDevMgr = audioDeviceManagerFactory.CreatDeviceManager(DEV_MGR_UNKNOW);
+    EXPECT_EQ(nullptr, audioDevMgr);
 }
 
 /**
@@ -301,9 +304,9 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_003, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_004, TestSize.Level1)
 {
-    audioDeviceManagerFactory.CreatDeviceManager(LOCAL_DEV_MGR);
-    AudioDeviceManagerFactory *managerFactory = &audioDeviceManagerFactory;
-    EXPECT_NE(nullptr, managerFactory);
+    ASSERT_TRUE(&audioDeviceManagerFactory);
+    std::shared_ptr<IAudioDeviceManager> audioDevMgr = audioDeviceManagerFactory.CreatDeviceManager(LOCAL_DEV_MGR);
+    EXPECT_EQ(nullptr, audioDevMgr);
 }
 
 /**
@@ -313,9 +316,9 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_004, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_005, TestSize.Level1)
 {
-    audioDeviceManagerFactory.CreatDeviceManager(REMOTE_DEV_MGR);
-    AudioDeviceManagerFactory *managerFactory = &audioDeviceManagerFactory;
-    EXPECT_NE(nullptr, managerFactory);
+    ASSERT_TRUE(&audioDeviceManagerFactory);
+    std::shared_ptr<IAudioDeviceManager> audioDevMgr = audioDeviceManagerFactory.CreatDeviceManager(REMOTE_DEV_MGR);
+    EXPECT_EQ(nullptr, audioDevMgr);
 }
 
 /**
@@ -325,9 +328,9 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_005, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_006, TestSize.Level1)
 {
-    audioDeviceManagerFactory.CreatDeviceManager(BLUETOOTH_DEV_MGR);
-    AudioDeviceManagerFactory *managerFactory = &audioDeviceManagerFactory;
-    EXPECT_NE(nullptr, managerFactory);
+    ASSERT_TRUE(&audioDeviceManagerFactory);
+    std::shared_ptr<IAudioDeviceManager> audioDevMgr = audioDeviceManagerFactory.CreatDeviceManager(BLUETOOTH_DEV_MGR);
+    EXPECT_EQ(nullptr, audioDevMgr);
 }
 
 /**
@@ -337,11 +340,12 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_006, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_007, TestSize.Level1)
 {
+    ASSERT_TRUE(&audioDeviceManagerFactory);
     std::shared_ptr<IAudioDeviceManager> audioManager = std::make_shared<IAudioDeviceManagerInner>();
+    ASSERT_TRUE(audioManager != nullptr);
     audioDeviceManagerFactory.allHdiDevMgr_.emplace(BLUETOOTH_DEV_MGR, audioManager);
-    audioDeviceManagerFactory.CreatDeviceManager(BLUETOOTH_DEV_MGR);
-    AudioDeviceManagerFactory *managerFactory = &audioDeviceManagerFactory;
-    EXPECT_NE(nullptr, managerFactory);
+    std::shared_ptr<IAudioDeviceManager> audioDevMgr = audioDeviceManagerFactory.CreatDeviceManager(BLUETOOTH_DEV_MGR);
+    EXPECT_NE(nullptr, audioDevMgr);
 }
 
 /**
@@ -351,15 +355,20 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_007, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_008, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceManagerIml != nullptr);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     audioDeviceManagerIml->audioMgr_ = IAudioManager::Get("daudio_primary_service", false);
 #endif // FEATURE_DISTRIBUTE_AUDIO
+    if (audioDeviceManagerIml->audioMgr_ == nullptr) {
+        GTEST_SKIP();
+    }
+
     AudioAdapterDescriptor audioAdapterDescriptor;
     audioAdapterDescriptor.adapterName = "";
     audioDeviceManagerIml->descriptors_.push_back(audioAdapterDescriptor);
     std::string adapterName = "";
-    audioDeviceManagerIml->GetTargetAdapterDesc(adapterName, true);
-    EXPECT_NE(nullptr, audioDeviceManagerIml);
+    struct AudioAdapterDescriptor *desc = audioDeviceManagerIml->GetTargetAdapterDesc(adapterName, true);
+    EXPECT_NE(nullptr, desc);
 }
 
 /**
@@ -369,15 +378,20 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_008, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_009, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceManagerIml != nullptr);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     audioDeviceManagerIml->audioMgr_ = IAudioManager::Get("daudio_primary_service", false);
 #endif // FEATURE_DISTRIBUTE_AUDIO
+    if (audioDeviceManagerIml->audioMgr_ == nullptr) {
+        GTEST_SKIP();
+    }
+
     AudioAdapterDescriptor audioAdapterDescriptor;
     audioAdapterDescriptor.adapterName = "adapterName";
     audioDeviceManagerIml->descriptors_.push_back(audioAdapterDescriptor);
     std::string adapterName = "adapterName";
-    audioDeviceManagerIml->GetTargetAdapterDesc(adapterName, true);
-    EXPECT_NE(nullptr, audioDeviceManagerIml);
+    struct AudioAdapterDescriptor *desc = audioDeviceManagerIml->GetTargetAdapterDesc(adapterName, true);
+    EXPECT_NE(nullptr, desc);
 }
 
 /**
@@ -387,16 +401,20 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_009, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_010, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceManagerIml != nullptr);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     audioDeviceManagerIml->audioMgr_ = IAudioManager::Get("daudio_primary_service", false);
 #endif // FEATURE_DISTRIBUTE_AUDIO
+    if (audioDeviceManagerIml->audioMgr_ == nullptr) {
+        GTEST_SKIP();
+    }
 
     AudioAdapterDescriptor audioAdapterDescriptor;
     audioAdapterDescriptor.adapterName = "adapterName";
     audioDeviceManagerIml->descriptors_.push_back(audioAdapterDescriptor);
     std::string adapterName = "";
-    audioDeviceManagerIml->GetTargetAdapterDesc(adapterName, true);
-    EXPECT_NE(nullptr, audioDeviceManagerIml);
+    struct AudioAdapterDescriptor *desc = audioDeviceManagerIml->GetTargetAdapterDesc(adapterName, true);
+    EXPECT_NE(nullptr, desc);
 }
 
 /**
@@ -406,16 +424,21 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_010, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_011, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceManagerIml != nullptr);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     audioDeviceManagerIml->audioMgr_ = IAudioManager::Get("daudio_primary_service", false);
 #endif // FEATURE_DISTRIBUTE_AUDIO
+    if (audioDeviceManagerIml->audioMgr_ == nullptr) {
+        GTEST_SKIP();
+    }
 
     std::string enableAdapters = "";
     DeviceAdapterInfo deviceAdapterInfo;
+    deviceAdapterInfo.devAdp = std::make_shared<IAudioDeviceAdapterInner>();
     audioDeviceManagerIml->enableAdapters_.emplace(enableAdapters, deviceAdapterInfo);
     std::string adapterName = "";
-    audioDeviceManagerIml->LoadAdapters(adapterName, true);
-    EXPECT_NE(nullptr, audioDeviceManagerIml);
+    auto audioDevAdp = audioDeviceManagerIml->LoadAdapters(adapterName, true);
+    EXPECT_NE(nullptr, audioDevAdp);
 }
 
 /**
@@ -425,16 +448,20 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_011, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_012, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceManagerIml != nullptr);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     audioDeviceManagerIml->audioMgr_ = IAudioManager::Get("daudio_primary_service", false);
 #endif // FEATURE_DISTRIBUTE_AUDIO
+    if (audioDeviceManagerIml->audioMgr_ == nullptr) {
+        GTEST_SKIP();
+    }
 
     std::string enableAdapters = "";
     DeviceAdapterInfo deviceAdapterInfo;
     audioDeviceManagerIml->enableAdapters_.emplace(enableAdapters, deviceAdapterInfo);
     std::string adapterName = "adapterName";
-    audioDeviceManagerIml->LoadAdapters(adapterName, true);
-    EXPECT_NE(nullptr, audioDeviceManagerIml);
+    auto audioDevAdp = audioDeviceManagerIml->LoadAdapters(adapterName, true);
+    EXPECT_NE(nullptr, audioDevAdp);
 }
 
 /**
@@ -444,6 +471,7 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_012, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_013, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceManagerIml != nullptr);
     std::string enableAdapters = "";
     DeviceAdapterInfo deviceAdapterInfo;
     audioDeviceManagerIml->enableAdapters_.emplace(enableAdapters, deviceAdapterInfo);
@@ -459,9 +487,13 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_013, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_014, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceManagerIml != nullptr);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     audioDeviceManagerIml->audioMgr_ = IAudioManager::Get("daudio_primary_service", false);
 #endif // FEATURE_DISTRIBUTE_AUDIO
+    if (audioDeviceManagerIml->audioMgr_ == nullptr) {
+        GTEST_SKIP();
+    }
 
     std::string enableAdapters = "adapterName";
     DeviceAdapterInfo deviceAdapterInfo;
@@ -470,7 +502,7 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_014, TestSize.Leve
     audioDeviceManagerIml->enableAdapters_.emplace(enableAdapters, deviceAdapterInfo);
     std::string adapterName = "adapterName";
     int32_t result = audioDeviceManagerIml->UnloadAdapter(adapterName);
-    EXPECT_NE(SUCCESS, result);
+    EXPECT_EQ(SUCCESS, result);
 }
 
 /**
@@ -480,9 +512,13 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_014, TestSize.Leve
 */
 HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_015, TestSize.Level1)
 {
+    ASSERT_TRUE(audioDeviceManagerIml != nullptr);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     audioDeviceManagerIml->audioMgr_ = IAudioManager::Get("daudio_primary_service", false);
 #endif // FEATURE_DISTRIBUTE_AUDIO
+    if (audioDeviceManagerIml->audioMgr_ == nullptr) {
+        GTEST_SKIP();
+    }
 
     std::string enableAdapters = "adapterName";
     DeviceAdapterInfo deviceAdapterInfo;
@@ -490,7 +526,7 @@ HWTEST(AudioDeviceManagerImplUnitTest, AudioDeviceManagerImpl_015, TestSize.Leve
     audioDeviceManagerIml->enableAdapters_.emplace(enableAdapters, deviceAdapterInfo);
     std::string adapterName = "adapterName";
     int32_t result = audioDeviceManagerIml->UnloadAdapter(adapterName);
-    EXPECT_NE(SUCCESS, result);
+    EXPECT_EQ(SUCCESS, result);
 }
 } // namespace AudioStandard
 } // namespace OHOS

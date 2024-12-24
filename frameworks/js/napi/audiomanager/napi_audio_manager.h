@@ -91,6 +91,7 @@ struct AudioManagerAsyncContext : public ContextBase {
     static napi_value RequestIndependentInterrupt(napi_env env, napi_callback_info info);
     static napi_value AbandonIndependentInterrupt(napi_env env, napi_callback_info info);
     static napi_value GetStreamManager(napi_env env, napi_callback_info info);
+    static napi_value GetEffectManager(napi_env env, napi_callback_info info);
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     static napi_value GetSessionManager(napi_env env, napi_callback_info info);
 #endif

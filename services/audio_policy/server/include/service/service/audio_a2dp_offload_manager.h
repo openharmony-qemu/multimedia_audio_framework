@@ -30,8 +30,9 @@
 #include "audio_module_info.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
-
-#include "audio_a2dp_offload_flag.h"
+#include "audio_router_center.h"
+#include "audio_policy_manager_factory.h"
+#include "audio_stream_collector.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -39,14 +40,30 @@
 #include "bluetooth_device_manager.h"
 #endif
 
+#include "audio_device_common.h"
+#include "audio_volume_manager.h"
+#include "audio_a2dp_offload_flag.h"
+#include "audio_iohandle_map.h"
+#include "audio_config_manager.h"
+#include "audio_active_device.h"
+#include "audio_offload_stream.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
 class AudioA2dpOffloadManager final : public Bluetooth::AudioA2dpPlayingStateChangedListener,
     public std::enable_shared_from_this<AudioA2dpOffloadManager> {
 public:
-    AudioA2dpOffloadManager()
-        : audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance())
+    AudioA2dpOffloadManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+        streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
+        audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
+        audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
+        audioActiveDevice_(AudioActiveDevice::GetInstance()),
+        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioVolumeManager_(AudioVolumeManager::GetInstance()),
+        audioOffloadStream_(AudioOffloadStream::GetInstance()),
+        audioDeviceCommon_(AudioDeviceCommon::GetInstance())
     {}
     void Init() {Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(shared_from_this());};
     void ConnectA2dpOffload(const std::string &deviceAddress, const std::vector<int32_t> &sessionIds);
@@ -60,12 +77,41 @@ public:
     BluetoothOffloadState GetA2dpOffloadFlag();
     int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
+
+    void UpdateA2dpOffloadFlagForAllStream(std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
+    void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+
+private:
+#ifdef BLUETOOTH_ENABLE
+    void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+#endif
+    void GetA2dpOffloadCodecAndSendToDsp();
+    int32_t HandleA2dpDeviceInOffload(BluetoothOffloadState a2dpOffloadFlag);
+    int32_t HandleA2dpDeviceOutOffload(BluetoothOffloadState a2dpOffloadFlag);
+    int32_t HandleActiveDevice(DeviceType deviceType);
+    void FetchStreamForA2dpOffload(const bool &requireReset);
+    void GetAllRunningStreamSession(std::vector<int32_t> &allSessions, bool doStop = false);
+    std::string GetVolumeGroupType(DeviceType deviceType);
 private:
     std::vector<int32_t> connectionTriggerSessionIds_;
     std::string a2dpOffloadDeviceAddress_ = "";
     std::mutex connectionMutex_;
     std::condition_variable connectionCV_;
+    std::mutex switchA2dpOffloadMutex_;
+
+    IAudioPolicyInterface& audioPolicyManager_;
+    AudioStreamCollector& streamCollector_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
+    AudioRouterCenter& audioRouterCenter_;
+    AudioIOHandleMap& audioIOHandleMap_;
+    AudioActiveDevice& audioActiveDevice_;
+    AudioConfigManager& audioConfigManager_;
+    AudioVolumeManager& audioVolumeManager_;
+    AudioOffloadStream& audioOffloadStream_;
+    AudioDeviceCommon& audioDeviceCommon_;
 };
 }
 }

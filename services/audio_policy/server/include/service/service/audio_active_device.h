@@ -61,8 +61,8 @@ public:
     float GetMaxAmplitude(const int32_t deviceId);
     void UpdateInputDeviceInfo(DeviceType deviceType);
     std::string GetActiveBtDeviceMac();
-    int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    void SetActiveBtDeviceMac(std::string macAddress);
+    void SetActiveBtDeviceMac(const std::string macAddress);
+    void SetActiveBtInDeviceMac(const std::string macAddress);
     int32_t SetDeviceActive(DeviceType deviceType, bool active);
     int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address);
     bool GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
@@ -79,6 +79,10 @@ public:
     DeviceCategory GetCurrentOutputDeviceCategory();
     std::string GetCurrentOutputDeviceNetworkId();
     std::string GetCurrentOutputDeviceMacAddr();
+    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
+        const std::string &deviceName = "");
+    void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
+        const std::string &deviceName = "");
 private:
     AudioActiveDevice() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
@@ -98,6 +102,7 @@ private:
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
 
     std::string activeBTDevice_;
+    std::string activeBTInDevice_;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioDeviceManager &audioDeviceManager_;
