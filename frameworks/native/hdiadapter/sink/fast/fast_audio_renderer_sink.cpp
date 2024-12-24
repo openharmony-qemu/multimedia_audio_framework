@@ -40,6 +40,7 @@
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
 #include "audio_utils.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 
@@ -873,6 +874,7 @@ int32_t FastAudioRendererSinkInner::Stop(void)
             "Stop failed! ret: %{public}d.", ret);
     }
     started_ = false;
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -892,6 +894,7 @@ int32_t FastAudioRendererSinkInner::Pause(void)
             "Pause failed!");
     }
     paused_ = true;
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

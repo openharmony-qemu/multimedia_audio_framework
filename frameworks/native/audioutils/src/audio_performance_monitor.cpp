@@ -37,6 +37,7 @@ void AudioPerformanceMonitor::DeleteOvertimeMonitor(SinkType sinkType)
 {
     CHECK_AND_RETURN_LOG(overTimeDetectMap_.find(sinkType) != overTimeDetectMap_.end(),
         "invalid sinkType: %{public}d", sinkType);
+    AUDIO_INFO_LOG("delete sinkType %{public}d overTime Monitor!", sinkType);
     overTimeDetectMap_.erase(sinkType);
 }
 
@@ -44,6 +45,7 @@ void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
 {
     CHECK_AND_RETURN_LOG(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end(),
         "invalid sessionId: %{public}d", sessionId);
+    AUDIO_INFO_LOG("delete sessionId %{public}d silence Monitor!", sessionId);
     silenceDetectMap_.erase(sessionId);
 }
 
@@ -93,7 +95,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
             std::string printStr{};
             //for example: not Silent-> not Silent -> silent -> not Silent -> silent, will print "--_-_";
             while (silenceDetectMap_[sessionId].historyStateQueue.size() != 0) {
-                printStr += silenceDetectMap_[sessionId].historyStateQueue.front()?"-":"_";
+                printStr += silenceDetectMap_[sessionId].historyStateQueue.front()?"_":"-";
                 silenceDetectMap_[sessionId].historyStateQueue.pop();
             }
             AUDIO_WARNING_LOG("record %{public}d state for last %{public}zu times: \n%{public}s",

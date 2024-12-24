@@ -1078,7 +1078,6 @@ bool AudioEndpointInner::StopDevice()
     }
     endpointStatus_ = STOPPED;
     isStarted_ = false;
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, INIT_LASTWRITTEN_TIME);
     return true;
 }
 
