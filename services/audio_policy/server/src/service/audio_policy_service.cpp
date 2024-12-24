@@ -74,7 +74,6 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 const int32_t UID_AUDIO = 1041;
-const int32_t DATA_LINK_CONNECTED = 11;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 
 #ifdef BLUETOOTH_ENABLE
@@ -85,22 +84,6 @@ mutex g_dataShareHelperMutex;
 mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
-
-static std::string GetEncryptAddr(const std::string &addr)
-{
-    const int32_t START_POS = 6;
-    const int32_t END_POS = 13;
-    const int32_t ADDRESS_STR_LEN = 17;
-    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
-        return std::string("");
-    }
-    std::string tmp = "**:**:**:**:**:**";
-    std::string out = addr;
-    for (int i = START_POS; i <= END_POS; i++) {
-        out[i] = tmp[i];
-    }
-    return out;
-}
 
 AudioPolicyService::~AudioPolicyService()
 {
