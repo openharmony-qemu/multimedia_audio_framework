@@ -960,7 +960,6 @@ int32_t AudioPolicyService::SetQueryClientTypeCallback(const sptr<IRemoteObject>
 int32_t AudioPolicyService::UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage)
 {
     AUDIO_INFO_LOG("Start");
-
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->RemoveAvailableDeviceChangeMap(clientId, usage);
     }
