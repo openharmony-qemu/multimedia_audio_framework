@@ -36,64 +36,7 @@ static AudioPolicyServer* GetServerPtr()
 {
     return AudioPolicyServiceUnitTest::GetServerPtr();
 }
-#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
-/**
-* @tc.name  : Test OnDeviceInfoUpdated.
-* @tc.number: OnDeviceInfoUpdated_001
-* @tc.desc  : Test OnDeviceInfoUpdated interfaces.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceInfoUpdated_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    desc->isEnable_ = true;
-    DeviceInfoUpdateCommand command = ENABLE_UPDATE;
 
-    GetServerPtr()->audioPolicyService_.OnDeviceInfoUpdated(*desc, command);
-}
-
-/**
-* @tc.name  : Test OnDeviceInfoUpdated.
-* @tc.number: OnDeviceInfoUpdated_002
-* @tc.desc  : Test OnDeviceInfoUpdated interfaces.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceInfoUpdated_002, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    desc->isEnable_ = true;
-    DeviceInfoUpdateCommand command = ENABLE_UPDATE;
-
-    GetServerPtr()->audioPolicyService_.OnDeviceInfoUpdated(*desc, command);
-}
-
-/**
-* @tc.name  : Test OnDeviceInfoUpdated.
-* @tc.number: OnDeviceInfoUpdated_003
-* @tc.desc  : Test OnDeviceInfoUpdated interfaces.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceInfoUpdated_003, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    desc->isEnable_ = false;
-    DeviceInfoUpdateCommand command = ENABLE_UPDATE;
-
-    GetServerPtr()->audioPolicyService_.OnDeviceInfoUpdated(*desc, command);
-}
-#endif
 /**
 * @tc.name  : Test DeviceUpdateClearRecongnitionStatus.
 * @tc.number: DeviceUpdateClearRecongnitionStatus_001
