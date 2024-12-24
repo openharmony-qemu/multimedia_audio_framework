@@ -50,9 +50,7 @@ namespace AudioStandard {
 using namespace std;
 
 namespace {
-static const char* INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
-static const char* PIPE_WAKEUP_INPUT = "wakeup_input";
 static const char* PREDICATES_STRING = "settings.general.device_name";
 static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
@@ -75,7 +73,6 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
-const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 const int32_t UID_AUDIO = 1041;
 const int32_t DATA_LINK_CONNECTED = 11;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
