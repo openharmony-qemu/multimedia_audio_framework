@@ -68,14 +68,18 @@ int32_t IpcOfflineStreamStub::OnRemoteRequest(uint32_t code, MessageParcel &data
 
 int32_t IpcOfflineStreamStub::HandleCreateOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef FEATURE_OFFLINE_EFFECT
     std::string chainName = data.ReadString();
     int32_t ret = CreateOfflineEffectChain(chainName);
     reply.WriteInt32(ret);
     return AUDIO_OK;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t IpcOfflineStreamStub::HandleConfigureOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef FEATURE_OFFLINE_EFFECT
     AudioStreamInfo inInfo;
     AudioStreamInfo outInfo;
     inInfo.Unmarshalling(data);
@@ -83,10 +87,13 @@ int32_t IpcOfflineStreamStub::HandleConfigureOfflineEffectChain(MessageParcel &d
     int32_t ret = ConfigureOfflineEffectChain(inInfo, outInfo);
     reply.WriteInt32(ret);
     return AUDIO_OK;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t IpcOfflineStreamStub::HandlePrepareOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef FEATURE_OFFLINE_EFFECT
     (void)data;
     std::shared_ptr<AudioSharedMemory> inBuf = nullptr;
     std::shared_ptr<AudioSharedMemory> outBuf = nullptr;
@@ -95,23 +102,30 @@ int32_t IpcOfflineStreamStub::HandlePrepareOfflineEffectChain(MessageParcel &dat
     AudioSharedMemory::WriteToParcel(outBuf, reply);
     reply.WriteInt32(ret);
     return AUDIO_OK;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t IpcOfflineStreamStub::HandleProcessOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef FEATURE_OFFLINE_EFFECT
     uint32_t inSize;
     uint32_t outSize;
     inSize = data.ReadUint32();
     outSize = data.ReadUint32();
     int32_t ret = ProcessOfflineEffectChain(inSize, outSize);
     return ret;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t IpcOfflineStreamStub::HandleReleaseOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef FEATURE_OFFLINE_EFFECT
     ReleaseOfflineEffectChain();
     return SUCCESS;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

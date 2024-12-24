@@ -25,6 +25,7 @@ declare_args() {
   audio_framework_feature_power_manager = true
   audio_framework_feature_device_manager = true
   audio_framework_feature_hiview_enable = true
+  audio_framework_feature_offline_effect = true
 
   if (!defined(global_parts_info) ||
       defined(global_parts_info.hdf_drivers_interface_distributed_audio)) {
