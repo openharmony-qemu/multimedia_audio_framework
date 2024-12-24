@@ -536,6 +536,71 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_014, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : Test Create API via legal input.
+ * @tc.number: Audio_Renderer_Create_015
+ * @tc.desc  : Test Create interface with STREAM_MUSIC. Returns audioRenderer instance, if create is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_015, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test CheckMaxRendererInstances API
+ * @tc.number: Audio_Renderer_CheckMaxRendererInstances_001
+ * @tc.desc  : Test CheckMaxRendererInstances interface. Returns SUCCESS, if check max renderer instances is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_CheckMaxRendererInstances_001, TestSize.Level0)
+{
+    int32_t result = AudioRenderer::CheckMaxRendererInstances();
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+ * @tc.name  : Test Mute API
+ * @tc.number: Audio_Renderer_Mute_001
+ * @tc.desc  : Test Mute interface. Returns true, if check Mute is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Mute_001, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    bool result = audioRenderer->Mute();
+    EXPECT_TRUE(result);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Unmute API
+ * @tc.number: Audio_Renderer_Unmute_001
+ * @tc.desc  : Test Unmute interface. Returns true, if check Unmute is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Unmute_001, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    bool result = audioRenderer->Unmute();
+    EXPECT_TRUE(result);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test SetDefaultOutputDevice API
+ * @tc.number: Audio_Renderer_SetDefaultOutputDevice_001
+ * @tc.desc  : Test SetDefaultOutputDevice interface. Returns true, if check Unmute is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetDefaultOutputDevice_001, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    bool result = audioRenderer->SetDefaultOutputDevice(DEVICE_TYPE_INVALID);
+    EXPECT_TRUE(result);
+    audioRenderer->Release();
+}
+
+/**
  * @tc.name  : Test Renderer playback
  * @tc.number: Audio_Renderer_Playback_001
  * @tc.desc  : Test normal playback for 2 sec
