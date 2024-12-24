@@ -19,6 +19,7 @@
 #include "audio_performance_monitor.h"
 #include "audio_performance_monitor_c.h"
 #include <memory>
+#include <string>
 #include "audio_errors.h"
 #include "media_monitor_manager.h"
 #include "audio_log.h"
@@ -39,36 +40,24 @@ void AudioPerformanceMonitor::DeleteOvertimeMonitor(SinkType sinkType)
     overTimeDetectMap_.erase(sinkType);
 }
 
-void AudioPerformanceMonitor::DeletejankMonitor(uint32_t sessionId)
+void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_LOG(jankDetectMap_.find(sessionId) != jankDetectMap_.end(),
+    CHECK_AND_RETURN_LOG(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end(),
         "invalid sessionId: %{public}d", sessionId);
-    jankDetectMap_.erase(sessionId);
+    silenceDetectMap_.erase(sessionId);
 }
 
 void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence)
 {
-    if (jankDetectMap_.find(sessionId) == jankDetectMap_.end()) {
+    if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
         AUDIO_INFO_LOG("start record silence state of sessionId : %{public}d", sessionId);
-        jankDetectMap_[sessionId] = FrameRecordInfo();
+        silenceDetectMap_[sessionId] = FrameRecordInfo();
     }
-        jankDetectMap_[sessionId].historyStateQueue.push(isSilence);
-        if (jankDetectMap_[sessionId].historyStateQueue.size() > MAX_RECORD_QUEUE_SIZE) {
-            jankDetectMap_[sessionId].historyStateQueue.pop();
-        }
+    silenceDetectMap_[sessionId].historyStateQueue.push(isSilence);
+    if (silenceDetectMap_[sessionId].historyStateQueue.size() > MAX_RECORD_QUEUE_SIZE) {
+        silenceDetectMap_[sessionId].historyStateQueue.pop();
+    }
     JudgeNoise(sessionId, isSilence);
-}
-
-void AudioPerformanceMonitor::RecordLastWrittenTime(uint32_t sessionId, int64_t lastWrittenTime)
-{
-    if (jankDetectMap_.find(sessionId) == jankDetectMap_.end()) {
-        AUDIO_INFO_LOG("start record last writtenTime of sessionId : %{public}d", sessionId);
-        jankDetectMap_[sessionId] = FrameRecordInfo();
-        jankDetectMap_[sessionId].lastWrittenTime = lastWrittenTime;
-        return;
-    }
-    JudgeNoise(sessionId, jankDetectMap_[sessionId].lastWrittenTime != lastWrittenTime);
-    jankDetectMap_[sessionId].lastWrittenTime = lastWrittenTime;
 }
 
 void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTimeStamp)
@@ -84,41 +73,43 @@ void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTim
         AUDIO_INFO_LOG("AudioSinkType %{public}d write data first time", sinkType);
     } else {
         if (curTimeStamp - overTimeDetectMap_[sinkType] > MAX_WRITTEN_INTERVAL[sinkType]) {
-            std::string printStr = "SinkType " + static_cast<uint32_t>(sinkType) + " write time interval " +
-                curTimeStamp - overTimeDetectMap_[sinkType] + " ns! overTime!";
-            ReportEvent(OVERTIME_EVENT, printStr);
+            AUDIO_WARNING_LOG("SinkType %{public}d write time interval %{public}" PRIu64 " ns! overTime!",
+                sinkType, curTimeStamp - overTimeDetectMap_[sinkType]);
+            ReportEvent(OVERTIME_EVENT);
         }
     }
     overTimeDetectMap_[sinkType] = curTimeStamp;
 }
 
 
-void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isValidData)
+void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
 {
-    if (isValidData) {
-        if (MIN_INVALID_VALUE <= jankDetectMap_[sessionId].inValidStateCount &&
-            jankDetectMap_[sessionId].inValidStateCount <= MAX_INVALID_VALUE) {
-            std::string printStr = "record state for last " + MAX_RECORD_QUEUE_SIZE + " times: \n";
-            //for example: valid -> valid -> invalid -> valid -> invalid, will print "--_-_";
-            while (jankDetectMap_[sessionId].historyStateQueue.size() != 0) {
-                printStr += jankDetectMap_[sessionId].historyStateQueue.front()?"-":"_";
-                jankDetectMap_[sessionId].historyStateQueue.pop();
+    if (isSilence) {
+        silenceDetectMap_[sessionId].silenceStateCount++;
+        silenceDetectMap_[sessionId].notSilenceStateCount = 0;
+    } else {
+        if (MIN_SILENCE_VALUE <= silenceDetectMap_[sessionId].silenceStateCount &&
+            silenceDetectMap_[sessionId].silenceStateCount <= MAX_SILENCE_VALUE) {
+            std::string printStr{};
+            //for example: not Silent-> not Silent -> silent -> not Silent -> silent, will print "--_-_";
+            while (silenceDetectMap_[sessionId].historyStateQueue.size() != 0) {
+                printStr += silenceDetectMap_[sessionId].historyStateQueue.front()?"-":"_";
+                silenceDetectMap_[sessionId].historyStateQueue.pop();
             }
-            ReportEvent(SILENCE_EVENT, printStr);
-            jankDetectMap_[sessionId] = FrameRecordInfo();
+            AUDIO_WARNING_LOG("record %{public}d state for last %{public}zu times: \n%{public}s",
+                sessionId, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
+            ReportEvent(SILENCE_EVENT);
+            silenceDetectMap_[sessionId] = FrameRecordInfo();
             return;
         }
-        jankDetectMap_[sessionId].inValidStateCount = 0;
-        jankDetectMap_[sessionId].validStateCount++;
-    } else {
-        jankDetectMap_[sessionId].inValidStateCount++;
-        jankDetectMap_[sessionId].validStateCount = 0;
+        silenceDetectMap_[sessionId].silenceStateCount = 0;
+        silenceDetectMap_[sessionId].notSilenceStateCount++;
     }
 }
 
-void AudioPerformanceMonitor::ReportEvent(int32_t reasonCode, std::string printStr)
+void AudioPerformanceMonitor::ReportEvent(int32_t reasonCode)
 {
-    AUDIO_INFO_LOG("start report reasonCode %{public}d, jank info: %{public}s", reasonCode, printStr);
+    AUDIO_INFO_LOG("start report reasonCode %{public}d", reasonCode);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::JANK_PLAYBACK,
         Media::MediaMonitor::EventType::FAULT_EVENT);

@@ -27,11 +27,10 @@ const int32_t OVERTIME_EVENT = 0;
 const int32_t SILENCE_EVENT = 1;
 const int64_t INIT_LASTWRITTEN_TIME = -1;
 
-// invalid means: silence frame in pulseaudio, not write data in one endpoint loop
-const uint32_t MIN_INVALID_VALUE = 1;
-const uint32_t MAX_INVALID_VALUE = 2;
-const uint32_t MIN_VALID_VALUE = 1;
-const uint32_t MAX_VALID_VALUE = 2;
+const uint32_t MIN_SILENCE_VALUE = 1;
+const uint32_t MAX_SILENCE_VALUE = 2;
+const uint32_t MIN_NOT_SILENCE_VALUE = 1;
+const uint32_t MAX_NOT_SILENCE_VALUE = 2;
 const size_t MAX_RECORD_QUEUE_SIZE = 20;
 
 enum SinkType : uint32_t {
@@ -46,10 +45,8 @@ enum SinkType : uint32_t {
 
 struct FrameRecordInfo
 {
-    uint64_t inValidStateCount = MAX_INVALID_VALUE + 1;
-    uint64_t validStateCount = MAX_VALID_VALUE + 1;
-    //only used in endpoint
-    int64_t lastWrittenTime = INIT_LASTWRITTEN_TIME;
+    uint64_t silenceStateCount = MAX_SILENCE_VALUE + 1;
+    uint64_t notSilenceStateCount = MAX_NOT_SILENCE_VALUE + 1;
     std::queue<bool> historyStateQueue{};
 };
 
@@ -57,19 +54,18 @@ class AudioPerformanceMonitor {
 public:
     static AudioPerformanceMonitor& GetInstance();
 
-    void RecordSilenceState(uint32_t performMonitorIndex, bool isSilence);
-    void RecordLastWrittenTime(uint32_t sessionId, int64_t lastWrittenTime);
-    void DeletejankMonitor(uint32_t sessionId);
+    void RecordSilenceState(uint32_t sessionId, bool isSilence);
+    void DeleteSilenceMonitor(uint32_t sessionId);
 
     void RecordTimeStamp(SinkType sinkType, uint64_t curTimeStamp);
     void DeleteOvertimeMonitor(SinkType sinkType);
 
-    std::map<uint32_t, FrameRecordInfo> jankDetectMap_{}; // AudioPerformanceMonitorIndex, FrameRecordInfo
+    std::map<uint32_t, FrameRecordInfo> silenceDetectMap_{}; // sessionId, FrameRecordInfo
     std::map<SinkType, uint64_t> overTimeDetectMap_{}; // SinkType, lastWrittenTimeStamp
 
 private:
     void JudgeNoise(uint32_t index, bool curState);
-    void ReportEvent(int32_t reasonCode, std::string printStr);
+    void ReportEvent(int32_t reasonCode);
 
     std::map<SinkType, uint64_t> MAX_WRITTEN_INTERVAL {
         {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},      // 100ms

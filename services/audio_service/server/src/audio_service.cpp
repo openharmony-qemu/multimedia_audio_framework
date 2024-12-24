@@ -250,7 +250,7 @@ void AudioService::RemoveRenderer(uint32_t sessionId)
     }
     allRendererMap_.erase(sessionId);
     RemoveIdFromMuteControlSet(sessionId);
-    AudioPerformanceMonitor::GetInstance().DeletejankMonitor(sessionId);
+    AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
 }
 
 void AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)

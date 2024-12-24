@@ -260,6 +260,7 @@ private:
     std::mutex sinkMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
+    SinkType sinkType_ = SINKTYPE_PRIMARY;
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -308,7 +309,7 @@ AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
-    attr_ = {};
+    sinkType_ = halName_ == DIRECT_HAL_NAME? SINKTYPE_DIRECT: SINKTYPE_PRIMARY;
 }
 
 AudioRendererSinkInner::~AudioRendererSinkInner()
@@ -323,7 +324,7 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
         AUDIO_WARNING_LOG("runningLockManager is null, playback can not work well!");
     }
 #endif
-    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_PRIMARY);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(sinkType_);
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
@@ -809,7 +810,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_PRIMARY, ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, ClockTime::GetCurNano());
 
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrame failed ret: %{public}x", ret);
 
@@ -1243,7 +1244,7 @@ int32_t AudioRendererSinkInner::Stop(void)
         return ERR_OPERATION_FAILED;
     }
     started_ = false;
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_PRIMARY, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 
     return SUCCESS;
@@ -1269,7 +1270,7 @@ int32_t AudioRendererSinkInner::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_PRIMARY, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

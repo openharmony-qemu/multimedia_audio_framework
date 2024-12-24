@@ -1042,7 +1042,6 @@ bool AudioEndpointInner::DelayStopDevice()
     } else {
         CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
             false, "Sink stop failed.");
-        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, INIT_LASTWRITTEN_TIME);
     }
     isStarted_ = false;
     return true;
@@ -1079,6 +1078,7 @@ bool AudioEndpointInner::StopDevice()
     }
     endpointStatus_ = STOPPED;
     isStarted_ = false;
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, INIT_LASTWRITTEN_TIME);
     return true;
 }
 
@@ -1321,7 +1321,6 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             int64_t current = ClockTime::GetCurNano();
             int64_t lastWrittenTime = tempBuffer->GetLastWrittenTime();
             uint32_t sessionId = processList_[i]->GetAudioSessionId();
-            AudioPerformanceMonitor::GetInstance().RecordLastWrittenTime(sessionId, lastWrittenTime);
             if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS) {
                 Trace trace("AudioEndpoint::MarkClientStandby");
                 AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", tempBuffer->GetSessionId());
@@ -1336,7 +1335,10 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             if (curReadSpan == nullptr || curReadSpan->spanStatus != SpanStatus::SPAN_WRITE_DONE) {
                 AUDIO_DEBUG_LOG("Find one process not ready"); // print uid of the process?
                 isAllReady = false;
+                AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true);
                 continue;
+            } else {
+                AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false);
             }
             // process Status is RUNNING && buffer status is WRITE_DONE
             tempBuffer->SetLastWrittenTime(current);
