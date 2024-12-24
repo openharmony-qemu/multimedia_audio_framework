@@ -693,14 +693,12 @@ int32_t RendererInServer::Start()
         }
     }
 
-    if (isDualToneEnabled_) {
-        if (dualToneStream_ != nullptr) {
-            stream_->GetAudioEffectMode(effectModeWhenDual_);
-            stream_->SetAudioEffectMode(EFFECT_NONE);
-            std::lock_guard<std::mutex> lock(dualToneMutex_);
-            dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
-            dualToneStream_->Start();
-        }
+    if (isDualToneEnabled_ && dualToneStream_ != nullptr) {
+        stream_->GetAudioEffectMode(effectModeWhenDual_);
+        stream_->SetAudioEffectMode(EFFECT_NONE);
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
+        dualToneStream_->Start();
     }
     return SUCCESS;
 }
