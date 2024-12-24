@@ -69,12 +69,10 @@ void AudioSettingObserver::SetUpdateFunc(UpdateFunc &func)
 AudioSettingProvider& AudioSettingProvider::GetInstance(
     int32_t systemAbilityId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (instance_ == nullptr) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (instance_ == nullptr) {
-            instance_ = new AudioSettingProvider();
-            Initialize(systemAbilityId);
-        }
+        instance_ = new AudioSettingProvider();
+        Initialize(systemAbilityId);
     }
     return *instance_;
 }
