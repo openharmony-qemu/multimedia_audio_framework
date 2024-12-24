@@ -453,7 +453,9 @@ ohos_unittest("audio_pnp_server_unit_test") {
     "samgr:samgr_proxy",
   ]
 
-  sources = [ "./unittest/audio_pnp_server_unit_test/src/audio_pnp_server_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_pnp_server_unit_test/src/audio_pnp_server_unit_test.cpp",
+  ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 
