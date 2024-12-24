@@ -139,16 +139,16 @@ void AudioServerLoadConfigurationTest(const uint8_t *rawData, size_t size)
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys = {};
     std::unordered_map<std::string, std::set<std::string>> audioParameterKey = {};
     std::set<std::string> audioParameterValue = {};
-    std::string audioParameterKeyStr_1 = "key1";
-    std::string audioParameterKeyStr_2 = "key2";
-    std::string audioParameterKeyValueStr_1 = "value1";
-    std::string audioParameterKeyValueStr_2 = "value2";
-    audioParameterValue.insert(audioParameterKeyValueStr_1);
-    audioParameterValue.insert(audioParameterKeyValueStr_2);
-    audioParameterKey.insert(std::make_pair(audioParameterKeyStr_1, audioParameterValue));
-    audioParameterKey.insert(std::make_pair(audioParameterKeyStr_2, audioParameterValue));
-    audioParameterKeys.insert(std::make_pair(audioParameterKeyStr_1, audioParameterKey));
-    audioParameterKeys.insert(std::make_pair(audioParameterKeyStr_2, audioParameterKey));
+    std::string audioParameterKeyStr1 = "key1";
+    std::string audioParameterKeyStr2 = "key2";
+    std::string audioParameterKeyValueStr1 = "value1";
+    std::string audioParameterKeyValueStr2 = "value2";
+    audioParameterValue.insert(audioParameterKeyValueStr1);
+    audioParameterValue.insert(audioParameterKeyValueStr2);
+    audioParameterKey.insert(std::make_pair(audioParameterKeyStr1, audioParameterValue));
+    audioParameterKey.insert(std::make_pair(audioParameterKeyStr2, audioParameterValue));
+    audioParameterKeys.insert(std::make_pair(audioParameterKeyStr1, audioParameterKey));
+    audioParameterKeys.insert(std::make_pair(audioParameterKeyStr2, audioParameterKey));
 
     std::shared_ptr<AudioParamParser> audioParamParser = std::make_shared<AudioParamParser>();
     audioParamParser->LoadConfiguration(audioParameterKeys);
@@ -163,11 +163,11 @@ void AudioServerGetExtarAudioParametersTest(const uint8_t* rawData, size_t size)
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     std::string mainKey = "mainKey";
-    std::string value_1 = "value1";
-    std::string value_2 = "value2";
+    std::string value1 = "value1";
+    std::string value2 = "value2";
     std::vector<std::string> subkeys = {};
-    subkeys.push_back(value_1);
-    subkeys.push_back(value_2);
+    subkeys.push_back(value1);
+    subkeys.push_back(value2);
 
     data.WriteString(static_cast<std::string>(mainKey));
     data.WriteInt32(subkeys.size());
