@@ -123,8 +123,8 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     rendererOptions.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MOVIE;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MOVIE;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     return;
@@ -1501,7 +1501,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_Stability_001, TestSize.L
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
+    thread renderThread(StartRenderThread, audioRenderer.get(), PLAYBACK_DURATION);
 
     for (int i = 0; i < VALUE_HUNDRED; i++) {
         audioRenderer->SetVolume(0.1);
@@ -3004,7 +3004,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
+    thread renderThread(StartRenderThread, audioRenderer.get(), PLAYBACK_DURATION);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
         bool isDrained = audioRenderer->Drain();
@@ -3201,7 +3201,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_Stability_001, TestSize.Level
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
+    thread renderThread(StartRenderThread, audioRenderer.get(), PLAYBACK_DURATION);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
         bool isFlushed = audioRenderer->Flush();

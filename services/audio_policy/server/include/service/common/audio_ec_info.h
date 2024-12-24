@@ -30,11 +30,7 @@ enum EcType {
     EC_TYPE_DIFF_ADAPTER
 };
 
-class AudioEcInfo {
-public:
-    AudioEcInfo() = default;
-    virtual ~AudioEcInfo() = default;
-
+struct AudioEcInfo {
     DeviceType inputDevice = DEVICE_TYPE_DEFAULT;
     DeviceType outputDevice = DEVICE_TYPE_DEFAULT;
     EcType ecType = EC_TYPE_NONE;

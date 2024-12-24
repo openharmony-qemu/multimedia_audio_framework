@@ -120,7 +120,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInit_001, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -138,7 +138,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInit_002, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -268,7 +268,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdate_001, TestSize.
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->OnStatusUpdate(OPERATION_FLUSHED);
     EXPECT_EQ(I_STATUS_IDLE, rendererInServer->status_);
 }
@@ -288,7 +288,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdate_002, TestSize.
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->OnStatusUpdate(OPERATION_DRAINED);
     EXPECT_TRUE(rendererInServer->afterDrain);
 }
@@ -308,7 +308,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdate_003, TestSize.
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->status_ = I_STATUS_DRAINING;
     rendererInServer->OnStatusUpdate(OPERATION_DRAINED);
     EXPECT_EQ(I_STATUS_STARTED, rendererInServer->status_);
@@ -331,7 +331,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdate_004, TestSize.
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->OnStatusUpdate(OPERATION_SET_OFFLOAD_ENABLE);
     EXPECT_TRUE(rendererInServer->offloadEnable_);
 }
@@ -351,7 +351,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_001, TestSi
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->OnStatusUpdateSub(OPERATION_RELEASED);
     EXPECT_EQ(I_STATUS_RELEASED, rendererInServer->status_);
 }
@@ -371,7 +371,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_002, TestSi
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(0);
     rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(0);
     rendererInServer->audioServerBuffer_->totalSizeInFrame_ = 4;
@@ -395,7 +395,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_003, TestSi
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(4);
     rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(0);
     rendererInServer->audioServerBuffer_->basicBufferInfo_->basePosInFrame.store(4);
@@ -422,7 +422,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_004, TestSi
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->OnStatusUpdateSub(OPERATION_UNSET_OFFLOAD_ENABLE);
     EXPECT_FALSE(rendererInServer->offloadEnable_);
 }
@@ -442,7 +442,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_005, TestSi
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->startedTime_ = 0;
     rendererInServer->OnStatusUpdateSub(OPERATION_UNDERFLOW);
     EXPECT_EQ(1, rendererInServer->underrunCount_);
@@ -487,7 +487,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_007, TestSi
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->OnStatusUpdateSub(OPERATION_STARTED);
     EXPECT_EQ(I_STATUS_INVALID, rendererInServer->status_);
 }
@@ -507,7 +507,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerHandleOperationFlushed_001, T
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->status_ = I_STATUS_FLUSHING_WHEN_STARTED;
     rendererInServer->HandleOperationFlushed();
     EXPECT_EQ(I_STATUS_STARTED, rendererInServer->status_);
@@ -528,7 +528,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerHandleOperationFlushed_002, T
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
     rendererInServer->HandleOperationFlushed();
     EXPECT_EQ(I_STATUS_PAUSED, rendererInServer->status_);
@@ -549,7 +549,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerHandleOperationFlushed_003, T
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     rendererInServer->HandleOperationFlushed();
     EXPECT_EQ(I_STATUS_STOPPED, rendererInServer->status_);
@@ -591,7 +591,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_001, TestSize.Lev
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->fadeoutFlag_ = NO_FADING;
     rendererInServer->DoFadingOut(bufferDesc);
     EXPECT_NE(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);
@@ -767,7 +767,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerVolumeHandle_002, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->lowPowerVolume_ = 0.0f;
     rendererInServer->audioServerBuffer_-> basicBufferInfo_->duckFactor.store(0.0f);
     rendererInServer->silentModeAndMixWithOthers_ = 0;
@@ -791,7 +791,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerVolumeHandle_003, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->oldAppliedVolume_ = 0.0f;
 
     rendererInServer->VolumeHandle(bufferDesc);
@@ -813,7 +813,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerVolumeHandle_004, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->oldAppliedVolume_ = 0.0f;
     bufferDesc.buffer = nullptr;
 
@@ -1686,7 +1686,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateExt_001, TestSi
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(SUCCESS, ret);
     rendererInServer->status_ = I_STATUS_STARTED;
     rendererInServer->OnStatusUpdateExt(OPERATION_STARTED, stateListener);
     EXPECT_TRUE(rendererInServer->afterDrain);
@@ -1719,7 +1719,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_002, TestSize.Level1)
 
     rendererInServer->status_ = I_STATUS_STARTED;
     rendererInServer->Init();
-    rendererInServer->ConfigServerBuffer();
     rendererInServer->standByEnable_ = true;
     rendererInServer->isInnerCapEnabled_ = true;
     rendererInServer->isDualToneEnabled_ = true;
@@ -1740,7 +1739,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_003, TestSize.Level1)
 
     rendererInServer->status_ = I_STATUS_PAUSED;
     rendererInServer->Init();
-    rendererInServer->ConfigServerBuffer();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream();
     rendererInServer->InitDualToneStream();
@@ -1761,7 +1759,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_004, TestSize.Level1)
 
     rendererInServer->status_ = I_STATUS_DRAINING;
     rendererInServer->Init();
-    rendererInServer->ConfigServerBuffer();
     rendererInServer->standByEnable_ = true;
     rendererInServer->isInnerCapEnabled_ = true;
     rendererInServer->isDualToneEnabled_ = true;
@@ -1782,7 +1779,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_005, TestSize.Level1)
 
     rendererInServer->status_ = I_STATUS_STARTING;
     rendererInServer->Init();
-    rendererInServer->ConfigServerBuffer();
     rendererInServer->standByEnable_ = true;
     rendererInServer->isInnerCapEnabled_ = true;
     rendererInServer->isDualToneEnabled_ = true;
@@ -1803,7 +1799,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_006, TestSize.Level1)
 
     rendererInServer->status_ = I_STATUS_STARTING;
     rendererInServer->Init();
-    rendererInServer->ConfigServerBuffer();
     rendererInServer->standByEnable_ = false;
     rendererInServer->isInnerCapEnabled_ = false;
     rendererInServer->isDualToneEnabled_ = false;
@@ -2625,7 +2620,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_002, TestSize
 
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
     rendererInServer->Init();
-    rendererInServer->ConfigServerBuffer();
 
     int32_t ret = rendererInServer->SetClientVolume();
 
@@ -3029,7 +3023,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDump_018, TestSize.Level1)
 
     std::string dump="";
     rendererInServer->Init();
-    rendererInServer->ConfigServerBuffer();
     rendererInServer->managerType_ = VOIP_PLAYBACK;
     rendererInServer->status_ = I_STATUS_RELEASED;
 

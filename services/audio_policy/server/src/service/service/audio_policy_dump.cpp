@@ -426,9 +426,8 @@ void AudioPolicyDump::AudioStreamDump(std::string &dumpString)
         AppendFormat(dumpString, " - contentType : %d\n", (*it)->rendererInfo.contentType);
         AppendFormat(dumpString, " - streamUsage : %d\n", (*it)->rendererInfo.streamUsage);
         AppendFormat(dumpString, " - samplingRate : %d\n", (*it)->rendererInfo.samplingRate);
-        AudioStreamType streamType = streamCollector_.GetStreamType((*it)->sessionId);
-        AppendFormat(dumpString, " - volume : %f\n", audioPolicyManager_.GetSystemVolumeDb(streamType));
         AppendFormat(dumpString, " - pipeType : %d\n", (*it)->rendererInfo.pipeType);
+        AppendFormat(dumpString, " - rendererState : %d\n", (*it)->rendererState);
     }
     GetCapturerStreamDump(dumpString);
 }
@@ -451,6 +450,7 @@ void AudioPolicyDump::GetCapturerStreamDump(std::string &dumpString)
         AppendFormat(dumpString, " - deviceType : %d\n", (*it)->inputDeviceInfo.deviceType_);
         AppendFormat(dumpString, " - samplingRate : %d\n", (*it)->capturerInfo.samplingRate);
         AppendFormat(dumpString, " - pipeType : %d\n", (*it)->capturerInfo.pipeType);
+        AppendFormat(dumpString, " - capturerState : %d\n", (*it)->capturerState);
     }
 }
 

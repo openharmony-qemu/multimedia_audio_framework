@@ -130,42 +130,26 @@ enum class StreamType {
     UNKNOWN
 };
 
-class ConfigInfo {
-public:
-    ConfigInfo() = default;
-    virtual ~ConfigInfo() = default;
-
+struct ConfigInfo {
     std::string name_ = STR_INIT;
     std::string value_ = STR_INIT;
     std::string type_ = STR_INIT;
 };
 
-class ProfileInfo {
-public:
-    ProfileInfo() = default;
-    virtual ~ProfileInfo() = default;
-
+struct ProfileInfo {
     std::string rate_ = STR_INIT;
     std::string channels_ = STR_INIT;
     std::string format_ = STR_INIT;
     std::string bufferSize_ = STR_INIT;
 };
 
-class AudioAdapterDeviceInfo {
-public:
-    AudioAdapterDeviceInfo() = default;
-    virtual ~AudioAdapterDeviceInfo() = default;
-
+struct AudioAdapterDeviceInfo {
     std::string name_ = STR_INIT;
     std::string type_ = STR_INIT;
     std::string role_ = STR_INIT;
 };
 
-class StreamPropInfo {
-public:
-    StreamPropInfo() = default;
-    virtual ~StreamPropInfo() = default;
-
+struct StreamPropInfo {
     std::string format_ = STR_INIT;
     uint32_t sampleRate_ = 0;
     uint32_t periodInMs_ = DEFAULT_PERIOD_IN_MS;
@@ -173,11 +157,7 @@ public:
     uint32_t bufferSize_ = 0;
 };
 
-class PipeInfo {
-public:
-    PipeInfo() = default;
-    virtual ~PipeInfo() = default;
-
+struct PipeInfo {
     std::string name_ = STR_INIT;
     std::string pipeRole_ = STR_INIT;
     std::string pipeFlags_ = STR_INIT;
@@ -197,11 +177,7 @@ public:
     std::list<ConfigInfo> configInfos_ {};
 };
 
-class AudioPipeDeviceInfo {
-public:
-    AudioPipeDeviceInfo() = default;
-    virtual ~AudioPipeDeviceInfo() = default;
-
+struct AudioPipeDeviceInfo {
     std::string name_ = STR_INIT;
     std::string type_ = STR_INIT;
     std::string pin_ = STR_INIT;
@@ -209,11 +185,7 @@ public:
     std::list<std::string> supportPipes_ {};
 };
 
-class ModuleInfo {
-public:
-    ModuleInfo() = default;
-    virtual ~ModuleInfo() = default;
-
+struct ModuleInfo {
     std::string moduleType_ = STR_INIT;
 
     std::string name_ = STR_INIT;
@@ -229,11 +201,7 @@ public:
     std::list<std::string> devices_ {};
 };
 
-class AudioAdapterInfo {
-public:
-    AudioAdapterInfo() = default;
-    virtual ~AudioAdapterInfo() = default;
-
+struct AudioAdapterInfo {
     PipeInfo *GetPipeByName(const std::string &pipeName);
     AudioPipeDeviceInfo *GetDeviceInfoByDeviceType(DeviceType deviceType);
 
@@ -243,20 +211,12 @@ public:
     std::list<PipeInfo> pipeInfos_ {};
 };
 
-class GlobalPaConfigs {
-public:
-    GlobalPaConfigs() = default;
-    virtual ~GlobalPaConfigs() = default;
-
+struct GlobalPaConfigs {
     std::string audioLatency_ = STR_INIT;
     std::string sinkLatency_ = STR_INIT;
 };
 
-class GlobalConfigs {
-public:
-    GlobalConfigs() = default;
-    virtual ~GlobalConfigs() = default;
-
+struct GlobalConfigs {
     std::string adapter_ = STR_INIT;
     std::string pipe_ = STR_INIT;
     std::string device_ = STR_INIT;

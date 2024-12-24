@@ -82,10 +82,6 @@ enum ClassType {
 };
 
 struct AudioModuleInfo {
-public:
-    AudioModuleInfo() = default;
-    virtual ~AudioModuleInfo() = default;
-
     std::string className;
     std::string name;
     std::string adapterName;
