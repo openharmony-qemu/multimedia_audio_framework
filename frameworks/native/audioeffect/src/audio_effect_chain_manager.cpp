@@ -422,7 +422,8 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
                 continue;
             }
             float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
-            float systemVolumeTemp = audioEffectVolume->GetSystemVolume(it->first);
+            float systemVolumeTemp = audioEffectVolume->GetSystemVolume(
+                sessionIDToEffectInfoMap_[*s].systemVolumeType);
             volumeMax = fmax((streamVolumeTemp * systemVolumeTemp), volumeMax);
         }
     }
@@ -461,7 +462,8 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
         auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
         float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*sessionId);
-        float systemVolumeTemp = audioEffectVolume->GetSystemVolume(sceneTypeTemp);
+        float systemVolumeTemp = audioEffectVolume->GetSystemVolume(
+            sessionIDToEffectInfoMap_[*sessionId].systemVolumeType);
         float currVolumeTemp = audioEffectChain->GetCurrVolume();
         float volumeMax = fmax((streamVolumeTemp * systemVolumeTemp), currVolumeTemp);
         if (volumeMax > currVolumeTemp) {
@@ -519,14 +521,15 @@ int32_t AudioEffectChainManager::StreamVolumeUpdate(const std::string sessionIDS
     return ret;
 }
 
-int32_t AudioEffectChainManager::SetSceneTypeSystemVolume(const std::string sceneType, const float systemVolume)
+int32_t AudioEffectChainManager::SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
-    // set systemVolume by sceneType
+    // set systemVolume by systemVolumeType
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
-    audioEffectVolume->SetSystemVolume(sceneType, systemVolume);
-    AUDIO_INFO_LOG("systemVolume is %{public}f", audioEffectVolume->GetSystemVolume(sceneType));
+    audioEffectVolume->SetSystemVolume(systemVolumeType, systemVolume);
+    AUDIO_INFO_LOG("systemVolumeType: %{punlic}d, systemVolume: %{public}f", systemVolumeType,
+        audioEffectVolume->GetSystemVolume(systemVolumeType));
 
     return SUCCESS;
 }
