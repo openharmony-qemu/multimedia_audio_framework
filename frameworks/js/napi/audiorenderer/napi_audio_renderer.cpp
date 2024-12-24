@@ -164,8 +164,12 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     if (rendererOptions.rendererInfo.rendererFlags != 0) {
         rendererOptions.rendererInfo.rendererFlags = 0;
     }
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
-
+#else
+    std::string cacheDir = "";
+    rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
+#endif
     if (rendererNapi->audioRenderer_ == nullptr) {
         CreateRendererFailed();
         rendererNapi.release();

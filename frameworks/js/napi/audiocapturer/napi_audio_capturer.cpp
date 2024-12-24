@@ -131,8 +131,12 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
     if (capturerOptions.capturerInfo.capturerFlags != 0) {
         capturerOptions.capturerInfo.capturerFlags = 0;
     }
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     napiCapturer->audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
-
+#else
+    std::string cacheDir = "/data/storage/el2/base/temp";
+    napiCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
+#endif
     if (napiCapturer->audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("Capturer Create failed");
         NapiAudioCapturer::isConstructSuccess_ = NAPI_ERR_SYSTEM;
