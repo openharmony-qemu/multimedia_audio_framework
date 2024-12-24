@@ -29,7 +29,7 @@ AudioEffectVolume::AudioEffectVolume()
     SceneTypeToVolumeMap_.clear();
     SystemVolumeMap_.clear();
     SystemVolumeMap_ = {
-        {STREAM_MUSIC, 0.5f},
+        {STREAM_MUSIC, 1.0f},
     };
 }
 
