@@ -143,7 +143,7 @@ private:
     time_t lastOffloadUpdateFinishTime_ = 0;
     // offload end
     float clientVolume_ = 1.0f;
-    bool initEffectFlag_ = false;
+    bool initEffectFlag_ = true;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
     std::mutex fadingMutex_;

@@ -139,6 +139,7 @@ public:
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
     void UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation);
     void UpdateStreamUsage();
+    int32_t InitEffectBuffer(const std::string &sessionID);
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -161,6 +162,9 @@ private:
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
     void UpdateCurrSceneTypeAndStreamUsageForDsp();
+    bool IsEffectChainStop(const std::string &sceneType, const std::string &sessionID);
+    int32_t InitEffectBufferInner(const std::string &sessionID);
+    int32_t InitAudioEffectChainDynamicInner(const std::string &sceneType);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
