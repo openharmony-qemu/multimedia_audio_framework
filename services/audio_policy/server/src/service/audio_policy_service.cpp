@@ -1796,7 +1796,6 @@ int32_t AudioPolicyService::CheckSupportedAudioEffectProperty(const AudioEffectP
 
 int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
 {
-    int32_t ret = AUDIO_OK;
     AudioEffectPropertyArrayV3 effectPropertyArray = {};
     AudioEffectPropertyArrayV3 enhancePropertyArray = {};
     for (auto &item : propertyArray.property) {
@@ -1820,7 +1819,7 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
         audioCapturerSession_.ReloadSourceForEffect(oldPropertyArray, enhancePropertyArray);
     }
     if (effectPropertyArray.property.size() > 0) {
-        ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(effectPropertyArray);
+        int32_t ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(effectPropertyArray);
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio effect property fail");
     }
     return AUDIO_OK;
