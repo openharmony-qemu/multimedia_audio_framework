@@ -603,7 +603,7 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
             msgTmp++;
             continue;
         }
-        AUDIO_DEBUG_LOG("Param msgTmp:[%{public}s] len:[%{public}zu]", msgTmp, strlen(msgTmp));
+        AUDIO_DEBUG_LOG("Param msgTmp:[%{private}s] len:[%{public}zu]", msgTmp, strlen(msgTmp));
         const char *arrStrTmp[UEVENT_ARR_SIZE] = {
             UEVENT_ACTION, UEVENT_DEV_NAME, UEVENT_NAME, UEVENT_STATE, UEVENT_DEVTYPE,
             UEVENT_SUBSYSTEM, UEVENT_SWITCH_NAME, UEVENT_SWITCH_STATE, UEVENT_HDI_NAME,
