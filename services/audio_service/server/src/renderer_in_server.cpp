@@ -698,7 +698,7 @@ int32_t RendererInServer::Start()
             dualToneStream_->Start();
         }
     }
-    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_)
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
     return SUCCESS;
 }
 
