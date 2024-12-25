@@ -329,7 +329,7 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
         .channels = processChannels,
         .rate = EFFECT_PROCESS_RATE,
         .format = sinkIn->thread_info.resampler->o_ss.format
-    }
+    };
     pa_channel_map outChannelMap;
     ConvertChLayoutToPaChMap(processChannelLayout, &outChannelMap);
     outChannelMap.channels = processChannels;
@@ -342,7 +342,8 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
         sinkIn->thread_info.resampler->i_ss.rate, sinkIn->thread_info.resampler->i_ss.channels,
         sinkIn->thread_info.resampler->i_ss.format, outSampleSpec.rate, outSampleSpec.channels,
         outSampleSpec.format);
-    r = pa_resampler_new(sinkIn.thread_info.resampler->mempool,
+    r = pa_resampler_new(
+        sinkIn->thread_info.resampler->mempool,
         &sinkIn->thread_info.resampler->i_ss,
         &sinkIn->thread_info.resampler->i_cm,
         &outSampleSpec, &outChannelMap,
@@ -1931,10 +1932,10 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
         pa_memblock_unref(unsampledChunk.memblock);
         return;
     }
-    int ret = memcpy_s(dst, inBufferLen, u->bufferAttr->bufOut, inBufferLen);
+    int ret = memcpy_s(dst, unsampledChunk.length, u->bufferAttr->bufOut, unsampledChunk.length);
     if (ret != 0) {
         float *dstFloat = (float *)dst;
-        for (int i = 0; i < inSpec->channels * u->bufferAttr->frameLen; i++) {
+        for (size_t i = 0; i < inBufferLen; i++) {
             dstFloat[i] = u->bufferAttr->bufOut[i];
         }
     }
@@ -1952,7 +1953,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     ret = memcpy_s(u->bufferAttr->bufOut, sampledChunk.length, src, sampledChunk.length);
     if (ret != 0) {
         float *srcFloat = (float *)src;
-        for (int i = 0; i < sampledChunk.length / sizeof(float); i++) {
+        for (size_t i = 0; i < sampledChunk.length / sizeof(float); i++) {
             u->bufferAttr->bufOut[i] = srcFloat[i];
         }
     }
@@ -2069,8 +2070,8 @@ static void SceneToResamplerMapAddNewScene(pa_hashmap *sceneToResamplerMap, cons
     pa_sample_spec inSpec = {
         .format = PA_SAMPLE_FLOAT32LE,
         .rate = EFFECT_PROCESS_RATE,
-        .channel = DEFAULT_NUM_CHANNEL
-    }
+        .channels = DEFAULT_NUM_CHANNEL
+    };
     pa_sample_spec outSpec = si->sample_spec;
     outSpec.format = PA_SAMPLE_FLOAT32LE;
     AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
@@ -2095,7 +2096,7 @@ static void UpdateResamplerOutChannelMap(pa_hashmap *sceneToResamplerMap, const 
     pa_sample_spec inSpec = {
         .format = PA_SAMPLE_FLOAT32LE,
         .rate = EFFECT_PROCESS_RATE,
-        .channels = DEFUALT_NUM_CHANNEL
+        .channels = DEFAULT_NUM_CHANNEL
     };
     pa_sample_spec outSpec = si->sample_spec;
     outSpec.format = PA_SAMPLE_FLOAT32LE;
