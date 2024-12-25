@@ -156,6 +156,10 @@ public:
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
 
     void SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag) override;
+
+    sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
+
+    int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

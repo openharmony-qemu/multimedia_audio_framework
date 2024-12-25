@@ -1230,6 +1230,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_WAKEUP:
             name = "WAKEUP";
             break;
+        case SOURCE_TYPE_UNPROCESSED:
+            name = "SOURCE_TYPE_UNPROCESSED";
+            break;
         default:
             name = "UNKNOWN";
     }

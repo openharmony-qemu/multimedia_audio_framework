@@ -29,6 +29,9 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int32_t MAX_OFFLINE_EFFECT_CHAIN_NUM = 10;
+}
 AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioService>(impl)
 {
@@ -1142,6 +1145,42 @@ void AudioManagerProxy::SetNonInterruptMute(const uint32_t sessionId, const bool
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINGLE_STREAM_MUTE), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
+}
+
+sptr<IRemoteObject> AudioManagerProxy::CreateIpcOfflineStream(int32_t &errorCode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, nullptr, "WriteInterfaceToken failed");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_IPC_OFFLINE_STREAM), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, nullptr, "CreateIpcOfflineStream failed, error: %{public}d", error);
+    sptr<IRemoteObject> process = reply.ReadRemoteObject();
+    errorCode = reply.ReadInt32();
+    return process;
+}
+
+int32_t AudioManagerProxy::GetOfflineAudioEffectChains(vector<string> &effectChains)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetOfflineAudioEffectChains failed, error: %{public}d", error);
+    int32_t vecSize = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(vecSize >= 0 && vecSize <= MAX_OFFLINE_EFFECT_CHAIN_NUM, AUDIO_ERR,
+        "invalid offline effect chain num:%{public}d", vecSize);
+    for (int i = 0; i < vecSize; i++) {
+        effectChains.emplace_back(reply.ReadString());
+    }
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

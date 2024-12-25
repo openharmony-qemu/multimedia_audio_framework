@@ -358,6 +358,7 @@ AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string &halName
         case SourceType::SOURCE_TYPE_MIC:
         case SourceType::SOURCE_TYPE_VOICE_CALL:
         case SourceType::SOURCE_TYPE_CAMCORDER:
+        case SourceType::SOURCE_TYPE_UNPROCESSED:
             return GetMicInstance();
         case SourceType::SOURCE_TYPE_WAKEUP:
             if (!strcmp(sourceName, "Built_in_wakeup_mirror")) {
@@ -397,6 +398,9 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
             break;
         case SOURCE_TYPE_CAMCORDER:
             hdiAudioInputType = AUDIO_INPUT_CAMCORDER_TYPE;
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            hdiAudioInputType = AUDIO_INPUT_RAW_TYPE;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
@@ -709,6 +713,7 @@ int32_t AudioCapturerSourceInner::Start(void)
                 break;
             case SOURCE_TYPE_MIC:
             case SOURCE_TYPE_CAMCORDER:
+            case SOURCE_TYPE_UNPROCESSED:
             default:
                 keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);

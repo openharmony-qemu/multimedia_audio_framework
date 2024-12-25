@@ -53,6 +53,7 @@
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
+#include "offline_stream_in_server.h"
 
 #define PA
 #ifdef PA
@@ -113,7 +114,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_REMOTE_CAST,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
-    SOURCE_TYPE_CAMCORDER
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
@@ -1962,6 +1964,24 @@ void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteF
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
+}
+
+sptr<IRemoteObject> AudioServer::CreateIpcOfflineStream(int32_t &errorCode)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), nullptr, "refused for %{public}d", callingUid);
+    sptr<OfflineStreamInServer> stream = OfflineStreamInServer::GetOfflineStream(errorCode);
+    CHECK_AND_RETURN_RET_LOG(stream, nullptr, "Create IpcOfflineStream failed.");
+    sptr<IRemoteObject> remoteObject = stream->AsObject();
+    return remoteObject;
+}
+
+int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effectChains)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "refused for %{public}d", callingUid);
+    return OfflineStreamInServer::GetOfflineAudioEffectChains(effectChains);
 }
 } // namespace AudioStandard
 } // namespace OHOS
