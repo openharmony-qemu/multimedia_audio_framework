@@ -2615,9 +2615,8 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         }
         if (!hasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo, reason)) {
             hasDirectChangeDevice  = true;
-            continue;
         }
-        if (NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason)) { continue; }
+        NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason);
         MoveToNewOutputDevice(rendererChangeInfo, descs, reason);
     }
     if (isUpdateActiveDevice) {
