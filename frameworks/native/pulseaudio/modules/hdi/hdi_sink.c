@@ -117,6 +117,8 @@ time_t g_effectStartVolZeroTimeMap[SCENE_TYPE_NUM] = {0, 0, 0, 0, 0, 0, 0};
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_DEFAULT", "SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
     "SCENE_SPEECH", "SCENE_RING", "SCENE_VOIP_DOWN", "SCENE_OTHERS", "EFFECT_NONE"};
 const int32_t COMMON_SCENE_TYPE_INDEX = 0;
+const int32_t SUCCESS = 0;
+const int32_t ERROR = -1;
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -1653,8 +1655,12 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
     void *dst = pa_memblock_acquire_chunk(chunkIn);
     int32_t frameLen = bitSize > 0 ? ((int32_t) length / bitSize) : 0;
-    ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
-
+    if (u->isLimiterCreated) {
+        LimiterManagerProcess(u->deviceType, frameLen, u->bufferAttr->tempBufOut, u->bufferAttr->bufOut);
+        ConvertFromFloat(u->format, frameLen, u->bufferAttr->bufOut, dst);
+    } else {
+        ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
+    }
     chunkIn->index = 0;
     chunkIn->length = length;
     pa_memblock_release(chunkIn->memblock);
@@ -2264,6 +2270,17 @@ static void UnsetSinkVolume(pa_sink *s)
     }
 }
 
+static void CreateLimiter(struct Userdata *u)
+{
+    if (!u->isLimiterCreated) {
+        if (LimiterManagerCreate(u->deviceType) == SUCCESS) {
+            if (LimiterManagerSetConfig(u->deviceType, (int32_t)u->ss.rate, (int32_t)u->ss.channels) == SUCCESS) {
+                u->isLimiterCreated = true;                    
+            }
+        }
+    }
+}
+
 static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 {
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
@@ -2282,6 +2299,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     } else {
         if (u->isEffectBufferAllocated || AllocateEffectBuffer(u)) {
             u->isEffectBufferAllocated = true;
+            CreateLimiter(u);
             SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
         }
     }
@@ -3301,16 +3319,32 @@ static bool POSSIBLY_UNUSED ThreadFuncRendererTimerMultiChannelFlagJudge(struct 
     return flag;
 }
 
+static void ReleaseEffectBufferAndLimiter(struct Userdata *u)
+{
+    if (u->isEffectBufferAllocated == true) {
+        FreeEffectBuffer(u);
+        u->isEffectBufferAllocated = false;
+    }
+
+    if (u->isLimiterCreated == true) {
+        if (LimiterManagerRelease(u->deviceType) == SUCCESS) {
+            u->isLimiterCreated = false;
+        } else {
+            AUDIO_ERR_LOG("LimiterManagerRelease failed");
+        }
+    }
+}
+
 static void ProcessNormalData(struct Userdata *u)
 {
     AUTO_CTRACE("ProcessNormalData");
     int64_t sleepForUsec = -1;
     pa_usec_t now = 0;
 
-    if (u->sink->thread_info.state == PA_SINK_SUSPENDED && u->isEffectBufferAllocated == true) {
-        FreeEffectBuffer(u);
-        u->isEffectBufferAllocated = false;
+    if (u->sink->thread_info.state == PA_SINK_SUSPENDED) {
+        ReleaseEffectBufferAndLimiter(u);
     }
+
     bool flag = (((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
                 (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
                 !(u->sink->thread_info.state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED) &&

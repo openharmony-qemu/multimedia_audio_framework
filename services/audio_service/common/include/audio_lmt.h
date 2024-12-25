@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef AUDIO_LIMITER_H
+#define AUDIO_LIMITER_H
+
+#include <cstdio>
+#include <cstdint>
+namespace OHOS {
+namespace AudioStandard {
+
+class AudioLimiter {
+public:
+    AudioLimiter(int32_t sinkNameCode);
+    ~AudioLimiter(int32_t sinkNameCode);
+    int32_t SetConfig(int32_t sampleRate, int32_t channels);
+    int32_t Process(int32_t frameLen, float *inBuffer, float *outBuffer);
+private:
+    ReleaseBuffer();
+    int32_t sinkNameCode_;
+    int32_t framelen_;
+    int32_t offset_;
+    float nextLev_;
+    float curMaxLev;
+    float threshold_;
+    float gain_;
+    float levelAttack_;
+    float levelRelease_;
+    float gainAttack_;
+    float gainRelease_;
+    float *bufHis;
+    float *integrationBufIn;
+    float *integrationBufOut;
+
+    // todo dump pcm
+}
+
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // AUDIO_LIMITER_H
