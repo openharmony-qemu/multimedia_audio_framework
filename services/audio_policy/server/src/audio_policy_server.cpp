@@ -173,7 +173,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
             SubscribeAccessibilityConfigObserver();
             InitKVStore();
-            RegisterDataObserver();
             break;
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
@@ -208,7 +207,6 @@ void AudioPolicyServer::HandleKvDataShareEvent()
         InitMicrophoneMute();
     }
     InitKVStore();
-    RegisterDataObserver();
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -472,6 +470,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
     if (action == "usual.event.DATA_SHARE_READY") {
+        RegisterDataObserver();
         if (isInitMuteState_ == false) {
             AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
             InitMicrophoneMute();

@@ -137,11 +137,12 @@ DeviceCategory GetDeviceCategory(const BluetoothRemoteDevice &device)
     int majorClass = DEFAULT_MAJOR_CLASS;
     int majorMinorClass = DEFAULT_MAJOR_MINOR_CLASS;
     device.GetDeviceProductType(cod, majorClass, majorMinorClass);
-    AUDIO_INFO_LOG("Device type majorClass: %{public}d, majorMinorClass: %{public}d.", majorClass, majorMinorClass);
+    AUDIO_WARNING_LOG("Device type majorClass: %{public}d, majorMinorClass: %{public}d.", majorClass, majorMinorClass);
     DeviceCategory bluetoothCategory = CATEGORY_DEFAULT;
     auto pos = bluetoothDeviceCategoryMap_.find(std::make_pair(majorClass, majorMinorClass));
     if (pos != bluetoothDeviceCategoryMap_.end()) {
         bluetoothCategory = pos->second;
+        AUDIO_WARNING_LOG("Bluetooth category is: %{public}d", bluetoothCategory);
     }
     return bluetoothCategory;
 }
