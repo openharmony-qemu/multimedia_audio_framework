@@ -19,14 +19,17 @@
 #include <memory>
 
 #include "ipc_offline_stream_stub.h"
-#include "offline_audio_effect_server_chain.h"
 #include "audio_info.h"
+#ifdef FEATURE_OFFLINE_EFFECT
+#include "offline_audio_effect_server_chain.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
 class OfflineStreamInServer : public IpcOfflineStreamStub {
 public:
     static sptr<OfflineStreamInServer> GetOfflineStream(int32_t &errCode);
+#ifdef FEATURE_OFFLINE_EFFECT
     static int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains);
 
     int32_t CreateOfflineEffectChain(const std::string &chainName) override;
@@ -39,6 +42,7 @@ public:
     int32_t ProcessOfflineEffectChain(uint32_t inSize, uint32_t outSize) override;
 
     void ReleaseOfflineEffectChain() override;
+#endif
 
     OfflineStreamInServer() = default;
     ~OfflineStreamInServer() = default;
@@ -46,7 +50,9 @@ private:
     int32_t AllocSharedMemory(uint32_t inSize, uint32_t outSize);
     std::shared_ptr<AudioSharedMemory> serverBufferIn_;
     std::shared_ptr<AudioSharedMemory> serverBufferOut_;
+#ifdef FEATURE_OFFLINE_EFFECT
     std::shared_ptr<OfflineAudioEffectServerChain> effectChain_;
+#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS

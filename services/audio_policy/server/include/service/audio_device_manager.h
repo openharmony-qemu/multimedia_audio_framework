@@ -71,7 +71,6 @@ public:
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
         const std::string &macAddress);
-    void UpdateScoState(const std::string &macAddress, bool isConnnected);
     bool GetScoState();
     void UpdateEarpieceStatus(const bool hasEarPiece);
     vector<shared_ptr<AudioDeviceDescriptor>> GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
@@ -92,6 +91,7 @@ public:
     shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    void Dump(std::string &dumpString);
 
 private:
     AudioDeviceManager();

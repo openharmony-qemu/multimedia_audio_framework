@@ -28,6 +28,7 @@ public:
     virtual ~IpcOfflineStreamProxy();
 
     // override for IpcOfflineStream
+#ifdef FEATURE_OFFLINE_EFFECT
     int32_t CreateOfflineEffectChain(const std::string &chainName) override;
 
     int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo,
@@ -39,6 +40,7 @@ public:
     int32_t ProcessOfflineEffectChain(uint32_t inSize, uint32_t outSize) override;
 
     void ReleaseOfflineEffectChain() override;
+#endif
 private:
     static inline BrokerDelegator<IpcOfflineStreamProxy> delegator_;
 };

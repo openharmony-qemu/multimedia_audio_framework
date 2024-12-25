@@ -40,8 +40,7 @@ int32_t MMAAudioRendererImpl::CreateAudioRenderer(CAudioRendererOptions options)
 {
     AudioRendererOptions rendererOptions;
     Convert2AudioRendererOptions(rendererOptions, options);
-    std::string cacheDir = "";
-    audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
+    audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("Create AudioRenderer failed.");
         return ERR_INVALID_INSTANCE_CODE;

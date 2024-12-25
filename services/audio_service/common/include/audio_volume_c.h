@@ -49,6 +49,10 @@ void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState);
 
 uint32_t GetFadeoutState(uint32_t streamIndex);
 
+uint32_t GetStopFadeoutState(uint32_t streamIndex);
+
+void RemoveStopFadeoutState(uint32_t streamIndex);
+
 #ifdef __cplusplus
 }
 #endif

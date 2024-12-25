@@ -934,6 +934,17 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
     }
 }
 
+void CloseFd(int fd)
+{
+    // log stdin, stdout, stderr.
+    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO) {
+        AUDIO_WARNING_LOG("special fd: %{public}d will be closed", fd);
+    }
+    int tmpFd = fd;
+    close(fd);
+    AUDIO_DEBUG_LOG("fd: %{public}d closed successfuly!", tmpFd);
+}
+
 static void MemcpyToI32FromI16(int16_t *src, int32_t *dst, size_t count)
 {
     for (size_t i = 0; i < count; i++) {
@@ -1381,7 +1392,6 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_GAME, STREAM_MUSIC},
     {STREAM_SPEECH, STREAM_MUSIC},
     {STREAM_NAVIGATION, STREAM_MUSIC},
-    {STREAM_CAMCORDER, STREAM_MUSIC},
     {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},

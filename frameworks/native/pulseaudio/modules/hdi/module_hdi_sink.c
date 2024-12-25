@@ -93,6 +93,7 @@ static pa_hook_result_t SinkInputNewCb(const pa_core *c, pa_sink_input *si)
     const char *channelLayout = pa_proplist_gets(si->proplist, "stream.channelLayout");
     const char *spatializationEnabled = pa_proplist_gets(si->proplist, "spatialization.enabled");
     const char *streamUsage = pa_proplist_gets(si->proplist, "stream.usage");
+    const char *systemVolumeType = pa_proplist_gets(si->proplist, "systemVolume.type");
     if (pa_safe_streq(deviceString, "remote")) {
         EffectChainManagerReleaseCb(sceneType, sessionID);
         return PA_HOOK_OK;
@@ -110,7 +111,8 @@ static pa_hook_result_t SinkInputNewCb(const pa_core *c, pa_sink_input *si)
             EffectChainManagerInitCb(sceneType);
         }
         EffectChainManagerCreateCb(sceneType, sessionID);
-        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, streamUsage};
+        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, streamUsage,
+            systemVolumeType};
         if (si->thread_info.state == PA_SINK_INPUT_RUNNING &&
             !EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
@@ -164,11 +166,13 @@ static pa_hook_result_t SinkInputStateChangedCb(const pa_core *c, pa_sink_input 
     const char *spatializationEnabled = pa_proplist_gets(si->proplist, "spatialization.enabled");
     const char *streamUsage = pa_proplist_gets(si->proplist, "stream.usage");
     const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
+    const char *systemVolumeType = pa_proplist_gets(si->proplist, "systemVolume.type");
     const char *bootUpMusic = "1003";
 
     if (si->thread_info.state == PA_SINK_INPUT_RUNNING && si->sink &&
         !pa_safe_streq(clientUid, bootUpMusic)) {
-        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, streamUsage};
+        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, streamUsage,
+            systemVolumeType};
         if (!EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
             EffectChainManagerVolumeUpdate(sessionID);

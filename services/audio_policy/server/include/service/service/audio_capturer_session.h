@@ -95,6 +95,9 @@ private:
     void SetInputDeviceTypeForReload(DeviceType deviceType);
     DeviceType GetInputDeviceTypeForReload();
     bool IsVoipDeviceChanged(const DeviceType inputDevcie, const DeviceType outputDevice);
+
+    std::string GetVoipUpProp(const AudioEnhancePropertyArray &propertyArray);
+    std::string GetVoipUpPropV3(const AudioEffectPropertyArrayV3 &oldPropertyArray);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouterCenter& audioRouterCenter_;

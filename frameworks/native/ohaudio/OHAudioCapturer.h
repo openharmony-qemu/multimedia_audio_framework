@@ -84,7 +84,7 @@ class OHAudioCapturer {
         void SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);
 
     private:
-        std::unique_ptr<AudioCapturer> audioCapturer_;
+        std::shared_ptr<AudioCapturer> audioCapturer_;
         std::shared_ptr<AudioCapturerCallback> audioCapturerCallback_;
 };
 }  // namespace AudioStandard

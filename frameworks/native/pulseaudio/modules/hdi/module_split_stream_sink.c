@@ -68,6 +68,7 @@
 #define STREAM_TYPE_MEDIA "1"
 #define STREAM_TYPE_COMMUNICATION "2"
 #define STREAM_TYPE_NAVIGATION "13"
+#define STREAM_TYPE_VIDEO_COMMUNICATION "17"
 
 char *g_splitArr[MAX_PARTS];
 int g_splitNums = 0;
@@ -401,11 +402,13 @@ static int IsPeekCurrentSinkInput(char *streamType, const char *usageStr)
 
     if (g_splitNums == SPLIT_THREE_STREAM) {
         if (strcmp(usageStr, STREAM_TYPE_NAVIGATION) && strcmp(usageStr, STREAM_TYPE_COMMUNICATION) &&
-            !strcmp(streamType, STREAM_TYPE_MEDIA)) {
+            strcmp(usageStr, STREAM_TYPE_VIDEO_COMMUNICATION) && !strcmp(streamType, STREAM_TYPE_MEDIA)) {
             flag = 1;
         } else if (!strcmp(usageStr, STREAM_TYPE_NAVIGATION) && !strcmp(streamType, STREAM_TYPE_NAVIGATION)) {
             flag = 1;
-        } else if (!strcmp(usageStr, STREAM_TYPE_COMMUNICATION) && !strcmp(streamType, STREAM_TYPE_COMMUNICATION)) {
+        } else if ((!strcmp(usageStr, STREAM_TYPE_COMMUNICATION) ||
+            !strcmp(usageStr, STREAM_TYPE_VIDEO_COMMUNICATION)) &&
+            !strcmp(streamType, STREAM_TYPE_COMMUNICATION)) {
             flag = 1;
         }
     }
@@ -1154,4 +1157,12 @@ void pa__done(pa_module*m)
 
     pa_xfree(u);
     m->userdata = NULL;
+
+    for (int32_t i = 0; i < MAX_PARTS; ++i) {
+        if (g_splitArr[i] == NULL) {
+            continue;
+        }
+        free(g_splitArr[i]);
+        g_splitArr[i] = NULL;
+    }
 }

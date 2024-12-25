@@ -34,6 +34,7 @@
 #include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "securec.h"
+#include "xcollie/watchdog.h"
 
 #include "audio_manager_base.h"
 #include "audio_process_cb_stub.h"
@@ -48,6 +49,8 @@ namespace AudioStandard {
 namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
+constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
+constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
 }
 
 class ProcessCbImpl;
@@ -116,6 +119,8 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
 
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -159,6 +164,7 @@ private:
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost);
 
     void DoFadeInOut(uint64_t &curWritePos);
+    void WatchingRecordProcessCallbackFuc();
 
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
@@ -228,6 +234,7 @@ private:
     std::atomic<bool> startFadeout_ = false; // true-fade out when pause or stop stream
 
     sptr<ProcessCbImpl> processCbImpl_ = nullptr;
+    std::atomic_bool recordProcessCallbackFucThreadStatus_ { false };
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -1319,6 +1326,32 @@ bool AudioProcessInClientInner::KeepLoopRunning()
     return false;
 }
 
+void ProcessRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+{
+    std::string watchDogMessage = message;
+    watchDogMessage += std::to_string(sessionId);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
+}
+
+void AudioProcessInClientInner::WatchingRecordProcessCallbackFuc()
+{
+    recordProcessCallbackFucThreadStatus_ = true;
+    auto taskFunc = [this]() {
+        if (recordProcessCallbackFucThreadStatus_) {
+            AUDIO_DEBUG_LOG("Set recordProcessCallbackFucThreadStatus_ to false");
+            recordProcessCallbackFucThreadStatus_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened");
+        }
+    };
+    std::string watchDogMessage = "WatchingRecordProcessCallbackFuc";
+    watchDogMessage += std::to_string(sessionId_);
+    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
+        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
+}
+
 void AudioProcessInClientInner::RecordProcessCallbackFuc()
 {
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
@@ -1328,8 +1361,11 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
     int64_t wakeUpTime = ClockTime::GetCurNano();
     int64_t clientReadCost = 0;
 
+    // add watchdog
+    WatchingRecordProcessCallbackFuc();
     while (!isCallbackLoopEnd_ && audioBuffer_ != nullptr) {
         if (!KeepLoopRunning()) {
+            recordProcessCallbackFucThreadStatus_ = true;
             continue;
         }
         threadStatus_ = INRUNNING;
@@ -1337,6 +1373,7 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
         if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
             wakeUpTime = ClockTime::GetCurNano();
             needReSyncPosition_ = false;
+            recordProcessCallbackFucThreadStatus_ = true;
             continue;
         }
         int64_t curTime = ClockTime::GetCurNano();
@@ -1366,7 +1403,10 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
             AUDIO_WARNING_LOG("%{public}s wakeUpTime is too late...", __func__);
             ClockTime::RelativeSleep(spanSizeInMs_ * ONE_MILLISECOND_DURATION);
         }
+        recordProcessCallbackFucThreadStatus_ = true;
     }
+    // stop watchdog
+    ProcessRemoveWatchdog("WatchingRecordProcessCallbackFuc", sessionId_);
 }
 
 int32_t AudioProcessInClientInner::RecordReSyncServicePos()
@@ -1728,6 +1768,12 @@ int32_t AudioProcessInClientInner::SetDefaultOutputDevice(const DeviceType defau
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "set failed with null ipcProxy.");
     return processProxy_->SetDefaultOutputDevice(defaultOutputDevice);
+}
+
+int32_t AudioProcessInClientInner::SetSilentModeAndMixWithOthers(bool on)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
+    return processProxy_->SetSilentModeAndMixWithOthers(on);
 }
 } // namespace AudioStandard
 } // namespace OHOS
