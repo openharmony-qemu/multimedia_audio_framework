@@ -697,6 +697,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
             CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERROR, "Bluetooth renderer is nullptr");
             int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (!ret) {
+                AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
                 return CheckBluetoothScenario();
             } else {
                 AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
@@ -836,7 +837,6 @@ int32_t BluetoothRendererSinkInner::Stop(void)
             return ERR_OPERATION_FAILED;
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -860,7 +860,6 @@ int32_t BluetoothRendererSinkInner::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -884,7 +883,7 @@ int32_t BluetoothRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

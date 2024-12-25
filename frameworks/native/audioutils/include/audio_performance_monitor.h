@@ -55,6 +55,7 @@ public:
     static AudioPerformanceMonitor& GetInstance();
 
     void RecordSilenceState(uint32_t sessionId, bool isSilence);
+    void ClearSilenceMonitor(uint32_t sessionId);
     void DeleteSilenceMonitor(uint32_t sessionId);
 
     void RecordTimeStamp(SinkType sinkType, uint64_t curTimeStamp);

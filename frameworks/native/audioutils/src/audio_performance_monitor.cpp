@@ -49,6 +49,14 @@ void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
     silenceDetectMap_.erase(sessionId);
 }
 
+void AudioPerformanceMonitor::ClearSilenceMonitor(uint32_t sessionId)
+{
+    if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
+        return;
+    }
+    silenceDetectMap_[sessionId] = FrameRecordInfo();
+}
+
 void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence)
 {
     if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
@@ -66,14 +74,13 @@ void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTim
 {
     CHECK_AND_RETURN_LOG(sinkType >= SinkType::SINKTYPE_PRIMARY && sinkType < SinkType::MAX_SINK_TYPE,
         "invalid sinkType: %{public}d", sinkType);
+    // init lastwritten time when start or resume
     if (curTimeStamp == INIT_LASTWRITTEN_TIME) {
         overTimeDetectMap_[sinkType] = curTimeStamp;
         return;
     }
-    if (overTimeDetectMap_.find(sinkType) == overTimeDetectMap_.end() ||
-        overTimeDetectMap_[sinkType] == INIT_LASTWRITTEN_TIME) {
-        AUDIO_INFO_LOG("AudioSinkType %{public}d write data first time", sinkType);
-    } else {
+    if (overTimeDetectMap_.find(sinkType) != overTimeDetectMap_.end() &&
+        overTimeDetectMap_[sinkType] != INIT_LASTWRITTEN_TIME) {
         if (curTimeStamp - overTimeDetectMap_[sinkType] > MAX_WRITTEN_INTERVAL[sinkType]) {
             AUDIO_WARNING_LOG("SinkType %{public}d write time interval %{public}" PRIu64 " ns! overTime!",
                 sinkType, curTimeStamp - overTimeDetectMap_[sinkType]);
@@ -83,22 +90,23 @@ void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTim
     overTimeDetectMap_[sinkType] = curTimeStamp;
 }
 
-
+// we use silenceStateCount to record the silence frames bewteen two not silence frame
 void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
 {
     if (isSilence) {
         silenceDetectMap_[sessionId].silenceStateCount++;
         silenceDetectMap_[sessionId].notSilenceStateCount = 0;
     } else {
+        // we init the count value as the maxValue+1 to make it as normal state
         if (MIN_SILENCE_VALUE <= silenceDetectMap_[sessionId].silenceStateCount &&
             silenceDetectMap_[sessionId].silenceStateCount <= MAX_SILENCE_VALUE) {
             std::string printStr{};
-            //for example: not Silent-> not Silent -> silent -> not Silent -> silent, will print "--_-_";
+            //for example: not Silent-> not Silent -> silent -> not Silent -> silent, will print "--_-_"
             while (silenceDetectMap_[sessionId].historyStateQueue.size() != 0) {
                 printStr += silenceDetectMap_[sessionId].historyStateQueue.front()?"_":"-";
                 silenceDetectMap_[sessionId].historyStateQueue.pop();
             }
-            AUDIO_WARNING_LOG("record %{public}d state for last %{public}zu times: \n%{public}s",
+            AUDIO_WARNING_LOG("record %{public}d state for last %{public}zu times: %{public}s",
                 sessionId, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
             ReportEvent(SILENCE_EVENT);
             silenceDetectMap_[sessionId] = FrameRecordInfo();
@@ -111,7 +119,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
 
 void AudioPerformanceMonitor::ReportEvent(int32_t reasonCode)
 {
-    AUDIO_INFO_LOG("start report reasonCode %{public}d", reasonCode);
+    AUDIO_INFO_LOG("report reasonCode %{public}d", reasonCode);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::JANK_PLAYBACK,
         Media::MediaMonitor::EventType::FAULT_EVENT);

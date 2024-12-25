@@ -252,6 +252,8 @@ void NoneMixEngine::MixStreams()
         StandbySleep();
         return;
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, ClockTime::GetCurNano());
     if (failedCount_ >= MAX_ERROR_COUNT) {
         AUDIO_WARNING_LOG("failed count is overflow.");
         PauseAsync();
@@ -288,12 +290,10 @@ void NoneMixEngine::MixStreams()
         cvFading_.notify_all();
     }
     renderSink_->RenderFrame(*audioBuffer.data(), audioBuffer.size(), written);
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, ClockTime::GetCurNano());
     stream_->ReturnIndex(index);
     renderSink_->UpdateAppsUid({appUid});
-    StandbySleep();
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, INIT_LASTWRITTEN_TIME);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, ClockTime::GetCurNano());
+    StandbySleep();
 }
 
 int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &stream)
@@ -323,7 +323,6 @@ void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &strea
     if (stream->GetStreamIndex() == stream_->GetStreamIndex()) {
         Stop();
         stream_ = nullptr;
-        AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_FAST);
     }
 }
 

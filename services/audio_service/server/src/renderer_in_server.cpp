@@ -35,6 +35,7 @@
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -697,6 +698,7 @@ int32_t RendererInServer::Start()
             dualToneStream_->Start();
         }
     }
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_)
     return SUCCESS;
 }
 

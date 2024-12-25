@@ -309,7 +309,9 @@ AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
-    sinkType_ = halName_ == DIRECT_HAL_NAME? SINKTYPE_DIRECT: SINKTYPE_PRIMARY;
+    if (halName_ == DIRECT_HAL_NAME || halName_ == VOIP_HAL_NAME) {
+        sinkType_ = SINKTYPE_DIRECT;
+    }
 }
 
 AudioRendererSinkInner::~AudioRendererSinkInner()
@@ -896,6 +898,7 @@ int32_t AudioRendererSinkInner::Start(void)
         UpdateSinkState(true);
         started_ = true;
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -1244,7 +1247,6 @@ int32_t AudioRendererSinkInner::Stop(void)
         return ERR_OPERATION_FAILED;
     }
     started_ = false;
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 
     return SUCCESS;
@@ -1270,7 +1272,6 @@ int32_t AudioRendererSinkInner::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -1294,7 +1295,7 @@ int32_t AudioRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

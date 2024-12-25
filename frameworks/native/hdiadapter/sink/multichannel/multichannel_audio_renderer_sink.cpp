@@ -646,7 +646,7 @@ int32_t MultiChannelRendererSinkInner::Start(void)
             return ERR_NOT_STARTED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -947,7 +947,6 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
             return ERR_OPERATION_FAILED;
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -974,7 +973,6 @@ int32_t MultiChannelRendererSinkInner::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -1000,7 +998,7 @@ int32_t MultiChannelRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
