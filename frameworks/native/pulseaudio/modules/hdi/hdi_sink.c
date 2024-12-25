@@ -1926,15 +1926,13 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
         return;
     }
     const pa_sample_spec *inSpec = pa_resampler_input_sample_spec(resampler);
-    const pa_sample_spec *outSpec = pa_resampler_output_sample_spec(resampler);
     size_t inBufferLen = (size_t)u->bufferAttr->frameLen * inSpec->channels * sizeof(float);
-    size_t outBufferLen = (size_t)u->bufferAttr->frameLen * outSpec->channels * sizeof(float);
     pa_memchunk unsampledChunk;
     unsampledChunk.length = inBufferLen;
     unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
     void *dst = pa_memblock_acquire(unsampledChunk.memblock);
     if (dst == NULL) {
-        AUDIO_ERROR_LOG("ResampleAfterEffectChain: pa_memblock_acquire dst fail! skip resampler_run!");
+        AUDIO_ERR_LOG("ResampleAfterEffectChain: pa_memblock_acquire dst fail! skip resampler_run!");
         pa_memblock_release(unsampledChunk.memblock);
         pa_memblock_unref(unsampledChunk.memblock);
         return;
@@ -1951,16 +1949,16 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     pa_resampler_run(resampler, &unsampledChunk, &sampledChunk);
     void *src = pa_memblock_acquire(sampledChunk.memblock);
     if (src == NULL) {
-        AUDIO_ERROR_LOG("ResampleAfterEffectChain: pa_memblock_acquire src fail! resampler_run fail!");
+        AUDIO_ERR_LOG("ResampleAfterEffectChain: pa_memblock_acquire src fail! resampler_run fail!");
         pa_memblock_release(sampledChunk.memblock);
         pa_memblock_unref(unsampledChunk.memblock);
         pa_memblock_unref(sampledChunk.memblock);
         return;
     }
-    ret = memcpy_s(u->bufferAttr->bufOut, outBufferLen, src, outBufferLen);
+    ret = memcpy_s(u->bufferAttr->bufOut, sampledChunk.length, src, sampledChunk.length);
     if (ret != 0) {
         float *srcFloat = (float *)src;
-        for (int i = 0; i < u->bufferAttr->frameLen * outSpec->channels; i++) {
+        for (int i = 0; i < sampledChunk.length / sizeof(float); i++) {
             u->bufferAttr->bufOut[i] = srcFloat[i];
         }
     }
