@@ -2599,7 +2599,7 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetDeviceDesc
     std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
-    if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
+    if (!isFirstScreenOn_) {
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
     } else {
         descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
