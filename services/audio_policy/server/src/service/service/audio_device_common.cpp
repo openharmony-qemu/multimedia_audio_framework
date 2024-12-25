@@ -1748,6 +1748,35 @@ void AudioDeviceCommon::BluetoothScoDisconectForRecongnition()
     }
 }
 
+void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
+{
+    DeviceType deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    bool hasRunningRendererStream = streamCollector_.HasRunningRendererStream();
+    if (hasRunningRendererStream && deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        return;
+    }
+    AUDIO_WARNING_LOG("Client died disconnect sco for normal");
+    Bluetooth::AudioHfpManager::DisconnectSco();
+}
+
+void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
+{
+    bool hasRunningRecognitionCapturerStream = streamCollector_.HasRunningRecognitionCapturerStream();
+    if (hasRunningRecognitionCapturerStream) {
+        return;
+    }
+    AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
+    if (tempDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        return;
+    }
+    if (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
+        Bluetooth::AudioHfpManager::GetRecognitionStatus() == Bluetooth::RecognitionStatus::RECOGNITION_CONNECTING) {
+        AUDIO_WARNING_LOG("Client died disconnect sco for recognition");
+        BluetoothScoDisconectForRecongnition();
+        Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
+    }
+}
+
 void AudioDeviceCommon::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
     SourceType sourceType)
 {

@@ -320,6 +320,9 @@ void AudioDeviceLock::RegisteredTrackerClientDied(pid_t uid)
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
 
+    audioDeviceCommon_.ClientDiedDisconnectScoNormal();
+    audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
+
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
         audioOffloadStream_.DynamicUnloadOffloadModule();
     }
