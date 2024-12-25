@@ -1124,6 +1124,7 @@ void AudioInterruptService::SwitchHintType(std::list<std::pair<AudioInterrupt, A
             if (iterActive->second == PAUSEDBYREMOTE) {
                 iterActive = tmpFocusInfoList.erase(iterActive);
             }
+            break;
         default:
             break;
     }
