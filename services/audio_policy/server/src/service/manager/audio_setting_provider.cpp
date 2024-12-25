@@ -69,10 +69,12 @@ void AudioSettingObserver::SetUpdateFunc(UpdateFunc &func)
 AudioSettingProvider& AudioSettingProvider::GetInstance(
     int32_t systemAbilityId)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     if (instance_ == nullptr) {
-        instance_ = new AudioSettingProvider();
-        Initialize(systemAbilityId);
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (instance_ == nullptr) {
+            Initialize(systemAbilityId);
+            instance_ = new AudioSettingProvider();
+        }
     }
     return *instance_;
 }
@@ -176,10 +178,6 @@ ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> 
 {
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
     auto uri = AssembleUri(observer->GetKey(), tableType);
-    if (!isDataShareReady_) {
-        AUDIO_WARNING_LOG("DataShareHelper is not ready");
-        return ERR_NO_INIT;
-    }
     auto helper = CreateDataShareHelper(tableType);
     if (helper == nullptr) {
         IPCSkeleton::SetCallingIdentity(callingIdentity);
@@ -333,6 +331,10 @@ void AudioSettingProvider::SetDataShareReady(std::atomic<bool> isDataShareReady)
 std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShareHelper(
     std::string tableType)
 {
+    if (!isDataShareReady_) {
+        AUDIO_WARNING_LOG("DataShareHelper is not ready");
+        return nullptr;
+    }
 #ifdef SUPPORT_USER_ACCOUNT
     int32_t currentuserId = GetCurrentUserId();
     if (currentuserId < MIN_USER_ACCOUNT) {
