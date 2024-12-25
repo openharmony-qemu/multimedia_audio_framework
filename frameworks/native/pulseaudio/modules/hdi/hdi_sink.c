@@ -92,6 +92,8 @@
 #define PRINT_INTERVAL_FRAME_COUNT 100
 #define MIN_SLEEP_FOR_USEC 2000
 #define DEFAULT_BLOCK_USEC 20000
+#define EFFECT_PROCESS_RATE 48000
+#define EFFECT_FRAME_LENGTH_MONO 960 // 48000Hz * 0.02s for 1 channel
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 const uint64_t DEFAULT_GETLATENCY_LOG_THRESHOLD_MS = 100;
@@ -322,38 +324,32 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
     } else {
         EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
     }
-
     pa_resampler *r;
-    pa_sample_spec ss = sinkIn->thread_info.resampler->o_ss;
-    pa_channel_map processCm;
-    ConvertChLayoutToPaChMap(processChannelLayout, &processCm);
-    processCm.channels = processChannels;
-    if (processChannels == sinkIn->thread_info.resampler->i_ss.channels) {
-        ss.channels = sinkIn->thread_info.resampler->i_ss.channels;
-        pa_channel_map cm = sinkIn->thread_info.resampler->i_cm;
-        if (pa_channel_map_equal(&sinkIn->thread_info.resampler->o_cm, &processCm)) {
-            return;
-        }
-        r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
-                             &sinkIn->thread_info.resampler->i_ss,
-                             &sinkIn->thread_info.resampler->i_cm,
-                             &ss, &cm,
-                             sinkIn->core->lfe_crossover_freq,
-                             sinkIn->thread_info.resampler->method,
-                             sinkIn->thread_info.resampler->flags);
-    } else {
-        ss.channels = processChannels;
-        if (ss.channels == sinkIn->thread_info.resampler->o_ss.channels) {
-            return;
-        }
-        r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
-                             &sinkIn->thread_info.resampler->i_ss,
-                             &sinkIn->thread_info.resampler->i_cm,
-                             &ss, &processCm,
-                             sinkIn->core->lfe_crossover_freq,
-                             sinkIn->thread_info.resampler->method,
-                             sinkIn->thread_info.resampler->flags);
+    pa_sample_spec outSampleSpec = {
+        .channels = processChannels,
+        .rate = EFFECT_PROCESS_RATE,
+        .format = sinkIn->thread_info.resampler->o_ss.format
     }
+    pa_channel_map outChannelMap;
+    ConvertChLayoutToPaChMap(processChannelLayout, &outChannelMap);
+    outChannelMap.channels = processChannels;
+    if (pa_sample_spec_equal(&sinkIn->thread_info.resampler->o_ss, &outSampleSpec) &&
+        pa_channel_map_equal(&sinkIn->thread_info.resampler->o_cm, &outChannelMap)) {
+            return;
+        }
+    AUDIO_INFO_LOG("Update Resampler before effectchain: input sample rate [%{public}d], channels [%{public}d], "
+        "format [%{public}d]; output rate [%{public}d], channels [%{public}d], format [%{public}d]",
+        sinkIn->thread_info.resampler->i_ss.rate, sinkIn->thread_info.resampler->i_ss.channels,
+        sinkIn->thread_info.resampler->i_ss.format, outSampleSpec.rate, outSampleSpec.channels,
+        outSampleSpec.format);
+    r = pa_resampler_new(sinkIn.thread_info.resampler->mempool,
+        &sinkIn->thread_info.resampler->i_ss,
+        &sinkIn->thread_info.resampler->i_cm,
+        &outSampleSpec, &outChannelMap,
+        sinkIn->core->lfe_crossover_freq,
+        sinkIn->thread_info.resampler->method,
+        sinkIn->thread_info.resampler->flags);
+    
     pa_resampler_free(sinkIn->thread_info.resampler);
     sinkIn->thread_info.resampler = r;
     return;
@@ -1914,7 +1910,7 @@ static pa_resampler *UpdateResamplerInChannelMap(const char *sinkSceneType, stru
     return resampler;
 }
 
-static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata *u)
+static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata *u, size_t inBufferLen)
 {
     CHECK_AND_RETURN_LOG(sinkSceneType != NULL, "ResampleAfterEffectChain: sceneType is NULL!");
     CHECK_AND_RETURN_LOG(u != NULL, "ResampleAfterEffectChain: u is null!");
@@ -1925,10 +1921,8 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     if (resampler == NULL) {
         return;
     }
-    const pa_sample_spec *inSpec = pa_resampler_input_sample_spec(resampler);
-    size_t inBufferLen = (size_t)u->bufferAttr->frameLen * inSpec->channels * sizeof(float);
     pa_memchunk unsampledChunk;
-    unsampledChunk.length = inBufferLen;
+    unsampledChunk.length = inBufferLen * sizeof(float);
     unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
     void *dst = pa_memblock_acquire(unsampledChunk.memblock);
     if (dst == NULL) {
@@ -1967,13 +1961,13 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     pa_memblock_unref(sampledChunk.memblock);
 }
 
-static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType)
+static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType, size_t inBufferLen, size_t outBufferLen)
 {
     AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", sinkSceneType);
     EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
     UpdateStreamAvailableMap(u, sinkSceneType);
-    ResampleAfterEffectChain(sinkSceneType, u);
-    for (int32_t k = 0; k < u->bufferAttr->frameLen * u->sink->sample_spec.channels; k++) {
+    ResampleAfterEffectChain(sinkSceneType, u, inBufferLen);
+    for (uint32_t k = 0; k < outBufferLen; k++) {
         u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
     }
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
@@ -2071,15 +2065,21 @@ static void ResetBufferAttr(struct Userdata *u)
 
 static void SceneToResamplerMapAddNewScene(pa_hashmap *sceneToResamplerMap, const char *sceneType, pa_sink *si)
 {
-    pa_sample_spec sinkSpec = si->sample_spec;
-    pa_channel_map sinkChannelMap = si->channel_map;
-    sinkSpec.format = PA_SAMPLE_FLOAT32LE;
-    // for now, use sample_spec from sink
+    // output from effectchain must be 2 channels, 48k sample rate
+    pa_sample_spec inSpec = {
+        .format = PA_SAMPLE_FLOAT32LE,
+        .rate = EFFECT_PROCESS_RATE,
+        .channel = DEFAULT_NUM_CHANNEL
+    }
+    pa_sample_spec outSpec = si->sample_spec;
+    outSpec.format = PA_SAMPLE_FLOAT32LE;
     AUDIO_INFO_LOG("SceneToResamplerMap new [%{public}s], output channels[%{public}d], sample rate[%{public}d]"
-        ", format[%{public}d]", (char *)sceneType, sinkSpec.channels, sinkSpec.rate, sinkSpec.format);
+        ", format[%{public}d]", (char *)sceneType, outSpec.channels, outSpec.rate, outSpec.format);
     pa_resampler *resampler = pa_resampler_new(
-        si->core->mempool, &sinkSpec, &sinkChannelMap,
-        &sinkSpec, &sinkChannelMap, si->core->lfe_crossover_freq,
+        si->core->mempool,
+        &inSpec, &si->channel_map,
+        &outSpec, &si->channel_map,
+        si->core->lfe_crossover_freq,
         PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
     char* newSceneType = strdup(sceneType);
     if (newSceneType == NULL) {
@@ -2091,10 +2091,14 @@ static void SceneToResamplerMapAddNewScene(pa_hashmap *sceneToResamplerMap, cons
 
 static void UpdateResamplerOutChannelMap(pa_hashmap *sceneToResamplerMap, const char *sceneType, pa_sink *si)
 {
-    // for now, use sample_spec from sink
-    pa_sample_spec sinkSpec = si->sample_spec;
-    pa_channel_map sinkChannelMap = si->channel_map;
-    sinkSpec.format = PA_SAMPLE_FLOAT32LE;
+    // output from effect chain must be 2 channels, 48000Hz, float
+    pa_sample_spec inSpec = {
+        .format = PA_SAMPLE_FLOAT32LE,
+        .rate = EFFECT_PROCESS_RATE,
+        .channels = DEFUALT_NUM_CHANNEL
+    };
+    pa_sample_spec outSpec = si->sample_spec;
+    outSpec.format = PA_SAMPLE_FLOAT32LE;
     char *dupSceneType = strdup(sceneType);
     if (dupSceneType == NULL) {
         AUDIO_ERR_LOG("SceneToResamplerMap: [%{public}s], allocate new char fail!", (char *)sceneType);
@@ -2102,8 +2106,10 @@ static void UpdateResamplerOutChannelMap(pa_hashmap *sceneToResamplerMap, const 
     }
     pa_hashmap_remove_and_free(sceneToResamplerMap, sceneType);
     pa_resampler *resampler = pa_resampler_new(
-        si->core->mempool, &sinkSpec, &sinkChannelMap,
-        &sinkSpec, &sinkChannelMap, si->core->lfe_crossover_freq,
+        si->core->mempool,
+        &inSpec, &si->channel_map,
+        &outSpec, &si->channel_map,
+        si->core->lfe_crossover_freq,
         PA_RESAMPLER_AUTO, PA_RESAMPLER_VARIABLE_RATE);
     pa_hashmap_put(sceneToResamplerMap, (void *)dupSceneType, (void *)resampler);
 }
@@ -2159,7 +2165,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     CHECK_AND_RETURN_LOG(u != NULL, "u is NULL");
 
     ResetBufferAttr(u);
-    int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
+    int32_t byteSize = (int32_t)pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     time_t currentTime = time(NULL);
     g_effectProcessFrameCount++;
@@ -2173,20 +2179,21 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
         EffectChainManagerReturnEffectChannelInfo((char *)sceneType, &processChannels, &processChannelLayout);
         char *sinkSceneType = CheckAndDealEffectZeroVolume(u, currentTime, (char *)sceneType);
-        size_t tmpLength = length * processChannels / DEFAULT_IN_CHANNEL_NUM;
+        size_t effectFrameByteSize = EFFECT_FRAME_LENGTH_MONO * processChannels * byteSize;
         chunkIn->index = 0;
-        chunkIn->length = tmpLength;
+        chunkIn->length = effectFrameByteSize;
         int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, (char *)sceneType);
         if (nSinkInput == 0) { continue; }
         chunkIn->index = 0;
-        chunkIn->length = tmpLength;
+        chunkIn->length = effectFrameByteSize;
         void *src = pa_memblock_acquire_chunk(chunkIn);
-        int32_t frameLen = bitSize > 0 ? ((int32_t)tmpLength / bitSize) : 0;
-        ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
-        memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
+        int32_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
+        ConvertToFloat(u->format, effectFrameSize, src, u->bufferAttr->tempBufIn);
+        memcpy_s(u->bufferAttr->bufIn, effectFrameSize * sizeof(float), u->bufferAttr->tempBufIn,
+            effectFrameSize * sizeof(float));
         u->bufferAttr->numChanIn = (int32_t)processChannels;
-        u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
-        PrimaryEffectProcess(u, sinkSceneType);
+        u->bufferAttr->frameLen = EFFECT_FRAME_LENGTH_MONO;
+        PrimaryEffectProcess(u, sinkSceneType, effectFrameSize, length / byteSize);
         pa_memblock_release(chunkIn->memblock);
     }
     if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) { g_effectProcessFrameCount = 0; }
