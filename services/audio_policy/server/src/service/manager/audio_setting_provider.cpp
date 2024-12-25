@@ -179,6 +179,10 @@ ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> 
 {
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
     auto uri = AssembleUri(observer->GetKey(), tableType);
+    if (!isDataShareReady_) {
+        AUDIO_WARNING_LOG("DataShareHelper is not ready");
+        return ERR_NO_INIT;
+    }
     auto helper = CreateDataShareHelper(tableType);
     if (helper == nullptr) {
         IPCSkeleton::SetCallingIdentity(callingIdentity);
