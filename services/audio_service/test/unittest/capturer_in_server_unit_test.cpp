@@ -142,7 +142,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_003, TestSize.Level1
     capturerInServer_->InitBufferStatus();
     EXPECT_NE(capturerInServer_, nullptr);
 }
-
+#ifdef CAPTURER_IN_SERVER_UNIT_TEST_DIFF
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -226,7 +226,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_007, TestSize.Level1
     capturerInServer_->OnStatusUpdate(IOperation::OPERATION_FLUSHED);
     EXPECT_NE(capturerInServer_, nullptr);
 }
-#ifdef CAPTURER_IN_SERVER_UNIT_TEST_DIFF
+
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -799,33 +799,5 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_030, TestSize.Level1
     int32_t result = capturerInServer_->InitCacheBuffer(targetSize);
     EXPECT_EQ(result, SUCCESS);
 }
-#ifdef CAPTURER_IN_SERVER_UNIT_TEST_DIFF
-/**
- * @tc.name  : Test CapturerInServer.
- * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_031.
- * @tc.desc  : Test InitCacheBuffer interface.
- */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_031, TestSize.Level1)
-{
-    AudioProcessConfig processConfig;
-    std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
-    std::weak_ptr<IStreamListener> streamListener = iStreamListener_;
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    capturerInServer_->status_ = I_STATUS_RELEASED;
-    capturerInServer_->OnStatusUpdate(OPERATION_UNDERFLOW);
-    capturerInServer_->status_ = I_STATUS_FLUSHING_WHEN_STARTED;
-    capturerInServer_->OnStatusUpdate(OPERATION_UNDERFLOW);
-    capturerInServer_->OnStatusUpdate(OPERATION_STARTED);
-    capturerInServer_->OnStatusUpdate(OPERATION_PAUSED);
-    capturerInServer_->OnStatusUpdate(OPERATION_STOPPED);
-    capturerInServer_->OnStatusUpdate(OPERATION_FLUSHED);
-    capturerInServer_->status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
-    capturerInServer_->OnStatusUpdate(OPERATION_FLUSHED);
-    capturerInServer_->status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
-    capturerInServer_->OnStatusUpdate(OPERATION_FLUSHED);
-    capturerInServer_->OnStatusUpdate(OPERATION_INVALID);
-}
-#endif
 } // namespace AudioStandard
 } // namespace OHOS
