@@ -16,6 +16,9 @@
 
 #ifndef AUDIO_LMT_MANAGER_H
 #define AUDIO_LMT_MANAGER_H
+
+#include <map>
+#include <mutex>
 namespace OHOS {
 namespace AudioStandard {
 

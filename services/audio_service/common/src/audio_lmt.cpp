@@ -17,6 +17,8 @@
 #endif
 
 #include "audio_lmt.h"
+#include "audio_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -51,7 +53,7 @@ AudioLimiter::~AudioLimiter()
 {
     // todo dump pcm
     ReleaseBuffer();
-    DumoFileUtil::CloseDumpFile(&dumpFile_);
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
     AUDIO_INFO_LOG("~AudioLimiter");
 }
 

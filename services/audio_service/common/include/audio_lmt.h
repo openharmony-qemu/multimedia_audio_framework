@@ -18,34 +18,38 @@
 
 #include <cstdio>
 #include <cstdint>
+#include <string>
 namespace OHOS {
 namespace AudioStandard {
 
 class AudioLimiter {
 public:
     AudioLimiter(int32_t sinkNameCode);
-    ~AudioLimiter(int32_t sinkNameCode);
+    ~AudioLimiter();
     int32_t SetConfig(int32_t sampleRate, int32_t channels);
     int32_t Process(int32_t frameLen, float *inBuffer, float *outBuffer);
 private:
-    ReleaseBuffer();
+    void ReleaseBuffer();
     int32_t sinkNameCode_;
-    int32_t framelen_;
-    int32_t offset_;
+    int32_t algoFramelen_;
+    int32_t inOffset_;
+    int32_t outOffset_;
+    int32_t format_;
     float nextLev_;
-    float curMaxLev;
+    float curMaxLev_;
     float threshold_;
     float gain_;
     float levelAttack_;
     float levelRelease_;
     float gainAttack_;
     float gainRelease_;
+    float procTime_;
     float *bufHis;
     float *integrationBufIn;
     float *integrationBufOut;
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
-}
+};
 
 } // namespace AudioStandard
 } // namespace OHOS
