@@ -64,7 +64,7 @@ static int32_t ParseEffectConfigFile(xmlDoc* &doc)
     }
 #endif
     if (doc == nullptr) {
-        AUDIO_ERR_LOG("error: could not parse audio_interrupt_policy_config.xml!");
+        AUDIO_ERR_LOG("error: could not parse audio_effect_config.xml!");
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::FAULT_EVENT);
