@@ -84,7 +84,6 @@ int32_t AudioLmtManager::ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, 
     std::lock_guard<std::mutex> lock(limiterMutex_);
     if (inBuffer == nullptr || outBuffer == nullptr) {
         AUDIO_ERR_LOG("inBuffer or outBuffer is nullptr");
-        memcpy_s(outBuffer, frameLen * sizeof(float), inBuffer, frameLen * sizeof(float));
         return ERROR;
     }
 

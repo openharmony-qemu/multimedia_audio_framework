@@ -96,6 +96,10 @@ int32_t AudioLimiter::SetConfig(int sampleRate, int channels)
 
 int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffer)
 {
+    if (inBuffer == nullptr || outBuffer == nullptr) {
+        AUDIO_ERR_LOG("inBuffer or outBuffer is nullptr");
+        return ERROR;
+    }
     int32_t ptrIn = 0;
     int32_t ptrOut = 0;
     DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(inBuffer), frameLen * sizeof(float));
