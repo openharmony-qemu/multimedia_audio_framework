@@ -1078,6 +1078,7 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
+    bool IsVoiceCallRelatedScene();
 private:
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
