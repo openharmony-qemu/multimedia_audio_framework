@@ -79,52 +79,54 @@ int32_t AudioLimiter::SetConfig(int sampleRate, int channels)
     if (integrationBufIn == nullptr) {
         AUDIO_ERR_LOG("allocate integration buffer failed");
     }
-    integratinBufOut = new (std::nothrow) float[algoFrameLen_]();
-    if (integratinBufOut == nullptr) {
+    integrationBufOut = new (std::nothrow) float[algoFrameLen_]();
+    if (integrationBufOut == nullptr) {
         AUDIO_ERR_LOG("allocate integration buffer failed");
     }
 
     dumpFileName_ = std::to_string(sinkNameCode_) + "_limiter" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + std::to_string(format_) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+
+    return SUCCESS;
 }
 
 int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffer)
 {
     int32_t ptrIn = 0;
     int32_t ptrOut = 0;
-    DumoFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(inBuffer), frameLen);
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(inBuffer), frameLen);
     // method 1 考虑拼帧
     // preprocess
-    memcpy_s(outBuffer, frameLen * sizeof(float), integratinBufOut + algoFrameLen_ - outOffset_, outOffset_ * sizeof(float));
+    memcpy_s(outBuffer, frameLen * sizeof(float), integrationBufOut + algoFrameLen_ - outOffset_, outOffset_ * sizeof(float));
     ptrOut = outOffset_;
     memcpy_s(integrationBufIn + inOffset_, (algoFrameLen_ - inOffset_) * sizeof(float), inBuffer, (algoFrameLen_ - inOffset_) * sizeof(float));
     ptrIn = algoFrameLen_ - inOffset_;
-    processAlgo(integrationBufIn, outBuffer + ptrOut);
+    ProcessAlgo(integrationBufIn, outBuffer + ptrOut);
     ptrOut += algoFrameLen_;
     // process
     while (frameLen - ptrOut >= algoFrameLen_) {
-        processAlgo(inBuffer + ptrIn, outBuffer + ptrOut);
+        ProcessAlgo(inBuffer + ptrIn, outBuffer + ptrOut);
         ptrIn += algoFrameLen_;
         ptrOut += algoFrameLen_;
     }
     // postprocess
-    processAlgo(inBuffer + ptrIn, integratinBufOut);
+    ProcessAlgo(inBuffer + ptrIn, integrationBufOut);
     ptrIn += algoFrameLen_;
-    memcpy_s(integrationBufIn, algoFrameLen_ * sizeof(float), inBuffer + ptrIn, (frameLen - prtIn) * sizeof(float));
+    memcpy_s(integrationBufIn, algoFrameLen_ * sizeof(float), inBuffer + ptrIn, (frameLen - ptrIn) * sizeof(float));
     inOffset_ = frameLen - ptrIn;
-    memcpy_s(outBuffer + ptrOut, (frameLen - ptrOut) * sizeof(float), integratinBufOut, (frameLen - ptrOut) * sizeof(float));
+    memcpy_s(outBuffer + ptrOut, (frameLen - ptrOut) * sizeof(float), integrationBufOut, (frameLen - ptrOut) * sizeof(float));
     outOffset_ = algoFrameLen_ - (frameLen - ptrOut);
 
     // method 2 不考虑拼帧
     while (frameLen - ptrOut >= algoFrameLen_) {
-        processAlgo(inBuffer + ptrIn, outBuffer + ptrOut);
+        ProcessAlgo(inBuffer + ptrIn, outBuffer + ptrOut);
         ptrIn += algoFrameLen_;
         ptrOut += algoFrameLen_;
     }
 }
 
-int32_t AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer) {
+void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer) {
     // calculate envelope energy
     float maxEnvelopeLevel = 0.0f;
     for (int32_t i = 0; i < algoFrameLen_; i += 2) {    // for 2 channel
@@ -140,7 +142,7 @@ int32_t AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer) {
     float tempMaxLevel = std::max(maxEnvelopeLevel, curMaxLev_);
     curMaxLev_ = maxEnvelopeLevel;
     float targetGain = 1.0f;
-    targetGain = tempMaxLevel > threshold_ ? threshold_ / tempMaxLevel, targetGain;
+    targetGain = tempMaxLevel > threshold_ ? threshold_ / tempMaxLevel : targetGain;
     float lastGain = gain_;
     float coeff = gain_ > targetGain ? gainAttack_ : gainRelease_;
     float gain_ = coeff * gain_ + (1 - coeff) * targetGain;

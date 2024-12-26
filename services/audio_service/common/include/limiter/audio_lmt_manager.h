@@ -19,6 +19,8 @@
 
 #include <map>
 #include <mutex>
+
+#include "audio_lmt.h"
 namespace OHOS {
 namespace AudioStandard {
 
@@ -34,7 +36,7 @@ public:
 private:
     std::map<int32_t, std::shared_ptr<AudioLimiter>> sinkNameToLimiterMap_;
     std::mutex limiterMutex_;
-}
+};
 
 }   // namespace AudioStandard
 }   // namespace OHOS

@@ -17,6 +17,8 @@
 #define LOG_TAG "AudioLmtManager"
 #endif
 
+#include "audio_lmt_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
 AudioLmtManager::AudioLmtManager()

@@ -29,9 +29,10 @@ public:
     int32_t SetConfig(int32_t sampleRate, int32_t channels);
     int32_t Process(int32_t frameLen, float *inBuffer, float *outBuffer);
 private:
+    void ProcessAlgo(float *inBuffer, float *outBuffer);
     void ReleaseBuffer();
     int32_t sinkNameCode_;
-    int32_t algoFramelen_;
+    int32_t algoFrameLen_;
     int32_t inOffset_;
     int32_t outOffset_;
     int32_t format_;

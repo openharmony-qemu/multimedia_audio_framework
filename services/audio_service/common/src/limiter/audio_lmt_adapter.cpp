@@ -17,6 +17,7 @@
  #define LOG_TAG "AudioLmtAdapter"
  #endif
 
+#include "audio_errors.h"
 #include "audio_lmt_adapter.h"
 #include "audio_lmt_manager.h"
 

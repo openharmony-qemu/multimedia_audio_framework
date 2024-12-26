@@ -52,6 +52,7 @@
 #include "audio_volume_c.h"
 #include "renderer_sink_adapter.h"
 #include "audio_effect_chain_adapter.h"
+#include "audio_lmt_adapter.h"
 #include "playback_capturer_adapter.h"
 #include "sink_userdata.h"
 #include "time.h"
