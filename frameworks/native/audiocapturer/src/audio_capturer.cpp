@@ -758,7 +758,7 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 
     if (switching_) {
         AUDIO_INFO_LOG("Wait for SwitchStream");
-        bool ret = switchStreamCv_.wait_for(lock, std::chrono::microseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
+        bool ret = switchStreamCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
             [this] {return !switching_;});
         if (!ret) {
             switching_ = false;
