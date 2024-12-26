@@ -572,37 +572,37 @@ HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_035, TestSize.Level1)
 /**
 * @tc.name  : Test AudioUtilsUnitTest API
 * @tc.type  : FUNC
-* @tc.number: AudioUtilsPlusUnitTest_036
+* @tc.number: AudioPerformanaceMonitor_001
 * @tc.desc  : Test AudioPerformanaceMonitor::GetInstance 
 */
-HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_036, TestSize.Level1)
+HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_001, TestSize.Level3)
 {
     AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
-    EXPECT_NE(mgr, nullptr);
+    EXPECT_NE(&mgr, nullptr);
 }
 
 /**
 * @tc.name  : Test AudioUtilsUnitTest API
 * @tc.type  : FUNC
-* @tc.number: AudioUtilsPlusUnitTest_037
+* @tc.number: AudioPerformanaceMonitor_002
 * @tc.desc  : Test AudioPerformanaceMonitor::RecordSilenceState--record first time
 */
-HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_037, TestSize.Level1)
+HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_002, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
     AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
-    EXCEPT_EQ(mgr.silenceDetectMap_.find(sessionId), mgr.silenceDetectMap_.end());
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true);
+    EXPECT_EQ(mgr.silenceDetectMap_.find(sessionId), mgr.silenceDetectMap_.end());
+    mgr.RecordSilenceState(sessionId, true);
     EXPECT_NE(mgr.silenceDetectMap_.find(sessionId), mgr.silenceDetectMap_.end());
 }
 
 /**
 * @tc.name  : Test AudioUtilsUnitTest API
 * @tc.type  : FUNC
-* @tc.number: AudioUtilsPlusUnitTest_038
+* @tc.number: AudioPerformanaceMonitor_003
 * @tc.desc  : Test AudioPerformanaceMonitor::RecordSilenceState--record excceds queue size
 */
-HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_038, TestSize.Level1)
+HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_003, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
     AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
@@ -616,59 +616,59 @@ HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_038, TestSize.Level1)
 /**
 * @tc.name  : Test AudioUtilsUnitTest API
 * @tc.type  : FUNC
-* @tc.number: AudioUtilsPlusUnitTest_039
+* @tc.number: AudioPerformanaceMonitor_004
 * @tc.desc  : Test AudioPerformanaceMonitor::ClearSilenceMonitor
 */
-HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_039, TestSize.Level1)
+HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_004, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
     AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
     mgr.ClearSilenceMonitor(sessionId);
-    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateQueue.size(), 0);
+    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateQueue.size(), static_cast<size_t>(0));
     uint32_t notExistSessionId = 111112;
     mgr.ClearSilenceMonitor(notExistSessionId);
-    EXPECT_EQ(mgr.silenceDetectMap_.find(notExistSessionId_), mgr.silenceDetectMap_.end());
+    EXPECT_EQ(mgr.silenceDetectMap_.find(notExistSessionId), mgr.silenceDetectMap_.end());
 }
 
 /**
 * @tc.name  : Test AudioUtilsUnitTest API
 * @tc.type  : FUNC
-* @tc.number: AudioUtilsPlusUnitTest_040
+* @tc.number: AudioPerformanaceMonitor_005
 * @tc.desc  : Test AudioPerformanaceMonitor::RecordSilenceState--record false and detect as noise event
 */
-HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_040, TestSize.Level1)
+HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_005, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
     AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
-    mgr.RecordSilenceState(sessionId, true);
+    mgr.RecordSilenceState(sessionId, false);
     for (size_t i = 0; i < MIN_SILENCE_VALUE; ++i) {
-        mgr.RecordSilenceState(sessionId, false);
+        mgr.RecordSilenceState(sessionId, true);
     }
-    mgr.RecordSilenceState(sessionId, true);
-    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateQueue.size(), 0);
+    mgr.RecordSilenceState(sessionId, false);
+    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateQueue.size(), static_cast<size_t>(0));
 }
 
 /**
 * @tc.name  : Test AudioUtilsUnitTest API
 * @tc.type  : FUNC
-* @tc.number: AudioUtilsPlusUnitTest_041
+* @tc.number: AudioPerformanaceMonitor_006
 * @tc.desc  : Test AudioPerformanaceMonitor::deleteSilenceMonitor
 */
-HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_041, TestSize.Level1)
+HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_006, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
     AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
     mgr.DeleteSilenceMonitor(sessionId);
-    EXPECT_EQ(mgr.silenceDetectMap_.size(), 0);
+    EXPECT_EQ(mgr.silenceDetectMap_.size(), static_cast<size_t>(0));
 }
 
 /**
 * @tc.name  : Test AudioUtilsUnitTest API
 * @tc.type  : FUNC
-* @tc.number: AudioUtilsPlusUnitTest_042
+* @tc.number: AudioPerformanaceMonitor_007
 * @tc.desc  : Test AudioPerformanaceMonitor::RecordTimeStamp
 */
-HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_042, TestSize.Level1)
+HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_007, TestSize.Level3)
 {
     SinkType sinkType = SINKTYPE_PRIMARY;
     AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
@@ -678,7 +678,7 @@ HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_042, TestSize.Level1)
     int64_t exeedTime = ClockTime::GetCurNano() + 100000000; // add 100ms
     mgr.RecordTimeStamp(sinkType, exeedTime);
     mgr.DeleteOvertimeMonitor(sinkType);
-    EXCEPT_EQ(mgr.overTimeDetectMap_.size(), 0);
+    EXPECT_EQ(mgr.overTimeDetectMap_.size(), static_cast<size_t>(0));
 }
 
 } // namespace AudioStandard
