@@ -186,7 +186,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             SubscribeOsAccountChangeEvents();
             break;
         case COMMON_EVENT_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility common event service start");
             SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
             SubscribeCommonEvent("usual.event.dms.rotation_changed");
             SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
