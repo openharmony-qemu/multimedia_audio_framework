@@ -2273,11 +2273,11 @@ static void UnsetSinkVolume(pa_sink *s)
 static void CreateLimiter(struct Userdata *u)
 {
     if (!u->isLimiterCreated) {
-        if (LimiterManagerCreate(u->deviceType) == SUCCESS) {
-            if (LimiterManagerSetConfig(u->deviceType, (int32_t)u->ss.rate, (int32_t)u->ss.channels) == SUCCESS) {
-                u->isLimiterCreated = true;                    
-            }
-        }
+        int32_t ret = LimiterManagerCreate(u->deviceType);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager create failed");
+        ret = LimiterManagerSetConfig(u->deviceType, (int32_t)u->ss.rate, (int32_t)u->ss.channels);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager set config failed");
+        u->isLimiterCreated = true;  
     }
 }
 

@@ -40,8 +40,6 @@ int32_t LimiterManagerProcess(int32_t sinkNameCode, int32_t frameLen, float *inB
 {
     AudioLmtManager *audioLmtManager = AudioLmtManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioLmtManager != nullptr, ERROR, "Failed to get AudioLmtManager instance");
-    CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, ERROR, "inBuffer is nullptr");
-    CHECK_AND_RETURN_RET_LOG(outBuffer != nullptr, ERROR, "outBuffer is nullptr");
     return audioLmtManager->ProcessLimiter(sinkNameCode, frameLen, inBuffer, outBuffer);
 }
 
