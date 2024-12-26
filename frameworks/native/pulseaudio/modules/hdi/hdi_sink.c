@@ -276,12 +276,7 @@ static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, flo
             break;
         default:
             ret = memcpy_s(dst, n, src, n);
-            if (ret != 0) {
-                float *srcFloat = (float *)src;
-                for (uint32_t i = 0; i < n; i++) {
-                    dst[i] = srcFloat[i];
-                }
-            }
+            CHECK_AND_RETURN_LOG(ret == 0, "ConvertToFloat: copy from src to dst fail!");
             break;
     }
 }
@@ -303,12 +298,7 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
             break;
         default:
             ret = memcpy_s(dst, n, src, n);
-            if (ret != 0) {
-                float *dstFloat = (float *)dst;
-                for (uint32_t i = 0; i < n; i++) {
-                    dstFloat[i] = src[i];
-                }
-            }
+            CHECK_AND_RETURN_LOG(ret == 0, "ConvertFromFloat: copy from src to dst fail!");
             break;
     }
 }
@@ -1933,12 +1923,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
         return;
     }
     int ret = memcpy_s(dst, unsampledChunk.length, u->bufferAttr->bufOut, unsampledChunk.length);
-    if (ret != 0) {
-        float *dstFloat = (float *)dst;
-        for (size_t i = 0; i < inBufferLen; i++) {
-            dstFloat[i] = u->bufferAttr->bufOut[i];
-        }
-    }
+    CHECK_AND_RETURN_LOG(ret == 0, "copy from bufOut to unsampled chunk fail!");
     pa_memblock_release(unsampledChunk.memblock);
     pa_memchunk sampledChunk;
     pa_resampler_run(resampler, &unsampledChunk, &sampledChunk);
@@ -1951,12 +1936,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
         return;
     }
     ret = memcpy_s(u->bufferAttr->bufOut, sampledChunk.length, src, sampledChunk.length);
-    if (ret != 0) {
-        float *srcFloat = (float *)src;
-        for (size_t i = 0; i < sampledChunk.length / sizeof(float); i++) {
-            u->bufferAttr->bufOut[i] = srcFloat[i];
-        }
-    }
+    CHECK_AND_RETURN_LOG(ret == 0, "copy from sampled chunk to bufOut fail!");
     pa_memblock_release(sampledChunk.memblock);
     pa_memblock_unref(unsampledChunk.memblock);
     pa_memblock_unref(sampledChunk.memblock);
