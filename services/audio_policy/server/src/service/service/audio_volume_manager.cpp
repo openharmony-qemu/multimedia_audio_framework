@@ -395,6 +395,10 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     }
     bool mute = sVolumeLevel == 0 ? true : false;
 
+    if (internalCall) {
+        CheckToCloseNotification(STREAM_MUSIC, volumeLevel);
+    }
+
     audioA2dpDevice_.SetA2dpDeviceMute(macAddress, mute);
     audioPolicyManager_.SetAbsVolumeMute(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
