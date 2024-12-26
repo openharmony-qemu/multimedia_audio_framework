@@ -98,8 +98,9 @@ int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffe
 {
     int32_t ptrIn = 0;
     int32_t ptrOut = 0;
-    DumpFileUtil::WriteDumpFile(dumpFileNameIn_, static_cast<void *>(inBuffer), frameLen);
-    // method 1 考虑拼帧
+    DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(inBuffer), frameLen * sizeof(float));
+#ifdef FRAME_CONCATENATION
+    // 考虑拼帧
     // preprocess
     memcpy_s(outBuffer, frameLen * sizeof(float), integrationBufOut + algoFrameLen_ - outOffset_, outOffset_ * sizeof(float));
     ptrOut = outOffset_;
@@ -120,14 +121,15 @@ int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffe
     inOffset_ = frameLen - ptrIn;
     memcpy_s(outBuffer + ptrOut, (frameLen - ptrOut) * sizeof(float), integrationBufOut, (frameLen - ptrOut) * sizeof(float));
     outOffset_ = algoFrameLen_ - (frameLen - ptrOut);
-
-    // method 2 不考虑拼帧
+#else
+    // 不考虑拼帧
     while (frameLen - ptrOut >= algoFrameLen_) {
         ProcessAlgo(inBuffer + ptrIn, outBuffer + ptrOut);
         ptrIn += algoFrameLen_;
         ptrOut += algoFrameLen_;
     }
-    DumpFileUtil::WriteDumpFile(dumpFileNameOut_, static_cast<void *>(outBuffer), frameLen);
+#endif
+    DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(outBuffer), frameLen * sizeof(float));
     return SUCCESS;
 }
 
