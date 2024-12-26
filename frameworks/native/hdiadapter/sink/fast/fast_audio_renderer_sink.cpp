@@ -875,6 +875,7 @@ int32_t FastAudioRendererSinkInner::Stop(void)
             "Stop failed! ret: %{public}d.", ret);
     }
     started_ = false;
+
     return SUCCESS;
 }
 
@@ -894,6 +895,7 @@ int32_t FastAudioRendererSinkInner::Pause(void)
             "Pause failed!");
     }
     paused_ = true;
+
     return SUCCESS;
 }
 

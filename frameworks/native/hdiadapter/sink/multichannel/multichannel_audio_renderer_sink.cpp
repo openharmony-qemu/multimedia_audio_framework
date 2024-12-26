@@ -947,6 +947,7 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
             return ERR_OPERATION_FAILED;
         }
     }
+
     return SUCCESS;
 }
 
@@ -973,6 +974,7 @@ int32_t MultiChannelRendererSinkInner::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
+
     return SUCCESS;
 }
 

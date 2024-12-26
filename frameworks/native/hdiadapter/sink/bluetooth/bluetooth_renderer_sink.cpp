@@ -837,6 +837,7 @@ int32_t BluetoothRendererSinkInner::Stop(void)
             return ERR_OPERATION_FAILED;
         }
     }
+
     return SUCCESS;
 }
 
@@ -860,6 +861,7 @@ int32_t BluetoothRendererSinkInner::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
+
     return SUCCESS;
 }
 

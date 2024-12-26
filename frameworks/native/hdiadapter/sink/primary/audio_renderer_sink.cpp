@@ -1247,6 +1247,7 @@ int32_t AudioRendererSinkInner::Stop(void)
         return ERR_OPERATION_FAILED;
     }
     started_ = false;
+
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 
     return SUCCESS;
@@ -1272,6 +1273,7 @@ int32_t AudioRendererSinkInner::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
+
     return SUCCESS;
 }
 
