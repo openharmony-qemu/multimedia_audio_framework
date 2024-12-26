@@ -2160,7 +2160,8 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
         EffectChainManagerReturnEffectChannelInfo((char *)sceneType, &processChannels, &processChannelLayout);
         char *sinkSceneType = CheckAndDealEffectZeroVolume(u, currentTime, (char *)sceneType);
-        size_t effectFrameByteSize = EFFECT_FRAME_LENGTH_MONO * processChannels * byteSize;
+        uint32_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
+        size_t effectFrameByteSize = effectFrameSize * byteSize;
         chunkIn->index = 0;
         chunkIn->length = effectFrameByteSize;
         int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, (char *)sceneType);
@@ -2168,7 +2169,6 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         chunkIn->index = 0;
         chunkIn->length = effectFrameByteSize;
         void *src = pa_memblock_acquire_chunk(chunkIn);
-        int32_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
         ConvertToFloat(u->format, effectFrameSize, src, u->bufferAttr->tempBufIn);
         memcpy_s(u->bufferAttr->bufIn, effectFrameSize * sizeof(float), u->bufferAttr->tempBufIn,
             effectFrameSize * sizeof(float));
