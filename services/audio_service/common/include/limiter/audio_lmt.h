@@ -48,8 +48,10 @@ private:
     float *bufHis;
     float *integrationBufIn;
     float *integrationBufOut;
-    FILE *dumpFile_ = nullptr;
-    std::string dumpFileName_ = "";
+    FILE *dumpFileInput_ = nullptr;
+    FILE *dumpFileOutput_ = nullptr;
+    std::string dumpFileNameIn_ = "";
+    std::string dumpFileNameOut_ = "";
 };
 
 } // namespace AudioStandard

@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include "audio_lmt_adapter.h"
 #include "audio_lmt_manager.h"
+#include "audio_log.h"
 
 using namespace OHOS::AudioStandard;
 

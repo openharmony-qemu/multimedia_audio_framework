@@ -17,7 +17,9 @@
 #define LOG_TAG "AudioLmtManager"
 #endif
 
+#include "audio_errors.h"
 #include "audio_lmt_manager.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -116,4 +118,3 @@ int32_t AudioLmtManager::ReleaseLimiter(int32_t sinkNameCode)
 }
 }   // namespace AudioStandard
 }   // namespace OHOS
-#endif

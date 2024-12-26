@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioLmt"
 #endif
 
+#include "audio_errors.h"
 #include "audio_lmt.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -45,15 +46,14 @@ AudioLimiter::AudioLimiter(int32_t sinkNameCode)
     gainRelease_ = GAIN_RELEASE;
     procTime_ = PROC_TIME;
     format_ = AUDIO_FORMAT_PCM_FLOAT;
-    // todo dump pcm
     AUDIO_INFO_LOG("AudioLimiter");
 }
 
 AudioLimiter::~AudioLimiter()
 {
-    // todo dump pcm
     ReleaseBuffer();
-    DumpFileUtil::CloseDumpFile(&dumpFile_);
+    DumpFileUtil::CloseDumpFile(&dumpFileInput_);
+    DumpFileUtil::CloseDumpFile(&dumpFileOutput_);
     AUDIO_INFO_LOG("~AudioLimiter");
 }
 
@@ -84,9 +84,12 @@ int32_t AudioLimiter::SetConfig(int sampleRate, int channels)
         AUDIO_ERR_LOG("allocate integration buffer failed");
     }
 
-    dumpFileName_ = std::to_string(sinkNameCode_) + "_limiter" + GetTime() + "_" + std::to_string(sampleRate) + "_"
+    dumpFileNameIn_ = std::to_string(sinkNameCode_) + "_limiter_in" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + std::to_string(format_) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);
+    dumpFileNameOut_ = std::to_string(sinkNameCode_) + "_limiter_out" + GetTime() + "_" + std::to_string(sampleRate) + "_"
+        + std::to_string(channels) + std::to_string(format_) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileNameOut_, &dumpFileOutput_);
 
     return SUCCESS;
 }
@@ -95,7 +98,7 @@ int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffe
 {
     int32_t ptrIn = 0;
     int32_t ptrOut = 0;
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(inBuffer), frameLen);
+    DumpFileUtil::WriteDumpFile(dumpFileNameIn_, static_cast<void *>(inBuffer), frameLen);
     // method 1 考虑拼帧
     // preprocess
     memcpy_s(outBuffer, frameLen * sizeof(float), integrationBufOut + algoFrameLen_ - outOffset_, outOffset_ * sizeof(float));
@@ -124,6 +127,8 @@ int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffe
         ptrIn += algoFrameLen_;
         ptrOut += algoFrameLen_;
     }
+    DumpFileUtil::WriteDumpFile(dumpFileNameOut_, static_cast<void *>(outBuffer), frameLen);
+    return SUCCESS;
 }
 
 void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer) {
@@ -145,7 +150,7 @@ void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer) {
     targetGain = tempMaxLevel > threshold_ ? threshold_ / tempMaxLevel : targetGain;
     float lastGain = gain_;
     float coeff = gain_ > targetGain ? gainAttack_ : gainRelease_;
-    float gain_ = coeff * gain_ + (1 - coeff) * targetGain;
+    gain_ = coeff * gain_ + (1 - coeff) * targetGain;
     float deltaGain = (gain_ - lastGain) / algoFrameLen_;
 
     // apply gain

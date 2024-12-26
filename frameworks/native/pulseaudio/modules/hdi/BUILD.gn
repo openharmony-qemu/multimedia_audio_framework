@@ -38,6 +38,7 @@ config("hdi_config") {
     "../../../playbackcapturer/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../services/audio_service/common/include",
+    "../../../../../services/audio_service/common/include/limiter",
   ]
 
   cflags = [
