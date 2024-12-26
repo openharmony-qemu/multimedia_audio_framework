@@ -186,10 +186,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             SubscribeOsAccountChangeEvents();
             break;
         case COMMON_EVENT_SERVICE_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility common event service start");
             SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
             SubscribeCommonEvent("usual.event.dms.rotation_changed");
             SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
+            SubscribeCommonEvent("usual.event.SCREEN_ON");
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -485,6 +485,9 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         std::string deviceName  = want.GetStringParam("remoteName");
         std::string macAddress = want.GetStringParam("deviceAddr");
         audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
+    } else if (action == "usual.event.SCREEN_ON") {
+        AUDIO_INFO_LOG("receive SCREEN_ON action");
+        audioPolicyService_.SetFirstScreenOn();
     }
 }
 
