@@ -30,6 +30,7 @@ public:
     int32_t ReleaseLimiter(int32_t sinkNameCode);
 private:
     std::map<int32_t, std::shared_ptr<AudioLimiter>> sinkNameToLimiterMap_;
+    std::mutex limiterMutex_;
 }
 
 }   // namespace AudioStandard

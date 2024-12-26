@@ -43,8 +43,8 @@ private:
     float *bufHis;
     float *integrationBufIn;
     float *integrationBufOut;
-
-    // todo dump pcm
+    FILE *dumpFile_ = nullptr;
+    std::string dumpFileName_ = "";
 }
 
 } // namespace AudioStandard

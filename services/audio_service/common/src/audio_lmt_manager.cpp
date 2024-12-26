@@ -38,6 +38,7 @@ AudioLmtManager *AudioLmtManager::GetInstance()
 
 int32_t AudioLmtManager::CreateLimiter(int32_t sinkNameCode)
 {
+    std::lock_guard<std::mutex> lock(limiterMutex_);
     if (sinkNameToLimiterMap_.find(sinkNameCode) != sinkNameToLimiterMap_.end()) {
         AUDIO_INFO_LOG("The limiter has been created, sinkNameCode = %{public}d", sinkNameCode);
         return SUCCESS;
@@ -57,6 +58,7 @@ int32_t AudioLmtManager::CreateLimiter(int32_t sinkNameCode)
 
 int32_t AudioLmtManager::SetLimiterConfig(int32_t sinkNameCode, int sampleRate, int channels)
 {
+    std::lock_guard<std::mutex> lock(limiterMutex_);
     auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
     if (iter == sinkNameToLimiterMap_.end()) {
         AUDIO_INFO_LOG("The limiter has not been created, sinkNameCode = %{public}d", sinkNameCode);
@@ -74,6 +76,7 @@ int32_t AudioLmtManager::SetLimiterConfig(int32_t sinkNameCode, int sampleRate, 
 
 int32_t AudioLmtManager::ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, float *inBuffer, float *outBuffer)
 {
+    std::lock_guard<std::mutex> lock(limiterMutex_);
     auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
     if (iter == sinkNameToLimiterMap_.end()) {
         AUDIO_INFO_LOG("The limiter has not been created, sinkNameCode = %{public}d", sinkNameCode);
@@ -91,6 +94,7 @@ int32_t AudioLmtManager::ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, 
 
 int32_t AudioLmtManager::ReleaseLimiter(int32_t sinkNameCode)
 {
+    std::lock_guard<std::mutex> lock(limiterMutex_);
     auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
     if (iter == sinkNameToLimiterMap_.end()) {
         AUDIO_INFO_LOG("The limiter has not been created, sinkNameCode = %{public}d", sinkNameCode);

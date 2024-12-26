@@ -28,6 +28,7 @@ constexpr float LEVEL_RELEASE = 0.7f;
 constexpr float GAIN_ATTACK = 0.1f;
 constexpr float GAIN_RELEASE = 0.6f;
 constexpr float PROC_TIME = 0.005f;  // 5ms
+constexpr float AUDIO_FORMAT_PCM_FLOAT = 4;
 
 AudioLimiter::AudioLimiter(int32_t sinkNameCode)
 {
@@ -41,7 +42,7 @@ AudioLimiter::AudioLimiter(int32_t sinkNameCode)
     gainAttack_ = GAIN_ATTACK;
     gainRelease_ = GAIN_RELEASE;
     procTime_ = PROC_TIME;
-    offset_ = 0;
+    format_ = AUDIO_FORMAT_PCM_FLOAT;
     // todo dump pcm
     AUDIO_INFO_LOG("AudioLimiter");
 }
@@ -50,6 +51,7 @@ AudioLimiter::~AudioLimiter()
 {
     // todo dump pcm
     ReleaseBuffer();
+    DumoFileUtil::CloseDumpFile(&dumpFile_);
     AUDIO_INFO_LOG("~AudioLimiter");
 }
 
@@ -79,12 +81,17 @@ int32_t AudioLimiter::SetConfig(int sampleRate, int channels)
     if (integratinBufOut == nullptr) {
         AUDIO_ERR_LOG("allocate integration buffer failed");
     }
+
+    dumpFileName_ = std::to_string(sinkNameCode_) + "_limiter" + GetTime() + "_" + std::to_string(sampleRate) + "_"
+        + std::to_string(channels) + std::to_string(format_) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 }
 
 int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffer)
 {
     int32_t ptrIn = 0;
     int32_t ptrOut = 0;
+    DumoFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(inBuffer), frameLen);
     // method 1 考虑拼帧
     // preprocess
     memcpy_s(outBuffer, frameLen * sizeof(float), integratinBufOut + algoFrameLen_ - outOffset_, outOffset_ * sizeof(float));
