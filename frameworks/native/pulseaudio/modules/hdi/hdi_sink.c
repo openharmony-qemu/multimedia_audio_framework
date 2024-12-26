@@ -1923,7 +1923,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
         return;
     }
     int ret = memcpy_s(dst, unsampledChunk.length, u->bufferAttr->bufOut, unsampledChunk.length);
-    CHECK_AND_RETURN_LOG(ret == 0, "copy from bufOut to unsampled chunk fail!");
+    CHECK_AND_RETURN_LOG(ret == 0, "ResampleAfterEffectChain: copy from bufOut to unsampled chunk fail!");
     pa_memblock_release(unsampledChunk.memblock);
     pa_memchunk sampledChunk;
     pa_resampler_run(resampler, &unsampledChunk, &sampledChunk);
@@ -1936,7 +1936,7 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
         return;
     }
     ret = memcpy_s(u->bufferAttr->bufOut, sampledChunk.length, src, sampledChunk.length);
-    CHECK_AND_RETURN_LOG(ret == 0, "copy from sampled chunk to bufOut fail!");
+    CHECK_AND_RETURN_LOG(ret == 0, "ResampleAfterEffectChain: copy from sampled chunk to bufOut fail!");
     pa_memblock_release(sampledChunk.memblock);
     pa_memblock_unref(unsampledChunk.memblock);
     pa_memblock_unref(sampledChunk.memblock);
@@ -2170,8 +2170,9 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         chunkIn->length = effectFrameByteSize;
         void *src = pa_memblock_acquire_chunk(chunkIn);
         ConvertToFloat(u->format, effectFrameSize, src, u->bufferAttr->tempBufIn);
-        memcpy_s(u->bufferAttr->bufIn, effectFrameSize * sizeof(float), u->bufferAttr->tempBufIn,
+        ret = memcpy_s(u->bufferAttr->bufIn, effectFrameSize * sizeof(float), u->bufferAttr->tempBufIn,
             effectFrameSize * sizeof(float));
+        CHECK_AND_RETURN_LOG(ret == 0, "SinkRenderPrimaryProcess: copy from bufIn to tempBufIn fail!");
         u->bufferAttr->numChanIn = (int32_t)processChannels;
         u->bufferAttr->frameLen = EFFECT_FRAME_LENGTH_MONO;
         PrimaryEffectProcess(u, sinkSceneType, effectFrameSize, length / byteSize);
