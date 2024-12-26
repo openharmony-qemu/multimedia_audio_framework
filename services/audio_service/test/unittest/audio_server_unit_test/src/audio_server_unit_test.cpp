@@ -880,7 +880,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_001, TestSize.Le
     AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
 
     int32_t ret = audioServer->GetAudioEffectProperty(audioEffectPropertyArrayV3);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
