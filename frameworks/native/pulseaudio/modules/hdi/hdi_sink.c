@@ -2170,7 +2170,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         chunkIn->length = effectFrameByteSize;
         void *src = pa_memblock_acquire_chunk(chunkIn);
         ConvertToFloat(u->format, effectFrameSize, src, u->bufferAttr->tempBufIn);
-        ret = memcpy_s(u->bufferAttr->bufIn, effectFrameSize * sizeof(float), u->bufferAttr->tempBufIn,
+        int ret = memcpy_s(u->bufferAttr->bufIn, effectFrameSize * sizeof(float), u->bufferAttr->tempBufIn,
             effectFrameSize * sizeof(float));
         CHECK_AND_RETURN_LOG(ret == 0, "SinkRenderPrimaryProcess: copy from bufIn to tempBufIn fail!");
         u->bufferAttr->numChanIn = (int32_t)processChannels;
