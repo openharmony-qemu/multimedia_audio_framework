@@ -167,7 +167,7 @@ private:
     int32_t InitRender();
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
-
+    void RenderEmptyFrame(char &data, uint64_t len);
     void InitAudioRouteNode(AudioRouteNode &source, AudioRouteNode &sink);
     void DumpData(std::string fileName, void *buffer, size_t len);
     std::string dumpFileName_ = "";
@@ -536,16 +536,9 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         writeLen = len;
         return SUCCESS;
     }
+
     if (renderEmptyFrameCount_ > 0) {
-        Trace traceEmpty("MchSinkInner::RenderFrame::renderEmpty");
-        if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
-            static_cast<size_t>(len)) != EOK) {
-            AUDIO_WARNING_LOG("call memset_s failed");
-        }
-        renderEmptyFrameCount_--;
-        if (renderEmptyFrameCount_ == 0) {
-            switchCV_.notify_all();
-        }
+        RenderEmptyFrame(char &data, uint64_t len);
     }
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&data), len, len};
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
@@ -585,6 +578,19 @@ void MultiChannelRendererSinkInner::CheckUpdateState(char *frame, uint64_t reply
                 maxAmplitude_ = 0;
             }
         }
+    }
+}
+
+void MultiChannelRendererSinkInner::RenderEmptyFrame(char &data, uint64_t len)
+{
+    Trace traceEmpty("MchSinkInner::RenderFrame::renderEmpty");
+    if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
+        static_cast<size_t>(len)) != EOK) {
+        AUDIO_WARNING_LOG("call memset_s failed");
+    }
+    renderEmptyFrameCount_--;
+    if (renderEmptyFrameCount_ == 0) {
+        switchCV_.notify_all();
     }
 }
 

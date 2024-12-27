@@ -1256,6 +1256,20 @@ static void HandleFading(pa_sink *si, size_t length, pa_sink_input *sinkIn, pa_m
     }
 }
 
+static void SinkRenderPrimaryStateCheck(pa_mix_info *infoIn, pa_sink_input *sinkIn) {
+    const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
+    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+
+    if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
+        AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
+        RecordPaSilenceState(sessionID, true);
+        pa_sink_input_handle_ohos_underrun(sinkIn);
+    } else {
+        AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
+        RecordPaSilenceState(sessionID, false);
+    }
+}
+
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
     unsigned maxInfo, const char *sceneType)
 {
@@ -1280,8 +1294,6 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         CheckAndPushUidToArr(sinkIn, appsUid, &count);
         const char *sSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
-        const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         bool existFlag = GetExistFlag(sinkIn, sSceneType, sSceneMode);
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sSceneType, sceneType);
         if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
@@ -1299,15 +1311,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
 
             ProcessAudioVolume(sinkIn, mixlength, &infoIn->chunk, si);
 
-            if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
-                AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
-                RecordPaSilenceState(sessionID, true);
-                pa_sink_input_handle_ohos_underrun(sinkIn);
-            } else {
-                AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
-                RecordPaSilenceState(sessionID, false);
-            }
-
+            SinkRenderPrimaryStateCheck(infoIn, sinkIn);
             HandleFading(si, *length, sinkIn, infoIn);
 
             infoIn++;
@@ -1376,6 +1380,25 @@ static void CheckMultiChannelFadeinIsDone(pa_sink *si, pa_sink_input *sinkIn)
     }
 }
 
+static void SinkRenderMultiChannelStateCheck(pa_sink *si, pa_mix_info *infoIn, pa_sink_input *sinkIn)
+{
+    const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
+    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+    const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
+
+    if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
+        AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
+        RecordPaSilenceState(sessionID, true);
+        pa_sink_input_handle_ohos_underrun(sinkIn);
+    } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
+        AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_not_silence");
+        RecordPaSilenceState(sessionID, false);
+        pa_atomic_store(&sinkIn->isFirstReaded, 1);
+        PrepareMultiChannelFading(sinkIn, infoIn, si);
+        CheckMultiChannelFadeinIsDone(si, sinkIn);
+    }
+}
+
 static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
     unsigned maxInfo)
 {
@@ -1400,9 +1423,6 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
         int32_t sinkChannels = sinkIn->sample_spec.channels;
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
-        const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
         if (!existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             pa_sink_input_assert_ref(sinkIn);
@@ -1413,17 +1433,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
             ProcessAudioVolume(sinkIn, mixlength, &infoIn->chunk, si);
 
-            if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
-                AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
-                RecordPaSilenceState(sessionID, true);
-                pa_sink_input_handle_ohos_underrun(sinkIn);
-            } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
-                AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_not_silence");
-                RecordPaSilenceState(sessionID, false);
-                pa_atomic_store(&sinkIn->isFirstReaded, 1);
-                PrepareMultiChannelFading(sinkIn, infoIn, si);
-                CheckMultiChannelFadeinIsDone(si, sinkIn);
-            }
+            SinkRenderMultiChannelStateCheck(si, infoIn, sinkIn);
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
             pa_assert(infoIn->chunk.length > 0);

@@ -50,13 +50,13 @@ ohos_shared_library("audio_utils") {
     "access_token:libprivacy_sdk",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
   ]
 
   if (sonic_enable == true) {
