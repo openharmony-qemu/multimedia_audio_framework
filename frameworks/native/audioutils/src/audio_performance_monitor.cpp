@@ -70,22 +70,26 @@ void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSile
     JudgeNoise(sessionId, isSilence);
 }
 
-void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, uint64_t curTimeStamp)
+void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, int64_t curTimeStamp)
 {
     CHECK_AND_RETURN_LOG(sinkType >= SinkType::SINKTYPE_PRIMARY && sinkType < SinkType::MAX_SINK_TYPE,
         "invalid sinkType: %{public}d", sinkType);
-    // init lastwritten time when start or resume
-    if (curTimeStamp == INIT_LASTWRITTEN_TIME) {
+    if (overTimeDetectMap_.find(sinkType) == overTimeDetectMap_.end()) {
+        AUDIO_INFO_LOG("start record sinkType: %{public}d", sinkType);
         overTimeDetectMap_[sinkType] = curTimeStamp;
         return;
     }
-    if (overTimeDetectMap_.find(sinkType) != overTimeDetectMap_.end() &&
-        overTimeDetectMap_[sinkType] != INIT_LASTWRITTEN_TIME) {
-        if (curTimeStamp - overTimeDetectMap_[sinkType] > MAX_WRITTEN_INTERVAL[sinkType]) {
-            AUDIO_WARNING_LOG("SinkType %{public}d write time interval %{public}" PRIu64 " ns! overTime!",
-                sinkType, curTimeStamp - overTimeDetectMap_[sinkType]);
-            ReportEvent(OVERTIME_EVENT);
-        }
+
+    // init lastwritten time when start or resume to avoid overtime
+    if (curTimeStamp == INIT_LASTWRITTEN_TIME) {
+        overTimeDetectMap_[sinkType] = curTimeStamp;
+        return;
+    } 
+
+    if (curTimeStamp - overTimeDetectMap_[sinkType] > MAX_WRITTEN_INTERVAL[sinkType]) {
+        AUDIO_WARNING_LOG("SinkType %{public}d write time interval %{public}" PRId64 " ns! overTime!",
+            sinkType, curTimeStamp - overTimeDetectMap_[sinkType]);
+        ReportEvent(OVERTIME_EVENT);
     }
     overTimeDetectMap_[sinkType] = curTimeStamp;
 }
@@ -103,7 +107,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
             std::string printStr{};
             //for example: not Silent-> not Silent -> silent -> not Silent -> silent, will print "--_-_"
             while (silenceDetectMap_[sessionId].historyStateQueue.size() != 0) {
-                printStr += silenceDetectMap_[sessionId].historyStateQueue.front()?"_":"-";
+                printStr += silenceDetectMap_[sessionId].historyStateQueue.front() ? "_" : "-";
                 silenceDetectMap_[sessionId].historyStateQueue.pop();
             }
             AUDIO_WARNING_LOG("record %{public}d state for last %{public}zu times: %{public}s",

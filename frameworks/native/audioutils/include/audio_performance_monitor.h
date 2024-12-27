@@ -43,8 +43,7 @@ enum SinkType : uint32_t {
     MAX_SINK_TYPE = 6,
 };
 
-struct FrameRecordInfo
-{
+struct FrameRecordInfo {
     uint64_t silenceStateCount = MAX_SILENCE_VALUE + 1;
     uint64_t notSilenceStateCount = MAX_NOT_SILENCE_VALUE + 1;
     std::queue<bool> historyStateQueue{};
@@ -54,21 +53,23 @@ class AudioPerformanceMonitor {
 public:
     static AudioPerformanceMonitor& GetInstance();
 
+    // silence Monitor records if server gets valid data from client
     void RecordSilenceState(uint32_t sessionId, bool isSilence);
     void ClearSilenceMonitor(uint32_t sessionId);
     void DeleteSilenceMonitor(uint32_t sessionId);
 
-    void RecordTimeStamp(SinkType sinkType, uint64_t curTimeStamp);
+    // overTime Monitor records the interval between two writes to HAL
+    void RecordTimeStamp(SinkType sinkType, int64_t curTimeStamp);
     void DeleteOvertimeMonitor(SinkType sinkType);
 
     std::map<uint32_t, FrameRecordInfo> silenceDetectMap_{}; // sessionId, FrameRecordInfo
-    std::map<SinkType, uint64_t> overTimeDetectMap_{}; // SinkType, lastWrittenTimeStamp
+    std::map<SinkType, int64_t> overTimeDetectMap_{}; // SinkType, lastWrittenTimeStamp
 
 private:
     void JudgeNoise(uint32_t index, bool curState);
     void ReportEvent(int32_t reasonCode);
 
-    std::map<SinkType, uint64_t> MAX_WRITTEN_INTERVAL {
+    std::map<SinkType, int64_t> MAX_WRITTEN_INTERVAL {
         {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},      // 100ms
         {SINKTYPE_DIRECT, 100 * AUDIO_MS_PER_NS},       // 100ms
         {SINKTYPE_MULTICHANNEL, 100 * AUDIO_MS_PER_NS}, // 100ms

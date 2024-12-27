@@ -573,7 +573,7 @@ HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_035, TestSize.Level1)
 * @tc.name  : Test AudioUtilsUnitTest API
 * @tc.type  : FUNC
 * @tc.number: AudioPerformanaceMonitor_001
-* @tc.desc  : Test AudioPerformanaceMonitor::GetInstance 
+* @tc.desc  : Test AudioPerformanaceMonitor::GetInstance
 */
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_001, TestSize.Level3)
 {
