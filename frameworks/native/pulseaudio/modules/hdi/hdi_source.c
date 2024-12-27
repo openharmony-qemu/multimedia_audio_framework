@@ -852,7 +852,7 @@ static void ThreadFuncProcessTimer(void *userdata)
 
     pa_thread_mq_install(&u->threadMq);
     u->timestamp = pa_rtclock_now();
-    int32_t lastFlag = -1;
+    bool lastFlag = false;
 
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
