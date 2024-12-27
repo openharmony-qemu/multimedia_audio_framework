@@ -559,11 +559,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_023, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     DeviceRole targetRole = INPUT_DEVICE;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> sharedAudioDeviceDescriptors;
-    for (const auto& desc : audioDeviceDescriptors) {
-        sharedAudioDeviceDescriptors.push_back(std::static_pointer_cast<AudioDeviceDescriptor>(desc));
-    }
-    int32_t ret = audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptors);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    int32_t ret = audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptorSptrVector);
     EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 }
 
@@ -577,9 +576,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_024, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     DeviceRole targetRole = OUTPUT_DEVICE;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> sharedAudioDeviceDescriptors;
-    for (const auto& desc : audioDeviceDescriptors) {
-        sharedAudioDeviceDescriptors.push_back(std::static_pointer_cast<AudioDeviceDescriptor>(desc));
-    }
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     int32_t ret = audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptorSptrVector);
     EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 }
