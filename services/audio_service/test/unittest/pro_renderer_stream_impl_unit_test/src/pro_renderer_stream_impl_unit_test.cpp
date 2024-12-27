@@ -60,6 +60,7 @@ static AudioProcessConfig InitProcessConfig()
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
     return config;
 }
+
 /**
  * @tc.name  : Test GetDirectSampleRate API
  * @tc.type  : FUNC
@@ -80,6 +81,66 @@ HWTEST(ProRendererStreamImplUnitTest, GetDirectSampleRate_001, TestSize.Level1)
     sampleRate = SAMPLE_RATE_48000;
     ret = rendererStreamImpl->GetDirectSampleRate(sampleRate);
     EXPECT_EQ(ret, SAMPLE_RATE_48000);
+}
+
+/**
+ * @tc.name  : Test GetDirectSampleRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetDirectSampleRate_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetDirectFormat_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    bool isDirect = false;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    AudioSampleFormat format1 = SAMPLE_S16LE;
+    AudioSampleFormat format2 = SAMPLE_S32LE;
+    AudioSampleFormat ret;
+
+    ret = rendererStreamImpl->GetDirectFormat(format1);
+    EXPECT_EQ(ret, SAMPLE_S16LE);
+
+    ret = rendererStreamImpl->GetDirectFormat(format2);
+    EXPECT_EQ(ret, SAMPLE_S32LE);
+}
+
+/**
+ * @tc.name  : Test GetDirectSampleRate API
+ * @tc.type  : FUNC
+ * @tc.number: InitParams_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, InitParams_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_8000;
+    processConfig.streamType = STREAM_VOICE_CALL;
+    bool isDirect = false;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->resample_.reset();
+
+    int32_t ret = rendererStreamImpl->InitParams();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetDirectSampleRate API
+ * @tc.type  : FUNC
+ * @tc.number: InitParams_002
+ */
+HWTEST(ProRendererStreamImplUnitTest, InitParams_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_4;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_8000;
+    processConfig.streamType = STREAM_VOICE_CALL;
+    bool isDirect = false;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    
+    int32_t ret = rendererStreamImpl->InitParams();
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -193,7 +254,7 @@ HWTEST(ProRendererStreamImplUnitTest, Flush_002, TestSize.Level1)
     int32_t ret = rendererStreamImpl->Flush();
     EXPECT_EQ(ret, SUCCESS);
 }
- 
+
 /**
  * @tc.name  : Test Drain API
  * @tc.type  : FUNC
@@ -395,6 +456,98 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_002, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+* @tc.name  : Test EnqueueBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: EnqueueBuffer
+ */
+HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    processConfig.streamType = STREAM_VOICE_CALL;
+    processConfig.streamInfo.channels = CHANNEL_4;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    
+    rendererStreamImpl->InitParams();
+    rendererStreamImpl->isNeedMcr_ = true;
+    rendererStreamImpl->isNeedResample_ = false;
+    const BufferDesc bufferDesc = {nullptr, 0, 0};
+    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test EnqueueBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: EnqueueBuffer
+ */
+HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_004, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    processConfig.streamType = STREAM_VOICE_CALL;
+    processConfig.streamInfo.channels = CHANNEL_4;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_8000;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    
+    rendererStreamImpl->InitParams();
+    rendererStreamImpl->isNeedMcr_ = true;
+    rendererStreamImpl->isNeedResample_ = true;
+    const BufferDesc bufferDesc = {nullptr, 0, 0};
+    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test EnqueueBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: EnqueueBuffer
+ */
+HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_005, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    processConfig.streamType = STREAM_VOICE_CALL;
+    processConfig.streamInfo.channels = STEREO;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_8000;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    
+    rendererStreamImpl->InitParams();
+    rendererStreamImpl->isNeedMcr_ = false;
+    rendererStreamImpl->isNeedResample_ = true;
+    
+    const BufferDesc bufferDesc = {nullptr, 0, 0};
+    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test EnqueueBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: EnqueueBuffer
+ */
+HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_006, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    processConfig.streamType = STREAM_VOICE_CALL;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.channels = STEREO;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    bool isDirect = false;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    
+    rendererStreamImpl->InitParams();
+    rendererStreamImpl->desFormat_ = SAMPLE_S16LE;
+    const BufferDesc bufferDesc = {nullptr, 0, 0};
+    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(ret, SUCCESS);
+}
 
 /**
  * @tc.name  : Test EnqueueBuffer API
@@ -674,7 +827,8 @@ HWTEST(ProRendererStreamImplUnitTest, GetLatency_001, TestSize.Level1)
     int32_t ret = rendererStreamImpl->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
 }
- /**
+
+/**
  *@tc.name  : Test SetAudioEffectMode API
  *@tc.type  : FUNC
  *@tc.number: SetAudioEffectMode
@@ -692,7 +846,7 @@ HWTEST(ProRendererStreamImplUnitTest, SetAudioEffectMode_001, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
 }
 
- /**
+/**
  *@tc.name  : Test GetAudioEffectMode API
  *@tc.type  : FUNC
  *@tc.number: GetAudioEffectMode
@@ -710,7 +864,7 @@ HWTEST(ProRendererStreamImplUnitTest, GetAudioEffectMode_001, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
 }
 
- /**
+/**
  *@tc.name  : Test SetPrivacyType API
  *@tc.type  : FUNC
  *@tc.number: SetPrivacyType
@@ -732,7 +886,7 @@ HWTEST(ProRendererStreamImplUnitTest, SetPrivacyType_001, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(privacyType, rePrivacyType);
 }
- /**
+/**
  *@tc.name  : Test GetOffloadApproximatelyCacheTime API
  *@tc.type  : FUNC
  *@tc.number: GetOffloadApproximatelyCacheTime
@@ -754,7 +908,7 @@ HWTEST(ProRendererStreamImplUnitTest, GetOffloadApproximatelyCacheTime_001, Test
     ASSERT_EQ(result, SUCCESS);
 }
 
- /**
+/**
  *@tc.name  : Test UpdateSpatializationState API
  *@tc.type  : FUNC
  *@tc.number: UpdateSpatializationState
@@ -801,6 +955,28 @@ HWTEST(ProRendererStreamImplUnitTest, Peek_001, TestSize.Level0)
 
     rendererStreamImpl->isBlock_ = false;
     EXPECT_EQ(rendererStreamImpl->Peek(&audioBuffer, index), ERR_WRITE_BUFFER);
+}
+
+/**
+ *@tc.name  : Test PeekAPI
+ *@tc.type  : FUNC
+ *@tc.number: Peek
+*/
+HWTEST(ProRendererStreamImplUnitTest, Peek_002, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
+    rendererStreamImpl->RegisterWriteCallback(rendererInServer);
+    std::vector<char> audioBuffer;
+    int32_t index = 0;
+
+    rendererStreamImpl->isBlock_ = true;
+    EXPECT_NE(rendererStreamImpl->Peek(&audioBuffer, index), SUCCESS);
 }
 
 /**
@@ -856,6 +1032,7 @@ HWTEST(ProRendererStreamImplUnitTest, RegisterStatusCallback_001, TestSize.Level
     rendererStreamImpl->RegisterStatusCallback(rendererInServer);
     EXPECT_NE(rendererStreamImpl->statusCallback_.lock(), nullptr);
 }
+
 /**
  *@tc.name  : Test RegisterWriteCallback API
  *@tc.type  : FUNC
@@ -879,6 +1056,7 @@ HWTEST(ProRendererStreamImplUnitTest, RegisterWriteCallback_001, TestSize.Level0
  *@tc.type  : FUNC
  *@tc.number: GetWritableSize
 */
+
 HWTEST(ProRendererStreamImplUnitTest, GetWritableSize_001, TestSize.Level0)
 {
     AudioProcessConfig processConfig = InitProcessConfig();
@@ -889,6 +1067,24 @@ HWTEST(ProRendererStreamImplUnitTest, GetWritableSize_001, TestSize.Level0)
     size_t writableSize = rendererStreamImpl->GetWritableSize();
 
     EXPECT_EQ(writableSize, 0);
+}
+
+/**
+ *@tc.name  : Test ConvertFloatToDes API
+ *@tc.type  : FUNC
+ *@tc.number: ConvertFloatToDes
+*/
+HWTEST(ProRendererStreamImplUnitTest, ConvertFloatToDes_001, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    rendererStreamImpl->InitParams();
+    int32_t writeIndex = 0;
+    rendererStreamImpl->desFormat_ = SAMPLE_F32LE;
+
+    rendererStreamImpl->ConvertFloatToDes(writeIndex);
 }
 } // namespace AudioStandard
 } // namespace OHOS
