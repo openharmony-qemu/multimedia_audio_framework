@@ -152,11 +152,9 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
             audioEvent->anahsName = UEVENT_REMOVE;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("set anahs event error.");
             return ERROR;
         }
     }
-    AUDIO_ERR_LOG("set anahs event error and subSystem is not platform.");
     return ERROR;
 }
 
