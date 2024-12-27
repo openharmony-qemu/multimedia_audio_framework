@@ -33,7 +33,6 @@
 #include <pulsecore/memblockq.h>
 #include <pulsecore/source.h>
 #include <pulsecore/source-output.h>
-#include <pulsecore/asyncmsgq.h>
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -221,15 +220,16 @@ static void FreeThread(struct Userdata *u)
         pa_thread_free(u->thread);
     }
 
-    uint32_t missedMsgqNum = PaAsyncqGetNumToRead(u->CaptureMq->asyncq);
+    pa_memchunk chunk;
+    int32_t code = 0;
+    int32_t missedMsgqNum = 0;
+    while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
+        pa_memblock_unref(chunk.memblock);
+        pa_asyncmsgq_done(u->CaptureMq, 0);
+        missedMsgqNum++;
+    }
     if (missedMsgqNum > 0) {
         AUDIO_ERR_LOG("OS_ProcessCapData missed message num: %{public}u", missedMsgqNum);
-        pa_memchunk chunk;
-        int32_t code = 0;
-        while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
-            pa_memblock_unref(chunk.memblock);
-            pa_asyncmsgq_done(u->CaptureMq, 0);
-        }
     }
 
     if (u->CaptureMq) {
@@ -787,7 +787,7 @@ static void ThreadCaptureData(void *userdata)
             eventfd_t writEvent = 1;
             int32_t writeRes = eventfd_write(u->eventFd, writEvent);
             if (writeRes != 0) {
-                AUDIO_ERR_LOG("Failed to write from eventfd");
+                AUDIO_ERR_LOG("Failed to write to eventfd");
                 continue;
             }
             cost = pa_rtclock_now() - now;
@@ -806,7 +806,7 @@ static void PaRtpollProcessFunc(struct Userdata *u)
 
     eventfd_t value;
     int32_t readRet = eventfd_read(u->eventFd, &value);
-    if ((readRet != 0) && (u->source->thread_info.state == PA_SOURCE_RUNNING)) {
+    if (readRet != 0) {
         AUDIO_ERR_LOG("Failed to read from eventfd");
         return;
     }
@@ -887,7 +887,9 @@ static void ThreadFuncProcessTimer(void *userdata)
                 getpid(), gettid());
             break;
         }
-        PaRtpollProcessFunc(u);
+        if (flag) {
+            PaRtpollProcessFunc(u);
+        }
     }
     UnscheduleThreadInServer(getpid(), gettid());
 }
