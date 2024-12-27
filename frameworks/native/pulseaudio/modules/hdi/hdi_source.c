@@ -33,6 +33,7 @@
 #include <pulsecore/memblockq.h>
 #include <pulsecore/source.h>
 #include <pulsecore/source-output.h>
+#include <pulsecore/asyncmsgq.h>
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -211,14 +212,26 @@ static void FreeSceneMapsAndResampler(struct Userdata *u)
 
 static void FreeThread(struct Userdata *u)
 {
+    if (u->threadCap) {
+        pa_thread_free(u->threadCap);
+    }
+
     if (u->thread) {
         pa_asyncmsgq_send(u->threadMq.inq, NULL, PA_MESSAGE_SHUTDOWN, NULL, 0, NULL);
         pa_thread_free(u->thread);
     }
 
-    if (u->threadCap) {
-        pa_thread_free(u->threadCap);
+    uint32_t missedMsgqNum = PaAsyncqGetNumToRead(u->CaptureMq->asyncq);
+    if (missedMsgqNum > 0) {
+        AUDIO_ERR_LOG("OS_ProcessCapData missed message num: %{public}u", missedMsgqNum);
+        pa_memchunk chunk;
+        int32_t code = 0;
+        while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
+            pa_memblock_unref(chunk.memblock);
+            pa_asyncmsgq_done(u->CaptureMq, 0);
+        }
     }
+
     if (u->CaptureMq) {
         pa_asyncmsgq_unref(u->CaptureMq);
     }
@@ -793,7 +806,7 @@ static void PaRtpollProcessFunc(struct Userdata *u)
 
     eventfd_t value;
     int32_t readRet = eventfd_read(u->eventFd, &value);
-    if (readRet != 0) {
+    if ((readRet != 0) && (u->source->thread_info.state == PA_SOURCE_RUNNING)) {
         AUDIO_ERR_LOG("Failed to read from eventfd");
         return;
     }
@@ -802,11 +815,12 @@ static void PaRtpollProcessFunc(struct Userdata *u)
     int32_t code = 0;
     pa_usec_t now = pa_rtclock_now();
 
-    pa_assert_se(pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
-    if (code == HDI_POST) {
-        AudioEnhanceExistAndProcess(&chunk, u);
+    while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
+        if (code == HDI_POST) {
+            AudioEnhanceExistAndProcess(&chunk, u);
+        }
+        pa_asyncmsgq_done(u->CaptureMq, 0);
     }
-    pa_asyncmsgq_done(u->CaptureMq, 0);
 
     int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE];
     size_t count = 0;
@@ -838,6 +852,7 @@ static void ThreadFuncProcessTimer(void *userdata)
 
     pa_thread_mq_install(&u->threadMq);
     u->timestamp = pa_rtclock_now();
+    int32_t lastFlag = -1;
 
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
@@ -845,20 +860,16 @@ static void ThreadFuncProcessTimer(void *userdata)
         bool flag = (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) ?
             (u->source->thread_info.state == PA_SOURCE_RUNNING && u->isCapturerStarted) :
             (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->isCapturerStarted);
-        if (flag) {
-            pa_atomic_store(&u->captureFlag, 1);
-        } else {
-            pa_atomic_store(&u->captureFlag, 0);
-        }
+        pa_atomic_store(&u->captureFlag, flag);
 
         pa_rtpoll_set_timer_relative(u->rtpoll, RTPOLL_RUN_WAKEUP_INTERVAL_USEC);
         if (u->rtpollItem) {
             struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
-            if (pollFd == NULL) {
-                AUDIO_ERR_LOG("get pollFd failed");
-                break;
+            CHECK_AND_BREAK_LOG(pollFd != NULL, "pollFd is null");
+            if (flag != lastFlag) {
+                pollFd->events = flag ? POLLIN : 0;
+                lastFlag = flag;
             }
-            pollFd->events = flag ? POLLIN : 0;
         }
         /* Hmm, nothing to do. Let's sleep */
         int ret = pa_rtpoll_run(u->rtpoll);
