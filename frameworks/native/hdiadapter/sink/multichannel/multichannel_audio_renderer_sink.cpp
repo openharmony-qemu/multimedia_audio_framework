@@ -538,7 +538,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     }
 
     if (renderEmptyFrameCount_ > 0) {
-        RenderEmptyFrame(char &data, uint64_t len);
+        RenderEmptyFrame(data, len);
     }
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&data), len, len};
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,

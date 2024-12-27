@@ -81,7 +81,7 @@ void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, int64_t curTime
     }
 
     // init lastwritten time when start or resume to avoid overtime
-    if (curTimeStamp == INIT_LASTWRITTEN_TIME) {
+    if (curTimeStamp == INIT_LASTWRITTEN_TIME || overTimeDetectMap_[sinkType] == INIT_LASTWRITTEN_TIME) {
         overTimeDetectMap_[sinkType] = curTimeStamp;
         return;
     } 
