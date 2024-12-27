@@ -1837,6 +1837,7 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_
 {
     std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
     AUDIO_INFO_LOG("Enter, session id: %{public}d, stream flag: %{public}d", sessionId, streamFlag);
+    CHECK_AND_RETURN_LOG(renderer_ != nullptr, "renderer_ is nullptr");
     renderer_->SwitchStream(sessionId, streamFlag, reason);
 }
 
