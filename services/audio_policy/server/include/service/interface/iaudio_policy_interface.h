@@ -165,6 +165,10 @@ public:
     virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
 
     virtual void SetAudioServerProxy(sptr<IStandardAudioService> gsp) = 0;
+
+    virtual void SetOffloadSessionId(uint32_t sessionId) = 0;
+
+    virtual void ResetOffloadSessionId() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

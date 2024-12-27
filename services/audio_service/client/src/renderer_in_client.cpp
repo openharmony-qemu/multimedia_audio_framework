@@ -734,12 +734,6 @@ int32_t RendererInClientInner::SetVolume(float volume)
         volumeRamp_.Terminate();
     }
     clientVolume_ = volume;
-    if (offloadEnable_) {
-        SetInnerVolume(MAX_FLOAT_VOLUME); // so volume will not change in RendererInServer
-        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-        ipcStream_->OffloadSetVolume(volume);
-        return SUCCESS;
-    }
 
     return SetInnerVolume(volume);
 }
@@ -761,6 +755,12 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
     duckVolume_ = volume;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetDuckFactor(volume);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetDuckFactor(volume);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Set Duck failed:%{public}u", ret);
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -2237,12 +2237,10 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
 
 void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
+    AUDIO_PRERELEASE_LOGI("SetSilentModeAndMixWithOthers %{public}d", on);
     silentModeAndMixWithOthers_ = on;
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     ipcStream_->SetSilentModeAndMixWithOthers(on);
-    if (offloadEnable_) {
-        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_);
-    }
     return;
 }
 
@@ -2285,7 +2283,11 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     State oldState = state_;
     state_ = NEW;
     SetStreamTrackerState(false);
-
+    // If pipe type is offload, need reset to normal.
+    // Otherwise, unable to enter offload mode.
+    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    }
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {
         goto error;
@@ -2293,9 +2295,6 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     if (!needStoreState) {
         AUDIO_INFO_LOG("telephony scene, return directly");
         return ret;
-    }
-    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     }
     switch (oldState) {
         case RUNNING:

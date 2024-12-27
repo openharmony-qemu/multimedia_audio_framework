@@ -35,7 +35,6 @@ public:
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     int32_t SetDefaultSink(std::string name) override;
     int32_t SetDefaultSource(std::string name) override;
-    int32_t SetVolumeDb(AudioStreamType streamType, float volumeDb) override;
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
     bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) override;

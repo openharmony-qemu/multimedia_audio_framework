@@ -35,8 +35,6 @@ public:
     virtual int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
     virtual int32_t GetLatency(uint64_t &latency) = 0;
     virtual int32_t SetRate(int32_t rate) = 0;
-    virtual int32_t SetLowPowerVolume(float volume) = 0;
-    virtual int32_t GetLowPowerVolume(float &volume) = 0;
     virtual int32_t SetAudioEffectMode(int32_t effectMode) = 0;
     virtual int32_t GetAudioEffectMode(int32_t &effectMode) = 0;
     virtual int32_t SetPrivacyType(int32_t privacyType) = 0;

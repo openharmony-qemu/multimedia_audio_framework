@@ -792,12 +792,14 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
 
     if (!offloadSessionID_.has_value()) {
         offloadSessionID_ = sessionId;
+        audioPolicyManager_.SetOffloadSessionId(sessionId);
 
         AUDIO_DEBUG_LOG("sessionId[%{public}d] try get offload stream", sessionId);
         if (MoveToNewPipeInner(sessionId, PIPE_TYPE_OFFLOAD) != SUCCESS) {
             AUDIO_ERR_LOG("sessionId[%{public}d]  CallingUid[%{public}d] StreamType[%{public}d] "
                 "failed to offload stream", sessionId, CallingUid, streamType);
             offloadSessionID_.reset();
+            audioPolicyManager_.ResetOffloadSessionId();
             return;
         }
         SetOffloadMode();
@@ -830,6 +832,7 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
         DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
         offloadSessionID_.reset();
+        audioPolicyManager_.ResetOffloadSessionId();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     } else {
         if (offloadSessionID_.has_value()) {
@@ -854,6 +857,7 @@ void AudioPolicyService::RemoteOffloadStreamRelease(uint32_t sessionId)
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
         DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
         offloadSessionID_.reset();
+        audioPolicyManager_.ResetOffloadSessionId();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     }
 }

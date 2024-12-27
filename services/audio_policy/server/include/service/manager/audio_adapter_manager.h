@@ -192,6 +192,10 @@ public:
     void HandleRingerMode(AudioRingerMode ringerMode);
 
     void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
+
+    void SetOffloadSessionId(uint32_t sessionId);
+
+    void ResetOffloadSessionId();
 private:
     friend class PolicyCallbackImpl;
 
@@ -240,7 +244,6 @@ private:
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
-    int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
     void SetAudioVolume(AudioStreamType streamType, float volumeDb);
     void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
@@ -316,6 +319,9 @@ private:
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
     sptr<IStandardAudioService> audioServerProxy_ = nullptr;
+    std::optional<uint32_t> offloadSessionID_;
+    std::mutex audioVolumeMutex_;
+    std::mutex activeDeviceMutex_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -328,33 +334,6 @@ public:
     ~PolicyCallbackImpl()
     {
         AUDIO_WARNING_LOG("Destructor PolicyCallbackImpl");
-    }
-
-    virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType)
-    {
-        AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-        int32_t volumeLevel = audioAdapterManager_->GetStreamVolume(streamForVolumeMap);
-
-        bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
-        DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
-        if (streamForVolumeMap == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
-            int32_t vol = audioAdapterManager_->IsAbsVolumeMute() ? 0.0f : 1.0f;
-            return {vol, volumeLevel};
-        }
-
-        bool muteStatus = audioAdapterManager_->GetStreamMute(streamForVolumeMap);
-        if (muteStatus) {
-            return {0.0f, 0};
-        }
-
-        float volumeDb = 1.0f;
-        if (audioAdapterManager_->IsUseNonlinearAlgo()) {
-            volumeDb = audioAdapterManager_->CalculateVolumeDbNonlinear(streamForVolumeMap,
-                audioAdapterManager_->GetActiveDevice(), volumeLevel);
-        } else {
-            volumeDb = audioAdapterManager_->CalculateVolumeDb(volumeLevel);
-        }
-        return {volumeDb, volumeLevel};
     }
 
     void OnAudioStreamRemoved(const uint64_t sessionID)

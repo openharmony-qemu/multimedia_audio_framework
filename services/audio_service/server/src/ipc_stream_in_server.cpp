@@ -399,16 +399,6 @@ int32_t IpcStreamInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp,
     return rendererInServer_->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
 }
 
-int32_t IpcStreamInServer::OffloadSetVolume(float volume)
-{
-    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
-        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
-            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
-        return ERR_OPERATION_FAILED;
-    }
-    return rendererInServer_->OffloadSetVolume(volume);
-}
-
 int32_t IpcStreamInServer::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
 {
     if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
@@ -451,6 +441,15 @@ int32_t IpcStreamInServer::SetMute(bool isMute)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->SetMute(isMute);
+    }
+    AUDIO_ERR_LOG("mode is not playback or renderer is null");
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetDuckFactor(duckFactor);
     }
     AUDIO_ERR_LOG("mode is not playback or renderer is null");
     return ERR_OPERATION_FAILED;

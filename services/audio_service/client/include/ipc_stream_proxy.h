@@ -78,8 +78,6 @@ public:
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override; // renderer only
 
-    int32_t OffloadSetVolume(float volume) override; // renderer only
-
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override; // renderer only
 
     int32_t GetStreamManagerType() override;
@@ -89,6 +87,8 @@ public:
     int32_t SetClientVolume() override;
 
     int32_t SetMute(bool isMute) override;
+
+    int32_t SetDuckFactor(float duckFactor) override;
 
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
 private:

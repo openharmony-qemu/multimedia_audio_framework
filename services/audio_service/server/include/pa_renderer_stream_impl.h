@@ -38,8 +38,6 @@ public:
     int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
-    int32_t SetLowPowerVolume(float volume) override;
-    int32_t GetLowPowerVolume(float &powerVolume) override;
     int32_t SetAudioEffectMode(int32_t effectMode) override;
     int32_t GetAudioEffectMode(int32_t &effectMode) override;
     int32_t SetPrivacyType(int32_t privacyType) override;
@@ -127,7 +125,6 @@ private:
     std::string effectSceneName_ = "";
     int32_t privacyType_ = 0;
 
-    float powerVolumeFactor_ = 1.0f;
     bool isStandbyPause_ = false;
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;

@@ -31,6 +31,8 @@ enum FadePauseState {
 
 float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass);
 
+float GetStreamVolume(uint32_t sessionId);
+
 float GetPreVolume(uint32_t sessionId);
 
 void SetPreVolume(uint32_t sessionId, float volume);
