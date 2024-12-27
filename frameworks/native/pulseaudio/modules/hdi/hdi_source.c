@@ -311,7 +311,7 @@ static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offse
     return pa_source_process_msg(o, code, data, offset, chunk);
 }
 
-static void SendInitCommandToAlgo()
+static void SendInitCommandToAlgo(void)
 {
     pa_usec_t now = pa_rtclock_now();
     int32_t ret = EnhanceChainManagerSendInitCommand();
@@ -804,11 +804,10 @@ static void PaRtpollProcessFunc(struct Userdata *u)
 {
     AUTO_CTRACE("PaRtpollProcessFunc");
 
-    eventfd_t value;
-    int32_t readRet = eventfd_read(u->eventFd, &value);
-    if (readRet != 0) {
-        AUDIO_ERR_LOG("Failed to read from eventfd");
-        return;
+    if (u->source->thread_info.state == PA_SOURCE_RUNNING) {
+        eventfd_t value;
+        int32_t readRet = eventfd_read(u->eventFd, &value);
+        CHECK_AND_RETURN_LOG(readRet == 0, "Failed to read from eventfd");
     }
 
     pa_memchunk chunk;
@@ -816,9 +815,13 @@ static void PaRtpollProcessFunc(struct Userdata *u)
     pa_usec_t now = pa_rtclock_now();
 
     while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
-        if (code == HDI_POST) {
-            AudioEnhanceExistAndProcess(&chunk, u);
+        if (u->source->thread_info.state != PA_SOURCE_RUNNING) {
+            // when the source is not in running state, but we still recive data from CaptureMq.
+            pa_memblock_unref(chunk.memblock);
+            pa_asyncmsgq_done(u->CaptureMq, 0);
+            continue;
         }
+        AudioEnhanceExistAndProcess(&chunk, u);
         pa_asyncmsgq_done(u->CaptureMq, 0);
     }
 
@@ -852,9 +855,14 @@ static void ThreadFuncProcessTimer(void *userdata)
 
     pa_thread_mq_install(&u->threadMq);
     u->timestamp = pa_rtclock_now();
-    bool lastFlag = false;
 
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
+
+    if (u->rtpollItem) {
+        struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
+        CHECK_AND_BREAK_LOG(pollFd != NULL, "pollFd is null");
+        pollFd->events = POLLIN;
+    }
 
     while (true) {
         bool flag = (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) ?
@@ -863,14 +871,7 @@ static void ThreadFuncProcessTimer(void *userdata)
         pa_atomic_store(&u->captureFlag, flag);
 
         pa_rtpoll_set_timer_relative(u->rtpoll, RTPOLL_RUN_WAKEUP_INTERVAL_USEC);
-        if (u->rtpollItem) {
-            struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
-            CHECK_AND_BREAK_LOG(pollFd != NULL, "pollFd is null");
-            if (flag != lastFlag) {
-                pollFd->events = flag ? POLLIN : 0;
-                lastFlag = flag;
-            }
-        }
+        
         /* Hmm, nothing to do. Let's sleep */
         int ret = pa_rtpoll_run(u->rtpoll);
         if (ret < 0) {
@@ -887,9 +888,7 @@ static void ThreadFuncProcessTimer(void *userdata)
                 getpid(), gettid());
             break;
         }
-        if (flag) {
-            PaRtpollProcessFunc(u);
-        }
+        PaRtpollProcessFunc(u);
     }
     UnscheduleThreadInServer(getpid(), gettid());
 }
