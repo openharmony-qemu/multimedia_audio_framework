@@ -713,7 +713,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_032, TestSize.Level1)
     updatedDesc.deviceRole_ = INPUT_DEVICE;
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
-
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForOutputDevice(updatedDesc,
         audioDeviceDescriptorSptrVector);
