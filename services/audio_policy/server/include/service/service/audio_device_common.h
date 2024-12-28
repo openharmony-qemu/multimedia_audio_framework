@@ -116,6 +116,8 @@ public:
     std::vector<SourceOutput> GetSourceOutputs();
     void BluetoothScoDisconectForRecongnition();
     void SetFirstScreenOn();
+    void ClientDiedDisconnectScoNormal();
+    void ClientDiedDisconnectScoRecognition();
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
