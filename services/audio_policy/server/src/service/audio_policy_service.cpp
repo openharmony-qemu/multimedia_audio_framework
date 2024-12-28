@@ -7777,6 +7777,9 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
                 SetPreferredDevice(AUDIO_CALL_RENDER, new(std::nothrow) AudioDeviceDescriptor());
                 SetPreferredDevice(AUDIO_CALL_CAPTURE, new(std::nothrow) AudioDeviceDescriptor());
                 ClearScoDeviceSuspendState(desc.macAddress_);
+#ifdef BLUETOOTH_ENABLE
+                CheckAndActiveHfpDevice(desc);
+#endif
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
@@ -7808,8 +7811,7 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::UserSelectDeviceMa
 #ifdef BLUETOOTH_ENABLE
 void AudioPolicyService::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 {
-    if (desc.connectState_ == CONNECTED &&
-        desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         AudioRendererInfo rendererInfo = {};
         rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
         std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList =
