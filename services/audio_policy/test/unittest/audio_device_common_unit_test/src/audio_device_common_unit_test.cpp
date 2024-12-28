@@ -550,7 +550,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_022, TestSize.Level1)
     EXPECT_EQ(GROUP_ID_NONE, deviceInfo.interruptGroupId_);
 }
 
-
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_023
