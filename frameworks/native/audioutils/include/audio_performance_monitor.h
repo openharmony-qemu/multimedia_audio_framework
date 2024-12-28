@@ -17,21 +17,30 @@
 
 #include <cstdint>
 #include <map>
-#include <queue>
+#include <deque>
+#include <mutex>
 
 namespace OHOS {
 namespace AudioStandard {
 
-const uint64_t AUDIO_MS_PER_NS = 1000000;
-const int32_t OVERTIME_EVENT = 0;
-const int32_t SILENCE_EVENT = 1;
+const uint64_t AUDIO_NS_PER_MS = 1000 * 1000;
 const int64_t INIT_LASTWRITTEN_TIME = -1;
+const int64_t MIN_REPORT_INTERVAL = 5 * 1000 * 1000 * 1000;  // 5s
 
-const uint32_t MIN_SILENCE_VALUE = 1;
-const uint32_t MAX_SILENCE_VALUE = 2;
-const uint32_t MIN_NOT_SILENCE_VALUE = 1;
-const uint32_t MAX_NOT_SILENCE_VALUE = 2;
+// jank defination: receive one silent frame, then receive MIN_SILENCE_FRAME_COUNT <= y <= MAX_SILENCE_FRAME_COUNT
+// not silent frames, and then receive a silent frame, in this case we will report SILENCE_EVENT
+const uint32_t MIN_SILENCE_FRAME_COUNT = 1;
+const uint32_t MAX_SILENCE_FRAME_COUNT = 2;
 const size_t MAX_RECORD_QUEUE_SIZE = 20;
+const size_t MAX_MAP_SIZE = 1024;
+
+const int64_t NORMAL_MAX_LASTWRITTEN_TIME = 100;    // 100 * AUDIO_NS_PER_MS
+const int64_t FAST_MAX_LASTWRITTEN_TIME = 8;    // 8 * AUDIO_NS_PER_MS
+
+enum DetectEvent : int32_t {
+    OVERTIME_EVENT = 0,
+    SILENCE_EVENT = 1,
+}
 
 enum SinkType : uint32_t {
     SINKTYPE_PRIMARY = 0,
@@ -44,9 +53,8 @@ enum SinkType : uint32_t {
 };
 
 struct FrameRecordInfo {
-    uint64_t silenceStateCount = MAX_SILENCE_VALUE + 1;
-    uint64_t notSilenceStateCount = MAX_NOT_SILENCE_VALUE + 1;
-    std::queue<bool> historyStateQueue{};
+    uint64_t silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
+    std::deque<bool> historyStateDeque{};
 };
 
 class AudioPerformanceMonitor {
@@ -62,20 +70,28 @@ public:
     void RecordTimeStamp(SinkType sinkType, int64_t curTimeStamp);
     void DeleteOvertimeMonitor(SinkType sinkType);
 
-    std::map<uint32_t, FrameRecordInfo> silenceDetectMap_{}; // sessionId, FrameRecordInfo
-    std::map<SinkType, int64_t> overTimeDetectMap_{}; // SinkType, lastWrittenTimeStamp
+    void DumpMonitorInfo(std::string &dumpString);
+
+    std::map<uint32_t /*sessionId*/, FrameRecordInfo> silenceDetectMap_{};
+    std::map<SinkType, int64_t /*lastWrittenTimeStamp*/> overTimeDetectMap_{};
 
 private:
     void JudgeNoise(uint32_t index, bool curState);
-    void ReportEvent(int32_t reasonCode);
+    void ReportEvent(DetectEvent reasonCode);
+
+    int64_t silenceLastReportTime_ = -1;
+    int64_t overTimeLastReportTime_ = -1;
+
+    std::mutex silenceMapMutex_;
+    std::mutex overTimeMapMutex_;
 
     std::map<SinkType, int64_t> MAX_WRITTEN_INTERVAL {
-        {SINKTYPE_PRIMARY, 100 * AUDIO_MS_PER_NS},      // 100ms
-        {SINKTYPE_DIRECT, 100 * AUDIO_MS_PER_NS},       // 100ms
-        {SINKTYPE_MULTICHANNEL, 100 * AUDIO_MS_PER_NS}, // 100ms
-        {SINKTYPE_REMOTE, 100 * AUDIO_MS_PER_NS},       // 100ms
-        {SINKTYPE_BLUETOOTH, 100 * AUDIO_MS_PER_NS},    // 100ms
-        {SINKTYPE_FAST, 8 * AUDIO_MS_PER_NS},           // 8ms
+        {SINKTYPE_PRIMARY, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},      // 100ms
+        {SINKTYPE_DIRECT, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},       // 100ms
+        {SINKTYPE_MULTICHANNEL, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS}, // 100ms
+        {SINKTYPE_REMOTE, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},       // 100ms
+        {SINKTYPE_BLUETOOTH, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},    // 100ms
+        {SINKTYPE_FAST, FAST_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},           // 8ms
     };
 };
 

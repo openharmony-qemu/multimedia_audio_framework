@@ -610,7 +610,7 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_003, TestSize.Level3)
         mgr.RecordSilenceState(sessionId, true);
     }
     EXPECT_NE(mgr.silenceDetectMap_.find(sessionId), mgr.silenceDetectMap_.end());
-    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateQueue.size(), MAX_RECORD_QUEUE_SIZE);
+    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateDeque.size(), MAX_RECORD_QUEUE_SIZE);
 }
 
 /**
@@ -624,7 +624,7 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_004, TestSize.Level3)
     uint32_t sessionId = 111111;
     AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
     mgr.ClearSilenceMonitor(sessionId);
-    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateQueue.size(), static_cast<size_t>(0));
+    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateDeque.size(), static_cast<size_t>(0));
     uint32_t notExistSessionId = 111112;
     mgr.ClearSilenceMonitor(notExistSessionId);
     EXPECT_EQ(mgr.silenceDetectMap_.find(notExistSessionId), mgr.silenceDetectMap_.end());
@@ -641,11 +641,11 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_005, TestSize.Level3)
     uint32_t sessionId = 111111;
     AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
     mgr.RecordSilenceState(sessionId, false);
-    for (size_t i = 0; i < MIN_SILENCE_VALUE; ++i) {
+    for (size_t i = 0; i < MIN_SILENCE_FRAME_COUNT; ++i) {
         mgr.RecordSilenceState(sessionId, true);
     }
     mgr.RecordSilenceState(sessionId, false);
-    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateQueue.size(), static_cast<size_t>(0));
+    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateDeque.size(), static_cast<size_t>(0));
 }
 
 /**

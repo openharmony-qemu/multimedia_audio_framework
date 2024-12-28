@@ -239,7 +239,6 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
         PermissionUtil::NotifyStop(tokenId, sessionId_);
     }
     int32_t ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
-    AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId_);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
 }

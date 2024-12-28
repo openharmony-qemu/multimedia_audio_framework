@@ -23,7 +23,6 @@
 #include "securec.h"
 #include "policy_handler.h"
 #include "audio_volume.h"
-#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {

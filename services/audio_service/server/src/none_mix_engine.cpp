@@ -252,8 +252,6 @@ void NoneMixEngine::MixStreams()
         StandbySleep();
         return;
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, INIT_LASTWRITTEN_TIME);
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, ClockTime::GetCurNano());
     if (failedCount_ >= MAX_ERROR_COUNT) {
         AUDIO_WARNING_LOG("failed count is overflow.");
         PauseAsync();
@@ -292,7 +290,6 @@ void NoneMixEngine::MixStreams()
     renderSink_->RenderFrame(*audioBuffer.data(), audioBuffer.size(), written);
     stream_->ReturnIndex(index);
     renderSink_->UpdateAppsUid({appUid});
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_DIRECT, ClockTime::GetCurNano());
     StandbySleep();
 }
 

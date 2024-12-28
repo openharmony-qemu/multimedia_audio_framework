@@ -23,62 +23,61 @@
 #include "audio_errors.h"
 #include "media_monitor_manager.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-AudioPerformanceMonitor& AudioPerformanceMonitor::GetInstance()
+AudioPerformanceMonitor &AudioPerformanceMonitor::GetInstance()
 {
     static AudioPerformanceMonitor mgr;
     return mgr;
 }
 
-void AudioPerformanceMonitor::DeleteOvertimeMonitor(SinkType sinkType)
+void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence)
 {
-    CHECK_AND_RETURN_LOG(overTimeDetectMap_.find(sinkType) != overTimeDetectMap_.end(),
-        "invalid sinkType: %{public}d", sinkType);
-    AUDIO_INFO_LOG("delete sinkType %{public}d overTime Monitor!", sinkType);
-    overTimeDetectMap_.erase(sinkType);
-}
-
-void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
-{
-    CHECK_AND_RETURN_LOG(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end(),
-        "invalid sessionId: %{public}d", sessionId);
-    AUDIO_INFO_LOG("delete sessionId %{public}d silence Monitor!", sessionId);
-    silenceDetectMap_.erase(sessionId);
+    std::lock_guard<std::mutex> lock(silenceMapMutex_);
+    if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
+        CHECK_AND_RETURN_LOG(silenceDetectMap_.size() < MAX_MAP_SIZE, "silenceDetectMap_ overSize!");
+        AUDIO_INFO_LOG("start record silence state of sessionId : %{public}d", sessionId);
+        silenceDetectMap_[sessionId] = FrameRecordInfo();
+    }
+    silenceDetectMap_[sessionId].historyStateDeque.push_back(isSilence);
+    if (silenceDetectMap_[sessionId].historyStateDeque.size() > MAX_RECORD_QUEUE_SIZE) {
+        silenceDetectMap_[sessionId].historyStateDeque.pop_front();
+    }
+    JudgeNoise(sessionId, isSilence);
 }
 
 void AudioPerformanceMonitor::ClearSilenceMonitor(uint32_t sessionId)
 {
+    std::lock_guard<std::mutex> lock(silenceMapMutex_);
     if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
         return;
     }
     silenceDetectMap_[sessionId] = FrameRecordInfo();
 }
 
-void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence)
+void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
 {
-    if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
-        AUDIO_INFO_LOG("start record silence state of sessionId : %{public}d", sessionId);
-        silenceDetectMap_[sessionId] = FrameRecordInfo();
-    }
-    silenceDetectMap_[sessionId].historyStateQueue.push(isSilence);
-    if (silenceDetectMap_[sessionId].historyStateQueue.size() > MAX_RECORD_QUEUE_SIZE) {
-        silenceDetectMap_[sessionId].historyStateQueue.pop();
-    }
-    JudgeNoise(sessionId, isSilence);
+    std::lock_guard<std::mutex> lock(silenceMapMutex_);
+    CHECK_AND_RETURN_LOG(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end(),
+        "invalid sessionId: %{public}d", sessionId);
+    AUDIO_INFO_LOG("delete sessionId %{public}d silence Monitor!", sessionId);
+    silenceDetectMap_.erase(sessionId);
 }
 
 void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, int64_t curTimeStamp)
 {
+    std::lock_guard<std::mutex> lock(overTimeMapMutex_);
     CHECK_AND_RETURN_LOG(sinkType >= SinkType::SINKTYPE_PRIMARY && sinkType < SinkType::MAX_SINK_TYPE,
         "invalid sinkType: %{public}d", sinkType);
     if (overTimeDetectMap_.find(sinkType) == overTimeDetectMap_.end()) {
+        CHECK_AND_RETURN_LOG(overTimeDetectMap_.size() < MAX_MAP_SIZE, "overTimeDetectMap_ overSize!");
         AUDIO_INFO_LOG("start record sinkType: %{public}d", sinkType);
         overTimeDetectMap_[sinkType] = curTimeStamp;
         return;
-    }
+    } 
 
     // init lastwritten time when start or resume to avoid overtime
     if (curTimeStamp == INIT_LASTWRITTEN_TIME || overTimeDetectMap_[sinkType] == INIT_LASTWRITTEN_TIME) {
@@ -94,21 +93,53 @@ void AudioPerformanceMonitor::RecordTimeStamp(SinkType sinkType, int64_t curTime
     overTimeDetectMap_[sinkType] = curTimeStamp;
 }
 
+void AudioPerformanceMonitor::DeleteOvertimeMonitor(SinkType sinkType)
+{
+    std::lock_guard<std::mutex> lock(overTimeMapMutex_);
+    CHECK_AND_RETURN_LOG(overTimeDetectMap_.find(sinkType) != overTimeDetectMap_.end(),
+        "invalid sinkType: %{public}d", sinkType);
+    AUDIO_INFO_LOG("delete sinkType %{public}d overTime Monitor!", sinkType);
+    overTimeDetectMap_.erase(sinkType);
+}
+
+void AudioPerformanceMonitor::DumpMonitorInfo(std::string &dumpString)
+{
+    dumpString += "\n-----silenceMonitor-----\n";
+    dumpString += "streamId\tcountNum\tcurState\n";
+    for (auto it = silenceDetectMap_.begin(); it != silenceDetectMap_.end(); ++it) {
+        dumpString += std::to_string(it->first) + "\t" + std::to_string(it->second.silenceStateCount) + "\t";
+        for (auto cit = it->second.historyStateDeque.begin(); cit != it->second.historyStateDeque.end(); ++cit) {
+            dumpString += (*it) ? "_" : "-";
+        }
+        dumpString += "\n"
+    }
+    dumpString += "LastSilenceReportTime: " +
+        silenceLastReportTime_ == -1 ? "not report yet" : ClockTime::NanoTimeToString(silenceLastReportTime_);
+
+    dumpString += "\n-----overTimeMonitor-----\n";
+    dumpString += "sinkType\tlastWrittenTime\n";
+    for (auto it = overTimeDetectMap_.begin(); it != overTimeDetectMap_.end(); ++it) {
+        dumpString += std::to_string(it->first) + "\t" + std::to_string(it->second) + "\n";
+    }
+    dumpString += "LastOverTimeReportTime: " +
+        overTimeLastReportTime_ == -1 ? "not report yet" : ClockTime::NanoTimeToString(overTimeLastReportTime_);
+}
+
 // we use silenceStateCount to record the silence frames bewteen two not silence frame
+// need to check if sessionId exists before use
 void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
 {
     if (isSilence) {
         silenceDetectMap_[sessionId].silenceStateCount++;
-        silenceDetectMap_[sessionId].notSilenceStateCount = 0;
     } else {
         // we init the count value as the maxValue+1 to make it as normal state
-        if (MIN_SILENCE_VALUE <= silenceDetectMap_[sessionId].silenceStateCount &&
-            silenceDetectMap_[sessionId].silenceStateCount <= MAX_SILENCE_VALUE) {
+        if (MIN_SILENCE_FRAME_COUNT <= silenceDetectMap_[sessionId].silenceStateCount &&
+            silenceDetectMap_[sessionId].silenceStateCount <= MAX_SILENCE_FRAME_COUNT) {
             std::string printStr{};
-            //for example: not Silent-> not Silent -> silent -> not Silent -> silent, will print "--_-_"
-            while (silenceDetectMap_[sessionId].historyStateQueue.size() != 0) {
-                printStr += silenceDetectMap_[sessionId].historyStateQueue.front() ? "_" : "-";
-                silenceDetectMap_[sessionId].historyStateQueue.pop();
+            // for example: not Silent-> not Silent -> silent -> not Silent -> silent, will print "--_-_"
+            while (silenceDetectMap_[sessionId].historyStateDeque.size() != 0) {
+                printStr += silenceDetectMap_[sessionId].historyStateDeque.front() ? "_" : "-";
+                silenceDetectMap_[sessionId].historyStateDeque.pop_front();
             }
             AUDIO_WARNING_LOG("record %{public}d state for last %{public}zu times: %{public}s",
                 sessionId, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
@@ -117,13 +148,29 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
             return;
         }
         silenceDetectMap_[sessionId].silenceStateCount = 0;
-        silenceDetectMap_[sessionId].notSilenceStateCount++;
     }
 }
 
-void AudioPerformanceMonitor::ReportEvent(int32_t reasonCode)
+void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode)
 {
-    AUDIO_INFO_LOG("report reasonCode %{public}d", reasonCode);
+    int64_t curRealTime = ClockTime::GetRealNano();
+    switch (reasonCode) {
+    case SILENCE_EVENT:
+        CHECK_AND_RETURN_LOG(curRealTime - silenceLastReportTime_ >= MIN_REPORT_INTERVAL,
+            "report silence event too frequent!");
+        silenceLastReportTime_ = ClockTime::GetRealNano();
+        break;
+    case OVERTIME_EVENT:
+        CHECK_AND_RETURN_LOG(curRealTime - overTimeLastReportTime_ >= MIN_REPORT_INTERVAL,
+            "report overtime event too frequent!");
+        overTimeLastReportTime_ = ClockTime::GetRealNano();
+        break;
+    default:
+        AUDIO_ERR_LOG("invalid DetectEvent %{public}d", reasonCode);
+        return;
+    }
+
+    AUDIO_WARNING_LOG("report reasonCode %{public}d", reasonCode);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::JANK_PLAYBACK,
         Media::MediaMonitor::EventType::FAULT_EVENT);

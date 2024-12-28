@@ -96,6 +96,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             }
             linkedPairedList_.erase(paired);
             isFind = true;
+            AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(processConfig.originalSessionId);
             break;
         } else {
             paired++;
