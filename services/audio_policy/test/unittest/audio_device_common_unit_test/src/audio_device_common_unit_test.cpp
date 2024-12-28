@@ -582,5 +582,229 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_024, TestSize.Level1)
     int32_t ret = audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptorSptrVector);
     EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 }
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_026
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnecting interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_026, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnecting(updatedDesc, audioDeviceDescriptorSptrVector);
+    audioDeviceCommon.RemoveOfflineDevice(updatedDesc);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_027
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnecting interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_027, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = OUTPUT_DEVICE;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnecting(updatedDesc, audioDeviceDescriptorSptrVector);
+    audioDeviceCommon.RemoveOfflineDevice(updatedDesc);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_028
+* @tc.desc  : Test UpdateConnectedDevicesWhenDisconnecting interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_028, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = OUTPUT_DEVICE;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(false, audioDeviceCommon.hasDpDevice_);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_029
+* @tc.desc  : Test UpdateConnectedDevicesWhenDisconnecting interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_029, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(false, audioDeviceCommon.hasDpDevice_);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_030
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForInputDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_030, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc,
+        audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_031
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForInputDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_031, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    updatedDesc.connectState_ = VIRTUAL_CONNECTED;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc,
+        audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_032
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForOutputDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_032, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForOutputDevice(updatedDesc,
+        audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_033
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForOutputDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_033, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    updatedDesc.connectState_ = VIRTUAL_CONNECTED;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForOutputDevice(updatedDesc,
+        audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_034
+* @tc.desc  : Test UpdateDualToneState interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_034, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool enable = true;
+    int32_t sessionId = 0;
+    audioDeviceCommon.UpdateDualToneState(enable, sessionId);
+    EXPECT_EQ(sessionId, audioDeviceCommon.enableDualHalToneSessionId_);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_035
+* @tc.desc  : Test UpdateDualToneState interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_035, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool enable = false;
+    int32_t sessionId = 0;
+    audioDeviceCommon.UpdateDualToneState(enable, sessionId);
+    EXPECT_EQ(enable, audioDeviceCommon.enableDualHalToneState_);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_036
+* @tc.desc  : Test UpdateDualToneState interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_036, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    rendererChangeInfo->rendererInfo.originalFlag = AUDIO_FLAG_MMAP;
+    rendererChangeInfo->outputDeviceInfo.deviceId_ = 0;
+    desc->deviceId_ = 1;
+    bool ret = audioDeviceCommon.IsFastFromA2dpToA2dp(desc, rendererChangeInfo, reason);
+    EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_037
+* @tc.desc  : Test UpdateDualToneState interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_037, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    rendererChangeInfo->rendererInfo.originalFlag = AUDIO_FLAG_MMAP;
+    rendererChangeInfo->outputDeviceInfo.deviceId_ = 0;
+    desc->deviceId_ = 0;
+    bool ret = audioDeviceCommon.IsFastFromA2dpToA2dp(desc, rendererChangeInfo, reason);
+    EXPECT_EQ(false, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
