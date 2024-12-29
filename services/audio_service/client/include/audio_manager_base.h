@@ -484,6 +484,13 @@ public:
      * @return Returns result of querying, 0 if success, error number else.
      */
     virtual int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) = 0;
+
+    /**
+     * generate sessionId.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t GenerateSessionId(uint32_t &sessionId) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -562,6 +569,7 @@ private:
     int HandleRestoreSession(MessageParcel &data, MessageParcel &reply);
     int HandleCreateIpcOfflineStream(MessageParcel &data, MessageParcel &reply);
     int HandleGetOfflineAudioEffectChains(MessageParcel &data, MessageParcel &reply);
+    int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
