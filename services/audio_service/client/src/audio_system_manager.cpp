@@ -1006,13 +1006,33 @@ int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioVolumeType stre
 int32_t AudioSystemManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
     AUDIO_DEBUG_LOG("stub implementation");
-    return SUCCESS;
+    return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 }
 
 int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
 {
     AUDIO_DEBUG_LOG("stub implementation");
-    return SUCCESS;
+    return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
+}
+
+int32_t AudioSystemManager::GenerateSessionId(uint32_t &sessionId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    int32_t ret = gasp->GenerateSessionId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get sessionId failed");
+    return 0;
+}
+
+int32_t AudioSystemManager::SetAudioInterruptCallback(const uint32_t sessionID,
+    const std::shared_ptr<AudioInterruptCallback> &callback, uint32_t clientUid, const int32_t zoneID)
+{
+    return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID, callback, clientUid, zoneID);
+}
+
+int32_t AudioSystemManager::UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId)
+{
+    return AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(zoneId, sessionId);
 }
 
 int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_ptr<AudioManagerCallback> &callback)
