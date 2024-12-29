@@ -2105,5 +2105,14 @@ int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effec
 #endif
     return ERR_NOT_SUPPORTED;
 }
+
+int AudioManagerStub::HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    int32_t ret = GenerateSessionId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "generate session id failed");
+    reply.WriteUint32(sessionId);
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS
