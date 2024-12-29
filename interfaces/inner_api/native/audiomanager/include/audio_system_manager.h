@@ -1297,7 +1297,6 @@ public:
     * in {@link audio_errors.h}.
     */
     int32_t SetVoiceRingtoneMute(bool isMute);
-    int32_t SetVoiceRingtoneMute(bool isMute);
 
     int32_t GenerateSessionId(uint32_t &sessionId);
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const std::shared_ptr<AudioInterruptCallback> &callback,
