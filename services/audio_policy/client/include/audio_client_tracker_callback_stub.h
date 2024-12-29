@@ -28,6 +28,7 @@ public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
             MessageParcel &reply, MessageOption &option) override;
     void SetClientTrackerCallback(const std::weak_ptr<AudioClientTracker> &callback);
+    void UnsetClientTrackerCallback();
 
     void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
     void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
@@ -44,6 +45,7 @@ public:
         MessageParcel &reply, MessageOption &option);
     void SelectCodeCase(uint32_t code, StreamSetStateEventInternal &streamSetStateEventInternal);
 private:
+    std::mutex clientTrackerMutex_;
     std::weak_ptr<AudioClientTracker> callback_;
 };
 } // namespace AudioStandard
