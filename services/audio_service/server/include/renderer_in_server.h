@@ -112,7 +112,7 @@ private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
-    void CheckBuffer(uint8_t *buffer, size_t bufferSize);
+    bool CheckBuffer(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
     void DoFadingOut(BufferDesc& bufferDesc);
