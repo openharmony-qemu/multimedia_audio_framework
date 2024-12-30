@@ -353,7 +353,7 @@ int32_t AudioEnhanceChain::GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &
 
 void AudioEnhanceChain::WriteDumpFile(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length)
 {
-    if(dumpFileIn_ == nullptr) {
+    if (dumpFileIn_ == nullptr) {
         return;
     }
     std::vector<uint8_t> buffer;
