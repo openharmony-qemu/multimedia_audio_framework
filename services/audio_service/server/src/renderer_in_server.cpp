@@ -393,7 +393,7 @@ void RendererInServer::DoFadingOut(BufferDesc& bufferDesc)
     }
 }
 
-void RendererInServer::CheckBuffer(uint8_t *buffer, size_t bufferSize)
+bool RendererInServer::CheckBuffer(uint8_t *buffer, size_t bufferSize)
 {
     bool isInvalid = false;
     uint8_t ui8Data = 0;
