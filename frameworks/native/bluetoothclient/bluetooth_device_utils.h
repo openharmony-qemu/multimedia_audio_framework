@@ -68,7 +68,6 @@ enum RecognitionStatus : int32_t {
     RECOGNITION_DISCONNECTING = 2,
     RECOGNITION_DISCONNECTED = 3,
 };
-
 } // namespace Bluetooth
 } // namespace OHOS
 
