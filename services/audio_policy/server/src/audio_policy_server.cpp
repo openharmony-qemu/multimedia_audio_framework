@@ -1098,6 +1098,9 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
         // when the voice call volume is adjusted on PC, adjust the music volume together.
         int32_t setResult = SetSingleStreamVolume(STREAM_MUSIC, volumeLevel, isUpdateUi,
             GetStreamMuteInternal(STREAM_MUSIC));
+        if (setResult != SUCCESS) {
+            AUDIO_WARNING_LOG("Fail to set STREAM_MUSIC volume");
+        }
     }
     return SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi, mute);
 }
