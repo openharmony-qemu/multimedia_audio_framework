@@ -708,7 +708,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (buffer[0] == 0) {
+    if (CheckBuffer(buffer, bufferSize)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
@@ -725,6 +725,28 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
     }
+}
+
+void RendererInClientInner::CheckBuffer(uint8_t *buffer, size_t bufferSize)
+{
+    bool isInvalid = false;
+    uint8_t ui8Data = 0;
+    uint16_t ui16Data = 0;
+    switch (clientConfig_.streamInfo.format) {
+        case SAMPLE_U8:
+            CHECK_AND_RETURN_LOG(bufferSize > 0, false, "buffer size is too small");
+            ui8Data = *buffer;
+            isInvalid = ui8Data == 0;
+            break;
+        case SAMPLE_S16LE:
+            CHECK_AND_RETURN_LOG(bufferSize > 1, false, "buffer size is too small"); 
+            ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
+            isInvalid = ui16Data == 0;
+            break;
+        default:
+            break;
+    }
+    return isInvalid;
 }
 
 int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,
