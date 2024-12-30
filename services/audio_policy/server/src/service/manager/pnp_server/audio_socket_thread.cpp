@@ -152,6 +152,7 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
             audioEvent->anahsName = UEVENT_REMOVE;
             return SUCCESS;
         } else {
+            AUDIO_ERR_LOG("set anahs event failed.");
             return ERROR;
         }
     }
@@ -231,7 +232,6 @@ int32_t AudioSocketThread::AudioAnahsDetectDevice(struct AudioPnpUevent *audioPn
         return HDF_ERR_INVALID_PARAM;
     }
     if (SetAudioAnahsEventValue(&audioEvent, audioPnpUevent) != SUCCESS) {
-        AUDIO_ERR_LOG("set audio anahs event failed.");
         return ERROR;
     }
 

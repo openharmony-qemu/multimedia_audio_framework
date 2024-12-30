@@ -408,6 +408,24 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetA2dpDeviceVolume_001, TestSize.Level1
 }
 
 /**
+ * @tc.name  : Test SetA2dpDeviceVolume.
+ * @tc.number: SetA2dpDeviceVolume_002
+ * @tc.desc  : Test SetA2dpDeviceVolume interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, SetA2dpDeviceVolume_002, TestSize.Level1)
+{
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    std::string macAddress = "A1:B2:C3:D4:E5:F6";
+    A2dpDeviceConfigInfo configInfo{};
+    configInfo.absVolumeSupport = true;
+    server->audioPolicyService_.audioDeviceStatus_.audioA2dpDevice_.AddA2dpDevice(macAddress, configInfo);
+    int32_t volumeLevel = 4;
+    bool internalCall = true;
+    int32_t ret = server->audioPolicyService_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test TriggerDeviceChangedCallback.
  * @tc.number: TriggerDeviceChangedCallback_001
  * @tc.desc  : Test TriggerDeviceChangedCallback interfaces.
