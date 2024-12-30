@@ -187,7 +187,7 @@ MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &
 MultiChannelRendererSinkInner::~MultiChannelRendererSinkInner()
 {
     AUDIO_INFO_LOG("~MultiChannelRendererSinkInner");
-    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_MULTICHANNEL);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_MULTICHANNEL);
 }
 
 MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(const std::string &halName)
@@ -555,7 +555,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_MULTICHANNEL, ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, ClockTime::GetCurNano());
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     if (logMode_) {
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
@@ -652,7 +652,7 @@ int32_t MultiChannelRendererSinkInner::Start(void)
             return ERR_NOT_STARTED;
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -1006,7 +1006,7 @@ int32_t MultiChannelRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

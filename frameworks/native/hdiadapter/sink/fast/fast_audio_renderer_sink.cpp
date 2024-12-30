@@ -687,7 +687,7 @@ int32_t FastAudioRendererSinkInner::Start(void)
 #endif
     started_ = true;
     AUDIO_DEBUG_LOG("Start cost[%{public}" PRId64 "]ms", (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 #ifdef FEATURE_POWER_MANAGER
@@ -916,7 +916,7 @@ int32_t FastAudioRendererSinkInner::Resume(void)
             "Resume failed!");
     }
     paused_ = false;
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

@@ -811,6 +811,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
         fadeoutFlag_ = DO_FADINGOUT;
     }
     DrainAudioBuffer();
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
     int ret = stream_->Drain();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
     if (isInnerCapEnabled_) {

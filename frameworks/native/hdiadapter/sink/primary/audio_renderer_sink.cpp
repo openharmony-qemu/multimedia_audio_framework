@@ -260,7 +260,7 @@ private:
     std::mutex sinkMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
-    SinkType sinkType_ = SINKTYPE_PRIMARY;
+    AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -310,7 +310,7 @@ AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
     if (halName_ == DIRECT_HAL_NAME || halName_ == VOIP_HAL_NAME) {
-        sinkType_ = SINKTYPE_DIRECT;
+        sinkType_ = ADAPTER_TYPE_DIRECT;
     }
 }
 

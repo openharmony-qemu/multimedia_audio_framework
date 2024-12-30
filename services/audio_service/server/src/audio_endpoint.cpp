@@ -550,7 +550,7 @@ void AudioEndpointInner::Release()
         endpointWorkThread_.join();
         AUDIO_DEBUG_LOG("AudioEndpoint join work thread end");
     }
-    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(SINKTYPE_FAST);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_FAST);
 
     stopUpdateThread_.store(true);
     updateThreadCV_.notify_all();
@@ -1600,7 +1600,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
             ProcessData(audioDataList, dstStreamData);
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(SINKTYPE_FAST, ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, ClockTime::GetCurNano());
 
     if (isInnerCapEnabled_) {
         ProcessToDupStream(audioDataList, dstStreamData);
