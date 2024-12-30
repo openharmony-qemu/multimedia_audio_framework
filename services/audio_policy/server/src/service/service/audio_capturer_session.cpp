@@ -323,30 +323,32 @@ bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &strea
     return true;
 }
 
-bool AudioCapturerSession::IsVoipDeviceChanged(const DeviceType inputDevice, const DeviceType outputDevice)
+bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevice,
+    const AudioDeviceDescriptor &outputDevice)
 {
-    DeviceType realInputDevice = inputDevice;
-    DeviceType realOutputDevice = outputDevice;
+    AudioDeviceDescriptor realInputDevice = inputDevice;
+    AudioDeviceDescriptor realOutputDevice = outputDevice;
     shared_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
     if (inputDesc != nullptr) {
-        realInputDevice = inputDesc->deviceType_;
+        realInputDevice = *inputDesc;
     }
     vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
     if (outputDesc.size() > 0 && outputDesc.front() != nullptr) {
-        realOutputDevice = outputDesc.front()->deviceType_;
+        realOutputDevice = *outputDesc.front();
     }
     AudioEcInfo lastEcInfo = audioEcManager_.GetAudioEcInfo();
-    if (lastEcInfo.inputDevice != realInputDevice || lastEcInfo.outputDevice != realOutputDevice) {
+    if (!lastEcInfo.inputDevice.IsSameDeviceDesc(realInputDevice) ||
+        !lastEcInfo.outputDevice.IsSameDeviceDesc(realOutputDevice)) {
         return true;
     }
     AUDIO_INFO_LOG("voice source reload ignore for device not change");
     return false;
 }
 
-void AudioCapturerSession::ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
-    const std::string &caller)
+void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
+    const AudioDeviceDescriptor &outputDevice, const std::string &caller)
 {
     AUDIO_INFO_LOG("form caller: %{public}s", caller.c_str());
     if (!audioEcManager_.GetEcFeatureEnable()) {
@@ -364,7 +366,8 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const DeviceType inputDev
             return;
         }
     } else {
-        if (inputDevice == DEVICE_TYPE_DEFAULT || inputDevice == GetInputDeviceTypeForReload()) {
+        if (inputDevice.deviceType_ == DEVICE_TYPE_DEFAULT ||
+            inputDevice.IsSameDeviceDesc(GetInputDeviceTypeForReload())) {
             AUDIO_INFO_LOG("mic source reload ignore for device not changed");
             return;
         }
@@ -379,13 +382,13 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const DeviceType inputDev
     audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
 }
 
-void AudioCapturerSession::SetInputDeviceTypeForReload(DeviceType deviceType)
+void AudioCapturerSession::SetInputDeviceTypeForReload(const AudioDeviceDescriptor &inputDevice)
 {
     std::lock_guard<std::mutex> lock(inputDeviceReloadMutex_);
-    inputDeviceForReload_ = deviceType;
+    inputDeviceForReload_ = inputDevice;
 }
 
-DeviceType AudioCapturerSession::GetInputDeviceTypeForReload()
+const AudioDeviceDescriptor& AudioCapturerSession::GetInputDeviceTypeForReload()
 {
     std::lock_guard<std::mutex> lock(inputDeviceReloadMutex_);
     return inputDeviceForReload_;
