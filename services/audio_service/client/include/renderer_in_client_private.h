@@ -225,7 +225,7 @@ private:
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
-    void ChcekBuffer(uint8_t *buffer, size_t bufferSize);
+    void CheckBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
 
     int32_t RegisterSpatializationStateEventListener();
