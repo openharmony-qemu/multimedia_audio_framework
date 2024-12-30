@@ -1775,6 +1775,7 @@ int32_t AudioPolicyService::CheckSupportedAudioEffectProperty(const AudioEffectP
 
 int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
 {
+    int32_t ret = AUDIO_OK;
     AudioEffectPropertyArrayV3 effectPropertyArray = {};
     AudioEffectPropertyArrayV3 enhancePropertyArray = {};
     for (auto &item : propertyArray.property) {
@@ -1790,7 +1791,7 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
         ERR_INVALID_PARAM, "check Audio Effect property failed");
     if (enhancePropertyArray.property.size() > 0) {
         AudioEffectPropertyArrayV3 oldPropertyArray = {};
-        int32_t ret = GetAudioEnhanceProperty(oldPropertyArray);
+        ret = GetAudioEnhanceProperty(oldPropertyArray);
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(enhancePropertyArray,
             audioActiveDevice_.GetCurrentInputDeviceType());
@@ -1798,10 +1799,10 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
         audioCapturerSession_.ReloadSourceForEffect(oldPropertyArray, enhancePropertyArray);
     }
     if (effectPropertyArray.property.size() > 0) {
-        int32_t ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(effectPropertyArray);
+        ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(effectPropertyArray);
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio effect property fail");
     }
-    return AUDIO_OK;
+    return ret;
 }
 
 int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
