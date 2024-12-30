@@ -102,6 +102,7 @@ static const size_t PARAMETER_SET_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
 constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 40;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
+const int32_t MCU_UID = 7500;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -2104,6 +2105,14 @@ int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effec
     return OfflineStreamInServer::GetOfflineAudioEffectChains(effectChains);
 #endif
     return ERR_NOT_SUPPORTED;
+}
+
+int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
+{
+    int32_t uid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(uid != MCU_UID, ERROR, "uid is %{public}d, not mcu uid", uid);
+    sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
