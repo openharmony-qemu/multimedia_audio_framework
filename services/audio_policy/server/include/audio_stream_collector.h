@@ -80,6 +80,9 @@ public:
     bool HasVoipRendererStream();
     bool ChangeVoipCapturerStreamToNormal();
     bool IsCallStreamUsage(StreamUsage usage);
+    bool HasRunningRendererStream();
+    bool HasRunningRecognitionCapturerStream();
+    
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
