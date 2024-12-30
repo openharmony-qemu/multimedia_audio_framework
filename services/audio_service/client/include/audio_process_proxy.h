@@ -47,6 +47,9 @@ public:
     int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
+
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
 private:
     static inline BrokerDelegator<AudioProcessProxy> delegator_;
 };
