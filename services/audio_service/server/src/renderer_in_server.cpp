@@ -400,12 +400,12 @@ bool RendererInServer::CheckBuffer(uint8_t *buffer, size_t bufferSize)
     uint16_t ui16Data = 0;
     switch (processConfig_.streamInfo.format) {
         case SAMPLE_U8:
-            CHECK_AND_RETURN_LOG(bufferSize > 0, false, "buffer size is too small");
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
             ui8Data = *buffer;
             isInvalid = ui8Data == 0;
             break;
         case SAMPLE_S16LE:
-            CHECK_AND_RETURN_LOG(bufferSize > 1, false, "buffer size is too small"); 
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small"); 
             ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
             isInvalid = ui16Data == 0;
             break;
