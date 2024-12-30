@@ -351,8 +351,11 @@ int32_t AudioEnhanceChain::GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &
     return SUCCESS;
 }
 
-void AudioEnhanceChain::WriteDumpFile(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint64_t length)
+void AudioEnhanceChain::WriteDumpFile(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length)
 {
+    if(dumpFileIn_ == nullptr) {
+        return;
+    }
     std::vector<uint8_t> buffer;
     size_t ecLen = algoAttr_.bitDepth * algoSupportedConfig_.ecNum;
     size_t micLen = algoAttr_.bitDepth * algoSupportedConfig_.micNum;
@@ -388,7 +391,7 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enh
         "algo cache input size:%{public}zu != inputLen:%{public}u", algoCache_.input.size(), inputLen);
     CHECK_AND_RETURN_RET_LOG(algoCache_.output.size() == outputLen, ERROR,
         "algo cache output size:%{public}zu != outputLen:%{public}u", algoCache_.output.size(), outputLen);
-    WriteDumpFile(enhanceBuffer, static_cast<uint64_t>(inputLen));
+    WriteDumpFile(enhanceBuffer, inputLen);
     if (standByEnhanceHandles_.size() == 0) {
         AUDIO_DEBUG_LOG("audioEnhanceChain->standByEnhanceHandles is empty");
         CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBuffer->micBufferOut.data(), enhanceBuffer->micBufferOut.size(),
