@@ -69,10 +69,6 @@ enum RecognitionStatus : int32_t {
     RECOGNITION_DISCONNECTED = 3,
 };
 
-enum ScoErrorCode : int32_t {
-    BT_ERR_SCO_HAS_BEEN_CONNECTED = 2902003,
-    BT_ERR_AUDIO_NOT_IDLE = 2902005,
-};
 } // namespace Bluetooth
 } // namespace OHOS
 
