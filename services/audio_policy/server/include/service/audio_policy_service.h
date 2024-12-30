@@ -308,6 +308,10 @@ public:
 
     void RegisteredTrackerClientDied(pid_t uid);
 
+    void ClientDiedDisconnectScoNormal();
+    
+    void ClientDiedDisconnectScoRecognition();
+
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     void OnAudioLatencyParsed(uint64_t latency);

@@ -86,6 +86,8 @@ public:
     std::set<int32_t> GetSessionIdsOnRemoteDeviceBySourceType(SourceType sourceType);
     std::set<int32_t> GetSessionIdsOnRemoteDeviceByDeviceType(DeviceType deviceType);
     int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
+    bool HasRunningRendererStream();
+    bool HasRunningRecognitionCapturerStream();
 
 private:
     std::mutex streamsInfoMutex_;
