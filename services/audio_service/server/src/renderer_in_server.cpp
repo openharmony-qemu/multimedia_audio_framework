@@ -405,7 +405,7 @@ bool RendererInServer::CheckBuffer(uint8_t *buffer, size_t bufferSize)
             isInvalid = ui8Data == 0;
             break;
         case SAMPLE_S16LE:
-            CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small"); 
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small");
             ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
             isInvalid = ui16Data == 0;
             break;
