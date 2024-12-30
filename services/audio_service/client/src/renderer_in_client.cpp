@@ -727,7 +727,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     }
 }
 
-void RendererInClientInner::CheckBuffer(uint8_t *buffer, size_t bufferSize)
+bool RendererInClientInner::CheckBuffer(uint8_t *buffer, size_t bufferSize)
 {
     bool isInvalid = false;
     uint8_t ui8Data = 0;
