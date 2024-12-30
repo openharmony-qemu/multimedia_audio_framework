@@ -2565,7 +2565,9 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             continue;
         }
         runningStreamCount++;
-        vector<std::unique_ptr<AudioDeviceDescriptor>> descs = GetDeviceDescriptorInner(rendererChangeInfo);
+        vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
+            audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
+            rendererChangeInfo->clientUID);
         if (HandleDeviceChangeForFetchOutputDevice(descs.front(), rendererChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE &&
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
@@ -2596,19 +2598,6 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     if (runningStreamCount == 0) {
         FetchOutputDeviceWhenNoRunningStream();
     }
-}
-
-vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetDeviceDescriptorInner(
-    std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
-{
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
-    if (!isFirstScreenOn_) {
-        descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
-    } else {
-        descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
-            rendererChangeInfo->clientUID);
-    }
-    return descs;
 }
 
 int32_t AudioPolicyService::ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
@@ -4546,11 +4535,6 @@ bool AudioPolicyService::IsDataShareReady()
 void AudioPolicyService::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
     audioPolicyManager_.SetDataShareReady(std::atomic_load(&isDataShareReady));
-}
-
-void AudioPolicyService::SetFirstScreenOn()
-{
-    isFirstScreenOn_ = true;
 }
 
 void AudioPolicyService::RegisterNameMonitorHelper()
