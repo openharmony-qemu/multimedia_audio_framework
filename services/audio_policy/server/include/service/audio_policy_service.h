@@ -226,8 +226,6 @@ public:
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
 
     int32_t ResumeStreamState();
-
-    void SetFirstScreenOn();
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
@@ -896,9 +894,6 @@ private:
     void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
 
-    vector<std::unique_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
-        std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
-
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
 
     int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel);
@@ -1100,7 +1095,6 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = false;
     bool isVoiceRingtoneMute_ = false;
-    bool isFirstScreenOn_ = false;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
