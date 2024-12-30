@@ -562,7 +562,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     if (lastScoCategory != ScoCategory::SCO_DEFAULT) {
         AUDIO_INFO_LOG("Entered to disConnectSco for last audioScene category.");
         ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(lastScoCategory));
-        if (ret == BT_ERR_SCO_HAS_BEEN_CONNECTED || ret == BT_ERR_AUDIO_NOT_IDLE ) {
+        if (ret == ScoErrorCode::BT_ERR_SCO_HAS_BEEN_CONNECTED || ret == ScoErrorCode::BT_ERR_AUDIO_NOT_IDLE ) {
             scene_ = scene;
         }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
