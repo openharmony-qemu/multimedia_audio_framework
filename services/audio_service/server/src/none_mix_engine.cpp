@@ -265,7 +265,7 @@ void NoneMixEngine::MixStreams()
     writeCount_++;
     if (index < 0) {
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_DIRECT_OUT);
         stream_->ReturnIndex(index);
         failedCount_++;
         if (startFadeout_) {
@@ -276,7 +276,7 @@ void NoneMixEngine::MixStreams()
         ClockTime::RelativeSleep(PERIOD_NS);
         return;
     }
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT);
     failedCount_ = 0;
     uint64_t written = 0;
     // fade in or fade out

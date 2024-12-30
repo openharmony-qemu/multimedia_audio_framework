@@ -197,9 +197,18 @@ extern "C" {
 
 using namespace OHOS::AudioStandard;
 
-void RecordPaSilenceState(uint32_t sessionId, bool isSilence)
+void RecordPaSilenceState(uint32_t sessionId, bool isSilence, enum PA_PIPE_TYPE paPipeType)
 {
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence);
+    switch (paPipeType)
+    {
+    case PA_PIPE_TYPE_NORMAL:
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_NORMAL_OUT);
+        break;
+    case PA_PIPE_TYPE_MULTICHANNEL:
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_MULTICHANNEL);
+    default:
+        break;
+    }
 }
 
 #ifdef __cplusplus

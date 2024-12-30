@@ -21,7 +21,12 @@
 extern "C" {
 #endif
 
-void RecordPaSilenceState(uint32_t sessionId, bool isSilence);
+enum PA_PIPE_TYPE {
+    PA_PIPE_TYPE_NORMAL,
+    PA_PIPE_TYPE_MULTICHANNEL
+};
+
+void RecordPaSilenceState(uint32_t sessionId, bool isSilence, enum PA_PIPE_TYPE paPipeType);
 
 #ifdef __cplusplus
 }

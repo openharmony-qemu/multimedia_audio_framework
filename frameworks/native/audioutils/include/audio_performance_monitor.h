@@ -19,6 +19,7 @@
 #include <map>
 #include <deque>
 #include <mutex>
+#include "audio_stream_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -104,7 +105,7 @@ private:
         {ADAPTER_TYPE_REMOTE, PIPE_TYPE_NORMAL_OUT},
         {ADAPTER_TYPE_BLUETOOTH, PIPE_TYPE_NORMAL_OUT},
         {ADAPTER_TYPE_FAST, PIPE_TYPE_LOWLATENCY_OUT},
-    }
+    };
 };
 
 } // namespace AudioStandard

@@ -1262,11 +1262,11 @@ static void SinkRenderPrimaryStateCheck(pa_mix_info *infoIn, pa_sink_input *sink
 
     if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
         AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
-        RecordPaSilenceState(sessionID, true);
+        RecordPaSilenceState(sessionID, true, PA_PIPE_TYPE_NORMAL);
         pa_sink_input_handle_ohos_underrun(sinkIn);
     } else {
         AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
-        RecordPaSilenceState(sessionID, false);
+        RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_NORMAL);
     }
 }
 
@@ -1388,11 +1388,11 @@ static void SinkRenderMultiChannelStateCheck(pa_sink *si, pa_mix_info *infoIn, p
 
     if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
         AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
-        RecordPaSilenceState(sessionID, true);
+        RecordPaSilenceState(sessionID, true, PA_PIPE_TYPE_MULTICHANNEL);
         pa_sink_input_handle_ohos_underrun(sinkIn);
     } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
         AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_not_silence");
-        RecordPaSilenceState(sessionID, false);
+        RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_MULTICHANNEL);
         pa_atomic_store(&sinkIn->isFirstReaded, 1);
         PrepareMultiChannelFading(sinkIn, infoIn, si);
         CheckMultiChannelFadeinIsDone(si, sinkIn);
