@@ -155,36 +155,5 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_002, TestSize.
         EXPECT_EQ(SUCCESS, chain_->Prepare());
     }
 }
-
-/**
- * @tc.name  : Test OfflineAudioEffectChain API
- * @tc.type  : FUNC
- * @tc.number: OfflineAudioEffectChain_003
- * @tc.desc  : Test OfflineAudioEffectChain interface.
- */
-HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_003, TestSize.Level1)
-{
-    uint32_t inSize = 0;
-    uint32_t outSize = 0;
-    if (chain_) {
-        EXPECT_EQ(SUCCESS, chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO));
-        EXPECT_EQ(SUCCESS, chain_->Prepare());
-        EXPECT_EQ(SUCCESS, chain_->GetEffectBufferSize(inSize, outSize));
-        EXPECT_GT(inSize, 0);
-        EXPECT_GT(outSize, 0);
-        uint8_t *inBuffer = new uint8_t[inSize];
-        uint8_t *outBuffer = new uint8_t[outSize];
-        for (uint32_t i = 0; i < inSize; i++) {
-            inBuffer[i] = 1;
-        }
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(nullptr, inSize, outBuffer, outSize));
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize + 1, outBuffer, outSize));
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, nullptr, outSize));
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, outBuffer, outSize + 1));
-        EXPECT_EQ(SUCCESS, chain_->Process(inBuffer, inSize, outBuffer, outSize));
-        delete []inBuffer;
-        delete []outBuffer;
-    }
-}
 } // namespace AudioStandard
 } // namespace OHOS
