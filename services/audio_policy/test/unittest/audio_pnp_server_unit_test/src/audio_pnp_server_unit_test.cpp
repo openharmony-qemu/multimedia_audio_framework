@@ -91,6 +91,7 @@ HWTEST_F(AudioPnpServerTest, OnPnpDeviceStatusChanged_ShouldCallCallback_WhenCal
     std::string info = "test_info";
 
     audioPnpServer_->OnPnpDeviceStatusChanged(info);
+    EXPECT_NE(audioPnpServer_->pnpCallback_, nullptr);
 }
 
 /**
@@ -105,6 +106,7 @@ HWTEST_F(AudioPnpServerTest, OnPnpDeviceStatusChanged_ShouldNotCallCallback_When
 
     std::string info = "test_info";
     audioPnpServer_->OnPnpDeviceStatusChanged(info);
+    EXPECT_EQ(audioPnpServer_->pnpCallback_, nullptr);
 }
 
 /**
@@ -116,6 +118,7 @@ HWTEST_F(AudioPnpServerTest, DetectAudioDevice_AnalogHeadsetStateAdded_Success, 
 {
     EXPECT_NE(audioPnpServer_, nullptr);
     audioPnpServer_->DetectAudioDevice();
+    EXPECT_EQ(audioPnpServer_->pnpCallback_, nullptr);
 }
 
 /**
