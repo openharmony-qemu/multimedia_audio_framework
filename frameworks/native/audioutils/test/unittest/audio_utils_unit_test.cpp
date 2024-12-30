@@ -1871,9 +1871,9 @@ HWTEST(AudioUtilsUnitTest, AudioBlend_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_001, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = 0;
+    uint8_t format = 0;
     uint8_t channels = 0;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(MODE_DEFAULT, format_, channels);
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(MODE_DEFAULT, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[0], 2);
 }
@@ -1888,10 +1888,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_002, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_U8;
+    uint8_t format = SAMPLE_U8;
     uint8_t channels = CHANNEL_8;
-    ChannelBlendMode blendMode_ = MODE_BLEND_LR;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_BLEND_LR;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[7], 15);
     EXPECT_EQ(b[5], 11);
@@ -1908,10 +1908,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_002, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_003, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_U8;
+    uint8_t format = SAMPLE_U8;
     uint8_t channels = CHANNEL_6;
-    ChannelBlendMode blendMode_ = MODE_BLEND_LR;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_BLEND_LR;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[5], 11);
     EXPECT_EQ(b[1], 3);
@@ -1927,10 +1927,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_003, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_004, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_S16LE;
+    uint8_t format = SAMPLE_S16LE;
     uint8_t channels = CHANNEL_4;
-    ChannelBlendMode blendMode_ = MODE_BLEND_LR;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_BLEND_LR;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[3], 6);
     EXPECT_EQ(b[1], 6);
@@ -1946,10 +1946,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_004, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_005, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_S32LE;
+    uint8_t format = SAMPLE_S32LE;
     uint8_t channels = STEREO;
-    ChannelBlendMode blendMode_ = MODE_BLEND_LR;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_BLEND_LR;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 4);
     EXPECT_EQ(b[1], 3);
 }
@@ -1964,10 +1964,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_005, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_006, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_U8;
+    uint8_t format = SAMPLE_U8;
     uint8_t channels = CHANNEL_8;
-    ChannelBlendMode blendMode_ = MODE_ALL_LEFT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_LEFT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[7], 14);
     EXPECT_EQ(b[5], 10);
@@ -1984,10 +1984,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_006, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_007, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_U8;
+    uint8_t format = SAMPLE_U8;
     uint8_t channels = CHANNEL_6;
-    ChannelBlendMode blendMode_ = MODE_ALL_LEFT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_LEFT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[5], 10);
     EXPECT_EQ(b[1], 2);
@@ -2003,10 +2003,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_007, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_008, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_S16LE;
+    uint8_t format = SAMPLE_S16LE;
     uint8_t channels = CHANNEL_4;
-    ChannelBlendMode blendMode_ = MODE_ALL_LEFT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_LEFT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[3], 4);
     EXPECT_EQ(b[1], 4);
@@ -2022,10 +2022,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_008, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_009, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_S32LE;
+    uint8_t format = SAMPLE_S32LE;
     uint8_t channels = STEREO;
-    ChannelBlendMode blendMode_ = MODE_ALL_LEFT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_LEFT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[1], 4);
 }
@@ -2040,10 +2040,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_009, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_010, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_S16LE;
+    uint8_t format = SAMPLE_S16LE;
     uint8_t channels = CHANNEL_8;
-    ChannelBlendMode blendMode_ = MODE_ALL_LEFT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_LEFT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[6], 14);
 }
@@ -2058,10 +2058,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_010, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_011, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_S24LE;
+    uint8_t format = SAMPLE_S24LE;
     uint8_t channels = CHANNEL_6;
-    ChannelBlendMode blendMode_ = MODE_ALL_RIGHT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_RIGHT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[0], 2);
 }
@@ -2076,10 +2076,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_011, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_012, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_S32LE;
+    uint8_t format = SAMPLE_S32LE;
     uint8_t channels = CHANNEL_4;
-    ChannelBlendMode blendMode_ = MODE_ALL_RIGHT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_RIGHT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[2], 6);
     EXPECT_EQ(b[0], 2);
@@ -2095,10 +2095,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_012, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_013, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_S24LE;
+    uint8_t format = SAMPLE_S24LE;
     uint8_t channels = CHANNEL_3;
-    ChannelBlendMode blendMode_ = MODE_ALL_RIGHT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_RIGHT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[0], 2);
 }
@@ -2659,9 +2659,9 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, UpdateClientTime_001, TestSize.Level1)
 {
-    bool IsRenderer = true;
+    bool isRenderer = true;
     std::string Timestamp = "abcdef";
-    LatencyMonitor::GetInstance().UpdateClientTime(IsRenderer, Timestamp);
+    LatencyMonitor::GetInstance().UpdateClientTime(isRenderer, Timestamp);
 }
 
 /**
@@ -2672,9 +2672,9 @@ HWTEST(AudioUtilsUnitTest, UpdateClientTime_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, UpdateClientTime_002, TestSize.Level1)
 {
-    bool IsRenderer = false;
+    bool isRenderer = false;
     std::string Timestamp = "abcdef";
-    LatencyMonitor::GetInstance().UpdateClientTime(IsRenderer, Timestamp);
+    LatencyMonitor::GetInstance().UpdateClientTime(isRenderer, Timestamp);
 }
 
 /**
@@ -2685,9 +2685,9 @@ HWTEST(AudioUtilsUnitTest, UpdateClientTime_002, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, UpdateSinkOrSourceTime_001, TestSize.Level1)
 {
-    bool IsRenderer = true;
+    bool isRenderer = true;
     std::string Timestamp = "abcdef";
-    LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(IsRenderer, Timestamp);
+    LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(isRenderer, Timestamp);
 }
 
 /**
@@ -2698,9 +2698,9 @@ HWTEST(AudioUtilsUnitTest, UpdateSinkOrSourceTime_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, UpdateSinkOrSourceTime_002, TestSize.Level1)
 {
-    bool IsRenderer = false;
+    bool isRenderer = false;
     std::string Timestamp = "abcdef";
-    LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(IsRenderer, Timestamp);
+    LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(isRenderer, Timestamp);
 }
 
 /**
@@ -2711,8 +2711,8 @@ HWTEST(AudioUtilsUnitTest, UpdateSinkOrSourceTime_002, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_001, TestSize.Level1)
 {
-    bool IsRenderer = false;
-    LatencyMonitor::GetInstance().ShowTimestamp(IsRenderer);
+    bool isRenderer = false;
+    LatencyMonitor::GetInstance().ShowTimestamp(isRenderer);
 }
 
 /**
@@ -2723,10 +2723,10 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_002, TestSize.Level1)
 {
-    bool IsRenderer = false;
+    bool isRenderer = false;
     LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
     latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    latencyMonitor.ShowTimestamp(IsRenderer);
+    latencyMonitor.ShowTimestamp(isRenderer);
 }
 
 /**
@@ -2737,10 +2737,10 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_002, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_003, TestSize.Level1)
 {
-    bool IsRenderer = true;
+    bool isRenderer = true;
     LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
     latencyMonitor.extraStrLen_ = 1;
-    latencyMonitor.ShowTimestamp(IsRenderer);
+    latencyMonitor.ShowTimestamp(isRenderer);
 }
 
 /**
@@ -2751,11 +2751,11 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_003, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_004, TestSize.Level1)
 {
-    bool IsRenderer = true;
+    bool isRenderer = true;
     LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
     latencyMonitor.extraStrLen_ = 1;
     latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    latencyMonitor.ShowTimestamp(IsRenderer);
+    latencyMonitor.ShowTimestamp(isRenderer);
 }
 
 /**
