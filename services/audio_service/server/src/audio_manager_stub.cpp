@@ -774,7 +774,7 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED):
             return HandleUpdateEffectBtOffloadSupported(data, reply);
         default:
-        return HandleFifthPartCode(code, data, reply, option);
+            return HandleFifthPartCode(code, data, reply, option);
     }
 }
 
