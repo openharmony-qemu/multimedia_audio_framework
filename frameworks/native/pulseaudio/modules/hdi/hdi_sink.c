@@ -2133,11 +2133,11 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
     }
 }
 
-uint32_t GetFrameSize(const char *sinkSceneType, size_t sinkLengthDefault, int32_t ByteSize, int processChannels)
+uint32_t GetFrameSize(const char *sinkSceneType, size_t sinkLengthDefault, int32_t byteSize, int processChannels)
 {
     if (pa_safe_streq(sinkSceneType, "EFFECT_NONE")) {
         size_t sinkByteLength = sinkLengthDefault * processChannels / DEFAULT_IN_CHANNEL_NUM;
-        uint32_t sinkLength = ByteSize > 0 ? ((uint32_t)sinkByteLength / ByteSize) : 0;
+        uint32_t sinkLength = byteSize > 0 ? ((uint32_t)sinkByteLength / byteSize) : 0;
         return sinkLength;
     } else {
         size_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
