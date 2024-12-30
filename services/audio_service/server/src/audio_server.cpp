@@ -2106,13 +2106,11 @@ int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effec
     return ERR_NOT_SUPPORTED;
 }
 
-int AudioManagerStub::HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply)
+int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
 {
-    uint32_t sessionId = data.ReadUint32();
-    int32_t ret = GenerateSessionId(sessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "generate session id failed");
-    reply.WriteUint32(sessionId);
-    return AUDIO_OK;
+    int32_t uid = IPCSkeleton::GetCallingUid();
+    sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
