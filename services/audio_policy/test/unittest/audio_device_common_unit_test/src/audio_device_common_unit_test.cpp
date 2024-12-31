@@ -1003,7 +1003,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_048, TestSize.Level1)
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichBluetoothDevice(rendererChangeInfo, audioDeviceDescriptorUniqueptrVector, reason);
+    audioDeviceCommon.MuteSinkForSwtichBluetoothDevice(rendererChangeInfo,
+        audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
 
