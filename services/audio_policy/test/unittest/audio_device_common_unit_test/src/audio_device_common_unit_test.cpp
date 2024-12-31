@@ -1063,12 +1063,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_052, TestSize.Level1)
     vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     rendererChangeInfos.push_back(std::move(rendererChangeInfo));
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    int32_t ret = SUCCESS;
-#ifdef BLUETOOTH_ENABLE
-    ret = audioDeviceCommon.HandleScoOutputDeviceFetched(desc, rendererChangeInfos, reason);
-    EXPECT_EQ(ERROR, ret);
-#endif
-    ret = audioDeviceCommon.HandleScoOutputDeviceFetched(desc, rendererChangeInfos, reason);
+    int32_t ret = audioDeviceCommon.HandleScoOutputDeviceFetched(desc, rendererChangeInfos, reason);
     EXPECT_EQ(ERROR, ret);
 }
 
