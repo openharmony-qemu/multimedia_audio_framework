@@ -121,7 +121,7 @@ public:
     virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
+    virtual int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */,
         const bool isUpdatedAudioStrategy = false /* default value: false -- is update audio strategy */) = 0;
 

@@ -61,7 +61,7 @@ public:
     int32_t GetAudioStreamId(uint32_t &sessionID) const override;
     int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) override;
     int32_t SetStreamType(AudioStreamType audioStreamType) override;
-    int32_t SetVolume(float volume) const override;
+    int32_t SetVolume(float volume) override;
     float GetVolume() const override;
     int32_t SetRenderRate(AudioRendererRate renderRate) const override;
     AudioRendererRate GetRenderRate() const override;
@@ -185,7 +185,7 @@ private:
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
-    void UpdateAudioInterruptStrategy(float volume) const;
+    void UpdateAudioInterruptStrategy(float volume);
     bool IsAllowedStartBackgroud();
     bool GetStartStreamResult(StateChangeCmdType cmdType);
     void UpdateFramesWritten();

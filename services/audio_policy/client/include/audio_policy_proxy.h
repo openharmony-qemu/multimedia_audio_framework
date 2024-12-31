@@ -125,7 +125,7 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0,
+    int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0,
         const bool isUpdatedAudioStrategy = false) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;

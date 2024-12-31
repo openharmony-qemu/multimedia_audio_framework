@@ -304,7 +304,7 @@ public:
      * @return Returns <b>true</b> if the capturing is successfully started; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Start() const = 0;
+    virtual bool Start() = 0;
 
     /**
      * @brief capture audio data.

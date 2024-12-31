@@ -41,7 +41,7 @@ public:
     int32_t GetParams(AudioCapturerParams &params) const override;
     int32_t GetCapturerInfo(AudioCapturerInfo &capturerInfo) const override;
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
-    bool Start() const override;
+    bool Start() override;
     int32_t  Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const override;
     CapturerState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;

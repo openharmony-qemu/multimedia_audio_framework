@@ -523,7 +523,7 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
     audioStream_->UnsetCapturerPeriodPositionCallback();
 }
 
-bool AudioCapturerPrivate::Start() const
+bool AudioCapturerPrivate::Start()
 {
     std::lock_guard lock(switchStreamMutex_);
     Trace trace("AudioCapturer::Start");

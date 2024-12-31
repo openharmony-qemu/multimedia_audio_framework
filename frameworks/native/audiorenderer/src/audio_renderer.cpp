@@ -994,7 +994,7 @@ int32_t AudioRendererPrivate::SetStreamType(AudioStreamType audioStreamType)
     return currentStream->SetAudioStreamType(audioStreamType);
 }
 
-int32_t AudioRendererPrivate::SetVolume(float volume) const
+int32_t AudioRendererPrivate::SetVolume(float volume)
 {
     UpdateAudioInterruptStrategy(volume);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
@@ -1002,7 +1002,7 @@ int32_t AudioRendererPrivate::SetVolume(float volume) const
     return currentStream->SetVolume(volume);
 }
 
-void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
+void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume)
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
