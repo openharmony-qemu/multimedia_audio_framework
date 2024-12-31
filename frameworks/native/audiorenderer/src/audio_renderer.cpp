@@ -994,7 +994,7 @@ int32_t AudioRendererPrivate::SetStreamType(AudioStreamType audioStreamType)
     return currentStream->SetAudioStreamType(audioStreamType);
 }
 
-int32_t AudioRendererPrivate::SetVolume(float volume)
+int32_t AudioRendererPrivate::SetVolume(float volume) const
 {
     UpdateAudioInterruptStrategy(volume);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
@@ -1002,7 +1002,7 @@ int32_t AudioRendererPrivate::SetVolume(float volume)
     return currentStream->SetVolume(volume);
 }
 
-void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume)
+void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
@@ -1016,8 +1016,9 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume)
             (originalStrategy_.concurrencyMode == AudioConcurrencyMode::INVALID ?
             AudioConcurrencyMode::DEFAULT : originalStrategy_.concurrencyMode);
         if (currentState == RUNNING) {
+            AudioInterrupt audioInterrupt = audioInterrupt_;
             AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
-            int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
+            int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt, 0, true);
             CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed at SetVolume");
         }
     }
