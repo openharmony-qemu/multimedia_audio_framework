@@ -1704,7 +1704,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
             audioInterrupt.audioFocusType.streamType);
         if (it != CAN_MIX_MUTED_STREAM.end()) {
             AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
-              audioInterrupt.audioFocusType.streamType);
+                audioInterrupt.audioFocusType.streamType);
             int32_t volumeLevel = GetSystemVolumeLevelInternal(streamInFocus);
             if (volumeLevel == 0) {
                 audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
