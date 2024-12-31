@@ -1023,6 +1023,8 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     }
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
+    audioDescriptor->exceptionFlag_ = false;
+    audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, EXCEPTION_FLAG_UPDATE);
     CheckForA2dpSuspend(desc);
 
     AudioStreamDeviceChangeReasonExt reason = GetDeviceChangeReason(desc, command);
