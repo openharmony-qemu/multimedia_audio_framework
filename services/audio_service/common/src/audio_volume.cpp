@@ -23,7 +23,7 @@
 #include "audio_utils.h"
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
-#include "event_bean.h"
+#include <numeric>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -549,6 +549,12 @@ uint32_t GetStopFadeoutState(uint32_t streamIndex)
 void RemoveStopFadeoutState(uint32_t streamIndex)
 {
     AudioVolume::GetInstance()->RemoveStopFadeoutState(streamIndex);
+}
+
+int32_t GetSimpleBufferAvg(uint8_t *buffer, int32_t length)
+{
+    int32_t sum = std::accumulate(buffer, buffer + length, 0);
+    return sum / length;
 }
 #ifdef __cplusplus
 }
