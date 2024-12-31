@@ -186,3 +186,10 @@ VOLUME_SUBSCRIBE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: Subscribe to volume key events}
   SUBSCRIBE_KEY: {type: STRING, desc: Subscribed events}
   SUBSCRIBE_RESULT: {type: UINT32, desc: Subscribed event results}
+
+  JANK_PLAYBACK:
+    __BASE: {type: FAULT, level: CRITICAL, desc: audio playback jank event}
+    REASON: {type: UINT8, desc: report jank reason}
+    PERIOD_MS: {type: UINT32, desc: jank time}
+    PIPE_TYPE: {type: UINT8, desc: pipe type}
+    HDI_ADAPTER: {type: UINT8, desc: hdi adapter}

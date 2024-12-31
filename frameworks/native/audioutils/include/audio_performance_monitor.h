@@ -62,7 +62,7 @@ struct FrameRecordInfo {
 
 class AudioPerformanceMonitor {
 public:
-    static AudioPerformanceMonitor& GetInstance();
+    static AudioPerformanceMonitor &GetInstance();
 
     // silence Monitor records if server gets valid data from client
     void RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType);
@@ -80,7 +80,7 @@ public:
 
 private:
     void JudgeNoise(uint32_t index, bool curState);
-    void ReportEvent(DetectEvent reasonCode, uint32_t periodMs, AudioPipeType pipeType, AdapterType adapterType);
+    void ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType, AdapterType adapterType);
 
     int64_t silenceLastReportTime_ = -1;
     int64_t overTimeLastReportTime_ = -1;

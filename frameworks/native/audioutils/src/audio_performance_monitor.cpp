@@ -90,8 +90,8 @@ void AudioPerformanceMonitor::RecordTimeStamp(AdapterType adapterType, int64_t c
 
     if (curTimeStamp - overTimeDetectMap_[adapterType] > MAX_WRITTEN_INTERVAL[adapterType]) {
         int64_t rawOvertimeMs = (curTimeStamp - overTimeDetectMap_[adapterType]) / AUDIO_NS_PER_MS;
-        uint32_t overtimeMs = static_cast<uint32_t>(rawOvertimeMs < 0 ? 0 :
-            (rawOvertimeMs >= UINT32_MAX ? UINT32_MAX : rawOvertimeMs));
+        int32_t overtimeMs = static_cast<int32_t>(rawOvertimeMs < 0 ? 0 :
+            (rawOvertimeMs >= INT32_MAX ? INT32_MAX : rawOvertimeMs));
         AUDIO_WARNING_LOG("AdapterType %{public}d, PipeType %{public}d, write time interval %{public}d ms! overTime!",
             adapterType, PIPE_TYPE_MAP[adapterType], overtimeMs);
         ReportEvent(OVERTIME_EVENT, overtimeMs, PIPE_TYPE_MAP[adapterType], adapterType);
@@ -151,7 +151,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
             }
             AUDIO_WARNING_LOG("record %{public}d state, pipeType %{public}d for last %{public}zu times: %{public}s",
                 sessionId, silenceDetectMap_[sessionId].pipeType, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
-            ReportEvent(SILENCE_EVENT, UINT32_MAX, silenceDetectMap_[sessionId].pipeType, ADAPTER_TYPE_UNKNOWN);
+            ReportEvent(SILENCE_EVENT, INT32_MAX, silenceDetectMap_[sessionId].pipeType, ADAPTER_TYPE_UNKNOWN);
             silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
             silenceDetectMap_[sessionId].historyStateDeque.clear();
             return;
@@ -160,7 +160,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
     }
 }
 
-void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, uint32_t periodMs, AudioPipeType pipeType,
+void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType,
     AdapterType adapterType)
 {
     int64_t curRealTime = ClockTime::GetRealNano();
@@ -185,6 +185,9 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, uint32_t perio
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::JANK_PLAYBACK,
         Media::MediaMonitor::EventType::FAULT_EVENT);
     bean->Add("REASON", reasonCode);
+    bean->Add("PERIOD_MS", periodMs);
+    bean->Add("PIPE_TYPE", pipeType);
+    bean->Add("HDI_ADAPTER", adapterType);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
