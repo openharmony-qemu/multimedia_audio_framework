@@ -22,6 +22,7 @@
 #include "audio_speed.h"
 #include "audio_errors.h"
 #include "audio_performance_monitor.h"
+#include "audio_stream_info.h"
 
 using namespace testing::ext;
 using namespace std;
@@ -577,8 +578,7 @@ HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_035, TestSize.Level1)
 */
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_001, TestSize.Level3)
 {
-    AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
-    EXPECT_NE(&mgr, nullptr);
+    EXPECT_NE(&AudioPerformanceMonitor::GetInstance(), nullptr);
 }
 
 /**
@@ -590,10 +590,11 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_001, TestSize.Level3)
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_002, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
-    AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
-    EXPECT_EQ(mgr.silenceDetectMap_.find(sessionId), mgr.silenceDetectMap_.end());
-    mgr.RecordSilenceState(sessionId, true);
-    EXPECT_NE(mgr.silenceDetectMap_.find(sessionId), mgr.silenceDetectMap_.end());
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.find(sessionId),
+        AudioPerformanceMonitor::GetInstance().silenceDetectMap_.end());
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_NORMAL_OUT);
+    EXPECT_NE(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.find(sessionId),
+        AudioPerformanceMonitor::GetInstance().silenceDetectMap_.end());
 }
 
 /**
@@ -605,12 +606,13 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_002, TestSize.Level3)
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_003, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
-    AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
     for (size_t i = 0; i < MAX_RECORD_QUEUE_SIZE + 1; ++i) {
-        mgr.RecordSilenceState(sessionId, true);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_NORMAL_OUT);
     }
-    EXPECT_NE(mgr.silenceDetectMap_.find(sessionId), mgr.silenceDetectMap_.end());
-    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateDeque.size(), MAX_RECORD_QUEUE_SIZE);
+    EXPECT_NE(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.find(sessionId),
+        AudioPerformanceMonitor::GetInstance().silenceDetectMap_.end());
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].historyStateDeque.size(),
+        MAX_RECORD_QUEUE_SIZE);
 }
 
 /**
@@ -622,12 +624,13 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_003, TestSize.Level3)
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_004, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
-    AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
-    mgr.ClearSilenceMonitor(sessionId);
-    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateDeque.size(), static_cast<size_t>(0));
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].historyStateDeque.size(),
+        static_cast<size_t>(0));
     uint32_t notExistSessionId = 111112;
-    mgr.ClearSilenceMonitor(notExistSessionId);
-    EXPECT_EQ(mgr.silenceDetectMap_.find(notExistSessionId), mgr.silenceDetectMap_.end());
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(notExistSessionId);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.find(notExistSessionId),
+        AudioPerformanceMonitor::GetInstance().silenceDetectMap_.end());
 }
 
 /**
@@ -639,13 +642,13 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_004, TestSize.Level3)
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_005, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
-    AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
-    mgr.RecordSilenceState(sessionId, false);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_NORMAL_OUT);
     for (size_t i = 0; i < MIN_SILENCE_FRAME_COUNT; ++i) {
-        mgr.RecordSilenceState(sessionId, true);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_NORMAL_OUT);
     }
-    mgr.RecordSilenceState(sessionId, false);
-    EXPECT_EQ(mgr.silenceDetectMap_[sessionId].historyStateDeque.size(), static_cast<size_t>(0));
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_NORMAL_OUT);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].historyStateDeque.size(),
+        static_cast<size_t>(0));
 }
 
 /**
@@ -657,9 +660,8 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_005, TestSize.Level3)
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_006, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
-    AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
-    mgr.DeleteSilenceMonitor(sessionId);
-    EXPECT_EQ(mgr.silenceDetectMap_.size(), static_cast<size_t>(0));
+    AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), static_cast<size_t>(0));
 }
 
 /**
@@ -670,15 +672,14 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_006, TestSize.Level3)
 */
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_007, TestSize.Level3)
 {
-    SinkType sinkType = SINKTYPE_PRIMARY;
-    AudioPerformanceMonitor mgr = AudioPerformanceMonitor::GetInstance();
-    mgr.RecordTimeStamp(sinkType, INIT_LASTWRITTEN_TIME);
+    AdapterType adapterType = ADAPTER_TYPE_PRIMARY;
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType, INIT_LASTWRITTEN_TIME);
     int64_t curTime = ClockTime::GetCurNano();
-    mgr.RecordTimeStamp(sinkType, curTime);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType, curTime);
     int64_t exeedTime = ClockTime::GetCurNano() + 100000000; // add 100ms
-    mgr.RecordTimeStamp(sinkType, exeedTime);
-    mgr.DeleteOvertimeMonitor(sinkType);
-    EXPECT_EQ(mgr.overTimeDetectMap_.size(), static_cast<size_t>(0));
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType, exeedTime);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(adapterType);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().overTimeDetectMap_.size(), static_cast<size_t>(0));
 }
 
 } // namespace AudioStandard
