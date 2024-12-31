@@ -1131,7 +1131,7 @@ void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType strea
         GetStreamMuteInternal(STREAM_SYSTEM) && !GetStreamMuteInternal(STREAM_MUSIC)) {
         AUDIO_WARNING_LOG("music volume level beyond 0 and set system unmute.");
         audioPolicyService_.SetStreamMute(STREAM_SYSTEM, false);
-        SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, true);
+        SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, false);
     }
 }
 
