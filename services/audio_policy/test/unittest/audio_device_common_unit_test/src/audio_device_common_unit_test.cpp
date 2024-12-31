@@ -815,7 +815,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_037, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_038, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
     rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
@@ -831,7 +831,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_038, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_039, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
     rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
@@ -847,7 +847,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_039, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_040, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_WIRED_HEADSET);
     rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OFFLOAD;
@@ -867,7 +867,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_040, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_041, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_WIRED_HEADSET);
     rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OFFLOAD;
@@ -887,7 +887,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_041, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_042, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_USB_HEADSET);
     rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OFFLOAD;
@@ -907,13 +907,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_042, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_043, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_unique<AudioDeviceDescriptor>();
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichGeneralDevice(rendererChangeInfo, audioDeviceDescriptorUniqueptrVector, reason);
+    audioDeviceCommon.MuteSinkForSwtichGeneralDevice(rendererChangeInfo,
+        audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
 
@@ -925,13 +926,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_043, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_044, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_unique<AudioDeviceDescriptor>();
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichGeneralDevice(rendererChangeInfo, audioDeviceDescriptorUniqueptrVector, reason);
+    audioDeviceCommon.MuteSinkForSwtichGeneralDevice(rendererChangeInfo,
+        audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
 
@@ -943,13 +945,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_044, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_045, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_unique<AudioDeviceDescriptor>();
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichGeneralDevice(rendererChangeInfo, audioDeviceDescriptorUniqueptrVector, reason);
+    audioDeviceCommon.MuteSinkForSwtichGeneralDevice(rendererChangeInfo,
+        audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
 
@@ -961,13 +964,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_045, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_046, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_unique<AudioDeviceDescriptor>();
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichBluetoothDevice(rendererChangeInfo, audioDeviceDescriptorUniqueptrVector, reason);
+    audioDeviceCommon.MuteSinkForSwtichBluetoothDevice(rendererChangeInfo,
+        audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
 
@@ -979,10 +983,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_046, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_047, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_unique<AudioDeviceDescriptor>();
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
     audioDeviceCommon.MuteSinkForSwtichBluetoothDevice(rendererChangeInfo,
@@ -998,55 +1002,15 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_047, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_048, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_unique<AudioDeviceDescriptor>();
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
     audioDeviceCommon.MuteSinkForSwtichBluetoothDevice(rendererChangeInfo,
         audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_049
-* @tc.desc  : Test BluetoothDeviceFetchOutputHandle interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_049, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = nullptr;
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::string encryptMacAddr;
-    unique_ptr<AudioRendererChangeInfo> audioDeviceDescriptorUniqueptr = std::make_unique<AudioRendererChangeInfo>();
-    vector<std::unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    rendererChangeInfos.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    int32_t ret = audioDeviceCommon.BluetoothDeviceFetchOutputHandle(desc, rendererChangeInfo, rendererChangeInfos,
-        reason, encryptMacAddr);
-    EXPECT_EQ(BLUETOOTH_FETCH_RESULT_CONTINUE, ret);
-
-    desc = std::make_unique<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    rendererChangeInfo->rendererInfo.originalFlag = AUDIO_FLAG_MMAP;
-    rendererChangeInfo->outputDeviceInfo.deviceId_ = 0;
-    desc->deviceId_ = 1;
-    ret = audioDeviceCommon.BluetoothDeviceFetchOutputHandle(desc, rendererChangeInfo, rendererChangeInfos,
-        reason, encryptMacAddr);
-    EXPECT_EQ(BLUETOOTH_FETCH_RESULT_CONTINUE, ret);
-
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    ret = audioDeviceCommon.BluetoothDeviceFetchOutputHandle(desc, rendererChangeInfo, rendererChangeInfos,
-        reason, encryptMacAddr);
-    EXPECT_EQ(BLUETOOTH_FETCH_RESULT_ERROR, ret);
-
-    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    ret = audioDeviceCommon.BluetoothDeviceFetchOutputHandle(desc, rendererChangeInfo, rendererChangeInfos,
-        reason, encryptMacAddr);
-    EXPECT_EQ(BLUETOOTH_FETCH_RESULT_DEFAULT, ret);
 }
 
 /**
@@ -1057,7 +1021,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_049, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_050, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
     audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_RINGING);
     bool ret = audioDeviceCommon.IsRendererStreamRunning(rendererChangeInfo);
@@ -1072,10 +1036,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_050, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_051, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->isEnable_ = false;
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
-    vector<std::unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     rendererChangeInfos.push_back(std::move(rendererChangeInfo));
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     int32_t ret = audioDeviceCommon.ActivateA2dpDeviceWhenDescEnabled(desc, rendererChangeInfos, reason);
@@ -1094,9 +1058,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_051, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_052, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
-    vector<std::unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     rendererChangeInfos.push_back(std::move(rendererChangeInfo));
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     int32_t ret = SUCCESS;
@@ -1116,8 +1080,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_052, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_053, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
     desc->deviceType_ = DEVICE_TYPE_EARPIECE;
@@ -1143,7 +1107,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_053, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_054, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     bool ret = audioDeviceCommon.NeedRehandleA2DPDevice(desc);
     EXPECT_EQ(false, ret);
