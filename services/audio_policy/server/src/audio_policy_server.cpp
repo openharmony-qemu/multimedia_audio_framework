@@ -1697,9 +1697,19 @@ void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, Int
 }
 
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
-    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
+    AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     if (interruptService_ != nullptr) {
+        auto it = std::find(CAN_MIX_MUTED_STREAM.begin(), CAN_MIX_MUTED_STREAM.end(),
+            audioInterrupt.audioFocusType.streamType);
+        if (it != CAN_MIX_MUTED_STREAM.end()) {
+            AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
+                audioInterrupt.audioFocusType.streamType);
+            int32_t volumeLevel = GetSystemVolumeLevelInternal(streamInFocus);
+            if (volumeLevel == 0) {
+                audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
+            }
+        }
         return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;

@@ -697,7 +697,7 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
 }
 
 int32_t AudioPolicyProxy::ActivateAudioInterrupt(
-    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
+    AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     MessageParcel data;
     MessageParcel reply;

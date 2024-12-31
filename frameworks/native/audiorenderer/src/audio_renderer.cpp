@@ -1016,8 +1016,9 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
             (originalStrategy_.concurrencyMode == AudioConcurrencyMode::INVALID ?
             AudioConcurrencyMode::DEFAULT : originalStrategy_.concurrencyMode);
         if (currentState == RUNNING) {
+            AudioInterrupt audioInterrupt = audioInterrupt_;
             AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
-            int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
+            int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt, 0, true);
             CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed at SetVolume");
         }
     }

@@ -74,6 +74,10 @@ const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
     STREAM_ULTRASONIC
 };
 
+const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
+    STREAM_NOTIFICATION
+};
+
 // for PC
 const std::vector<AudioStreamType> GET_PC_STREAM_RING_VOLUME_TYPES {
     STREAM_SYSTEM,
@@ -224,7 +228,7 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneId = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0,
+    int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0,
         const bool isUpdatedAudioStrategy = false) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;

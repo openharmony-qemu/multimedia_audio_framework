@@ -1003,7 +1003,7 @@ int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioVolumeType stre
     return SUCCESS;
 }
 
-int32_t AudioSystemManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+int32_t AudioSystemManager::ActivateAudioInterrupt(AudioInterrupt &audioInterrupt)
 {
     AUDIO_DEBUG_LOG("stub implementation");
     return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);

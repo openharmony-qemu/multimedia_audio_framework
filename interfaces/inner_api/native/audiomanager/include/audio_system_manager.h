@@ -961,7 +961,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
+    int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt);
 
     /**
      * @brief Deactivactivate audio Interrupt
