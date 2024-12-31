@@ -312,6 +312,9 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
         processChannels = u->multiChannel.sinkChannel;
         processChannelLayout = u->multiChannel.sinkChannelLayout;
     } else {
+        if (pa_safe_streq(sceneType, "EFFECT_NONE")) {
+            return;
+        }
         EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
     }
     pa_resampler *r;
@@ -1856,9 +1859,9 @@ static void UpdateStreamAvailableMap(struct Userdata *u, const char *sceneType)
 }
 
 /* For ResampleAffterEffectChain, update input channellayout and sample spec */
-static pa_resampler *UpdateResamplerInChannelMap(const char *sinkSceneType, struct Userdata *u)
+static pa_resampler *UpdateResamplerInChannelMap(const char *sceneType, struct Userdata *u)
 {
-    pa_resampler *resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sinkSceneType);
+    pa_resampler *resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sceneType);
     if (resampler == NULL) {
         return NULL;
     }
@@ -1878,18 +1881,18 @@ static pa_resampler *UpdateResamplerInChannelMap(const char *sinkSceneType, stru
         AUDIO_INFO_LOG("UpdateResampler: sceneType [%{public}s], input channels [%{public}d], "
             "sample rate [%{public}d], format[%{public}d]. "
             "new input channels [%{public}d], sample rate [%{public}d], format[%{public}d]",
-            (char *)sinkSceneType, pa_resampler_input_sample_spec(resampler)->channels,
+            (char *)sceneType, pa_resampler_input_sample_spec(resampler)->channels,
             pa_resampler_input_sample_spec(resampler)->rate, pa_resampler_input_sample_spec(resampler)->format,
             inChannelMap.channels, inSpec.rate, inSpec.format);
         pa_sample_spec sinkSpec = *(pa_resampler_output_sample_spec(resampler));
         pa_channel_map sinkChannelMap = *(pa_resampler_output_channel_map(resampler));
-        char *dupSceneType = strdup(sinkSceneType);
+        char *dupSceneType = strdup(sceneType);
         if (dupSceneType == NULL) {
             AUDIO_ERR_LOG("UpdateResampler: [%{public}s], allocate new char fail! return old resampler!",
-                sinkSceneType);
+                sceneType);
             return resampler;
         }
-        pa_hashmap_remove_and_free(u->sceneToResamplerMap, sinkSceneType);
+        pa_hashmap_remove_and_free(u->sceneToResamplerMap, sceneType);
         resampler = pa_resampler_new(
             u->sink->core->mempool,
             &inSpec, &inChannelMap,
@@ -1901,17 +1904,13 @@ static pa_resampler *UpdateResamplerInChannelMap(const char *sinkSceneType, stru
     return resampler;
 }
 
-static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata *u, size_t inBufferLen)
+static void ResampleAfterEffectChain(const char* sceneType, struct Userdata *u, size_t inBufferLen)
 {
-    CHECK_AND_RETURN_LOG(sinkSceneType != NULL, "ResampleAfterEffectChain: sceneType is NULL!");
-    CHECK_AND_RETURN_LOG(u != NULL, "ResampleAfterEffectChain: u is null!");
-    if (pa_safe_streq(sinkSceneType, "EFFECT_NONE")) {
+    if (sceneType == NULL || pa_safe_streq(sceneType, "EFFECT_NONE") || u == NULL) {
         return;
     }
-    pa_resampler *resampler = UpdateResamplerInChannelMap(sinkSceneType, u);
-    if (resampler == NULL) {
-        return;
-    }
+    pa_resampler *resampler = UpdateResamplerInChannelMap(sceneType, u);
+    CHECK_AND_RETURN_LOG(resampler != NULL, "ResampleAfterEffectChain: resampler is null!");
     pa_memchunk unsampledChunk;
     unsampledChunk.length = inBufferLen * sizeof(float);
     unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
@@ -1942,12 +1941,13 @@ static void ResampleAfterEffectChain(const char* sinkSceneType, struct Userdata 
     pa_memblock_unref(sampledChunk.memblock);
 }
 
-static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType, size_t inBufferLen, size_t outBufferLen)
+static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType, const char *sceneType, size_t inBufferLen,
+    size_t outBufferLen)
 {
     AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", sinkSceneType);
     EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
     UpdateStreamAvailableMap(u, sinkSceneType);
-    ResampleAfterEffectChain(sinkSceneType, u, inBufferLen);
+    ResampleAfterEffectChain(sceneType, u, inBufferLen);
     for (uint32_t k = 0; k < outBufferLen; k++) {
         u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
     }
@@ -2133,6 +2133,18 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
     }
 }
 
+uint32_t GetFrameSize(const char *sinkSceneType, size_t sinkLengthDefault, int32_t byteSize, int processChannels)
+{
+    if (pa_safe_streq(sinkSceneType, "EFFECT_NONE")) {
+        size_t sinkByteLength = sinkLengthDefault * processChannels / DEFAULT_IN_CHANNEL_NUM;
+        uint32_t sinkLength = byteSize > 0 ? ((uint32_t)sinkByteLength / byteSize) : 0;
+        return sinkLength;
+    } else {
+        size_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
+        return effectFrameSize;
+    }
+}
+
 static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     CHECK_AND_RETURN_LOG(si != NULL, "si is null");
@@ -2160,22 +2172,22 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
         EffectChainManagerReturnEffectChannelInfo((char *)sceneType, &processChannels, &processChannelLayout);
         char *sinkSceneType = CheckAndDealEffectZeroVolume(u, currentTime, (char *)sceneType);
-        uint32_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
-        size_t effectFrameByteSize = effectFrameSize * byteSize;
+        uint32_t frameSize = GetFrameSize(sceneType, length, byteSize, processChannels);
+        size_t frameByteSize = frameSize * byteSize;
         chunkIn->index = 0;
-        chunkIn->length = effectFrameByteSize;
+        chunkIn->length = frameByteSize;
         int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, (char *)sceneType);
         if (nSinkInput == 0) { continue; }
         chunkIn->index = 0;
-        chunkIn->length = effectFrameByteSize;
+        chunkIn->length = frameByteSize;
         void *src = pa_memblock_acquire_chunk(chunkIn);
-        ConvertToFloat(u->format, effectFrameSize, src, u->bufferAttr->tempBufIn);
-        int32_t ret = memcpy_s(u->bufferAttr->bufIn, effectFrameSize * sizeof(float), u->bufferAttr->tempBufIn,
-            effectFrameSize * sizeof(float));
+        ConvertToFloat(u->format, frameSize, src, u->bufferAttr->tempBufIn);
+        int32_t ret = memcpy_s(u->bufferAttr->bufIn, frameSize * sizeof(float), u->bufferAttr->tempBufIn,
+            frameSize * sizeof(float));
         CHECK_AND_RETURN_LOG(ret == 0, "SinkRenderPrimaryProcess: copy from bufIn to tempBufIn fail!");
         u->bufferAttr->numChanIn = (int32_t)processChannels;
-        u->bufferAttr->frameLen = EFFECT_FRAME_LENGTH_MONO;
-        PrimaryEffectProcess(u, sinkSceneType, effectFrameSize, length / byteSize);
+        u->bufferAttr->frameLen = frameSize / u->bufferAttr->numChanIn;
+        PrimaryEffectProcess(u, sinkSceneType, sceneType, frameSize, length / byteSize);
         pa_memblock_release(chunkIn->memblock);
     }
     if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) { g_effectProcessFrameCount = 0; }
