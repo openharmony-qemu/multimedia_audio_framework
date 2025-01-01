@@ -1465,14 +1465,14 @@ int32_t AudioPolicyServer::SetRingerModeInternal(AudioRingerMode ringerMode, boo
 }
 
 #ifdef FEATURE_DTMF_TONE
-std::shared_ptr<ToneInfo> AudioPolicyServer::GetToneConfig(int32_t ltonetype)
+std::shared_ptr<ToneInfo> AudioPolicyServer::GetToneConfig(int32_t ltonetype, const std::string &countryCode)
 {
-    return audioPolicyService_.GetToneConfig(ltonetype);
+    return audioPolicyService_.GetToneConfig(ltonetype, countryCode);
 }
 
-std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
+std::vector<int32_t> AudioPolicyServer::GetSupportedTones(const std::string &countryCode)
 {
-    return audioPolicyService_.GetSupportedTones();
+    return audioPolicyService_.GetSupportedTones(countryCode);
 }
 #endif
 

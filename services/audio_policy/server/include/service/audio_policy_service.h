@@ -212,9 +212,9 @@ public:
 
     int32_t ResumeStreamState();
 #ifdef FEATURE_DTMF_TONE
-    std::vector<int32_t> GetSupportedTones();
+    std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 
-    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode);
 #endif
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,

@@ -26,6 +26,8 @@ declare_args() {
   audio_framework_feature_device_manager = true
   audio_framework_feature_hiview_enable = true
   audio_framework_feature_offline_effect = true
+  audio_telephony_core_service_enable = true
+  audio_telephony_cellular_data_enable = true
 
   if (!defined(global_parts_info) ||
       defined(global_parts_info.hdf_drivers_interface_distributed_audio)) {
@@ -74,6 +76,16 @@ declare_args() {
     audio_framework_feature_hiview_enable = true
   } else {
     audio_framework_feature_hiview_enable = false
+  }
+
+  if (defined(global_parts_info) &&
+      !defined(global_parts_info.telephony_core_service)) {
+    audio_telephony_core_service_enable = false
+  }
+
+  if (defined(global_parts_info) &&
+      !defined(global_parts_info.telephony_cellular_data)) {
+    audio_telephony_cellular_data_enable = false
   }
 
   audio_framework_feature_new_napi = true

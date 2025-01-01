@@ -78,7 +78,11 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicrophoneMuteAudioConfig_001, TestS
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetSupportedTones_001, TestSize.Level1)
 {
-    AudioPolicyManager::GetInstance().GetSupportedTones();
+    std::vector<int32_t> res = AudioPolicyManager::GetInstance().GetSupportedTones("");
+    EXPECT_NE(0, res.size());
+
+    res = AudioPolicyManager::GetInstance().GetSupportedTones("cn");
+    EXPECT_NE(0, res.size());
 }
 
 /**
@@ -89,8 +93,15 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetSupportedTones_001, TestSize.Level1)
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
 {
     int32_t ltonetype = 0;
-    std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype);
-    ASSERT_NE(nullptr, toneInfo);
+    std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
+    EXPECT_NE(nullptr, toneInfo);
+
+    toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "cn");
+    EXPECT_NE(nullptr, toneInfo);
+
+    ltonetype = INT32_MAX;
+    toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
+    EXPECT_NE(nullptr, toneInfo);
 }
 #endif
 
@@ -167,7 +178,11 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_00
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSupportedTones_001, TestSize.Level1)
 {
-    AudioPolicyManager::GetInstance().GetSupportedTones();
+    std::vector<int32_t> res = AudioPolicyManager::GetInstance().GetSupportedTones("");
+    EXPECT_NE(0, res.size());
+
+    res = AudioPolicyManager::GetInstance().GetSupportedTones("cn");
+    EXPECT_NE(0, res.size());
 }
 
 /**
@@ -178,8 +193,15 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSupportedTones_001, TestSize
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetToneConfig_001, TestSize.Level1)
 {
     int32_t ltonetype = 0;
-    std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype);
-    ASSERT_NE(nullptr, toneInfo);
+    std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
+    EXPECT_NE(nullptr, toneInfo);
+
+    toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "cn");
+    EXPECT_NE(nullptr, toneInfo);
+
+    ltonetype = INT32_MAX;
+    toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
+    EXPECT_NE(nullptr, toneInfo);
 }
 #endif
 
@@ -611,7 +633,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level
         std::make_shared<AudioPolicyClientStubImpl>();
     std::shared_ptr<AudioRingerModeCallbackTest> callback = std::make_shared<AudioRingerModeCallbackTest>();
     AudioRingerMode ringerMode = AudioRingerMode::RINGER_MODE_SILENT;
-    
+
     ringermodeStub->OnRingerModeUpdated(ringerMode);
 
     ringermodeStub->AddRingerModeCallback(callback);
@@ -639,7 +661,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Rounting_Manager_Listener_001, TestSize.Level1
         std::make_shared<AudioManagerMicStateChangeCallbackTest>();
     MicStateChangeEvent micStateChangeEvent;
     micStateChangeEvent.mute = true;
-    
+
     audioPolicyClientStubImpl->OnMicStateUpdated(micStateChangeEvent);
 
     audioPolicyClientStubImpl->AddMicStateChangeCallback(callback);
