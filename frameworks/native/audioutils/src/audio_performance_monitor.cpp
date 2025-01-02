@@ -86,7 +86,7 @@ void AudioPerformanceMonitor::RecordTimeStamp(AdapterType adapterType, int64_t c
     if (curTimeStamp == INIT_LASTWRITTEN_TIME || overTimeDetectMap_[adapterType] == INIT_LASTWRITTEN_TIME) {
         overTimeDetectMap_[adapterType] = curTimeStamp;
         return;
-    } 
+    }
 
     if (curTimeStamp - overTimeDetectMap_[adapterType] > MAX_WRITTEN_INTERVAL[adapterType]) {
         int64_t rawOvertimeMs = (curTimeStamp - overTimeDetectMap_[adapterType]) / AUDIO_NS_PER_MS;
@@ -202,15 +202,14 @@ using namespace OHOS::AudioStandard;
 
 void RecordPaSilenceState(uint32_t sessionId, bool isSilence, enum PA_PIPE_TYPE paPipeType)
 {
-    switch (paPipeType)
-    {
-    case PA_PIPE_TYPE_NORMAL:
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_NORMAL_OUT);
-        break;
-    case PA_PIPE_TYPE_MULTICHANNEL:
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_MULTICHANNEL);
-    default:
-        break;
+    switch (paPipeType) {
+        case PA_PIPE_TYPE_NORMAL:
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_NORMAL_OUT);
+            break;
+        case PA_PIPE_TYPE_MULTICHANNEL:
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_MULTICHANNEL);
+        default:
+            break;
     }
 }
 

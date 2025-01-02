@@ -1256,7 +1256,8 @@ static void HandleFading(pa_sink *si, size_t length, pa_sink_input *sinkIn, pa_m
     }
 }
 
-static void SinkRenderPrimaryStateCheck(pa_mix_info *infoIn, pa_sink_input *sinkIn) {
+static void SinkRenderPrimaryStateCheck(pa_mix_info *infoIn, pa_sink_input *sinkIn)
+{
     const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
 
