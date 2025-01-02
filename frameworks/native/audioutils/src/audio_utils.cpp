@@ -184,6 +184,18 @@ int64_t ClockTime::GetCurNano()
     return result;
 }
 
+int64_t ClockTime::GetRealNano()
+{
+    int64_t result = -1; // -1 for bad result
+    struct timespec time;
+    clockid_t clockId = CLOCK_REALTIME;
+    int ret = clock_gettime(clockId, &time);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
+        "GetRealNanotime fail, result:%{public}d", ret);
+    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
+    return result;
+}
+
 int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
 {
     int32_t ret = -1; // -1 for bad result.
@@ -200,6 +212,23 @@ int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
     }
 
     return ret;
+}
+
+std::string ClockTime::NanoTimeToString(int64_t nanoTime)
+{
+    struct tm *tm_info;
+    char buffer[80];
+    time_t time_seconds = nanoTime / AUDIO_NS_PER_SECOND;
+
+    tm_info = localtime(&time_seconds);
+    if (tm_info == NULL) {
+        AUDIO_ERR_LOG("get localtime failed!");
+        return "";
+    }
+
+    size_t res = strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
+    CHECK_AND_RETURN_RET_LOG(res != 0, "", "strftime failed!");
+    return std::string(buffer);
 }
 
 int32_t ClockTime::RelativeSleep(int64_t nanoTime)
@@ -707,6 +736,17 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
         }
     }
     return float(curMaxAmplitude) / LONG_MAX;
+}
+
+bool SetSysPara(const std::string &key, int32_t value)
+{
+    auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
+    if (res < 0) {
+        AUDIO_WARNING_LOG("SetSysPara fail, key:%{public}s res:%{public}d", key.c_str(), res);
+        return false;
+    }
+    AUDIO_INFO_LOG("SetSysPara %{public}d success.", value);
+    return true;
 }
 
 template <typename T>

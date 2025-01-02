@@ -12,6 +12,7 @@
 # limitations under the License.
 
 persist.multimedia.audio.ringtonevolume = audio:audio:660
+persist.multimedia.audio.audioCacheState = audio:audio:600
 persist.multimedia.audioflag.forceipc.capturer = audio:audio:664
 const.multimedia.audio.fixedvolume = audio:audio:660
 const.multimedia.audio.volumestep = audio:audio:660
