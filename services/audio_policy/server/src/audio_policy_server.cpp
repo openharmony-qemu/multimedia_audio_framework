@@ -171,6 +171,9 @@ void AudioPolicyServer::OnStart()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
+    if (getpid() > FIRST_SCREEN_ON_PID) {
+        audioPolicyService_.SetFirstScreenOn();
+    }
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -641,9 +644,6 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         if (isInitMuteState_ == false) {
             AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
             InitMicrophoneMute();
-        }
-        if (getpid() > FIRST_SCREEN_ON_PID) {
-            audioPolicyService_.SetFirstScreenOn();
         }
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
