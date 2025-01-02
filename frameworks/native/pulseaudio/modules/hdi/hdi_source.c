@@ -233,6 +233,8 @@ static void FreeThread(struct Userdata *u)
             AUDIO_ERR_LOG("OS_ProcessCapData missed message num: %{public}u", missedMsgqNum);
         }
         pa_asyncmsgq_unref(u->CaptureMq);
+    } else {
+        AUDIO_ERR_LOG("CaptureMq is null");
     }
 
     pa_thread_mq_done(&u->threadMq);
