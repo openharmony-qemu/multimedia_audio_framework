@@ -495,8 +495,8 @@ AudioEcInfo AudioEcManager::GetAudioEcInfo()
 void AudioEcManager::ResetAudioEcInfo()
 {
     std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
-    audioEcInfo_.inputDevice = DEVICE_TYPE_NONE;
-    audioEcInfo_.outputDevice = DEVICE_TYPE_NONE;
+    audioEcInfo_.inputDevice.deviceType_ = DEVICE_TYPE_NONE;
+    audioEcInfo_.outputDevice.deviceType_ = DEVICE_TYPE_NONE;
 }
 
 void AudioEcManager::PresetArmIdleInput(const string& address)
