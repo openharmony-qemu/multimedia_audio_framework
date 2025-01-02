@@ -169,8 +169,6 @@ public:
     virtual void SetOffloadSessionId(uint32_t sessionId) = 0;
 
     virtual void ResetOffloadSessionId() = 0;
-
-    virtual void UpdateSafeVolumeAfterTimer() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

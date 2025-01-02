@@ -137,7 +137,7 @@ int32_t AudioRoutingManager::SetPreferredDevice(const PreferredType preferredTyp
 
 void AudioRoutingManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
 {
-    return AudioPolicyManager::GetInstance().SaveRemoteInfo(networkId, deviceType);
+    AudioPolicyManager::GetInstance().SaveRemoteInfo(networkId, deviceType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -128,6 +128,7 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void UpdateSinkState(bool started);
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     OffloadAudioRendererSinkInner();
@@ -145,10 +146,12 @@ private:
     int32_t muteCount_ = 0;
     bool switchDeviceMute_ = false;
     uint32_t renderId_ = 0;
+    uint32_t sinkId_ = 0;
     std::string adapterNameCase_ = "";
     struct IAudioManager *audioManager_ = nullptr;
     struct IAudioAdapter *audioAdapter_ = nullptr;
     struct IAudioRender *audioRender_ = nullptr;
+    IAudioSinkCallback *callback_ = nullptr;
     struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     struct AudioCallbackService callbackServ = {};
@@ -363,7 +366,13 @@ bool OffloadAudioRendererSinkInner::IsInited()
 
 void OffloadAudioRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_WARNING_LOG("not supported.");
+    std::lock_guard<std::mutex> lock(renderMutex_);
+    if (callback_) {
+        AUDIO_INFO_LOG("AudioSinkCallback registered");
+    } else {
+        callback_ = callback;
+        AUDIO_INFO_LOG("Register AudioSinkCallback");
+    }
 }
 
 typedef int32_t (*RenderCallback)(struct IAudioCallback *self, enum AudioCallbackType type, int8_t* reserved,
@@ -610,6 +619,7 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
 
 int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
+    std::lock_guard<std::mutex> lock(renderMutex_);
     Trace trace("OffloadSink::Init");
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName; // Set sound card information
@@ -647,6 +657,7 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET_LOG(tmp == 0, ERR_NOT_STARTED,
         "Create render failed, Audio Port: %{public}d", audioPort_.portId);
     rendererInited_ = true;
+    GetRenderId(sinkId_);
 
     return SUCCESS;
 }
@@ -726,6 +737,7 @@ float OffloadAudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t OffloadAudioRendererSinkInner::Start(void)
 {
+    std::lock_guard<std::mutex> lock(renderMutex_);
     Trace trace("OffloadSink::Start");
     AUDIO_INFO_LOG("Start");
     InitLatencyMeasurement();
@@ -746,6 +758,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         AUDIO_ERR_LOG("Start failed! ret %d", ret);
         return ERR_NOT_STARTED;
     }
+    UpdateSinkState(true);
 
     dumpFileName_ = "offload_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
@@ -880,6 +893,7 @@ int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 
 int32_t OffloadAudioRendererSinkInner::Stop(void)
 {
+    std::lock_guard<std::mutex> lock(renderMutex_);
     Trace trace("OffloadSink::Stop");
     AUDIO_INFO_LOG("Stop");
 
@@ -892,6 +906,7 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
         CHECK_AND_RETURN_RET_LOG(!Flush(), ERR_OPERATION_FAILED, "Flush failed!");
         AudioXCollie audioXCollie("audioRender_->Stop", TIME_OUT_SECONDS);
         int32_t ret = audioRender_->Stop(audioRender_);
+        UpdateSinkState(false);
         if (!ret) {
             started_ = false;
             return SUCCESS;
@@ -1146,6 +1161,16 @@ int32_t OffloadAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
 {
     renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD);
     return SUCCESS;
+}
+
+// UpdateSinkState must be called with OffloadAudioRendererSinkInner::renderMutex_ held
+void OffloadAudioRendererSinkInner::UpdateSinkState(bool started)
+{
+    if (callback_) {
+        callback_->OnAudioSinkStateChange(sinkId_, started);
+    } else {
+        AUDIO_WARNING_LOG("AudioSinkCallback is nullptr");
+    }
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

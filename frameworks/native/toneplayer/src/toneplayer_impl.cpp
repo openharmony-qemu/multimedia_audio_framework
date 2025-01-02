@@ -418,7 +418,7 @@ bool TonePlayerImpl::InitToneWaveInfo()
 bool TonePlayerImpl::InitAudioRenderer()
 {
     processSize_ = (rendererOptions_.streamInfo.samplingRate * C20MS) / C1000MS;
-    audioRenderer_ = AudioRenderer::Create(rendererOptions_);
+    audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false,
         "Renderer create failed");
 

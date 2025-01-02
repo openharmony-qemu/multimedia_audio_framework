@@ -1204,5 +1204,142 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_063, TestSize.Lev
     audioProcConfig.streamInfo.channels = MONO;
     EXPECT_EQ(true, ptrAudioProcessInClientInner->CheckIfSupport(audioProcConfig));
 }
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_064
+ * @tc.desc  : Test SetMute, SetDuckVolume, SetUnderflowCount, GetUnderflowCount, SetOverflowCount, GetOverflowCount
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_064, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+    int32_t ret = ptrAudioProcessInClientInner->SetMute(true);
+    EXPECT_EQ(0, ret);
+    ret = ptrAudioProcessInClientInner->SetDuckVolume(0.5f);
+    EXPECT_EQ(0, ret);
+    ptrAudioProcessInClientInner->underflowCount_ = 0;
+    ptrAudioProcessInClientInner->SetUnderflowCount(1);
+    uint32_t res = ptrAudioProcessInClientInner->GetUnderflowCount();
+    EXPECT_EQ(1, res);
+    ptrAudioProcessInClientInner->overflowCount_ = 0;
+    ptrAudioProcessInClientInner->SetOverflowCount(1);
+    res = ptrAudioProcessInClientInner->GetOverflowCount();
+    EXPECT_EQ(1, res);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_065
+ * @tc.desc  : Test GetFramesWritten, GetFramesRead, UpdateLatencyTimestamp
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_065, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+    ptrAudioProcessInClientInner->processConfig_.audioMode = AUDIO_MODE_PLAYBACK;
+    int64_t res = 0;
+    res = ptrAudioProcessInClientInner->GetFramesWritten();
+    EXPECT_EQ(res, -1);
+    ptrAudioProcessInClientInner->processConfig_.audioMode = AUDIO_MODE_RECORD;
+    res = ptrAudioProcessInClientInner->GetFramesRead();
+    EXPECT_EQ(res, -1);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_066
+ * @tc.desc  : Test SaveUnderrunCallback
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_066, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+    std::shared_ptr<ClientUnderrunCallBack> underrunCallback = nullptr;
+    ptrAudioProcessInClientInner->isInited_ = false;
+    int32_t ret = ptrAudioProcessInClientInner->SaveUnderrunCallback(underrunCallback);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_067
+ * @tc.desc  : Test ChannelFormatConvert
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_067, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+    AudioStreamData srcData;
+    AudioStreamData dstData;
+    srcData.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    dstData.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    bool ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+    dstData.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    srcData.streamInfo.format = SAMPLE_S16LE;
+    srcData.streamInfo.channels = STEREO;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(true, ret);
+    srcData.streamInfo.channels = MONO;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+    srcData.streamInfo.format = SAMPLE_F32LE;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+    srcData.streamInfo.channels = STEREO;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+    srcData.streamInfo.format = INVALID_WIDTH;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_068
+ * @tc.desc  : Test Pause, Resume
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_068, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+    int32_t ret = ptrAudioProcessInClientInner->Pause(true);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+    ret = ptrAudioProcessInClientInner->Pause(true);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+    ret = ptrAudioProcessInClientInner->Resume();
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

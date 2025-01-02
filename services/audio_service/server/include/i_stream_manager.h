@@ -32,7 +32,7 @@ enum ManagerType : int32_t {
 
 class IStreamManager {
 public:
-    ~IStreamManager() = default;
+    virtual ~IStreamManager() = default;
 
     static IStreamManager &GetPlaybackManager(ManagerType managerType = PLAYBACK);
     static IStreamManager &GetRecorderManager();

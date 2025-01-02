@@ -210,7 +210,7 @@ class OHAudioRenderer {
 
         void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
     private:
-        std::unique_ptr<AudioRenderer> audioRenderer_;
+        std::shared_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
         std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
         std::shared_ptr<OHRendererPositionCallback> rendererPositionCallback_;

@@ -59,32 +59,6 @@ static const std::vector<DeviceType> VOLUME_GROUP_TYPE_LIST = {
     DEVICE_TYPE_REMOTE_CAST
 };
 
-static const std::vector<AudioStreamType> VOICE_CALL_VOLUME_TYPE_LIST = {
-    // all stream types for voice call volume type
-    STREAM_VOICE_CALL,
-    STREAM_VOICE_COMMUNICATION
-};
-
-static const std::vector<AudioStreamType> RINGTONE_VOLUME_TYPE_LIST = {
-    // all stream types for ringtone volume type
-    STREAM_RING,
-    STREAM_VOICE_RING,
-    STREAM_SYSTEM,
-    STREAM_NOTIFICATION,
-    STREAM_SYSTEM_ENFORCED,
-    STREAM_DTMF
-};
-
-static const std::vector<AudioStreamType> MEDIA_VOLUME_TYPE_LIST = {
-    // all stream types for media volume type
-    STREAM_MUSIC,
-    STREAM_MOVIE,
-    STREAM_GAME,
-    STREAM_SPEECH,
-    STREAM_NAVIGATION,
-    STREAM_VOICE_MESSAGE
-};
-
 static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
     // all keys for system sound uri
     "ringtone_for_sim_card_0",
@@ -381,11 +355,6 @@ void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, boo
 
 void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
 {
-    // In case if KvStore didnot connect during bootup
-    if (!isLoaded_) {
-        InitKVStoreInternal();
-    }
-
     int32_t volumeLevel =
         volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
@@ -425,41 +394,13 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
         "SetSystemVolumeLevel audio adapter null");
 
-    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d", streamType, volumeDb, volumeLevel);
-    if (streamForVolumeMap == STREAM_VOICE_CALL) {
-        return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamForVolumeMap == STREAM_MUSIC) {
-        return SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamForVolumeMap == STREAM_RING) {
-        return SetVolumeDbForVolumeTypeGroup(RINGTONE_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamForVolumeMap == STREAM_SYSTEM) {
-        return SetVolumeDbForVolumeTypeGroup(GET_PC_STREAM_RING_VOLUME_TYPES, volumeDb);
-    }
+    AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
+        streamType, volumeDb, volumeLevel, currentActiveDevice_);
 
     // audio volume
     SetAudioVolume(streamType, volumeDb);
 
-    return audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
-}
-
-int32_t AudioAdapterManager::SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup,
-    float volumeDb)
-{
-    int32_t result = SUCCESS;
-    // audio volume
-    if (volumeTypeGroup.size() > 0) {
-        SetAudioVolume(volumeTypeGroup[0], volumeDb);
-    }
-
-    for (auto &streamType: volumeTypeGroup) {
-        result = audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
-        if (result != SUCCESS) {
-            // The operation of setting volume has failed, return error directly.
-            return result;
-        }
-    }
-    return result;
+    return SUCCESS;
 }
 
 void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volumeDb)
@@ -520,8 +461,8 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (offloadSessionID_.has_value()) { // need stream volume and system volume
         volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_.value(), streamType, OFFLOAD_CLASS);
+        audioServerProxy_->OffloadSetVolume(volume);
     }
-    audioServerProxy_->OffloadSetVolume(volume);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
@@ -790,7 +731,6 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
         LoadVolumeMap();
         LoadMuteStatusMap();
         UpdateSafeVolume();
-        UpdateSafeVolumeAfterTimer();
     }
 
     auto iter = VOLUME_TYPE_LIST.begin();
@@ -1314,41 +1254,6 @@ void AudioAdapterManager::UpdateSafeVolume()
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
                 volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
                 isBtBoot_ = false;
-            }
-            break;
-        default:
-            AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_);
-            break;
-    }
-}
-
-void AudioAdapterManager::UpdateSafeVolumeAfterTimer()
-{
-    auto currentActiveOutputDeviceDescriptor =
-        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
-    switch (currentActiveDevice_) {
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) > safeVolume_ &&
-                safeStatusBt_ == SAFE_ACTIVE) {
-                AUDIO_INFO_LOG("wired device restore safe volume after music timer");
-                volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
-                volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
-            }
-            break;
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-            if (currentActiveOutputDeviceDescriptor->deviceCategory_ == BT_CAR ||
-                currentActiveOutputDeviceDescriptor->deviceCategory_ == BT_SOUNDBOX) {
-                break;
-            }
-            if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) > safeVolume_ &&
-                safeStatus_ == SAFE_ACTIVE) {
-                AUDIO_INFO_LOG("blutooth device restore safe volume after music timer");
-                volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
-                volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
             }
             break;
         default:

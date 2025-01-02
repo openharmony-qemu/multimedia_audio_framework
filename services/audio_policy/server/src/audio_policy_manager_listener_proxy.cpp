@@ -84,7 +84,7 @@ void AudioPolicyManagerListenerProxy::OnAvailableDeviceChange(const AudioDeviceU
 
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
 
     CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()),
         "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");

@@ -48,6 +48,7 @@
     *HasBluetoothEndpoint*;
     *GetOfflineStream*;
     *GetOfflineAudioEffectChains*;
+    *GenerateSessionId*;
   local:
     *;
 };

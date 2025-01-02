@@ -49,6 +49,8 @@ public:
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
 
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
     virtual ~AudioProcess() = default;
 };
 
@@ -86,6 +88,7 @@ public:
         ON_REGISTER_PROCESS_CB,
         ON_REGISTER_THREAD_PRIORITY,
         ON_SET_DEFAULT_OUTPUT_DEVICE,
+        ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS,
         PROCESS_MAX_MSG
     };
 

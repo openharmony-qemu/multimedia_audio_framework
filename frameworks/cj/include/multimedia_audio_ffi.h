@@ -208,9 +208,6 @@ FFI_EXPORT void FfiMMAARMOn(int64_t id, int32_t callbackType, uint32_t deviceUsa
     int32_t *errorCode);
 FFI_EXPORT void FfiMMAARMOnWithFlags(int64_t id, int32_t callbackType, void (*callback)(), int32_t flags,
     int32_t *errorCode);
-// this func spells errors will be removed
-FFI_EXPORT void FfiMMAARMWOnithCapturerInfo(int64_t id, int32_t callbackType, void (*callback)(),
-    CAudioCapturerInfo capturerInfo, int32_t *errorCode);
 FFI_EXPORT void FfiMMAARMOnWithCapturerInfo(int64_t id, int32_t callbackType, void (*callback)(),
     CAudioCapturerInfo capturerInfo, int32_t *errorCode);
 FFI_EXPORT void FfiMMAARMOnWithRendererInfo(int64_t id, int32_t callbackType, void (*callback)(),

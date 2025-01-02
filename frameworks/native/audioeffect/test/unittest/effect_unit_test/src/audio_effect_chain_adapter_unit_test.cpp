@@ -310,7 +310,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerAddSessionInfo_001, Te
     EXPECT_EQ(SUCCESS, result);
 
     const char *sessionid = "123456";
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1"};
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -330,7 +330,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerAddSessionInfo_002, Te
     EXPECT_EQ(SUCCESS, result);
 
     const char *sessionid = "";
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1"};
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
     EXPECT_EQ(ERROR, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -351,7 +351,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerAddSessionInfo_003, Te
 
     sceneType = "";
     const char *sessionid = "123456";
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1"};
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -372,7 +372,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerAddSessionInfo_004, Te
 
     sceneType = "";
     const char *sessionid = "";
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1"};
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
     EXPECT_EQ(ERROR, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -393,7 +393,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerAddSessionInfo_005, Te
 
     sceneType = nullptr;
     const char *sessionid = nullptr;
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1"};
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
     EXPECT_EQ(ERROR, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -413,7 +413,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerDeleteSessionInfo_001,
     EXPECT_EQ(SUCCESS, result);
 
     const char *sessionid = "123456";
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1"};
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
     EXPECT_EQ(SUCCESS, result);
 
@@ -436,7 +436,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerDeleteSessionInfo_002,
     EXPECT_EQ(SUCCESS, result);
 
     const char *sessionid = "123456";
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1"};
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
     EXPECT_EQ(SUCCESS, result);
 
@@ -460,7 +460,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerDeleteSessionInfo_003,
     EXPECT_EQ(SUCCESS, result);
 
     const char *sessionid = "123456";
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1"};
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
     EXPECT_EQ(SUCCESS, result);
 
@@ -484,7 +484,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerReturnEffectChannelInf
     EXPECT_EQ(SUCCESS, result);
 
     const char *sessionid = "123456";
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1"};
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
     EXPECT_EQ(SUCCESS, result);
 

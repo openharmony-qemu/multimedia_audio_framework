@@ -796,14 +796,17 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
 }
 
 template <typename T>
-void StringParser(std::string& param, T& result)
+bool StringConverter(const std::string &str, T &result)
 {
-    std::stringstream valueStr;
-    valueStr << param;
-    valueStr >> result;
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
+    return ec == std::errc{} && ptr == str.data() + str.size();
 }
 
-template void StringParser(std::string& param, uint32_t& result);
+template bool StringConverter(const std::string &str, uint64_t &result);
+template bool StringConverter(const std::string &str, uint32_t &result);
+template bool StringConverter(const std::string &str, int32_t &result);
+template bool StringConverter(const std::string &str, uint8_t &result);
+template bool StringConverter(const std::string &str, int8_t &result);
 
 bool SetSysPara(const std::string &key, int32_t value)
 {
@@ -929,6 +932,17 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
             *file = DumpFileUtil::OpenDumpFileInner(para, fileName, OTHER_NATIVE_SERVICE);
         }
     }
+}
+
+void CloseFd(int fd)
+{
+    // log stdin, stdout, stderr.
+    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO) {
+        AUDIO_WARNING_LOG("special fd: %{public}d will be closed", fd);
+    }
+    int tmpFd = fd;
+    close(fd);
+    AUDIO_DEBUG_LOG("fd: %{public}d closed successfuly!", tmpFd);
 }
 
 static void MemcpyToI32FromI16(int16_t *src, int32_t *dst, size_t count)
@@ -1378,7 +1392,6 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_GAME, STREAM_MUSIC},
     {STREAM_SPEECH, STREAM_MUSIC},
     {STREAM_NAVIGATION, STREAM_MUSIC},
-    {STREAM_CAMCORDER, STREAM_MUSIC},
     {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},

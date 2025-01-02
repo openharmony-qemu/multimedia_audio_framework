@@ -1390,5 +1390,22 @@ void AudioManagerProxy::CheckHibernateState(bool onHibernate)
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "CheckHibernateState failed, error: %{public}d", error);
     return;
 }
+
+int32_t AudioManagerProxy::GenerateSessionId(uint32_t &sessionId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+    data.WriteUint32(sessionId);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "generate sessionid failed,error:%{public}d", error);
+    sessionId = reply.ReadUint32();
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

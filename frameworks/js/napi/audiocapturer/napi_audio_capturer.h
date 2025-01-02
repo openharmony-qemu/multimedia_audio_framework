@@ -37,8 +37,11 @@ public:
     ~NapiAudioCapturer();
 
     static napi_value Init(napi_env env, napi_value exports);
-
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+    std::shared_ptr<AudioCapturer> audioCapturer_;
+#else
     std::unique_ptr<AudioCapturer> audioCapturer_;
+#endif
     std::mutex readCallbackMutex_;
     std::condition_variable readCallbackCv_;
 

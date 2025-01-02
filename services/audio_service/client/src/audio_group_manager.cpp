@@ -90,9 +90,10 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
-            "[AudioGroupManger]: invalid value %{public}s", value.c_str());
-        return std::stoi(value);
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(value, convertValue), 0,
+            "[AudioGroupManger]: convert invalid value: %{public}s", value.c_str());
+        return convertValue;
     }
 
     switch (volumeType) {
@@ -130,9 +131,10 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
         std::string condition = "EVENT_TYPE=3;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE=" +
             std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
-            "[AudioGroupManger]: invalid value %{public}s", value.c_str());
-        return std::stoi(value);
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(value, convertValue), 0,
+            "[AudioGroupManger]: convert invalid value: %{public}s", value.c_str());
+        return convertValue;
     }
 
     if (volumeType == STREAM_ALL) {
@@ -157,9 +159,10 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
         std::string condition = "EVENT_TYPE=2;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE" +
             std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
-            "[AudioGroupManger]: invalid value %{public}s", value.c_str());
-        return std::stoi(value);
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(value, convertValue), 0,
+            "[AudioGroupManger]: convert invalid value: %{public}s", value.c_str());
+        return convertValue;
     }
 
     if (volumeType == STREAM_ALL) {

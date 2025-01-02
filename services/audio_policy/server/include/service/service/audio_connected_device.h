@@ -50,8 +50,8 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress);
-    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
-        std::string macAddress, DeviceRole deviceRole);
+    void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
+        std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress,
@@ -66,6 +66,7 @@ public:
     bool HasArm(const DeviceRole role);
     bool HasHifi(const DeviceRole role);
     bool IsArmDevice(const std::string &address, const DeviceRole role);
+    std::shared_ptr<AudioDeviceDescriptor> GetUsbDeviceDescriptor(const std::string &address, const DeviceRole role);
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}

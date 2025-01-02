@@ -408,6 +408,24 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetA2dpDeviceVolume_001, TestSize.Level1
 }
 
 /**
+ * @tc.name  : Test SetA2dpDeviceVolume.
+ * @tc.number: SetA2dpDeviceVolume_002
+ * @tc.desc  : Test SetA2dpDeviceVolume interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, SetA2dpDeviceVolume_002, TestSize.Level1)
+{
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    std::string macAddress = "A1:B2:C3:D4:E5:F6";
+    A2dpDeviceConfigInfo configInfo{};
+    configInfo.absVolumeSupport = true;
+    server->audioPolicyService_.audioDeviceStatus_.audioA2dpDevice_.AddA2dpDevice(macAddress, configInfo);
+    int32_t volumeLevel = 4;
+    bool internalCall = true;
+    int32_t ret = server->audioPolicyService_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test TriggerDeviceChangedCallback.
  * @tc.number: TriggerDeviceChangedCallback_001
  * @tc.desc  : Test TriggerDeviceChangedCallback interfaces.
@@ -572,7 +590,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
     networkId = REMOTE_NETWORK_ID;
     ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
-
 }
 
 /**
@@ -994,8 +1011,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcChannels_001, TestSize.Level1)
 HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateAudioEcInfo_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    DeviceType inputDevice = DeviceType::DEVICE_TYPE_MAX;
-    DeviceType outputDevice = DeviceType::DEVICE_TYPE_MAX;
+    AudioDeviceDescriptor inputDevice, outputDevice;
+    inputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
+    outputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
 
     server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = false;
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
@@ -1006,15 +1024,15 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateAudioEcInfo_001, TestSize.Level1)
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
 
     inputDevice = server->audioPolicyService_.audioEcManager_.audioEcInfo_.inputDevice;
-    outputDevice = DeviceType::DEVICE_TYPE_MAX;
+    outputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
 
-    inputDevice = DeviceType::DEVICE_TYPE_MAX;
+    inputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
     outputDevice = server->audioPolicyService_.audioEcManager_.audioEcInfo_.outputDevice;
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
 
-    inputDevice = DeviceType::DEVICE_TYPE_MAX;
-    outputDevice = DeviceType::DEVICE_TYPE_MAX;
+    inputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
+    outputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
     EXPECT_EQ(server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_, true);
 }

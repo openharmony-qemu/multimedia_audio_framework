@@ -41,7 +41,6 @@ HWTEST(AudioAffinityParserTest, audioAffinityParser_001, TestSize.Level1)
     audioAffinity_->mDoc_ = new xmlDoc();
     audioAffinity_->LoadConfiguration();
     EXPECT_NE(audioAffinity_, nullptr);
-    delete audioAffinity_->mDoc_;
 }
 
 /**
@@ -60,7 +59,6 @@ HWTEST(AudioAffinityParserTest, audioAffinityParser_002, TestSize.Level1)
     audioAffinity_->LoadConfiguration();
     audioAffinity_->Parse();
     EXPECT_NE(audioAffinity_, nullptr);
-    delete audioAffinity_->mDoc_;
 }
 
 /**
@@ -77,9 +75,6 @@ HWTEST(AudioAffinityParserTest, audioAffinityParser_003, TestSize.Level1)
     EXPECT_NE(audioAffinity_, nullptr);
 
     audioAffinity_->LoadConfiguration();
-    audioAffinity_->Destroy();
-    EXPECT_NE(audioAffinity_, nullptr);
-    delete audioAffinity_->mDoc_;
 }
 
 /**

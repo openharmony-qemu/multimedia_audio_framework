@@ -190,7 +190,7 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
 
 void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)
 {
-    if (networkID != LOCAL_NETWORK_ID || (networkID == LOCAL_NETWORK_ID && sinkName != PRIMARY_SPEAKER)) {
+    if (networkID != LOCAL_NETWORK_ID || sinkName != PRIMARY_SPEAKER) {
         // PA may move the sink to default when unloading module.
         MuteSinkPort(PRIMARY_SPEAKER, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
     }

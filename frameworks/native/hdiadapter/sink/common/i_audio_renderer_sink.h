@@ -24,14 +24,14 @@ namespace OHOS {
 namespace AudioStandard {
 
 typedef struct IAudioSinkAttr {
-    const char *adapterName = NULL;
+    const char *adapterName = nullptr;
     uint32_t openMicSpeaker = 0;
     HdiAdapterFormat format = HdiAdapterFormat::INVALID_WIDTH;
     uint32_t sampleRate = 0;
     uint32_t channel = 0;
     float volume = 0.0f;
-    const char *filePath = NULL;
-    const char *deviceNetworkId = NULL;
+    const char *filePath = nullptr;
+    const char *deviceNetworkId = nullptr;
     int32_t deviceType = 0;
     uint64_t channelLayout = 0;
     int32_t audioStreamFlag = 0;

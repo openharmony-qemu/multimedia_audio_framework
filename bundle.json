@@ -30,7 +30,8 @@
           "audio_framework_feature_opensl_es",
           "audio_framework_suport_svsession_manager",
           "audio_framework_feature_support_os_account",
-          "audio_framework_feature_hitrace_enable"
+          "audio_framework_feature_hitrace_enable",
+          "audio_framework_feature_offline_effect"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -209,8 +210,6 @@
             "//foundation/multimedia/audio_framework/test:audio_benchmark_test",
             "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_test_packages",
-            "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/test/unittest:remote_audio_capturer_source_unit_test",
-            "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/test/unittest:remote_fast_audio_capturer_source_unittest",
             "//foundation/multimedia/audio_framework/frameworks/native/opensles:audio_opensles_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer_test",
             "//foundation/multimedia/audio_framework/services/audio_service:audio_service_test_packages",

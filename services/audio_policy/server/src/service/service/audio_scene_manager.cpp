@@ -156,5 +156,13 @@ bool AudioSceneManager::IsSameAudioScene()
 {
     return lastAudioScene_ == audioScene_;
 }
+
+bool AudioSceneManager::IsVoiceCallRelatedScene()
+{
+    return audioScene_ == AUDIO_SCENE_RINGING ||
+        audioScene_ == AUDIO_SCENE_PHONE_CALL ||
+        audioScene_ == AUDIO_SCENE_PHONE_CHAT ||
+        audioScene_ == AUDIO_SCENE_VOICE_RINGING;
+}
 }
 }

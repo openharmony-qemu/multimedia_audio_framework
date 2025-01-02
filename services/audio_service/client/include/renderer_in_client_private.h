@@ -217,6 +217,7 @@ private:
     int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
+    void WatchingWriteCallbackFunc();
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
@@ -224,6 +225,7 @@ private:
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    bool CheckBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
 
     int32_t RegisterSpatializationStateEventListener();
@@ -412,6 +414,7 @@ private:
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
 
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
+    std::atomic_bool writeCallbackFuncThreadStatusFlag_ { false };
     DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
 };
 

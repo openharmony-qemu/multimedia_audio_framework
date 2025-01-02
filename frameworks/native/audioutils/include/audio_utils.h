@@ -27,6 +27,8 @@
 #include <queue>
 #include <climits>
 #include <condition_variable>
+#include <charconv>
+#include <unistd.h>
 #include "securec.h"
 
 #include "audio_info.h"
@@ -199,7 +201,7 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 }
 
 template <typename T>
-void StringParser(std::string& param, T& result);
+bool StringConverter(const std::string &str, T &result);
 
 bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>
@@ -640,6 +642,8 @@ enum HdiRenderOffset : uint32_t {
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
+
+void CloseFd(int fd);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

@@ -99,6 +99,7 @@ const char *g_audioServerCodeStrs[] = {
     "RESTORE_SESSION",
     "CREATE_IPC_OFFLINE_STREAM",
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
+    "GENERATE_SESSION_ID",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -772,6 +773,15 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleLoadHdiEffectModel(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED):
             return HandleUpdateEffectBtOffloadSupported(data, reply);
+        default:
+            return HandleFifthPartCode(code, data, reply, option);
+    }
+}
+
+int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    switch (code) {
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE):
             return HandleSetSinkMuteForSwitchDevice(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT):
@@ -786,6 +796,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleCreateIpcOfflineStream(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS):
             return HandleGetOfflineAudioEffectChains(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID):
+            return HandleGenerateSessionId(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1055,6 +1067,15 @@ int AudioManagerStub::HandleSetNonInterruptMute(MessageParcel &data, MessageParc
     uint32_t sessionId = data.ReadUint32();
     bool muteFlag = data.ReadBool();
     SetNonInterruptMute(sessionId, muteFlag);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    int32_t ret = GenerateSessionId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "generate session id failed");
+    reply.WriteUint32(sessionId);
     return AUDIO_OK;
 }
 } // namespace AudioStandard

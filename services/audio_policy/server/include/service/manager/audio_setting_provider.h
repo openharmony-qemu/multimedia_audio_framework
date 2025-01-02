@@ -75,7 +75,7 @@ protected:
     ~AudioSettingProvider() override;
 
 private:
-    static bool isDataShareReady_;
+    static std::atomic<bool> isDataShareReady_;
     static void Initialize(int32_t systemAbilityId);
     static std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelper(std::string tableType = "");
     static bool ReleaseDataShareHelper(std::shared_ptr<DataShare::DataShareHelper> &helper);

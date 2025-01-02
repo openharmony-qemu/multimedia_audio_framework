@@ -76,7 +76,7 @@ void AudioRouteMap::RemoveDeviceInRouterMap(std::string networkId)
     std::unordered_map<int32_t, std::pair<std::string, int32_t>>::iterator it;
     for (it = routerMap_.begin();it != routerMap_.end();) {
         if (it->second.first == networkId) {
-            routerMap_.erase(it++);
+            it = routerMap_.erase(it);
         } else {
             it++;
         }
@@ -89,7 +89,7 @@ void AudioRouteMap::RemoveDeviceInFastRouterMap(std::string networkId)
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>>::iterator it;
     for (it = fastRouterMap_.begin();it != fastRouterMap_.end();) {
         if (it->second.first == networkId) {
-            fastRouterMap_.erase(it++);
+            it = fastRouterMap_.erase(it);
         } else {
             it++;
         }

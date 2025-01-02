@@ -555,6 +555,8 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
         pa_proplist_sets(propList, "headtracking.enabled",
             std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
+        AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig.streamType);
+        pa_proplist_sets(propList, "systemVolume.type", std::to_string(systemVolumeType).c_str());
         SetHighResolution(propList, processConfig, sessionId);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         SetRecordProplist(propList, processConfig);
@@ -696,7 +698,8 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         flags |= PA_STREAM_DONT_MOVE; //inner cap source-output,should not be moved!
     }
-    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr, static_cast<pa_stream_flags_t>(flags));
+    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr,
+        static_cast<pa_stream_flags_t>(flags));
     // PA_STREAM_ADJUST_LATENCY exist, return peek length from server;
     if (result < 0) {
         int32_t error = pa_context_errno(context_);

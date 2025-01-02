@@ -74,6 +74,10 @@ const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
     STREAM_ULTRASONIC
 };
 
+const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
+    STREAM_NOTIFICATION
+};
+
 // for PC
 const std::vector<AudioStreamType> GET_PC_STREAM_RING_VOLUME_TYPES {
     STREAM_SYSTEM,
@@ -224,7 +228,7 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneId = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0,
+    int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0,
         const bool isUpdatedAudioStrategy = false) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
@@ -472,6 +476,14 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
+
+    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, bool isUpdateUi);
+    void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, bool isUpdateUi);
+    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel, bool mute);
+
+    void ProcUpdateRingerMode();
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -571,15 +583,19 @@ private:
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
-    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi);
+    void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
+    void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
+    bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
@@ -629,6 +645,10 @@ private:
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();
 
+    // for updating default device selection state when game audio stream is muted
+    void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
+    void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
+
     AudioPolicyService& audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
     AudioDeviceManager &audioDeviceManager_;
@@ -669,6 +689,7 @@ private:
     std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
     AudioPolicyDump &audioPolicyDump_;
+    int32_t sessionIdByRemote_ = -1;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

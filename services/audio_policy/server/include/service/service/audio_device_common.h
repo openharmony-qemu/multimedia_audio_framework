@@ -115,6 +115,9 @@ public:
         ConnectState connectState);
     std::vector<SourceOutput> GetSourceOutputs();
     void BluetoothScoDisconectForRecongnition();
+    void SetFirstScreenOn();
+    void ClientDiedDisconnectScoNormal();
+    void ClientDiedDisconnectScoRecognition();
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -215,6 +218,8 @@ private:
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
     bool NotifyRecreateDirectStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason);
+    vector<std::shared_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
+        std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
     // fetchInput
     void FetchInputDeviceInner(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
@@ -242,6 +247,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     bool isOpenRemoteDevice = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
+    bool isFirstScreenOn_ = false;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;
