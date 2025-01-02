@@ -28,7 +28,7 @@ namespace AudioStandard {
 
 bool g_hasPermissioned = false;
 
-const int32_t TEST_SESSIONID = MIN_SESSIONID + 1010;
+const int32_t TEST_SESSIONID = MIN_STREAMID + 1010;
 const int32_t A2DP_STOPPED = 1;
 const int32_t A2DP_PLAYING = 2;
 const int32_t A2DP_INVALID = 3;

@@ -34,7 +34,7 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t MIDDLE_SESSIONID = 100001;
-constexpr uint32_t MORE_SESSIONID = MAX_SESSIONID + 1;
+constexpr uint32_t MORE_SESSIONID = MAX_STREAMID + 1;
 const int32_t MAP_NUM = 1;
 const int32_t CAPTURER_FLAG = 10;
 const uint32_t SESSIONID = 123456;
