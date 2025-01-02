@@ -52,6 +52,7 @@ constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 80;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
+constexpr pid_t FIRST_SCREEN_ON_PID = 1000;
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
@@ -170,6 +171,9 @@ void AudioPolicyServer::OnStart()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
+    if (getpid() > FIRST_SCREEN_ON_PID) {
+        audioPolicyService_.SetFirstScreenOn();
+    }
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
