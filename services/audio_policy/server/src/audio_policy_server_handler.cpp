@@ -300,7 +300,7 @@ bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const Inte
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->interruptEvent = interruptEvent;
-    eventContextObj->streamId = streamId;
+    eventContextObj->sessionId = streamId;
     lock_guard<mutex> runnerlock(runnerMutex_);
     AUDIO_INFO_LOG("Send interrupt event with streamId callback");
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID,
