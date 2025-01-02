@@ -114,6 +114,12 @@ void AudioEffectChain::SetFoldState(const std::string &foldState)
         "convert invalid foldState: %{public}s", foldState.c_str());
 }
 
+void AudioEffectChain::SetLidState(const std::string &lidState)
+{
+    CHECK_AND_RETURN_LOG(StringConverter(lidState, lidState_),
+        "convert invalid lidState: %{public}s", lidState.c_str());
+}
+
 void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
 {
     currSceneType_ = currSceneType;
@@ -195,6 +201,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[SPATIALIZATION_ENABLED_INDEX] = spatializationEnabled_;
     data[STREAM_USAGE_INDEX] = streamUsage_;
     data[FOLD_STATE_INDEX] = static_cast<int32_t>(foldState_);
+    data[LID_STATE_INDEX] = static_cast<int32_t>(lidState_);
     AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
         "spatializationSceneType: %{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d",
