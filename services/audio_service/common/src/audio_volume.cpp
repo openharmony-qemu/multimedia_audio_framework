@@ -17,13 +17,13 @@
 #define LOG_TAG "AudioVolume"
 #endif
 
+#include <numeric>
 #include "audio_volume.h"
 #include "audio_volume_c.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
-#include <numeric>
 
 namespace OHOS {
 namespace AudioStandard {
