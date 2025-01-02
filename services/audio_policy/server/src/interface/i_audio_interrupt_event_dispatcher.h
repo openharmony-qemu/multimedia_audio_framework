@@ -24,8 +24,8 @@ namespace AudioStandard {
 // define interfaces for handler to call
 class IAudioInterruptEventDispatcher {
 public:
-    virtual void DispatchInterruptEventWithSessionId(
-        uint32_t sessionId, InterruptEventInternal &interruptEvent) = 0;
+    virtual void DispatchInterruptEventWithStreamId(
+        uint32_t streamId, InterruptEventInternal &interruptEvent) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

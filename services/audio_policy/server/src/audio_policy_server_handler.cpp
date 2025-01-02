@@ -294,18 +294,18 @@ bool AudioPolicyServerHandler::SendInterruptEventInternalCallback(const Interrup
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendInterruptEventWithSessionIdCallback(const InterruptEventInternal &interruptEvent,
-    const uint32_t &sessionId)
+bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const InterruptEventInternal &interruptEvent,
+    const uint32_t &streamId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->interruptEvent = interruptEvent;
-    eventContextObj->sessionId = sessionId;
+    eventContextObj->streamId = streamId;
     lock_guard<mutex> runnerlock(runnerMutex_);
-    AUDIO_INFO_LOG("Send interrupt event with sessionId callback");
-    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_SESSIONID,
+    AUDIO_INFO_LOG("Send interrupt event with streamId callback");
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_SESSIONID event failed");
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
     return ret;
 }
 
@@ -808,11 +808,11 @@ void AudioPolicyServerHandler::HandleInterruptEvent(const AppExecFwk::InnerEvent
     std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher = interruptEventDispatcher_.lock();
     lock.unlock();
     if (dispatcher != nullptr) {
-        dispatcher->DispatchInterruptEventWithSessionId(0, eventContextObj->interruptEvent);
+        dispatcher->DispatchInterruptEventWithStreamId(0, eventContextObj->interruptEvent);
     }
 }
 
-void AudioPolicyServerHandler::HandleInterruptEventWithSessionId(const AppExecFwk::InnerEvent::Pointer &event)
+void AudioPolicyServerHandler::HandleInterruptEventWithStreamId(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
@@ -821,7 +821,7 @@ void AudioPolicyServerHandler::HandleInterruptEventWithSessionId(const AppExecFw
     std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher = interruptEventDispatcher_.lock();
     lock.unlock();
     if (dispatcher != nullptr) {
-        dispatcher->DispatchInterruptEventWithSessionId(eventContextObj->sessionId,
+        dispatcher->DispatchInterruptEventWithStreamId(eventContextObj->sessionId,
             eventContextObj->interruptEvent);
     }
 }
@@ -1288,8 +1288,8 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
         case EventAudioServerCmd::INTERRUPT_EVENT:
             HandleInterruptEvent(event);
             break;
-        case EventAudioServerCmd::INTERRUPT_EVENT_WITH_SESSIONID:
-            HandleInterruptEventWithSessionId(event);
+        case EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID:
+            HandleInterruptEventWithStreamId(event);
             break;
         case EventAudioServerCmd::INTERRUPT_EVENT_WITH_CLIENTID:
             HandleInterruptEventWithClientId(event);

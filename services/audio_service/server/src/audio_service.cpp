@@ -177,7 +177,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
 
 void AudioService::UpdateMuteControlSet(uint32_t sessionId, bool muteFlag)
 {
-    if (sessionId < MIN_SESSIONID || sessionId > MAX_SESSIONID) {
+    if (sessionId < MIN_STREAMID || sessionId > MAX_STREAMID) {
         AUDIO_WARNING_LOG("Invalid sessionid %{public}u", sessionId);
         return;
     }
