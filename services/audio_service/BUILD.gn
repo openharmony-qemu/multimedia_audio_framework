@@ -460,11 +460,6 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
-  if (audio_framework_feature_offline_effect) {
-    public_deps =
-        [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
-  }
-
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
@@ -488,6 +483,13 @@ audio_ohos_library("audio_service") {
   public_external_deps = [ "libxml2:libxml2" ]
 
   defines = []
+
+  if (audio_framework_feature_offline_effect) {
+    public_deps =
+        [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
+    defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
     external_deps += [ "config_policy:configpolicy_util" ]
