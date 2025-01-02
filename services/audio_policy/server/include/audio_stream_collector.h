@@ -83,10 +83,10 @@ public:
     bool HasVoipRendererStream();
     bool ChangeVoipCapturerStreamToNormal();
     bool IsCallStreamUsage(StreamUsage usage);
-    std::set<int32_t> GetSessionIdByStreamUsage(StreamUsage streamUsage);
-    std::set<int32_t> GetSessionIdBySourceType(SourceType sourceType);
-    std::set<int32_t> GetSessionIdByDeviceType(DeviceType deviceType);
-    int32_t GetSessionIdPauseByRemote(InterruptHint hintType);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage streamUsage);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceBySourceType(SourceType sourceType);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceByDeviceType(DeviceType deviceType);
+    int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
 
