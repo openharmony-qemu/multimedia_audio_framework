@@ -35,8 +35,8 @@ typedef struct IAudioSinkAttr {
     int32_t deviceType = 0;
     uint64_t channelLayout = 0;
     int32_t audioStreamFlag = 0;
-    std::string address;
-    const char *aux;
+    std::string address = "";
+    const char *aux = NULL;
 } IAudioSinkAttr;
 
 class IAudioSinkCallback {

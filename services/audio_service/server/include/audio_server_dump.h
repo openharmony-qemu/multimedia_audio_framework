@@ -91,6 +91,7 @@ private:
     void ServerDataDump(std::string &dumpString);
     void AudioCacheTimeDump(std::string &dumpString);
     void AudioCacheMemoryDump(std::string &dumpString);
+    void AudioPerformMonitorDump(std::string &dumpString);
     void InitDumpFuncMap();
     void HelpInfoDump(std::string& dumpString);
     static bool IsEndWith(const std::string &mainStr, const std::string &toMatch);

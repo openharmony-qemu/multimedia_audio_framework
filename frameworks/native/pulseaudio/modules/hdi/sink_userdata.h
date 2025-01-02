@@ -79,6 +79,7 @@ struct Userdata {
     uint32_t streamAvailable;
     uint32_t lastStreamAvailable;
     pa_hashmap *streamAvailableMap;
+    uint32_t performMonitorIndex;
     struct {
         int32_t sessionID;
         bool firstWriteHdi; // for set volume onstart, avoid mute

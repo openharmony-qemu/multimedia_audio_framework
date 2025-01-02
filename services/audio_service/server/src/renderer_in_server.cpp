@@ -35,6 +35,7 @@
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -722,6 +723,7 @@ int32_t RendererInServer::Start()
         dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
         dualToneStream_->Start();
     }
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
     return SUCCESS;
 }
 
@@ -835,6 +837,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
         fadeoutFlag_ = DO_FADINGOUT;
     }
     DrainAudioBuffer();
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
     int ret = stream_->Drain(stopFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
     if (isInnerCapEnabled_) {
