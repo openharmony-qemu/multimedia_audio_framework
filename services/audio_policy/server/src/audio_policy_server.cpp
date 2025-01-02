@@ -2691,7 +2691,7 @@ int32_t AudioPolicyServer::UnsetAvailableDeviceChangeCallback(const int32_t /*cl
 
 int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterrupt)
 {
-    return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.sessionId));
+    return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.streamId));
 }
 
 int32_t AudioPolicyServer::ConfigDistributedRoutingRole(
