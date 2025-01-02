@@ -220,19 +220,18 @@ static void FreeThread(struct Userdata *u)
         pa_thread_free(u->thread);
     }
 
-    pa_memchunk chunk;
-    int32_t code = 0;
-    int32_t missedMsgqNum = 0;
-    while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
-        pa_memblock_unref(chunk.memblock);
-        pa_asyncmsgq_done(u->CaptureMq, 0);
-        missedMsgqNum++;
-    }
-    if (missedMsgqNum > 0) {
-        AUDIO_ERR_LOG("OS_ProcessCapData missed message num: %{public}u", missedMsgqNum);
-    }
-
     if (u->CaptureMq) {
+        pa_memchunk chunk;
+        int32_t code = 0;
+        int32_t missedMsgqNum = 0;
+        while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
+            pa_memblock_unref(chunk.memblock);
+            pa_asyncmsgq_done(u->CaptureMq, 0);
+            missedMsgqNum++;
+        }
+        if (missedMsgqNum > 0) {
+            AUDIO_ERR_LOG("OS_ProcessCapData missed message num: %{public}u", missedMsgqNum);
+        }
         pa_asyncmsgq_unref(u->CaptureMq);
     }
 
