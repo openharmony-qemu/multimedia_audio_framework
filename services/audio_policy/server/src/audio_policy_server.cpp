@@ -52,6 +52,7 @@ constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 80;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
+constexpr pid_t FIRST_SCREEN_ON_PID = 1000;
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
@@ -640,6 +641,9 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         if (isInitMuteState_ == false) {
             AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
             InitMicrophoneMute();
+        }
+        if (getpid() > FIRST_SCREEN_ON_PID) {
+            audioPolicyService_.SetFirstScreenOn();
         }
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
