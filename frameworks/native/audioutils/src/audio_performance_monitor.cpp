@@ -80,7 +80,7 @@ void AudioPerformanceMonitor::RecordTimeStamp(AdapterType adapterType, int64_t c
         AUDIO_INFO_LOG("start record adapterType: %{public}d", adapterType);
         overTimeDetectMap_[adapterType] = curTimeStamp;
         return;
-    } 
+    }
 
     // init lastwritten time when start or resume to avoid overtime
     if (curTimeStamp == INIT_LASTWRITTEN_TIME || overTimeDetectMap_[adapterType] == INIT_LASTWRITTEN_TIME) {
@@ -110,8 +110,8 @@ void AudioPerformanceMonitor::DeleteOvertimeMonitor(AdapterType adapterType)
 
 void AudioPerformanceMonitor::DumpMonitorInfo(std::string &dumpString)
 {
-    std::lock_guard<std::mutex> lock(silenceMapMutex_);
-    std::lock_guard<std::mutex> lock(overTimeMapMutex_);
+    std::lock_guard<std::mutex> lock1(silenceMapMutex_);
+    std::lock_guard<std::mutex> lock2(overTimeMapMutex_);
     dumpString += "\n----------silenceMonitor----------\n";
     dumpString += "streamId\tcountNum\tcurState\n";
     for (auto it = silenceDetectMap_.begin(); it != silenceDetectMap_.end(); ++it) {
