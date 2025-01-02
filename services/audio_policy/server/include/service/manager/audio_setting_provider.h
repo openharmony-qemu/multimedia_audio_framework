@@ -54,6 +54,7 @@ class AudioSettingProvider : public NoCopyable {
 public:
     static AudioSettingProvider& GetInstance(int32_t systemAbilityId);
     static int32_t GetCurrentUserId();
+    static bool CheckOsAccountReady();
     ErrCode GetStringValue(const std::string &key, std::string &value, std::string tableType = "");
     ErrCode GetIntValue(const std::string &key, int32_t &value, std::string tableType = "");
     ErrCode GetLongValue(const std::string &key, int64_t &value, std::string tableType = "");

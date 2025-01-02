@@ -319,13 +319,20 @@ int32_t AudioSettingProvider::GetCurrentUserId()
             AUDIO_DEBUG_LOG("current userId is :%{public}d", currentuserId);
             break;
         }
-        // sleep and wait for 1 millisecond
+        // sleep and wait for 1 second
         sleep(SLEEP_TIME);
     }
     if (result != ERR_OK || ids.empty()) {
         AUDIO_WARNING_LOG("current userId is empty");
     }
     return currentuserId;
+}
+
+bool AudioSettingProvider::CheckOsAccountReady()
+{
+    std::vector<int> ids;
+    ErrCode result = AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
+    return (result == ERR_OK && !ids.empty());
 }
 
 void AudioSettingProvider::SetDataShareReady(std::atomic<bool> isDataShareReady)
