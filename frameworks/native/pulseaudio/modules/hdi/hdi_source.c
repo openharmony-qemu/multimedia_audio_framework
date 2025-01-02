@@ -220,20 +220,21 @@ static void FreeThread(struct Userdata *u)
         pa_thread_free(u->thread);
     }
 
-    pa_memchunk chunk;
-    int32_t code = 0;
-    int32_t missedMsgqNum = 0;
-    while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
-        pa_memblock_unref(chunk.memblock);
-        pa_asyncmsgq_done(u->CaptureMq, 0);
-        missedMsgqNum++;
-    }
-    if (missedMsgqNum > 0) {
-        AUDIO_ERR_LOG("OS_ProcessCapData missed message num: %{public}u", missedMsgqNum);
-    }
-
     if (u->CaptureMq) {
+        pa_memchunk chunk;
+        int32_t code = 0;
+        int32_t missedMsgqNum = 0;
+        while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
+            pa_memblock_unref(chunk.memblock);
+            pa_asyncmsgq_done(u->CaptureMq, 0);
+            missedMsgqNum++;
+        }
+        if (missedMsgqNum > 0) {
+            AUDIO_ERR_LOG("OS_ProcessCapData missed message num: %{public}u", missedMsgqNum);
+        }
         pa_asyncmsgq_unref(u->CaptureMq);
+    } else {
+        AUDIO_ERR_LOG("CaptureMq is null");
     }
 
     pa_thread_mq_done(&u->threadMq);
@@ -1222,6 +1223,12 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
 
     pa_atomic_store(&u->captureFlag, 0);
     pa_atomic_store(&u->quitCaptureFlag, 0);
+
+    if (!(u->CaptureMq = pa_asyncmsgq_new(0))) {
+        AUDIO_ERR_LOG("Failed to create u->CaptureMq");
+        return -1;
+    }
+
     u->eventFd = eventfd(0, EFD_NONBLOCK);
     u->rtpollItem = pa_rtpoll_item_new(u->rtpoll, PA_RTPOLL_NEVER, 1);
     struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
@@ -1237,10 +1244,6 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
     
     if (pa_thread_mq_init(&u->threadCapMq, m->core->mainloop, u->rtpoll) < 0) {
         AUDIO_ERR_LOG("threadCapMq init failed.");
-        return -1;
-    }
-    if (!(u->CaptureMq = pa_asyncmsgq_new(0))) {
-        AUDIO_ERR_LOG("Failed to create u->CaptureMq");
         return -1;
     }
 
