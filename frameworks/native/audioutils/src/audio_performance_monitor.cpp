@@ -110,6 +110,8 @@ void AudioPerformanceMonitor::DeleteOvertimeMonitor(AdapterType adapterType)
 
 void AudioPerformanceMonitor::DumpMonitorInfo(std::string &dumpString)
 {
+    std::lock_guard<std::mutex> lock(silenceMapMutex_);
+    std::lock_guard<std::mutex> lock(overTimeMapMutex_);
     dumpString += "\n----------silenceMonitor----------\n";
     dumpString += "streamId\tcountNum\tcurState\n";
     for (auto it = silenceDetectMap_.begin(); it != silenceDetectMap_.end(); ++it) {
