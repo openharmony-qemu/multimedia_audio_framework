@@ -698,7 +698,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             AudioHfpManager::UpdateCurrentActiveHfpDevice(defaultDevice);
             AUDIO_WARNING_LOG("Sco disconnect, need set audio scene as default.");
             AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT);
-        } else if (scoState == HfpScoConnectState::SCO_CONNECTED) {
+        } else if (scoState == HfpScoConnectState::SCO_CONNECTED && reason == HFP_AG_SCO_REMOTE_USER_SET_UP) {
             AudioScene audioScene = AudioHfpManager::GetPolicyAudioScene();
             if (audioScene != AudioHfpManager::GetCurrentAudioScene()) {
                 AUDIO_WARNING_LOG("Sco connect by peripheral device, update scene_ %{public}d", audioScene);
