@@ -2323,13 +2323,13 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
     CHECK_AND_RETURN_LOG(ret >= PARAMS_INTERRUPT_NUM, "[InterruptOnChange]: Failed parse condition");
 
     std::set<int32_t> sessionIdMedia = AudioStreamCollector::GetAudioStreamCollector().
-        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_MUSIC);
+        GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_MUSIC);
     std::set<int32_t> sessionIdMovie = AudioStreamCollector::GetAudioStreamCollector().
-        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_MOVIE);
+        GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_MOVIE);
     std::set<int32_t> sessionIdGame = AudioStreamCollector::GetAudioStreamCollector().
-        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_GAME);
+        GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_GAME);
     std::set<int32_t> sessionIdAudioBook = AudioStreamCollector::GetAudioStreamCollector().
-        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_AUDIOBOOK);
+        GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_AUDIOBOOK);
     std::set<int32_t> sessionIds = {};
     sessionIds.insert(sessionIdMedia.begin(), sessionIdMedia.end());
     sessionIds.insert(sessionIdMovie.begin(), sessionIdMovie.end());
@@ -3385,7 +3385,8 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
     }
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
     std::set<int32_t> sessionIds =
-        AudioStreamCollector::GetAudioStreamCollector().GetSessionIdByDeviceType(DEVICE_TYPE_REMOTE_CAST);
+        AudioStreamCollector::GetAudioStreamCollector().GetSessionIdsOnRemoteDeviceByDeviceType(
+            DEVICE_TYPE_REMOTE_CAST);
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
     ProcessRemoteInterrupt(sessionIds, interruptEvent);
     return SUCCESS;
