@@ -464,7 +464,7 @@ int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clie
 }
 
 #ifdef FEATURE_DTMF_TONE
-std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
+std::vector<int32_t> AudioPolicyManager::GetSupportedTones(const std::string &countryCode)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -472,16 +472,16 @@ std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
         std::vector<int> lSupportedToneList = {};
         return lSupportedToneList;
     }
-    return gsp->GetSupportedTones();
+    return gsp->GetSupportedTones(countryCode);
 }
 
-std::shared_ptr<ToneInfo> AudioPolicyManager::GetToneConfig(int32_t ltonetype)
+std::shared_ptr<ToneInfo> AudioPolicyManager::GetToneConfig(int32_t ltonetype, const std::string &countryCode)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::GetToneConfig");
 
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, nullptr, "audio policy manager proxy is NULL.");
-    return gsp->GetToneConfig(ltonetype);
+    return gsp->GetToneConfig(ltonetype, countryCode);
 }
 #endif
 

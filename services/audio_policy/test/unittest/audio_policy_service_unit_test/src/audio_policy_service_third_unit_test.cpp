@@ -507,5 +507,70 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetMaxAmplitude_001, TestSize.Level1)
     const int32_t deviceId = 0;
     GetServerPtr()->audioPolicyService_.GetMaxAmplitude(deviceId);
 }
+
+/**
+* @tc.name  : Test AudioToneParser.
+* @tc.number: AudioToneParser_001
+* @tc.desc  : Test AudioToneParser.
+*/
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioToneParser_001, TestSize.Level1)
+{
+    std::unique_ptr<AudioToneParser> audioToneParser = std::make_unique<AudioToneParser>();
+    ASSERT_NE(nullptr, audioToneParser);
+
+    std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
+    int32_t res = -1;
+    res = audioToneParser->LoadConfig(toneDescriptorMap);
+    EXPECT_EQ(res, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioToneParser.
+* @tc.number: AudioToneParser_002
+* @tc.desc  : Test AudioToneParser.
+*/
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioToneParser_002, TestSize.Level1)
+{
+    std::unique_ptr<AudioToneParser> audioToneParser = std::make_unique<AudioToneParser>();
+    ASSERT_NE(nullptr, audioToneParser);
+
+    const std::string configPath = "/system/etc/audio/audio_tone_dtmf_config.xml";
+    std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
+    std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ToneInfo>>> customToneDescriptorMap;
+
+    int32_t res = -1;
+    res = audioToneParser->LoadNewConfig("", toneDescriptorMap, customToneDescriptorMap);
+    EXPECT_NE(res, SUCCESS);
+
+    res = audioToneParser->LoadNewConfig(configPath, toneDescriptorMap, customToneDescriptorMap);
+    EXPECT_EQ(res, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioToneParser.
+* @tc.number: AudioToneParser_003
+* @tc.desc  : Test AudioToneParser.
+*/
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioToneParser_003, TestSize.Level1)
+{
+    std::unique_ptr<AudioToneParser> audioToneParser = std::make_unique<AudioToneParser>();
+    ASSERT_NE(nullptr, audioToneParser);
+
+    std::shared_ptr<ToneInfo> ltoneDesc = std::make_shared<ToneInfo>();
+    xmlNode *node = nullptr;
+    audioToneParser->ParseToneInfoAttribute(node, ltoneDesc);
+    EXPECT_NE(nullptr, ltoneDesc);
+
+    std::vector<ToneInfoMap*> toneDescriptorMaps;
+    std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneInfoMap;
+    toneDescriptorMaps.push_back(&toneInfoMap);
+    toneDescriptorMaps.push_back(nullptr);
+    audioToneParser->ParseToneInfo(node, toneDescriptorMaps);
+    EXPECT_EQ(0, toneInfoMap.size());
+
+    std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ToneInfo>>> customToneDescriptorMap;
+    audioToneParser->ParseCustom(node, customToneDescriptorMap);
+    EXPECT_EQ(0, customToneDescriptorMap.size());
+}
 } // namespace AudioStandard
 } // namespace OHOS

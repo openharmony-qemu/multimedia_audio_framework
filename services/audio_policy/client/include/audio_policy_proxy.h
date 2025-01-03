@@ -91,9 +91,9 @@ public:
     int32_t UnsetDistributedRoutingRoleCallback() override;
 
 #ifdef FEATURE_DTMF_TONE
-    std::vector<int32_t> GetSupportedTones() override;
+    std::vector<int32_t> GetSupportedTones(const std::string &countryCode) override;
 
-    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) override;
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode) override;
 #endif
 
     AudioRingerMode GetRingerMode() override;
@@ -372,4 +372,3 @@ private:
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_PROXY_H
- 

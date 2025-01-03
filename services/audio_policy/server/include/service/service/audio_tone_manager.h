@@ -44,8 +44,8 @@ public:
     }
 #ifdef FEATURE_DTMF_TONE
     bool LoadToneDtmfConfig();
-    std::vector<int32_t> GetSupportedTones();
-    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+    std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode);
 #endif
 private:
     AudioToneManager() {}
@@ -53,6 +53,7 @@ private:
 private:
 #ifdef FEATURE_DTMF_TONE
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap_;
+    std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ToneInfo>>> customToneDescriptorMap_;
 #endif
 };
 

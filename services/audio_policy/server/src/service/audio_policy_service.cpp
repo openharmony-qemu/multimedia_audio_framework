@@ -670,14 +670,14 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
 }
 
 #ifdef FEATURE_DTMF_TONE
-std::vector<int32_t> AudioPolicyService::GetSupportedTones()
+std::vector<int32_t> AudioPolicyService::GetSupportedTones(const std::string &countryCode)
 {
-    return audioToneManager_.GetSupportedTones();
+    return audioToneManager_.GetSupportedTones(countryCode);
 }
 
-std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
+std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype, const std::string &countryCode)
 {
-    return audioToneManager_.GetToneConfig(ltonetype);
+    return audioToneManager_.GetToneConfig(ltonetype, countryCode);
 }
 #endif
 void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(
@@ -1891,7 +1891,7 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
     AudioEnhancePropertyArray oldPropertyArray = {};
     int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(oldPropertyArray);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
-    
+
     ret = AudioServerProxy::GetInstance().SetAudioEnhancePropertyProxy(propertyArray,
         audioActiveDevice_.GetCurrentInputDeviceType());
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
