@@ -1032,10 +1032,12 @@ static void SinkRenderMultiChannelInputsDrop(pa_sink *si, pa_mix_info *infoIn, u
     }
 }
 
-static void silenceData(pa_mix_info *infoIn, pa_sink *si)
+static void silenceData(pa_mix_info *infoIn, pa_sink *si, uint32_t streamIndex)
 {
     pa_memchunk_make_writable(&infoIn->chunk, 0);
     void *tmpdata = pa_memblock_acquire_chunk(&infoIn->chunk);
+    int32_t bufferAvg = GetSimpleBufferAvg(tmpdata, infoIn->chunk.length);
+    AUDIO_INFO_LOG("do fading done for sink[%{public}d],buffer avg:%{public}d", streamIndex, bufferAvg);
     memset_s(tmpdata, infoIn->chunk.length, 0, infoIn->chunk.length);
     pa_memblock_release(infoIn->chunk.memblock);
 }
@@ -1132,7 +1134,7 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
     }
 
     if (sinkFadeoutPause == DONE_FADE && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
-        silenceData(infoIn, si);
+        silenceData(infoIn, si, streamIndex);
         AUDIO_PRERELEASE_LOGI("after pause fadeout done, silenceData");
         return;
     }
@@ -1146,6 +1148,8 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         //do fading in
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
+        int32_t bufferAvg = GetSimpleBufferAvg(data, infoIn->chunk.length);
+        AUDIO_INFO_LOG("do fading in for sink[%{public}d],buffer avg:%{public}d", streamIndex, bufferAvg);
         DoFading(data, infoIn->chunk.length, format, (uint32_t)u->ss.channels, 0);
         u->primary.primaryFadingInDone = 1;
         pa_memblock_release(infoIn->chunk.memblock);
@@ -1154,6 +1158,8 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         //do fading out
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
+        int32_t bufferAvg = GetSimpleBufferAvg(data, infoIn->chunk.length);
+        AUDIO_INFO_LOG("do fading out for sink[%{public}d],buffer avg:%{public}d", streamIndex, bufferAvg);
         DoFading(data, infoIn->chunk.length, format, (uint32_t)u->ss.channels, 1);
         SetFadeoutState(streamIndex, DONE_FADE);
         pa_memblock_release(infoIn->chunk.memblock);
@@ -1363,7 +1369,7 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
     uint32_t streamIndex = sinkIn->index;
     uint32_t sinkFadeoutPause = GetFadeoutState(streamIndex);
     if (sinkFadeoutPause == DONE_FADE) {
-        silenceData(infoIn, si);
+        silenceData(infoIn, si, streamIndex);
         AUDIO_PRERELEASE_LOGI("silenceData.");
         return;
     }
