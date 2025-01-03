@@ -79,8 +79,8 @@ int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
     } else {
         audioVolumeManager_.SetVoiceRingtoneMute(false);
     }
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentOutputDeviceType(), "SetAudioScene");
+    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SetAudioScene");
     return SUCCESS;
 }
 
@@ -104,8 +104,8 @@ int32_t AudioDeviceLock::SetDeviceActive(InternalDeviceType deviceType, bool act
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentOutputDeviceType(), "SetDevcieActive");
+    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SetDevcieActive");
     return SUCCESS;
 }
 
@@ -319,6 +319,9 @@ void AudioDeviceLock::RegisteredTrackerClientDied(pid_t uid)
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
+
+    audioDeviceCommon_.ClientDiedDisconnectScoNormal();
+    audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
         audioOffloadStream_.DynamicUnloadOffloadModule();

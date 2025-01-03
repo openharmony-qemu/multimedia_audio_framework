@@ -27,6 +27,7 @@
 #include "ipc_stream_in_server.h"
 #include "audio_capturer_source.h"
 #include "audio_volume.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -95,6 +96,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             }
             linkedPairedList_.erase(paired);
             isFind = true;
+            AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(process->GetAudioSessionId());
             break;
         } else {
             paired++;
@@ -249,6 +251,7 @@ void AudioService::RemoveRenderer(uint32_t sessionId)
     }
     allRendererMap_.erase(sessionId);
     RemoveIdFromMuteControlSet(sessionId);
+    AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
 }
 
 void AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)

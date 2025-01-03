@@ -52,7 +52,7 @@ constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 80;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
-constexpr int32_t API_VERSION_14 = 14; // for deprecated since 9
+constexpr pid_t FIRST_SCREEN_ON_PID = 1000;
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
@@ -171,6 +171,9 @@ void AudioPolicyServer::OnStart()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
+    if (getpid() > FIRST_SCREEN_ON_PID) {
+        audioPolicyService_.SetFirstScreenOn();
+    }
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -729,14 +732,9 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(AudioVolumeType volumeType)
     return audioPolicyService_.GetMinVolumeLevel(volumeType);
 }
 
+// deprecated since api 9.
 int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(AudioStreamType streamType, int32_t volumeLevel)
 {
-    int32_t buildApi = GetApiTargerVersion();
-    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("No system permission for legacy call");
-        return ERR_PERMISSION_DENIED;
-    }
-
     if (!IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
     }
@@ -932,14 +930,9 @@ float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t
     return audioPolicyService_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
 
+// deprecated since api 9.
 int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool mute)
 {
-    int32_t buildApi = GetApiTargerVersion();
-    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
-
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetStreamMuteInternal(streamType, mute, false);
 }
@@ -1098,6 +1091,9 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
         // when the voice call volume is adjusted on PC, adjust the music volume together.
         int32_t setResult = SetSingleStreamVolume(STREAM_MUSIC, volumeLevel, isUpdateUi,
             GetStreamMuteInternal(STREAM_MUSIC));
+        if (setResult != SUCCESS) {
+            AUDIO_WARNING_LOG("Fail to set STREAM_MUSIC volume");
+        }
     }
     return SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi, mute);
 }
@@ -1128,7 +1124,7 @@ void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType strea
         GetStreamMuteInternal(STREAM_SYSTEM) && !GetStreamMuteInternal(STREAM_MUSIC)) {
         AUDIO_WARNING_LOG("music volume level beyond 0 and set system unmute.");
         audioPolicyService_.SetStreamMute(STREAM_SYSTEM, false);
-        SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, true);
+        SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, false);
     }
 }
 
@@ -1406,16 +1402,9 @@ InternalDeviceType AudioPolicyServer::GetActiveInputDevice()
     return audioPolicyService_.GetActiveInputDevice();
 }
 
-// deprecated since 9.
+// deprecated since api 9.
 int32_t AudioPolicyServer::SetRingerModeLegacy(AudioRingerMode ringMode)
 {
-    AUDIO_INFO_LOG("Set ringer mode to %{public}d in legacy", ringMode);
-    int32_t buildApi = GetApiTargerVersion();
-    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
-
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetRingerModeInner(ringMode);
 }
@@ -1694,9 +1683,19 @@ void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, Int
 }
 
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
-    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
+    AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     if (interruptService_ != nullptr) {
+        auto it = std::find(CAN_MIX_MUTED_STREAM.begin(), CAN_MIX_MUTED_STREAM.end(),
+            audioInterrupt.audioFocusType.streamType);
+        if (it != CAN_MIX_MUTED_STREAM.end()) {
+            AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
+                audioInterrupt.audioFocusType.streamType);
+            int32_t volumeLevel = GetSystemVolumeLevelInternal(streamInFocus);
+            if (volumeLevel == 0) {
+                audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
+            }
+        }
         return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;

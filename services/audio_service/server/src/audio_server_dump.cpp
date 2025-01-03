@@ -21,6 +21,7 @@
 #include "audio_service.h"
 #include "pa_adapter_tools.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 
@@ -51,6 +52,7 @@ void AudioServerDump::InitDumpFuncMap()
     dumpFuncMap[u"-ep"] = &AudioServerDump::PolicyHandlerDump;
     dumpFuncMap[u"-ct"] = &AudioServerDump::AudioCacheTimeDump;
     dumpFuncMap[u"-cm"] = &AudioServerDump::AudioCacheMemoryDump;
+    dumpFuncMap[u"-pm"] = &AudioServerDump::AudioPerformMonitorDump;
 }
 
 void AudioServerDump::ResetPAAudioDump()
@@ -207,6 +209,7 @@ void AudioServerDump::HelpInfoDump(string &dumpString)
     AppendFormat(dumpString, "  -ep\t\t\t|dump policyhandler info\n");
     AppendFormat(dumpString, "  -ct\t\t\t|dump AudioCached time info\n");
     AppendFormat(dumpString, "  -cm\t\t\t|dump AudioCached memory info\n");
+    AppendFormat(dumpString, "  -pm\t\t\t|dump AudioPerformMonitor info\n");
 }
 
 void AudioServerDump::AudioDataDump(string &dumpString, std::queue<std::u16string>& argQue)
@@ -544,5 +547,13 @@ void AudioServerDump::AudioCacheMemoryDump(std::string &dumpString)
                     "bufferLength: " + std::to_string(bufferLength / BYTE_TO_KB_SIZE) + " KB, " +
                     "structLength: " + std::to_string(structLength / BYTE_TO_KB_SIZE) + " KB \n";
 }
+
+void AudioServerDump::AudioPerformMonitorDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("AudioPerformMonitorDump");
+    dumpString += "\n Dump Audio Performance Monitor Record Infos\n";
+    AudioPerformanceMonitor::GetInstance().DumpMonitorInfo(dumpString);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

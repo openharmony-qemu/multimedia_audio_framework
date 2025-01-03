@@ -34,10 +34,9 @@ static AudioSessionStrategy strategyTest;
 
 static std::shared_ptr<AudioInterruptService> audioInterruptService;
 static sptr<AudioPolicyServer> serverTest = nullptr;
-
-static int32_t CALLER_PID_TEST = 0;
-static int32_t PIT_TEST = 0;
-static int32_t SESSION_ID_TEST = 0;
+const int32_t CALLER_PID_TEST = 0;
+const int32_t PIT_TEST = 0;
+const int32_t SESSION_ID_TEST = 0;
 
 const int32_t CALLER_PID = 0;
 const int32_t DEFAULT_ZONE_ID = 0;

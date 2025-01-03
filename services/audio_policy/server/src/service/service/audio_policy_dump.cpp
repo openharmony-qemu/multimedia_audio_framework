@@ -420,6 +420,7 @@ void AudioPolicyDump::AudioStreamDump(std::string &dumpString)
         } else if ((*it)->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
             AppendFormat(dumpString, " - fast AudioCapturer stream:\n");
         }
+        AppendFormat(dumpString, " - rendererStatus : %d\n", (*it)->rendererState);
         AppendFormat(dumpString, " - clientUID : %d\n", (*it)->clientUID);
         AppendFormat(dumpString, " - streamId : %d\n", (*it)->sessionId);
         AppendFormat(dumpString, " - deviceType : %d\n", (*it)->outputDeviceInfo.deviceType_);

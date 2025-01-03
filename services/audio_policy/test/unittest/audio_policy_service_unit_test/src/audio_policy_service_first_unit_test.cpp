@@ -326,8 +326,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
         audioDeviceDescriptor.deviceType_ = deviceType;
         for (const auto& isConnected : isConnecteds) {
             AUDIO_INFO_LOG("AudioPolicyServiceTest_001 isConnected:%{public}d", static_cast<uint32_t>(isConnected));
-            GetServerPtr()->audioPolicyService_.audioDeviceStatus_.hasModulesLoaded = false;
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
             GetServerPtr()->audioPolicyService_.audioDeviceStatus_.hasModulesLoaded = true;
             GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
             GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected,

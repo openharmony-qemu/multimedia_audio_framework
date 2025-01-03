@@ -1268,7 +1268,7 @@ int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropert
             }
         }
     }
-    return AUDIO_OK;
+    return ret;
 }
 
 int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)

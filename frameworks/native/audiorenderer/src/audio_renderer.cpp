@@ -1016,8 +1016,9 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
             (originalStrategy_.concurrencyMode == AudioConcurrencyMode::INVALID ?
             AudioConcurrencyMode::DEFAULT : originalStrategy_.concurrencyMode);
         if (currentState == RUNNING) {
+            AudioInterrupt audioInterrupt = audioInterrupt_;
             AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
-            int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
+            int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt, 0, true);
             CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed at SetVolume");
         }
     }
@@ -1837,6 +1838,7 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_
 {
     std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
     AUDIO_INFO_LOG("Enter, session id: %{public}d, stream flag: %{public}d", sessionId, streamFlag);
+    CHECK_AND_RETURN_LOG(renderer_ != nullptr, "renderer_ is nullptr");
     renderer_->SwitchStream(sessionId, streamFlag, reason);
 }
 

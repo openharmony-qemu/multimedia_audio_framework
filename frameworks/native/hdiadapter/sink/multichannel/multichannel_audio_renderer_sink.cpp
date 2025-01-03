@@ -41,6 +41,7 @@
 #include "parameters.h"
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 
@@ -172,7 +173,7 @@ private:
     int32_t CheckHdiFuncWhenStart();
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
-
+    void RenderEmptyFrame(char &data, uint64_t len);
     void InitAudioRouteNode(AudioRouteNode &source, AudioRouteNode &sink);
     void DumpData(std::string fileName, void *buffer, size_t len);
     std::string dumpFileName_ = "";
@@ -192,6 +193,7 @@ MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &
 MultiChannelRendererSinkInner::~MultiChannelRendererSinkInner()
 {
     AUDIO_INFO_LOG("~MultiChannelRendererSinkInner");
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_MULTICHANNEL);
 }
 
 MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(const std::string &halName)
@@ -549,16 +551,9 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         writeLen = len;
         return SUCCESS;
     }
+
     if (renderEmptyFrameCount_ > 0) {
-        Trace traceEmpty("MchSinkInner::RenderFrame::renderEmpty");
-        if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
-            static_cast<size_t>(len)) != EOK) {
-            AUDIO_WARNING_LOG("call memset_s failed");
-        }
-        renderEmptyFrameCount_--;
-        if (renderEmptyFrameCount_ == 0) {
-            switchCV_.notify_all();
-        }
+        RenderEmptyFrame(data, len);
     }
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&data), len, len};
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
@@ -575,6 +570,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, ClockTime::GetCurNano());
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     if (logMode_) {
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
@@ -597,6 +593,19 @@ void MultiChannelRendererSinkInner::CheckUpdateState(char *frame, uint64_t reply
                 maxAmplitude_ = 0;
             }
         }
+    }
+}
+
+void MultiChannelRendererSinkInner::RenderEmptyFrame(char &data, uint64_t len)
+{
+    Trace traceEmpty("MchSinkInner::RenderFrame::renderEmpty");
+    if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
+        static_cast<size_t>(len)) != EOK) {
+        AUDIO_WARNING_LOG("call memset_s failed");
+    }
+    renderEmptyFrameCount_--;
+    if (renderEmptyFrameCount_ == 0) {
+        switchCV_.notify_all();
     }
 }
 
@@ -645,7 +654,7 @@ int32_t MultiChannelRendererSinkInner::Start(void)
         CHECK_AND_RETURN_RET_LOG(CheckHdiFuncWhenStart() == SUCCESS, ERR_NOT_STARTED,
             "Some Hdi function failed after starting");
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -1025,7 +1034,7 @@ int32_t MultiChannelRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

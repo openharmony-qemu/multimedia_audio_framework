@@ -331,7 +331,6 @@ void AudioCacheMgrInner::GetCurMemoryCondition(size_t &dataLength, size_t &buffe
     size_t curBufferLength = 0;
     size_t curStructLength = 0;
     if (memChunkDeque_.empty()) {
-        AUDIO_INFO_LOG("cache memory is empty");
         return;
     }
 

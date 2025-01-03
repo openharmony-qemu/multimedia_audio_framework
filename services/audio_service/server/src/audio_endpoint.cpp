@@ -45,6 +45,7 @@
 #include "media_monitor_manager.h"
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 #ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
@@ -556,6 +557,7 @@ void AudioEndpointInner::Release()
         endpointWorkThread_.join();
         AUDIO_DEBUG_LOG("AudioEndpoint join work thread end");
     }
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_FAST);
 
     stopUpdateThread_.store(true);
     updateThreadCV_.notify_all();
@@ -1324,6 +1326,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             // Status is RUNNING
             int64_t current = ClockTime::GetCurNano();
             int64_t lastWrittenTime = tempBuffer->GetLastWrittenTime();
+            uint32_t sessionId = processList_[i]->GetAudioSessionId();
             if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS) {
                 Trace trace("AudioEndpoint::MarkClientStandby");
                 AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", tempBuffer->GetSessionId());
@@ -1338,7 +1341,10 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             if (curReadSpan == nullptr || curReadSpan->spanStatus != SpanStatus::SPAN_WRITE_DONE) {
                 AUDIO_DEBUG_LOG("Find one process not ready"); // print uid of the process?
                 isAllReady = false;
+                AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_LOWLATENCY_OUT);
                 continue;
+            } else {
+                AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_LOWLATENCY_OUT);
             }
             // process Status is RUNNING && buffer status is WRITE_DONE
             tempBuffer->SetLastWrittenTime(current);
@@ -1601,6 +1607,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
             ProcessData(audioDataList, dstStreamData);
         }
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, ClockTime::GetCurNano());
 
     if (isInnerCapEnabled_) {
         ProcessToDupStream(audioDataList, dstStreamData);

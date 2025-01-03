@@ -62,8 +62,8 @@ public:
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
     int32_t CloseWakeUpAudioCapturer();
 
-    void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
-        const std::string &caller);
+    void ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
+        const AudioDeviceDescriptor &outputDevice, const std::string &caller);
     void ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
         const AudioEffectPropertyArrayV3 &newPropertyArray);
     void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
@@ -77,7 +77,10 @@ private:
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioEcManager_(AudioEcManager::GetInstance()),
         audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
-        audioVolumeManager_(AudioVolumeManager::GetInstance()) {}
+        audioVolumeManager_(AudioVolumeManager::GetInstance())
+    {
+        inputDeviceForReload_.deviceType_ = DEVICE_TYPE_DEFAULT;
+    }
     ~AudioCapturerSession() {}
 
     void HandleRemainingSource();
@@ -92,9 +95,9 @@ private:
         AudioModuleInfo &audioModuleInfo);
     int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
-    void SetInputDeviceTypeForReload(DeviceType deviceType);
-    DeviceType GetInputDeviceTypeForReload();
-    bool IsVoipDeviceChanged(const DeviceType inputDevcie, const DeviceType outputDevice);
+    void SetInputDeviceTypeForReload(const AudioDeviceDescriptor &inputDevice);
+    const AudioDeviceDescriptor& GetInputDeviceTypeForReload();
+    bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
 
     std::string GetVoipUpProp(const AudioEnhancePropertyArray &propertyArray);
     std::string GetVoipUpPropV3(const AudioEffectPropertyArrayV3 &oldPropertyArray);
@@ -117,7 +120,7 @@ private:
     uint64_t sessionIdUsedToOpenSource_ = 0;
 
     std::mutex inputDeviceReloadMutex_;
-    DeviceType inputDeviceForReload_ = DEVICE_TYPE_DEFAULT;
+    AudioDeviceDescriptor inputDeviceForReload_;
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 };
 

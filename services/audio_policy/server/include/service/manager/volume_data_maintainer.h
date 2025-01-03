@@ -89,6 +89,7 @@ public:
     void RegisterCloned();
     bool SaveMicMuteState(bool isMute);
     bool GetMicMuteState(bool &isMute);
+    bool CheckOsAccountReady();
 
 private:
     VolumeDataMaintainer();

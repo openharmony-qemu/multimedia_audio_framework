@@ -40,7 +40,9 @@
 #include "volume_tools.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
+#include "audio_utils.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -135,7 +137,7 @@ private:
     bool rendererInited_;
     bool started_;
     bool paused_;
-    bool suspend_;
+    std::atomic<bool> suspend_ = false;
     float leftVolume_;
     float rightVolume_;
     struct HDI::Audio_Bluetooth::AudioProxyManager *audioManager_;
@@ -219,6 +221,7 @@ BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatenc
 BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
 {
     BluetoothRendererSinkInner::DeInit();
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_BLUETOOTH);
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
@@ -572,6 +575,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         Trace trace("audioRender_->RenderFrame");
         int64_t stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
+        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, ClockTime::GetCurNano());
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
         if (logMode_ || stamp >= STAMP_THRESHOLD_MS) {
             AUDIO_PRERELEASE_LOGW("A2dp RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms " \
@@ -709,6 +713,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
             CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERROR, "Bluetooth renderer is nullptr");
             int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (!ret) {
+                AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
                 return CheckBluetoothScenario();
             } else {
                 AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
@@ -900,7 +905,7 @@ int32_t BluetoothRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -940,12 +945,16 @@ int32_t BluetoothRendererSinkInner::Flush(void)
 
 int32_t BluetoothRendererSinkInner::SuspendRenderSink(void)
 {
+    AUDIO_INFO_LOG("in");
+    Trace trace("BluetoothRendererSinkInner::SuspendRenderSink");
     suspend_ = true;
     return SUCCESS;
 }
 
 int32_t BluetoothRendererSinkInner::RestoreRenderSink(void)
 {
+    AUDIO_INFO_LOG("in");
+    Trace trace("BluetoothRendererSinkInner::RestoreRenderSink");
     suspend_ = false;
     return SUCCESS;
 }

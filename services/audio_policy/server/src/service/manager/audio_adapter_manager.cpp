@@ -728,9 +728,17 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     currentActiveDevice_ = deviceType;
 
     if (!isSameVolumeGroup) {
-        LoadVolumeMap();
-        LoadMuteStatusMap();
-        UpdateSafeVolume();
+        // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
+        // and retry for 5 times, which could cause a sysfreeze. Check if any os account is ready. If not,
+        // skip interacting with datashare.
+        bool osAccountReady = volumeDataMaintainer_.CheckOsAccountReady();
+        if (osAccountReady) {
+            LoadVolumeMap();
+            LoadMuteStatusMap();
+            UpdateSafeVolume();
+        } else {
+            AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
+        }
     }
 
     auto iter = VOLUME_TYPE_LIST.begin();

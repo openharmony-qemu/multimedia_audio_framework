@@ -35,6 +35,7 @@
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -393,12 +394,34 @@ void RendererInServer::DoFadingOut(BufferDesc& bufferDesc)
     }
 }
 
+bool RendererInServer::CheckBuffer(uint8_t *buffer, size_t bufferSize)
+{
+    bool isInvalid = false;
+    uint8_t ui8Data = 0;
+    uint16_t ui16Data = 0;
+    switch (processConfig_.streamInfo.format) {
+        case SAMPLE_U8:
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
+            ui8Data = *buffer;
+            isInvalid = ui8Data == 0;
+            break;
+        case SAMPLE_S16LE:
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small");
+            ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
+            isInvalid = ui16Data == 0;
+            break;
+        default:
+            break;
+    }
+    return isInvalid;
+}
+
 void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (buffer[0] == 0) {
+    if (CheckBuffer(buffer, bufferSize)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
@@ -700,6 +723,7 @@ int32_t RendererInServer::Start()
         dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
         dualToneStream_->Start();
     }
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
     return SUCCESS;
 }
 
@@ -813,6 +837,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
         fadeoutFlag_ = DO_FADINGOUT;
     }
     DrainAudioBuffer();
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
     int ret = stream_->Drain(stopFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
     if (isInnerCapEnabled_) {

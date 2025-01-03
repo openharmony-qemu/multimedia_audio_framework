@@ -40,7 +40,6 @@ static std::shared_ptr<AudioServer> audioServer;
 void AudioServerUnitTest::SetUpTestCase(void)
 {
     audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServer->OnStart();
     audioServer->OnDump();
 }
 

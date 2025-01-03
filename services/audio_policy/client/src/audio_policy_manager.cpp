@@ -672,7 +672,7 @@ int32_t AudioPolicyManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
 }
 
 int32_t AudioPolicyManager::ActivateAudioInterrupt(
-    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
+    AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
