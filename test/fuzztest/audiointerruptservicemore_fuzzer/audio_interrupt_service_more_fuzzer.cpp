@@ -136,7 +136,7 @@ void AddSetAudioManagerInterruptCallbackFuzzTest()
 void ResetNonInterruptControlFuzzTest() //build.gn 未添加宏定义defines
 {
     uint32_t sessionId = GetData<uint32_t>();
-    GetServerPtr()->interruptService_->GetClientTypeBySessionId(sessionId);
+    GetServerPtr()->interruptService_->GetClientTypeByStreamId(sessionId);
     GetServerPtr()->interruptService_->ResetNonInterruptControl(sessionId);
 }
 

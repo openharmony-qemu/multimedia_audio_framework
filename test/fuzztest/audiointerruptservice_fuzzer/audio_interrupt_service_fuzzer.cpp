@@ -197,7 +197,7 @@ void GetSessionInfoInFocusFuzzTest(const uint8_t *rawData, size_t size)
     interruptService->GetSessionInfoInFocus(audioInterrupt, zoneId);
 }
 
-void DispatchInterruptEventWithSessionIdFuzzTest(const uint8_t *rawData, size_t size)
+void DispatchInterruptEventWithStreamIdFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -212,7 +212,7 @@ void DispatchInterruptEventWithSessionIdFuzzTest(const uint8_t *rawData, size_t 
     interruptEvent.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
     interruptEvent.duckVolume = 0;
 
-    interruptService->DispatchInterruptEventWithSessionId(sessionId, interruptEvent);
+    interruptService->DispatchInterruptEventWithStreamId(sessionId, interruptEvent);
 }
 
 void RequestAudioFocusFuzzTest(const uint8_t *rawData, size_t size)
@@ -335,7 +335,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::RemoveAudioInterruptZonePidsFuzzTest,
     OHOS::AudioStandard::GetStreamInFocusFuzzTest,
     OHOS::AudioStandard::GetSessionInfoInFocusFuzzTest,
-    OHOS::AudioStandard::DispatchInterruptEventWithSessionIdFuzzTest,
+    OHOS::AudioStandard::DispatchInterruptEventWithStreamIdFuzzTest,
     OHOS::AudioStandard::RequestAudioFocusFuzzTest,
     OHOS::AudioStandard::AbandonAudioFocusFuzzTest,
     OHOS::AudioStandard::SetAudioInterruptCallbackFuzzTest,
