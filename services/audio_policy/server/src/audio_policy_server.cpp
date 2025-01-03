@@ -2987,5 +2987,15 @@ int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, c
 {
     return audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
 }
+
+void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
+{
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);
+}
+
+void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID)
+{
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS
