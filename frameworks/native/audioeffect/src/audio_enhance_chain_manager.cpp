@@ -208,7 +208,7 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
         if (withDeviceEnhances_.find(enhance) == withDeviceEnhances_.end()) {
             key = enhance;
         } else {
-            key = enhance + deviceTypeName;
+            key = enhance +  "_&_" + deviceTypeName;
         }
         ErrCode ret = settingProvider.GetStringValue(key, property);
         if (ret == SUCCESS) {
