@@ -675,7 +675,7 @@ HWTEST(AudioManagerUnitTest, SetAudioInterruptCallback_001, TestSize.Level1)
 * @tc.desc   : Test UnsetAudioInterruptCallback interface.
 */
 HWTEST(AudioManagerUnitTest, UnsetAudioInterruptCallback_001, TestSize.Level1)
-{ 
+{
     int32_t zoneId = 1;
     uint32_t sessionId = 1;
     auto ret = AudioSystemManager::GetInstance()->UnsetAudioInterruptCallback(zoneId, sessionId);
