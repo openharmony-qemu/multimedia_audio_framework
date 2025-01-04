@@ -48,7 +48,6 @@ const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_
 const std::vector<AudioEnhanceScene> AUDIO_WITH_DEVICE_ENHANCES {SCENE_VOIP_UP};
 const std::string MAINKEY_DEVICE_STATUS = "device_status";
 const std::string SUBKEY_FOLD_STATE = "fold_state";
-const std::string DB_INITED = "ENHANCE_PROPERTY_MAP_DB_INITED";
 }
 
 static int32_t FindEnhanceLib(const std::string &enhance,
@@ -169,6 +168,11 @@ void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectCh
     // Construct enhancePropertyMap_ that stores effect's property
     enhancePropertyMap_ = managerParam.effectDefaultProperty;
     defaultPropertyMap_ = managerParam.effectDefaultProperty;
+    ConstructDeviceEnhances();
+}
+
+void AudioEnhanceChainManager::ConstructDeviceEnhances()
+{
     CHECK_AND_RETURN_LOG(sceneTypeAndModeToEnhanceChainNameMap_.size() != 0, "no enhance algos");
     for (const auto& sceneType: AUDIO_WITH_DEVICE_ENHANCES) {
         std::string scene = AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.find(sceneType)->second;

@@ -82,7 +82,6 @@ private:
         const uint32_t sceneKeyCode);
     std::string GetEnhanceChainNameBySceneCode(const uint32_t sceneKeyCode, const bool defaultFlag);
     int32_t UpdatePropertyAndSendToAlgo(const DeviceType &inputDevice);
-    void InitEnhancePropertyMapToDb();
     void UpdateEnhancePropertyMapFromDb(DeviceType deviceType);
     int32_t WriteEnhancePropertyToDb(const std::string &key, const std::string &property);
     int32_t SetAudioEnhancePropertyToChains(AudioEnhanceProperty property);
@@ -93,6 +92,7 @@ private:
     void ConstructEnhanceChainMgrMaps(std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
         std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
+    void ConstructDeviceEnhances();
 
     std::map<uint32_t, std::shared_ptr<AudioEnhanceChain>> sceneTypeToEnhanceChainMap_;
     std::map<uint32_t, int32_t> sceneTypeToEnhanceChainCountMap_;
