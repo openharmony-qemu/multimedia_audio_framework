@@ -642,6 +642,47 @@ HWTEST(AudioManagerUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
 }
 
 /**
+* @tc.name   : Test GenerateSessionId API
+* @tc.number : GenerateSessionId_001
+* @tc.desc   : Test GenerateSessionId_001 interface.
+*/
+HWTEST(AudioManagerUnitTest, GenerateSessionId_001, TestSize.Level1)
+{
+    uint32_t sessionId = 0;
+    auto ret = AudioSystemManager::GetInstance()->GenerateSessionId(sessionId);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name   : Test SetAudioInterruptCallback API
+* @tc.number : SetAudioInterruptCallback_001
+* @tc.desc   : Test SetAudioInterruptCallback interface.
+*/
+HWTEST(AudioManagerUnitTest, SetAudioInterruptCallback_001, TestSize.Level1)
+{
+    uint32_t sessionId = 0;
+    std::shared_ptr<AudioInterruptCallback> callback = nullptr;
+    uint32_t clientUid = 1;
+    int32_t zoneID = 1;
+    auto ret = AudioSystemManager::GetInstance()->SetAudioInterruptCallback(sessionId, callback,
+        clientUid, zoneID);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name   : Test UnsetAudioInterruptCallback API
+* @tc.number : UnsetAudioInterruptCallback_001
+* @tc.desc   : Test UnsetAudioInterruptCallback interface.
+*/
+HWTEST(AudioManagerUnitTest, UnsetAudioInterruptCallback_001, TestSize.Level1)
+{ 
+    int32_t zoneId = 1;
+    uint32_t sessionId = 1;
+    auto ret = AudioSystemManager::GetInstance()->UnsetAudioInterruptCallback(zoneId, sessionId);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
 * @tc.name   : Test RequestIndependentInterrupt API
 * @tc.number : RequestIndependentInterrupt_001
 * @tc.desc   : Test RequestIndependentInterrupt interface.
