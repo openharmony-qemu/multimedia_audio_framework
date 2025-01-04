@@ -45,6 +45,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 
@@ -259,6 +260,7 @@ private:
     std::mutex sinkMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
+    AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -307,7 +309,9 @@ AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
-    attr_ = {};
+    if (halName_ == DIRECT_HAL_NAME || halName_ == VOIP_HAL_NAME) {
+        sinkType_ = ADAPTER_TYPE_DIRECT;
+    }
 }
 
 AudioRendererSinkInner::~AudioRendererSinkInner()
@@ -322,6 +326,7 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
         AUDIO_WARNING_LOG("runningLockManager is null, playback can not work well!");
     }
 #endif
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(sinkType_);
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
@@ -437,14 +442,13 @@ std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, c
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s, halName: %{public}s",
         key, condition.c_str(), halName_.c_str());
-    // for usb, condition is get_usb_info#CxD0 or need_change_usb_device#CxD0
-    if (key == USB_DEVICE) {
-        if (halName_ == USB_HAL_NAME) {
-            adapterNameCase_ = USB_HAL_NAME;
-        }
+    if (condition.starts_with("get_usb_info#C")) {
+        // Init adapter to get parameter before load sink module (need fix)
+        adapterNameCase_ = "usb";
         int32_t ret = InitAdapter();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init usb audio adapter failed. ret=%{public}d", ret);
-    } else if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init adapter failed for get usb info param");
+    }
+    if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
         // Init adapter and render to get parameter before load sink module (need fix)
         return GetDPDeviceAttrInfo(condition);
     }
@@ -807,6 +811,8 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, ClockTime::GetCurNano());
+
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrame failed ret: %{public}x", ret);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
@@ -891,6 +897,7 @@ int32_t AudioRendererSinkInner::Start(void)
         UpdateSinkState(true);
         started_ = true;
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -1289,7 +1296,7 @@ int32_t AudioRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

@@ -40,6 +40,7 @@
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
 #include "audio_utils.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 
@@ -374,12 +375,12 @@ void FastAudioRendererSinkInner::ReleaseMmapBuffer()
         AUDIO_WARNING_LOG("ReleaseMmapBuffer buffer already null.");
     }
     if (privFd_ != INVALID_FD) {
-        close(privFd_);
+        CloseFd(privFd_);
         privFd_ = INVALID_FD;
     }
 #endif
     if (bufferFd_ != INVALID_FD) {
-        close(bufferFd_);
+        CloseFd(bufferFd_);
         bufferFd_ = INVALID_FD;
     }
 }
@@ -686,6 +687,7 @@ int32_t FastAudioRendererSinkInner::Start(void)
 #endif
     started_ = true;
     AUDIO_DEBUG_LOG("Start cost[%{public}" PRId64 "]ms", (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 #ifdef FEATURE_POWER_MANAGER
@@ -914,7 +916,7 @@ int32_t FastAudioRendererSinkInner::Resume(void)
             "Resume failed!");
     }
     paused_ = false;
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 

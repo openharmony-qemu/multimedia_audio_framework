@@ -236,10 +236,12 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
 
     uint64_t channelLayoutNum = 0;
     int32_t streamUsage = 0;
+    int32_t systemVolumeType = 0;
     std::string sceneTypeString = "";
     std::string sessionIDString = "";
     std::string sceneModeString = "";
     std::string spatializationEnabledString = "";
+
     if (sceneType && pack.channelLayout && sessionID && pack.sceneMode &&
         pack.spatializationEnabled && pack.streamUsage) {
         sceneTypeString = sceneType;
@@ -248,6 +250,7 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
         sceneModeString = pack.sceneMode;
         spatializationEnabledString = pack.spatializationEnabled;
         streamUsage = static_cast<int32_t>(std::strtol(pack.streamUsage, nullptr, BASE_TEN));
+        systemVolumeType = static_cast<int32_t>(std::strtol(pack.systemVolumeType, nullptr, BASE_TEN));
     } else {
         AUDIO_ERR_LOG("map input parameters missing.");
         return ERROR;
@@ -260,6 +263,7 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
     info.channelLayout = channelLayoutNum;
     info.spatializationEnabled = spatializationEnabledString;
     info.streamUsage = streamUsage;
+    info.systemVolumeType = systemVolumeType;
     return audioEffectChainManager->SessionInfoMapAdd(sessionIDString, info);
 }
 

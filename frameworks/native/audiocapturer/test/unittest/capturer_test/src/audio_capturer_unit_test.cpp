@@ -38,6 +38,7 @@ namespace {
     const int32_t STRESS_TEST_COUNTS = 200;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
+    static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 } // namespace
 
 void AudioCapturerUnitTest::SetUpTestCase(void) {}
@@ -689,6 +690,44 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_026, TestSize.Level0)
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_EQ(nullptr, audioCapturer);
+}
+
+/**
+ * @tc.name  : Test Create API via legal input.
+ * @tc.number: Audio_Capturer_Create_027
+ * @tc.desc  : Test Create capture with invalid sourceType
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_027, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.sourceType = static_cast<SourceType>(SOURCE_TYPE_MAX + 1);
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    EXPECT_EQ(nullptr, audioCapturer);
+}
+
+/**
+ * @tc.name  : Test Create API via legal input.
+ * @tc.number: Audio_Capturer_Create_028
+ * @tc.desc  : Test Create capture with invalid sourceType
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_028, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.sourceType = static_cast<SourceType>(AUDIO_SOURCE_TYPE_INVALID_5);
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    EXPECT_EQ(nullptr, audioCapturer);
 }
 
 /**
@@ -2064,7 +2103,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.
 
 /**
 * @tc.name  : Test InitPlaybackCapturer.
-* @tc.number: InitPlaybackCapturer
+* @tc.number: InitPlaybackCapturer_001
 * @tc.desc  : Test InitPlaybackCapturer.
 */
 HWTEST(AudioCapturerUnitTest, InitPlaybackCapturer_001, TestSize.Level1)
@@ -2078,6 +2117,41 @@ HWTEST(AudioCapturerUnitTest, InitPlaybackCapturer_001, TestSize.Level1)
     int32_t ret = audioCapturer->InitPlaybackCapturer(type, config);
 
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test InitPlaybackCapturer.
+* @tc.number: InitPlaybackCapturer_002
+* @tc.desc  : Test InitPlaybackCapturer.
+*/
+HWTEST(AudioCapturerUnitTest, InitPlaybackCapturer_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+
+    int32_t type = 2;
+    const AudioPlaybackCaptureConfig config;
+    int32_t ret = audioCapturer->InitPlaybackCapturer(type, config);
+
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetCaptureSilentState.
+* @tc.number: SetCaptureSilentState_001
+* @tc.desc  : Test SetCaptureSilentState.
+*/
+HWTEST(AudioCapturerUnitTest, SetCaptureSilentState_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+
+    int32_t ret = audioCapturer->SetCaptureSilentState(true);
+    EXPECT_EQ(ret, ERROR);
+    ret = audioCapturer->SetCaptureSilentState(false);
+    EXPECT_EQ(ret, ERROR);
 }
 
 /**
@@ -2217,6 +2291,8 @@ HWTEST(AudioCapturerUnitTest, SwitchStream_001, TestSize.Level1)
     audioCapturer->SwitchStream(sessionId, streamFlag_2, reason);
     const int32_t streamFlag_3 = AUDIO_FLAG_VOIP_FAST;
     audioCapturer->SwitchStream(sessionId, streamFlag_3, reason);
+    const int32_t streamFlag_4 = AUDIO_FLAG_INVALID;
+    audioCapturer->SwitchStream(sessionId, streamFlag_4, reason);
     EXPECT_EQ(streamFlag, 0);
 }
 

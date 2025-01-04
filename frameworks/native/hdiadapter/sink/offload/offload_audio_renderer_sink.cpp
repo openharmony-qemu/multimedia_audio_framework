@@ -170,11 +170,6 @@ private:
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::mutex renderMutex_;
-    std::unique_ptr<std::thread> threadVolume_ = nullptr;
-    std::atomic<bool> brkThreadVolume_ = false;
-    std::mutex volumeInnerMutex_;
-    float leftActualVolume_ = 0.0f;
-    float rightActualVolume_ = 0.0f;
 
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
@@ -185,7 +180,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void ThreadSetVolume(float destLeft, float destRight);
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> offloadRunningLockManager_;
@@ -471,7 +465,7 @@ void OffloadAudioRendererSinkInner::DeInit()
 {
     Trace trace("OffloadSink::DeInit");
     std::lock_guard<std::mutex> lock(renderMutex_);
-    std::lock_guard<std::mutex> lockVolumeInner(volumeInnerMutex_);
+    std::lock_guard<std::mutex> lockVolume(volumeMutex_);
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
@@ -484,8 +478,6 @@ void OffloadAudioRendererSinkInner::DeInit()
     callbackServ = {};
     muteCount_ = 0;
     switchDeviceMute_ = false;
-    leftActualVolume_ = 0.0f;
-    rightActualVolume_ = 0.0f;
 
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -789,48 +781,7 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
         return SUCCESS;
     }
 
-    if (threadVolume_ != nullptr) {
-        brkThreadVolume_ = true;
-        if (threadVolume_->joinable()) {
-            threadVolume_->join();
-        }
-        brkThreadVolume_ = false;
-        threadVolume_ = nullptr;
-    }
-    threadVolume_ = std::make_unique<std::thread>(&OffloadAudioRendererSinkInner::ThreadSetVolume,
-        this, leftVolume_, rightVolume_);
-    return SUCCESS;
-}
-
-void OffloadAudioRendererSinkInner::ThreadSetVolume(float destLeft, float destRight)
-{
-    pthread_setname_np(pthread_self(), "OS_OffloadSetVolume");
-    Trace trace("OffloadSink::ThreadSetVolume");
-    float leftVolume = 0.0f;
-    float rightVolume = 0.0f;
-    GetVolume(leftVolume, rightVolume);
-    float leftDiffer = leftVolume - destLeft;
-    float rightDiffer = rightVolume - destRight;
-
-    // volume no change, set volume only once,
-    // dest volume zero, set volume only once to dest.
-    if ((leftDiffer == 0 && rightDiffer == 0) || (destLeft == 0 && destRight == 0)) {
-        SetVolumeInner(destLeft, destRight);
-    } else {
-        int32_t count = 10; // 10 count for set volume
-        int32_t sleepUs = 20 * 1000; // 20 * 1000 us set volume cycle
-        float differLf = leftDiffer / count;
-        float differRt = rightDiffer / count;
-        for (int32_t i = count - 1; i >= 0; --i) {
-            if (brkThreadVolume_) {
-                break;
-            }
-            float left = destLeft + differLf * i;
-            float right = destRight + differRt * i;
-            SetVolumeInner(left, right);
-            usleep(sleepUs);
-        }
-    }
+    return SetVolumeInner(left, right);
 }
 
 int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
@@ -838,7 +789,6 @@ int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
     AudioXCollie audioXCollie("OffloadAudioRendererSinkInner::SetVolumeInner", TIME_OUT_SECONDS,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("set offload vol left is %{public}f, right is %{public}f", left, right);
-    std::lock_guard<std::mutex> lockVolumeInner(volumeInnerMutex_);
     float thevolume;
     int32_t ret;
     if (audioRender_ == nullptr) {
@@ -858,18 +808,15 @@ int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
     ret = audioRender_->SetVolume(audioRender_, thevolume);
     if (ret) {
         AUDIO_ERR_LOG("Set volume failed!");
-    } else {
-        leftActualVolume_ = left;
-        rightActualVolume_ = right;
     }
     return ret;
 }
 
 int32_t OffloadAudioRendererSinkInner::GetVolume(float &left, float &right)
 {
-    std::lock_guard<std::mutex> lock(volumeInnerMutex_);
-    left = leftActualVolume_;
-    right = rightActualVolume_;
+    std::lock_guard<std::mutex> lock(volumeMutex_);
+    left = leftVolume_;
+    right = rightVolume_;
     return SUCCESS;
 }
 

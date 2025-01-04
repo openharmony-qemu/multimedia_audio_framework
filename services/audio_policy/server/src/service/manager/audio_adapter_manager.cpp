@@ -394,7 +394,8 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
         "SetSystemVolumeLevel audio adapter null");
 
-    AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d", streamType, volumeDb, volumeLevel);
+    AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
+        streamType, volumeDb, volumeLevel, currentActiveDevice_);
 
     // audio volume
     SetAudioVolume(streamType, volumeDb);
@@ -727,9 +728,17 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     currentActiveDevice_ = deviceType;
 
     if (!isSameVolumeGroup) {
-        LoadVolumeMap();
-        LoadMuteStatusMap();
-        UpdateSafeVolume();
+        // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
+        // and retry for 5 times, which could cause a sysfreeze. Check if any os account is ready. If not,
+        // skip interacting with datashare.
+        bool osAccountReady = volumeDataMaintainer_.CheckOsAccountReady();
+        if (osAccountReady) {
+            LoadVolumeMap();
+            LoadMuteStatusMap();
+            UpdateSafeVolume();
+        } else {
+            AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
+        }
     }
 
     auto iter = VOLUME_TYPE_LIST.begin();

@@ -28,6 +28,7 @@
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -152,6 +153,7 @@ int32_t AudioProcessInServer::Start()
     }
 
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     AUDIO_INFO_LOG("Start in server success!");
     return SUCCESS;
 }
@@ -199,7 +201,7 @@ int32_t AudioProcessInServer::Resume()
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
-
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }

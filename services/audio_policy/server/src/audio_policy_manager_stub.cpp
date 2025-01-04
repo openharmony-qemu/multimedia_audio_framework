@@ -252,15 +252,18 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
 #ifdef FEATURE_DTMF_TONE
 void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
 {
-    std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(data.ReadInt32());
+    int32_t ltonetype = data.ReadInt32();
+    std::string countryCode = data.ReadString();
+    std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(ltonetype, countryCode);
     CHECK_AND_RETURN_LOG(ltoneInfo != nullptr, "obj is null");
     ltoneInfo->Marshalling(reply);
 }
 
 void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply)
 {
+    std::string countryCode = data.ReadString();
     int32_t lToneListSize = 0;
-    std::vector<int32_t> lToneList = GetSupportedTones();
+    std::vector<int32_t> lToneList = GetSupportedTones(countryCode);
     lToneListSize = static_cast<int32_t>(lToneList.size());
     reply.WriteInt32(lToneListSize);
     for (int i = 0; i < lToneListSize; i++) {

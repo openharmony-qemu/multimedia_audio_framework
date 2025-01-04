@@ -69,9 +69,20 @@ if (!audio_framework_feature_dtmf_tone) {
       "c_utils:utils",
       "eventhandler:libeventhandler",
       "hilog:libhilog",
+      "init:libbegetutil",
       "ipc:ipc_single",
       "pulseaudio:pulse",
     ]
+
+    if (audio_telephony_core_service_enable) {
+      external_deps += [ "core_service:tel_core_service_api" ]
+      defines += [ "AUDIO_TEL_CORE_SERVICE_ENABLE" ]
+    }
+
+    if (audio_telephony_cellular_data_enable) {
+      external_deps += [ "cellular_data:tel_cellular_data_api" ]
+      defines += [ "AUIDO_TEL_CELLULAR_DATA_ENABLE" ]
+    }
 
     public_external_deps = [ "bounds_checking_function:libsec_shared" ]
 

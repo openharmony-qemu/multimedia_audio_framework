@@ -66,14 +66,14 @@ void AudioEffectVolumeUnitTest::TearDown(void)
 HWTEST(AudioEffectVolumeUnitTest, GetSystemVolume_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioEffectVolumeUnitTest: GetSystemVolume_001 start ");
-    const std::string sceneType = "SCENE_MUSIC";
+    const int32_t systemVolumeType = 1;
     const float systemVolume = 0.5f;
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    audioEffectVolume->SetSystemVolume(sceneType, systemVolume);
-    float result = audioEffectVolume->GetSystemVolume(sceneType);
+    audioEffectVolume->SetSystemVolume(systemVolumeType, systemVolume);
+    float result = audioEffectVolume->GetSystemVolume(systemVolumeType);
     EXPECT_EQ(systemVolume, result);
 
-    result = audioEffectVolume->GetSystemVolume("");
+    result = audioEffectVolume->GetSystemVolume(9999);
     EXPECT_EQ(systemVolume, result);
 }
 

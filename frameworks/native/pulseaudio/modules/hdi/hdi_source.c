@@ -211,16 +211,30 @@ static void FreeSceneMapsAndResampler(struct Userdata *u)
 
 static void FreeThread(struct Userdata *u)
 {
+    if (u->threadCap) {
+        pa_thread_free(u->threadCap);
+    }
+
     if (u->thread) {
         pa_asyncmsgq_send(u->threadMq.inq, NULL, PA_MESSAGE_SHUTDOWN, NULL, 0, NULL);
         pa_thread_free(u->thread);
     }
 
-    if (u->threadCap) {
-        pa_thread_free(u->threadCap);
-    }
     if (u->CaptureMq) {
+        pa_memchunk chunk;
+        int32_t code = 0;
+        int32_t missedMsgqNum = 0;
+        while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
+            pa_memblock_unref(chunk.memblock);
+            pa_asyncmsgq_done(u->CaptureMq, 0);
+            missedMsgqNum++;
+        }
+        if (missedMsgqNum > 0) {
+            AUDIO_ERR_LOG("OS_ProcessCapData missed message num: %{public}u", missedMsgqNum);
+        }
         pa_asyncmsgq_unref(u->CaptureMq);
+    } else {
+        AUDIO_ERR_LOG("CaptureMq is null");
     }
 
     pa_thread_mq_done(&u->threadMq);
@@ -298,7 +312,7 @@ static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offse
     return pa_source_process_msg(o, code, data, offset, chunk);
 }
 
-static void SendInitCommandToAlgo()
+static void SendInitCommandToAlgo(void)
 {
     pa_usec_t now = pa_rtclock_now();
     int32_t ret = EnhanceChainManagerSendInitCommand();
@@ -774,7 +788,7 @@ static void ThreadCaptureData(void *userdata)
             eventfd_t writEvent = 1;
             int32_t writeRes = eventfd_write(u->eventFd, writEvent);
             if (writeRes != 0) {
-                AUDIO_ERR_LOG("Failed to write from eventfd");
+                AUDIO_ERR_LOG("Failed to write to eventfd");
                 continue;
             }
             cost = pa_rtclock_now() - now;
@@ -791,22 +805,26 @@ static void PaRtpollProcessFunc(struct Userdata *u)
 {
     AUTO_CTRACE("PaRtpollProcessFunc");
 
-    eventfd_t value;
-    int32_t readRet = eventfd_read(u->eventFd, &value);
-    if (readRet != 0) {
-        AUDIO_ERR_LOG("Failed to read from eventfd");
-        return;
+    if (u->source->thread_info.state == PA_SOURCE_RUNNING) {
+        eventfd_t value;
+        int32_t readRet = eventfd_read(u->eventFd, &value);
+        CHECK_AND_RETURN_LOG(readRet == 0, "Failed to read from eventfd");
     }
 
     pa_memchunk chunk;
     int32_t code = 0;
     pa_usec_t now = pa_rtclock_now();
 
-    pa_assert_se(pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
-    if (code == HDI_POST) {
+    while (pa_asyncmsgq_get(u->CaptureMq, NULL, &code, NULL, NULL, &chunk, 0) == 0) {
+        if (u->source->thread_info.state != PA_SOURCE_RUNNING) {
+            // when the source is not in running state, but we still recive data from CaptureMq.
+            pa_memblock_unref(chunk.memblock);
+            pa_asyncmsgq_done(u->CaptureMq, 0);
+            continue;
+        }
         AudioEnhanceExistAndProcess(&chunk, u);
+        pa_asyncmsgq_done(u->CaptureMq, 0);
     }
-    pa_asyncmsgq_done(u->CaptureMq, 0);
 
     int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE];
     size_t count = 0;
@@ -841,25 +859,20 @@ static void ThreadFuncProcessTimer(void *userdata)
 
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
+    if (u->rtpollItem) {
+        struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
+        CHECK_AND_BREAK_LOG(pollFd != NULL, "pollFd is null");
+        pollFd->events = POLLIN;
+    }
+
     while (true) {
         bool flag = (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) ?
             (u->source->thread_info.state == PA_SOURCE_RUNNING && u->isCapturerStarted) :
             (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->isCapturerStarted);
-        if (flag) {
-            pa_atomic_store(&u->captureFlag, 1);
-        } else {
-            pa_atomic_store(&u->captureFlag, 0);
-        }
+        pa_atomic_store(&u->captureFlag, flag);
 
         pa_rtpoll_set_timer_relative(u->rtpoll, RTPOLL_RUN_WAKEUP_INTERVAL_USEC);
-        if (u->rtpollItem) {
-            struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
-            if (pollFd == NULL) {
-                AUDIO_ERR_LOG("get pollFd failed");
-                break;
-            }
-            pollFd->events = flag ? POLLIN : 0;
-        }
+        
         /* Hmm, nothing to do. Let's sleep */
         int ret = pa_rtpoll_run(u->rtpoll);
         if (ret < 0) {
@@ -1210,6 +1223,12 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
 
     pa_atomic_store(&u->captureFlag, 0);
     pa_atomic_store(&u->quitCaptureFlag, 0);
+
+    if (!(u->CaptureMq = pa_asyncmsgq_new(0))) {
+        AUDIO_ERR_LOG("Failed to create u->CaptureMq");
+        return -1;
+    }
+
     u->eventFd = eventfd(0, EFD_NONBLOCK);
     u->rtpollItem = pa_rtpoll_item_new(u->rtpoll, PA_RTPOLL_NEVER, 1);
     struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
@@ -1225,10 +1244,6 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
     
     if (pa_thread_mq_init(&u->threadCapMq, m->core->mainloop, u->rtpoll) < 0) {
         AUDIO_ERR_LOG("threadCapMq init failed.");
-        return -1;
-    }
-    if (!(u->CaptureMq = pa_asyncmsgq_new(0))) {
-        AUDIO_ERR_LOG("Failed to create u->CaptureMq");
         return -1;
     }
 

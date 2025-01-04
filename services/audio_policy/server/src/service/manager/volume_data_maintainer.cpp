@@ -122,6 +122,11 @@ bool VolumeDataMaintainer::GetFirstBoot(bool &firstBoot)
     return true;
 }
 
+bool VolumeDataMaintainer::CheckOsAccountReady()
+{
+    return AudioSettingProvider::CheckOsAccountReady();
+}
+
 void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);

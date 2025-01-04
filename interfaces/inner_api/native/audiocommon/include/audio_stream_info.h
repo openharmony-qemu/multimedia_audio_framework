@@ -18,6 +18,7 @@
 #include <map>
 #include <set>
 #include <unordered_map>
+#include <parcel.h>
 
 #include "audio_source_type.h"
 

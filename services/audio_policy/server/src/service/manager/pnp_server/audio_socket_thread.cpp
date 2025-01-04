@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <string>
 #include "osal_time.h"
+#include "audio_utils.h"
 #include "audio_errors.h"
 #include "securec.h"
 #include "singleton.h"
@@ -87,19 +88,19 @@ int AudioSocketThread::AudioPnpUeventOpen(int *fd)
 
     if (setsockopt(socketFd, SOL_SOCKET, SO_RCVBUF, &buffSize, sizeof(buffSize)) != 0) {
         AUDIO_ERR_LOG("setsockopt SO_RCVBUF failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
     if (setsockopt(socketFd, SOL_SOCKET, SO_PASSCRED, &on, sizeof(on)) != 0) {
         AUDIO_ERR_LOG("setsockopt SO_PASSCRED failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
     if (::bind(socketFd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         AUDIO_ERR_LOG("bind socket failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
@@ -151,11 +152,10 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
             audioEvent->anahsName = UEVENT_REMOVE;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("set anahs event error.");
+            AUDIO_ERR_LOG("set anahs event failed.");
             return ERROR;
         }
     }
-    AUDIO_ERR_LOG("set anahs event error and subSystem is not platform.");
     return ERROR;
 }
 
@@ -174,14 +174,6 @@ static void SetAudioPnpUevent(AudioEvent *audioEvent, struct AudioPnpUevent *aud
         case ADD_DEVICE_ADAPTER:
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
             audioEvent->deviceType = PNP_DEVICE_ADAPTER_DEVICE;
-            break;
-        case ADD_DEVICE_MIC_BLOCKED:
-            audioEvent->eventType = PNP_EVENT_MIC_BLOCKED;
-            audioEvent->deviceType = PNP_DEVICE_MIC;
-            break;
-        case ADD_DEVICE_MIC_UN_BLOCKED:
-            audioEvent->eventType = PNP_EVENT_MIC_UNBLOCKED;
-            audioEvent->deviceType = PNP_DEVICE_MIC;
             break;
         default:
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
@@ -232,7 +224,6 @@ int32_t AudioSocketThread::AudioAnahsDetectDevice(struct AudioPnpUevent *audioPn
         return HDF_ERR_INVALID_PARAM;
     }
     if (SetAudioAnahsEventValue(&audioEvent, audioPnpUevent) != SUCCESS) {
-        AUDIO_ERR_LOG("set audio anahs event failed.");
         return ERROR;
     }
 
@@ -584,6 +575,27 @@ int32_t AudioSocketThread::AudioUsbHeadsetDetectDevice(struct AudioPnpUevent *au
     return SUCCESS;
 }
 
+int32_t AudioSocketThread::AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUevent)
+{
+    if (audioPnpUevent == nullptr) {
+        AUDIO_ERR_LOG("mic blocked audioPnpUevent is null");
+        return HDF_ERR_INVALID_PARAM;
+    }
+    AudioEvent audioEvent = {0};
+    if (strncmp(audioPnpUevent->name, "mic_blocked", strlen("mic_blocked")) == 0) {
+        audioEvent.eventType = PNP_EVENT_MIC_BLOCKED;
+    } else if (strncmp(audioPnpUevent->name, "mic_un_blocked", strlen("mic_un_blocked")) == 0) {
+        audioEvent.eventType = PNP_EVENT_MIC_UNBLOCKED;
+    } else {
+        return HDF_ERR_INVALID_PARAM;
+    }
+    audioEvent.deviceType = PNP_DEVICE_MIC;
+
+    AUDIO_INFO_LOG("mic blocked uevent info recv: %{public}s", audioPnpUevent->name);
+    UpdatePnpDeviceState(&audioEvent);
+    return SUCCESS;
+}
+
 bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLength)
 {
     struct AudioPnpUevent audioPnpUevent = {"", "", "", "", "", "", "", "", "", ""};
@@ -602,7 +614,7 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
             msgTmp++;
             continue;
         }
-        AUDIO_DEBUG_LOG("Param msgTmp:[%{public}s] len:[%{public}zu]", msgTmp, strlen(msgTmp));
+        AUDIO_DEBUG_LOG("Param msgTmp:[%{private}s] len:[%{public}zu]", msgTmp, strlen(msgTmp));
         const char *arrStrTmp[UEVENT_ARR_SIZE] = {
             UEVENT_ACTION, UEVENT_DEV_NAME, UEVENT_NAME, UEVENT_STATE, UEVENT_DEVTYPE,
             UEVENT_SUBSYSTEM, UEVENT_SWITCH_NAME, UEVENT_SWITCH_STATE, UEVENT_HDI_NAME,
@@ -628,7 +640,8 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
         (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioAnahsDetectDevice(&audioPnpUevent) == SUCCESS) ||
-        (AudioNnDetectDevice(&audioPnpUevent) == SUCCESS)) {
+        (AudioNnDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioMicBlockDevice(&audioPnpUevent) == SUCCESS)) {
         return true;
     }
 

@@ -139,7 +139,7 @@ void AudioPolicyServiceEnhanceOneFuzzTest()
     AudioStreamInfo streamInfo;
     uint32_t sessionId = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
-    
+
     DeviceType deviceType = GetData<DeviceType>();
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.SetCurrentInputDeviceType(deviceType);
 }
@@ -300,8 +300,11 @@ void AudioPolicyServiceEnhanceFiveFuzzTest()
     uint64_t sessionID = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(sessionID);
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemainingSource();
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.ReloadSourceForDeviceChange(DEVICE_TYPE_DEFAULT,
-        deviceType, "test");
+    AudioDeviceDescriptor inputDevice, outputDevice;
+    inputDevice.deviceType_ = DEVICE_TYPE_DEFAULT;
+    outputDevice.deviceType_ = deviceType;
+    GetServerPtr()->audioPolicyService_.audioCapturerSession_.ReloadSourceForDeviceChange(
+        inputDevice, outputDevice, "test");
 }
 
 void AudioPolicyServiceEnhanceSixFuzzTest()

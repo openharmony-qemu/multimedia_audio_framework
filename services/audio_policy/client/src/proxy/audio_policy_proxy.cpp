@@ -77,7 +77,7 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode)
 }
 
 #ifdef FEATURE_DTMF_TONE
-std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
+std::vector<int32_t> AudioPolicyProxy::GetSupportedTones(const std::string &countryCode)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -87,6 +87,7 @@ std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
     std::vector<int> lSupportedToneList = {};
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, lSupportedToneList, "WriteInterfaceToken failed");
+    data.WriteString(countryCode);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_TONES), data, reply, option);
     if (error != ERR_NONE) {
@@ -102,7 +103,7 @@ std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
     return lSupportedToneList;
 }
 
-std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
+std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype, const std::string &countryCode)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -114,6 +115,7 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, spToneInfo, "WriteInterfaceToken failed");
     data.WriteInt32(ltonetype);
+    data.WriteString(countryCode);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_TONEINFO), data, reply, option);
     if (error != ERR_NONE) {
@@ -697,7 +699,7 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
 }
 
 int32_t AudioPolicyProxy::ActivateAudioInterrupt(
-    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
+    AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -709,7 +711,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(
     data.WriteBool(isUpdatedAudioStrategy);
     ret = AudioInterrupt::Marshalling(data, audioInterrupt);
     CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
-    
+
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate interrupt failed, error: %{public}d", error);

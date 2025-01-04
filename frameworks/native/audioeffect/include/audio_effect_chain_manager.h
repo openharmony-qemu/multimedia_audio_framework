@@ -66,6 +66,7 @@ struct SessionEffectInfo {
     uint64_t channelLayout;
     std::string spatializationEnabled;
     int32_t streamUsage;
+    int32_t systemVolumeType;
 };
 
 const std::vector<AudioChannelLayout> AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS {
@@ -132,7 +133,7 @@ public:
     int32_t StreamVolumeUpdate(const std::string sessionIDString, const float streamVolume);
     uint32_t GetLatency(const std::string &sessionId);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
-    int32_t SetSceneTypeSystemVolume(const std::string sceneType, const float systemVolume);
+    int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume);
     void ResetInfo();  // Use for testing temporarily.
     void UpdateDefaultAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);

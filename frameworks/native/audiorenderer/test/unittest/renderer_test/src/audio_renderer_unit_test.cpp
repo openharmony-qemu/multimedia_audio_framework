@@ -123,8 +123,8 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     rendererOptions.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MOVIE;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MOVIE;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     return;
@@ -532,6 +532,71 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_014, TestSize.Level0)
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Create API via legal input.
+ * @tc.number: Audio_Renderer_Create_015
+ * @tc.desc  : Test Create interface with STREAM_MUSIC. Returns audioRenderer instance, if create is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_015, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test CheckMaxRendererInstances API
+ * @tc.number: Audio_Renderer_CheckMaxRendererInstances_001
+ * @tc.desc  : Test CheckMaxRendererInstances interface. Returns SUCCESS, if check max renderer instances is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_CheckMaxRendererInstances_001, TestSize.Level0)
+{
+    int32_t result = AudioRenderer::CheckMaxRendererInstances();
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+ * @tc.name  : Test Mute API
+ * @tc.number: Audio_Renderer_Mute_001
+ * @tc.desc  : Test Mute interface. Returns true, if check Mute is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Mute_001, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    bool result = audioRenderer->Mute();
+    EXPECT_TRUE(result);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Unmute API
+ * @tc.number: Audio_Renderer_Unmute_001
+ * @tc.desc  : Test Unmute interface. Returns true, if check Unmute is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Unmute_001, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    bool result = audioRenderer->Unmute();
+    EXPECT_TRUE(result);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test SetDefaultOutputDevice API
+ * @tc.number: Audio_Renderer_SetDefaultOutputDevice_001
+ * @tc.desc  : Test SetDefaultOutputDevice interface. Returns true, if check Unmute is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetDefaultOutputDevice_001, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    bool result = audioRenderer->SetDefaultOutputDevice(DEVICE_TYPE_INVALID);
+    EXPECT_TRUE(result);
     audioRenderer->Release();
 }
 
@@ -1501,7 +1566,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_Stability_001, TestSize.L
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
+    thread renderThread(StartRenderThread, audioRenderer.get(), PLAYBACK_DURATION);
 
     for (int i = 0; i < VALUE_HUNDRED; i++) {
         audioRenderer->SetVolume(0.1);
@@ -3004,7 +3069,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
+    thread renderThread(StartRenderThread, audioRenderer.get(), PLAYBACK_DURATION);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
         bool isDrained = audioRenderer->Drain();
@@ -3201,7 +3266,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_Stability_001, TestSize.Level
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
+    thread renderThread(StartRenderThread, audioRenderer.get(), PLAYBACK_DURATION);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
         bool isFlushed = audioRenderer->Flush();

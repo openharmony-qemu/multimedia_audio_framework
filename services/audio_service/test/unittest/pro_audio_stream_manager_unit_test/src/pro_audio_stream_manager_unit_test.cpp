@@ -569,5 +569,59 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_020, TestSize.Level1
     int32_t result = audioStreamManager->CreatePlayBackEngine(rendererStream);
     EXPECT_NE(ERROR, result);
 }
+
+/**
+* @tc.name   : Test CreatePlayBackEngine API
+* @tc.number : ProAudioStreamManager_021
+* @tc.desc   : Test TriggerStartIfNecessary interface.
+*/
+HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_021, TestSize.Level1)
+{
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
+    ASSERT_TRUE(audioStreamManager != nullptr);
+
+    AudioProcessConfig config;
+    config.appInfo.appUid = CAPTURER_FLAG;
+    config.appInfo.appPid = CAPTURER_FLAG;
+    config.streamInfo.format = SAMPLE_S32LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    config.streamType = AudioStreamType::STREAM_MUSIC;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    shared_ptr<IRendererStream> rendererStream = audioStreamManager->CreateRendererStream(config);
+    audioStreamManager->playbackEngine_.reset();
+
+    int32_t result = audioStreamManager->TriggerStartIfNecessary();
+    EXPECT_NE(ERROR, result);
+}
+
+/**
+* @tc.name   : Test CreatePlayBackEngine API
+* @tc.number : ProAudioStreamManager_022
+* @tc.desc   : Test TriggerStartIfNecessary interface.
+*/
+HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_022, TestSize.Level1)
+{
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
+    ASSERT_TRUE(audioStreamManager != nullptr);
+
+    AudioProcessConfig config;
+    config.appInfo.appUid = CAPTURER_FLAG;
+    config.appInfo.appPid = CAPTURER_FLAG;
+    config.streamInfo.format = SAMPLE_S32LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    config.streamType = AudioStreamType::STREAM_MUSIC;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    shared_ptr<IRendererStream> rendererStream = audioStreamManager->CreateRendererStream(config);
+    audioStreamManager->playbackEngine_->Stop();
+
+    int32_t result = audioStreamManager->TriggerStartIfNecessary();
+    EXPECT_NE(ERROR, result);
+}
 }
 }

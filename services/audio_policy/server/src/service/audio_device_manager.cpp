@@ -318,7 +318,7 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
         capturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
         capturePublicDevices_);
-    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECONGNITION, "capture recon privacy device",
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECOGNITION, "capture recognition privacy device",
         reconCapturePrivacyDevices_);
 }
 
@@ -861,16 +861,6 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
     return audioDeviceDescriptors;
 }
 
-void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isConnnected)
-{
-    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
-    for (const auto &desc : connectedDevices_) {
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->macAddress_ == macAddress) {
-            desc->isScoRealConnected_ = isConnnected;
-        }
-    }
-}
-
 bool AudioDeviceManager::GetScoState()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
@@ -1070,7 +1060,7 @@ void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDe
 {
     RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
-    RemoveMatchDeviceInArray(devDesc, "capture recon privacy device", reconCapturePrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "capture recognition privacy device", reconCapturePrivacyDevices_);
 }
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
@@ -1356,6 +1346,26 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallRenderDevic
         devDesc = make_shared<AudioDeviceDescriptor>(speaker_);
     }
     return devDesc;
+}
+
+void AudioDeviceManager::Dump(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    AppendFormat(dumpString, " MediaDefaultOutputDevices:\n");
+    for (auto it : mediaDefaultOutputDevices_) {
+        AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
+            AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
+    }
+    AppendFormat(dumpString, "current media default output device: %s\n",
+        AudioInfoDumpUtils::GetDeviceTypeName(selectedMediaDefaultOutputDevice_).c_str());
+
+    AppendFormat(dumpString, " CallDefaultOutputDevices:\n");
+    for (auto it : callDefaultOutputDevices_) {
+        AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
+            AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
+    }
+    AppendFormat(dumpString, "current call default output device: %s\n",
+        AudioInfoDumpUtils::GetDeviceTypeName(selectedCallDefaultOutputDevice_).c_str());
 }
 // LCOV_EXCL_STOP
 }

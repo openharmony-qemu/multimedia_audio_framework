@@ -106,9 +106,9 @@ public:
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
 #ifdef FEATURE_DTMF_TONE
-    std::vector<int32_t> GetSupportedTones();
+    std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 
-    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode);
 #endif
 
     AudioRingerMode GetRingerMode();
@@ -154,7 +154,7 @@ public:
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0);
 
     int32_t ActivateAudioInterrupt(
-        const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
+        AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 

@@ -29,7 +29,7 @@ namespace AudioStandard {
 class AudioCapturerAdapter {
 public:
     static AudioCapturerAdapter* GetInstance();
-    AudioCapturer *GetAudioCapturerById(SLuint32 id);
+    std::shared_ptr<AudioCapturer> GetAudioCapturerById(SLuint32 id);
     void EraseAudioCapturerById(SLuint32 id);
     SLresult CreateAudioCapturerAdapter
         (SLuint32 id, SLDataSource *dataSource, SLDataSink *dataSink, AudioStreamType streamType);
@@ -44,7 +44,7 @@ public:
 private:
     AudioCapturerAdapter();
     ~AudioCapturerAdapter();
-    std::map<SLuint32, AudioCapturer*> captureMap_;
+    std::map<SLuint32, std::shared_ptr<AudioCapturer>> captureMap_;
     std::shared_ptr<ReadOrWriteCallbackAdapter> callbackPtr_;
     std::map<SLuint32, std::shared_ptr<ReadOrWriteCallbackAdapter>> callbackMap_;
 

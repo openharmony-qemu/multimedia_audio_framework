@@ -58,7 +58,7 @@
     *InitAudioEnhanceChainManager*;
     *UpdateSpatializationState*;
     *UpdateSpatialDeviceType*;
-    *SetSceneTypeSystemVolume*;
+    *SetEffectSystemVolume*;
     *EffectVolumeUpdate*;
     *SetSpatializationSceneType*;
     *GetOffloadEnabled*;

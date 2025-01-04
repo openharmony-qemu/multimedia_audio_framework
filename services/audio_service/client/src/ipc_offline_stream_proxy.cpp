@@ -28,6 +28,7 @@ IpcOfflineStreamProxy::IpcOfflineStreamProxy(const sptr<IRemoteObject> &impl) : 
 
 IpcOfflineStreamProxy::~IpcOfflineStreamProxy() = default;
 
+#ifdef FEATURE_OFFLINE_EFFECT
 int32_t IpcOfflineStreamProxy::CreateOfflineEffectChain(const std::string &chainName)
 {
     MessageParcel data;
@@ -105,6 +106,6 @@ void IpcOfflineStreamProxy::ReleaseOfflineEffectChain()
     CHECK_AND_RETURN_LOG(ret == AUDIO_OK, "Relase failed, error: %{public}d", ret);
     return;
 }
-
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

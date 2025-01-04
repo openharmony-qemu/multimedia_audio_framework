@@ -19,7 +19,7 @@
 #include <chrono>
 #include <thread>
 
-#include "audio_capturer_source.h"
+#include "audio_capturer_source.cpp"
 #include "fast_audio_capturer_source.h"
 #include "bluetooth_capturer_source.h"
 
@@ -636,6 +636,63 @@ HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_012, TestSize.Le
     capturer->RegisterParameterCallback(nullptr);
     capturer->RegisterAudioCapturerSourceCallback(nullptr);
     capturer->RegisterWakeupCloseCallback(nullptr);
+}
+
+/**
+ * @tc.name  : Test Template AudioCapturerSource
+ * @tc.number: Audio_Capturer_Source_013
+ * @tc.desc  : Test Template AudioCapturerSource call Create Then Get Or Set Value
+ */
+HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_013, TestSize.Level1)
+{
+    AudioCapturerSourceInner capturer;
+    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_U8);
+    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_S16);
+    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_S24);
+    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_S32);
+    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_F32);
+
+    int32_t ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_U8);
+    ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_S16);
+    ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_S24);
+    ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_S32);
+    ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_F32);
+
+    uint32_t id = GenerateUniqueIDBySource(SOURCE_TYPE_EC);
+    id = GenerateUniqueIDBySource(SOURCE_TYPE_MIC_REF);
+    id = GenerateUniqueIDBySource(SOURCE_TYPE_WAKEUP);
+
+    uint64_t layout = GetChannelLayoutByCount(MONO);
+    layout = GetChannelLayoutByCount(STEREO);
+    layout = GetChannelLayoutByCount(CHANNEL_4);
+    layout = GetChannelLayoutByCount(CHANNEL_8);
+    layout = GetChannelLayoutByCount(CHANNEL_16);
+
+    auto res = ConvertToHDIAudioInputType(SOURCE_TYPE_INVALID);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_MIC);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_WAKEUP);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_COMMUNICATION);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_CALL);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_RECOGNITION);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_EC);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_MIC_REF);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_CAMCORDER);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_UNPROCESSED);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_MAX);
+
+    AudioCategory audioCategory = GetAudioCategory(AUDIO_SCENE_PHONE_CALL);
+    audioCategory = GetAudioCategory(AUDIO_SCENE_PHONE_CHAT);
+    audioCategory = GetAudioCategory(AUDIO_SCENE_RINGING);
+    audioCategory = GetAudioCategory(AUDIO_SCENE_DEFAULT);
+    audioCategory = GetAudioCategory(AUDIO_SCENE_MAX);
+
+    AudioRouteNode source;
+    ret = SetInputPortPin(DEVICE_TYPE_MIC, source);
+    ret = SetInputPortPin(DEVICE_TYPE_WIRED_HEADSET, source);
+    ret = SetInputPortPin(DEVICE_TYPE_USB_ARM_HEADSET, source);
+    ret = SetInputPortPin(DEVICE_TYPE_USB_HEADSET, source);
+    ret = SetInputPortPin(DEVICE_TYPE_BLUETOOTH_SCO, source);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

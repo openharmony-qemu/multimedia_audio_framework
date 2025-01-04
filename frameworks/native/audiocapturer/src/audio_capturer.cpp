@@ -538,8 +538,8 @@ bool AudioCapturerPrivate::Start() const
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         audioInterrupt_.sessionId != INVALID_SESSION_ID, false);
-
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+    AudioInterrupt audioInterrupt = audioInterrupt_;
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
 
     // When the cellular call stream is starting, only need to activate audio interrupt.
@@ -758,7 +758,7 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 
     if (switching_) {
         AUDIO_INFO_LOG("Wait for SwitchStream");
-        bool ret = switchStreamCv_.wait_for(lock, std::chrono::microseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
+        bool ret = switchStreamCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
             [this] {return !switching_;});
         if (!ret) {
             switching_ = false;

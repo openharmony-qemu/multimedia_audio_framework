@@ -106,6 +106,8 @@ public:
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
+    int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
+
     float GetSystemVolumeDb(AudioStreamType streamType) const;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
@@ -206,11 +208,13 @@ public:
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
 
+    void SetFirstScreenOn();
+
     int32_t ResumeStreamState();
 #ifdef FEATURE_DTMF_TONE
-    std::vector<int32_t> GetSupportedTones();
+    std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 
-    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode);
 #endif
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,

@@ -53,6 +53,8 @@ uint32_t GetStopFadeoutState(uint32_t streamIndex);
 
 void RemoveStopFadeoutState(uint32_t streamIndex);
 
+int32_t GetSimpleBufferAvg(uint8_t *buffer, int32_t length);
+
 #ifdef __cplusplus
 }
 #endif

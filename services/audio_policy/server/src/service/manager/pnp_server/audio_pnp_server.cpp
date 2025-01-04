@@ -21,6 +21,7 @@
 #include <poll.h>
 #include "securec.h"
 #include "osal_time.h"
+#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_input_thread.h"
 #include "audio_policy_log.h"
@@ -188,7 +189,7 @@ void AudioPnpServer::OpenAndReadWithSocket()
             }
         }
     }
-    close(socketFd);
+    CloseFd(socketFd);
     return;
 }
 

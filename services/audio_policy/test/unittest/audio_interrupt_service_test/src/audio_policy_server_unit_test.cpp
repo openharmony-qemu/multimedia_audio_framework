@@ -783,5 +783,45 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_040, TestSize.Level1)
 
     EXPECT_EQ(ret, ERR_UNKNOWN);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: SetSystemVolumeLevelInternal_001
+* @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelInternal
+*/
+HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("SetSystemVolumeLevelInternal_001 start");
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_NE(ptrAudioPolicyServer, nullptr);
+
+    int32_t volumeLevel = 5;
+    bool isUpdateUi = true;
+    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL, volumeLevel, isUpdateUi);
+    EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: SetSystemVolumeLevelInternal_002
+* @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelInternal
+*/
+HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("SetSystemVolumeLevelInternal_002 start");
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_NE(ptrAudioPolicyServer, nullptr);
+
+    int32_t volumeLevel = 5;
+    bool isUpdateUi = true;
+    VolumeUtils::SetPCVolumeEnable(true);
+    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL, volumeLevel, isUpdateUi);
+    VolumeUtils::SetPCVolumeEnable(false);
+    EXPECT_EQ(ret, SUCCESS);
 }
+} // AudioStandard
+} // OHOS

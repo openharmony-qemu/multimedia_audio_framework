@@ -17,13 +17,13 @@
 #define LOG_TAG "AudioVolume"
 #endif
 
+#include <numeric>
 #include "audio_volume.h"
 #include "audio_volume_c.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
-#include "event_bean.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -549,6 +549,15 @@ uint32_t GetStopFadeoutState(uint32_t streamIndex)
 void RemoveStopFadeoutState(uint32_t streamIndex)
 {
     AudioVolume::GetInstance()->RemoveStopFadeoutState(streamIndex);
+}
+
+int32_t GetSimpleBufferAvg(uint8_t *buffer, int32_t length)
+{
+    if (length <= 0) {
+        return -1;
+    }
+    int32_t sum = std::accumulate(buffer, buffer + length, 0);
+    return sum / length;
 }
 #ifdef __cplusplus
 }

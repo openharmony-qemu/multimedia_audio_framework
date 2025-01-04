@@ -55,6 +55,7 @@
 #include "volume_tools.h"
 
 #include "media_monitor_manager.h"
+#include "xcollie/watchdog.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -74,6 +75,8 @@ static const uint32_t WAIT_FOR_NEXT_CB = 5000; // 5ms
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
+constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
+constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -380,6 +383,31 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     return result;
 }
 
+void RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+{
+    std::string watchDogMessage = message;
+    watchDogMessage += std::to_string(sessionId);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
+}
+
+void RendererInClientInner::WatchingWriteCallbackFunc()
+{
+    writeCallbackFuncThreadStatusFlag_ = true;
+    auto taskFunc = [this]() {
+        if (writeCallbackFuncThreadStatusFlag_) {
+            AUDIO_DEBUG_LOG("Set writeCallbackFuncThreadStatusFlag_ to false");
+            writeCallbackFuncThreadStatusFlag_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened");
+        }
+    };
+    std::string watchDogMessage = "WatchingWriteCallbackFunc" + std::to_string(sessionId_);
+    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
+        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
+}
+
 void RendererInClientInner::WriteCallbackFunc()
 {
     AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
@@ -388,10 +416,13 @@ void RendererInClientInner::WriteCallbackFunc()
     // Modify thread priority is not need as first call write will do these work.
     cbThreadCv_.notify_one();
 
+    // add watchdog
+    WatchingWriteCallbackFunc();
     // start loop
     while (!cbThreadReleased_) {
         Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
         if (!WaitForRunning()) {
+            writeCallbackFuncThreadStatusFlag_ = true;
             continue;
         }
         if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
@@ -417,7 +448,10 @@ void RendererInClientInner::WriteCallbackFunc()
                 break;
             }
         }
-        if (state_ != RUNNING) { continue; }
+        if (state_ != RUNNING) {
+            writeCallbackFuncThreadStatusFlag_ = true;
+            continue;
+        }
         // call client write
         std::unique_lock<std::mutex> lockCb(writeCbMutex_);
         if (writeCb_ != nullptr) {
@@ -429,8 +463,10 @@ void RendererInClientInner::WriteCallbackFunc()
         Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
         std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
         cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
+        writeCallbackFuncThreadStatusFlag_ = true;
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
+    RendererRemoveWatchdog("WatchingWriteCallbackFunc", sessionId_);
 }
 
 int32_t RendererInClientInner::FlushRingCache()
@@ -672,7 +708,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (buffer[0] == 0) {
+    if (CheckBuffer(buffer, bufferSize)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
@@ -689,6 +725,28 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
     }
+}
+
+bool RendererInClientInner::CheckBuffer(uint8_t *buffer, size_t bufferSize)
+{
+    bool isInvalid = false;
+    uint8_t ui8Data = 0;
+    uint16_t ui16Data = 0;
+    switch (clientConfig_.streamInfo.format) {
+        case SAMPLE_U8:
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
+            ui8Data = *buffer;
+            isInvalid = ui8Data == 0;
+            break;
+        case SAMPLE_S16LE:
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small");
+            ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
+            isInvalid = ui16Data == 0;
+            break;
+        default:
+            break;
+    }
+    return isInvalid;
 }
 
 int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,

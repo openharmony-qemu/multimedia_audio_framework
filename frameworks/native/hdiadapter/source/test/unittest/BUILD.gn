@@ -124,6 +124,10 @@ ohos_unittest("audio_capturer_source_unit_test") {
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include/",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/devicemanager/interface/",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/common/",
+    "//foundation/multimedia/audio_framework/services/audio_service/common/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioschedule/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/manager/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioeffect/include/",
     "./include",
   ]
 
@@ -136,8 +140,12 @@ ohos_unittest("audio_capturer_source_unit_test") {
   ]
 
   deps = [
+    "../../../../../../services/audio_service:audio_common",
+    "../../../../audioeffect:audio_effect",
+    "../../../../audioschedule:audio_schedule",
     "../../../../audioutils:audio_utils",
     "../../../devicemanager:audio_device_manager",
+    "../../../manager:hdiadapter_utils",
     "../../../source:audio_capturer_source",
     "../../../source:bluetooth_capturer_source",
     "../../../source:fast_audio_capturer_source",
@@ -145,12 +153,16 @@ ohos_unittest("audio_capturer_source_unit_test") {
 
   external_deps = [
     "c_utils:utils",
+    "drivers_interface_audio:libaudio_proxy_4.0",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "googletest:gmock",
     "googletest:gtest",
     "hilog:libhilog",
+    "init:libbegetutil",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
     "pulseaudio:pulse",
+    "samgr:samgr_proxy",
   ]
 
   part_name = "audio_framework"

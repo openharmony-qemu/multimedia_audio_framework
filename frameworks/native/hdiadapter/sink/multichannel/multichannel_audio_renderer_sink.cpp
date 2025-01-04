@@ -41,6 +41,7 @@
 #include "parameters.h"
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 
@@ -109,6 +110,7 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void UpdateSinkState(bool started);
     int32_t GetRenderId(uint32_t &renderId) const override;
 
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
@@ -126,10 +128,12 @@ private:
     int32_t logMode_ = 0;
     uint32_t openSpeaker_ = 0;
     uint32_t renderId_ = 0;
+    uint32_t sinkId_ = 0;
     std::string adapterNameCase_ = "";
     struct IAudioManager *audioManager_ = nullptr;
     struct IAudioAdapter *audioAdapter_ = nullptr;
     struct IAudioRender *audioRender_ = nullptr;
+    IAudioSinkCallback *callback_ = nullptr;
     std::string halName_;
     struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
@@ -148,6 +152,8 @@ private:
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
+    // for sink state
+    std::mutex sinkMutex_;
     // for device switch
     std::atomic<bool> inSwitch_ = false;
     std::atomic<int32_t> renderEmptyFrameCount_ = 0;
@@ -164,9 +170,10 @@ private:
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
     int32_t InitRender();
+    int32_t CheckHdiFuncWhenStart();
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
-
+    void RenderEmptyFrame(char &data, uint64_t len);
     void InitAudioRouteNode(AudioRouteNode &source, AudioRouteNode &sink);
     void DumpData(std::string fileName, void *buffer, size_t len);
     std::string dumpFileName_ = "";
@@ -186,6 +193,7 @@ MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &
 MultiChannelRendererSinkInner::~MultiChannelRendererSinkInner()
 {
     AUDIO_INFO_LOG("~MultiChannelRendererSinkInner");
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_MULTICHANNEL);
 }
 
 MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(const std::string &halName)
@@ -367,7 +375,13 @@ bool MultiChannelRendererSinkInner::IsInited()
 
 void MultiChannelRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_ERR_LOG("RegisterAudioSinkCallback not supported.");
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    if (callback_) {
+        AUDIO_INFO_LOG("AudioSinkCallback registered");
+    } else {
+        callback_ = callback;
+        AUDIO_INFO_LOG("Register AudioSinkCallback");
+    }
 }
 
 int32_t MultiChannelRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
@@ -378,6 +392,7 @@ int32_t MultiChannelRendererSinkInner::GetPresentationPosition(uint64_t& frames,
 
 void MultiChannelRendererSinkInner::DeInit()
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("Mch DeInit.");
     started_ = false;
     sinkInited_ = false;
@@ -494,6 +509,7 @@ int32_t MultiChannelRendererSinkInner::CreateRender(const struct AudioPort &rend
 
 int32_t MultiChannelRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
     openSpeaker_ = attr_.openMicSpeaker;
@@ -505,6 +521,7 @@ int32_t MultiChannelRendererSinkInner::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init render failed");
 
     sinkInited_ = true;
+    GetRenderId(sinkId_);
 
     return SUCCESS;
 }
@@ -534,16 +551,9 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         writeLen = len;
         return SUCCESS;
     }
+
     if (renderEmptyFrameCount_ > 0) {
-        Trace traceEmpty("MchSinkInner::RenderFrame::renderEmpty");
-        if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
-            static_cast<size_t>(len)) != EOK) {
-            AUDIO_WARNING_LOG("call memset_s failed");
-        }
-        renderEmptyFrameCount_--;
-        if (renderEmptyFrameCount_ == 0) {
-            switchCV_.notify_all();
-        }
+        RenderEmptyFrame(data, len);
     }
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&data), len, len};
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
@@ -560,6 +570,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, ClockTime::GetCurNano());
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     if (logMode_) {
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
@@ -585,6 +596,19 @@ void MultiChannelRendererSinkInner::CheckUpdateState(char *frame, uint64_t reply
     }
 }
 
+void MultiChannelRendererSinkInner::RenderEmptyFrame(char &data, uint64_t len)
+{
+    Trace traceEmpty("MchSinkInner::RenderFrame::renderEmpty");
+    if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
+        static_cast<size_t>(len)) != EOK) {
+        AUDIO_WARNING_LOG("call memset_s failed");
+    }
+    renderEmptyFrameCount_--;
+    if (renderEmptyFrameCount_ == 0) {
+        switchCV_.notify_all();
+    }
+}
+
 float MultiChannelRendererSinkInner::GetMaxAmplitude()
 {
     lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
@@ -594,6 +618,7 @@ float MultiChannelRendererSinkInner::GetMaxAmplitude()
 
 int32_t MultiChannelRendererSinkInner::Start(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("MCHSink::Start");
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
@@ -624,26 +649,34 @@ int32_t MultiChannelRendererSinkInner::Start(void)
             AUDIO_ERR_LOG("Mch Start failed!");
             return ERR_NOT_STARTED;
         }
+        UpdateSinkState(true);
         started_ = true;
-        uint64_t frameSize = 0;
-        uint64_t frameCount = 0;
-        ret = audioRender_->GetFrameSize(audioRender_, &frameSize);
-        if (ret) {
-            AUDIO_ERR_LOG("Mch GetFrameSize failed!");
-            return ERR_NOT_STARTED;
-        }
-        ret = audioRender_->GetFrameCount(audioRender_, &frameCount);
-        if (ret) {
-            AUDIO_ERR_LOG("Mch GetFrameCount failed!");
-            return ERR_NOT_STARTED;
-        }
-        ret = audioRender_->SetVolume(audioRender_, 1);
-        if (ret) {
-            AUDIO_ERR_LOG("Mch setvolume failed!");
-            return ERR_NOT_STARTED;
-        }
+        CHECK_AND_RETURN_RET_LOG(CheckHdiFuncWhenStart() == SUCCESS, ERR_NOT_STARTED,
+            "Some Hdi function failed after starting");
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
+    return SUCCESS;
+}
 
+int32_t MultiChannelRendererSinkInner::CheckHdiFuncWhenStart()
+{
+    uint64_t frameSize = 0;
+    uint64_t frameCount = 0;
+    int32_t ret = audioRender_->GetFrameSize(audioRender_, &frameSize);
+    if (ret) {
+        AUDIO_ERR_LOG("Mch GetFrameSize failed!");
+        return ERR_NOT_STARTED;
+    }
+    ret = audioRender_->GetFrameCount(audioRender_, &frameCount);
+    if (ret) {
+        AUDIO_ERR_LOG("Mch GetFrameCount failed!");
+        return ERR_NOT_STARTED;
+    }
+    ret = audioRender_->SetVolume(audioRender_, 1);
+    if (ret) {
+        AUDIO_ERR_LOG("Mch setvolume failed!");
+        return ERR_NOT_STARTED;
+    }
     return SUCCESS;
 }
 
@@ -918,6 +951,7 @@ int32_t MultiChannelRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t MultiChannelRendererSinkInner::Stop(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("MCHSink::Stop");
     AUDIO_INFO_LOG("Stop.");
 #ifdef FEATURE_POWER_MANAGER
@@ -936,6 +970,7 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
 
     if (started_) {
         int32_t ret = audioRender_->Stop(audioRender_);
+        UpdateSinkState(false);
         if (!ret) {
             started_ = false;
             return SUCCESS;
@@ -950,6 +985,7 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
 
 int32_t MultiChannelRendererSinkInner::Pause(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("MCHSink::Pause");
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Pause failed audioRender_ null");
@@ -977,6 +1013,7 @@ int32_t MultiChannelRendererSinkInner::Pause(void)
 
 int32_t MultiChannelRendererSinkInner::Resume(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Resume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
@@ -997,7 +1034,7 @@ int32_t MultiChannelRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -1196,6 +1233,16 @@ int32_t MultiChannelRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> 
 {
     AUDIO_WARNING_LOG("not supported.");
     return SUCCESS;
+}
+
+// UpdateSinkState must be called with MultiChannelRendererSinkInner::sinkMutex_ held
+void MultiChannelRendererSinkInner::UpdateSinkState(bool started)
+{
+    if (callback_) {
+        callback_->OnAudioSinkStateChange(sinkId_, started);
+    } else {
+        AUDIO_WARNING_LOG("AudioSinkCallback is nullptr");
+    }
 }
 
 int32_t MultiChannelRendererSinkInner::GetRenderId(uint32_t &renderId) const
