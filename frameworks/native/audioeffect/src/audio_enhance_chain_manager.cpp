@@ -169,20 +169,20 @@ void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectCh
     // Construct enhancePropertyMap_ that stores effect's property
     enhancePropertyMap_ = managerParam.effectDefaultProperty;
     defaultPropertyMap_ = managerParam.effectDefaultProperty;
-    if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0) { return; }
+    CHECK_AND_RETURN_LOG(sceneTypeAndModeToEnhanceChainNameMap_.size() != 0, "no enhance algos");
     for (const auto& sceneType: AUDIO_WITH_DEVICE_ENHANCES) {
         std::string scene = AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.find(sceneType)->second;
         std::string sceneAndMode = scene + "_&_" + "ENHANCE_DEFAULT";
         std::string enhanceChain = "";
         auto item = sceneTypeAndModeToEnhanceChainNameMap_.find(sceneAndMode);
-        if (item != sceneTypeAndModeToEnhanceChainNameMap_.end()) {
-            enhanceChain = item->second;
-        }
+        CHECK_AND_CONTINUE_LOG(item != sceneTypeAndModeToEnhanceChainNameMap_.end(),
+            "no such sceneAndMode %{public}s", sceneAndMode.c_str());
+        enhanceChain = item->second;
         auto mapIter = enhanceChainToEnhancesMap_.find(enhanceChain);
         std::vector<std::string> deviceEnhances;
-        if (mapIter != enhanceChainToEnhancesMap_.end()) {
-            deviceEnhances = mapIter->second;
-        }
+        CHECK_AND_CONTINUE_LOG(mapIter != enhanceChainToEnhancesMap_.end(),
+            "no such enhanceChain %{public}s", enhanceChain.c_str());
+        deviceEnhances = mapIter->second;
         for (std::string enhance: deviceEnhances) {
             auto iter = enhancePropertyMap_.find(enhance);
             if (iter == enhancePropertyMap_.end()) {
