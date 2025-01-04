@@ -930,5 +930,40 @@ HWTEST_F(AudioServerUnitTest, AudioServerLoadAudioEffectLibraries_001, TestSize.
     int32_t ret = audioServer->LoadAudioEffectLibraries(libraries, effects, successEffectList);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test CheckParam API
+ * @tc.type  : FUNC
+ * @tc.number: CheckParam_001
+ * @tc.desc  : Test CheckParam interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckParam_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.rendererInfo.contentType = static_cast<ContentType>(-1);
+    int32_t ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    config.rendererInfo.contentType = static_cast<ContentType>(100);
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    config.rendererInfo.contentType = CONTENT_TYPE_ULTRASONIC;
+    config.rendererInfo.streamUsage = static_cast<StreamUsage>(-1);
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    config.rendererInfo.streamUsage = static_cast<StreamUsage>(100);
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, SUCCESS);
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, SUCCESS);
+    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
