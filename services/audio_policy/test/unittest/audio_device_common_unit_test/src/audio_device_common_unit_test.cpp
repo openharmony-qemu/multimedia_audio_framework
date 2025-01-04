@@ -1120,9 +1120,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_054, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_055, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
-    unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
-    vector<std::unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     rendererChangeInfos.push_back(std::move(rendererChangeInfo));
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     int32_t ret = audioDeviceCommon.ActivateA2dpDevice(desc, rendererChangeInfos, reason);
@@ -1154,10 +1154,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_056, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_057, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    unique_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_unique<AudioCapturerChangeInfo>();
-    vector<unique_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
+    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
     captureChangeInfos.push_back(std::move(captureChangeInfo));
 
     SourceType sourceType = SOURCE_TYPE_MIC;
@@ -1173,10 +1173,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_057, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_058, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
-    unique_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_unique<AudioCapturerChangeInfo>();
-    vector<unique_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
+    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
     captureChangeInfos.push_back(std::move(captureChangeInfo));
     SourceType sourceType = SOURCE_TYPE_MIC;
     audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
@@ -1191,10 +1191,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_058, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_059, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_MIC;
-    unique_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_unique<AudioCapturerChangeInfo>();
-    vector<unique_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
+    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
     captureChangeInfos.push_back(std::move(captureChangeInfo));
     SourceType sourceType = SOURCE_TYPE_MIC;
     audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
@@ -1209,10 +1209,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_059, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_060, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_MIC;
-    unique_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_unique<AudioCapturerChangeInfo>();
-    vector<unique_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
+    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
     captureChangeInfos.push_back(std::move(captureChangeInfo));
     SourceType sourceType = SOURCE_TYPE_MIC;
     audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
@@ -1228,7 +1228,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_061, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     bool isUpdateActiveDevice = true;
-    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_unique<AudioCapturerChangeInfo>();
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
     capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
@@ -1248,7 +1248,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_062, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     bool isUpdateActiveDevice = true;
-    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_unique<AudioCapturerChangeInfo>();
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
     capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
