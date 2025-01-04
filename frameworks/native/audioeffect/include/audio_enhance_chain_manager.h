@@ -109,6 +109,7 @@ private:
     std::map<uint32_t, uint32_t> captureId2SceneCount_;
     std::map<uint32_t, uint32_t> captureId2DefaultChainCount_;
     std::map<uint32_t, std::shared_ptr<AudioEnhanceChain>> captureId2DefaultChain_;
+    std::set<std::string> withDeviceEnhances_;
 
     // for effect instances limit
     std::string defaultScene_;
