@@ -1111,5 +1111,216 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_054, TestSize.Level1)
     ret = audioDeviceCommon.NeedRehandleA2DPDevice(desc);
     EXPECT_EQ(true, ret);
 }
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_055
+* @tc.desc  : Test ActivateA2dpDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_055, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    rendererChangeInfos.push_back(std::move(rendererChangeInfo));
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    int32_t ret = audioDeviceCommon.ActivateA2dpDevice(desc, rendererChangeInfos, reason);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_056
+* @tc.desc  : Test TriggerRecreateRendererStreamCallback interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_056, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    int32_t callerPid = 0;
+    int32_t sessionId = 0;
+    int32_t streamFlag = 0;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    audioDeviceCommon.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    audioDeviceCommon.TriggerRecreateRendererStreamCallback(callerPid, sessionId, streamFlag, reason);
+    EXPECT_EQ(true, audioDeviceCommon.audioPolicyServerHandler_ != nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_057
+* @tc.desc  : Test HandleBluetoothInputDeviceFetched interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_057, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
+    captureChangeInfos.push_back(std::move(captureChangeInfo));
+
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
+    EXPECT_EQ(1, captureChangeInfos.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_058
+* @tc.desc  : Test HandleBluetoothInputDeviceFetched interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_058, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
+    captureChangeInfos.push_back(std::move(captureChangeInfo));
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
+    EXPECT_EQ(1, captureChangeInfos.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_059
+* @tc.desc  : Test HandleBluetoothInputDeviceFetched interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_059, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_MIC;
+    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
+    captureChangeInfos.push_back(std::move(captureChangeInfo));
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
+    EXPECT_EQ(1, captureChangeInfos.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_060
+* @tc.desc  : Test HandleBluetoothInputDeviceFetched interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_060, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_MIC;
+    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
+    captureChangeInfos.push_back(std::move(captureChangeInfo));
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
+    EXPECT_EQ(1, captureChangeInfos.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_061
+* @tc.desc  : Test NotifyRecreateCapturerStream interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_061, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool isUpdateActiveDevice = true;
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
+    capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
+    capturerChangeInfo->inputDeviceInfo.networkId_ = "test";
+    bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
+        capturerChangeInfo, reason);
+    EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_062
+* @tc.desc  : Test NotifyRecreateCapturerStream interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_062, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool isUpdateActiveDevice = true;
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
+    capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
+    capturerChangeInfo->inputDeviceInfo.networkId_ = "LocalDevice";
+    bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
+        capturerChangeInfo, reason);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_063
+* @tc.desc  : Test ReloadA2dpAudioPort interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_063, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioModuleInfo moduleInfo;
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioStreamInfo audioStreamInfo;
+    std::string networkID = "";
+    std::string sinkName = "";
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    int32_t ret = audioDeviceCommon.ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo, networkID,
+        sinkName, sourceType);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+
+    deviceType = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    ret = audioDeviceCommon.ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo, networkID,
+        sinkName, sourceType);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_064
+* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_064, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool handleFlag = true;
+    std::string address = "";
+    ConnectState connectState = CONNECTED;
+    int32_t ret = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
+    EXPECT_EQ(SUCCESS, ret);
+
+    handleFlag = false;
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    ret = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_065
+* @tc.desc  : Test GetSpatialDeviceType interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_065, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::string macAddress = "F0-FA-C7-8C-46-01";
+    DeviceType deviceType = audioDeviceCommon.GetSpatialDeviceType(macAddress);
+    EXPECT_EQ(DEVICE_TYPE_NONE, deviceType);
+
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.macAddress_ = "F0-FA-C7-8C-46-01";
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    deviceType = audioDeviceCommon.GetSpatialDeviceType(macAddress);
+    EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceType);
+}
 } // namespace AudioStandard
 } // namespace OHOS
