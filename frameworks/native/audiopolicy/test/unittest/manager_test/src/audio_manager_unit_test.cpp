@@ -2244,7 +2244,7 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
     bool isStarted = audioRenderer1->Start();
     EXPECT_EQ(true, isStarted);
 
-    uint32_t sessionID1 = -1;
+    uint32_t streamId1 = -1;
     std::this_thread::sleep_for(std::chrono::seconds(2));
     if (audioRenderer1 != nullptr) {
         // Wait here for callback. If not callback for 2 mintues, will skip this step
@@ -2253,7 +2253,7 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
         EXPECT_EQ(g_audioFocusInfoList.size(), 1);
         for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
             if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
-                sessionID1 = it->first.sessionId;
+                streamId1 = it->first.streamId;
                 EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
             } else {
                 EXPECT_TRUE(false);
@@ -2276,7 +2276,7 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
         for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
             if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
                 EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
-                EXPECT_TRUE(sessionID1 != it->first.sessionId);
+                EXPECT_TRUE(streamId1 != it->first.streamId);
             }
         }
     }

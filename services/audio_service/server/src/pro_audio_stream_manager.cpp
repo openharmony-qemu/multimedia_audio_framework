@@ -48,7 +48,7 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
     Trace trace("ProAudioStreamManager::CreateRender");
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);
     uint32_t sessionId = 0;
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+    if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
     } else {
         sessionId = processConfig.originalSessionId;

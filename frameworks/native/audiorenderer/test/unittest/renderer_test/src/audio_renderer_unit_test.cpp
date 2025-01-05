@@ -7906,9 +7906,9 @@ HWTEST(AudioRendererUnitTest, InitAudioInterruptCallback_001, TestSize.Level1)
     AppInfo appInfo = {};
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->audioInterrupt_.sessionId = 1;
+    audioRendererPrivate->audioInterrupt_.streamId = 1;
     audioRendererPrivate->InitAudioInterruptCallback();
-    EXPECT_EQ(audioRendererPrivate->audioInterrupt_.sessionId, 1);
+    EXPECT_EQ(audioRendererPrivate->audioInterrupt_.streamId, 1);
 }
 
 /**

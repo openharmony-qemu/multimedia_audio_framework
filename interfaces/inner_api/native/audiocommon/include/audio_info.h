@@ -68,8 +68,8 @@ constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
-constexpr uint32_t MIN_SESSIONID = 100000;
-constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIN_SESSIONID;
+constexpr uint32_t MIN_STREAMID = 100000;
+constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
 
 const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;

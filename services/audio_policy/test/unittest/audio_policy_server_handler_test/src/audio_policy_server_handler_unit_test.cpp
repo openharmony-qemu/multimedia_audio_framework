@@ -480,7 +480,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleMicStateUpdatedEventWithClientId_
  * @tc.number: HandleInterruptEventWithSessionId_001
  * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
  */
-HWTEST(AudioPolicyServerHandlerUnitTest, HandleInterruptEventWithSessionId_001, TestSize.Level2)
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleInterruptEventWithStreamId_001, TestSize.Level2)
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
@@ -489,7 +489,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleInterruptEventWithSessionId_001, 
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
-    audioPolicyServerHandler_->HandleInterruptEventWithSessionId(event);
+    audioPolicyServerHandler_->HandleInterruptEventWithStreamId(event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
 

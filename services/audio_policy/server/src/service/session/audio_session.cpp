@@ -79,7 +79,7 @@ AudioSessionStrategy AudioSession::GetSessionStrategy()
 
 int32_t AudioSession::AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair)
 {
-    uint32_t streamId = interruptPair.first.sessionId;
+    uint32_t streamId = interruptPair.first.streamId;
     AUDIO_INFO_LOG("AddAudioInterrpt: streamId %{public}u", streamId);
 
     std::lock_guard<std::mutex> lock(sessionMutex_);
@@ -95,7 +95,7 @@ int32_t AudioSession::AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocu
 
 int32_t AudioSession::RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair)
 {
-    uint32_t streamId = interruptPair.first.sessionId;
+    uint32_t streamId = interruptPair.first.streamId;
     AUDIO_INFO_LOG("RemoveAudioInterrpt: streamId %{public}u", streamId);
 
     std::lock_guard<std::mutex> lock(sessionMutex_);
