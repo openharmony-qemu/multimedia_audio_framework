@@ -150,14 +150,6 @@ static void SetAudioPnpUevent(AudioEvent *audioEvent, struct AudioPnpUevent *aud
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
             audioEvent->deviceType = PNP_DEVICE_ADAPTER_DEVICE;
             break;
-        case ADD_DEVICE_MIC_BLOCKED:
-            audioEvent->eventType = PNP_EVENT_MIC_BLOCKED;
-            audioEvent->deviceType = PNP_DEVICE_MIC;
-            break;
-        case ADD_DEVICE_MIC_UN_BLOCKED:
-            audioEvent->eventType = PNP_EVENT_MIC_UNBLOCKED;
-            audioEvent->deviceType = PNP_DEVICE_MIC;
-            break;
         default:
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
             audioEvent->deviceType = PNP_DEVICE_UNKNOWN;
@@ -498,6 +490,28 @@ int32_t AudioSocketThread::AudioUsbHeadsetDetectDevice(struct AudioPnpUevent *au
     return SUCCESS;
 }
 
+int32_t AudioSocketThread::AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUevent)
+{
+    if (audioPnpUevent == nullptr) {
+        AUDIO_ERR_LOG("mic blocked audioPnpUevent is null");
+        return HDF_ERR_INVALID_PARAM;
+    }
+    AudioEvent audioEvent = {0};
+    if (strncmp(audioPnpUevent->name, "mic_blocked", strlen("mic_blocked")) == 0) {
+
+        audioEvent.eventType = PNP_EVENT_MIC_BLOCKED;
+    } else if (strncmp(audioPnpUevent->name, "mic_un_blocked", strlen("mic_un_blocked")) == 0) {
+        audioEvent.eventType = PNP_EVENT_MIC_UNBLOCKED;
+    } else {
+        return HDF_ERR_INVALID_PARAM;
+    }
+    audioEvent.deviceType = PNP_DEVICE_MIC;
+
+    AUDIO_INFO_LOG("mic blocked uevent info recv: %{public}s", audioPnpUevent->name);
+    UpdatePnpDeviceState(&audioEvent);
+    return SUCCESS;
+}
+
 bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLength)
 {
     struct AudioPnpUevent audioPnpUevent = {"", "", "", "", "", "", "", "", ""};
@@ -536,13 +550,10 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
         msgTmp += strlen(msgTmp) + 1;
     }
 
-    if (AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) {
-        return true;
-    }
-    if (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) {
-        return true;
-    }
-    if (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) {
+    if ((AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioMicBlockDevice(&audioPnpUevent) == SUCCESS)) {
         return true;
     }
 
