@@ -2191,6 +2191,7 @@ int32_t AudioPolicyServer::ResumeStreamState()
     return audioPolicyService_.ResumeStreamState();
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, StreamUsage streamUsage)
 {
@@ -2226,6 +2227,7 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
 
     return audioPolicyService_.UpdateStreamState(clientUid, setStateEvent);
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {

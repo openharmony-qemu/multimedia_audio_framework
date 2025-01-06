@@ -823,5 +823,115 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_002, TestSize.Level1)
     VolumeUtils::SetPCVolumeEnable(false);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_041
+* @tc.desc  : Test AudioPolicyServer::GetSystemActiveVolumeType
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_041, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    AudioStreamType streamType;
+    int32_t clientUid = 0;
+    streamType = ptrAudioPolicyServer->GetSystemActiveVolumeType(clientUid);
+    EXPECT_EQ(streamType, STREAM_MUSIC);
+    clientUid = 1;
+    streamType = ptrAudioPolicyServer->GetSystemActiveVolumeType(clientUid);
+    EXPECT_EQ(streamType, STREAM_MUSIC);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_042
+* @tc.desc  : Test AudioPolicyServer::GetSystemVolumeLevelNoMuteState
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_042, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    AudioStreamType streamType = STREAM_ALL;
+    int res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
+    EXPECT_EQ(res, 0);
+    streamType = STREAM_MUSIC;
+    res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
+    EXPECT_EQ(res, 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_043
+* @tc.desc  : Test AudioPolicyServer::GetStreamMute
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_043, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    AudioStreamType streamType = STREAM_RING;
+    bool ret = ptrAudioPolicyServer->GetStreamMute(streamType);
+    EXPECT_EQ(ret, false);
+    streamType = STREAM_VOICE_RING;
+    ret = ptrAudioPolicyServer->GetStreamMute(streamType);
+    EXPECT_EQ(ret, false);
+    streamType = STREAM_MUSIC;
+    ret = ptrAudioPolicyServer->GetStreamMute(streamType);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_044
+* @tc.desc  : Test AudioPolicyServer::GetPreferredOutputStreamType
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_044, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    AudioRendererInfo rendererInfo;
+    int32_t ret = ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo);
+    EXPECT_EQ(ret, 0);
+    ptrAudioPolicyServer->audioPolicyService_.isFastControlled_ = true;
+    ret = ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo);
+    EXPECT_EQ(ret, 0);
+    rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    ret = ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_045
+* @tc.desc  : Test AudioPolicyServer::IsAllowedPlayback
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_045, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    int32_t uid = 0;
+    int32_t pid = 0;
+    bool ret = ptrAudioPolicyServer->IsAllowedPlayback(uid, pid);
+    EXPECT_EQ(ret, true);
+}
 } // AudioStandard
 } // OHOS
