@@ -94,9 +94,9 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
                 endpointName = (*paired).second->GetEndpointName();
                 delayTime = GetReleaseDelayTime((*paired).second, isSwitchStream);
             }
+            AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(process->GetAudioSessionId());
             linkedPairedList_.erase(paired);
             isFind = true;
-            AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(process->GetAudioSessionId());
             break;
         } else {
             paired++;
