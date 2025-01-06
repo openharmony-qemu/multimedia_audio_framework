@@ -528,7 +528,7 @@ int32_t AudioEffectChainManager::SetEffectSystemVolume(const int32_t systemVolum
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     audioEffectVolume->SetSystemVolume(systemVolumeType, systemVolume);
-    AUDIO_INFO_LOG("systemVolumeType: %{punlic}d, systemVolume: %{public}f", systemVolumeType,
+    AUDIO_INFO_LOG("systemVolumeType: %{public}d, systemVolume: %{public}f", systemVolumeType,
         audioEffectVolume->GetSystemVolume(systemVolumeType));
 
     return SUCCESS;
