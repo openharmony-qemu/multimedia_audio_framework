@@ -275,6 +275,7 @@ void BluetoothRendererSinkInner::SetAudioParameter(const AudioParamKey key, cons
         AUDIO_WARNING_LOG("SetAudioParameter for render failed, error code: %d", ret);
     }
 
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     if (started_ && isBluetoothLowLatency_ && !strcmp(value.c_str(), BLUETOOTH_CANCEL_SUSPEND)) {
         int32_t tryCount = 3; // try to start bluetooth render up to 3 times;
         while (tryCount-- > 0) {
