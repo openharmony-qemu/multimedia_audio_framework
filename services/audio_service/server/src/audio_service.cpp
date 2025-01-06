@@ -79,6 +79,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             AUDIO_INFO_LOG("SessionId %{public}u", (*paired).first->GetSessionId());
+            AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(process->GetAudioSessionId());
             auto processConfig = process->GetAudioProcessConfig();
             if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
                 SetDecMaxRendererStreamCnt();
@@ -96,7 +97,6 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             }
             linkedPairedList_.erase(paired);
             isFind = true;
-            AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(process->GetAudioSessionId());
             break;
         } else {
             paired++;
