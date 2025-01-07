@@ -96,32 +96,6 @@ VolumeDataMaintainer::~VolumeDataMaintainer()
     AUDIO_DEBUG_LOG("VolumeDataMaintainer Destory");
 }
 
-bool VolumeDataMaintainer::SetFirstBoot(bool fristBoot)
-{
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    const std::string settingKey = "first_boot";
-    ErrCode ret = settingProvider.PutBoolValue(settingKey, fristBoot);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Failed to set fristboot :%{public}d", ret);
-        return false;
-    }
-    return true;
-}
-
-bool VolumeDataMaintainer::GetFirstBoot(bool &firstBoot)
-{
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    const std::string settingKey = "first_boot";
-    bool value;
-    ErrCode ret = settingProvider.GetBoolValue(settingKey, value);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Failed to get fristboot :%{public}d", ret);
-        return false;
-    }
-    firstBoot = value;
-    return true;
-}
-
 bool VolumeDataMaintainer::CheckOsAccountReady()
 {
     return AudioSettingProvider::CheckOsAccountReady();

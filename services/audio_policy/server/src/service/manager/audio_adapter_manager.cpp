@@ -287,7 +287,8 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
 {
     AudioVolumeType audioVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
     // PC Boot Animation Volume use STREAM_SYSTEM
-    if (volumeType == STREAM_RING || audioVolumeMap == STREAM_SYSTEM) {
+    if ((volumeType == STREAM_RING && !VolumeUtils::IsPCVolumeEnable()) || (audioVolumeMap == STREAM_SYSTEM &&
+        currentActiveDevice_ == DEVICE_TYPE_SPEAKER)) {
         int32_t volumeLevel =
             volumeDataMaintainer_.GetStreamVolume(audioVolumeMap) * (GetStreamMute(audioVolumeMap) ? 0 : 1);
         int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
@@ -1172,14 +1173,16 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
         isNeedCopyMuteData_ = true;
         isNeedCopyRingerModeData_ = true;
         isNeedCopySystemUrlData_ = true;
-        volumeDataMaintainer_.SetFirstBoot(false);
+        SetFirstBoot();
         return true;
     }
     // first boot
-    if (!volumeDataMaintainer_.GetFirstBoot(isFirstBoot)) {
+    char firstboot[3] = {0};
+    auto ret = GetParameter("persist.multimedia.audio.firstboot", "1", firstboot, sizeof(firstboot));
+    if (ret <= 0) {
         AUDIO_INFO_LOG("first boot, ready init data to database");
         isFirstBoot = true;
-        volumeDataMaintainer_.SetFirstBoot(false);
+        SetFirstBoot();
     }
 
     return true;
@@ -2024,6 +2027,16 @@ int32_t AudioAdapterManager::GetSafeVolumeTimeout() const
         return DEFAULT_SAFE_VOLUME_TIMEOUT;
     }
     return safeVolumeTimeout_;
+}
+
+void AudioAdapterManager::SetFirstBoot()
+{
+    int32_t ret = SetParameter("persist.multimedia.audio.firstboot", std::to_string(0).c_str());
+    if (ret == 0) {
+        AUDIO_INFO_LOG("Save first boot success");
+    } else {
+        AUDIO_ERR_LOG("Save first boot failed, result %{public}d", ret);
+    }
 }
 
 void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
