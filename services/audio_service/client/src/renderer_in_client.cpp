@@ -407,7 +407,7 @@ void RendererInClientInner::InitCallbackHandler()
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
     if (callbackHandler_ == nullptr) {
-        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
+        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(), "OS_AudioStateCB");
     }
 }
 

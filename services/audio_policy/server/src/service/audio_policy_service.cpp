@@ -5416,44 +5416,12 @@ void AudioPolicyService::RegisteredTrackerClientDied(pid_t uid)
     RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
 
-    ClientDiedDisconnectScoNormal();
-    ClientDiedDisconnectScoRecognition();
-
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
         DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
     }
 
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
         DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
-    }
-}
-
-void AudioPolicyService::ClientDiedDisconnectScoNormal()
-{
-    DeviceType deviceType = GetCurrentOutputDeviceType();
-    bool hasRunningRendererStream = streamCollector_.HasRunningRendererStream();
-    if (hasRunningRendererStream && deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        return;
-    }
-    AUDIO_WARNING_LOG("Client died disconnect sco for normal");
-    Bluetooth::AudioHfpManager::DisconnectSco();
-}
-
-void AudioPolicyService::ClientDiedDisconnectScoRecognition()
-{
-    bool hasRunningRecognitionCapturerStream = streamCollector_.HasRunningRecognitionCapturerStream();
-    if (hasRunningRecognitionCapturerStream) {
-        return;
-    }
-    AudioDeviceDescriptor tempDesc = GetCurrentInputDevice();
-    if (tempDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
-        return;
-    }
-    if (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
-        Bluetooth::AudioHfpManager::GetRecognitionStatus() == Bluetooth::RecognitionStatus::RECOGNITION_CONNECTING) {
-        AUDIO_WARNING_LOG("Client died disconnect sco for recognition");
-        BluetoothScoDisconectForRecongnition();
-        Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
     }
 }
 
