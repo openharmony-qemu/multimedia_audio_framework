@@ -547,6 +547,26 @@ void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole r
                 "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
         }
     }
+    string &activeArmAddr = role == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
+    activeArmAddr = address;
+}
+
+void AudioEcManager::CloseUsbArmDevice(const AudioDeviceDescriptor &device)
+{
+    AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d",
+        GetEncryptAddr(device.macAddress_).c_str(), device.deviceRole_);
+    const string &activeArmAddr = device.deviceRole_ == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
+    CHECK_AND_RETURN_RET(device.macAddress_ == activeArmAddr,);
+    std::list<AudioModuleInfo> moduleInfoList;
+    bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
+    CHECK_AND_RETURN_LOG(ret, "GetModuleListByType Failed");
+    for (auto &moduleInfo : moduleInfoList) {
+        DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
+        if (configRole != device.deviceRole_) {continue;}
+        if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
+            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name);
+        }
+    }
 }
 
 void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole role, AudioModuleInfo& moduleInfo)

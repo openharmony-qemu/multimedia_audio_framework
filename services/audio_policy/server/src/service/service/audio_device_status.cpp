@@ -392,6 +392,8 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
         }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(DP_SINK);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioEcManager_.CloseUsbArmDevice(updatedDesc);
     }
 
     AudioServerProxy::GetInstance().ResetRouteForDisconnectProxy(updatedDesc.deviceType_);
