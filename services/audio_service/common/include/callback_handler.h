@@ -31,9 +31,11 @@ public:
 class CallbackHandler {
 public:
     virtual ~CallbackHandler() = default;
-    static std::shared_ptr<CallbackHandler> GetInstance(std::shared_ptr<IHandler> iHandler);
+    static std::shared_ptr<CallbackHandler> GetInstance(std::shared_ptr<IHandler> iHandler,
+        const std::string &handlerName);
 
     virtual void SendCallbackEvent(uint32_t code, int64_t data) = 0;
+    virtual void SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime) = 0;
 
     virtual void ReleaseEventRunner() = 0;
 };

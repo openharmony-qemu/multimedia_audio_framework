@@ -37,6 +37,7 @@
 #include "audio_utils.h"
 #include "audio_log_utils.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 
@@ -672,13 +673,12 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     if (ret == 0 && writeLen != 0) {
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
         BufferDesc buffer = {reinterpret_cast<uint8_t *>(&data), len, len};
         DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel),
             static_cast<AudioSamplingRate>(attr_.sampleRate));
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-                static_cast<void *>(&data), writeLen);
+            DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
+            AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), writeLen);
         }
         CheckUpdateState(&data, len);
     }

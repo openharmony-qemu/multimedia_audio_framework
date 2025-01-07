@@ -40,6 +40,7 @@
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
 #include "audio_log_utils.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter;
@@ -162,6 +163,7 @@ private:
     unordered_map<AudioCategory, AudioPort> audioPortMap_;
     unordered_map<string, AudioCategory> splitStreamMap_;
     unordered_map<AudioCategory, FILE*> dumpFileMap_;
+    unordered_map<AudioCategory, std::string> dumpFileNameMap_;
     std::mutex createRenderMutex_;
     vector<uint32_t> renderIdVector_ = {MEDIA_RENDERID, NAVIGATION_RENDERID, COMMUNICATION_RENDERID};
     // for get amplitude
@@ -249,6 +251,7 @@ void RemoteAudioRendererSinkInner::ClearRender()
     AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
 
     dumpFileMap_.clear();
+    dumpFileNameMap_.clear();
     AUDIO_INFO_LOG("Clear remote audio render end.");
 }
 
@@ -471,7 +474,10 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
     writeLen = len;
 
     FILE *dumpFile = dumpFileMap_[splitStreamMap_[streamType]];
+    std::string dumpFileName = dumpFileNameMap_[splitStreamMap_[streamType]];
     DumpFileUtil::WriteDumpFile(dumpFile, static_cast<void *>(&data), len);
+    AudioCacheMgr::GetInstance().CacheData(dumpFileName, static_cast<void *>(&data), len);
+
     CheckUpdateState(&data, len);
 
     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
@@ -517,10 +523,12 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     std::lock_guard<std::mutex> lock(createRenderMutex_);
 
     for (const auto &audioPort : audioPortMap_) {
-        FILE *dumpFile = nullptr;
-        DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME
-            + std::to_string(audioPort.first) + ".pcm", &dumpFile);
+        std::string dumpFileName = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + GetTime() + "_" +
+            std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
+            std::to_string(attr_.format) + ".pcm";
+        DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName, &dumpFile);
         dumpFileMap_[audioPort.first] = dumpFile;
+        dumpFileNameMap_[audioPort.first] = dumpFileName;
     }
     
     auto renderId = renderIdVector_.begin();

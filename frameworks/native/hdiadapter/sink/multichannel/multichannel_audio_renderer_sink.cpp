@@ -39,6 +39,7 @@
 #include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 
@@ -163,7 +164,8 @@ private:
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
     void InitAudioRouteNode(AudioRouteNode &source, AudioRouteNode &sink);
-
+    void DumpData(std::string fileName, void *buffer, size_t len);
+    std::string dumpFileName_ = "";
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AudioScene::AUDIO_SCENE_INVALID;
@@ -542,6 +544,9 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     Trace::CountVolume("MultiChannelRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     Trace trace("MchSinkInner::RenderFrame");
 
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    DumpData(dumpFileName_, static_cast<void *>(&data), len);
+
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     if (ret != 0) {
@@ -602,7 +607,9 @@ int32_t MultiChannelRendererSinkInner::Start(void)
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_MCH_SINK_FILENAME, &dumpFile_);
+    dumpFileName_ = "multichannel_renderersink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
+        + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     if (!started_) {
         int32_t ret = audioRender_->Start(audioRender_);
@@ -1182,6 +1189,14 @@ int32_t MultiChannelRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> 
     AUDIO_WARNING_LOG("not supported.");
     return SUCCESS;
 }
+
+void MultiChannelRendererSinkInner::DumpData(std::string fileName, void *buffer, size_t len)
+{
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        AudioCacheMgr::GetInstance().CacheData(fileName, buffer, len);
+    }
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
