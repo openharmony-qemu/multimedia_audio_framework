@@ -28,9 +28,11 @@ public:
     ~AudioLimiter();
     int32_t SetConfig(int32_t sampleRate, int32_t channels);
     int32_t Process(int32_t frameLen, float *inBuffer, float *outBuffer);
+    uint32_t GetLatency();
 private:
     void ProcessAlgo(float *inBuffer, float *outBuffer);
     void ReleaseBuffer();
+    uint32_t latency_;
     int32_t sinkNameCode_;
     int32_t algoFrameLen_;
     int32_t inOffset_;

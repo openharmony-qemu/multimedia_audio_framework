@@ -32,6 +32,7 @@ constexpr float GAIN_ATTACK = 0.1f;
 constexpr float GAIN_RELEASE = 0.6f;
 constexpr float PROC_TIME = 0.005f;  // 5ms
 constexpr float AUDIO_FORMAT_PCM_FLOAT = 4;
+constexpr int32_t AUDIO_MS_PER_S = 1000;
 
 AudioLimiter::AudioLimiter(int32_t sinkNameCode)
 {
@@ -46,6 +47,7 @@ AudioLimiter::AudioLimiter(int32_t sinkNameCode)
     gainRelease_ = GAIN_RELEASE;
     procTime_ = PROC_TIME;
     format_ = AUDIO_FORMAT_PCM_FLOAT;
+    latency_ = PROC_TIME * AUDIO_MS_PER_S;
     AUDIO_INFO_LOG("AudioLimiter");
 }
 
@@ -84,11 +86,11 @@ int32_t AudioLimiter::SetConfig(int sampleRate, int channels)
         AUDIO_ERR_LOG("allocate integration buffer failed");
     }
 
-    dumpFileNameIn_ = std::to_string(sinkNameCode_) + "_limiter_in" + GetTime() + "_" + std::to_string(sampleRate) + "_"
-        + std::to_string(channels) + std::to_string(format_) + ".pcm";
+    dumpFileNameIn_ = std::to_string(sinkNameCode_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
+        + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);
-    dumpFileNameOut_ = std::to_string(sinkNameCode_) + "_limiter_out" + GetTime() + "_" + std::to_string(sampleRate) + "_"
-        + std::to_string(channels) + std::to_string(format_) + ".pcm";
+    dumpFileNameOut_ = std::to_string(sinkNameCode_) + "_limiter_out_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
+        + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileNameOut_, &dumpFileOutput_);
 
     return SUCCESS;
@@ -106,9 +108,14 @@ int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffe
 #ifdef FRAME_CONCATENATION
     // 考虑拼帧
     // preprocess
-    memcpy_s(outBuffer, frameLen * sizeof(float), integrationBufOut + algoFrameLen_ - outOffset_, outOffset_ * sizeof(float));
+    int32_t ret;
+    ret = memcpy_s(outBuffer, frameLen * sizeof(float), integrationBufOut + algoFrameLen_ - outOffset_,
+        outOffset_ * sizeof(float));
+    CHECK_AND_RETURN_LOG(ret == 0, ERROR, "memcpy_s failed");
     ptrOut = outOffset_;
-    memcpy_s(integrationBufIn + inOffset_, (algoFrameLen_ - inOffset_) * sizeof(float), inBuffer, (algoFrameLen_ - inOffset_) * sizeof(float));
+    ret = memcpy_s(integrationBufIn + inOffset_, (algoFrameLen_ - inOffset_) * sizeof(float), inBuffer,
+        (algoFrameLen_ - inOffset_) * sizeof(float));
+    CHECK_AND_RETURN_LOG(ret == 0, ERROR, "memcpy_s failed");
     ptrIn = algoFrameLen_ - inOffset_;
     ProcessAlgo(integrationBufIn, outBuffer + ptrOut);
     ptrOut += algoFrameLen_;
@@ -121,9 +128,13 @@ int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffe
     // postprocess
     ProcessAlgo(inBuffer + ptrIn, integrationBufOut);
     ptrIn += algoFrameLen_;
-    memcpy_s(integrationBufIn, algoFrameLen_ * sizeof(float), inBuffer + ptrIn, (frameLen - ptrIn) * sizeof(float));
+    ret = memcpy_s(integrationBufIn, algoFrameLen_ * sizeof(float), inBuffer + ptrIn,
+        (frameLen - ptrIn) * sizeof(float));
+    CHECK_AND_RETURN_LOG(ret == 0, ERROR, "memcpy_s failed");
     inOffset_ = frameLen - ptrIn;
-    memcpy_s(outBuffer + ptrOut, (frameLen - ptrOut) * sizeof(float), integrationBufOut, (frameLen - ptrOut) * sizeof(float));
+    ret = memcpy_s(outBuffer + ptrOut, (frameLen - ptrOut) * sizeof(float), integrationBufOut,
+        (frameLen - ptrOut) * sizeof(float));
+    CHECK_AND_RETURN_LOG(ret == 0, ERROR, "memcpy_s failed");
     outOffset_ = algoFrameLen_ - (frameLen - ptrOut);
 #else
     // 不考虑拼帧
@@ -167,6 +178,11 @@ void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer) {
         bufHis[i] = inBuffer[i];
         bufHis[i + 1] = inBuffer[i + 1];
     }
+}
+
+uint32_t GetLatency()
+{
+    return latency_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -90,16 +90,27 @@ int32_t AudioLmtManager::ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, 
     auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
     if (iter == sinkNameToLimiterMap_.end()) {
         AUDIO_INFO_LOG("The limiter has not been created, sinkNameCode = %{public}d", sinkNameCode);
+        CHECK_AND_RETURN_LOG(memcpy_s(outBuffer, frameLen * sizeof(float), inBuffer, frameLen * sizeof(float)) == 0,
+            ERROR, "memcpy_s failed");
         return ERROR;
     }
 
     std::shared_ptr<AudioLimiter> limiter = iter->second;
     if (limiter == nullptr) {
         AUDIO_INFO_LOG("The limiter is nullptr, sinkNameCode = %{public}d", sinkNameCode);
+        CHECK_AND_RETURN_LOG(memcpy_s(outBuffer, frameLen * sizeof(float), inBuffer, frameLen * sizeof(float)) == 0,
+            ERROR, "memcpy_s failed");
         return ERROR;
     }
 
-    return limiter->Process(frameLen, inBuffer, outBuffer);
+    int32_t ret = limiter->Process(frameLen, inBuffer, outBuffer);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to process limiter, sinkNameCode = %{public}d", sinkNameCode);
+        CHECK_AND_RETURN_LOG(memcpy_s(outBuffer, frameLen * sizeof(float), inBuffer, frameLen * sizeof(float)) == 0,
+            ERROR, "memcpy_s failed");
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 int32_t AudioLmtManager::ReleaseLimiter(int32_t sinkNameCode)
@@ -114,6 +125,23 @@ int32_t AudioLmtManager::ReleaseLimiter(int32_t sinkNameCode)
     sinkNameToLimiterMap_.erase(iter);
     AUDIO_INFO_LOG("Release limiter success, sinkNameCode = %{public}d", sinkNameCode);
     return SUCCESS;
+}
+
+uint32_t GetLatency(int32_t sinkNameCode)
+{
+    std::lock_guard<std::mutex> lock(limiterMutex_);
+    auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
+    if (iter == sinkNameToLimiterMap_.end()) {
+        AUDIO_INFO_LOG("The limiter has not been created, sinkNameCode = %{public}d", sinkNameCode);
+        return 0;
+    }
+
+    std::shared_ptr<AudioLimiter> limiter = iter->second;
+    if (limiter == nullptr) {
+        AUDIO_INFO_LOG("The limiter is nullptr, sinkNameCode = %{public}d", sinkNameCode);
+        return 0;
+    }
+    return limiter->GetLatency();
 }
 }   // namespace AudioStandard
 }   // namespace OHOS

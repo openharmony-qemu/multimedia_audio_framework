@@ -1672,7 +1672,7 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     void *dst = pa_memblock_acquire_chunk(chunkIn);
     int32_t frameLen = bitSize > 0 ? ((int32_t) length / bitSize) : 0;
     if (u->isLimiterCreated) {
-        LimiterManagerProcess((int32_t)u->sink.index, frameLen, u->bufferAttr->tempBufOut, u->bufferAttr->bufOut);
+        LimiterManagerProcess((int32_t)u->sink->index, frameLen, u->bufferAttr->tempBufOut, u->bufferAttr->bufOut);
         ConvertFromFloat(u->format, frameLen, u->bufferAttr->bufOut, dst);
     } else {
         ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
@@ -2309,9 +2309,9 @@ static void UnsetSinkVolume(pa_sink *s)
 static void CreateLimiter(struct Userdata *u)
 {
     if (!u->isLimiterCreated) {
-        int32_t ret = LimiterManagerCreate((int32_t)u->u->sink.index);
+        int32_t ret = LimiterManagerCreate((int32_t)u->sink->index);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager create failed");
-        ret = LimiterManagerSetConfig((int32_t)u->u->sink.index, (int32_t)u->ss.rate, (int32_t)u->ss.channels);
+        ret = LimiterManagerSetConfig((int32_t)u->sink->index, (int32_t)u->ss.rate, (int32_t)u->ss.channels);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager set config failed");
         u->isLimiterCreated = true;  
     }
@@ -3363,7 +3363,7 @@ static void ReleaseEffectBufferAndLimiter(struct Userdata *u)
     }
 
     if (u->isLimiterCreated == true) {
-        if (LimiterManagerRelease((int32_t)u->u->sink.index) == SUCCESS) {
+        if (LimiterManagerRelease((int32_t)u->sink->index) == SUCCESS) {
             u->isLimiterCreated = false;
         } else {
             AUDIO_ERR_LOG("LimiterManagerRelease failed");
