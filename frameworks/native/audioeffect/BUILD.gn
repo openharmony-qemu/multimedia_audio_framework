@@ -71,10 +71,10 @@ ohos_shared_library("audio_effect") {
     "src/audio_head_tracker.cpp",
   ]
 
-   deps = [
-    "../../../services/audio_service:audio_common",
-    "../audioutils:audio_utils",
-   ]
+  deps = [
+  "../../../services/audio_service:audio_common",
+  "../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "c_utils:utils",
