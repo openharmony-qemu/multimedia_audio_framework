@@ -72,8 +72,8 @@ ohos_shared_library("audio_effect") {
   ]
 
   deps = [
-  "../../../services/audio_service:audio_common",
-  "../audioutils:audio_utils",
+    "../../../services/audio_service:audio_common",
+    "../audioutils:audio_utils",
   ]
 
   external_deps = [
