@@ -45,7 +45,6 @@ constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 80;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
-constexpr int32_t API_VERSION_14 = 14; // for deprecated since 9
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
@@ -554,14 +553,9 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(AudioVolumeType volumeType)
     return audioPolicyService_.GetMinVolumeLevel(volumeType);
 }
 
+// deprecated since api 9.
 int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(AudioStreamType streamType, int32_t volumeLevel)
 {
-    int32_t buildApi = GetApiTargerVersion();
-    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("No system permission for legacy call");
-        return ERR_PERMISSION_DENIED;
-    }
-
     if (!IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
     }
@@ -708,14 +702,9 @@ float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t
     return audioPolicyService_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
 
+// deprecated since api 9.
 int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool mute)
 {
-    int32_t buildApi = GetApiTargerVersion();
-    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
-
     return SetStreamMuteInternal(streamType, mute, false);
 }
 
@@ -1045,16 +1034,10 @@ InternalDeviceType AudioPolicyServer::GetActiveInputDevice()
     return audioPolicyService_.GetActiveInputDevice();
 }
 
-// deprecated since 9.
+// deprecated since api 9.
 int32_t AudioPolicyServer::SetRingerModeLegacy(AudioRingerMode ringMode)
 {
     AUDIO_INFO_LOG("Set ringer mode to %{public}d in legacy", ringMode);
-    int32_t buildApi = GetApiTargerVersion();
-    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
-
     return SetRingerModeInner(ringMode);
 }
 
