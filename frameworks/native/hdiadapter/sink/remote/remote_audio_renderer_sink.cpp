@@ -523,6 +523,7 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     std::lock_guard<std::mutex> lock(createRenderMutex_);
 
     for (const auto &audioPort : audioPortMap_) {
+        FILE *dumpFile = nullptr;
         std::string dumpFileName = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + GetTime() + "_" +
             std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
             std::to_string(attr_.format) + ".pcm";
