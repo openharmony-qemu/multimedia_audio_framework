@@ -181,7 +181,7 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
             AUDIO_ERR_LOG("invalid DetectEvent %{public}d", reasonCode);
             return;
     }
-
+#ifndef AUDIO_BUILD_VARIANT_ROOT
     AUDIO_WARNING_LOG("report reasonCode %{public}d", reasonCode);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::JANK_PLAYBACK,
@@ -191,6 +191,7 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
     bean->Add("PIPE_TYPE", pipeType);
     bean->Add("HDI_ADAPTER", adapterType);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+#endif
 }
 
 } // namespace AudioStandard
