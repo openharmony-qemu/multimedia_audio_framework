@@ -677,15 +677,25 @@ int32_t RendererInServer::Start()
         }
     }
 
-    if (isDualToneEnabled_) {
+    dualToneStreamInStart();
+    return SUCCESS;
+}
+
+void RendererInServer::dualToneStreamInStart()
+{
+    if (isDualToneEnabled_ && dualToneStream_ != nullptr) {
+        //Joint judgment ensures that there is a double ring and there is a stream to enter.
+        stream_->GetAudioEffectMode(effectModeWhenDual_);
+        stream_->SetAudioEffectMode(EFFECT_NONE);
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        //Locking before SetAudioEffectMode/GetAudioEffectMode results in a deadlock.
         if (dualToneStream_ != nullptr) {
-            stream_->GetAudioEffectMode(effectModeWhenDual_);
-            stream_->SetAudioEffectMode(EFFECT_NONE);
+            //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
+            //modified elsewhere, it was decided again after the lock was awarded.
+            dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
             dualToneStream_->Start();
         }
     }
-    return SUCCESS;
 }
 
 int32_t RendererInServer::Pause()
@@ -713,11 +723,16 @@ int32_t RendererInServer::Pause()
             dupStream_->Pause();
         }
     }
-    if (isDualToneEnabled_) {
+    if (isDualToneEnabled_ && dualToneStream_ != nullptr) {
+        //Joint judgment ensures that there is a double ring and there is a stream to enter.
+        stream_->SetAudioEffectMode(effectModeWhenDual_);
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        //Locking before SetAudioEffectMode/GetAudioEffectMode results in a deadlock.
         if (dualToneStream_ != nullptr) {
-            stream_->SetAudioEffectMode(effectModeWhenDual_);
+            //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
+            //modified elsewhere, it was decided again after the lock was awarded.
             dualToneStream_->Pause();
+            dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
@@ -846,11 +861,16 @@ int32_t RendererInServer::Stop()
             dupStream_->Stop();
         }
     }
-    if (isDualToneEnabled_) {
+    if (isDualToneEnabled_ && dualToneStream_ != nullptr) {
+        //Joint judgment ensures that there is a double ring and there is a stream to enter.
+        stream_->SetAudioEffectMode(effectModeWhenDual_);
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        //Locking before SetAudioEffectMode/GetAudioEffectMode results in a deadlock.
         if (dualToneStream_ != nullptr) {
-            stream_->SetAudioEffectMode(effectModeWhenDual_);
+            //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
+            //modified elsewhere, it was decided again after the lock was awarded.
             dualToneStream_->Stop();
+            dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -949,6 +969,10 @@ int32_t RendererInServer::GetLowPowerVolume(float &volume)
 
 int32_t RendererInServer::SetAudioEffectMode(int32_t effectMode)
 {
+    if (isDualToneEnabled_) {
+        effectModeWhenDual_ = effectMode;
+        return SUCCESS;
+    }
     return stream_->SetAudioEffectMode(effectMode);
 }
 
@@ -1069,6 +1093,7 @@ int32_t RendererInServer::InitDualToneStream()
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", dualToneStreamIndex_);
         stream_->GetAudioEffectMode(effectModeWhenDual_);
         stream_->SetAudioEffectMode(EFFECT_NONE);
+        dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
         dualToneStream_->Start();
     }
     return SUCCESS;
