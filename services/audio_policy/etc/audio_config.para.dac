@@ -17,3 +17,4 @@ const.multimedia.audio.fixedvolume = audio:audio:660
 const.multimedia.audio.volumestep = audio:audio:660
 persist.multimedia.audio.safevolume = audio:audio:660
 persist.multimedia.audio.safevolume.timeout = audio:audio:660
+persist.multimedia.audio.firstboot = audio:audio:660
