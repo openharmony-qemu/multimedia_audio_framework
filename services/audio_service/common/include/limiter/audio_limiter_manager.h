@@ -29,12 +29,12 @@ public:
     AudioLmtManager();
     ~AudioLmtManager();
     static AudioLmtManager *GetInstance();
-    int32_t CreateLimiter(int32_t sinkNameCode);
-    int32_t SetLimiterConfig(int32_t sinkNameCode, int32_t maxRequest, int32_t biteSize,
+    int32_t CreateLimiter(int32_t sinkIndex);
+    int32_t SetLimiterConfig(int32_t sinkIndex, int32_t maxRequest, int32_t biteSize,
         int32_t sampleRate, int32_t channels);
-    int32_t ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, float *inBuffer, float *outBuffer);
-    int32_t ReleaseLimiter(int32_t sinkNameCode);
-    uint32_t GetLatency(int32_t sinkNameCode);
+    int32_t ProcessLimiter(int32_t sinkIndex, int32_t frameLen, float *inBuffer, float *outBuffer);
+    int32_t ReleaseLimiter(int32_t sinkIndex);
+    uint32_t GetLatency(int32_t sinkIndex);
 private:
     std::map<int32_t, std::shared_ptr<AudioLimiter>> sinkNameToLimiterMap_;
     std::mutex limiterMutex_;

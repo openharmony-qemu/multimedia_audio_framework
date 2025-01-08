@@ -24,31 +24,31 @@
 
 using namespace OHOS::AudioStandard;
 
-int32_t LimiterManagerCreate(int32_t sinkNameCode)
+int32_t LimiterManagerCreate(int32_t sinkIndex)
 {
     AudioLmtManager *audioLmtManager = AudioLmtManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioLmtManager != nullptr, ERROR, "Failed to get AudioLmtManager instance");
-    return audioLmtManager->CreateLimiter(sinkNameCode);
+    return audioLmtManager->CreateLimiter(sinkIndex);
 }
 
-int32_t LimiterManagerSetConfig(int32_t sinkNameCode, int32_t maxRequest, int32_t biteSize,
+int32_t LimiterManagerSetConfig(int32_t sinkIndex, int32_t maxRequest, int32_t biteSize,
     int32_t sampleRate, int32_t channels)
 {
     AudioLmtManager *audioLmtManager = AudioLmtManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioLmtManager != nullptr, ERROR, "Failed to get AudioLmtManager instance");
-    return audioLmtManager->SetLimiterConfig(sinkNameCode, maxRequest, biteSize, sampleRate, channels);
+    return audioLmtManager->SetLimiterConfig(sinkIndex, maxRequest, biteSize, sampleRate, channels);
 }
 
-int32_t LimiterManagerProcess(int32_t sinkNameCode, int32_t frameLen, float *inBuffer, float *outBuffer)
+int32_t LimiterManagerProcess(int32_t sinkIndex, int32_t frameLen, float *inBuffer, float *outBuffer)
 {
     AudioLmtManager *audioLmtManager = AudioLmtManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioLmtManager != nullptr, ERROR, "Failed to get AudioLmtManager instance");
-    return audioLmtManager->ProcessLimiter(sinkNameCode, frameLen, inBuffer, outBuffer);
+    return audioLmtManager->ProcessLimiter(sinkIndex, frameLen, inBuffer, outBuffer);
 }
 
-int32_t LimiterManagerRelease(int32_t sinkNameCode)
+int32_t LimiterManagerRelease(int32_t sinkIndex)
 {
     AudioLmtManager *audioLmtManager = AudioLmtManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioLmtManager != nullptr, ERROR, "Failed to get AudioLmtManager instance");
-    return audioLmtManager->ReleaseLimiter(sinkNameCode);
+    return audioLmtManager->ReleaseLimiter(sinkIndex);
 }

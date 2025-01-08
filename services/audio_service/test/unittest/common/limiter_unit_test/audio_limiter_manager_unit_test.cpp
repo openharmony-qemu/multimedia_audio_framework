@@ -16,3 +16,283 @@
 
 #include <gtest/gtest.h>
 
+#include "audio_errors.h"
+#include "audio_limiter_manager.h"
+#include "audio_log.h"
+#include "audio_stream_info.h"
+
+using namespace testing::ext;
+
+namespace OHOS {
+namespace AudioStandard {
+
+class AudioLimiterUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+
+void AudioLimiterUnitTest::SetUpTestCase(void) {}
+
+void AudioLimiterUnitTest::TearDownTestCase(void)
+{
+    limiterManager.reset();
+}
+
+void AudioLimiterUnitTest::SetUp(void)
+{
+    std::shared_ptr<AudioLmtManager> limiterManager = AudioLmtManager::GetInstance();
+}
+
+void AudioLimiterUnitTest::TearDown(void) {}
+
+/**
+ * @tc.name  : Test CreateLimiter API
+ * @tc.type  : FUNC
+ * @tc.number: CreateLimiter_001
+ * @tc.desc  : Test CreateLimiter interface when first create.
+ */
+HWTEST_F(AudioLimiterUnitTest, CreateLimiter_001, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CreateLimiter API
+ * @tc.type  : FUNC
+ * @tc.number: CreateLimiter_002
+ * @tc.desc  : Test CreateLimiter interface when repeate create use the same sinkIndex.
+ */
+HWTEST_F(AudioLimiterUnitTest, CreateLimiter_001, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetLimiterConfig API
+ * @tc.type  : FUNC
+ * @tc.number: SetLimiterConfig_001
+ * @tc.desc  : Test SetLimiterConfig interface when limiter has not been created.
+ */
+HWTEST_F(AudioLimiterUnitTest, SetLimiterConfig_001, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test SetLimiterConfig API
+ * @tc.type  : FUNC
+ * @tc.number: SetLimiterConfig_002
+ * @tc.desc  : Test SetLimiterConfig interface when config is vaild.
+ */
+HWTEST_F(AudioLimiterUnitTest, SetLimiterConfig_002, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetLimiterConfig API
+ * @tc.type  : FUNC
+ * @tc.number: SetLimiterConfig_003
+ * @tc.desc  : Test SetLimiterConfig interface when config is invaild.
+ */
+HWTEST_F(AudioLimiterUnitTest, SetLimiterConfig_003, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test ProcessLimiter API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessLimiter_001
+ * @tc.desc  : Test ProcessLimiter interface when inBuffer or outBuffer is nullptr.
+ */
+HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_001, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    float *inBuffer = nullptr;
+    float *outBuffer = nullptr;
+    ret = limiterManager->ProcessLimiter(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test ProcessLimiter API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessLimiter_002
+ * @tc.desc  : Test ProcessLimiter interface when limiter has not been created.
+ */
+HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_002, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBuffer.data();
+    float *outBuffer = outBuffer.data();
+    ret = limiterManager->ProcessLimiter(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test ProcessLimiter API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessLimiter_003
+ * @tc.desc  : Test ProcessLimiter interface when frameLen is vaild.
+ */
+HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_003, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    EXPECT_EQ(ret, SUCCESS);
+    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBuffer.data();
+    float *outBuffer = outBuffer.data();
+    ret = limiterManager->ProcessLimiter(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test ProcessLimiter API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessLimiter_004
+ * @tc.desc  : Test ProcessLimiter interface when frameLen is invaild.
+ */
+HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_004, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    EXPECT_EQ(ret, SUCCESS);
+    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBuffer.data();
+    float *outBuffer = outBuffer.data();
+    ret = limiterManager->ProcessLimiter(sinkIndex, 0, inBuffer, outBuffer);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test ReleaseLimiter API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseLimiter_001
+ * @tc.desc  : Test ReleaseLimiter interface when limiter has not been created.
+ */
+HWTEST_F(AudioLimiterUnitTest, ReleaseLimiter_001, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    ret = limiterManager->ReleaseLimiter(sinkIndex);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test ReleaseLimiter API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseLimiter_002
+ * @tc.desc  : Test ReleaseLimiter interface when limiter has been created.
+ */
+HWTEST_F(AudioLimiterUnitTest, ReleaseLimiter_002, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->ReleaseLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ReleaseLimiter API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseLimiter_003
+ * @tc.desc  : Test ReleaseLimiter interface when limiter has been created and released.
+ */
+HWTEST_F(AudioLimiterUnitTest, ReleaseLimiter_003, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->ReleaseLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->ReleaseLimiter(sinkIndex);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test GetLatency API
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_001
+ * @tc.desc  : Test GetLatency interface when limiter has not been created.
+ */
+HWTEST_F(AudioLimiterUnitTest, GetLatency_001, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    uint32_t latency = limiterManager->GetLatency(sinkIndex);
+    EXPECT_EQ(latency, 0);
+}
+
+/**
+ * @tc.name  : Test GetLatency API
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_002
+ * @tc.desc  : Test GetLatency interface when limiter has been created.
+ */
+HWTEST_F(AudioLimiterUnitTest, GetLatency_002, TestSize.Level1)
+{
+    EXCEPT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    EXPECT_EQ(ret, SUCCESS);
+    uint32_t latency = limiterManager->GetLatency(sinkIndex);
+    EXPECT_EQ(ret, TEST_MAX_REQUEST / (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO) * AUDIO_MS_PER_S);
+}
+} // namespace AudioStandard
+} // namespace OHOS

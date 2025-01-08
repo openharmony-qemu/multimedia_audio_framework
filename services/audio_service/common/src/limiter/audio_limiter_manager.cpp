@@ -40,54 +40,48 @@ AudioLmtManager *AudioLmtManager::GetInstance()
     return &instance;
 }
 
-int32_t AudioLmtManager::CreateLimiter(int32_t sinkNameCode)
+int32_t AudioLmtManager::CreateLimiter(int32_t sinkIndex)
 {
     std::lock_guard<std::mutex> lock(limiterMutex_);
-    if (sinkNameToLimiterMap_.find(sinkNameCode) != sinkNameToLimiterMap_.end() &&
-        sinkNameToLimiterMap_[sinkNameCode] != nullptr) {
-        AUDIO_INFO_LOG("The limiter has been created, sinkNameCode = %{public}d", sinkNameCode);
+    if (sinkNameToLimiterMap_.find(sinkIndex) != sinkNameToLimiterMap_.end() &&
+        sinkNameToLimiterMap_[sinkIndex] != nullptr) {
+        AUDIO_INFO_LOG("The limiter has been created, sinkIndex = %{public}d", sinkIndex);
         return SUCCESS;
     }
 
-    std::shared_ptr<AudioLimiter> limiter = std::make_shared<AudioLimiter>(sinkNameCode);
+    std::shared_ptr<AudioLimiter> limiter = std::make_shared<AudioLimiter>(sinkIndex);
 
-    if (limiter == nullptr) {
-        AUDIO_INFO_LOG("Failed to create limiter, sinkNameCode = %{public}d", sinkNameCode);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(limiter != nullptr, ERROR,
+        "Failed to create limiter, sinkIndex = %{public}d", sinkIndex);
 
-    sinkNameToLimiterMap_[sinkNameCode] = limiter;
-    AUDIO_INFO_LOG("Create limiter success, sinkNameCode = %{public}d", sinkNameCode);
+    sinkNameToLimiterMap_[sinkIndex] = limiter;
+    AUDIO_INFO_LOG("Create limiter success, sinkIndex = %{public}d", sinkIndex);
     return SUCCESS;
 }
 
-int32_t AudioLmtManager::SetLimiterConfig(int32_t sinkNameCode, int32_t maxRequest, int32_t biteSize,
+int32_t AudioLmtManager::SetLimiterConfig(int32_t sinkIndex, int32_t maxRequest, int32_t biteSize,
     int32_t sampleRate, int32_t channels)
 {
     std::lock_guard<std::mutex> lock(limiterMutex_);
-    auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
-    if (iter == sinkNameToLimiterMap_.end()) {
-        AUDIO_INFO_LOG("The limiter has not been created, sinkNameCode = %{public}d", sinkNameCode);
-        return ERROR;
-    }
+    auto iter = sinkNameToLimiterMap_.find(sinkIndex);
+    CHECK_AND_RETURN_RET_LOG(iter != sinkNameToLimiterMap_.end(), ERROR,
+        "The limiter has not been created, sinkIndex = %{public}d", sinkIndex);
 
     std::shared_ptr<AudioLimiter> limiter = iter->second;
-    if (limiter == nullptr) {
-        AUDIO_INFO_LOG("The limiter is nullptr, sinkNameCode = %{public}d", sinkNameCode);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(limiter != nullptr, ERROR,
+        "The limiter is nullptr, sinkIndex = %{public}d", sinkIndex);
 
     return limiter->SetConfig(maxRequest, biteSize, sampleRate, channels);
 }
 
-int32_t AudioLmtManager::ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, float *inBuffer, float *outBuffer)
+int32_t AudioLmtManager::ProcessLimiter(int32_t sinkIndex, int32_t frameLen, float *inBuffer, float *outBuffer)
 {
     std::lock_guard<std::mutex> lock(limiterMutex_);
     CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr && outBuffer != nullptr, ERROR, "inBuffer or outBuffer is nullptr");
 
-    auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
+    auto iter = sinkNameToLimiterMap_.find(sinkIndex);
     if (iter == sinkNameToLimiterMap_.end()) {
-        AUDIO_INFO_LOG("The limiter has not been created, sinkNameCode = %{public}d", sinkNameCode);
+        AUDIO_INFO_LOG("The limiter has not been created, sinkIndex = %{public}d", sinkIndex);
         CHECK_AND_RETURN_LOG(memcpy_s(outBuffer, frameLen * sizeof(float), inBuffer, frameLen * sizeof(float)) == 0,
             ERROR, "memcpy_s failed");
         return ERROR;
@@ -95,7 +89,7 @@ int32_t AudioLmtManager::ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, 
 
     std::shared_ptr<AudioLimiter> limiter = iter->second;
     if (limiter == nullptr) {
-        AUDIO_INFO_LOG("The limiter is nullptr, sinkNameCode = %{public}d", sinkNameCode);
+        AUDIO_INFO_LOG("The limiter is nullptr, sinkIndex = %{public}d", sinkIndex);
         CHECK_AND_RETURN_LOG(memcpy_s(outBuffer, frameLen * sizeof(float), inBuffer, frameLen * sizeof(float)) == 0,
             ERROR, "memcpy_s failed");
         return ERROR;
@@ -103,7 +97,7 @@ int32_t AudioLmtManager::ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, 
 
     int32_t ret = limiter->Process(frameLen, inBuffer, outBuffer);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Failed to process limiter, sinkNameCode = %{public}d", sinkNameCode);
+        AUDIO_ERR_LOG("Failed to process limiter, sinkIndex = %{public}d", sinkIndex);
         CHECK_AND_RETURN_LOG(memcpy_s(outBuffer, frameLen * sizeof(float), inBuffer, frameLen * sizeof(float)) == 0,
             ERROR, "memcpy_s failed");
         return ERROR;
@@ -111,34 +105,28 @@ int32_t AudioLmtManager::ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, 
     return SUCCESS;
 }
 
-int32_t AudioLmtManager::ReleaseLimiter(int32_t sinkNameCode)
+int32_t AudioLmtManager::ReleaseLimiter(int32_t sinkIndex)
 {
     std::lock_guard<std::mutex> lock(limiterMutex_);
-    auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
-    if (iter == sinkNameToLimiterMap_.end()) {
-        AUDIO_INFO_LOG("The limiter has not been created, sinkNameCode = %{public}d", sinkNameCode);
-        return ERROR;
-    }
+    auto iter = sinkNameToLimiterMap_.find(sinkIndex);
+    CHECK_AND_RETURN_RET_LOG(iter != sinkNameToLimiterMap_.end(), ERROR,
+        "The limiter has not been created, sinkIndex = %{public}d", sinkIndex);
 
     sinkNameToLimiterMap_.erase(iter);
-    AUDIO_INFO_LOG("Release limiter success, sinkNameCode = %{public}d", sinkNameCode);
+    AUDIO_INFO_LOG("Release limiter success, sinkIndex = %{public}d", sinkIndex);
     return SUCCESS;
 }
 
-uint32_t GetLatency(int32_t sinkNameCode)
+uint32_t GetLatency(int32_t sinkIndex)
 {
     std::lock_guard<std::mutex> lock(limiterMutex_);
-    auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
-    if (iter == sinkNameToLimiterMap_.end()) {
-        AUDIO_INFO_LOG("The limiter has not been created, sinkNameCode = %{public}d", sinkNameCode);
-        return 0;
-    }
+    auto iter = sinkNameToLimiterMap_.find(sinkIndex);
+    CHECK_AND_RETURN_RET_LOG(iter != sinkNameToLimiterMap_.end(), 0,
+        "The limiter has not been created, sinkIndex = %{public}d", sinkIndex);
 
     std::shared_ptr<AudioLimiter> limiter = iter->second;
-    if (limiter == nullptr) {
-        AUDIO_INFO_LOG("The limiter is nullptr, sinkNameCode = %{public}d", sinkNameCode);
-        return 0;
-    }
+    CHECK_AND_RETURN_RET_LOG(limiter != nullptr, 0, "The limiter is nullptr, sinkIndex = %{public}d", sinkIndex);
+
     return limiter->GetLatency();
 }
 }   // namespace AudioStandard

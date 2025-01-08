@@ -35,19 +35,16 @@ constexpr float AUDIO_FORMAT_PCM_FLOAT = 4;
 constexpr int32_t AUDIO_MS_PER_S = 1000;
 constexpr int32_t AUDIO_LMT_ALGO_CHANNEL = 2;    // 2 channel for stereo
 
-AudioLimiter::AudioLimiter(int32_t sinkNameCode)
+AudioLimiter::AudioLimiter(int32_t sinkIndex)
 {
-    sinkNameCode_ = sinkNameCode;
+    sinkIndex_ = sinkIndex;
     nextLev_ = NEXT_LEVEL;
-    curMaxLev_ = 0.0f;
     threshold_ = THRESHOLD;
-    gain_ = 0.0f;
     levelAttack_ = LEVEL_ATTACK;
     levelRelease_ = LEVEL_RELEASE;
     gainAttack_ = GAIN_ATTACK;
     gainRelease_ = GAIN_RELEASE;
     format_ = AUDIO_FORMAT_PCM_FLOAT;
-    latency_ = 0;
     AUDIO_INFO_LOG("AudioLimiter");
 }
 
@@ -77,10 +74,10 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
     bufHis = new (std::nothrow) float[algoFrameLen_]();
     CHECK_AND_RETURN_RET_LOG(bufHis != nullptr, ERROR, "allocate limit algorithm buffer failed");
 
-    dumpFileNameIn_ = std::to_string(sinkNameCode_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
+    dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);
-    dumpFileNameOut_ = std::to_string(sinkNameCode_) + "_limiter_out_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
+    dumpFileNameOut_ = std::to_string(sinkIndex_) + "_limiter_out_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileNameOut_, &dumpFileOutput_);
 
@@ -89,14 +86,14 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
 
 int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffer)
 {
+    CHECK_AND_RETURN_RET_LOG(algoFrameLen_ * PROC_COUNT == frameLen, ERROR,
+        "error, ptrIndex = %{public}d, frameLen = %{public}d", ptrIndex, frameLen);
     int32_t ptrIndex = 0;
     DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(inBuffer), frameLen * sizeof(float));
     for (int32_t i = 0; i < PROC_COUNT; i++) {
         ProcessAlgo(algoFrameLen, inBuffer + ptrIndex, outBuffer + ptrIndex);
         ptrIndex += algoFrameLen_;
     }
-    CHECK_AND_RETURN_RET_LOG(ptrIndex == frameLen, ERROR, "error, ptrIndex = %{public}d, frameLen = %{public}d",
-        ptrIndex, frameLen);
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(outBuffer), frameLen * sizeof(float));
     return SUCCESS;
 }

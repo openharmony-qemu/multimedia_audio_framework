@@ -46,13 +46,11 @@ void AudioLimiterUnitTest::TearDownTestCase(void)
 
 void AudioLimiterUnitTest::SetUp(void)
 {
-    int32_t sinkNameCode = 1;
-    std::shared_ptr<AudioLimiter> limiter = std::make_shared<AudioLimiter>(sinkNameCode);
+    int32_t sinkIndex = 1;
+    std::shared_ptr<AudioLimiter> limiter = std::make_shared<AudioLimiter>(sinkIndex);
 }
 
-void AudioLimiterUnitTest::TearDown(void)
-{
-}
+void AudioLimiterUnitTest::TearDown(void) {}
 
 /**
  * @tc.name  : Test SetConfig API
@@ -88,14 +86,54 @@ HWTEST_F(AudioLimiterUnitTest, SetConfig_002, TestSize.Level1)
  * @tc.number: Process_001
  * @tc.desc  : Test Process interface when framelen is vaild.
  */
+HWTEST_F(AudioLimiterUnitTest, Process_001, TestSize.Level1)
+{
+    EXCEPT_NE(limiter, nullptr);
+
+    int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    EXPECT_EQ(ret, SUCCESS);
+    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBuffer.data();
+    float *outBuffer = outBuffer.data();
+    result = limiter->Process(TEST_MAX_REQUEST, inBuffer, outBuffer);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Process API
+ * @tc.type  : FUNC
+ * @tc.number: Process_002
+ * @tc.desc  : Test Process interface when framelen is invaild.
+ */
 HWTEST_F(AudioLimiterUnitTest, Process_002, TestSize.Level1)
 {
     EXCEPT_NE(limiter, nullptr);
 
     int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    result = limiter->Process(TEST_MAX_REQUEST, inBuffer, outBuffer);
+    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBuffer.data();
+    float *outBuffer = outBuffer.data();
+    result = limiter->Process(0, inBuffer, outBuffer);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test GetLatency API
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_001
+ * @tc.desc  : Test GetLatency interface.
+ */
+HWTEST_F(AudioLimiterUnitTest, GetLatency_001, TestSize.Level1)
+{
+    EXCEPT_NE(limiter, nullptr);
+
+    int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
+    ret = limiter->GetLatency();
+    EXPECT_EQ(ret, TEST_MAX_REQUEST / (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO) * AUDIO_MS_PER_S);
 }
-}
-}
+} // namespace AudioStandard
+} // namespace OHOS

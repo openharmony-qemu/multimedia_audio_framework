@@ -23,11 +23,11 @@
 extern "C" {
 #endif
 
-int32_t LimiterManagerCreate(int32_t sinkNameCode);
-int32_t LimiterManagerSetConfig(int32_t sinkNameCode, int32_t maxRequest, int32_t biteSize,
+int32_t LimiterManagerCreate(int32_t sinkIndex);
+int32_t LimiterManagerSetConfig(int32_t sinkIndex, int32_t maxRequest, int32_t biteSize,
     int32_t sampleRate, int32_t channels);
-int32_t LimiterManagerProcess(int32_t sinkNameCode, int32_t frameLen, float *inBuffer, float *outBuffer);
-int32_t LimiterManagerRelease(int32_t sinkNameCode);
+int32_t LimiterManagerProcess(int32_t sinkIndex, int32_t frameLen, float *inBuffer, float *outBuffer);
+int32_t LimiterManagerRelease(int32_t sinkIndex);
 #ifdef __cplusplus
 }
 #endif
