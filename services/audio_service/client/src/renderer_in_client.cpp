@@ -2293,7 +2293,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     }
     if (!needStoreState) {
         AUDIO_INFO_LOG("telephony scene, return directly");
-        return ret;
+        return ret == SUCCESS;
     }
     if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
         rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
