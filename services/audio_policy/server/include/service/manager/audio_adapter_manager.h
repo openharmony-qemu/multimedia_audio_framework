@@ -196,6 +196,8 @@ public:
     void SetOffloadSessionId(uint32_t sessionId);
 
     void ResetOffloadSessionId();
+
+    int32_t SetVolumeDb(AudioStreamType streamType, int32_t volumeLevel);
 private:
     friend class PolicyCallbackImpl;
 
