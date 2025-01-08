@@ -210,6 +210,7 @@ private:
     std::string deviceClass_ = "";
     std::string extraSceneType_ = "0";
     std::string foldState_ = "0";
+    std::string lidState_ = "0";
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
     bool isInitialized_ = false;

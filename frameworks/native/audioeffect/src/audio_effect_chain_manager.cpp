@@ -900,6 +900,10 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
                 audioEffectChain->SetFoldState(value);
                 paramUpdated = true;
                 break;
+            case HDI_LID_STATE:
+                audioEffectChain->SetLidState(value);
+                paramUpdated = true;
+                break;
             default:
                 break;
         }
@@ -926,6 +930,8 @@ void AudioEffectChainManager::UpdateParamExtra(
         updateParam(extraSceneType_, HDI_EXTRA_SCENE_TYPE);
     } else if (mainkey == "device_status" && subkey == "fold_state") {
         updateParam(foldState_, HDI_FOLD_STATE);
+    } else if (mainkey == "device_status" && subkey == "lid_state") {
+        updateParam(lidState_, HDI_LID_STATE);
     } else {
         AUDIO_INFO_LOG("UpdateParamExtra failed, mainkey is %{public}s, subkey is %{public}s, "
             "value is %{public}s", mainkey.c_str(), subkey.c_str(), value.c_str());
