@@ -174,6 +174,8 @@ void AudioPolicyServer::OnStart()
     if (getpid() > FIRST_SCREEN_ON_PID) {
         audioPolicyService_.SetFirstScreenOn();
     }
+    // Restart to reload the volume.
+    InitKVStore();
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -234,7 +236,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case ACCESSIBILITY_MANAGER_SERVICE_ID:
             SubscribeAccessibilityConfigObserver();
-            InitKVStore();
             break;
         case POWER_MANAGER_SERVICE_ID:
             SubscribePowerStateChangeEvents();
@@ -312,7 +313,6 @@ void AudioPolicyServer::HandleKvDataShareEvent()
         AUDIO_INFO_LOG("datashare is ready and need init mic mute state");
         InitMicrophoneMute();
     }
-    InitKVStore();
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)

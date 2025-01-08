@@ -20,6 +20,7 @@
 
 #include "iservice_registry.h"
 #include "audio_errors.h"
+#include "system_ability_definition.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -346,6 +347,9 @@ std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShar
 {
     CHECK_AND_RETURN_RET_LOG(isDataShareReady_.load(), nullptr,
         "DATA_SHARE_READY not received, create DataShareHelper failed");
+    if (remoteObj_ == nullptr) {
+        Initialize(AUDIO_POLICY_SERVICE_ID);
+    }
 #ifdef SUPPORT_USER_ACCOUNT
     int32_t currentuserId = GetCurrentUserId();
     if (currentuserId < MIN_USER_ACCOUNT) {
