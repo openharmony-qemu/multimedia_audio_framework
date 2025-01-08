@@ -40,6 +40,7 @@ static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -988,6 +989,11 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
              outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
             audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
             audioVolumeManager_.SetRingerModeMute(false);
+            if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
+                audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
+                audioPolicyManager_.SetVolumeDb(STREAM_RING,
+                    audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
+            }
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
         }
