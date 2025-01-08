@@ -87,10 +87,11 @@ struct Userdata {
         pa_usec_t hdiPos;
         pa_usec_t hdiPosTs;
         pa_usec_t prewrite;
-        pa_thread *thread;
-        pa_asyncmsgq *msgq;
+        pa_thread *threadHdi;
         bool isHDISinkStarted;
         struct RendererSinkAdapter *sinkAdapter;
+        pa_asyncmsgq *dq;
+        pa_atomic_t dflag;
         pa_atomic_t hdistate; // 0:need_data 1:wait_consume 2:flushing
         pa_usec_t fullTs;
         bool runninglocked;
@@ -101,9 +102,7 @@ struct Userdata {
     struct {
         pa_usec_t timestamp;
         pa_usec_t lastProcessDataTime; // The timestamp from the last time the data was prepared to HDI
-        pa_thread *thread;
-        pa_thread *thread_hdi;
-        pa_asyncmsgq *msgq;
+        pa_thread *threadHdi;
         pa_atomic_t isHDISinkStarted;
         struct RendererSinkAdapter *sinkAdapter;
         pa_asyncmsgq *dq;
@@ -124,17 +123,14 @@ struct Userdata {
     struct {
         bool used;
         pa_usec_t timestamp;
-        pa_thread *thread;
-        pa_thread *thread_hdi;
+        pa_thread *threadHdi;
         bool isHDISinkStarted;
         bool isHDISinkInited;
         struct RendererSinkAdapter *sinkAdapter;
-        pa_asyncmsgq *msgq;
         pa_asyncmsgq *dq;
         pa_atomic_t dflag;
         pa_usec_t writeTime;
         pa_usec_t prewrite;
-        pa_atomic_t hdistate;
         pa_memchunk chunk;
         SinkAttr sample_attrs;
         pa_atomic_t fadingFlagForMultiChannel; // 1：do fade in, 0: no need
