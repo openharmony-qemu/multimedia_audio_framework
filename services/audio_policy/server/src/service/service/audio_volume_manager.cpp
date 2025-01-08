@@ -314,6 +314,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
             // set to avrcp device
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice, volumeLevel);
         } else if (result == ERR_UNKNOWN) {
+            AUDIO_INFO_LOG("UNKNOWN RESULT set abs safe volume")
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice,
                 audioPolicyManager_.GetSafeVolumeLevel());
         } else {
@@ -775,6 +776,7 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
             // set to avrcp device
             int32_t volumeLevel;
             audioA2dpDevice_.GetA2dpDeviceVolumeLevel(btDevice, volumeLevel);
+            AUDIO_INFO_LOG("AudioVolumeManager::SetStreamMute set abs volume");
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice,
                 volumeLevel);
 #endif
