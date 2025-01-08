@@ -14,12 +14,12 @@
  */
 
  #ifndef LOG_TAG
- #define LOG_TAG "AudioLmtAdapter"
+ #define LOG_TAG "AudioLimiterAdapter"
  #endif
 
 #include "audio_errors.h"
-#include "audio_lmt_adapter.h"
-#include "audio_lmt_manager.h"
+#include "audio_limiter_adapter.h"
+#include "audio_limiter_manager.h"
 #include "audio_log.h"
 
 using namespace OHOS::AudioStandard;
@@ -31,11 +31,12 @@ int32_t LimiterManagerCreate(int32_t sinkNameCode)
     return audioLmtManager->CreateLimiter(sinkNameCode);
 }
 
-int32_t LimiterManagerSetConfig(int32_t sinkNameCode, int32_t sampleRate, int32_t channels)
+int32_t LimiterManagerSetConfig(int32_t sinkNameCode, int32_t maxRequest, int32_t biteSize,
+    int32_t sampleRate, int32_t channels)
 {
     AudioLmtManager *audioLmtManager = AudioLmtManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioLmtManager != nullptr, ERROR, "Failed to get AudioLmtManager instance");
-    return audioLmtManager->SetLimiterConfig(sinkNameCode, sampleRate, channels);
+    return audioLmtManager->SetLimiterConfig(sinkNameCode, maxRequest, biteSize, sampleRate, channels);
 }
 
 int32_t LimiterManagerProcess(int32_t sinkNameCode, int32_t frameLen, float *inBuffer, float *outBuffer)

@@ -1672,6 +1672,7 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     void *dst = pa_memblock_acquire_chunk(chunkIn);
     int32_t frameLen = bitSize > 0 ? ((int32_t) length / bitSize) : 0;
     if (u->isLimiterCreated) {
+        // limiter only support 2 channels and float format
         LimiterManagerProcess((int32_t)u->sink->index, frameLen, u->bufferAttr->tempBufOut, u->bufferAttr->bufOut);
         ConvertFromFloat(u->format, frameLen, u->bufferAttr->bufOut, dst);
     } else {
@@ -2311,7 +2312,9 @@ static void CreateLimiter(struct Userdata *u)
     if (!u->isLimiterCreated) {
         int32_t ret = LimiterManagerCreate((int32_t)u->sink->index);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager create failed");
-        ret = LimiterManagerSetConfig((int32_t)u->sink->index, (int32_t)u->ss.rate, (int32_t)u->ss.channels);
+        // allocate limiter buffer; cal algoframelen and latency
+        ret = LimiterManagerSetConfig((int32_t)u->sink->index, (int32_t)u->sink->thread_info.max_request,
+            (int32_t)pa_sample_size_of_format(u->format), (int32_t)u->ss.rate, (int32_t)u->ss.channels);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager set config failed");
         u->isLimiterCreated = true;  
     }
@@ -2335,6 +2338,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     } else {
         if (u->isEffectBufferAllocated || AllocateEffectBuffer(u)) {
             u->isEffectBufferAllocated = true;
+            // limiter process only in normal render
             CreateLimiter(u);
             SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
         }
@@ -3361,14 +3365,8 @@ static void ReleaseEffectBufferAndLimiter(struct Userdata *u)
         FreeEffectBuffer(u);
         u->isEffectBufferAllocated = false;
     }
-
-    if (u->isLimiterCreated == true) {
-        if (LimiterManagerRelease((int32_t)u->sink->index) == SUCCESS) {
-            u->isLimiterCreated = false;
-        } else {
-            AUDIO_ERR_LOG("LimiterManagerRelease failed");
-        }
-    }
+    // free limiter buffer
+    FreeLimiter(u);
 }
 
 static void ProcessNormalData(struct Userdata *u)
@@ -4597,6 +4595,17 @@ static bool FreeBufferAttr(struct Userdata *u)
     return true;
 }
 
+static void FreeLimiter(struct Userdata *u)
+{
+    if (u->isLimiterCreated == true) {
+        if (LimiterManagerRelease((int32_t)u->sink->index) == SUCCESS) {
+            u->isLimiterCreated = false;
+        } else {
+            AUDIO_ERR_LOG("LimiterManagerRelease failed");
+        }
+    }
+}
+
 static void UserdataFree(struct Userdata *u)
 {
     if (u == NULL) {
@@ -4654,6 +4663,8 @@ static void UserdataFree(struct Userdata *u)
     if (!FreeBufferAttr(u)) {
         return;
     }
+    // free limiter buffer
+    FreeLimiter(u);
 
     pa_xfree(u);
 

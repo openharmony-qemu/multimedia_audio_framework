@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioLmt"
+#define LOG_TAG "AudioLimiter"
 #endif
 
 #include "audio_errors.h"
-#include "audio_lmt.h"
+#include "audio_limiter.h"
 #include "audio_log.h"
 #include "audio_utils.h"
 
@@ -30,9 +30,10 @@ constexpr float LEVEL_ATTACK = 0.3f;
 constexpr float LEVEL_RELEASE = 0.7f;
 constexpr float GAIN_ATTACK = 0.1f;
 constexpr float GAIN_RELEASE = 0.6f;
-constexpr float PROC_TIME = 0.005f;  // 5ms
+constexpr float PROC_COUNT = 4;  // process 4 times
 constexpr float AUDIO_FORMAT_PCM_FLOAT = 4;
 constexpr int32_t AUDIO_MS_PER_S = 1000;
+constexpr int32_t AUDIO_LMT_ALGO_CHANNEL = 2;    // 2 channel for stereo
 
 AudioLimiter::AudioLimiter(int32_t sinkNameCode)
 {
@@ -45,9 +46,8 @@ AudioLimiter::AudioLimiter(int32_t sinkNameCode)
     levelRelease_ = LEVEL_RELEASE;
     gainAttack_ = GAIN_ATTACK;
     gainRelease_ = GAIN_RELEASE;
-    procTime_ = PROC_TIME;
     format_ = AUDIO_FORMAT_PCM_FLOAT;
-    latency_ = PROC_TIME * AUDIO_MS_PER_S;
+    latency_ = 0;
     AUDIO_INFO_LOG("AudioLimiter");
 }
 
@@ -68,23 +68,14 @@ void AudioLimiter::ReleaseBuffer()
     return;
 }
 
-int32_t AudioLimiter::SetConfig(int sampleRate, int channels)
+int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sampleRate, int32_t channels)
 {
-    algoFrameLen_ = sampleRate * channels * procTime_;
-    inOffset_ = 0;
-    outOffset_ = algoFrameLen_;
+    CHECK_AND_RETURN_RET_LOG(maxRequest > 0 && biteSize > 0 && sampleRate > 0 && channels == AUDIO_LMT_ALGO_CHANNEL,
+        ERROR, "Invalid input parameters");
+    algoFrameLen_ = maxRequest / (biteSize * sampleRate * PROC_COUNT);
+    latency_ = maxRequest / (biteSize * sampleRate * channels) * AUDIO_MS_PER_S;
     bufHis = new (std::nothrow) float[algoFrameLen_]();
-    if (bufHis == nullptr) {
-        AUDIO_ERR_LOG("allocate limit algorithm buffer failed");
-    }
-    integrationBufIn = new (std::nothrow) float[algoFrameLen_]();
-    if (integrationBufIn == nullptr) {
-        AUDIO_ERR_LOG("allocate integration buffer failed");
-    }
-    integrationBufOut = new (std::nothrow) float[algoFrameLen_]();
-    if (integrationBufOut == nullptr) {
-        AUDIO_ERR_LOG("allocate integration buffer failed");
-    }
+    CHECK_AND_RETURN_RET_LOG(bufHis != nullptr, ERROR, "allocate limit algorithm buffer failed");
 
     dumpFileNameIn_ = std::to_string(sinkNameCode_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
@@ -98,60 +89,22 @@ int32_t AudioLimiter::SetConfig(int sampleRate, int channels)
 
 int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffer)
 {
-    if (inBuffer == nullptr || outBuffer == nullptr) {
-        AUDIO_ERR_LOG("inBuffer or outBuffer is nullptr");
-        return ERROR;
-    }
-    int32_t ptrIn = 0;
-    int32_t ptrOut = 0;
+    int32_t ptrIndex = 0;
     DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(inBuffer), frameLen * sizeof(float));
-#ifdef FRAME_CONCATENATION
-    // 考虑拼帧
-    // preprocess
-    int32_t ret;
-    ret = memcpy_s(outBuffer, frameLen * sizeof(float), integrationBufOut + algoFrameLen_ - outOffset_,
-        outOffset_ * sizeof(float));
-    CHECK_AND_RETURN_LOG(ret == 0, ERROR, "memcpy_s failed");
-    ptrOut = outOffset_;
-    ret = memcpy_s(integrationBufIn + inOffset_, (algoFrameLen_ - inOffset_) * sizeof(float), inBuffer,
-        (algoFrameLen_ - inOffset_) * sizeof(float));
-    CHECK_AND_RETURN_LOG(ret == 0, ERROR, "memcpy_s failed");
-    ptrIn = algoFrameLen_ - inOffset_;
-    ProcessAlgo(integrationBufIn, outBuffer + ptrOut);
-    ptrOut += algoFrameLen_;
-    // process
-    while (frameLen - ptrOut >= algoFrameLen_) {
-        ProcessAlgo(inBuffer + ptrIn, outBuffer + ptrOut);
-        ptrIn += algoFrameLen_;
-        ptrOut += algoFrameLen_;
+    for (int32_t i = 0; i < PROC_COUNT; i++) {
+        ProcessAlgo(algoFrameLen, inBuffer + ptrIndex, outBuffer + ptrIndex);
+        ptrIndex += algoFrameLen_;
     }
-    // postprocess
-    ProcessAlgo(inBuffer + ptrIn, integrationBufOut);
-    ptrIn += algoFrameLen_;
-    ret = memcpy_s(integrationBufIn, algoFrameLen_ * sizeof(float), inBuffer + ptrIn,
-        (frameLen - ptrIn) * sizeof(float));
-    CHECK_AND_RETURN_LOG(ret == 0, ERROR, "memcpy_s failed");
-    inOffset_ = frameLen - ptrIn;
-    ret = memcpy_s(outBuffer + ptrOut, (frameLen - ptrOut) * sizeof(float), integrationBufOut,
-        (frameLen - ptrOut) * sizeof(float));
-    CHECK_AND_RETURN_LOG(ret == 0, ERROR, "memcpy_s failed");
-    outOffset_ = algoFrameLen_ - (frameLen - ptrOut);
-#else
-    // 不考虑拼帧
-    while (frameLen - ptrOut >= algoFrameLen_) {
-        ProcessAlgo(inBuffer + ptrIn, outBuffer + ptrOut);
-        ptrIn += algoFrameLen_;
-        ptrOut += algoFrameLen_;
-    }
-#endif
+    CHECK_AND_RETURN_RET_LOG(ptrIndex == frameLen, ERROR, "error, ptrIndex = %{public}d, frameLen = %{public}d",
+        ptrIndex, frameLen);
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(outBuffer), frameLen * sizeof(float));
     return SUCCESS;
 }
 
-void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer) {
+void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuffer) {
     // calculate envelope energy
     float maxEnvelopeLevel = 0.0f;
-    for (int32_t i = 0; i < algoFrameLen_; i += 2) {    // for 2 channel
+    for (int32_t i = 0; i < algoFrameLen; i += AUDIO_LMT_ALGO_CHANNEL) {
         float tempBufInLeft = inBuffer[i];
         float tempBufInRight = inBuffer[i + 1];
         float tempLevel = std::max(std::abs(tempBufInLeft), std::abs(tempBufInRight));
@@ -168,10 +121,10 @@ void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer) {
     float lastGain = gain_;
     float coeff = gain_ > targetGain ? gainAttack_ : gainRelease_;
     gain_ = coeff * gain_ + (1 - coeff) * targetGain;
-    float deltaGain = (gain_ - lastGain) / algoFrameLen_;
+    float deltaGain = (gain_ - lastGain) / algoFrameLen;
 
-    // apply gain
-    for (int32_t i = 0; i < algoFrameLen_; i += 2) {    // for 2 channel
+    // apply gain 
+    for (int32_t i = 0; i < algoFrameLen; i += AUDIO_LMT_ALGO_CHANNEL) {
         lastGain += deltaGain;
         outBuffer[i] = bufHis[i] * lastGain;
         outBuffer[i + 1] = bufHis[i + 1] * lastGain;

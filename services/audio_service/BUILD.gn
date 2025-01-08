@@ -61,9 +61,9 @@ ohos_shared_library("audio_common") {
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/volume_tools.cpp",
-    "common/src/limiter/audio_lmt_adapter.cpp",
-    "common/src/limiter/audio_lmt_manager.cpp",
-    "common/src/limiter/audio_lmt.cpp",
+    "common/src/limiter/audio_limiter_adapter.cpp",
+    "common/src/limiter/audio_limiter_manager.cpp",
+    "common/src/limiter/audio_limiter.cpp",
   ]
 
   cflags = [

@@ -14,13 +14,13 @@
  */
 
 
-#ifndef AUDIO_LMT_MANAGER_H
-#define AUDIO_LMT_MANAGER_H
+#ifndef AUDIO_LIMITER_MANAGER_H
+#define AUDIO_LIMITER_MANAGER_H
 
 #include <map>
 #include <mutex>
 
-#include "audio_lmt.h"
+#include "audio_limiter.h"
 namespace OHOS {
 namespace AudioStandard {
 
@@ -30,7 +30,8 @@ public:
     ~AudioLmtManager();
     static AudioLmtManager *GetInstance();
     int32_t CreateLimiter(int32_t sinkNameCode);
-    int32_t SetLimiterConfig(int32_t sinkNameCode, int32_t sampleRate, int32_t channels);
+    int32_t SetLimiterConfig(int32_t sinkNameCode, int32_t maxRequest, int32_t biteSize,
+        int32_t sampleRate, int32_t channels);
     int32_t ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, float *inBuffer, float *outBuffer);
     int32_t ReleaseLimiter(int32_t sinkNameCode);
     uint32_t GetLatency(int32_t sinkNameCode);
@@ -41,4 +42,4 @@ private:
 
 }   // namespace AudioStandard
 }   // namespace OHOS
-#endif // AUDIO_LMT_MANAGER_H
+#endif // AUDIO_LIMITER_MANAGER_H

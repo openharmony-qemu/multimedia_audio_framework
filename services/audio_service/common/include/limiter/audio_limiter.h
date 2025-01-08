@@ -26,7 +26,7 @@ class AudioLimiter {
 public:
     AudioLimiter(int32_t sinkNameCode);
     ~AudioLimiter();
-    int32_t SetConfig(int32_t sampleRate, int32_t channels);
+    int32_t SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sampleRate, int32_t channels);
     int32_t Process(int32_t frameLen, float *inBuffer, float *outBuffer);
     uint32_t GetLatency();
 private:
@@ -35,8 +35,6 @@ private:
     uint32_t latency_;
     int32_t sinkNameCode_;
     int32_t algoFrameLen_;
-    int32_t inOffset_;
-    int32_t outOffset_;
     int32_t format_;
     float nextLev_;
     float curMaxLev_;
@@ -46,7 +44,6 @@ private:
     float levelRelease_;
     float gainAttack_;
     float gainRelease_;
-    float procTime_;
     float *bufHis;
     float *integrationBufIn;
     float *integrationBufOut;

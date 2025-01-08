@@ -14,11 +14,11 @@
  */
 
 #ifndef LOG_TAG
-#define LOG_TAG "AudioLmtManager"
+#define LOG_TAG "AudioLimiterManager"
 #endif
 
 #include "audio_errors.h"
-#include "audio_lmt_manager.h"
+#include "audio_limiter_manager.h"
 #include "audio_log.h"
 
 namespace OHOS {
@@ -61,7 +61,8 @@ int32_t AudioLmtManager::CreateLimiter(int32_t sinkNameCode)
     return SUCCESS;
 }
 
-int32_t AudioLmtManager::SetLimiterConfig(int32_t sinkNameCode, int sampleRate, int channels)
+int32_t AudioLmtManager::SetLimiterConfig(int32_t sinkNameCode, int32_t maxRequest, int32_t biteSize,
+    int32_t sampleRate, int32_t channels)
 {
     std::lock_guard<std::mutex> lock(limiterMutex_);
     auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
@@ -76,16 +77,13 @@ int32_t AudioLmtManager::SetLimiterConfig(int32_t sinkNameCode, int sampleRate, 
         return ERROR;
     }
 
-    return limiter->SetConfig(sampleRate, channels);
+    return limiter->SetConfig(maxRequest, biteSize, sampleRate, channels);
 }
 
 int32_t AudioLmtManager::ProcessLimiter(int32_t sinkNameCode, int32_t frameLen, float *inBuffer, float *outBuffer)
 {
     std::lock_guard<std::mutex> lock(limiterMutex_);
-    if (inBuffer == nullptr || outBuffer == nullptr) {
-        AUDIO_ERR_LOG("inBuffer or outBuffer is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr && outBuffer != nullptr, ERROR, "inBuffer or outBuffer is nullptr");
 
     auto iter = sinkNameToLimiterMap_.find(sinkNameCode);
     if (iter == sinkNameToLimiterMap_.end()) {

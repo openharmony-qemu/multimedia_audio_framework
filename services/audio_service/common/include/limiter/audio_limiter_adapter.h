@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_LMT_ADAPTER_H
-#define AUDIO_LMT_ADAPTER_H
+#ifndef AUDIO_LIMITER_ADAPTER_H
+#define AUDIO_LIMITER_ADAPTER_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -24,11 +24,11 @@ extern "C" {
 #endif
 
 int32_t LimiterManagerCreate(int32_t sinkNameCode);
-int32_t LimiterManagerSetConfig(int32_t sinkNameCode, int32_t sampleRate, int32_t channels);
+int32_t LimiterManagerSetConfig(int32_t sinkNameCode, int32_t maxRequest, int32_t biteSize,
+    int32_t sampleRate, int32_t channels);
 int32_t LimiterManagerProcess(int32_t sinkNameCode, int32_t frameLen, float *inBuffer, float *outBuffer);
 int32_t LimiterManagerRelease(int32_t sinkNameCode);
-int32_t GetSinkNameCode(const char *sinkName);
 #ifdef __cplusplus
 }
 #endif
-#endif // AUDIO_LMT_ADAPTER_H
+#endif // AUDIO_LIMITER_ADAPTER_H
