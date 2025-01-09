@@ -26,10 +26,11 @@ namespace AudioStandard {
 using namespace std;
 class CallbackHandlerInner : public CallbackHandler, public AppExecFwk::EventHandler {
 public:
-    explicit CallbackHandlerInner(std::shared_ptr<IHandler> iHandler);
+    explicit CallbackHandlerInner(std::shared_ptr<IHandler> iHandler, const std::string &handlerName);
     ~CallbackHandlerInner();
 
     void SendCallbackEvent(uint32_t eventCode, int64_t data) override;
+    void SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime) override;
 
     void ReleaseEventRunner() override;
 
@@ -40,13 +41,14 @@ private:
     std::weak_ptr<IHandler> iHandler_;
 };
 
-std::shared_ptr<CallbackHandler> CallbackHandler::GetInstance(std::shared_ptr<IHandler> iHandler)
+std::shared_ptr<CallbackHandler> CallbackHandler::GetInstance(std::shared_ptr<IHandler> iHandler,
+    const std::string &handlerName)
 {
-    return std::make_shared<CallbackHandlerInner>(iHandler);
+    return std::make_shared<CallbackHandlerInner>(iHandler, handlerName);
 }
 
-CallbackHandlerInner::CallbackHandlerInner(std::shared_ptr<IHandler> iHandler)
-    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create("OS_AudioStateCB"))
+CallbackHandlerInner::CallbackHandlerInner(std::shared_ptr<IHandler> iHandler, const std::string &handlerName)
+    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create(handlerName))
 {
     iHandler_ = iHandler;
 }
@@ -59,6 +61,11 @@ CallbackHandlerInner::~CallbackHandlerInner()
 void CallbackHandlerInner::SendCallbackEvent(uint32_t eventCode, int64_t data)
 {
     SendEvent(AppExecFwk::InnerEvent::Get(eventCode, data));
+}
+
+void CallbackHandlerInner::SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime)
+{
+    SendEvent(AppExecFwk::InnerEvent::Get(eventCode, data), delayTime, Priority::LOW);
 }
 
 void CallbackHandlerInner::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
