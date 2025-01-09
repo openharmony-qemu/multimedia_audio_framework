@@ -44,9 +44,7 @@ private:
     float levelRelease_;
     float gainAttack_;
     float gainRelease_;
-    float *bufHis;
-    float *integrationBufIn;
-    float *integrationBufOut;
+    float *bufHis_;
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
     std::string dumpFileNameIn_ = "";

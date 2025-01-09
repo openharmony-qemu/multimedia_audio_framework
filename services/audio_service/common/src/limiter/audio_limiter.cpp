@@ -45,6 +45,7 @@ AudioLimiter::AudioLimiter(int32_t sinkIndex)
     gainAttack_ = GAIN_ATTACK;
     gainRelease_ = GAIN_RELEASE;
     format_ = AUDIO_FORMAT_PCM_FLOAT;
+    bufHis_ = nullptr;
     AUDIO_INFO_LOG("AudioLimiter");
 }
 
@@ -58,9 +59,9 @@ AudioLimiter::~AudioLimiter()
 
 void AudioLimiter::ReleaseBuffer()
 {
-    if (bufHis != nullptr) {
+    if (bufHis_ != nullptr) {
         delete[] bufHis;
-        bufHis = nullptr;
+        bufHis_ = nullptr;
     }
     return;
 }
@@ -71,8 +72,8 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
         ERROR, "Invalid input parameters");
     algoFrameLen_ = maxRequest / (biteSize * channels * PROC_COUNT);
     latency_ = maxRequest / (biteSize * sampleRate * channels) * AUDIO_MS_PER_S;
-    bufHis = new (std::nothrow) float[algoFrameLen_]();
-    CHECK_AND_RETURN_RET_LOG(bufHis != nullptr, ERROR, "allocate limit algorithm buffer failed");
+    bufHis_ = new (std::nothrow) float[algoFrameLen_]();
+    CHECK_AND_RETURN_RET_LOG(bufHis_ != nullptr, ERROR, "allocate limit algorithm buffer failed");
 
     dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
@@ -123,10 +124,10 @@ void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuff
     // apply gain 
     for (int32_t i = 0; i < algoFrameLen; i += AUDIO_LMT_ALGO_CHANNEL) {
         lastGain += deltaGain;
-        outBuffer[i] = bufHis[i] * lastGain;
-        outBuffer[i + 1] = bufHis[i + 1] * lastGain;
-        bufHis[i] = inBuffer[i];
-        bufHis[i + 1] = inBuffer[i + 1];
+        outBuffer[i] = bufHis_[i] * lastGain;
+        outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
+        bufHis_[i] = inBuffer[i];
+        bufHis_[i + 1] = inBuffer[i + 1];
     }
 }
 
