@@ -27,7 +27,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-const int32_t TEST_MAX_REQUEST = 7680;
+const int32_t TEST_MAX_REQUEST = 7680; // buffer size for 20ms 2channel 48000Hz
 const int32_t AUDIO_MS_PER_S = 1000;
 static AudioLmtManager * limiterManager;
 
@@ -127,7 +127,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_001, TestSize.Level1)
     EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
-    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    int32_t frameLen = TEST_MAX_REQUEST / SAMPLE_F32LE;
     float *inBuffer = nullptr;
     float *outBuffer = nullptr;
     int32_t ret = limiterManager->ProcessLimiter(sinkIndex, frameLen, inBuffer, outBuffer);
@@ -149,7 +149,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_002, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    int32_t frameLen = TEST_MAX_REQUEST / SAMPLE_F32LE;
     std::vector<float> inBufferVector(frameLen, 0);
     std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
@@ -173,7 +173,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_003, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    int32_t frameLen = TEST_MAX_REQUEST / SAMPLE_F32LE;
     std::vector<float> inBufferVector(frameLen, 0);
     std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
@@ -249,7 +249,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, GetLatency_002, TestSize.Level1)
     ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
     ret = limiterManager->GetLatency(sinkIndex);
-    EXPECT_EQ(ret, TEST_MAX_REQUEST / (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO) * AUDIO_MS_PER_S);
+    EXPECT_EQ(ret, TEST_MAX_REQUEST * AUDIO_MS_PER_S/ (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO * PROC_COUNT));
 }
 } // namespace AudioStandard
 } // namespace OHOS

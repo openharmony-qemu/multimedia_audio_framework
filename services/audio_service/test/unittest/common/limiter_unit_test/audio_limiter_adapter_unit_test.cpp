@@ -27,7 +27,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-const int32_t TEST_MAX_REQUEST = 7680;
+const int32_t TEST_MAX_REQUEST = 7680; // buffer size for 20ms 2channel 48000Hz
 
 class AudioLimiterAdapterUnitTest : public testing::Test {
 public:
@@ -114,7 +114,7 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_001, TestSize.Level1
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);
     EXPECT_EQ(ret, SUCCESS);
-    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    int32_t frameLen = TEST_MAX_REQUEST / SAMPLE_F32LE;
     float *inBuffer = nullptr;
     float *outBuffer = nullptr;
     ret = LimiterManagerProcess(sinkIndex, frameLen, inBuffer, outBuffer);
@@ -134,7 +134,7 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_002, TestSize.Level1
     EXPECT_EQ(ret, SUCCESS);
     ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    int32_t frameLen = TEST_MAX_REQUEST / SAMPLE_F32LE;
     std::vector<float> inBufferVector(frameLen, 0);
     std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
@@ -156,7 +156,7 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_003, TestSize.Level1
     EXPECT_EQ(ret, SUCCESS);
     ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    int32_t frameLen = TEST_MAX_REQUEST / SAMPLE_F32LE;
     std::vector<float> inBufferVector(frameLen, 0);
     std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();

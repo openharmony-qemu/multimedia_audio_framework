@@ -30,8 +30,8 @@ const float LEVEL_ATTACK = 0.3f;
 const float LEVEL_RELEASE = 0.7f;
 const float GAIN_ATTACK = 0.1f;
 const float GAIN_RELEASE = 0.6f;
-const float PROC_COUNT = 4;  // process 4 times
-const float AUDIO_FORMAT_PCM_FLOAT = 4;
+const int32_t AUDIO_FORMAT_PCM_FLOAT = 4;
+const int32_t PROC_COUNT = 4;  // process 4 times
 const int32_t AUDIO_MS_PER_S = 1000;
 const int32_t AUDIO_LMT_ALGO_CHANNEL = 2;    // 2 channel for stereo
 
@@ -71,7 +71,7 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
     CHECK_AND_RETURN_RET_LOG(maxRequest > 0 && biteSize > 0 && sampleRate > 0 && channels == AUDIO_LMT_ALGO_CHANNEL,
         ERROR, "Invalid input parameters");
     algoFrameLen_ = maxRequest / (biteSize * PROC_COUNT);
-    latency_ = maxRequest / (biteSize * sampleRate * channels) * AUDIO_MS_PER_S;
+    latency_ = algoFrameLen_ * AUDIO_MS_PER_S / (sampleRate * channels);
     AUDIO_INFO_LOG("maxRequest = %{public}d, biteSize = %{public}d, sampleRate = %{public}d, channels = %{public}d,"
         "algoFrameLen_ = %{public}d, latency_ = %{public}d",
         maxRequest, biteSize, sampleRate, channels, algoFrameLen_, latency_);
