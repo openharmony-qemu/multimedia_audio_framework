@@ -19,6 +19,8 @@
 #include "audio_effect_volume.h"
 #include "audio_effect_log.h"
 
+#include "audio_utils.h"
+
 namespace OHOS {
 namespace AudioStandard {
 AudioEffectVolume::AudioEffectVolume()
