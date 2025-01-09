@@ -69,7 +69,7 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
 {
     CHECK_AND_RETURN_RET_LOG(maxRequest > 0 && biteSize > 0 && sampleRate > 0 && channels == AUDIO_LMT_ALGO_CHANNEL,
         ERROR, "Invalid input parameters");
-    algoFrameLen_ = maxRequest / (biteSize * sampleRate * PROC_COUNT);
+    algoFrameLen_ = maxRequest / (biteSize * channels * PROC_COUNT);
     latency_ = maxRequest / (biteSize * sampleRate * channels) * AUDIO_MS_PER_S;
     bufHis = new (std::nothrow) float[algoFrameLen_]();
     CHECK_AND_RETURN_RET_LOG(bufHis != nullptr, ERROR, "allocate limit algorithm buffer failed");

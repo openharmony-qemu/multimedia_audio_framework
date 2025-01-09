@@ -77,22 +77,9 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerCreate_002, TestSize.Level1)
  * @tc.name  : Test LimiterManagerSetConfig API
  * @tc.type  : FUNC
  * @tc.number: LimiterManagerSetConfig_001
- * @tc.desc  : Test LimiterManagerSetConfig interface when limiter has not been created.
- */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_001, TestSize.Level1)
-{
-    int32_t sinkIndex = 1;
-    int32_t ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
- * @tc.name  : Test LimiterManagerSetConfig API
- * @tc.type  : FUNC
- * @tc.number: LimiterManagerSetConfig_002
  * @tc.desc  : Test LimiterManagerSetConfig interface when config is vaild.
  */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_002, TestSize.Level1)
+HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_001, TestSize.Level1)
 {
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);
@@ -104,16 +91,16 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_002, TestSize.Leve
 /**
  * @tc.name  : Test LimiterManagerSetConfig API
  * @tc.type  : FUNC
- * @tc.number: LimiterManagerSetConfig_003
+ * @tc.number: LimiterManagerSetConfig_002
  * @tc.desc  : Test LimiterManagerSetConfig interface when config is invaild.
  */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_003, TestSize.Level1)
+HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_002, TestSize.Level1)
 {
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);
     EXPECT_EQ(ret, SUCCESS);
     ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
 }
 
 /**
@@ -127,9 +114,10 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_001, TestSize.Level1
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);
     EXPECT_EQ(ret, SUCCESS);
+    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
     float *inBuffer = nullptr;
     float *outBuffer = nullptr;
-    ret = LimiterManagerProcess(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
+    ret = LimiterManagerProcess(sinkIndex, frameLen, inBuffer, outBuffer);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -142,11 +130,12 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_001, TestSize.Level1
 HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_002, TestSize.Level1)
 {
     int32_t sinkIndex = 1;
-    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
     float *outBuffer = outBufferVector.data();
-    int32_t ret = LimiterManagerProcess(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
+    int32_t ret = LimiterManagerProcess(sinkIndex, frameLen, inBuffer, outBuffer);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -163,11 +152,12 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_003, TestSize.Level1
     EXPECT_EQ(ret, SUCCESS);
     ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
     float *outBuffer = outBufferVector.data();
-    ret = LimiterManagerProcess(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
+    ret = LimiterManagerProcess(sinkIndex, frameLen, inBuffer, outBuffer);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -184,8 +174,9 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_004, TestSize.Level1
     EXPECT_EQ(ret, SUCCESS);
     ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
     float *outBuffer = outBufferVector.data();
     ret = LimiterManagerProcess(sinkIndex, 0, inBuffer, outBuffer);

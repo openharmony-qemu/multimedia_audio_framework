@@ -94,11 +94,12 @@ HWTEST_F(AudioLimiterUnitTest, Process_001, TestSize.Level1)
 
     int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
     float *outBuffer = outBufferVector.data();
-    result = limiter->Process(TEST_MAX_REQUEST, inBuffer, outBuffer);
+    ret = limiter->Process(frameLen, inBuffer, outBuffer);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -114,11 +115,12 @@ HWTEST_F(AudioLimiterUnitTest, Process_002, TestSize.Level1)
 
     int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
     float *outBuffer = outBufferVector.data();
-    result = limiter->Process(0, inBuffer, outBuffer);
+    ret = limiter->Process(0, inBuffer, outBuffer);
     EXPECT_EQ(ret, ERROR);
 }
 

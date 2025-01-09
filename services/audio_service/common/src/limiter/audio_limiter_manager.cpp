@@ -34,7 +34,7 @@ AudioLmtManager::~AudioLmtManager()
     AUDIO_INFO_LOG("~AudioLmtManager");
 }
 
-static AudioLmtManager* AudioLmtManager::GetInstance()
+AudioLmtManager* AudioLmtManager::GetInstance()
 {
     static AudioLmtManager instance;
     return &instance;
