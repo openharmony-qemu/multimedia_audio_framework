@@ -36,7 +36,7 @@ int32_t IpcStreamListenerProxy::OnOperationHandled(Operation operation, int64_t 
 {
     MessageParcel data;
     MessageParcel reply;
-    int32_t flag = IsWeakUpLaterNeeded(operation) ? (MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER)
+    int32_t flag = IsWakeUpLaterNeeded(operation) ? (MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER)
         : MessageOption::TF_ASYNC;
     MessageOption option(flag); // server call client in async
 
