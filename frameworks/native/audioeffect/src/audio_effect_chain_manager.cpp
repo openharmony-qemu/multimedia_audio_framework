@@ -638,7 +638,7 @@ int32_t AudioEffectChainManager::StreamVolumeUpdate(const std::string sessionIDS
 
 int32_t AudioEffectChainManager::SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     // set systemVolume by systemVolumeType
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
