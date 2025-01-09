@@ -64,11 +64,11 @@ bool AudioAdapterManagerHandler::SendSaveVolume(const DeviceType &deviceType,
 }
 
 bool AudioAdapterManagerHandler::SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
-    const StreamUsage &streamUsage)
+    const StreamUsage &streamUsage, const DeviceType &deviceType)
 {
     bool ret = true;
 #ifndef TEST_COVERAGE
-    auto eventContextObj = std::make_shared<StreamMuteStatusEvent>(streamType, mute, streamUsage);
+    auto eventContextObj = std::make_shared<StreamMuteStatusEvent>(streamType, mute, streamUsage, deviceType);
     lock_guard<mutex> runnerlock(runnerMutex_);
     ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAdapterManagerServerCmd::STREAM_MUTE_STATUS_UPDATE,
         eventContextObj));
@@ -108,7 +108,7 @@ void AudioAdapterManagerHandler::HandleUpdateStreamMuteStatus(const AppExecFwk::
     std::shared_ptr<StreamMuteStatusEvent> eventContextObj = event->GetSharedObject<StreamMuteStatusEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     AudioPolicyManagerFactory::GetAudioPolicyManager().HandleStreamMuteStatus(eventContextObj->streamType_,
-        eventContextObj->mute_, eventContextObj->streamUsage_);
+        eventContextObj->mute_, eventContextObj->streamUsage_, eventContextObj->deviceType_);
 }
 
 void AudioAdapterManagerHandler::HandleUpdateRingerMode(const AppExecFwk::InnerEvent::Pointer &event)

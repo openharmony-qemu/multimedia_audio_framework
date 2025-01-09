@@ -348,14 +348,15 @@ int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
     return gsp->GetSystemVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy)
+int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy,
+    const DeviceType &deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     if (isLegacy) {
-        return gsp->SetStreamMuteLegacy(volumeType, mute);
+        return gsp->SetStreamMuteLegacy(volumeType, mute, deviceType);
     }
-    return gsp->SetStreamMute(volumeType, mute);
+    return gsp->SetStreamMute(volumeType, mute, deviceType);
 }
 
 bool AudioPolicyManager::GetStreamMute(AudioVolumeType volumeType)

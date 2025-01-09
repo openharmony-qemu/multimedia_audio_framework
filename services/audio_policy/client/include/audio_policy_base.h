@@ -52,9 +52,11 @@ public:
 
     virtual float GetSingleStreamVolume(int32_t streamId) = 0;
 
-    virtual int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute) = 0;
+    virtual int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
-    virtual int32_t SetStreamMute(AudioVolumeType volumeType, bool mute) = 0;
+    virtual int32_t SetStreamMute(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual bool GetStreamMute(AudioVolumeType volumeType) = 0;
 

@@ -348,9 +348,14 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
     volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel);
 }
 
-void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
+void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
+    const DeviceType &deviceType)
 {
-    volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
+    if (deviceType != DEVICE_TYPE_NONE) {
+        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, mute);
+    } else {
+        volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
+    }
 }
 
 void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
@@ -502,13 +507,14 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
     return CalculateVolumeDb(volumeLevel);
 }
 
-int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
+int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
+    const DeviceType &deviceType)
 {
-    return SetStreamMuteInternal(streamType, mute, streamUsage);
+    return SetStreamMuteInternal(streamType, mute, streamUsage, deviceType);
 }
 
 int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute,
-    StreamUsage streamUsage)
+    StreamUsage streamUsage, const DeviceType &deviceType)
 {
     AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
     if (mute && !VolumeUtils::IsPCVolumeEnable() &&
@@ -530,7 +536,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
     volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
 
     if (handler_ != nullptr) {
-        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage);
+        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType);
     }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.

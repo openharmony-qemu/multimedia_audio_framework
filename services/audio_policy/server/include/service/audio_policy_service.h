@@ -119,7 +119,8 @@ public:
     float GetSingleStreamVolume(int32_t streamId) const;
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
-        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN);
+        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
