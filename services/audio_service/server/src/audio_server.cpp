@@ -1747,29 +1747,12 @@ int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float
 
 int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, float volume)
 {
-    std::string sceneType;
-    switch (streamType) {
-        case STREAM_RING:
-        case STREAM_ALARM:
-            sceneType = "SCENE_RING";
-            break;
-        case STREAM_VOICE_ASSISTANT:
-            sceneType = "SCENE_SPEECH";
-            break;
-        case STREAM_MUSIC:
-            sceneType = "SCENE_MUSIC";
-            break;
-        case STREAM_ACCESSIBILITY:
-            sceneType = "SCENE_OTHERS";
-            break;
-        default:
-            return SUCCESS;
-    }
+    AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    AUDIO_INFO_LOG("streamType : %{public}d , systemVolume: %{public}f", streamType, volume);
-    audioEffectChainManager->SetSceneTypeSystemVolume(sceneType, volume);
+    AUDIO_INFO_LOG("streamType: %{public}d, systemVolume: %{public}f", streamType, volume);
+    audioEffectChainManager->SetEffectSystemVolume(systemVolumeType, volume);
     
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
