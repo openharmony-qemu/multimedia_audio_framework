@@ -482,7 +482,7 @@ void AudioAdapterManager::ResetOffloadSessionId()
     offloadSessionID_.reset();
 }
 
-int32_t AudioAdapterManager::SetDoubleRingVolumeDb(AudioStreamType streamType, int32_t volumeLevel)
+int32_t AudioAdapterManager::SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel)
 {
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
