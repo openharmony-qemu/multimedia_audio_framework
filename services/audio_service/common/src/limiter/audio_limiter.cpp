@@ -130,7 +130,7 @@ void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuff
     }
 }
 
-uint32_t GetLatency()
+uint32_t AudioLimiter::GetLatency()
 {
     return latency_;
 }

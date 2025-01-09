@@ -178,6 +178,8 @@ static void *AllocateBuffer(size_t size);
 static bool AllocateEffectBuffer(struct Userdata *u);
 static void FreeEffectBuffer(struct Userdata *u);
 static void ResetBufferAttr(struct Userdata *u);
+static void CreateLimiter(struct Userdata *u);
+static void FreeLimiter(struct Userdata *u);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-6f
