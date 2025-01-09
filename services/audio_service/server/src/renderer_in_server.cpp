@@ -940,7 +940,8 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
 {
     std::unique_lock<std::mutex> lock(statusLock_);
     if (managerType_ == DIRECT_PLAYBACK) {
-        return IStreamManager::GetPlaybackManager(managerType_).GetLatency();
+        latency = IStreamManager::GetPlaybackManager(managerType_).GetLatency();
+        return SUCCESS;
     }
     return stream_->GetLatency(latency);
 }
