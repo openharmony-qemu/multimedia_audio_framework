@@ -30,7 +30,7 @@ public:
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
 
 private:
-    bool IsWeakUpLaterNeeded(Operation operation);
+    bool IsWakeUpLaterNeeded(Operation operation);
     static inline BrokerDelegator<IpcStreamListenerProxy> delegator_;
 };
 } // namespace AudioStandard

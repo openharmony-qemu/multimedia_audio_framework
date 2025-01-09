@@ -50,7 +50,7 @@ int32_t IpcStreamListenerProxy::OnOperationHandled(Operation operation, int64_t 
     return reply.ReadInt32();
 }
 
-bool IpcStreamListenerProxy::IsWeakUpLaterNeeded(Operation operation)
+bool IpcStreamListenerProxy::IsWakeUpLaterNeeded(Operation operation)
 {
     return (operation == SET_OFFLOAD_ENABLE) ||
         (operation == DATA_LINK_CONNECTING) ||
