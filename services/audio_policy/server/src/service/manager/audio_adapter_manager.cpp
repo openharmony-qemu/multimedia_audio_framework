@@ -483,6 +483,23 @@ void AudioAdapterManager::ResetOffloadSessionId()
     offloadSessionID_.reset();
 }
 
+int32_t AudioAdapterManager::SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel)
+{
+    float volumeDb = 1.0f;
+    if (useNonlinearAlgo_) {
+        if (Util::IsDualToneStreamType(streamType)) {
+            volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
+        } else {
+            volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
+        }
+    } else {
+        volumeDb = CalculateVolumeDb(volumeLevel);
+    }
+    SetAudioVolume(streamType, volumeDb);
+
+    return SUCCESS;
+}
+
 int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     if (GetStreamMuteInternal(streamType)) {

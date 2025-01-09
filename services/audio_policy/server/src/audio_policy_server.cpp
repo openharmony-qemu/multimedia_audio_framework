@@ -1169,6 +1169,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
         SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
     } else if (ret == ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
         SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
+        AUDIO_ERR_LOG("fail to set system volume level by safe vol");
     } else {
         AUDIO_ERR_LOG("fail to set system volume level, ret is %{public}d", ret);
     }

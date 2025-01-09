@@ -314,6 +314,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
             // set to avrcp device
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice, volumeLevel);
         } else if (result == ERR_UNKNOWN) {
+            AUDIO_INFO_LOG("UNKNOWN RESULT set abs safe volume");
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice,
                 audioPolicyManager_.GetSafeVolumeLevel());
         } else {
