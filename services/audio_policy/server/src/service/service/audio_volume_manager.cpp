@@ -776,7 +776,6 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
             // set to avrcp device
             int32_t volumeLevel;
             audioA2dpDevice_.GetA2dpDeviceVolumeLevel(btDevice, volumeLevel);
-            AUDIO_INFO_LOG("AudioVolumeManager::SetStreamMute set abs volume");
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice,
                 volumeLevel);
 #endif
