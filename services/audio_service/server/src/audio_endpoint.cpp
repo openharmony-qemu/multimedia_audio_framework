@@ -485,6 +485,7 @@ int32_t AudioEndpointInner::InitDupStream()
 
     // buffer init
     dupBufferSize_ = dstSpanSizeInframe_ * dstByteSizePerFrame_; // each
+    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr");
     CHECK_AND_RETURN_RET_LOG(dupBufferSize_ < dstAudioBuffer_->GetDataSize(), ERR_OPERATION_FAILED, "Init buffer fail");
     dupBuffer_ = std::make_unique<uint8_t []>(dupBufferSize_);
     ret = memset_s(reinterpret_cast<void *>(dupBuffer_.get()), dupBufferSize_, 0, dupBufferSize_);
@@ -1047,7 +1048,7 @@ bool AudioEndpointInner::DelayStopDevice()
         CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Stop() == SUCCESS,
             false, "Source stop failed.");
     } else {
-        CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
+        CHECK_AND_RETURN_RET_LOG(endpointStatus_ == IDEL && fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
             false, "Sink stop failed.");
     }
     isStarted_ = false;

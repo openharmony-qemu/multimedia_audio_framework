@@ -442,6 +442,12 @@ public:
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 
+    void ResetClientTrackerStubMap();
+
+    void RemoveClientTrackerStub(int32_t sessionId);
+
+    void CheckAndRemoveClientTrackerStub(const AudioMode &mode, const AudioStreamChangeInfo &streamChangeInfo);
+
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 
     int32_t SetMicrophoneBlockedCallback(const int32_t clientId,
@@ -486,6 +492,7 @@ private:
 
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
+    static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> clientTrackerStubMap_;
 
     bool isAudioRendererEventListenerRegistered = false;
     bool isAudioCapturerEventListenerRegistered = false;

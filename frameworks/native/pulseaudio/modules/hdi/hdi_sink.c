@@ -466,9 +466,6 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         AUDIO_DEBUG_LOG("StartOffloadHdi before write, because maybe sink switch");
         StartOffloadHdi(u, i);
     }
-    if (u->offload.firstWriteHdi) {
-        OffloadSetHdiVolume(i);
-    }
     int32_t ret = u->offload.sinkAdapter->RendererRenderFrame(u->offload.sinkAdapter, ((char*)p + index),
         (uint64_t)length, &writeLen);
     pa_memblock_release(pchunk->memblock);
@@ -481,6 +478,9 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         u->offload.firstWriteHdi = false;
         u->offload.hdiPosTs = now;
         u->offload.hdiPos = 0;
+        // if the hdi is flushing, it will block the volume setting.
+        // so the render frame judge it.
+        OffloadSetHdiVolume(i);
     }
     if (ret == 0 && u->offload.setHdiBufferSizeNum > 0 && writeLen == length) {
         u->offload.setHdiBufferSizeNum--;
@@ -2782,6 +2782,7 @@ static void OffloadRewindAndFlush(struct Userdata *u, pa_sink_input *i, bool aft
     playback_stream *ps = i->userdata;
     CHECK_AND_RETURN_LOG(ps != NULL, "ps is null");
 
+    OffloadLock(u); // flush will interrupt the offload callback, may be offload unlock.
     int32_t ret = u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
     if (ret == 0) {
         uint64_t offloadFade = 180000; // 180000 us fade out

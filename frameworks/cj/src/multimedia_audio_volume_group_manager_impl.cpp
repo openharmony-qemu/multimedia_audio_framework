@@ -33,24 +33,40 @@ MMAAudioVolumeGroupManagerImpl::MMAAudioVolumeGroupManagerImpl(int32_t groupId)
 }
 int32_t MMAAudioVolumeGroupManagerImpl::GetMaxVolume(int32_t volumeType)
 {
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return CJ_ERR_INVALID_VALUE;
+    }
     auto ret = audioGroupMngr_->GetMaxVolume(static_cast<AudioVolumeType>(volumeType));
     return ret;
 }
 
 int32_t MMAAudioVolumeGroupManagerImpl::GetMinVolume(int32_t volumeType)
 {
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return CJ_ERR_INVALID_VALUE;
+    }
     auto ret = audioGroupMngr_->GetMinVolume(static_cast<AudioVolumeType>(volumeType));
     return ret;
 }
 
 int32_t MMAAudioVolumeGroupManagerImpl::GetRingerMode() const
 {
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return CJ_ERR_INVALID_VALUE;
+    }
     auto ret = audioGroupMngr_->GetRingerMode();
     return static_cast<int32_t>(ret);
 }
 
 float MMAAudioVolumeGroupManagerImpl::GetSystemVolumeInDb(int32_t volumeType, int32_t volumeLevel, int32_t deviceType)
 {
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return CJ_ERR_INVALID_RETURN_FLOAT_VALUE;
+    }
     auto ret = audioGroupMngr_->GetSystemVolumeInDb(static_cast<AudioVolumeType>(volumeType), volumeLevel,
         static_cast<DeviceType>(deviceType));
     return ret;
@@ -58,12 +74,20 @@ float MMAAudioVolumeGroupManagerImpl::GetSystemVolumeInDb(int32_t volumeType, in
 
 int32_t MMAAudioVolumeGroupManagerImpl::GetVolume(int32_t volumeType)
 {
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return CJ_ERR_INVALID_VALUE;
+    }
     auto ret = audioGroupMngr_->GetVolume(static_cast<AudioVolumeType>(volumeType));
     return ret;
 }
 
 bool MMAAudioVolumeGroupManagerImpl::IsMicrophoneMute()
 {
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return false;
+    }
     auto ret = audioGroupMngr_->IsMicrophoneMute();
     return ret;
 }
@@ -71,6 +95,10 @@ bool MMAAudioVolumeGroupManagerImpl::IsMicrophoneMute()
 bool MMAAudioVolumeGroupManagerImpl::IsMute(int32_t volumeType)
 {
     bool isMute{ false };
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return isMute;
+    }
     auto ret = audioGroupMngr_->IsStreamMute(static_cast<AudioVolumeType>(volumeType), isMute);
     if (ret != NATIVE_SUCCESS) {
         AUDIO_ERR_LOG("failed to get mute status.");
@@ -80,12 +108,20 @@ bool MMAAudioVolumeGroupManagerImpl::IsMute(int32_t volumeType)
 
 bool MMAAudioVolumeGroupManagerImpl::IsVolumeUnadjustable()
 {
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return false;
+    }
     auto ret = audioGroupMngr_->IsVolumeUnadjustable();
     return ret;
 }
 
 float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForOutputDevice(const int32_t deviceId)
 {
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return CJ_ERR_INVALID_RETURN_FLOAT_VALUE;
+    }
     auto ret = audioGroupMngr_->GetMaxAmplitude(deviceId);
     if (ret < 0) {
         AUDIO_ERR_LOG("failed to get MaxAmplitude.");
@@ -95,6 +131,10 @@ float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForOutputDevice(const int32
 
 float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDevice(const int32_t deviceId)
 {
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        return CJ_ERR_INVALID_RETURN_FLOAT_VALUE;
+    }
     auto ret = audioGroupMngr_->GetMaxAmplitude(deviceId);
     if (ret < 0) {
         AUDIO_ERR_LOG("failed to get MaxAmplitude.");
@@ -104,6 +144,15 @@ float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDevice(const int32_
 
 void MMAAudioVolumeGroupManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
 {
+    if (errorCode == nullptr) {
+        AUDIO_ERR_LOG("invalid pointer");
+        return;
+    }
+    if (audioGroupMngr_ == nullptr) {
+        AUDIO_ERR_LOG("invalid audio group manager instance");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
     switch (callbackType) {
         case AudioVolumeGroupManagerCallbackType::RING_MODE_CHANGE: {
             auto func = CJLambda::Create(reinterpret_cast<void (*)(int32_t)>(callback));
