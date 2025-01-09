@@ -101,7 +101,9 @@
     </focus_type>
     <focus_type value="STREAM_VOICE_MESSAGE">
         <focus_table>
-            <deny>nil</deny>
+            <deny>
+                <focus_type value="SOURCE_TYPE_WAKEUP"/>
+            </deny>
             <shared>
                 <focus_type value="STREAM_SYSTEM" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_GAME" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -114,7 +116,6 @@
                 <focus_type value="STREAM_NOTIFICATION" is_forced="true" action_type="DUCK" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
-                <focus_type value="SOURCE_TYPE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_CALL" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_REMOTE_CAST" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -1012,7 +1013,6 @@
             <shared>
                 <focus_type value="STREAM_VOICE_CALL_ASSISTANT" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="PLAY" action_on="incoming"/>
-                <focus_type value="STREAM_VOICE_MESSAGE" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_SYSTEM" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_RING" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_MUSIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -1035,6 +1035,7 @@
             </shared>
             <private>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="STOP" action_on="existing"/>
+                <focus_type value="STREAM_VOICE_MESSAGE" is_forced="true" action_type="STOP" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_CAMCORDER" is_forced="true" action_type="STOP" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="STOP" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="STOP" action_on="existing"/>
