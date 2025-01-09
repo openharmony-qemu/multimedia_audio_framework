@@ -34,10 +34,10 @@ AudioLmtManager::~AudioLmtManager()
     AUDIO_INFO_LOG("~AudioLmtManager");
 }
 
-static std::shared_ptr<AudioLmtManager> AudioLmtManager::GetInstance()
+static AudioLmtManager* AudioLmtManager::GetInstance()
 {
-    static std::shared_ptr<AudioLmtManager> instance = std::make_shared<AudioLmtManager>();
-    return instance;
+    static AudioLmtManager instance;
+    return &instance;
 }
 
 int32_t AudioLmtManager::CreateLimiter(int32_t sinkIndex)

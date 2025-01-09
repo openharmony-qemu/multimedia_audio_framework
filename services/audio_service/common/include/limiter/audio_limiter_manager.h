@@ -28,7 +28,7 @@ class AudioLmtManager {
 public:
     AudioLmtManager();
     ~AudioLmtManager();
-    static std::shared_ptr<AudioLmtManager> GetInstance();
+    static  AudioLmtManager* GetInstance();
     int32_t CreateLimiter(int32_t sinkIndex);
     int32_t SetLimiterConfig(int32_t sinkIndex, int32_t maxRequest, int32_t biteSize,
         int32_t sampleRate, int32_t channels);

@@ -29,7 +29,6 @@ namespace AudioStandard {
 
 const int32_t TEST_MAX_REQUEST = 7680;
 const int32_t AUDIO_MS_PER_S = 1000;
-static std::shared_ptr<AudioLmtManager> limiterManager;
 
 class AudioLimiterManagerUnitTest : public testing::Test {
 public:
@@ -41,14 +40,11 @@ public:
 
 void AudioLimiterManagerUnitTest::SetUpTestCase(void) {}
 
-void AudioLimiterManagerUnitTest::TearDownTestCase(void)
-{
-    limiterManager.reset();
-}
+void AudioLimiterManagerUnitTest::TearDownTestCase(void) {}
 
 void AudioLimiterManagerUnitTest::SetUp(void)
 {
-    std::shared_ptr<AudioLmtManager> limiterManager = AudioLmtManager::GetInstance();
+    AudioLmtManager *limiterManager = AudioLmtManager::GetInstance();
 }
 
 void AudioLimiterManagerUnitTest::TearDown(void) {}
