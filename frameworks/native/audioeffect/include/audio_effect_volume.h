@@ -30,8 +30,8 @@ public:
     static std::shared_ptr<AudioEffectVolume> GetInstance();
     void SetDspVolume(const float volume);
     float GetDspVolume();
-    void SetSystemVolume(const std::string sceneType, const float systemVolume);
-    float GetSystemVolume(const std::string sceneType);
+    void SetSystemVolume(const int32_t systemVolumeType, const float systemVolume);
+    float GetSystemVolume(const int32_t systemVolumeType);
     void SetStreamVolume(const std::string sessionID, float systemVolume);
     float GetStreamVolume(const std::string sessionID);
     int32_t StreamVolumeDelete(const std::string sessionID);
@@ -40,7 +40,7 @@ private:
     std::mutex volumeMutex_;
     std::map<std::string, float> SceneTypeToVolumeMap_;
     std::map<std::string, float> SessionIDToVolumeMap_;
-    std::map<std::string, float> SceneTypeToSystemVolumeMap_;
+    std::map<int32_t, float> SystemVolumeMap_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

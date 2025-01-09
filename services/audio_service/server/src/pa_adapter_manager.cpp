@@ -563,6 +563,8 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
         pa_proplist_sets(propList, "headtracking.enabled",
             std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
+        AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig.streamType);
+        pa_proplist_sets(propList, "systemVolume.type", std::to_string(systemVolumeType).c_str());
         SetHighResolution(propList, processConfig, sessionId);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         SetRecordProplist(propList, processConfig);
