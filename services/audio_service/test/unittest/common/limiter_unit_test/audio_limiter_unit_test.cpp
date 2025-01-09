@@ -49,7 +49,7 @@ void AudioLimiterUnitTest::TearDownTestCase(void)
 void AudioLimiterUnitTest::SetUp(void)
 {
     int32_t sinkIndex = 1;
-    std::shared_ptr<AudioLimiter> limiter = std::make_shared<AudioLimiter>(sinkIndex);
+    limiter = std::make_shared<AudioLimiter>(sinkIndex);
 }
 
 void AudioLimiterUnitTest::TearDown(void) {}

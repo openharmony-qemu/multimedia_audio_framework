@@ -60,7 +60,7 @@ AudioLimiter::~AudioLimiter()
 void AudioLimiter::ReleaseBuffer()
 {
     if (bufHis_ != nullptr) {
-        delete[] bufHis;
+        delete[] bufHis_;
         bufHis_ = nullptr;
     }
     return;
