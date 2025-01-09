@@ -95,6 +95,8 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("selectOutputDeviceByFilter", SelectOutputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("selectInputDevice", SelectInputDevice),
         DECLARE_NAPI_FUNCTION("selectInputDeviceByFilter", SelectInputDeviceByFilter),
+        DECLARE_NAPI_FUNCTION("excludeOutputDevices", ExcludeOutputDevices),
+        DECLARE_NAPI_FUNCTION("unexcludeOutputDevices", UnexcludeOutputDevices),
         DECLARE_NAPI_FUNCTION("setCommunicationDevice", SetCommunicationDevice),
         DECLARE_NAPI_FUNCTION("isCommunicationDeviceActive", IsCommunicationDeviceActive),
         DECLARE_NAPI_FUNCTION("isCommunicationDeviceActiveSync", IsCommunicationDeviceActiveSync),
@@ -109,6 +111,7 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getPreferredInputDeviceByFilter", GetPreferredInputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("getAvailableMicrophones", GetAvailableMicrophones),
         DECLARE_NAPI_FUNCTION("getAvailableDevices", GetAvailableDevices),
+        DECLARE_NAPI_FUNCTION("getExcludedOutputDevices", GetExcludedOutputDevices),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
 #if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
@@ -418,6 +421,89 @@ napi_value NapiAudioRoutingManager::SelectInputDeviceByFilter(napi_env env, napi
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SelectInputDeviceByFilter", executor, complete);
+}
+
+napi_value NapiAudioRoutingManager::ExcludeOutputDevices(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("ExcludeOutputDevices failed : no memory");
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetAudioDeviceUsage(env, context->audioDevUsage, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "exclude output devices failed",
+            NAPI_ERR_UNSUPPORTED);
+        NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
+            context->bArgTransFlag, argv[PARAM1]);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRoutingManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRoutingManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
+            "context object state is error.");
+        context->intValue = napiAudioRoutingManager->audioMngr_->ExcludeOutputDevices(context->audioDevUsage,
+            context->deviceDescriptors);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "ExcludeOutputDevices failed",
+            NAPI_ERR_SYSTEM);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "ExcludeOutputDevices", executor, complete);
+}
+
+napi_value NapiAudioRoutingManager::UnexcludeOutputDevices(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("UnexcludeOutputDevices failed : no memory");
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetAudioDeviceUsage(env, context->audioDevUsage, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "unexclude output devices failed",
+            NAPI_ERR_UNSUPPORTED);
+        context->argSize = argc;
+        if (argc == ARGS_TWO) {
+            NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
+                context->bArgTransFlag, argv[PARAM1]);
+        }
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRoutingManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRoutingManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
+            "context object state is error.");
+        if (context->argSize == ARGS_ONE) {
+            context->intValue = napiAudioRoutingManager->audioMngr_->UnexcludeOutputDevices(context->audioDevUsage);
+        } else {
+            context->intValue = napiAudioRoutingManager->audioMngr_->UnexcludeOutputDevices(context->audioDevUsage,
+                context->deviceDescriptors);
+        }
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "UnexcludeOutputDevices failed",
+            NAPI_ERR_SYSTEM);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "UnexcludeOutputDevices", executor, complete);
 }
 
 napi_value NapiAudioRoutingManager::SetCommunicationDevice(napi_env env, napi_callback_info info)
@@ -859,6 +945,26 @@ napi_value NapiAudioRoutingManager::GetAvailableDevices(napi_env env, napi_callb
         availableSptrDescs.push_back(dec);
     }
     NapiParamUtils::SetDeviceDescriptors(env, availableSptrDescs, result);
+    return result;
+}
+
+napi_value NapiAudioRoutingManager::GetExcludedOutputDevices(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "argCount invalid");
+
+    AudioDeviceUsage audioDevUsage;
+    napi_status status = NapiParamUtils::GetAudioDeviceUsage(env, audioDevUsage, argv[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of deviceUsage must be enum DeviceUsage"),
+        "exclude output devices failed");
+    vector<shared_ptr<AudioDeviceDescriptor>> excludedDevices =
+        napiAudioRoutingManager->audioMngr_->GetExcludedOutputDevices(audioDevUsage);
+    NapiParamUtils::SetDeviceDescriptors(env, excludedDevices, result);
     return result;
 }
 

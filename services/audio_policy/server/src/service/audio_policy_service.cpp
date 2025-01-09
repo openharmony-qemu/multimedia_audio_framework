@@ -162,8 +162,16 @@ void AudioPolicyService::CreateRecoveryThread()
     if (RecoveryDevicesThread_ != nullptr) {
         RecoveryDevicesThread_->detach();
     }
-    RecoveryDevicesThread_ = std::make_unique<std::thread>([this] { this->RecoveryPreferredDevices(); });
+    RecoveryDevicesThread_ = std::make_unique<std::thread>([this] {
+        this->RecoverExcludedOutputDevices();
+        this->RecoveryPreferredDevices();
+    });
     pthread_setname_np(RecoveryDevicesThread_->native_handle(), "APSRecovery");
+}
+
+void AudioPolicyService::RecoverExcludedOutputDevices()
+{
+    audioRecoveryDevice_.RecoverExcludedOutputDevices();
 }
 
 void AudioPolicyService::RecoveryPreferredDevices()
@@ -411,6 +419,25 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
     return audioDeviceLock_.SelectInputDevice(audioCapturerFilter, selectedDesc);
+}
+
+int32_t AudioPolicyService::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    Trace trace("AudioPolicyService::ExcludeOutputDevices");
+    return audioDeviceLock_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioPolicyService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    return audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetExcludedOutputDevices(
+    AudioDeviceUsage audioDevUsage)
+{
+    return audioDeviceLock_.GetExcludedOutputDevices(audioDevUsage);
 }
 
 bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const

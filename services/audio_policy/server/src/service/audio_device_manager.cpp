@@ -21,6 +21,7 @@
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_device_parser.h"
+#include "audio_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -129,7 +130,7 @@ void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDevi
     if (result) {
         descArray.push_back(devDesc);
         AUDIO_WARNING_LOG("Add to %{public}s list, and then %{public}s",
-            logName.c_str(), GetConnDevicesStr(descArray).c_str());
+            logName.c_str(), AudioPolicyUtils::GetInstance().GetDevicesStr(descArray).c_str());
     }
 }
 
@@ -233,7 +234,8 @@ bool AudioDeviceManager::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
 void AudioDeviceManager::AddConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     connectedDevices_.insert(connectedDevices_.begin(), devDesc);
-    AUDIO_INFO_LOG("Connected list %{public}s", GetConnDevicesStr(connectedDevices_).c_str());
+    AUDIO_INFO_LOG("Connected list %{public}s",
+        AudioPolicyUtils::GetInstance().GetDevicesStr(connectedDevices_).c_str());
 }
 
 void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -265,7 +267,8 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
             it = connectedDevices_.erase(it);
         }
     }
-    AUDIO_INFO_LOG("Connected list %{public}s", GetConnDevicesStr(connectedDevices_).c_str());
+    AUDIO_INFO_LOG("Connected list %{public}s",
+        AudioPolicyUtils::GetInstance().GetDevicesStr(connectedDevices_).c_str());
 }
 
 void AudioDeviceManager::AddDefaultDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -408,28 +411,7 @@ void AudioDeviceManager::AddNewDevice(const std::shared_ptr<AudioDeviceDescripto
 std::string AudioDeviceManager::GetConnDevicesStr()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
-    return GetConnDevicesStr(connectedDevices_);
-}
-
-std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    std::string devices;
-    devices.append("device type:id:role:(category:constate) ");
-    for (auto iter : descs) {
-        CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
-        devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
-        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
-        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->getRole())));
-        if (iter->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
-            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
-            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
-        } else if (IsUsb(iter->getType())) {
-            devices.append(":" + GetEncryptAddr(iter->macAddress_));
-        }
-        devices.append(" ");
-    }
-    return devices;
+    return AudioPolicyUtils::GetInstance().GetDevicesStr(connectedDevices_);
 }
 
 void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
@@ -447,7 +429,7 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
     descArray.erase(removeBeginIt, descArray.end());
 
     AUDIO_WARNING_LOG("Remove %{public}zu desc from %{public}s list, and then %{public}s", deleteNum,
-        logName.c_str(), GetConnDevicesStr(descArray).c_str());
+        logName.c_str(), AudioPolicyUtils::GetInstance().GetDevicesStr(descArray).c_str());
 }
 
 void AudioDeviceManager::RemoveNewDevice(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
