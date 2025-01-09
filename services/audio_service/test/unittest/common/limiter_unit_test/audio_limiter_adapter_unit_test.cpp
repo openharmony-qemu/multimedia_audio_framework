@@ -15,6 +15,7 @@
 
 
 #include <gtest/gtest.h>
+#include <parcel.h>
 
 #include "audio_errors.h"
 #include "audio_limiter_adapter.h"
@@ -25,6 +26,8 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+const int32_t TEST_MAX_REQUEST = 7680;
 
 class AudioLimiterAdapterUnitTest : public testing::Test {
 public:
@@ -104,7 +107,7 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_002, TestSize.Leve
  * @tc.number: LimiterManagerSetConfig_003
  * @tc.desc  : Test LimiterManagerSetConfig interface when config is invaild.
  */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_002, TestSize.Level1)
+HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_003, TestSize.Level1)
 {
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);
@@ -139,10 +142,10 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_001, TestSize.Level1
 HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_002, TestSize.Level1)
 {
     int32_t sinkIndex = 1;
-    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
-    float *inBuffer = inBuffer.data();
-    float *outBuffer = outBuffer.data();
+    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
     int32_t ret = LimiterManagerProcess(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
     EXPECT_EQ(ret, ERROR);
 }
@@ -160,10 +163,10 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_003, TestSize.Level1
     EXPECT_EQ(ret, SUCCESS);
     ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
-    float *inBuffer = inBuffer.data();
-    float *outBuffer = outBuffer.data();
+    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
     ret = LimiterManagerProcess(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -181,10 +184,10 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_004, TestSize.Level1
     EXPECT_EQ(ret, SUCCESS);
     ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
-    float *inBuffer = inBuffer.data();
-    float *outBuffer = outBuffer.data();
+    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
     ret = LimiterManagerProcess(sinkIndex, 0, inBuffer, outBuffer);
     EXPECT_EQ(ret, ERROR);
 }

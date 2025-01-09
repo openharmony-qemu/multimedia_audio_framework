@@ -15,6 +15,7 @@
 
 
 #include <gtest/gtest.h>
+#include <parcel.h>
 
 #include "audio_errors.h"
 #include "audio_limiter.h"
@@ -26,9 +27,10 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr int32_t TEST_MAX_REQUEST = 7680;
-
+const int32_t TEST_MAX_REQUEST = 7680;
+const int32_t AUDIO_MS_PER_S = 1000;
 static std::shared_ptr<AudioLimiter> limiter;
+
 class AudioLimiterUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -60,7 +62,7 @@ void AudioLimiterUnitTest::TearDown(void) {}
  */
 HWTEST_F(AudioLimiterUnitTest, SetConfig_001, TestSize.Level1)
 {
-    EXCEPT_NE(limiter, nullptr);
+    EXPECT_NE(limiter, nullptr);
 
     int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
@@ -74,7 +76,7 @@ HWTEST_F(AudioLimiterUnitTest, SetConfig_001, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterUnitTest, SetConfig_002, TestSize.Level1)
 {
-    EXCEPT_NE(limiter, nullptr);
+    EXPECT_NE(limiter, nullptr);
 
     int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
     EXPECT_EQ(ret, ERROR);
@@ -88,14 +90,14 @@ HWTEST_F(AudioLimiterUnitTest, SetConfig_002, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterUnitTest, Process_001, TestSize.Level1)
 {
-    EXCEPT_NE(limiter, nullptr);
+    EXPECT_NE(limiter, nullptr);
 
     int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
-    float *inBuffer = inBuffer.data();
-    float *outBuffer = outBuffer.data();
+    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
     result = limiter->Process(TEST_MAX_REQUEST, inBuffer, outBuffer);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -108,14 +110,14 @@ HWTEST_F(AudioLimiterUnitTest, Process_001, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterUnitTest, Process_002, TestSize.Level1)
 {
-    EXCEPT_NE(limiter, nullptr);
+    EXPECT_NE(limiter, nullptr);
 
     int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
-    float *inBuffer = inBuffer.data();
-    float *outBuffer = outBuffer.data();
+    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
     result = limiter->Process(0, inBuffer, outBuffer);
     EXPECT_EQ(ret, ERROR);
 }
@@ -128,7 +130,7 @@ HWTEST_F(AudioLimiterUnitTest, Process_002, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterUnitTest, GetLatency_001, TestSize.Level1)
 {
-    EXCEPT_NE(limiter, nullptr);
+    EXPECT_NE(limiter, nullptr);
 
     int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);

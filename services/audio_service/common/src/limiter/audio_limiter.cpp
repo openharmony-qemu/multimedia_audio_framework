@@ -24,16 +24,16 @@
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr float NEXT_LEVEL = 0.5f;
-constexpr float THRESHOLD = 0.92f;
-constexpr float LEVEL_ATTACK = 0.3f;
-constexpr float LEVEL_RELEASE = 0.7f;
-constexpr float GAIN_ATTACK = 0.1f;
-constexpr float GAIN_RELEASE = 0.6f;
-constexpr float PROC_COUNT = 4;  // process 4 times
-constexpr float AUDIO_FORMAT_PCM_FLOAT = 4;
-constexpr int32_t AUDIO_MS_PER_S = 1000;
-constexpr int32_t AUDIO_LMT_ALGO_CHANNEL = 2;    // 2 channel for stereo
+const float NEXT_LEVEL = 0.5f;
+const float THRESHOLD = 0.92f;
+const float LEVEL_ATTACK = 0.3f;
+const float LEVEL_RELEASE = 0.7f;
+const float GAIN_ATTACK = 0.1f;
+const float GAIN_RELEASE = 0.6f;
+const float PROC_COUNT = 4;  // process 4 times
+const float AUDIO_FORMAT_PCM_FLOAT = 4;
+const int32_t AUDIO_MS_PER_S = 1000;
+const int32_t AUDIO_LMT_ALGO_CHANNEL = 2;    // 2 channel for stereo
 
 AudioLimiter::AudioLimiter(int32_t sinkIndex)
 {

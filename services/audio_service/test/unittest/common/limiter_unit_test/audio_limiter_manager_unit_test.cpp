@@ -15,6 +15,7 @@
 
 
 #include <gtest/gtest.h>
+#include <parcel.h>
 
 #include "audio_errors.h"
 #include "audio_limiter_manager.h"
@@ -25,6 +26,10 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+const int32_t TEST_MAX_REQUEST = 7680;
+const int32_t AUDIO_MS_PER_S = 1000;
+static std::shared_ptr<AudioLmtManager> limiterManager;
 
 class AudioLimiterManagerUnitTest : public testing::Test {
 public:
@@ -56,7 +61,7 @@ void AudioLimiterManagerUnitTest::TearDown(void) {}
  */
 HWTEST_F(AudioLimiterManagerUnitTest, CreateLimiter_001, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
@@ -69,9 +74,9 @@ HWTEST_F(AudioLimiterManagerUnitTest, CreateLimiter_001, TestSize.Level1)
  * @tc.number: CreateLimiter_002
  * @tc.desc  : Test CreateLimiter interface when repeate create use the same sinkIndex.
  */
-HWTEST_F(AudioLimiterManagerUnitTest, CreateLimiter_001, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, CreateLimiter_002, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
@@ -88,9 +93,11 @@ HWTEST_F(AudioLimiterManagerUnitTest, CreateLimiter_001, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_001, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
-
-    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    EXPECT_NE(limiterManager, nullptr);
+    
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST,
+        SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -102,7 +109,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_001, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_002, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
@@ -119,7 +126,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_002, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_003, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
@@ -136,7 +143,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_003, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_001, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     float *inBuffer = nullptr;
@@ -153,13 +160,13 @@ HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_001, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_002, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
-    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
-    float *inBuffer = inBuffer.data();
-    float *outBuffer = outBuffer.data();
+    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
     ret = limiterManager->ProcessLimiter(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
     EXPECT_EQ(ret, ERROR);
 }
@@ -172,17 +179,17 @@ HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_002, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_003, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
     EXPECT_EQ(ret, SUCCESS);
     ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
-    float *inBuffer = inBuffer.data();
-    float *outBuffer = outBuffer.data();
+    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
     ret = limiterManager->ProcessLimiter(sinkIndex, TEST_MAX_REQUEST, inBuffer, outBuffer);
     EXPECT_EQ(ret, ERROR);
 }
@@ -195,17 +202,17 @@ HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_003, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_004, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
     EXPECT_EQ(ret, SUCCESS);
     ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    std::vector<float> inBuffer(TEST_MAX_REQUEST, 0);
-    std::vector<float> outBuffer(TEST_MAX_REQUEST, 0);
-    float *inBuffer = inBuffer.data();
-    float *outBuffer = outBuffer.data();
+    std::vector<float> inBufferVector(TEST_MAX_REQUEST, 0);
+    std::vector<float> outBufferVector(TEST_MAX_REQUEST, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
     ret = limiterManager->ProcessLimiter(sinkIndex, 0, inBuffer, outBuffer);
     EXPECT_EQ(ret, ERROR);
 }
@@ -218,7 +225,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_004, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, ReleaseLimiter_001, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     ret = limiterManager->ReleaseLimiter(sinkIndex);
@@ -233,7 +240,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, ReleaseLimiter_001, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, ReleaseLimiter_002, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
@@ -250,7 +257,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, ReleaseLimiter_002, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, ReleaseLimiter_003, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
@@ -269,7 +276,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, ReleaseLimiter_003, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, GetLatency_001, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     uint32_t latency = limiterManager->GetLatency(sinkIndex);
@@ -284,7 +291,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, GetLatency_001, TestSize.Level1)
  */
 HWTEST_F(AudioLimiterManagerUnitTest, GetLatency_002, TestSize.Level1)
 {
-    EXCEPT_NE(limiterManager, nullptr);
+    EXPECT_NE(limiterManager, nullptr);
 
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
