@@ -407,7 +407,7 @@ void AudioPolicyClientProxy::OnSpatializationEnabledChange(const bool &enabled)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
@@ -433,7 +433,7 @@ void AudioPolicyClientProxy::OnSpatializationEnabledChangeForAnyDevice(const std
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
@@ -459,7 +459,7 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChange(const bool &enabled)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
@@ -485,7 +485,7 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const std::
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;

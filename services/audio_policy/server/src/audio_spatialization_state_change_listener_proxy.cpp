@@ -40,7 +40,7 @@ void AudioSpatializationStateChangeListenerProxy::OnSpatializationStateChange(
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
 
     AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerProxy OnSpatializationStateChange entered");
 
