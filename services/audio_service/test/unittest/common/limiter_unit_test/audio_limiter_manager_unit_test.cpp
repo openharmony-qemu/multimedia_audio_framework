@@ -26,7 +26,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioLimiterUnitTest : public testing::Test {
+class AudioLimiterManagerUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -34,19 +34,19 @@ public:
     void TearDown();
 };
 
-void AudioLimiterUnitTest::SetUpTestCase(void) {}
+void AudioLimiterManagerUnitTest::SetUpTestCase(void) {}
 
-void AudioLimiterUnitTest::TearDownTestCase(void)
+void AudioLimiterManagerUnitTest::TearDownTestCase(void)
 {
     limiterManager.reset();
 }
 
-void AudioLimiterUnitTest::SetUp(void)
+void AudioLimiterManagerUnitTest::SetUp(void)
 {
     std::shared_ptr<AudioLmtManager> limiterManager = AudioLmtManager::GetInstance();
 }
 
-void AudioLimiterUnitTest::TearDown(void) {}
+void AudioLimiterManagerUnitTest::TearDown(void) {}
 
 /**
  * @tc.name  : Test CreateLimiter API
@@ -54,7 +54,7 @@ void AudioLimiterUnitTest::TearDown(void) {}
  * @tc.number: CreateLimiter_001
  * @tc.desc  : Test CreateLimiter interface when first create.
  */
-HWTEST_F(AudioLimiterUnitTest, CreateLimiter_001, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, CreateLimiter_001, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -69,7 +69,7 @@ HWTEST_F(AudioLimiterUnitTest, CreateLimiter_001, TestSize.Level1)
  * @tc.number: CreateLimiter_002
  * @tc.desc  : Test CreateLimiter interface when repeate create use the same sinkIndex.
  */
-HWTEST_F(AudioLimiterUnitTest, CreateLimiter_001, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, CreateLimiter_001, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -86,7 +86,7 @@ HWTEST_F(AudioLimiterUnitTest, CreateLimiter_001, TestSize.Level1)
  * @tc.number: SetLimiterConfig_001
  * @tc.desc  : Test SetLimiterConfig interface when limiter has not been created.
  */
-HWTEST_F(AudioLimiterUnitTest, SetLimiterConfig_001, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_001, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -100,7 +100,7 @@ HWTEST_F(AudioLimiterUnitTest, SetLimiterConfig_001, TestSize.Level1)
  * @tc.number: SetLimiterConfig_002
  * @tc.desc  : Test SetLimiterConfig interface when config is vaild.
  */
-HWTEST_F(AudioLimiterUnitTest, SetLimiterConfig_002, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_002, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -117,7 +117,7 @@ HWTEST_F(AudioLimiterUnitTest, SetLimiterConfig_002, TestSize.Level1)
  * @tc.number: SetLimiterConfig_003
  * @tc.desc  : Test SetLimiterConfig interface when config is invaild.
  */
-HWTEST_F(AudioLimiterUnitTest, SetLimiterConfig_003, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_003, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -134,7 +134,7 @@ HWTEST_F(AudioLimiterUnitTest, SetLimiterConfig_003, TestSize.Level1)
  * @tc.number: ProcessLimiter_001
  * @tc.desc  : Test ProcessLimiter interface when inBuffer or outBuffer is nullptr.
  */
-HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_001, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_001, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -151,7 +151,7 @@ HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_001, TestSize.Level1)
  * @tc.number: ProcessLimiter_002
  * @tc.desc  : Test ProcessLimiter interface when limiter has not been created.
  */
-HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_002, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_002, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -170,7 +170,7 @@ HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_002, TestSize.Level1)
  * @tc.number: ProcessLimiter_003
  * @tc.desc  : Test ProcessLimiter interface when frameLen is vaild.
  */
-HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_003, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_003, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -193,7 +193,7 @@ HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_003, TestSize.Level1)
  * @tc.number: ProcessLimiter_004
  * @tc.desc  : Test ProcessLimiter interface when frameLen is invaild.
  */
-HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_004, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_004, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -216,7 +216,7 @@ HWTEST_F(AudioLimiterUnitTest, ProcessLimiter_004, TestSize.Level1)
  * @tc.number: ReleaseLimiter_001
  * @tc.desc  : Test ReleaseLimiter interface when limiter has not been created.
  */
-HWTEST_F(AudioLimiterUnitTest, ReleaseLimiter_001, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, ReleaseLimiter_001, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -231,7 +231,7 @@ HWTEST_F(AudioLimiterUnitTest, ReleaseLimiter_001, TestSize.Level1)
  * @tc.number: ReleaseLimiter_002
  * @tc.desc  : Test ReleaseLimiter interface when limiter has been created.
  */
-HWTEST_F(AudioLimiterUnitTest, ReleaseLimiter_002, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, ReleaseLimiter_002, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -248,7 +248,7 @@ HWTEST_F(AudioLimiterUnitTest, ReleaseLimiter_002, TestSize.Level1)
  * @tc.number: ReleaseLimiter_003
  * @tc.desc  : Test ReleaseLimiter interface when limiter has been created and released.
  */
-HWTEST_F(AudioLimiterUnitTest, ReleaseLimiter_003, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, ReleaseLimiter_003, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -267,7 +267,7 @@ HWTEST_F(AudioLimiterUnitTest, ReleaseLimiter_003, TestSize.Level1)
  * @tc.number: GetLatency_001
  * @tc.desc  : Test GetLatency interface when limiter has not been created.
  */
-HWTEST_F(AudioLimiterUnitTest, GetLatency_001, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, GetLatency_001, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 
@@ -282,7 +282,7 @@ HWTEST_F(AudioLimiterUnitTest, GetLatency_001, TestSize.Level1)
  * @tc.number: GetLatency_002
  * @tc.desc  : Test GetLatency interface when limiter has been created.
  */
-HWTEST_F(AudioLimiterUnitTest, GetLatency_002, TestSize.Level1)
+HWTEST_F(AudioLimiterManagerUnitTest, GetLatency_002, TestSize.Level1)
 {
     EXCEPT_NE(limiterManager, nullptr);
 

@@ -87,11 +87,11 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
 int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffer)
 {
     CHECK_AND_RETURN_RET_LOG(algoFrameLen_ * PROC_COUNT == frameLen, ERROR,
-        "error, ptrIndex = %{public}d, frameLen = %{public}d", ptrIndex, frameLen);
+        "error, algoFrameLen_ = %{public}d, frameLen = %{public}d", algoFrameLen_, frameLen);
     int32_t ptrIndex = 0;
     DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(inBuffer), frameLen * sizeof(float));
     for (int32_t i = 0; i < PROC_COUNT; i++) {
-        ProcessAlgo(algoFrameLen, inBuffer + ptrIndex, outBuffer + ptrIndex);
+        ProcessAlgo(algoFrameLen_, inBuffer + ptrIndex, outBuffer + ptrIndex);
         ptrIndex += algoFrameLen_;
     }
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(outBuffer), frameLen * sizeof(float));

@@ -33,6 +33,7 @@
 #include "i_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "audio_volume.h"
+#include "audio_limiter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -531,8 +532,8 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     latency += limiterLatency * AUDIO_US_PER_MS;
 
     AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", algo latency: %{public}u ms"
-        ", a2dp offload latency: %{public}u ms, lmt latency: %{public}u ms, write: %{public}" PRIu64 ", 
-        read: %{public}" PRIu64 ", sink:%{public}" PRIu64 "", latency, paLatency, algorithmLatency,
+        ", a2dp offload latency: %{public}u ms, lmt latency: %{public}u ms, write: %{public}" PRIu64 ""
+        ", read: %{public}" PRIu64 ", sink:%{public}" PRIu64 "", latency, paLatency, algorithmLatency,
         a2dpOffloadLatency, limiterLatency, writeIndex, readIndex, info->sink_usec);
 
     preLatency_ = latency;

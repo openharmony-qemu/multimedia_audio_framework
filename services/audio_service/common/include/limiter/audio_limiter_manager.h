@@ -36,7 +36,7 @@ public:
     int32_t ReleaseLimiter(int32_t sinkIndex);
     uint32_t GetLatency(int32_t sinkIndex);
 private:
-    std::map<int32_t, std::shared_ptr<AudioLimiter>> sinkNameToLimiterMap_;
+    std::map<int32_t, std::shared_ptr<AudioLimiter>> sinkIndexToLimiterMap_;
     std::mutex limiterMutex_;
 };
 

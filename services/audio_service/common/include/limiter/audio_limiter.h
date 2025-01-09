@@ -30,7 +30,7 @@ public:
     int32_t Process(int32_t frameLen, float *inBuffer, float *outBuffer);
     uint32_t GetLatency();
 private:
-    void ProcessAlgo(float *inBuffer, float *outBuffer);
+    void ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuffer);
     void ReleaseBuffer();
     uint32_t latency_;
     int32_t sinkIndex_;
