@@ -26,6 +26,9 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS = 20000000; // 20ms
+constexpr int32_t AUDIO_US_PER_S = 1000000;
+constexpr int32_t AUDIO_DEFAULT_LATENCY = 164000;
+constexpr int32_t AUDIO_FRAME_WORK_LATENCY = 40000;
 constexpr int32_t FADING_MS = 20; // 20ms
 constexpr int32_t MAX_ERROR_COUNT = 50;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
@@ -45,6 +48,7 @@ NoneMixEngine::NoneMixEngine()
       failedCount_(0),
       writeCount_(0),
       fwkSyncTime_(0),
+      latency_(0),
       stream_(nullptr),
       startFadein_(false),
       startFadeout_(false),
@@ -105,6 +109,7 @@ int32_t NoneMixEngine::Start()
         playbackThread_ = std::make_unique<AudioThreadTask>(THREAD_NAME);
         playbackThread_->RegisterJob([this] { this->MixStreams(); });
     }
+    latency_ = 0;
     if (!isStart_) {
         startFadeout_ = false;
         startFadein_ = true;
@@ -448,6 +453,23 @@ int32_t NoneMixEngine::SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip
     renderSink_->DeInit();
     isVoip_ = isVoip;
     return InitSink(streamInfo);
+}
+
+uint64_t NoneMixEngine::GetLatency() noexcept
+{
+    if (!isStart_) {
+        return 0;
+    }
+    if (latency_ > 0) {
+        return latency_;
+    }
+    uint32_t latency = 0;
+    if (renderSink_->GetLatency(&latency) == 0) {
+        latency_ = latency * AUDIO_US_PER_S + AUDIO_FRAME_WORK_LATENCY;
+    } else {
+        latency_ = AUDIO_DEFAULT_LATENCY;
+    }
+    return latency_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

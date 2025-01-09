@@ -34,6 +34,7 @@ public:
     virtual int32_t Stop() override;
     virtual int32_t Pause() override;
     virtual int32_t Flush() override;
+    virtual uint64_t GetLatency() noexcept override;
 
     virtual bool IsPlaybackEngineRunning() const noexcept override;
 

@@ -38,6 +38,9 @@ public:
     int32_t ReleaseCapturer(uint32_t streamIndex) override;
 
     int32_t AddUnprocessStream(int32_t appUid) override;
+
+    uint64_t GetLatency() noexcept override;
+
 private:
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig);
     int32_t CreatePlayBackEngine(const std::shared_ptr<IRendererStream> &stream);
