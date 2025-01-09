@@ -25,11 +25,9 @@ AudioEffectVolume::AudioEffectVolume()
 {
     AUDIO_DEBUG_LOG("created!");
     SceneTypeToVolumeMap_.clear();
-    SceneTypeToSystemVolumeMap_ = {
-        {"SCENE_RING", 1.0f},
-        {"SCENE_SPEECH", 1.0f},
-        {"SCENE_MUSIC", 1.0f},
-        {"SCENE_OTHERS", 1.0f},
+    SystemVolumeMap_.clear();
+    SystemVolumeMap_ = {
+        {STREAM_MUSIC, 1.0f},
     };
 }
 
@@ -51,22 +49,22 @@ void AudioEffectVolume::SetSystemVolume(const std::string sceneType, const float
     SceneTypeToSystemVolumeMap_[sceneType] = systemVolume;
 }
 
-float AudioEffectVolume::GetSystemVolume(const std::string sceneType)
+void AudioEffectVolume::SetSystemVolume(const int32_t systemVolumeType, const float systemVolume)
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
-    auto it = SceneTypeToSystemVolumeMap_.find(sceneType);
-    if (it == SceneTypeToSystemVolumeMap_.end()) {
-        return SceneTypeToSystemVolumeMap_["SCENE_MUSIC"];
-    } else {
-        return SceneTypeToSystemVolumeMap_[sceneType];
-    }
+    AUDIO_DEBUG_LOG("systemVolumeType: %{public}d, systemVolume: %{public}f", systemVolumeType, systemVolume);
+    SystemVolumeMap_[systemVolumeType] = systemVolume;
 }
 
-void AudioEffectVolume::SetStreamVolume(const std::string sessionID, const float streamVolume)
+float AudioEffectVolume::GetSystemVolume(const int32_t systemVolumeType)
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
-    AUDIO_DEBUG_LOG("SetStreamVolume: %{public}f", streamVolume);
-    SessionIDToVolumeMap_[sessionID] = streamVolume;
+    auto it = SystemVolumeMap_.find(systemVolumeType);
+    if (it == SystemVolumeMap_.end()) {
+        return SystemVolumeMap_[STREAM_MUSIC];
+    } else {
+        return SystemVolumeMap_[systemVolumeType];
+    }
 }
 
 float AudioEffectVolume::GetStreamVolume(const std::string sessionID)

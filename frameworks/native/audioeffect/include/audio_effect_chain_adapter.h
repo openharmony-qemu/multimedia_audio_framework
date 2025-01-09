@@ -42,6 +42,7 @@ typedef struct SessionInfoPack {
     const char *sceneMode;
     const char *spatializationEnabled;
     const char *streamUsage;
+    const char *systemVolumeType;
 } SessionInfoPack;
 
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
