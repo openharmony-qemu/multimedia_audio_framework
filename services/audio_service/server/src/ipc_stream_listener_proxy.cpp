@@ -36,7 +36,7 @@ int32_t IpcStreamListenerProxy::OnOperationHandled(Operation operation, int64_t 
 {
     MessageParcel data;
     MessageParcel reply;
-    int32_t flag = operation == SET_OFFLOAD_ENABLE ? (MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER)
+    int32_t flag = IsWeakUpLaterNeeded(operation) ? (MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER)
         : MessageOption::TF_ASYNC;
     MessageOption option(flag); // server call client in async
 
@@ -48,6 +48,13 @@ int32_t IpcStreamListenerProxy::OnOperationHandled(Operation operation, int64_t 
     int ret = Remote()->SendRequest(IpcStreamListenerMsg::ON_OPERATION_HANDLED, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "OnEndpointChange failed, error: %{public}d", ret);
     return reply.ReadInt32();
+}
+
+bool IpcStreamListenerProxy::IsWeakUpLaterNeeded(Operation operation)
+{
+    return (operation == SET_OFFLOAD_ENABLE) ||
+        (operation == DATA_LINK_CONNECTING) ||
+        (operation == DATA_LINK_CONNECTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS
