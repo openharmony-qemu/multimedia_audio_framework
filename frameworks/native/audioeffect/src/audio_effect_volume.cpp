@@ -62,6 +62,13 @@ float AudioEffectVolume::GetSystemVolume(const int32_t systemVolumeType)
     }
 }
 
+void AudioEffectVolume::SetStreamVolume(const std::string sessionID, const float streamVolume)
+{
+    std::lock_guard<std::mutex> lock(volumeMutex_);
+    AUDIO_DEBUG_LOG("SetStreamVolume: %{public}f", streamVolume);
+    SessionIDToVolumeMap_[sessionID] = streamVolume;
+}
+
 float AudioEffectVolume::GetStreamVolume(const std::string sessionID)
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
