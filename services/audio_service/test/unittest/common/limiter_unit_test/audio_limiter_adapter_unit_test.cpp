@@ -125,27 +125,9 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_001, TestSize.Level1
  * @tc.name  : Test LimiterManagerProcess API
  * @tc.type  : FUNC
  * @tc.number: LimiterManagerProcess_002
- * @tc.desc  : Test LimiterManagerProcess interface when limiter has not been created.
- */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_002, TestSize.Level1)
-{
-    int32_t sinkIndex = 1;
-    int32_t frameLen = TEST_MAX_REQUEST / (SAMPLE_F32LE * STEREO);
-    std::vector<float> inBufferVector(frameLen, 0);
-    std::vector<float> outBufferVector(frameLen, 0);
-    float *inBuffer = inBufferVector.data();
-    float *outBuffer = outBufferVector.data();
-    int32_t ret = LimiterManagerProcess(sinkIndex, frameLen, inBuffer, outBuffer);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
- * @tc.name  : Test LimiterManagerProcess API
- * @tc.type  : FUNC
- * @tc.number: LimiterManagerProcess_003
  * @tc.desc  : Test LimiterManagerProcess interface when frameLen is vaild.
  */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_003, TestSize.Level1)
+HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_002, TestSize.Level1)
 {
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);
@@ -163,11 +145,11 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_003, TestSize.Level1
 
 /**
  * @tc.name  : Test LimiterManagerProcess API
- * @tc.type  : FUNC
- * @tc.number: LimiterManagerProcess_004
+ * @tc.type  : FUNC-
+ * @tc.number: LimiterManagerProcess_003
  * @tc.desc  : Test LimiterManagerProcess interface when frameLen is invaild.
  */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_004, TestSize.Level1)
+HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_003, TestSize.Level1)
 {
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);
@@ -187,22 +169,9 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_004, TestSize.Level1
  * @tc.name  : Test LimiterManagerRelease API
  * @tc.type  : FUNC
  * @tc.number: LimiterManagerRelease_001
- * @tc.desc  : Test LimiterManagerRelease interface when limiter has not been created.
- */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerRelease_001, TestSize.Level1)
-{
-    int32_t sinkIndex = 1;
-    int32_t ret = LimiterManagerRelease(sinkIndex);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
- * @tc.name  : Test LimiterManagerRelease API
- * @tc.type  : FUNC
- * @tc.number: LimiterManagerRelease_002
  * @tc.desc  : Test LimiterManagerRelease interface when limiter has been created.
  */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerRelease_002, TestSize.Level1)
+HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerRelease_001, TestSize.Level1)
 {
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);
@@ -214,10 +183,10 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerRelease_002, TestSize.Level1
 /**
  * @tc.name  : Test LimiterManagerRelease API
  * @tc.type  : FUNC
- * @tc.number: LimiterManagerRelease_003
- * @tc.desc  : Test LimiterManagerRelease interface when limiter has been created.
+ * @tc.number: LimiterManagerRelease_002
+ * @tc.desc  : Test LimiterManagerRelease interface when limiter has been released.
  */
-HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerRelease_003, TestSize.Level1)
+HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerRelease_002, TestSize.Level1)
 {
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);

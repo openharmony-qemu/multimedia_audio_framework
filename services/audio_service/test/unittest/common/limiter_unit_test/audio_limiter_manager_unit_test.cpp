@@ -29,7 +29,7 @@ namespace AudioStandard {
 
 const int32_t TEST_MAX_REQUEST = 7680;
 const int32_t AUDIO_MS_PER_S = 1000;
-static AudioLimiterManager * limiterManager;
+static AudioLmtManager * limiterManager;
 
 class AudioLimiterManagerUnitTest : public testing::Test {
 public:
