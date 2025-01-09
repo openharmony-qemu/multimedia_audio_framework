@@ -991,7 +991,7 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
             audioVolumeManager_.SetRingerModeMute(false);
             if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
                 audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
-                audioPolicyManager_.SetVolumeDb(STREAM_RING,
+                audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
                     audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
             }
         } else {
