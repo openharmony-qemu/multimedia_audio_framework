@@ -170,7 +170,7 @@ public:
 
     virtual void ResetOffloadSessionId() = 0;
 
-    virtual int32_t SetVolumeDb(AudioStreamType streamType, int32_t volumeLevel) = 0;
+    virtual int32_t SetDoubleRingVolumeDb(AudioStreamType streamType, int32_t volumeLevel) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
