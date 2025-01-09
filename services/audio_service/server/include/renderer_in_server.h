@@ -103,6 +103,7 @@ public:
 
     bool Dump(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
+    void dualToneStreamInStart();
 
 public:
     const AudioProcessConfig processConfig_;
