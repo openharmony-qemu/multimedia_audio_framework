@@ -55,13 +55,14 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
-    static constexpr int64_t RECORD_DELAY_TIME = 4000000; // 4ms
-    static constexpr int64_t RECORD_VOIP_DELAY_TIME = 20000000; // 20ms
-    static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
-    static constexpr int64_t PLAYBACK_DELAY_STOP_HDI_TIME_NS = 3000000000; // 3s
-    static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME = 200000000; // 200ms
-    static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s
-    static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME = 4000000000; // 4s
+    static constexpr int64_t RECORD_DELAY_TIME = 4000000; // 4ms = 4 * 1000 * 1000ns
+    static constexpr int64_t RECORD_VOIP_DELAY_TIME = 20000000; // 20ms = 20 * 1000 * 1000ns
+    static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms = 100 * 1000 * 1000ns
+    static constexpr int64_t PLAYBACK_DELAY_STOP_HDI_TIME_NS = 3000000000; // 3s = 3 * 1000 * 1000 * 1000ns
+    static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME = 200000000; // 200ms = 200 * 1000 * 1000ns
+    static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s = 1000 * 1000 * 1000ns
+    static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME = 4000000000; // 4s = 4 * 1000 * 1000 * 1000ns
+    static constexpr int64_t DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING = 1000000000; // 1s = 1 * 1000 * 1000 * 1000ns
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
@@ -212,6 +213,7 @@ private:
 
     void CheckStandBy();
     bool IsAnyProcessRunning();
+    bool IsAnyProcessRunningInner();
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     void WaitAllProcessReady(uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos);
@@ -914,6 +916,12 @@ int32_t AudioEndpointInner::GetPreferBufferInfo(uint32_t &totalSizeInframe, uint
 bool AudioEndpointInner::IsAnyProcessRunning()
 {
     std::lock_guard<std::mutex> lock(listLock_);
+    return IsAnyProcessRunningInner();
+}
+
+// Should be called with AudioEndpointInner::listLock_ locked
+bool AudioEndpointInner::IsAnyProcessRunningInner()
+{
     bool isRunning = false;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         if (processBufferList_[i]->GetStreamStatus() &&
@@ -1280,6 +1288,10 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     if (processList_.size() == 0) {
         StopDevice();
         endpointStatus_ = UNLINKED;
+    } else if (!IsAnyProcessRunningInner()) {
+        endpointStatus_ = IDEL;
+        isStarted_ = false;
+        delayStopTime_ = DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING;
     }
 
     AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
