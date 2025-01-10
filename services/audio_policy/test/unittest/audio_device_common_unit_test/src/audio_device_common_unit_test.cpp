@@ -45,13 +45,13 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_001, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = static_cast<StreamUsage>(1000);
 
-    std::vector<sptr<AudioDeviceDescriptor>> deviceOutputList =
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceOutputList =
         audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "");
     EXPECT_EQ(1, deviceOutputList.size());
 
     AudioCapturerInfo captureInfo;
     captureInfo.sourceType = SOURCE_TYPE_INVALID;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInputList =
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInputList =
         audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "");
     EXPECT_EQ(1, deviceOutputList.size());
 }
