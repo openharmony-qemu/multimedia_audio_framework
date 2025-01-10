@@ -238,7 +238,6 @@ static void FreeThread(struct Userdata *u)
     }
 
     pa_thread_mq_done(&u->threadMq);
-    pa_thread_mq_done(&u->threadCapMq);
     if (u->eventFd != 0) {
         close(u->eventFd);
         u->eventFd = 0;
@@ -763,7 +762,7 @@ static void ThreadCaptureData(void *userdata)
 {
     struct Userdata *u = userdata;
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
-    pa_thread_mq_install(&u->threadCapMq);
+    pa_thread_mq_install(&u->threadMq);
     // set audio thread priority
     ScheduleThreadInServer(getpid(), gettid());
 
@@ -1239,11 +1238,6 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
 
     if (!(u->thread = pa_thread_new("OS_ProcessCapData", ThreadFuncProcessTimer, u))) {
         AUDIO_ERR_LOG("Failed to create hdi-source-record thread!");
-        return -1;
-    }
-    
-    if (pa_thread_mq_init(&u->threadCapMq, m->core->mainloop, u->rtpoll) < 0) {
-        AUDIO_ERR_LOG("threadCapMq init failed.");
         return -1;
     }
 
