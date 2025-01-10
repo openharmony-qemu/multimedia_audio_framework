@@ -1526,13 +1526,13 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     bool needPlaceHolder = false;
-    if (audioInterrupt.audioFocusType.streamType != STREAM_DEFAULT &&
-        sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(audioInterrupt.pid)) {
+    if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(audioInterrupt.pid)) {
         // if this stream is the last renderer for audio session, change the state to PLACEHOLDER.
         auto audioSession = sessionService_->GetAudioSessionByPid(audioInterrupt.pid);
         if (audioSession != nullptr) {
             audioSession->RemoveAudioInterrptByStreamId(audioInterrupt.streamId);
-            needPlaceHolder = audioSession->IsAudioRendererEmpty() &&
+            needPlaceHolder = audioInterrupt.audioFocusType.streamType != STREAM_DEFAULT &&
+                audioSession->IsAudioRendererEmpty() &&
                 !HadVoipStatus(audioInterrupt, audioFocusInfoList);
         }
     }
