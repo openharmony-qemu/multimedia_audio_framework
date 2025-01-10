@@ -202,6 +202,7 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 
 template <typename T>
 bool StringConverter(const std::string &str, T &result);
+bool StringConverterFloat(const std::string &str, float &result);
 
 bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>

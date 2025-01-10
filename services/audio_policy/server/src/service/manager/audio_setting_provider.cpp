@@ -113,10 +113,8 @@ ErrCode AudioSettingProvider::GetFloatValue(const std::string &key, float &value
     if (ret != ERR_OK) {
         return ret;
     }
-    AUDIO_DEBUG_LOG("GetFloatValue valueStr=%{public}s", valueStr.c_str());
-    if (valueStr != "") {
-        value = std::stof(valueStr);
-    }
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(valueStr, value), ERR_INVALID_PARAM,
+        "GetFloatValue error! invalid valueStr = %{public}s", valueStr.c_str());
     return ERR_OK;
 }
 
