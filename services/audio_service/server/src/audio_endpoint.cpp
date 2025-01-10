@@ -1037,7 +1037,7 @@ bool AudioEndpointInner::DelayStopDevice()
         CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Stop() == SUCCESS,
             false, "Source stop failed.");
     } else {
-        CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
+        CHECK_AND_RETURN_RET_LOG(endpointStatus_ == IDEL && fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
             false, "Sink stop failed.");
     }
     isStarted_ = false;
