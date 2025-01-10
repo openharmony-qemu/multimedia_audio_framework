@@ -545,7 +545,8 @@ bool AudioVolumeManager::IsWiredHeadSet(const DeviceType &deviceType)
 bool AudioVolumeManager::IsBlueTooth(const DeviceType &deviceType)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        if (audioActiveDevice_.GetCurrentOutputDeviceCategory() == BT_HEADPHONE) {
+        if (audioActiveDevice_.GetCurrentOutputDeviceCategory() != BT_CAR &&
+            audioActiveDevice_.GetCurrentOutputDeviceCategory() != BT_SOUNDBOX) {
             return true;
         }
     }
