@@ -18,7 +18,7 @@
 
 #include "audio_errors.h"
 #include "audio_limiter.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -45,6 +45,10 @@ AudioLimiter::AudioLimiter(int32_t sinkIndex)
     gainAttack_ = GAIN_ATTACK;
     gainRelease_ = GAIN_RELEASE;
     format_ = AUDIO_FORMAT_PCM_FLOAT;
+    latency_ = 0;
+    algoFrameLen_ = 0;
+    curMaxLev_ = 0.0f;
+    gain_ = 0.0f;
     bufHis_ = nullptr;
     AUDIO_INFO_LOG("AudioLimiter");
 }
@@ -122,7 +126,7 @@ void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuff
     float lastGain = gain_;
     float coeff = gain_ > targetGain ? gainAttack_ : gainRelease_;
     gain_ = coeff * gain_ + (1 - coeff) * targetGain;
-    float deltaGain = (gain_ - lastGain) / algoFrameLen;
+    float deltaGain = (gain_ - lastGain) * AUDIO_LMT_ALGO_CHANNEL / algoFrameLen;
 
     // apply gain 
     for (int32_t i = 0; i < algoFrameLen; i += AUDIO_LMT_ALGO_CHANNEL) {

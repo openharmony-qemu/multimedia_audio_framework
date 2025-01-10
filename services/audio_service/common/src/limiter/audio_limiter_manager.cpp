@@ -19,7 +19,7 @@
 
 #include "audio_errors.h"
 #include "audio_limiter_manager.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
