@@ -48,7 +48,6 @@ static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     {SOURCE_TYPE_VOICE_TRANSCRIPTION, 3},
     {SOURCE_TYPE_MIC, 2},
     {SOURCE_TYPE_VOICE_RECOGNITION, 1},
-    {SOURCE_TYPE_UNPROCESSED, 0},
 };
 
 static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
