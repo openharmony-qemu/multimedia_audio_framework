@@ -762,7 +762,6 @@ static void ThreadCaptureData(void *userdata)
 {
     struct Userdata *u = userdata;
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
-    pa_thread_mq_install(&u->threadMq);
     // set audio thread priority
     ScheduleThreadInServer(getpid(), gettid());
 
