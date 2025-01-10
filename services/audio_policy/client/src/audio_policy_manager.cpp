@@ -63,7 +63,7 @@ inline sptr<IAudioPolicy> GetAudioPolicyProxyFromSamgr()
     return apProxy;
 }
 
-inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
+const sptr<IAudioPolicy> AudioPolicyManager::GetAudioPolicyManagerProxy()
 {
     AUDIO_DEBUG_LOG("In");
     lock_guard<mutex> lock(g_apProxyMutex);
