@@ -17,7 +17,6 @@
 #include <mutex>
 
 #include "singleton.h"
-#include "ffrt.h"
 #include "event_handler.h"
 #include "event_runner.h"
 
@@ -73,7 +72,7 @@ private:
     ClientTypeListener *clientTypeListener_ = nullptr;
     std::mutex runnerMutex_;
 
-    ffrt::mutex callbackMutex_;
+    std::mutex callbackMutex_;
     sptr<IStandardAudioPolicyManagerListener> queryClientTypeCallback_ = nullptr;
 };
 } // namespace AudioStandard
