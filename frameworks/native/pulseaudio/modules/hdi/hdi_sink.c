@@ -52,6 +52,7 @@
 #include "audio_volume_c.h"
 #include "renderer_sink_adapter.h"
 #include "audio_effect_chain_adapter.h"
+#include "audio_limiter_adapter.h"
 #include "playback_capturer_adapter.h"
 #include "sink_userdata.h"
 #include "time.h"
@@ -121,6 +122,8 @@ time_t g_effectStartVolZeroTimeMap[SCENE_TYPE_NUM] = {0, 0, 0, 0, 0, 0, 0};
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_DEFAULT", "SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
     "SCENE_SPEECH", "SCENE_RING", "SCENE_VOIP_DOWN", "SCENE_OTHERS", "EFFECT_NONE"};
 const int32_t COMMON_SCENE_TYPE_INDEX = 0;
+const int32_t SUCCESS = 0;
+const int32_t ERROR = -1;
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -177,6 +180,8 @@ static void *AllocateBuffer(size_t size);
 static bool AllocateEffectBuffer(struct Userdata *u);
 static void FreeEffectBuffer(struct Userdata *u);
 static void ResetBufferAttr(struct Userdata *u);
+static void CreateLimiter(struct Userdata *u);
+static void FreeLimiter(struct Userdata *u);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-6f
@@ -1670,8 +1675,13 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
     void *dst = pa_memblock_acquire_chunk(chunkIn);
     int32_t frameLen = bitSize > 0 ? ((int32_t) length / bitSize) : 0;
-    ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
-
+    if (u->isLimiterCreated) {
+        // limiter only support 2 channels and float format
+        LimiterManagerProcess((int32_t)u->sink->index, frameLen, u->bufferAttr->tempBufOut, u->bufferAttr->bufOut);
+        ConvertFromFloat(u->format, frameLen, u->bufferAttr->bufOut, dst);
+    } else {
+        ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
+    }
     chunkIn->index = 0;
     chunkIn->length = length;
     pa_memblock_release(chunkIn->memblock);
@@ -2301,6 +2311,19 @@ static void UnsetSinkVolume(pa_sink *s)
     }
 }
 
+static void CreateLimiter(struct Userdata *u)
+{
+    if (!u->isLimiterCreated) {
+        int32_t ret = LimiterManagerCreate((int32_t)u->sink->index);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager create failed");
+        // allocate limiter buffer; cal algoframelen and latency
+        ret = LimiterManagerSetConfig((int32_t)u->sink->index, (int32_t)u->sink->thread_info.max_request,
+            (int32_t)pa_sample_size_of_format(u->format), (int32_t)u->ss.rate, (int32_t)u->ss.channels);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager set config failed");
+        u->isLimiterCreated = true;
+    }
+}
+
 static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 {
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
@@ -2319,6 +2342,8 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     } else {
         if (u->isEffectBufferAllocated || AllocateEffectBuffer(u)) {
             u->isEffectBufferAllocated = true;
+            // limiter process only in normal render
+            CreateLimiter(u);
             SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
         }
     }
@@ -3335,16 +3360,26 @@ static bool POSSIBLY_UNUSED ThreadFuncRendererTimerMultiChannelFlagJudge(struct 
     return flag;
 }
 
+static void ReleaseEffectBufferAndLimiter(struct Userdata *u)
+{
+    if (u->isEffectBufferAllocated == true) {
+        FreeEffectBuffer(u);
+        u->isEffectBufferAllocated = false;
+    }
+    // free limiter buffer
+    FreeLimiter(u);
+}
+
 static void ProcessNormalData(struct Userdata *u)
 {
     AUTO_CTRACE("ProcessNormalData");
     int64_t sleepForUsec = -1;
     pa_usec_t now = 0;
 
-    if (u->sink->thread_info.state == PA_SINK_SUSPENDED && u->isEffectBufferAllocated == true) {
-        FreeEffectBuffer(u);
-        u->isEffectBufferAllocated = false;
+    if (u->sink->thread_info.state == PA_SINK_SUSPENDED) {
+        ReleaseEffectBufferAndLimiter(u);
     }
+
     bool flag = (((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
                 (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
                 !(u->sink->thread_info.state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED) &&
@@ -4621,6 +4656,17 @@ static bool FreeBufferAttr(struct Userdata *u)
     return true;
 }
 
+static void FreeLimiter(struct Userdata *u)
+{
+    if (u->isLimiterCreated == true) {
+        if (LimiterManagerRelease((int32_t)u->sink->index) == SUCCESS) {
+            u->isLimiterCreated = false;
+        } else {
+            AUDIO_ERR_LOG("LimiterManagerRelease failed");
+        }
+    }
+}
+
 static void UserdataFree(struct Userdata *u)
 {
     if (u == NULL) {
@@ -4674,6 +4720,8 @@ static void UserdataFree(struct Userdata *u)
     if (!FreeBufferAttr(u)) {
         return;
     }
+    // free limiter buffer
+    FreeLimiter(u);
 
     pa_xfree(u);
 

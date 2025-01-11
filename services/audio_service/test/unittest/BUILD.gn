@@ -240,7 +240,9 @@ ohos_unittest("audio_service_unit_test") {
 
   include_dirs = [
     "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/common/include/limiter",
     "../../../../services/audio_service/common/src",
+    "../../../../services/audio_service/common/src/limiter",
     "../../../../services/audio_service/server/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
@@ -260,6 +262,9 @@ ohos_unittest("audio_service_unit_test") {
     "./common/audio_common_converter_unit_test.cpp",
     "./common/audio_down_mix_stereo_unit_test.cpp",
     "./common/audio_volume_unit_test.cpp",
+    "./common/limiter_unit_test/audio_limiter_adapter_unit_test.cpp",
+    "./common/limiter_unit_test/audio_limiter_manager_unit_test.cpp",
+    "./common/limiter_unit_test/audio_limiter_unit_test.cpp",
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
   ]
