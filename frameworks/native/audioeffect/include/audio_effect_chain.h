@@ -90,6 +90,8 @@ public:
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     int32_t SetEffectProperty(const std::string &effect, const std::string &property);
     void SetStreamUsage(const int32_t streamUsage);
+    void GetInputChannelInfo(uint32_t &channels, uint64_t &channelLayout);
+    void CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info, AudioEffectConfig *tmpIoBufferConfig);
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
