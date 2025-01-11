@@ -1139,6 +1139,10 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
             return AUDIO_FLAG_NORMAL;
         }
     }
+    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast output stream");
+        flag = AUDIO_FLAG_NORMAL;
+    }
     return flag;
 }
 
@@ -1155,9 +1159,14 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
     if (preferredDeviceList.size() == 0) {
         return AUDIO_FLAG_NORMAL;
     }
-    return audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
+    int32_t flag = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
         preferredDeviceList[0]->deviceType_,
         capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
+    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast input stream");
+        flag = AUDIO_FLAG_NORMAL;
+    }
+    return flag;
 }
 
 int32_t AudioPolicyService::ResumeStreamState()
