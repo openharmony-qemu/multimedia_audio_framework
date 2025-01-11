@@ -512,7 +512,7 @@ void AudioEffectChain::GetInputChannelInfo(uint32_t &channels, uint64_t &channel
 void AudioEffectChain::CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info, AudioEffectConfig *tmpIoBufferConfig)
 {
     AUDIO_INFO_LOG("begin CheckChannelLayoutByReplyInfo channel: %{public}u", ioBufferConfig_.inputCfg.channels);
-    if (info.data == nullptr || tmpIoBufferConfig == nullptr) {
+    if (info.data == nullptr) {
         (*tmpIoBufferConfig).inputCfg.channels = DEFAULT_NUM_CHANNEL;
         (*tmpIoBufferConfig).inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
         ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
