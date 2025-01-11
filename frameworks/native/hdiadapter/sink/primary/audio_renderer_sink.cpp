@@ -46,6 +46,7 @@
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
 #include "audio_performance_monitor.h"
+#include "ipc_skeleton.h"
 
 using namespace std;
 
@@ -70,6 +71,8 @@ const unsigned int FORMAT_1_BYTE = 1;
 const unsigned int FORMAT_2_BYTE = 2;
 const unsigned int FORMAT_3_BYTE = 3;
 const unsigned int FORMAT_4_BYTE = 4;
+constexpr uid_t UID_BLUETOOTH_SA = 1002;
+
 #ifdef FEATURE_POWER_MANAGER
 const unsigned int TIME_OUT_SECONDS = 10;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
@@ -262,6 +265,12 @@ private:
     std::atomic<bool> switchDeviceMute_ = false;
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
 
+    // for sco recovery
+    bool hasAudioParamInfo_ = false;
+    AudioParamKey audioParamKey_ = AudioParamKey::NONE;
+    string audioParamCondition_ = "";
+    string audioParamValue_ = "";
+
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
@@ -382,7 +391,20 @@ void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const st
         condition.c_str(), value.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
 
-    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "SetAudioParameter failed, audioAdapter_ is null");
+// LCOV_EXCL_START
+    if (audioAdapter_ == nullptr) {
+        auto callerUid = IPCSkeleton::GetCallingUid();
+        AUDIO_ERR_LOG("audioAdapter_ is null, callerUid: %{public}d", callerUid);
+        CHECK_AND_RETURN_LOG(callerUid == UID_BLUETOOTH_SA && key == AudioParamKey::BT_WBS,
+            "Only allowed to set bt_wbs audio parameter when audioAdapter_ is null");
+        hasAudioParamInfo_ = true;
+        audioParamKey_ = key;
+        audioParamCondition_ = condition;
+        audioParamValue_ = value;
+        return;
+    }
+// LCOV_EXCL_STOP
+
     int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("SetAudioParameter failed, error code: %d", ret);
@@ -1468,6 +1490,13 @@ int32_t AudioRendererSinkInner::InitAdapter()
     adapterDesc_ = descs[index];
     CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) == SUCCESS),
         ERR_NOT_STARTED, "Load Adapter Fail.");
+
+// LCOV_EXCL_START
+    if (hasAudioParamInfo_) {
+        SetAudioParameter(audioParamKey_, audioParamCondition_, audioParamValue_);
+        hasAudioParamInfo_ = false;
+    }
+// LCOV_EXCL_STOP
 
     adapterInited_ = true;
 
