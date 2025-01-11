@@ -21,6 +21,7 @@
 #include "audio_limiter_manager.h"
 #include "audio_common_log.h"
 
+#include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
 AudioLmtManager::AudioLmtManager()
