@@ -1550,8 +1550,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_073, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::unique_ptr<AudioDeviceDescriptor> outputDevice = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
+    std::shared_ptr<AudioDeviceDescriptor> outputDevice = std::make_shared<AudioDeviceDescriptor>();
     outputDevice->networkId_ = "";
     outputDevices.push_back(std::move(outputDevice));
     audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
@@ -1568,8 +1568,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_074, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::unique_ptr<AudioDeviceDescriptor> outputDevice = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
+    std::shared_ptr<AudioDeviceDescriptor> outputDevice = std::make_shared<AudioDeviceDescriptor>();
     outputDevice->networkId_ = "LocalDevice";
     outputDevice->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
     outputDevices.push_back(std::move(outputDevice));
@@ -1587,8 +1587,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_075, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::unique_ptr<AudioDeviceDescriptor> outputDevice = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
+    std::shared_ptr<AudioDeviceDescriptor> outputDevice = std::make_shared<AudioDeviceDescriptor>();
     outputDevice->networkId_ = "LocalDevice";
     outputDevice->deviceType_ = DEVICE_TYPE_DP;
     outputDevices.push_back(std::move(outputDevice));
@@ -1626,8 +1626,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_077, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
-    std::unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     descs.push_back(std::move(desc));
     audioDeviceCommon.FetchStreamForA2dpMchStream(rendererChangeInfo, descs);
     audioDeviceCommon.SetHasDpFlag(true);
@@ -1643,8 +1643,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_078, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
-    std::unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     descs.push_back(std::move(desc));
     audioDeviceCommon.FetchStreamForSpkMchStream(rendererChangeInfo, descs);
     audioDeviceCommon.SetHasDpFlag(true);
@@ -1659,8 +1659,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_078, TestSize.Level1)
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_079, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    unique_ptr<AudioDeviceDescriptor> desc = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_NONE;
     int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo);
     EXPECT_EQ(ERR_NEED_NOT_SWITCH_DEVICE, ret);
@@ -1695,7 +1695,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_080, TestSize.Level1)
     SourceOutput sourceOutput;
     std::vector<SourceOutput> sourceOutputs;
     sourceOutputs.push_back(sourceOutput);
-    sptr<AudioDeviceDescriptor> remoteDeviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceCommon.isOpenRemoteDevice = false;
     int32_t ret = audioDeviceCommon.MoveToRemoteInputDevice(sourceOutputs, remoteDeviceDescriptor);
     EXPECT_EQ(ERR_INVALID_OPERATION, ret);
