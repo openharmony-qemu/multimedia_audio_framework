@@ -55,14 +55,14 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
-    static constexpr int64_t RECORD_DELAY_TIME = 4000000; // 4ms = 4 * 1000 * 1000ns
-    static constexpr int64_t RECORD_VOIP_DELAY_TIME = 20000000; // 20ms = 20 * 1000 * 1000ns
-    static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms = 100 * 1000 * 1000ns
+    static constexpr int64_t RECORD_DELAY_TIME_NS = 4000000; // 4ms = 4 * 1000 * 1000ns
+    static constexpr int64_t RECORD_VOIP_DELAY_TIME_NS = 20000000; // 20ms = 20 * 1000 * 1000ns
+    static constexpr int64_t MAX_SPAN_DURATION_NS = 100000000; // 100ms = 100 * 1000 * 1000ns
     static constexpr int64_t PLAYBACK_DELAY_STOP_HDI_TIME_NS = 3000000000; // 3s = 3 * 1000 * 1000 * 1000ns
-    static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME = 200000000; // 200ms = 200 * 1000 * 1000ns
+    static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME_NS = 200000000; // 200ms = 200 * 1000 * 1000ns
     static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s = 1000 * 1000 * 1000ns
-    static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME = 4000000000; // 4s = 4 * 1000 * 1000 * 1000ns
-    static constexpr int64_t DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING = 1000000000; // 1s = 1 * 1000 * 1000 * 1000ns
+    static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS = 4000000000; // 4s = 4 * 1000 * 1000 * 1000ns
+    static constexpr int64_t DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS = 1000000000; // 1s
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
@@ -850,7 +850,7 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const AudioDeviceDescriptor &dev
     AUDIO_DEBUG_LOG("panDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
         spanDuration_, serverAheadReadTime_);
 
-    CHECK_AND_RETURN_RET_LOG(spanDuration_ > 0 && spanDuration_ < MAX_SPAN_DURATION_IN_NANO,
+    CHECK_AND_RETURN_RET_LOG(spanDuration_ > 0 && spanDuration_ < MAX_SPAN_DURATION_NS,
         ERR_INVALID_PARAM, "mmap span info error, spanDuration %{public}" PRIu64".", spanDuration_);
     dstAudioBuffer_ = OHAudioBuffer::CreateFromRemote(dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
         AUDIO_SERVER_ONLY, dstBufferFd_, OHAudioBuffer::INVALID_BUFFER_FD);
@@ -1101,7 +1101,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
     InitLatencyMeasurement();
     // Prevents the audio from immediately stopping at 0 volume on start
-    delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME;
+    delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS;
     AUDIO_PRERELEASE_LOGI("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
@@ -1129,7 +1129,7 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
         // delay call sink stop when no process running
         AUDIO_PRERELEASE_LOGI("OnPause status is IDEL, need delay call stop");
         delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
-            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME);
+            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
     }
     // todo
     return SUCCESS;
@@ -1224,7 +1224,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         if (isDeviceRunningInIdel_) {
             CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
             delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
-                ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME);
+                ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
         }
     }
 
@@ -1291,7 +1291,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     } else if (!IsAnyProcessRunningInner()) {
         endpointStatus_ = IDEL;
         isStarted_ = false;
-        delayStopTime_ = DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING;
+        delayStopTime_ = DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS;
     }
 
     AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
@@ -1313,7 +1313,7 @@ void AudioEndpointInner::CheckStandBy()
         // delay call sink stop when no process running
         AUDIO_INFO_LOG("status is IDEL, need delay call stop");
         delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
-            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME);
+            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
     }
 }
 
@@ -1526,7 +1526,7 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
         if (!zeroVolumeStopDevice_ && !isVolumeAlreadyZero_) {
             AUDIO_INFO_LOG("Begin zero volume, will stop device.");
-            delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME;
+            delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS;
             isVolumeAlreadyZero_ = true;
         }
     } else {
@@ -1736,7 +1736,7 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
 {
     uint64_t nextHandlePos = curReadPos + dstSpanSizeInframe_;
     int64_t nextHdiWriteTime = GetPredictNextWriteTime(nextHandlePos);
-    int64_t tempDelay = endpointType_ == TYPE_VOIP_MMAP ? RECORD_VOIP_DELAY_TIME : RECORD_DELAY_TIME;
+    int64_t tempDelay = endpointType_ == TYPE_VOIP_MMAP ? RECORD_VOIP_DELAY_TIME_NS : RECORD_DELAY_TIME_NS;
     int64_t predictWakeupTime = nextHdiWriteTime + tempDelay;
     if (predictWakeupTime <= ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION;
