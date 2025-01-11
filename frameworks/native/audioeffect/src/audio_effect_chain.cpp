@@ -511,7 +511,7 @@ void AudioEffectChain::GetInputChannelInfo(uint32_t &channels, uint64_t &channel
 
 void CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info, AudioEffectConfig *tmpIoBufferConfig)
 {
-    AUDIO_INFO_LOG("begin CheckChannelLayoutByReplyInfo channel: %{public}d", (ioBufferConfig_.inputCfg.channels));
+    AUDIO_INFO_LOG("begin CheckChannelLayoutByReplyInfo channel: %{public}u", (ioBufferConfig_.inputCfg.channels));
     if (info.data == nullptr || tmpIoBufferConfig == nullptr) {
         (*tmpIoBufferConfig).inputCfg.channels = DEFAULT_NUM_CHANNEL;
         (*tmpIoBufferConfig).inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
@@ -526,7 +526,7 @@ void CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info, AudioEffectConfig 
         ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
         ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     }
-    AUDIO_INFO_LOG("channel change to: %{public}d, channelLayoutSupportedFlage: %{public}d",
+    AUDIO_INFO_LOG("channel change to: %{public}u, channelLayoutSupportedFlage: %{public}d",
         ioBufferConfig_.inputCfg.channels, *channelLayoutSupportedFlage);
 }
 
