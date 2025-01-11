@@ -2318,7 +2318,7 @@ static void CreateLimiter(struct Userdata *u)
         ret = LimiterManagerSetConfig((int32_t)u->sink->index, (int32_t)u->sink->thread_info.max_request,
             (int32_t)pa_sample_size_of_format(u->format), (int32_t)u->ss.rate, (int32_t)u->ss.channels);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager set config failed");
-        u->isLimiterCreated = true;  
+        u->isLimiterCreated = true;
     }
 }
 

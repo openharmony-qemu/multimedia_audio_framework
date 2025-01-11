@@ -30,7 +30,7 @@ namespace AudioStandard {
 const int32_t TEST_MAX_REQUEST = 7680; // buffer size for 20ms 2channel 48000Hz
 const int32_t AUDIO_MS_PER_S = 1000;
 const int32_t PROC_COUNT = 4; // process 4 times
-static AudioLmtManager * limiterManager;
+static AudioLmtManager *limiterManager;
 
 class AudioLimiterManagerUnitTest : public testing::Test {
 public:

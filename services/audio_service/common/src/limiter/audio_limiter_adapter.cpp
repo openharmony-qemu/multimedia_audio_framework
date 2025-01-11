@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
- #ifndef LOG_TAG
- #define LOG_TAG "AudioLimiterAdapter"
- #endif
+#ifndef LOG_TAG
+#define LOG_TAG "AudioLimiterAdapter"
+#endif
 
 #include "audio_errors.h"
 #include "audio_limiter_adapter.h"
