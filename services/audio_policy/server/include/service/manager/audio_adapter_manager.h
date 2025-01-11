@@ -192,6 +192,8 @@ public:
     void HandleRingerMode(AudioRingerMode ringerMode);
 
     void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
+
+    int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
 private:
     friend class PolicyCallbackImpl;
 
