@@ -374,6 +374,23 @@ void AudioAdapterManager::SetAudioServerProxy(sptr<IStandardAudioService> gsp)
     audioServerProxy_ = gsp;
 }
 
+int32_t AudioAdapterManager::SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel)
+{
+    float volumeDb = 1.0f;
+    if (useNonlinearAlgo_) {
+        if (Util::IsDualToneStreamType(streamType)) {
+            volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
+        } else {
+            volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
+        }
+    } else {
+        volumeDb = CalculateVolumeDb(volumeLevel);
+    }
+    SetAudioVolume(streamType, volumeDb);
+
+    return SUCCESS;
+}
+
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
     AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
