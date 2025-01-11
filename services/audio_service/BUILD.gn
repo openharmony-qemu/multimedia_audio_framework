@@ -275,7 +275,7 @@ config("audio_service_config") {
 
   include_dirs = [
     "common/include",
-    "common/include/limiter", 
+    "common/include/limiter",
     "client/include",
     "server/include",
     "server/include/config",
