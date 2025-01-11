@@ -165,6 +165,8 @@ public:
     virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
 
     virtual void SetAudioServerProxy(sptr<IStandardAudioService> gsp) = 0;
+
+    virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
