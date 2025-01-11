@@ -294,7 +294,19 @@ int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     uint32_t &chans = *channels;
     uint64_t &chLayout = *channelLayout;
-    return audioEffectChainManager->ReturnEffectChannelInfo(sceneTypeString, chans, chLayout);
+    return audioEffectChainManager->QueryEffectChannelInfo(sceneTypeString, chans, chLayout);
+}
+
+int32_t EffectChainManagerQueryHdiSupportedChannelLayout(uint32_t *channels, uint64_t *channelLayout)
+{
+    if (channels == nullptr || channelLayout == nullptr) {
+        return ERROR;
+    }
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    uint32_t &chans = *channels;
+    uint64_t &chLayout = *channelLayout;
+    return audioEffectChainManager->QueryHdiSupportedChannelInfo(chans, chLayout);
 }
 
 int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)
