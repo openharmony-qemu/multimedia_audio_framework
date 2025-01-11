@@ -58,12 +58,12 @@ ohos_shared_library("audio_common") {
     "common/src/callback_handler.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
+    "common/src/limiter/audio_limiter.cpp",
+    "common/src/limiter/audio_limiter_adapter.cpp",
+    "common/src/limiter/audio_limiter_manager.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/volume_tools.cpp",
-    "common/src/limiter/audio_limiter_adapter.cpp",
-    "common/src/limiter/audio_limiter_manager.cpp",
-    "common/src/limiter/audio_limiter.cpp",
   ]
 
   cflags = [
