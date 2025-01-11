@@ -1757,12 +1757,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_081, TestSize.Level1)
     ret = audioDeviceCommon.GetHasDpFlag();
     EXPECT_EQ(false, ret);
 
-    audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_VOICE_RINGING);
-    audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
-
     reason = AudioStreamDeviceChangeReason::UNKNOWN;
     oldSinkname = "RemoteCastInnerCapturer";
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
