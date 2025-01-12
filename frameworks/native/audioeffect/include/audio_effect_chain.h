@@ -44,6 +44,7 @@ enum AudioEffectChainSetParamIndex {
     SPATIALIZATION_ENABLED_INDEX = 8,
     STREAM_USAGE_INDEX = 9,
     FOLD_STATE_INDEX = 10,
+    LID_STATE_INDEX = 11,
     MAX_PARAM_INDEX,
 };
 
@@ -63,6 +64,7 @@ public:
     void SetEffectMode(const std::string &mode);
     void SetExtraSceneType(const std::string &extraSceneType);
     void SetFoldState(const std::string &foldState);
+    void SetLidState(const std::string &lidState);
     void SetEffectCurrSceneType(AudioEffectScene currSceneType);
     void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     void SetSpatializationEnabled(bool enabled);
@@ -88,6 +90,8 @@ public:
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     int32_t SetEffectProperty(const std::string &effect, const std::string &property);
     void SetStreamUsage(const int32_t streamUsage);
+    void GetInputChannelInfo(uint32_t &channels, uint64_t &channelLayout);
+    void CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info, AudioEffectConfig *tmpIoBufferConfig);
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
@@ -103,6 +107,7 @@ private:
     uint32_t latency_ = 0;
     uint32_t extraEffectChainType_ = 0;
     uint32_t foldState_ = 0;
+    uint32_t lidState_ = 0;
     StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
     AudioEffectScene currSceneType_ = SCENE_MUSIC;
     std::vector<AudioEffectHandle> standByEffectHandles_;

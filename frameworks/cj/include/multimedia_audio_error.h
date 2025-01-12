@@ -34,6 +34,7 @@ const int32_t CJ_ERR_SYSTEM = 6800301;
 const size_t CJ_ERR_INVALID_RETURN_VALUE = 0;
 const int32_t CJ_ERR_INVALID_VALUE = -1;
 const double CJ_ERR_INVALID_RETURN_DOUBLE_VALUE = 0.0;
+const float CJ_ERR_INVALID_RETURN_FLOAT_VALUE = 0.0;
 
 /* native error code */
 const int32_t NATIVE_SUCCESS = 0;

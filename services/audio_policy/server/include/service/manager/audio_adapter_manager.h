@@ -198,6 +198,8 @@ public:
     void SetOffloadSessionId(uint32_t sessionId);
 
     void ResetOffloadSessionId();
+
+    int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
 private:
     friend class PolicyCallbackImpl;
 
@@ -265,6 +267,7 @@ private:
     void UpdateSafeVolume();
     void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     void SetVolumeCallbackAfterClone();
+    void SetFirstBoot();
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {

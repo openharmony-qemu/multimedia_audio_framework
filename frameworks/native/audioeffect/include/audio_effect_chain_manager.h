@@ -47,7 +47,7 @@ namespace AudioStandard {
 const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
 const uint32_t DEFAULT_MCH_NUM_CHANNEL = CHANNEL_6;
-const uint32_t DSP_MAX_NUM_CHANNEL = CHANNEL_10;
+const uint32_t DSP_MAX_NUM_CHANNEL = CHANNEL_16;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 const uint64_t DEFAULT_MCH_NUM_CHANNELLAYOUT = CH_LAYOUT_5POINT1;
 const uint32_t BASE_TEN = 10;
@@ -148,6 +148,8 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     void UpdateStreamUsage();
     int32_t InitEffectBuffer(const std::string &sessionID);
+    int32_t QueryEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
+    int32_t QueryHdiSupportedChannelInfo(uint32_t &channels, uint64_t &channelLayout);
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -175,6 +177,7 @@ private:
     bool IsEffectChainStop(const std::string &sceneType, const std::string &sessionID);
     int32_t InitEffectBufferInner(const std::string &sessionID);
     int32_t InitAudioEffectChainDynamicInner(const std::string &sceneType);
+    int32_t QueryEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -210,6 +213,7 @@ private:
     std::string deviceClass_ = "";
     std::string extraSceneType_ = "0";
     std::string foldState_ = "0";
+    std::string lidState_ = "0";
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
     bool isInitialized_ = false;

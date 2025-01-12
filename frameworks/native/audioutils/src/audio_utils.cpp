@@ -808,6 +808,14 @@ template bool StringConverter(const std::string &str, int32_t &result);
 template bool StringConverter(const std::string &str, uint8_t &result);
 template bool StringConverter(const std::string &str, int8_t &result);
 
+bool StringConverterFloat(const std::string &str, float &result)
+{
+    char *end = nullptr;
+    errno = 0;
+    result = std::strtof(str.c_str(), &end);
+    return end != str.c_str() && *end == '\0' && errno == 0;
+}
+
 bool SetSysPara(const std::string &key, int32_t value)
 {
     auto res = SetParameter(key.c_str(), std::to_string(value).c_str());

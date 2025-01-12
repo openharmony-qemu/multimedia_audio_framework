@@ -33,6 +33,7 @@
 #include "i_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "audio_volume.h"
+#include "audio_limiter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -527,9 +528,13 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     latency += offloadEnable_ ? 0 : algorithmLatency * AUDIO_US_PER_MS;
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     latency += a2dpOffloadLatency * AUDIO_US_PER_MS;
+    uint32_t limiterLatency = GetLimiterLatency();
+    latency += limiterLatency * AUDIO_US_PER_MS;
+
     AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", algo latency: %{public}u ms"
-        ", a2dp offload latency: %{public}u ms, write: %{public}" PRIu64 ", read: %{public}" PRIu64 ", sink:%{public}"
-        PRIu64, latency, paLatency, algorithmLatency, a2dpOffloadLatency, writeIndex, readIndex, info->sink_usec);
+        ", a2dp offload latency: %{public}u ms, lmt latency: %{public}u ms, write: %{public}" PRIu64 ""
+        ", read: %{public}" PRIu64 ", sink:%{public}" PRIu64 "", latency, paLatency, algorithmLatency,
+        a2dpOffloadLatency, limiterLatency, writeIndex, readIndex, info->sink_usec);
 
     preLatency_ = latency;
     preTimeGetLatency_ = curTimeGetLatency;
@@ -559,6 +564,17 @@ uint32_t PaRendererStreamImpl::GetA2dpOffloadLatency()
         AUDIO_ERR_LOG("OffloadGetRenderPosition failed");
     }
     return a2dpOffloadLatency;
+}
+
+uint32_t PaRendererStreamImpl::GetLimiterLatency()
+{
+    AudioLmtManager *audioLmtManager = AudioLmtManager::GetInstance();
+    uint32_t limiterLatency = 0;
+    if (audioLmtManager != nullptr) {
+        int32_t sinkIndex = static_cast<int32_t>(pa_stream_get_device_index(paStream_));
+        limiterLatency = audioLmtManager->GetLatency(sinkIndex);
+    }
+    return limiterLatency;
 }
 
 int32_t PaRendererStreamImpl::SetRate(int32_t rate)

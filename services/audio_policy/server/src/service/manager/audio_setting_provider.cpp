@@ -20,6 +20,7 @@
 
 #include "iservice_registry.h"
 #include "audio_errors.h"
+#include "system_ability_definition.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -112,10 +113,8 @@ ErrCode AudioSettingProvider::GetFloatValue(const std::string &key, float &value
     if (ret != ERR_OK) {
         return ret;
     }
-    AUDIO_DEBUG_LOG("GetFloatValue valueStr=%{public}s", valueStr.c_str());
-    if (valueStr != "") {
-        value = std::stof(valueStr);
-    }
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(valueStr, value), ERR_INVALID_PARAM,
+        "GetFloatValue error! invalid valueStr = %{public}s", valueStr.c_str());
     return ERR_OK;
 }
 
@@ -346,6 +345,10 @@ std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShar
 {
     CHECK_AND_RETURN_RET_LOG(isDataShareReady_.load(), nullptr,
         "DATA_SHARE_READY not received, create DataShareHelper failed");
+    if (remoteObj_ == nullptr) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        Initialize(AUDIO_POLICY_SERVICE_ID);
+    }
 #ifdef SUPPORT_USER_ACCOUNT
     int32_t currentuserId = GetCurrentUserId();
     if (currentuserId < MIN_USER_ACCOUNT) {

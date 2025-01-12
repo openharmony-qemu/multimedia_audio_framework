@@ -115,13 +115,22 @@ int AudioClientTrackerCallbackStub::OffloadRemoteRequest(
 void AudioClientTrackerCallbackStub::SetClientTrackerCallback(
     const std::weak_ptr<AudioClientTracker> &callback)
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     callback_ = callback;
+}
+
+void AudioClientTrackerCallbackStub::UnsetClientTrackerCallback()
+{
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
+    callback_.reset();
 }
 
 void AudioClientTrackerCallbackStub::MuteStreamImpl(
     const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    lock.unlock();
     if (cb != nullptr) {
         cb->MuteStreamImpl(streamSetStateEventInternal);
     } else {
@@ -132,7 +141,9 @@ void AudioClientTrackerCallbackStub::MuteStreamImpl(
 void AudioClientTrackerCallbackStub::UnmuteStreamImpl(
     const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    lock.unlock();
     if (cb != nullptr) {
         cb->UnmuteStreamImpl(streamSetStateEventInternal);
     } else {
@@ -143,7 +154,9 @@ void AudioClientTrackerCallbackStub::UnmuteStreamImpl(
 void AudioClientTrackerCallbackStub::PausedStreamImpl(
     const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    lock.unlock();
     if (cb != nullptr) {
         cb->PausedStreamImpl(streamSetStateEventInternal);
     } else {
@@ -153,7 +166,9 @@ void AudioClientTrackerCallbackStub::PausedStreamImpl(
 
 void AudioClientTrackerCallbackStub::SetLowPowerVolumeImpl(float volume)
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    lock.unlock();
     if (cb != nullptr) {
         cb->SetLowPowerVolumeImpl(volume);
     } else {
@@ -164,7 +179,9 @@ void AudioClientTrackerCallbackStub::SetLowPowerVolumeImpl(float volume)
 void AudioClientTrackerCallbackStub::ResumeStreamImpl(
     const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    lock.unlock();
     if (cb != nullptr) {
         cb->ResumeStreamImpl(streamSetStateEventInternal);
     } else {
@@ -174,7 +191,9 @@ void AudioClientTrackerCallbackStub::ResumeStreamImpl(
 
 void AudioClientTrackerCallbackStub::SetOffloadModeImpl(int32_t state, bool isAppBack)
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    lock.unlock();
     if (cb != nullptr) {
         cb->SetOffloadModeImpl(state, isAppBack);
     } else {
@@ -184,7 +203,9 @@ void AudioClientTrackerCallbackStub::SetOffloadModeImpl(int32_t state, bool isAp
 
 void AudioClientTrackerCallbackStub::UnsetOffloadModeImpl()
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    lock.unlock();
     if (cb != nullptr) {
         cb->UnsetOffloadModeImpl();
     } else {
@@ -194,7 +215,9 @@ void AudioClientTrackerCallbackStub::UnsetOffloadModeImpl()
 
 void AudioClientTrackerCallbackStub::GetLowPowerVolumeImpl(float &volume)
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    lock.unlock();
     if (cb != nullptr) {
         cb->GetLowPowerVolumeImpl(volume);
     } else {
@@ -204,7 +227,9 @@ void AudioClientTrackerCallbackStub::GetLowPowerVolumeImpl(float &volume)
 
 void AudioClientTrackerCallbackStub::GetSingleStreamVolumeImpl(float &volume)
 {
+    std::unique_lock<std::mutex> lock(clientTrackerMutex_);
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    lock.unlock();
     if (cb != nullptr) {
         cb->GetSingleStreamVolumeImpl(volume);
     } else {

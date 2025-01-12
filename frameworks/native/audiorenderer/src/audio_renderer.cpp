@@ -114,6 +114,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
 
     if (rendererProxyObj_ != nullptr) {
         rendererProxyObj_->UnsetRendererObj();
+        AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionID_);
     }
 
     RemoveRendererPolicyServiceDiedCallback();
@@ -229,6 +230,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 {
     Trace trace("AudioRenderer::Create");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
+        nullptr, "sa not start");
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
     if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
@@ -1803,8 +1806,12 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
     }
 
     uint32_t newSessionId = 0;
-    if (!SwitchToTargetStream(targetClass, newSessionId, reason) && audioRendererErrorCallback_) {
-        audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
+    if (!SwitchToTargetStream(targetClass, newSessionId, reason)) {
+        int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
+        if (audioRendererErrorCallback_) {
+            audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
+        }
     }
     usedSessionId_.push_back(newSessionId);
     int32_t ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(newSessionId,

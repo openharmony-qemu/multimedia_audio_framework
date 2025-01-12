@@ -57,8 +57,10 @@ AudioCapturerPrivate::~AudioCapturerPrivate()
     }
     AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
     if (audioStream_ != nullptr) {
+        audioStream_->GetAudioSessionID(sessionID_);
         audioStream_->ReleaseAudioStream(true);
         audioStream_ = nullptr;
+        AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionID_);
     }
     if (audioStateChangeCallback_ != nullptr) {
         audioStateChangeCallback_->HandleCapturerDestructor();
@@ -1242,6 +1244,8 @@ void AudioCapturerPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
         interruptCbImpl->StartSwitch();
     }
     if (!SwitchToTargetStream(targetClass, newSessionId)) {
+        int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
         AUDIO_ERR_LOG("Switch to target stream failed");
     }
     if (interruptCbImpl) {

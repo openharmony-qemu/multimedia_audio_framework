@@ -17,18 +17,19 @@
 
 #include <list>
 #include <unordered_map>
-#include <mutex>
 #include <cinttypes>
-#include "errors.h"
-#include "ipc_skeleton.h"
-#include "ffrt.h"
 
+#include "ipc_skeleton.h"
+#include "errors.h"
+#include "mutex"
+
+#include "audio_setting_provider.h"
 #include "audio_policy_log.h"
 #include "audio_info.h"
-#include "audio_setting_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t MAX_SAFE_STATUS = 2;
 
 class VolumeDataMaintainer {
 public:
@@ -54,9 +55,6 @@ public:
         return volumeDataMainTainer;
     }
     ~VolumeDataMaintainer();
-
-    bool SetFirstBoot(bool fristBoot);
-    bool GetFirstBoot(bool &firstBoot);
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
     bool SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
@@ -103,8 +101,8 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t GetStreamVolumeInternal(AudioStreamType streamType);
 
-    ffrt::mutex volumeMutex_;
-    ffrt::mutex volumeForDbMutex_;
+    std::mutex volumeMutex_;
+    std::mutex volumeForDbMutex_;
     std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save volume Mutestatus map
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save volume map
     bool isSettingsCloneHaveStarted_ = false;

@@ -25,7 +25,7 @@ namespace {
 constexpr int32_t MAX_DELAY_TIME = 4 * 1000;
 }
 AudioAdapterManagerHandler::AudioAdapterManagerHandler() : AppExecFwk::EventHandler(
-    AppExecFwk::EventRunner::Create("OS_APAdapterAsyncRunner", AppExecFwk::ThreadMode::FFRT))
+    AppExecFwk::EventRunner::Create("OS_APAdapterAsyncRunner"))
 {
     AUDIO_DEBUG_LOG("ctor");
 }
