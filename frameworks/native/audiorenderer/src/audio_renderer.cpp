@@ -745,10 +745,11 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 
     {
         std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
-        if (!audioStream_->GetSilentModeAndMixWithOthers()) {
-            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
+        if (audioStream_->GetSilentModeAndMixWithOthers()) {
+            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
         }
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
     }
 
     if (IsNoStreamRenderer()) {
@@ -1393,14 +1394,16 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
     std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
     if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
         if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
-            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
             CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed");
             audioStream_->SetSilentModeAndMixWithOthers(on);
             return;
         } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
             audioStream_->SetSilentModeAndMixWithOthers(on);
-            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
-            CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
+            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
+            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
+            CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed");
             return;
         }
     }
