@@ -21,7 +21,6 @@
 #include <dlfcn.h>
 #include "iservice_registry.h"
 
-#include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
 #include "parameter.h"
 #include "parameters.h"
@@ -56,6 +55,7 @@ static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
 static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
+constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 }
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {

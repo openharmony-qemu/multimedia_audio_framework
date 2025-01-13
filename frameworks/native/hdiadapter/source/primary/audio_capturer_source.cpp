@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -841,7 +841,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
         static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
     VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void*>(frame), replyBytes);
     }
@@ -912,7 +912,7 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t 
                 AudioEncodingType::ENCODING_PCM, static_cast<AudioSampleFormat>(attr_.format),
                 static_cast<AudioChannel>(attr_.channel));
             VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
-            if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+            if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
                 Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
                     static_cast<void*>(fdesc->frame), replyBytes);
             }
@@ -1076,7 +1076,7 @@ int32_t AudioCapturerSourceInner::Start(void)
     dumpFileName_ = halName_ + "_" + std::to_string(attr_.sourceType) + "_" + GetTime()
         + "_source_" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel)
         + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     return StartCapture();
 }
@@ -1675,7 +1675,7 @@ void AudioCapturerSourceInner::CheckLatencySignal(uint8_t *frame, size_t replyBy
         AudioExtParamKey hdiKey = AudioExtParamKey(key);
         std::string condition = "debug_audio_latency_measurement";
         int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(),
-            value, PARAM_VALUE_LENTH);
+            value, DumpFileUtil::PARAM_VALUE_LENTH);
         AUDIO_INFO_LOG("GetExtraParam ret:%{public}d", ret);
         LatencyMonitor::GetInstance().UpdateDspTime(value);
         LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(false,

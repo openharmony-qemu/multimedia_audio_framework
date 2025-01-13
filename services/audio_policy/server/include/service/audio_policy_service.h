@@ -24,7 +24,6 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_info.h"
 #include "audio_manager_base.h"
 #include "audio_policy_client_proxy.h"
 #include "audio_policy_manager_factory.h"
@@ -559,6 +558,7 @@ private:
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
     bool isFastControlled_ = true;
+    static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
 

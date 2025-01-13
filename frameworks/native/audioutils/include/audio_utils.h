@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,22 +47,9 @@
 #define BIT_32 32
 namespace OHOS {
 namespace AudioStandard {
-const int64_t PCM_MAYBE_SILENT = 1;
-const int64_t PCM_MAYBE_NOT_SILENT = 5;
-const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
-const int32_t SIGNAL_DATA_SIZE = 96;
-const int32_t SIGNAL_THRESHOLD = 10;
-const int32_t BLANK_THRESHOLD_MS = 100;
-const int32_t DETECTED_ZERO_THRESHOLD = 1;
-const size_t MILLISECOND_PER_SECOND = 1000;
-const int64_t DEFAULT_TIMEOUT_NS = 40 * 1000 * 1000;
-const size_t MOCK_INTERVAL = 2000;
-const int32_t GET_EXTRA_PARAM_LEN = 200;
-const int32_t YEAR_BASE = 1900;
-const int32_t DECIMAL_EXPONENT = 10;
-const size_t DATE_LENGTH = 17;
-static uint32_t g_sessionToMock = 0;
 const uint32_t STRING_BUFFER_SIZE = 4096;
+const size_t MILLISECOND_PER_SECOND = 1000;
+const int32_t GET_EXTRA_PARAM_LEN = 200;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
@@ -136,6 +123,7 @@ public:
  */
 class WatchTimeout {
 public:
+    static constexpr int64_t DEFAULT_TIMEOUT_NS = 40 * 1000 * 1000;
     WatchTimeout(const std::string &funcName, int64_t timeoutNs = DEFAULT_TIMEOUT_NS);
     ~WatchTimeout();
     void CheckCurrTimeout();
@@ -219,22 +207,12 @@ enum AudioDumpFileType {
     AUDIO_PULSE = 2,
 };
 
-namespace {
-const char* DUMP_SERVER_PARA = "sys.audio.dump.writeserver.enable";
-const char* DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
-const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
-const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
-const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
-const char* DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
-const char* DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
-const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
-const char* DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
-const uint32_t PARAM_VALUE_LENTH = 150;
-const char* BETA_VERSION = "beta";
-}
-
 class DumpFileUtil {
 public:
+    static constexpr char DUMP_SERVER_PARA[] = "sys.audio.dump.writeserver.enable";
+    static constexpr char DUMP_CLIENT_PARA[] = "sys.audio.dump.writeclient.enable";
+    static constexpr uint32_t PARAM_VALUE_LENTH = 150;
+    static constexpr char BETA_VERSION[] = "beta";
     static void WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
     static void CloseDumpFile(FILE **dumpFile);
     static std::map<std::string, std::string> g_lastPara;

@@ -24,7 +24,6 @@
 #include "audio_server.h"
 #include "audio_service.h"
 #include "audio_stream_info.h"
-#include "audio_utils.h"
 #include "policy_handler.h"
 
 #include <locale>

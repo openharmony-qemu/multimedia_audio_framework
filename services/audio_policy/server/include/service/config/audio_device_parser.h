@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,16 +24,12 @@
 #include <libxml/tree.h>
 
 #include "audio_policy_log.h"
-#include "audio_info.h"
 #include "iport_observer.h"
 #include "parser.h"
 #include "audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-static const char* PRIVACY_TYPE = "privacy";
-static const char* PUBLIC_TYPE = "public";
-static const char* NEGATIVE_TYPE = "negative";
 
 enum DeviceNodeName {
     UNKNOWN_NODE = -1,
@@ -44,6 +40,8 @@ enum DeviceNodeName {
 
 class AudioDeviceParser : public Parser {
 public:
+    static constexpr char PRIVACY_TYPE[] = "privacy";
+    static constexpr char PUBLIC_TYPE[] = "public";
     static constexpr char DEVICE_CONFIG_FILE[] = "/system/etc/audio/audio_device_privacy.xml";
 
     bool LoadConfiguration() final;

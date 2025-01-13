@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -38,6 +38,9 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 static const size_t MIN_FRAME_SIZE = 1;
+static const int32_t INT32_VOLUME_MIN = 0; // 0, min volume
+static const uint32_t VOLUME_SHIFT = 16;
+static constexpr int32_t INT32_VOLUME_MAX = 1 << VOLUME_SHIFT;
 class VolumeToolsUnitTest : public ::testing::Test {
 public:
     void SetUp();
@@ -66,7 +69,7 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_001, TestSize.Level1)
 {
     float volFloat = 0.5;
     int32_t ret = VolumeTools::GetInt32Vol(volFloat);
-    int32_t expected = static_cast<int32_t>(volFloat *INT32_VOLUME_MAX);
+    int32_t expected = static_cast<int32_t>(volFloat * INT32_VOLUME_MAX);
     EXPECT_EQ(ret, expected);
 }
 

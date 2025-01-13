@@ -37,6 +37,16 @@ const uint32_t DEFAULT_MICNUM = 2;
 const uint32_t DEFAULT_ECNUM = 0;
 const uint32_t DEFAULT_MICREFNUM = 0;
 
+const std::vector<std::string> NEED_EC_SCENE = {
+    "SCENE_VOIP_UP",
+    "SCENE_PRE_ENHANCE",
+};
+
+const std::vector<std::string> NEED_MICREF_SCENE = {
+    "SCENE_VOIP_UP",
+    "SCENE_RECORD",
+};
+
 AudioEnhanceChain::AudioEnhanceChain(const std::string &scene, const AudioEnhanceParamAdapter &algoParam,
     const AudioEnhanceDeviceAttr &deviceAttr, const bool defaultFlag)
 {
@@ -100,9 +110,9 @@ void AudioEnhanceChain::InitDump()
     dumpFileInName += ".pcm";
     std::string dumpFileOutName = dumpFileName + sceneType_ + "_" + GetTime() + "_Out.pcm";
     std::string dumpFileDeInterleaverName = dumpFileName + sceneType_ + "_" + GetTime() + "_DeInterLeaver.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileInName, &dumpFileIn_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileOutName, &dumpFileOut_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileDeInterleaverName, &dumpFileDeinterLeaver_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileInName, &dumpFileIn_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileOutName, &dumpFileOut_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileDeInterleaverName, &dumpFileDeinterLeaver_);
 }
 
 AudioEnhanceChain::~AudioEnhanceChain()

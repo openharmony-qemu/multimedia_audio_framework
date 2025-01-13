@@ -30,9 +30,15 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT = 40;
+constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64;
+constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32;
+constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16;
+constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7;
+constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20;
 #ifndef HAS_FEATURE_INNERCAPTURER
 constexpr int32_t ERROR = -1;
 #endif
+
 const char *g_audioServerCodeStrs[] = {
     "GET_AUDIO_PARAMETER",
     "SET_AUDIO_PARAMETER",
@@ -493,6 +499,7 @@ static bool UnmarshallEffectChainMgrParam(EffectChainManagerParam &effectChainMg
     }
 
     containSize = data.ReadInt32();
+
     CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
         false, "Create audio effect chain name map failed, please check log");
     while (containSize--) {

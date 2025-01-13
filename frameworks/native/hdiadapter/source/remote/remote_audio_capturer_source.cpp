@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -54,6 +54,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
+const char* DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
 } // namespace
 
 class RemoteAudioCapturerSourceInner : public RemoteAudioCapturerSource, public IAudioDeviceAdapterCallback {
@@ -407,7 +408,7 @@ int32_t RemoteAudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Start");
     std::lock_guard<std::mutex> lock(createCaptureMutex_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_CAPTURE_SOURCE_FILENAME, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, DUMP_REMOTE_CAPTURE_SOURCE_FILENAME, &dumpFile_);
     if (!isCapturerCreated_.load()) {
         CHECK_AND_RETURN_RET_LOG(CreateCapture(audioPort_) == SUCCESS, ERR_NOT_STARTED,
             "Create capture fail, audio port %{public}d", audioPort_.portId);

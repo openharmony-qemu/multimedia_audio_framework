@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,6 @@
 
 #include "audio_policy_service.h"
 #include "audio_volume_parser.h"
-#include "audio_utils.h"
 #include "audio_policy_server.h"
 #include "audio_volume.h"
 
@@ -1354,7 +1353,7 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
         // if read ringer mode success, data is loaded.
         isLoaded_ = volumeDataMaintainer_.GetRingerMode(ringerMode_);
     }
-    
+
     int32_t volumeLevel =
         volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation

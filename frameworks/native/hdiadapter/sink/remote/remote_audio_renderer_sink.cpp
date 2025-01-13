@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -83,6 +83,7 @@ const string NAVIGATION_STREAM_TYPE = "13";
 uint32_t MEDIA_RENDERID = 0;
 uint32_t NAVIGATION_RENDERID = 1;
 uint32_t COMMUNICATION_RENDERID = 2;
+const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
 }
 class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
@@ -544,7 +545,7 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
         std::string dumpFileName = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + GetTime() + "_" +
             std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
             std::to_string(attr_.format) + ".pcm";
-        DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName, &dumpFile);
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName, &dumpFile);
         dumpFileMap_[audioPort.first] = dumpFile;
         dumpFileNameMap_[audioPort.first] = dumpFileName;
     }

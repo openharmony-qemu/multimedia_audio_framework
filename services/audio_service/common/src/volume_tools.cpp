@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,6 +35,9 @@ static const size_t MIN_FRAME_SIZE = 1;
 static const size_t MAX_FRAME_SIZE = 100000; // max to about 2s for 48khz
 static const uint32_t INT_32_MAX = 0x7fffffff;
 static const int32_t HALF_FACTOR = 2;
+static const int32_t INT32_VOLUME_MIN = 0; // 0, min volume
+static const uint32_t VOLUME_SHIFT = 16;
+static constexpr int32_t INT32_VOLUME_MAX = 1 << VOLUME_SHIFT; // 1 << 16 = 65536, max volume
 }
 namespace OHOS {
 namespace AudioStandard {

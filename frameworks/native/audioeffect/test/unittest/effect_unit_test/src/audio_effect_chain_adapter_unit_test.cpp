@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,6 @@
 #include <gmock/gmock.h>
 
 #include "audio_effect.h"
-#include "audio_utils.h"
 #include "audio_effect_log.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect_chain_manager.h"
@@ -659,7 +658,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerSceneCheck_001, TestSi
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = EffectChainManagerInitCb(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    
+
     bool result2 = EffectChainManagerSceneCheck("SCENE_MUSIC", "SCENE_MUSIC");
     EXPECT_EQ(false, result2);
 
@@ -688,7 +687,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerSceneCheck_002, TestSi
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = EffectChainManagerInitCb(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    
+
     const char *sinkSceneType = nullptr;
     sceneType = nullptr;
     bool result2 = EffectChainManagerSceneCheck(sinkSceneType, sceneType);
@@ -708,7 +707,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerSceneCheck_003, TestSi
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = EffectChainManagerInitCb(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    
+
     const char *sinkSceneType = nullptr;
     bool result2 = EffectChainManagerSceneCheck(sinkSceneType, sceneType);
     EXPECT_EQ(false, result2);
@@ -747,7 +746,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerProcess_001, TestSize.
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = EffectChainManagerInitCb(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    
+
     struct BufferAttr bufferAttr;
     char sceneType2[] = "SCENE_MUSIC";
     result = EffectChainManagerProcess(sceneType2, &bufferAttr);
@@ -767,7 +766,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerProcess_002, TestSize.
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = EffectChainManagerInitCb(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    
+
     struct BufferAttr bufferAttr;
     char *sceneType2 = nullptr;
     result = EffectChainManagerProcess(sceneType2, &bufferAttr);
@@ -787,7 +786,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerProcess_003, TestSize.
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = EffectChainManagerInitCb(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    
+
     struct BufferAttr bufferAttr;
     char sceneType2[] = "";
     result = EffectChainManagerProcess(sceneType2, &bufferAttr);

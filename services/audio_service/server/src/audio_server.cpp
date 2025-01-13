@@ -45,7 +45,6 @@
 #include "audio_manager_listener_proxy.h"
 #include "audio_service.h"
 #include "audio_schedule.h"
-#include "audio_info.h"
 #include "audio_utils.h"
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
@@ -71,7 +70,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-
+constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
 constexpr int32_t SYSTEM_STATUS_START = 1;
 constexpr int32_t SYSTEM_STATUS_STOP = 0;
 constexpr int32_t SYSTEM_PROCESS_TYPE = 1;
@@ -88,6 +87,10 @@ const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
+const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
+const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
+const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
+const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,

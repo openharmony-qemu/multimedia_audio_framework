@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -744,7 +744,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_002, TestSize.Level1)
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     ASSERT_NE(nullptr, audioRendererFilter) << "audioRendererFilter is nullptr.";
     audioRendererFilter->uid = -1;
-    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
+    audioRendererFilter->rendererInfo.rendererFlags = AudioPolicyDump::STREAM_FLAG_NORMAL;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
@@ -771,7 +771,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_003, TestSize.Level1)
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     ASSERT_NE(nullptr, audioRendererFilter) << "audioRendererFilter is nullptr.";
     audioRendererFilter->uid = getuid();
-    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
+    audioRendererFilter->rendererInfo.rendererFlags = AudioPolicyDump::STREAM_FLAG_NORMAL;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
@@ -2035,7 +2035,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetCapturerStreamDump_001, TestSize.Level1)
     shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo2 = make_shared<AudioCapturerChangeInfo>();
 
     AudioCapturerInfo capturerInfo;
-    capturerInfo.capturerFlags = STREAM_FLAG_NORMAL;
+    capturerInfo.capturerFlags = AudioPolicyDump::STREAM_FLAG_NORMAL;
     capturerChangeInfo->createrUID = 0;
     capturerChangeInfo->capturerInfo = capturerInfo;
     GetServerPtr()->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_.push_back(
@@ -2144,7 +2144,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_001, TestSi
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     ASSERT_NE(nullptr, audioRendererFilter) << "audioRendererFilter is nullptr.";
     audioRendererFilter->uid = getuid();
-    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
+    audioRendererFilter->rendererInfo.rendererFlags = AudioPolicyDump::STREAM_FLAG_NORMAL;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
     std::vector<DeviceType> deviceTypesTmp = {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_TYPE_BLUETOOTH_SCO,
@@ -2184,7 +2184,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDeviceByFilterInner_002, TestSi
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     ASSERT_NE(nullptr, audioRendererFilter) << "audioRendererFilter is nullptr.";
     audioRendererFilter->uid = getuid();
-    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
+    audioRendererFilter->rendererInfo.rendererFlags = AudioPolicyDump::STREAM_FLAG_NORMAL;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
@@ -2240,7 +2240,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnDeviceConfigurationChanged_001, TestSize.
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     ASSERT_NE(nullptr, audioRendererFilter) << "audioRendererFilter is nullptr.";
     audioRendererFilter->uid = getuid();
-    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
+    audioRendererFilter->rendererInfo.rendererFlags = AudioPolicyDump::STREAM_FLAG_NORMAL;
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
     GetServerPtr()->audioPolicyService_.audioDeviceStatus_.Init(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,7 +35,6 @@
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
-#include "audio_info.h"
 #include "audio_policy_service.h"
 #include "audio_policy_utils.h"
 #include "audio_stream_removed_callback.h"
@@ -53,53 +52,14 @@
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr uint64_t DSTATUS_SESSION_ID = 4294967296;
-constexpr uint32_t DSTATUS_DEFAULT_RATE = 48000;
-constexpr int32_t LOCAL_USER_ID = 100;
-
 class AudioPolicyService;
 class AudioInterruptService;
 class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
 
-// for phone
-const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
-    STREAM_MUSIC,
-    STREAM_VOICE_CALL,
-    STREAM_RING,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_ALARM,
-    STREAM_ACCESSIBILITY,
-    STREAM_ULTRASONIC
-};
-
 const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
     STREAM_NOTIFICATION
-};
-
-// for PC
-const std::vector<AudioStreamType> GET_PC_STREAM_RING_VOLUME_TYPES {
-    STREAM_SYSTEM,
-    STREAM_SYSTEM_ENFORCED,
-    STREAM_NOTIFICATION
-};
-
-const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
-    STREAM_VOICE_CALL,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_ACCESSIBILITY,
-    STREAM_RING,
-    STREAM_ALARM,
-    STREAM_VOICE_RING,
-    STREAM_ULTRASONIC,
-    // adjust the type of music from the head of list to end, make sure music is updated last.
-    // avoid interference from ring updates on special platform.
-    // when the device is switched to headset,ring and alarm is dualtone type.
-    // dualtone type use fixed volume curve of speaker.
-    // the ring and alarm are classified into the music group.
-    // the music volume becomes abnormal when the db value of music is modified.
-    STREAM_MUSIC
 };
 
 class AudioPolicyServer : public SystemAbility,
@@ -563,9 +523,11 @@ private:
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
     static constexpr int32_t AUDIO_UID = 1041;
     static constexpr uint32_t MICPHONE_CALLER = 0;
+    static constexpr int32_t ROOT_UID = 0;
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
+    static constexpr const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
 
     class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
     public:
@@ -724,6 +686,7 @@ public:
         }
     }
 private:
+    static constexpr int32_t LOCAL_USER_ID = 100;
     AudioPolicyServer *audioPolicyServer_;
 };
 

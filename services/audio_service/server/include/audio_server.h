@@ -34,7 +34,6 @@
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
-#include "audio_utils.h"
 #include "policy_handler.h"
 
 namespace OHOS {
@@ -251,6 +250,7 @@ private:
     static constexpr int32_t VASSISTANT_UID = 3001;
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
+    static constexpr int32_t ROOT_UID = 0;
     static uint32_t paDaemonTid_;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;
