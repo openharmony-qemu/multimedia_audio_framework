@@ -498,7 +498,6 @@ int32_t AudioSocketThread::AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUe
     }
     AudioEvent audioEvent = {0};
     if (strncmp(audioPnpUevent->name, "mic_blocked", strlen("mic_blocked")) == 0) {
-
         audioEvent.eventType = PNP_EVENT_MIC_BLOCKED;
     } else if (strncmp(audioPnpUevent->name, "mic_un_blocked", strlen("mic_un_blocked")) == 0) {
         audioEvent.eventType = PNP_EVENT_MIC_UNBLOCKED;
