@@ -1997,7 +1997,7 @@ int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, 
     CHECK_AND_RETURN_RET_LOG(audioConfigManager_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
-        audioDeviceCommon_.FetchDevice(true);
+        audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
         return SUCCESS;
     }
     return ret;

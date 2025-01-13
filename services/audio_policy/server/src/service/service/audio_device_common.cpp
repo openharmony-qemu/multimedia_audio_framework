@@ -928,7 +928,7 @@ void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkname, const std::
 {
     auto ringermode = audioPolicyManager_.GetRingerMode();
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
-    if (reason.isOverride()) {
+    if (reason.isOverride() || reason.isSetDefaultOutputDevice()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
