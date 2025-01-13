@@ -862,6 +862,8 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleServiceEvent_001, TestSize.Level2
     audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
     eventId = AudioPolicyServerHandler::EventAudioServerCmd::MICROPHONE_BLOCKED;
     audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
+    eventId = AudioPolicyServerHandler::EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT;
+    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
 
@@ -1021,5 +1023,49 @@ HWTEST(AudioPolicyServerHandlerUnitTest, GetCallbackCapturerInfoList_002, TestSi
     audioPolicyServerHandler_->GetCallbackCapturerInfoList(clientPid);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
 }
+
+/**
+ * @tc.name  : SetCallbackCapturerInfo_001
+ * @tc.number: SetCallbackCapturerInfo_001
+ * @tc.desc  : Test SetCallbackCapturerInfo method when set audioCapturerInfo into clientCbCapturerInfoMap_.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SetCallbackCapturerInfo_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    AudioCapturerInfo audioCapturerInfo;
+    int32_t ret = audioPolicyServerHandler_->SetCallbackCapturerInfo(audioCapturerInfo);
+    EXPECT_EQ(ret, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : SetCallbackRendererInfo_001
+ * @tc.number: SetCallbackRendererInfo_001
+ * @tc.desc  : Test SetCallbackRendererInfo method when set SetCallbackRendererInfo into clientCbRendererInfoMap_.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SetCallbackRendererInfo_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    AudioRendererInfo audioRendererInfo;
+    int32_t ret = audioPolicyServerHandler_->SetCallbackRendererInfo(audioRendererInfo);
+    EXPECT_EQ(ret, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : AddExternInterruptCbsMap_001
+ * @tc.number: AddExternInterruptCbsMap_001
+ * @tc.desc  : Test AddExternInterruptCbsMap method when add audioInterruptCallback into amInterruptCbsMap_.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, AddExternInterruptCbsMap_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 123;
+    std::shared_ptr<AudioInterruptCallback> audioInterruptCallback = nullptr;
+    audioPolicyServerHandler_->AddExternInterruptCbsMap(clientPid, audioInterruptCallback);
+    EXPECT_EQ(audioPolicyServerHandler_->amInterruptCbsMap_[clientPid], audioInterruptCallback);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
