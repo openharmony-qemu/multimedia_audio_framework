@@ -360,6 +360,7 @@ void AudioPolicyManagerStub::SetStreamMuteLegacyInternal(MessageParcel &data, Me
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
     int result = SetStreamMuteLegacy(volumeType, mute);
     reply.WriteInt32(result);
 }
@@ -369,6 +370,7 @@ void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageP
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
     int result = SetStreamMute(volumeType, mute);
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
     reply.WriteInt32(result);
 }
 

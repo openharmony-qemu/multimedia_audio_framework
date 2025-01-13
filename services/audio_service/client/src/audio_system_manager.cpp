@@ -521,7 +521,7 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
+int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType) const
 {
     AUDIO_INFO_LOG("SetStreamMute for volumeType [%{public}d], mute [%{public}d]", volumeType, mute);
     switch (volumeType) {
@@ -548,7 +548,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
     }
 
     /* Call Audio Policy SetStreamMute */
-    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true);
+    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true, deviceType);
 }
 
 bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const

@@ -506,11 +506,12 @@ public:
      *
      * @param volumeType audio volume type.
      * @param mute Specifies whether the stream is muted.
+     * @param deivceType Specifies which device to mute.
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetMute(AudioVolumeType volumeType, bool mute) const;
+    int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE) const;
 
     /**
      * @brief is stream mute.
