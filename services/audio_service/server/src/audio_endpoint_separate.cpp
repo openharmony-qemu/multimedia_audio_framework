@@ -40,7 +40,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
-    static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
+    static constexpr int64_t MAX_SPAN_DURATION_NS = 100000000; // 100ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
 }
 
@@ -256,7 +256,7 @@ int32_t AudioEndpointSeparate::PrepareDeviceBuffer(const AudioDeviceDescriptor &
     AUDIO_DEBUG_LOG("%{public}s spanDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
         __func__, spanDuration_, serverAheadReadTime_);
 
-    if (spanDuration_ <= 0 || spanDuration_ >= MAX_SPAN_DURATION_IN_NANO) {
+    if (spanDuration_ <= 0 || spanDuration_ >= MAX_SPAN_DURATION_NS) {
         AUDIO_ERR_LOG("%{public}s mmap span info error, spanDuration %{public}" PRIu64".", __func__, spanDuration_);
         return ERR_INVALID_PARAM;
     }
