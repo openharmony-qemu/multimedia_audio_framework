@@ -1475,6 +1475,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         oldAudioStream = audioStream_;
         audioStream_ = newAudioStream;
         UpdateRendererAudioStream(audioStream_);
+        isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
