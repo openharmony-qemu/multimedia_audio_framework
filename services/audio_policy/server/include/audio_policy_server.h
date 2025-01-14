@@ -478,6 +478,8 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    int32_t SetVirtualCall(const bool isVirtual) override;
+
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, bool isUpdateUi);

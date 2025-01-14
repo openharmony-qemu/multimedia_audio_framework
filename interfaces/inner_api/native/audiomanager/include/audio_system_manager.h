@@ -1303,6 +1303,8 @@ public:
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const std::shared_ptr<AudioInterruptCallback> &callback,
         uint32_t clientUid, const int32_t zoneID);
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId);
+
+    int32_t SetVirtualCall(const bool isVirtual);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:
