@@ -738,7 +738,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     if (GetVolumeInner() == 0 && isStillMuted_) {
         AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillMuted_=%{public}d",
             GetVolumeInner(), isStillMuted_);
-        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
+        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
     } else {
         isStillMuted_ = false;
     }
@@ -746,7 +746,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     {
         std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
         if (audioStream_->GetSilentModeAndMixWithOthers()) {
-            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
+            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
@@ -1401,7 +1401,7 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
             return;
         } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
             audioStream_->SetSilentModeAndMixWithOthers(on);
-            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
+            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
             CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed");
             return;
