@@ -1067,5 +1067,83 @@ HWTEST(AudioPolicyServerHandlerUnitTest, AddExternInterruptCbsMap_001, TestSize.
     EXPECT_EQ(audioPolicyServerHandler_->amInterruptCbsMap_[clientPid], audioInterruptCallback);
 }
 
+/**
+ * @tc.name  : SendMicrophoneBlockedCallback_001
+ * @tc.number: SendMicrophoneBlockedCallback_001
+ * @tc.desc  : Test SendMicrophoneBlockedCallback method when send MicrophoneBlockedCallback.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendMicrophoneBlockedCallback_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    DeviceBlockStatus status = DEVICE_UNBLOCKED;
+    bool ret = audioPolicyServerHandler_->SendMicrophoneBlockedCallback(descForCb, status);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : SendMicStateUpdatedCallback_001
+ * @tc.number: SendMicStateUpdatedCallback_001
+ * @tc.desc  : Test SendMicStateUpdatedCallback method when send MicStateUpdatedCallback.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendMicStateUpdatedCallback_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    MicStateChangeEvent micStateChangeEvent;
+    micStateChangeEvent.mute = false;
+    bool ret = audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : SendMicStateWithClientIdCallback_001
+ * @tc.number: SendMicStateWithClientIdCallback_001
+ * @tc.desc  : Test SendMicStateWithClientIdCallback method when send MicStateWithClientIdCallback.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendMicStateWithClientIdCallback_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 123;
+    MicStateChangeEvent micStateChangeEvent;
+    micStateChangeEvent.mute = false;
+    bool ret = audioPolicyServerHandler_->SendMicStateWithClientIdCallback(micStateChangeEvent, clientPid);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : SendInterruptEventInternalCallback_001
+ * @tc.number: SendInterruptEventInternalCallback_001
+ * @tc.desc  : Test SendInterruptEventInternalCallback method when send InterruptEventInternalCallback.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendInterruptEventInternalCallback_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    InterruptEventInternal interruptEventInternal;
+    bool ret = audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEventInternal);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : SendInterruptEventWithClientIdCallback_001
+ * @tc.number: SendInterruptEventWithClientIdCallback_001
+ * @tc.desc  : Test SendInterruptEventWithClientIdCallback method when send InterruptEventWithClientIdCallback.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendInterruptEventWithClientIdCallback_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    InterruptEventInternal interruptEvent = {};
+    interruptEvent.eventType = INTERRUPT_TYPE_END;
+    interruptEvent.forceType = INTERRUPT_SHARE;
+    interruptEvent.hintType = INTERRUPT_HINT_NONE;
+    interruptEvent.duckVolume = 0;
+    int32_t clientPid = 123;
+    bool ret = audioPolicyServerHandler_->SendInterruptEventWithClientIdCallback(interruptEvent, clientPid);
+    EXPECT_EQ(ret, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
