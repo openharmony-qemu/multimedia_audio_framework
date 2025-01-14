@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -43,7 +43,9 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     const char *deviceClassPrimary = "primary";
     const char *deviceClassUsb = "usb";
     const char *deviceClassA2DP = "a2dp";
+#ifdef FEATURE_FILE_IO
     const char *deviceClassFile = "file_io";
+#endif
 #ifdef DAUDIO_ENABLE
     const char *deviceClassRemote = "remote";
 #endif
@@ -57,10 +59,12 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     if (!strcmp(deviceClass, deviceClassA2DP)) {
         return BluetoothCapturerSource::GetInstance();
     }
+#ifdef FEATURE_FILE_IO
     if (!strcmp(deviceClass, deviceClassFile)) {
         static AudioCapturerFileSource audioCapturer;
         return &audioCapturer;
     }
+#endif
 #ifdef DAUDIO_ENABLE
     if (!strcmp(deviceClass, deviceClassRemote)) {
         std::string networkId = deviceNetworkId;
