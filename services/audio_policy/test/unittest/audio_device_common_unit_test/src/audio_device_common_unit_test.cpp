@@ -1764,6 +1764,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_081, TestSize.Level1)
     ret = audioDeviceCommon.GetHasDpFlag();
     EXPECT_EQ(true, ret);
 }
+
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_082
@@ -1777,12 +1778,12 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_082, TestSize.Level1)
     rendererChangeInfo->outputDeviceInfo.macAddress_ = "";
     rendererChangeInfo->outputDeviceInfo.networkId_ = "";
     rendererChangeInfo->outputDeviceInfo.deviceRole_ = INPUT_DEVICE;
-    std::unique_ptr<AudioDeviceDescriptor> outputdevice = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
     outputdevice->deviceType_ = DEVICE_TYPE_SPEAKER;
     outputdevice->macAddress_ = "";
     outputdevice->networkId_ = "";
     outputdevice->deviceRole_ = INPUT_DEVICE;
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
     outputDevices.push_back(std::move(outputdevice));
     std::vector<SinkInput> sinkInputs;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OVERRODE;
@@ -1804,12 +1805,12 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_083, TestSize.Level1)
     rendererChangeInfo->outputDeviceInfo.macAddress_ = "";
     rendererChangeInfo->outputDeviceInfo.networkId_ = "";
     rendererChangeInfo->outputDeviceInfo.deviceRole_ = INPUT_DEVICE;
-    std::unique_ptr<AudioDeviceDescriptor> outputdevice = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
     outputdevice->deviceType_ = DEVICE_TYPE_SPEAKER;
     outputdevice->macAddress_ = "";
     outputdevice->networkId_ = "LocalDevice";
     outputdevice->deviceRole_ = INPUT_DEVICE;
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
     outputDevices.push_back(std::move(outputdevice));
     std::vector<SinkInput> sinkInputs;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OVERRODE;
@@ -1830,8 +1831,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_084, TestSize.Level1)
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
 
-    std::unique_ptr<AudioDeviceDescriptor> outputdevice = std::make_unique<AudioDeviceDescriptor>();
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
+    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
     outputDevices.push_back(std::move(outputdevice));
     audioDeviceCommon.enableDualHalToneState_ = true;
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
@@ -1849,8 +1850,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_085, TestSize.Level1)
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
 
-    std::unique_ptr<AudioDeviceDescriptor> outputdevice = std::make_unique<AudioDeviceDescriptor>();
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
+    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
     outputDevices.push_back(std::move(outputdevice));
     audioDeviceCommon.enableDualHalToneState_ = false;
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
@@ -1868,9 +1869,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_086, TestSize.Level1)
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
 
-    std::unique_ptr<AudioDeviceDescriptor> outputdevice = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
     outputdevice->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
     outputDevices.push_back(std::move(outputdevice));
     VolumeUtils::SetPCVolumeEnable(false);
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
@@ -1888,9 +1889,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_087, TestSize.Level1)
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
 
-    std::unique_ptr<AudioDeviceDescriptor> outputdevice = std::make_unique<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
     outputdevice->deviceType_ = DEVICE_TYPE_SPEAKER;
-    vector<std::unique_ptr<AudioDeviceDescriptor>> outputDevices;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
     outputDevices.push_back(std::move(outputdevice));
     VolumeUtils::SetPCVolumeEnable(false);
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
