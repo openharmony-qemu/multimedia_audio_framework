@@ -485,6 +485,7 @@ public:
     void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel, bool mute);
 
     void ProcUpdateRingerMode();
+    uint32_t TranslateErrorCode(int32_t result);
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:

@@ -933,5 +933,43 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_045, TestSize.Level1)
     bool ret = ptrAudioPolicyServer->IsAllowedPlayback(uid, pid);
     EXPECT_EQ(ret, true);
 }
+
+/**
+* @tc.name  : Test TranslateErrorCodeer.
+* @tc.number: TranslateErrorCode_001
+* @tc.desc  : Test TranslateErrorCodeer.
+*/
+HWTEST(AudioPolicyUnitTest, TranslateErrorCode_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    int32_t result = ERR_INVALID_PARAM;
+    uint32_t resultForMonitor = ERR_SUBSCRIBE_INVALID_PARAM;
+    uint32_t actual = ptrAudioPolicyServer->TranslateErrorCode(result);
+    EXPECT_EQ(resultForMonitor, actual);
+
+    result = ERR_NULL_POINTER;
+    resultForMonitor = ERR_SUBSCRIBE_KEY_OPTION_NULL;
+    actual = ptrAudioPolicyServer->TranslateErrorCode(result);
+    EXPECT_EQ(resultForMonitor, actual);
+
+    result = ERR_MMI_CREATION;
+    resultForMonitor = ERR_SUBSCRIBE_MMI_NULL;
+    actual = ptrAudioPolicyServer->TranslateErrorCode(result);
+    EXPECT_EQ(resultForMonitor, actual);
+
+    result = ERR_MMI_SUBSCRIBE;
+    resultForMonitor = ERR_MODE_SUBSCRIBE;
+    actual = ptrAudioPolicyServer->TranslateErrorCode(result);
+    EXPECT_EQ(resultForMonitor, actual);
+
+    result = 99999;
+    resultForMonitor = 0;
+    actual = ptrAudioPolicyServer->TranslateErrorCode(result);
+    EXPECT_EQ(resultForMonitor, actual);
+}
 } // AudioStandard
 } // OHOS
