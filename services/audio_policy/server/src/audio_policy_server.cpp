@@ -3488,6 +3488,17 @@ int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
     return audioPolicyService_.SetVoiceRingtoneMute(isMute);
 }
 
+int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
+{
+    constexpr int32_t meetServiceUid = 5523; // "uid" : "meetservice"
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by meetservice
+    CHECK_AND_RETURN_RET_LOG(callerUid == meetServiceUid, ERROR,
+        "SetVirtualCall callerUid is error: not meetservice");
+    AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
+    return audioPolicyService_.SetVirtualCall(isVirtual);
+}
+
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);

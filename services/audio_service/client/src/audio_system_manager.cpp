@@ -1590,5 +1590,9 @@ int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const 
     return AudioPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
 }
 
+int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
+{
+    return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+}
 } // namespace AudioStandard
 } // namespace OHOS
