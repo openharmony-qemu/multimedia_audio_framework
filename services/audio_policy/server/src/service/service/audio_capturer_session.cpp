@@ -394,17 +394,18 @@ const AudioDeviceDescriptor& AudioCapturerSession::GetInputDeviceTypeForReload()
     return inputDeviceForReload_;
 }
 
-std::string AudioCapturerSession::GetVoipUpPropV3(const AudioEffectPropertyArrayV3 &propertyArray)
+std::string AudioCapturerSession::GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &propertyArray,
+    const std::string &propName)
 {
-    std::string voipUpProp = "";
+    std::string propValue = "";
     auto iter = std::find_if(propertyArray.property.begin(), propertyArray.property.end(),
-        [](const AudioEffectPropertyV3 &prop) {
-            return prop.name == "voip_up";
+        [&propName](const AudioEffectPropertyV3 &prop) {
+            return prop.name == propName;
         });
     if (iter != propertyArray.property.end()) {
-        voipUpProp = iter->category;
+        propValue = iter->category;
     }
-    return voipUpProp;
+    return propValue;
 }
 
 void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
@@ -414,27 +415,33 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV
         AUDIO_INFO_LOG("reload ignore for feature not enable");
         return;
     }
-    if (audioEcManager_.GetSourceOpened() != SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AUDIO_INFO_LOG("reload ignore for source not voip");
+    if (audioEcManager_.GetSourceOpened() != SOURCE_TYPE_VOICE_COMMUNICATION &&
+        audioEcManager_.GetSourceOpened() != SOURCE_TYPE_MIC) {
+        AUDIO_INFO_LOG("reload ignore for source not voip or record");
         return;
     }
-
-    if ((GetVoipUpPropV3(oldPropertyArray) == "PNR") ^ (GetVoipUpPropV3(newPropertyArray) == "PNR")) {
+    std::string oldRecordProp = GetEnhancePropByNameV3(oldPropertyArray, "record");
+    std::string oldVoipUpProp = GetEnhancePropByNameV3(oldPropertyArray, "voip_up");
+    std::string newRecordProp = GetEnhancePropByNameV3(newPropertyArray, "record");
+    std::string newVoipUpProp = GetEnhancePropByNameV3(newPropertyArray, "voip_up");
+    if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
+        (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
     }
 }
 
-std::string AudioCapturerSession::GetVoipUpProp(const AudioEnhancePropertyArray &propertyArray)
+std::string AudioCapturerSession::GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray,
+    const std::string &propName)
 {
-    std::string voipUpProp = "";
+    std::string propValue = "";
     auto iter = std::find_if(propertyArray.property.begin(), propertyArray.property.end(),
-        [](const AudioEnhanceProperty &prop) {
-            return prop.enhanceClass == "voip_up";
+        [&propName](const AudioEnhanceProperty &prop) {
+            return prop.enhanceClass == propName;
         });
     if (iter != propertyArray.property.end()) {
-        voipUpProp = iter->enhanceProp;
+        propValue = iter->enhanceProp;
     }
-    return voipUpProp;
+    return propValue;
 }
 
 void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
@@ -444,11 +451,17 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray
         AUDIO_INFO_LOG("reload ignore for feature not enable");
         return;
     }
-    if (audioEcManager_.GetSourceOpened() != SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AUDIO_INFO_LOG("reload ignore for source not voip");
+    if (audioEcManager_.GetSourceOpened() != SOURCE_TYPE_VOICE_COMMUNICATION &&
+        audioEcManager_.GetSourceOpened() != SOURCE_TYPE_MIC) {
+        AUDIO_INFO_LOG("reload ignore for source not voip or record");
         return;
     }
-    if ((GetVoipUpProp(oldPropertyArray) == "PNR") ^ (GetVoipUpProp(newPropertyArray) == "PNR")) {
+    std::string oldRecordProp = GetEnhancePropByName(oldPropertyArray, "record");
+    std::string oldVoipUpProp = GetEnhancePropByName(oldPropertyArray, "voip_up");
+    std::string newRecordProp = GetEnhancePropByName(newPropertyArray, "record");
+    std::string newVoipUpProp = GetEnhancePropByName(newPropertyArray, "voip_up");
+    if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
+        (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
     }
 }

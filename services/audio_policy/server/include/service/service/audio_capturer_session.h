@@ -99,8 +99,8 @@ private:
     const AudioDeviceDescriptor& GetInputDeviceTypeForReload();
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
 
-    std::string GetVoipUpProp(const AudioEnhancePropertyArray &propertyArray);
-    std::string GetVoipUpPropV3(const AudioEffectPropertyArrayV3 &oldPropertyArray);
+    std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
+    std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouterCenter& audioRouterCenter_;
