@@ -3857,7 +3857,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
                 *((uint64_t *)data) = CalcOffloadCacheLenInHdi(u);
             } else if (u->sink_latency) {
                 *((uint64_t *)data) = u->sink_latency * PA_USEC_PER_MSEC;
-            } else {
+            } else if (pa_atomic_load(&u->primary.isHDISinkStarted) == 1) {
                 uint64_t latency;
                 uint32_t hdiLatency;
                 bool getLatencyFromHdiSucess = true;
