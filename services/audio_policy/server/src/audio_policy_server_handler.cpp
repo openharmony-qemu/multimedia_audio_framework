@@ -1331,7 +1331,14 @@ int32_t AudioPolicyServerHandler::SetCallbackRendererInfo(const AudioRendererInf
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     lock_guard<mutex> lock(clientCbRendererInfoMapMutex_);
-    clientCbRendererInfoMap_[clientPid].push_back(rendererInfo);
+    auto &rendererList = clientCbRendererInfoMap_[clientPid];
+    auto it = std::find_if(rendererList.begin(), rendererList.end(),
+        [&rendererInfo](const AudioRendererInfo &existingRenderer) {
+            return existingRenderer.streamUsage == rendererInfo.streamUsage;
+        });
+    if (it == rendererList.end()) {
+        rendererList.push_back(rendererInfo);
+    }
     return AUDIO_OK;
 }
 
@@ -1349,7 +1356,14 @@ int32_t AudioPolicyServerHandler::SetCallbackCapturerInfo(const AudioCapturerInf
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     lock_guard<mutex> lock(clientCbCapturerInfoMapMutex_);
-    clientCbCapturerInfoMap_[clientPid].push_back(capturerInfo);
+    auto &capturerList = clientCbCapturerInfoMap_[clientPid];
+    auto it = std::find_if(capturerList.begin(), capturerList.end(),
+        [&capturerInfo](const AudioCapturerInfo &existingCapturer) {
+            return existingCapturer.sourceType == capturerInfo.sourceType;
+        });
+    if (it == capturerList.end()) {
+        capturerList.push_back(capturerInfo);
+    }
     return AUDIO_OK;
 }
 
