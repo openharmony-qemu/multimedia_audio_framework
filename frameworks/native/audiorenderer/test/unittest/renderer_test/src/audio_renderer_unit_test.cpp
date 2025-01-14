@@ -8289,9 +8289,9 @@ HWTEST(AudioRendererUnitTest, RestoreTheadLoop_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, IsFastStreamClass_001, TestSize.Level1)
 {
-    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::PA_STREAM) , false);
-    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::FAST_STREAM) , true);
-    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::VOIP_STREAM) , true);
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::PA_STREAM), false);
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::FAST_STREAM), true);
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::VOIP_STREAM), true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
