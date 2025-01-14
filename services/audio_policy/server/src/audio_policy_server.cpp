@@ -1696,7 +1696,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
                 audioInterrupt.audioFocusType.streamType);
             int32_t volumeLevel = GetSystemVolumeLevelInternal(streamInFocus);
             if (volumeLevel == 0) {
-                audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
+                audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
             }
         }
         return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
