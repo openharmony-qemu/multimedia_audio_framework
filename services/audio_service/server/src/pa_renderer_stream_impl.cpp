@@ -411,6 +411,10 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
+    if (state_ == RELEASED) {
+        AUDIO_WARNING_LOG("stream is released, remain current timestamp unchanged");
+        return SUCCESS;
+    }
     int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentTimeStamp", PA_STREAM_IMPL_TIMEOUT,
         [](void *) {
@@ -436,6 +440,10 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
+    }
+    if (state_ == RELEASED) {
+        AUDIO_WARNING_LOG("stream is released, remain current position unchanged");
+        return SUCCESS;
     }
     int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentPosition", PA_STREAM_IMPL_TIMEOUT,
@@ -498,6 +506,11 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
+    }
+    if (state_ == RELEASED) {
+        AUDIO_WARNING_LOG("stream is released, latency is 0");
+        latency = 0;
+        return SUCCESS;
     }
     pa_usec_t paLatency {0};
 
