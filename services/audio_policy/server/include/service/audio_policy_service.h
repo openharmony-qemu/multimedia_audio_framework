@@ -212,6 +212,8 @@ public:
     void SetFirstScreenOn();
 
     int32_t ResumeStreamState();
+
+    int32_t SetVirtualCall(const bool isVirtual);
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 

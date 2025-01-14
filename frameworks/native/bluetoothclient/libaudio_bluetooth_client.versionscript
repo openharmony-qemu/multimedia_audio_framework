@@ -46,6 +46,8 @@
     *HasA2dpDeviceConnected*;
     *GetA2dpInDeviceStreamInfo*;
     *DisconnectBluetoothA2dpSource*;
+    *SetVirtualCall*;
+    *IsVirtualCall*;
   local:
     *;
 };

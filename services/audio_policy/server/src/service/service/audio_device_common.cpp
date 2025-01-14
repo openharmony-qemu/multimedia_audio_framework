@@ -1910,5 +1910,9 @@ void AudioDeviceCommon::SetFirstScreenOn()
     isFirstScreenOn_ = true;
 }
 
+int32_t AudioDeviceCommon::SetVirtualCall(const bool isVirtual)
+{
+    return Bluetooth::AudioHfpManager::SetVirtualCall(isVirtual);
+}
 }
 }

@@ -1957,6 +1957,13 @@ int32_t AudioPolicyManager::SetVoiceRingtoneMute(bool isMute)
     return gsp->SetVoiceRingtoneMute(isMute);
 }
 
+int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetVirtualCall(isVirtual);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

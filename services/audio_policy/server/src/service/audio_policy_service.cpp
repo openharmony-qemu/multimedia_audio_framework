@@ -756,6 +756,11 @@ void AudioPolicyService::SetFirstScreenOn()
     audioDeviceCommon_.SetFirstScreenOn();
 }
 
+int32_t AudioPolicyService::SetVirtualCall(const bool isVirtual)
+{
+    return audioDeviceCommon_.SetVirtualCall(isVirtual);
+}
+
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper

@@ -178,7 +178,8 @@ enum class AudioPolicyInterfaceCode {
     GET_STREAM_IN_FOCUS_BY_UID,
     SET_PREFERRED_DEVICE,
     SAVE_REMOTE_INFO,
-    AUDIO_POLICY_MANAGER_CODE_MAX = SAVE_REMOTE_INFO,
+    SET_VIRTUAL_CALL,
+    AUDIO_POLICY_MANAGER_CODE_MAX = SET_VIRTUAL_CALL,
 };
 } // namespace AudioStandard
 } // namespace OHOS
