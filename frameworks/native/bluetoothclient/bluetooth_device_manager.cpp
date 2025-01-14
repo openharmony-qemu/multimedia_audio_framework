@@ -478,7 +478,7 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     g_deviceObserver->OnDeviceStatusUpdated(desc, isConnected);
 }
 
-viod MediaBluetoothDeviceManager::HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device)
+void MediaBluetoothDeviceManager::HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device)
 {
     if (!IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
         AUDIO_WARNING_LOG("HandleUpdateDeviceCategory failed for the device has not be reported the connected action.");
@@ -1022,7 +1022,7 @@ void HfpBluetoothDeviceManager::HandleRemoveVirtualConnectDevice(const Bluetooth
     NotifyToUpdateVirtualDevice(device, desc, DeviceStatus::VIRTUAL_REMOVE);
 }
 
-viod HfpBluetoothDeviceManager::HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device)
+void HfpBluetoothDeviceManager::HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device)
 {
     if (!IsHfpBluetoothDeviceExist(device.GetDeviceAddr())) {
         AUDIO_WARNING_LOG("HandleUpdateDeviceCategory failed for the device has not be reported the connected action.");
