@@ -1396,14 +1396,14 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
         if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
             audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
-            CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed");
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
             audioStream_->SetSilentModeAndMixWithOthers(on);
             return;
         } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
             audioStream_->SetSilentModeAndMixWithOthers(on);
             audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
-            CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed");
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
             return;
         }
     }
