@@ -8281,5 +8281,17 @@ HWTEST(AudioRendererUnitTest, RestoreTheadLoop_001, TestSize.Level1)
 
     EXPECT_EQ(audioRendererPrivate->abortRestore_, true);
 }
+
+/**
+ * @tc.name  : Test IsFastStreamClass
+ * @tc.number: IsFastStreamClass
+ * @tc.desc  : Test IsFastStreamClass
+ */
+HWTEST(AudioRendererUnitTest, IsFastStreamClass_001, TestSize.Level1)
+{
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::PA_STREAM) , false);
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::FAST_STREAM) , true);
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::VOIP_STREAM) , true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
