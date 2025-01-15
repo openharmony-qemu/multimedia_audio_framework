@@ -14,8 +14,8 @@
  */
 #ifndef AUDIO_ADAPTER_MANAGER_HANDLER_H
 #define AUDIO_ADAPTER_MANAGER_HANDLER_H
-
 #include <mutex>
+
 #include "singleton.h"
 #include "event_handler.h"
 #include "event_runner.h"
@@ -55,12 +55,14 @@ public:
 
     struct StreamMuteStatusEvent {
         StreamMuteStatusEvent() = delete;
-        StreamMuteStatusEvent(const AudioStreamType &streamType, const bool &mute, const StreamUsage &streamUsage)
-            : streamType_(streamType), mute_(mute), streamUsage_(streamUsage)
+        StreamMuteStatusEvent(const AudioStreamType &streamType, const bool &mute, const StreamUsage &streamUsage,
+            const DeviceType &deviceType)
+            : streamType_(streamType), mute_(mute), streamUsage_(streamUsage), deviceType_(deviceType)
         {}
         AudioStreamType streamType_;
         bool mute_;
         StreamUsage streamUsage_;
+        DeviceType deviceType_;
     };
 
     struct RingerModeEvent {
@@ -74,7 +76,7 @@ public:
     bool SendKvDataUpdate(const bool &isFirstBoot);
     bool SendSaveVolume(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel);
     bool SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
-        const StreamUsage &streamUsage);
+        const StreamUsage &streamUsage, const DeviceType &deviceType = DEVICE_TYPE_NONE);
     bool SendRingerModeUpdate(const AudioRingerMode &ringerMode);
 
 protected:

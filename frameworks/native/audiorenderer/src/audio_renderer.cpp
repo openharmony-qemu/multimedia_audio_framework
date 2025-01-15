@@ -1752,6 +1752,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         // Update audioStream_ to newAudioStream in both AudioRendererPrivate and AudioInterruptCallbackImpl.
         oldAudioStream = audioStream_;
         UpdateRendererAudioStream(newAudioStream);
+        isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
@@ -1806,8 +1807,12 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
     }
 
     uint32_t newSessionId = 0;
-    if (!SwitchToTargetStream(targetClass, newSessionId, reason) && audioRendererErrorCallback_) {
-        audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
+    if (!SwitchToTargetStream(targetClass, newSessionId, reason)) {
+        int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
+        if (audioRendererErrorCallback_) {
+            audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
+        }
     }
     usedSessionId_.push_back(newSessionId);
     int32_t ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(newSessionId,

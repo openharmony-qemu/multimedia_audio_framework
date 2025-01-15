@@ -118,6 +118,7 @@ public:
     void SetFirstScreenOn();
     void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
+    int32_t SetVirtualCall(const bool isVirtual);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

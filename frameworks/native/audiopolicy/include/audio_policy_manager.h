@@ -69,7 +69,8 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId);
 
-    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false);
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
     bool GetStreamMute(AudioVolumeType volumeType);
 
@@ -463,6 +464,8 @@ public:
     int32_t SetVoiceRingtoneMute(bool isMute);
 
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+
+    int32_t SetVirtualCall(const bool isVirtual);
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);

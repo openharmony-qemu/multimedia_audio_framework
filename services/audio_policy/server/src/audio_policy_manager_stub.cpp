@@ -186,6 +186,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_STREAM_IN_FOCUS_BY_UID",
     "SET_PREFERRED_DEVICE",
     "SAVE_REMOTE_INFO",
+    "SET_VIRTUAL_CALL",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -360,6 +361,7 @@ void AudioPolicyManagerStub::SetStreamMuteLegacyInternal(MessageParcel &data, Me
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
     int result = SetStreamMuteLegacy(volumeType, mute);
     reply.WriteInt32(result);
 }
@@ -368,7 +370,8 @@ void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageP
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
-    int result = SetStreamMute(volumeType, mute);
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    int result = SetStreamMute(volumeType, mute, deviceType);
     reply.WriteInt32(result);
 }
 
@@ -1286,6 +1289,9 @@ void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_SESSION_ACTIVATED):
             IsAudioSessionActivatedInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VIRTUAL_CALL):
+            SetVirtualCallInternal(data, reply);
+            break;
         default:
             OnMiddleNinRemoteRequest(code, data, reply, option);
             break;
@@ -2075,6 +2081,13 @@ void AudioPolicyManagerStub::SetVoiceRingtoneMuteInternal(MessageParcel &data, M
 {
     bool isMute = data.ReadBool();
     int32_t result = SetVoiceRingtoneMute(isMute);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetVirtualCallInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isVirtual = data.ReadBool();
+    int32_t result = SetVirtualCall(isVirtual);
     reply.WriteInt32(result);
 }
 } // namespace audio_policy

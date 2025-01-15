@@ -48,9 +48,11 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute) override;
+    int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) override;
 
-    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute) override;
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) override;
 
     bool GetStreamMute(AudioVolumeType volumeType) override;
 
@@ -361,6 +363,8 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
 
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+
+    int32_t SetVirtualCall(const bool isVirtual) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;

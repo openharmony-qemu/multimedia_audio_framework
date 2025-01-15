@@ -1244,6 +1244,8 @@ void AudioCapturerPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
         interruptCbImpl->StartSwitch();
     }
     if (!SwitchToTargetStream(targetClass, newSessionId)) {
+        int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
         AUDIO_ERR_LOG("Switch to target stream failed");
     }
     if (interruptCbImpl) {
