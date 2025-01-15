@@ -710,10 +710,39 @@ HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_014, TestSize.Le
     ret = capturerSourceInner.StartNonblockingCapture();
     EXPECT_NE(ret, SUCCESS);
 
+    ret = capturerSourceInner.StopNonblockingCapture();
+    EXPECT_EQ(ret, SUCCESS);
+
     AudioSampleAttributes attrs;
     capturerSourceInner.InitAttrsCapture(attrs);
     capturerSourceInner.SetEcSampleAttributes(attrs);
     capturerSourceInner.CaptureThreadLoop();
+}
+
+/**
+ * @tc.name  : Test Template AudioCapturerSource
+ * @tc.number: Audio_Capturer_Source_015
+ * @tc.desc  : Test Template AudioCapturerSource call Create Then Update Usb Attrs
+ */
+HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_015, TestSize.Level1)
+{
+    AudioCapturerSourceInner capturerSourceInner("usb");
+
+    std::string usbInfo = "source_rate:16000;source_format:AUDIO_FORMAT_PCM_16_BIT";
+    auto ret = capturerSourceInner.UpdateUsbAttrs(usbInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    
+    usbInfo = "source_rate:24000;source_format:AUDIO_FORMAT_PCM_24_BIT";
+    ret = capturerSourceInner.UpdateUsbAttrs(usbInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    
+    usbInfo = "source_rate:32000;source_format:AUDIO_FORMAT_PCM_32_BIT";
+    ret = capturerSourceInner.UpdateUsbAttrs(usbInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    usbInfo = "source_rate:48000;source_format:AUDIO_FORMAT_PCM_48_BIT";
+    ret = capturerSourceInner.UpdateUsbAttrs(usbInfo);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
