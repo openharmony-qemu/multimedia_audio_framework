@@ -694,5 +694,26 @@ HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_013, TestSize.Le
     ret = SetInputPortPin(DEVICE_TYPE_BLUETOOTH_SCO, source);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test Template AudioCapturerSource
+ * @tc.number: Audio_Capturer_Source_014
+ * @tc.desc  : Test Template AudioCapturerSource call Create Then Init
+ */
+HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_014, TestSize.Level1)
+{
+    AudioCapturerSourceInner capturerSourceInner("primary");
+
+    auto ret = capturerSourceInner.InitAdapterAndCapture();
+    EXPECT_NE(ret, SUCCESS);
+    
+    ret = capturerSourceInner.StartNonblockingCapture();
+    EXPECT_NE(ret, SUCCESS);
+
+    AudioSampleAttributes attrs;
+    capturerSourceInner.InitAttrsCapture(attrs);
+    capturerSourceInner.SetEcSampleAttributes(attrs);
+    capturerSourceInner.CaptureThreadLoop();
+}
 } // namespace AudioStandard
 } // namespace OHOS
