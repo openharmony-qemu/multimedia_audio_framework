@@ -50,9 +50,7 @@ namespace AudioStandard {
 using namespace std;
 
 namespace {
-static const char* INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
-static const char* PIPE_WAKEUP_INPUT = "wakeup_input";
 static const char* PREDICATES_STRING = "settings.general.device_name";
 static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
@@ -75,9 +73,7 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
-const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 const int32_t UID_AUDIO = 1041;
-const int32_t DATA_LINK_CONNECTED = 11;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 
 #ifdef BLUETOOTH_ENABLE
@@ -88,22 +84,6 @@ mutex g_dataShareHelperMutex;
 mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
-
-static std::string GetEncryptAddr(const std::string &addr)
-{
-    const int32_t START_POS = 6;
-    const int32_t END_POS = 13;
-    const int32_t ADDRESS_STR_LEN = 17;
-    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
-        return std::string("");
-    }
-    std::string tmp = "**:**:**:**:**:**";
-    std::string out = addr;
-    for (int i = START_POS; i <= END_POS; i++) {
-        out[i] = tmp[i];
-    }
-    return out;
-}
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -315,6 +295,11 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
     return audioVolumeManager_.GetSystemVolumeLevel(streamType);
 }
 
+int32_t AudioPolicyService::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
+{
+    return audioVolumeManager_.GetSystemVolumeLevelNoMuteState(streamType);
+}
+
 float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
 {
     return audioPolicyManager_.GetSystemVolumeDb(streamType);
@@ -352,9 +337,10 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
     return streamCollector_.GetSingleStreamVolume(streamId);
 }
 
-int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage)
+int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
+    const DeviceType &deviceType)
 {
-    return audioVolumeManager_.SetStreamMute(streamType, mute, streamUsage);
+    return audioVolumeManager_.SetStreamMute(streamType, mute, streamUsage, deviceType);
 }
 
 int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
@@ -685,14 +671,14 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
 }
 
 #ifdef FEATURE_DTMF_TONE
-std::vector<int32_t> AudioPolicyService::GetSupportedTones()
+std::vector<int32_t> AudioPolicyService::GetSupportedTones(const std::string &countryCode)
 {
-    return audioToneManager_.GetSupportedTones();
+    return audioToneManager_.GetSupportedTones(countryCode);
 }
 
-std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
+std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype, const std::string &countryCode)
 {
-    return audioToneManager_.GetToneConfig(ltonetype);
+    return audioToneManager_.GetToneConfig(ltonetype, countryCode);
 }
 #endif
 void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(
@@ -763,6 +749,16 @@ bool AudioPolicyService::IsDataShareReady()
 void AudioPolicyService::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
     audioPolicyManager_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
+void AudioPolicyService::SetFirstScreenOn()
+{
+    audioDeviceCommon_.SetFirstScreenOn();
+}
+
+int32_t AudioPolicyService::SetVirtualCall(const bool isVirtual)
+{
+    return audioDeviceCommon_.SetVirtualCall(isVirtual);
 }
 
 void AudioPolicyService::RegisterNameMonitorHelper()
@@ -970,7 +966,6 @@ int32_t AudioPolicyService::SetQueryClientTypeCallback(const sptr<IRemoteObject>
 int32_t AudioPolicyService::UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage)
 {
     AUDIO_INFO_LOG("Start");
-
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->RemoveAvailableDeviceChangeMap(clientId, usage);
     }
@@ -1150,6 +1145,10 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
             return AUDIO_FLAG_NORMAL;
         }
     }
+    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast output stream");
+        flag = AUDIO_FLAG_NORMAL;
+    }
     return flag;
 }
 
@@ -1166,9 +1165,14 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
     if (preferredDeviceList.size() == 0) {
         return AUDIO_FLAG_NORMAL;
     }
-    return audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
+    int32_t flag = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
         preferredDeviceList[0]->deviceType_,
         capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
+    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast input stream");
+        flag = AUDIO_FLAG_NORMAL;
+    }
+    return flag;
 }
 
 int32_t AudioPolicyService::ResumeStreamState()
@@ -1802,7 +1806,7 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
         ERR_INVALID_PARAM, "check Audio Effect property failed");
     if (enhancePropertyArray.property.size() > 0) {
         AudioEffectPropertyArrayV3 oldPropertyArray = {};
-        int32_t ret = GetAudioEnhanceProperty(oldPropertyArray);
+        ret = GetAudioEnhanceProperty(oldPropertyArray);
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(enhancePropertyArray,
             audioActiveDevice_.GetCurrentInputDeviceType());
@@ -1813,7 +1817,7 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(effectPropertyArray);
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio effect property fail");
     }
-    return AUDIO_OK;
+    return ret;
 }
 
 int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
@@ -1902,7 +1906,7 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
     AudioEnhancePropertyArray oldPropertyArray = {};
     int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(oldPropertyArray);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
-    
+
     ret = AudioServerProxy::GetInstance().SetAudioEnhancePropertyProxy(propertyArray,
         audioActiveDevice_.GetCurrentInputDeviceType());
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");

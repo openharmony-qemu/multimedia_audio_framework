@@ -69,7 +69,8 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId);
 
-    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false);
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
     bool GetStreamMute(AudioVolumeType volumeType);
 
@@ -106,9 +107,9 @@ public:
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
 #ifdef FEATURE_DTMF_TONE
-    std::vector<int32_t> GetSupportedTones();
+    std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 
-    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode);
 #endif
 
     AudioRingerMode GetRingerMode();
@@ -154,7 +155,7 @@ public:
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0);
 
     int32_t ActivateAudioInterrupt(
-        const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
+        AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
@@ -442,6 +443,12 @@ public:
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 
+    void ResetClientTrackerStubMap();
+
+    void RemoveClientTrackerStub(int32_t sessionId);
+
+    void CheckAndRemoveClientTrackerStub(const AudioMode &mode, const AudioStreamChangeInfo &streamChangeInfo);
+
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 
     int32_t SetMicrophoneBlockedCallback(const int32_t clientId,
@@ -457,6 +464,8 @@ public:
     int32_t SetVoiceRingtoneMute(bool isMute);
 
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+
+    int32_t SetVirtualCall(const bool isVirtual);
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
@@ -486,6 +495,7 @@ private:
 
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
+    static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> clientTrackerStubMap_;
 
     bool isAudioRendererEventListenerRegistered = false;
     bool isAudioCapturerEventListenerRegistered = false;

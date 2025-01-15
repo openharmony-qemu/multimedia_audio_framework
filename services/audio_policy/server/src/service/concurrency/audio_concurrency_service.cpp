@@ -31,6 +31,8 @@ void AudioConcurrencyService::Init()
 
 void AudioConcurrencyService::DispatchConcurrencyEventWithSessionId(uint32_t sessionID)
 {
+    CHECK_AND_RETURN_LOG(sessionID >= MIN_STREAMID && sessionID <= MAX_STREAMID,
+        "EntryPoint Taint Mark:arg sessionID: %{public}u is tained", sessionID);
     std::lock_guard<std::mutex> lock(cbMapMutex_);
     AUDIO_DEBUG_LOG("DispatchConcurrencyEventWithSessionId %{public}d", sessionID);
     CHECK_AND_RETURN_LOG(concurrencyClients_.find(sessionID) != concurrencyClients_.end(),

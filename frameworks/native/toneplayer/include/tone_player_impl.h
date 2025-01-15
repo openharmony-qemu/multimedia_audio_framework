@@ -63,9 +63,11 @@ private:
     void GetCurrentSegmentUpdated();
     bool CheckToneContinuity();
     int32_t GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t samples);
+    static std::string Str16ToStr8(std::u16string str);
+    static std::string GetCountryCode();
 
     AudioRendererOptions rendererOptions_ = {};
-    std::unique_ptr<AudioRenderer> audioRenderer_;  // Pointer to AudioRenderer used for playback
+    std::shared_ptr<AudioRenderer> audioRenderer_;  // Pointer to AudioRenderer used for playback
     bool isRendererInited_ = false;
 
     std::mutex optMutex_;

@@ -45,8 +45,6 @@
 #include "hdi_utils_ringbuffer.h"
 #include "audio_dump_pcm.h"
 
-using namespace std;
-
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -368,7 +366,7 @@ private:
                 size_ -= replyBytes;
                 head_ = (head_ + replyBytes) % sizeMax_;
             } else {
-                uint64_t copySize = min((sizeMax_ - head_), replyBytes);
+                uint64_t copySize = std::min((sizeMax_ - head_), replyBytes);
                 if (copySize != 0) {
                     MemcpysAndCheck(frame, replyBytes, buffer_.get() + head_, copySize);
                     headNum_ += copySize;
@@ -418,7 +416,7 @@ private:
             if (tail < head_) {
                 MemcpysAndCheck((buffer_.get() + tail), bufferBytes, frame, bufferBytes);
             } else {
-                uint64_t copySize = min(sizeMax_ - tail, bufferBytes);
+                uint64_t copySize = std::min(sizeMax_ - tail, bufferBytes);
                 MemcpysAndCheck((buffer_.get() + tail), sizeMax_ - tail, frame, copySize);
 
                 if (copySize < bufferBytes) {
@@ -522,6 +520,7 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
         case SOURCE_TYPE_WAKEUP:
             hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
             break;
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
         case SOURCE_TYPE_VOICE_COMMUNICATION:
             hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
             break;

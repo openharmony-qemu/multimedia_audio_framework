@@ -75,16 +75,20 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
+    StreamUsage GetRunningStreamUsageNoUltrasonic();
+    SourceType GetRunningSourceTypeNoUltrasonic();
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     int32_t ResumeStreamState();
     bool HasVoipRendererStream();
     bool ChangeVoipCapturerStreamToNormal();
     bool IsCallStreamUsage(StreamUsage usage);
-    std::set<int32_t> GetSessionIdByStreamUsage(StreamUsage streamUsage);
-    std::set<int32_t> GetSessionIdBySourceType(SourceType sourceType);
-    std::set<int32_t> GetSessionIdByDeviceType(DeviceType deviceType);
-    int32_t GetSessionIdPauseByRemote(InterruptHint hintType);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage streamUsage);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceBySourceType(SourceType sourceType);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceByDeviceType(DeviceType deviceType);
+    int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
+    bool HasRunningRendererStream();
+    bool HasRunningRecognitionCapturerStream();
 
 private:
     std::mutex streamsInfoMutex_;

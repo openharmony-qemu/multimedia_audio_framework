@@ -31,16 +31,21 @@ namespace OHOS {
 namespace AudioStandard {
     static constexpr char AUDIO_TONE_CONFIG_FILE[] = "/system/etc/audio/audio_tone_dtmf_config.xml";
 
+using ToneInfoMap = std::unordered_map<int32_t, std::shared_ptr<ToneInfo>>;
 class AudioToneParser {
 public:
     AudioToneParser();
     virtual ~AudioToneParser();
-    int32_t LoadConfig(std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> &toneDescriptorMap);
+    int32_t LoadConfig(ToneInfoMap &toneDescriptorMap);
+    int32_t LoadNewConfig(const std::string &configPath, ToneInfoMap &toneDescriptorMap,
+        std::unordered_map<std::string, ToneInfoMap> &customToneDescriptorMap);
+
 private:
     void ParseSegment(xmlNode *node, int32_t segInx, std::shared_ptr<ToneInfo> ltoneDesc);
     void ParseToneInfoAttribute(xmlNode *sNode, std::shared_ptr<ToneInfo> ltoneDesc);
-    void ParseToneInfo(xmlNode *node, std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> &toneDescriptorMap);
+    void ParseToneInfo(xmlNode *node, std::vector<ToneInfoMap*> &toneDescriptorMaps);
     void ParseFrequency(std::string freqList, ToneSegment &ltoneSeg);
+    void ParseCustom(xmlNode *node, std::unordered_map<std::string, ToneInfoMap> &customToneDescriptorMap);
 };
 } // namespace AudioStandard
 } // namespace OHOS

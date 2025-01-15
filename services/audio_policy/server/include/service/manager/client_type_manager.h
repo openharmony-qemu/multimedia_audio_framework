@@ -19,8 +19,8 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-#include "ffrt.h"
 
+#include "client_type_manager.h"
 #include "client_type_manager_handler.h"
 
 namespace OHOS {
@@ -38,7 +38,7 @@ public:
     void SetQueryClientTypeCallback(const sptr<IStandardAudioPolicyManagerListener> &callback);
 
 private:
-    ffrt::mutex clientTypeMapMutex_;
+    std::mutex clientTypeMapMutex_;
     std::unordered_map<uint32_t, ClientType> clientTypeMap_;
 
     std::mutex handlerMutex_;

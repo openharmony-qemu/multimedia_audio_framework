@@ -28,6 +28,13 @@
 #include "tone_player_impl.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
+#include "parameter.h"
+#ifdef AUDIO_TEL_CORE_SERVICE_ENABLE
+#include "core_service_client.h"
+#endif
+#ifdef AUIDO_TEL_CELLULAR_DATA_ENABLE
+#include "cellular_data_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,6 +45,9 @@ constexpr int32_t CDOUBLE = 2;
 constexpr int32_t DIGITAMPLITUDE = 800;
 constexpr int32_t AMPLITUDE = 8000;
 constexpr int32_t BIT8 = 8;
+constexpr int32_t SYSPARA_SIZE = 128;
+const char DEBUG_COUNTRYCODE_NAME[] = "debug.toneplayer.country";
+const char DEFAULT_STRING[] = "error";
 
 static const std::vector<ToneType> TONE_TYPE_LIST = {
     TONE_TYPE_DIAL_0,
@@ -71,7 +81,7 @@ TonePlayerImpl::TonePlayerImpl(const std::string cachePath, const AudioRendererI
     rendererOptions_.rendererInfo.rendererFlags = AUDIO_FLAG_FORCED_NORMAL; // use AUDIO_FLAG_FORCED_NORMAL
 
     rendererOptions_.strategy = { AudioConcurrencyMode::MIX_WITH_OTHERS };
-    supportedTones_ = AudioPolicyManager::GetInstance().GetSupportedTones();
+    supportedTones_ = AudioPolicyManager::GetInstance().GetSupportedTones(GetCountryCode());
     toneInfo_ = NULL;
     initialToneInfo_ = NULL;
     samplingRate_ = rendererOptions_.streamInfo.samplingRate;
@@ -163,7 +173,7 @@ bool TonePlayerImpl::LoadTone(ToneType toneType)
     toneType_ = toneType;
     amplitudeType_ = std::count(TONE_TYPE_LIST.begin(), TONE_TYPE_LIST.end(), toneType_) > 0 ?
         DIGITAMPLITUDE : AMPLITUDE;
-    initialToneInfo_ = AudioPolicyManager::GetInstance().GetToneConfig(toneType);
+    initialToneInfo_ = AudioPolicyManager::GetInstance().GetToneConfig(toneType, GetCountryCode());
     if (initialToneInfo_->segmentCnt == 0) {
         AUDIO_ERR_LOG("LoadTone failed, calling GetToneConfig returned invalid");
         return result;
@@ -331,6 +341,47 @@ int32_t TonePlayerImpl::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t req
     return 0;
 }
 
+std::string TonePlayerImpl::Str16ToStr8(std::u16string str)
+{
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert(DEFAULT_STRING);
+    std::string result = convert.to_bytes(str);
+    return result == DEFAULT_STRING ? "" : result;
+}
+
+std::string TonePlayerImpl::GetCountryCode()
+{
+    char paramValue[SYSPARA_SIZE] = {0};
+    GetParameter(DEBUG_COUNTRYCODE_NAME, "", paramValue, SYSPARA_SIZE);
+    if (strcmp(paramValue, "")) {
+        AUDIO_DEBUG_LOG("GetParameter %{public}s", paramValue);
+        std::string countryCode(paramValue);
+        for (char &c : countryCode) {
+            c = std::tolower(c);
+        }
+        return countryCode;
+    }
+
+    std::string countryCodeStr8 = "";
+#if defined(AUDIO_TEL_CORE_SERVICE_ENABLE) && defined(AUIDO_TEL_CELLULAR_DATA_ENABLE)
+    int32_t slotId = Telephony::CellularDataClient::GetInstance().GetDefaultCellularDataSlotId();
+    std::u16string countryCodeForNetwork;
+    DelayedRefSingleton<Telephony::CoreServiceClient>::GetInstance().GetIsoCountryCodeForNetwork(
+        slotId, countryCodeForNetwork);
+    countryCodeStr8 = Str16ToStr8(countryCodeForNetwork);
+    if (countryCodeStr8.empty()) {
+        std::u16string countryCodeForSim;
+        DelayedRefSingleton<Telephony::CoreServiceClient>::GetInstance().GetISOCountryCodeForSim(
+            slotId, countryCodeForSim);
+        countryCodeStr8 = Str16ToStr8(countryCodeForSim);
+    }
+    AUDIO_DEBUG_LOG("GetISOCountryCode %{public}s", paramValue);
+#endif
+    for (char &c : countryCodeStr8) {
+        c = std::tolower(c);
+    }
+    return countryCodeStr8;
+}
+
 bool TonePlayerImpl::CheckToneStarted(uint32_t reqSample, int8_t *audioBuffer)
 {
     if (toneState_ != TONE_STARTING) {
@@ -418,7 +469,7 @@ bool TonePlayerImpl::InitToneWaveInfo()
 bool TonePlayerImpl::InitAudioRenderer()
 {
     processSize_ = (rendererOptions_.streamInfo.samplingRate * C20MS) / C1000MS;
-    audioRenderer_ = AudioRenderer::Create(rendererOptions_);
+    audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false,
         "Renderer create failed");
 

@@ -57,6 +57,7 @@ public:
     void ControlAudioFocus(bool applyFocus);
 
 private:
+    std::mutex focusMutex_;
     sptr<AudioPolicyServer> audioPolicyServer_;
     bool isAudioFocusApplied_ {false};
 };

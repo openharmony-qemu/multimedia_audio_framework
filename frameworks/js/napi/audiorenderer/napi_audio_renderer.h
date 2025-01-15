@@ -42,8 +42,11 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
     void DestroyCallbacks();
     void DestroyNAPICallbacks();
-
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+    std::shared_ptr<AudioRenderer> audioRenderer_;
+#else
     std::unique_ptr<AudioRenderer> audioRenderer_;
+#endif
     std::mutex writeCallbackMutex_;
     std::condition_variable writeCallbackCv_;
 

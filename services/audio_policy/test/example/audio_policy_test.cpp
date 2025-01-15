@@ -559,7 +559,7 @@ static void PrintFocusInfoList(const std::list<std::pair<AudioInterrupt, AudioFo
         cout <<"| audioFocusType.streamType: \t"<< it->first.audioFocusType.streamType<< "\t |" << endl;
         cout <<"| audioFocusType.sourceType: \t"<< it->first.audioFocusType.sourceType<< "\t |" << endl;
         cout <<"| audioFocusType.isPlay: \t"    << it->first.audioFocusType.isPlay    << "\t |" << endl;
-        cout <<"| sessionID: \t\t\t"            << it->first.sessionId                << "\t |" << endl;
+        cout <<"| streamId: \t\t\t"            << it->first.streamId                << "\t |" << endl;
         cout <<"| pauseWhenDucked: \t\t"        << it->first.pauseWhenDucked          << "\t |" << endl;
         cout <<"| pid: \t\t\t\t"                << it->first.pid                      << "\t |" << endl;
         cout <<"| mode: \t\t\t"                 << it->first.mode                     << "\t |" << endl;

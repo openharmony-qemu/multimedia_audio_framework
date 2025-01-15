@@ -46,7 +46,6 @@ struct Userdata {
     pa_thread *thread;
     pa_thread_mq threadMq;
     pa_thread *threadCap;
-    pa_thread_mq threadCapMq;
     pa_asyncmsgq *CaptureMq;
     pa_rtpoll *rtpoll;
     uint32_t bufferSize;

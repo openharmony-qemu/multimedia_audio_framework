@@ -30,7 +30,8 @@
           "audio_framework_feature_opensl_es",
           "audio_framework_suport_svsession_manager",
           "audio_framework_feature_support_os_account",
-          "audio_framework_feature_hitrace_enable"
+          "audio_framework_feature_hitrace_enable",
+          "audio_framework_feature_offline_effect"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -45,8 +46,10 @@
             "bluetooth",
             "bundle_framework",
             "c_utils",
+            "cellular_data",
             "common_event_service",
             "config_policy",
+            "core_service",
             "data_share",
             "device_manager",
             "distributed_notification_service",

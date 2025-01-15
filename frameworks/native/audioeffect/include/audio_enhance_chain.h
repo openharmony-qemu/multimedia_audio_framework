@@ -102,6 +102,7 @@ private:
     void InitAudioEnhanceChain();
     void InitDump();
     void ReleaseEnhanceChain();
+    void WriteDumpFile(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length);
     int32_t GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &enhanceBuffer);
     int32_t DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t offset);
     int32_t SetPropertyToHandle(AudioEffectHandle handle, const std::string &property);
@@ -115,8 +116,6 @@ private:
     AudioEnhanceParamAdapter algoParam_;
     AudioEnhanceDeviceAttr deviceAttr_;
     FILE *dumpFileIn_ = nullptr;
-    FILE *dumpFileEc_ = nullptr;
-    FILE *dumpFileMicRef_ = nullptr;
     FILE *dumpFileOut_ = nullptr;
     FILE *dumpFileDeinterLeaver_ = nullptr;
     bool needEcFlag_;

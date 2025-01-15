@@ -55,7 +55,7 @@ public:
     virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) = 0;
 
@@ -160,7 +160,8 @@ public:
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel) = 0;
 
     virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
 
@@ -169,6 +170,8 @@ public:
     virtual void SetOffloadSessionId(uint32_t sessionId) = 0;
 
     virtual void ResetOffloadSessionId() = 0;
+
+    virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

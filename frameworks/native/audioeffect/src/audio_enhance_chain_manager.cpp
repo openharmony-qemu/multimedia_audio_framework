@@ -45,9 +45,9 @@ const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_
     {ENHANCE_NONE, "ENHANCE_NONE"},
     {ENHANCE_DEFAULT, "ENHANCE_DEFAULT"},
 };
+const std::vector<AudioEnhanceScene> AUDIO_WITH_DEVICE_ENHANCES {SCENE_VOIP_UP};
 const std::string MAINKEY_DEVICE_STATUS = "device_status";
 const std::string SUBKEY_FOLD_STATE = "fold_state";
-const std::string DB_INITED = "ENHANCE_PROPERTY_MAP_DB_INITED";
 }
 
 static int32_t FindEnhanceLib(const std::string &enhance,
@@ -168,6 +168,33 @@ void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectCh
     // Construct enhancePropertyMap_ that stores effect's property
     enhancePropertyMap_ = managerParam.effectDefaultProperty;
     defaultPropertyMap_ = managerParam.effectDefaultProperty;
+    ConstructDeviceEnhances();
+}
+
+void AudioEnhanceChainManager::ConstructDeviceEnhances()
+{
+    CHECK_AND_RETURN_LOG(sceneTypeAndModeToEnhanceChainNameMap_.size() != 0, "no enhance algos");
+    for (const auto& sceneType: AUDIO_WITH_DEVICE_ENHANCES) {
+        std::string scene = AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.find(sceneType)->second;
+        std::string sceneAndMode = scene + "_&_" + "ENHANCE_DEFAULT";
+        std::string enhanceChain = "";
+        auto item = sceneTypeAndModeToEnhanceChainNameMap_.find(sceneAndMode);
+        CHECK_AND_CONTINUE_LOG(item != sceneTypeAndModeToEnhanceChainNameMap_.end(),
+            "no such sceneAndMode %{public}s", sceneAndMode.c_str());
+        enhanceChain = item->second;
+        auto mapIter = enhanceChainToEnhancesMap_.find(enhanceChain);
+        std::vector<std::string> deviceEnhances;
+        CHECK_AND_CONTINUE_LOG(mapIter != enhanceChainToEnhancesMap_.end(),
+            "no such enhanceChain %{public}s", enhanceChain.c_str());
+        deviceEnhances = mapIter->second;
+        for (std::string enhance: deviceEnhances) {
+            auto iter = enhancePropertyMap_.find(enhance);
+            if (iter == enhancePropertyMap_.end()) {
+                continue;
+            }
+            withDeviceEnhances_.insert(iter->first);
+        }
+    }
 }
 
 void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceType)
@@ -181,7 +208,12 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
             AUDIO_ERR_LOG("DeviceTypeName Null");
             return;
         }
-        std::string key = enhance + "_&_" + deviceTypeName;
+        std::string key = "";
+        if (withDeviceEnhances_.find(enhance) == withDeviceEnhances_.end()) {
+            key = enhance;
+        } else {
+            key = enhance +  "_&_" + deviceTypeName;
+        }
         ErrCode ret = settingProvider.GetStringValue(key, property);
         if (ret == SUCCESS) {
             prop = property;
@@ -338,6 +370,7 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     if (AddAudioEnhanceChainHandles(audioEnhanceChain, effectChainName) != SUCCESS) {
         sceneTypeToEnhanceChainCountMap_.erase(sceneKeyCode);
         sceneTypeToEnhanceChainMap_.erase(sceneKeyCode);
+        chainNum_--;
         AUDIO_ERR_LOG("%{public}u create failed.", sceneKeyCode);
         return ERROR;
     }
@@ -778,10 +811,15 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEffectPrope
     int32_t ret = SUCCESS;
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     for (const auto &property : propertyArray.property) {
+        std::string key = "";
         enhancePropertyMap_.insert_or_assign(property.name, property.category);
-        std::string deviceTypeName = "";
-        GetDeviceTypeName(deviceType, deviceTypeName);
-        std::string key = property.name + "_&_" + deviceTypeName;
+        if (withDeviceEnhances_.find(property.name) == withDeviceEnhances_.end()) {
+            key = property.name;
+        } else {
+            std::string deviceTypeName = "";
+            GetDeviceTypeName(deviceType, deviceTypeName);
+            key = property.name + "_&_" + deviceTypeName;
+        }
         ret = WriteEnhancePropertyToDb(key, property.category);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("fail, WriteEnhancePropertyToDb, ErrCode: %{public}d", ret);
@@ -812,10 +850,15 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEnhanceProp
     int32_t ret = SUCCESS;
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     for (const auto &property : propertyArray.property) {
+        std::string key = "";
         enhancePropertyMap_.insert_or_assign(property.enhanceClass, property.enhanceProp);
-        std::string deviceTypeName = "";
-        GetDeviceTypeName(deviceType, deviceTypeName);
-        std::string key = property.enhanceClass + "_&_" + deviceTypeName;
+        if (withDeviceEnhances_.find(property.enhanceClass) == withDeviceEnhances_.end()) {
+            key = property.enhanceClass;
+        } else {
+            std::string deviceTypeName = "";
+            GetDeviceTypeName(deviceType, deviceTypeName);
+            key = property.enhanceClass + "_&_" + deviceTypeName;
+        }
         ret = WriteEnhancePropertyToDb(key, property.enhanceProp);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("fail, WriteEnhancePropertyToDb, ErrCode: %{public}d", ret);

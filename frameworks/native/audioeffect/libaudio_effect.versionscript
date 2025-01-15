@@ -58,7 +58,7 @@
     *InitAudioEnhanceChainManager*;
     *UpdateSpatializationState*;
     *UpdateSpatialDeviceType*;
-    *SetSceneTypeSystemVolume*;
+    *SetEffectSystemVolume*;
     *EffectVolumeUpdate*;
     *SetSpatializationSceneType*;
     *GetOffloadEnabled*;
@@ -75,6 +75,7 @@
     *SendInitCommand*;
     *EnhanceChainManagerSendInitCommand*;
     *InitEffectBuffer*;
+    *EffectChainManagerQueryHdiSupportedChannelLayout*;
   local:
     *;
 };

@@ -377,8 +377,7 @@ bool OHAudioRenderer::Initialize(AudioRendererOptions &rendererOptions)
         rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
         offloadAllowed = false;
     }
-    std::string cacheDir = "/data/storage/el2/base/temp";
-    audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
+    audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
 
     // if caller do not set usage, do not allow to use offload output
     if (audioRenderer_ != nullptr) {

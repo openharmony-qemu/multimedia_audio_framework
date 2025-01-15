@@ -40,6 +40,7 @@ ohos_shared_library("audio_common") {
 
   include_dirs = [
     "common/include",
+    "common/include/limiter",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -57,6 +58,9 @@ ohos_shared_library("audio_common") {
     "common/src/callback_handler.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
+    "common/src/limiter/audio_limiter.cpp",
+    "common/src/limiter/audio_limiter_adapter.cpp",
+    "common/src/limiter/audio_limiter_manager.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/volume_tools.cpp",
@@ -210,6 +214,7 @@ ohos_shared_library("audio_client") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "eventhandler:libeventhandler",
+    "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "i18n:intl_util",
@@ -239,6 +244,10 @@ ohos_shared_library("audio_client") {
     defines += [ "TEST_COVERAGE" ]
   }
 
+  if (audio_framework_feature_offline_effect) {
+    defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
   cflags = [ "-Os" ]
@@ -266,6 +275,7 @@ config("audio_service_config") {
 
   include_dirs = [
     "common/include",
+    "common/include/limiter",
     "client/include",
     "server/include",
     "server/include/config",
@@ -362,7 +372,6 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    "../../frameworks/native/offlineaudioeffect:offline_audio_effect",
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
@@ -376,6 +385,7 @@ audio_ohos_library("audio_process_service") {
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
+    "eventhandler:libeventhandler",
     "hdf_core:libhdf_utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -398,6 +408,13 @@ audio_ohos_library("audio_process_service") {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
   }
+
+  if (audio_framework_feature_offline_effect) {
+    deps +=
+        [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
+    defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
@@ -448,9 +465,6 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
-  public_deps =
-      [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
-
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
@@ -474,6 +488,13 @@ audio_ohos_library("audio_service") {
   public_external_deps = [ "libxml2:libxml2" ]
 
   defines = []
+
+  if (audio_framework_feature_offline_effect) {
+    public_deps =
+        [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
+    defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
     external_deps += [ "config_policy:configpolicy_util" ]

@@ -70,7 +70,7 @@ public:
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
-    void WriterRenderStreamStandbySysEvent();
+    void CheckAndWriterRenderStreamStandbySysEvent(bool standbyEnable);
 
     int32_t Init();
     int32_t ConfigServerBuffer();
@@ -105,6 +105,7 @@ public:
     bool Dump(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
     void RestoreSession();
+    void dualToneStreamInStart();
 
 public:
     const AudioProcessConfig processConfig_;
@@ -112,6 +113,7 @@ private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    bool CheckBuffer(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
     void DoFadingOut(BufferDesc& bufferDesc);
@@ -176,6 +178,9 @@ private:
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     int32_t renderEmptyCountForInnerCap_ = 0;
+
+    // only read & write in CheckAndWriterRenderStreamStandbySysEvent
+    bool lastWriteStandbyEnableStatus_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

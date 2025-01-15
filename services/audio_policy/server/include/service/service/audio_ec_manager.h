@@ -54,6 +54,7 @@ public:
 
     void PresetArmIdleInput(const string &address);
     void ActivateArmDevice(const string &address, const DeviceRole role);
+    void CloseUsbArmDevice(const AudioDeviceDescriptor &device);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
 
     int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
@@ -79,7 +80,7 @@ private:
     void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType sourceType);
     void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
-    void UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice);
+    void UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice, const AudioDeviceDescriptor &outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
     std::string ShouldOpenMicRef(SourceType source);
@@ -106,6 +107,8 @@ private:
 
     std::mutex audioEcInfoMutex_;
     AudioEcInfo audioEcInfo_;
+    std::string activeArmInputAddr_;
+    std::string activeArmOutputAddr_;
 
     bool isMicRefVoipUpOn_ = false;
     bool isMicRefRecordOn_ = false;

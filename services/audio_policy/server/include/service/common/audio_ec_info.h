@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "audio_device_descriptor.h"
 #include "audio_device_info.h"
 #include "audio_adapter_info.h"
 
@@ -30,13 +31,14 @@ enum EcType {
     EC_TYPE_DIFF_ADAPTER
 };
 
-class AudioEcInfo {
-public:
-    AudioEcInfo() = default;
-    virtual ~AudioEcInfo() = default;
-
-    DeviceType inputDevice = DEVICE_TYPE_DEFAULT;
-    DeviceType outputDevice = DEVICE_TYPE_DEFAULT;
+struct AudioEcInfo {
+    AudioEcInfo()
+    {
+        inputDevice.deviceType_ = DEVICE_TYPE_DEFAULT;
+        outputDevice.deviceType_ = DEVICE_TYPE_DEFAULT;
+    }
+    AudioDeviceDescriptor inputDevice;
+    AudioDeviceDescriptor outputDevice;
     EcType ecType = EC_TYPE_NONE;
     std::string ecInputAdapter = "";
     std::string ecOutputAdapter = "";

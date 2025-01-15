@@ -40,7 +40,6 @@ static std::shared_ptr<AudioServer> audioServer;
 void AudioServerUnitTest::SetUpTestCase(void)
 {
     audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServer->OnStart();
     audioServer->OnDump();
 }
 
@@ -778,6 +777,193 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
     EXPECT_EQ(res, ERR_INVALID_PARAM);
     res = audioServer->SetWakeupSourceCallback(remoteObject);
     EXPECT_EQ(res, 0);
+}
+
+/**
+ * @tc.name  : Test SetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetAudioEffectProperty_001
+ * @tc.desc  : Test SetAudioEffectProperty interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+        .name = "testName1",
+        .category = "testCategory1",
+        .flag = RENDER_EFFECT_FLAG,
+    };
+
+    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+        .name = "testName2",
+        .category = "testCategory2",
+        .flag = RENDER_EFFECT_FLAG,
+    };
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+
+    int32_t ret = audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetAudioEffectProperty_002
+ * @tc.desc  : Test SetAudioEffectProperty interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+        .name = "testName1",
+        .category = "testCategory1",
+        .flag = CAPTURE_EFFECT_FLAG,
+    };
+
+    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+        .name = "testName2",
+        .category = "testCategory2",
+        .flag = CAPTURE_EFFECT_FLAG,
+    };
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+
+    int32_t ret = audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetAudioEffectProperty_003
+ * @tc.desc  : Test SetAudioEffectProperty interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioEffectPropertyV3  audioEffectPropertyV31 = {
+        .name = "testName1",
+        .category = "testCategory1",
+        .flag = RENDER_EFFECT_FLAG,
+    };
+
+    AudioEffectPropertyV3  audioEffectPropertyV32 = {
+        .name = "testName2",
+        .category = "testCategory2",
+        .flag = CAPTURE_EFFECT_FLAG,
+    };
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
+    audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
+
+    int32_t ret = audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetAudioEffectProperty_001
+ * @tc.desc  : Test GetAudioEffectProperty interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+
+    int32_t ret = audioServer->GetAudioEffectProperty(audioEffectPropertyArrayV3);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetAudioEffectProperty_002
+ * @tc.desc  : Test GetAudioEnhancePropertyArray interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+
+    int32_t ret = audioServer->GetAudioEnhancePropertyArray(audioEffectPropertyArrayV3, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetAudioEffectProperty_003
+ * @tc.desc  : Test GetAudioEffectPropertyArray interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
+
+    int32_t ret = audioServer->GetAudioEffectPropertyArray(audioEffectPropertyArrayV3);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test LoadAudioEffectLibraries API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerLoadAudioEffectLibraries_001
+ * @tc.desc  : Test LoadAudioEffectLibraries interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerLoadAudioEffectLibraries_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<Library> libraries;
+    std::vector<Effect> effects;
+    std::vector<Effect> successEffectList;
+    int32_t ret = audioServer->LoadAudioEffectLibraries(libraries, effects, successEffectList);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test CheckParam API
+ * @tc.type  : FUNC
+ * @tc.number: CheckParam_001
+ * @tc.desc  : Test CheckParam interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckParam_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.rendererInfo.contentType = static_cast<ContentType>(-1);
+    int32_t ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    config.rendererInfo.contentType = static_cast<ContentType>(100);
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    config.rendererInfo.contentType = CONTENT_TYPE_ULTRASONIC;
+    config.rendererInfo.streamUsage = static_cast<StreamUsage>(-1);
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    config.rendererInfo.streamUsage = static_cast<StreamUsage>(100);
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, SUCCESS);
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, SUCCESS);
+    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    ret = audioServer->CheckParam(config);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

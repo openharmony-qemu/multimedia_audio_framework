@@ -288,10 +288,10 @@ enum DeviceCategory {
 };
 
 enum DeviceUsage {
-    MEDIA = 1,
-    VOICE = 2,
-    ALL_USAGE = 3,
-    RECONGNITION = 4,
+    MEDIA = 1 << 0,
+    VOICE = 1 << 1,
+    RECOGNITION = 1 << 2,
+    ALL_USAGE = (1 << 3) - 1, // Represents the bitwise OR of all the above usages.
 };
 
 enum DeviceInfoUpdateCommand {

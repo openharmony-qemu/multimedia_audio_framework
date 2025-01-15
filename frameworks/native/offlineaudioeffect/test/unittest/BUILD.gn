@@ -13,40 +13,46 @@
 
 import("//build/test.gni")
 import("../../../../../audio_framework_test_sources.gni")
+import("../../../../../config.gni")
 
-module_output_path = "multimedia_audio_framework/offline_audio_effect_manager"
+if (!audio_framework_feature_offline_effect) {
+  group("offline_audio_effect_manager_unit_test") {
+    deps = []
+  }
+} else {
+  ohos_unittest("offline_audio_effect_manager_unit_test") {
+    module_out_path = "multimedia_audio_framework/offline_audio_effect_manager"
+    include_dirs = [
+      "../../include",
+      "../../../../../interfaces/inner_api/native/offlineaudioeffect/include",
+      "../../../../../interfaces/inner_api/native/audiocommon/include",
+      "../../../../../services/audio_service/client/include",
+    ]
 
-ohos_unittest("offline_audio_effect_manager_unit_test") {
-  module_out_path = module_output_path
-  include_dirs = [
-    "../../include",
-    "../../../../../interfaces/inner_api/native/offlineaudioeffect/include",
-    "../../../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../../../services/audio_service/client/include",
-  ]
+    cflags = [
+      "-Wall",
+      "-Werror",
+      "-fno-access-control",
+    ]
 
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-fno-access-control",
-  ]
+    sources = [ "offline_audio_effect_manager_unit_test.cpp" ]
 
-  sources = [ "offline_audio_effect_manager_unit_test.cpp" ]
+    deps = [
+      "../../:offline_audio_effect",
+      "../../../../../services/audio_service:audio_client",
+      "../../../audioutils:audio_utils",
+    ]
 
-  deps = [
-    "../../:offline_audio_effect",
-    "../../../../../services/audio_service:audio_client",
-    "../../../audioutils:audio_utils",
-  ]
+    external_deps = [
+      "c_utils:utils",
+      "drivers_interface_audio:libeffect_proxy_1.0",
+      "googletest:gmock",
+      "googletest:gtest",
+      "hilog:libhilog",
+      "hitrace:hitrace_meter",
+    ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gmock",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hitrace:hitrace_meter",
-  ]
-
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
+    part_name = "audio_framework"
+    subsystem_name = "multimedia"
+  }
 }

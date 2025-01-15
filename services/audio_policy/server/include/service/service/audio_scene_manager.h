@@ -51,6 +51,7 @@ public:
     AudioScene GetLastAudioScene() const;
     bool IsSameAudioScene();
     bool IsStreamActive(AudioStreamType streamType) const;
+    bool IsVoiceCallRelatedScene();
 private:
     AudioSceneManager() : audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

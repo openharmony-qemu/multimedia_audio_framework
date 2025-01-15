@@ -20,12 +20,14 @@
 
 #include "iservice_registry.h"
 #include "audio_errors.h"
+#include "system_ability_definition.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioSettingProvider* AudioSettingProvider::instance_;
 std::mutex AudioSettingProvider::mutex_;
-bool AudioSettingProvider::isDataShareReady_;
+std::atomic<bool> AudioSettingProvider::isDataShareReady_ = false;
 sptr<IRemoteObject> AudioSettingProvider::remoteObj_;
 
 const std::string SETTING_COLUMN_KEYWORD = "KEYWORD";
@@ -72,8 +74,8 @@ AudioSettingProvider& AudioSettingProvider::GetInstance(
     if (instance_ == nullptr) {
         std::lock_guard<std::mutex> lock(mutex_);
         if (instance_ == nullptr) {
-            instance_ = new AudioSettingProvider();
             Initialize(systemAbilityId);
+            instance_ = new AudioSettingProvider();
         }
     }
     return *instance_;
@@ -111,10 +113,8 @@ ErrCode AudioSettingProvider::GetFloatValue(const std::string &key, float &value
     if (ret != ERR_OK) {
         return ret;
     }
-    AUDIO_DEBUG_LOG("GetFloatValue valueStr=%{public}s", valueStr.c_str());
-    if (valueStr != "") {
-        value = std::stof(valueStr);
-    }
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(valueStr, value), ERR_INVALID_PARAM,
+        "GetFloatValue error! invalid valueStr = %{public}s", valueStr.c_str());
     return ERR_OK;
 }
 
@@ -318,7 +318,7 @@ int32_t AudioSettingProvider::GetCurrentUserId()
             AUDIO_DEBUG_LOG("current userId is :%{public}d", currentuserId);
             break;
         }
-        // sleep and wait for 1 millisecond
+        // sleep and wait for 1 second
         sleep(SLEEP_TIME);
     }
     if (result != ERR_OK || ids.empty()) {
@@ -327,14 +327,28 @@ int32_t AudioSettingProvider::GetCurrentUserId()
     return currentuserId;
 }
 
+bool AudioSettingProvider::CheckOsAccountReady()
+{
+    std::vector<int> ids;
+    ErrCode result = AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
+    return (result == ERR_OK && !ids.empty());
+}
+
 void AudioSettingProvider::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
-    isDataShareReady_ = isDataShareReady;
+    AUDIO_INFO_LOG("Receive event DATA_SHARE_READY");
+    isDataShareReady_.store(isDataShareReady);
 }
 
 std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShareHelper(
     std::string tableType)
 {
+    CHECK_AND_RETURN_RET_LOG(isDataShareReady_.load(), nullptr,
+        "DATA_SHARE_READY not received, create DataShareHelper failed");
+    if (remoteObj_ == nullptr) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        Initialize(AUDIO_POLICY_SERVICE_ID);
+    }
 #ifdef SUPPORT_USER_ACCOUNT
     int32_t currentuserId = GetCurrentUserId();
     if (currentuserId < MIN_USER_ACCOUNT) {
@@ -353,9 +367,13 @@ std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShar
     } else if (currentuserId > 0 && tableType == "secure") {
         SettingSystemUrlProxy =
             SETTING_USER_SECURE_URI_PROXY + std::to_string(currentuserId) + "?Proxy=true";
+        WatchTimeout guard("DataShare::DataShareHelper::Creator:CreateDataShareHelper.SettingSystemUrlProxy");
         helper = DataShare::DataShareHelper::Creator(remoteObj_, SettingSystemUrlProxy, SETTINGS_DATA_EXT_URI);
+        guard.CheckCurrTimeout();
     } else {
+        WatchTimeout guard("DataShare::DataShareHelper::Creator:CreateDataShareHelper.SETTING_URI_PROXY");
         helper = DataShare::DataShareHelper::Creator(remoteObj_, SETTING_URI_PROXY, SETTINGS_DATA_EXT_URI);
+        guard.CheckCurrTimeout();
     }
     if (helper == nullptr) {
         AUDIO_WARNING_LOG("helper is nullptr, uri=%{public}s", SettingSystemUrlProxy.c_str());

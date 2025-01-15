@@ -46,9 +46,9 @@ void AudioSpatializationServiceFuzzTest(const uint8_t *rawData, size_t size)
     g_audioSpatializationService->HandleHeadTrackingEnabledChange(selectedAudioDevice, true);
 
     uint32_t sessionID = *reinterpret_cast<const uint32_t*>(rawData);
-    uint32_t streamUsage_int = *reinterpret_cast<const uint32_t*>(rawData);
-    streamUsage_int = (streamUsage_int % STREAMUSAGE_ENUM_NUM) - NUM;
-    StreamUsage streamUsage = static_cast<StreamUsage>(streamUsage_int);
+    uint32_t streamUsageInt = *reinterpret_cast<const uint32_t*>(rawData);
+    streamUsageInt = (streamUsageInt % STREAMUSAGE_ENUM_NUM) - NUM;
+    StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageInt);
 
     g_audioSpatializationService->GetSpatializationSceneType();
     g_audioSpatializationService->UpdateSpatializationState();

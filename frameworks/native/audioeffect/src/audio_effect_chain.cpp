@@ -114,6 +114,12 @@ void AudioEffectChain::SetFoldState(const std::string &foldState)
         "convert invalid foldState: %{public}s", foldState.c_str());
 }
 
+void AudioEffectChain::SetLidState(const std::string &lidState)
+{
+    CHECK_AND_RETURN_LOG(StringConverter(lidState, lidState_),
+        "convert invalid lidState: %{public}s", lidState.c_str());
+}
+
 void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
 {
     currSceneType_ = currSceneType;
@@ -195,6 +201,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[SPATIALIZATION_ENABLED_INDEX] = spatializationEnabled_;
     data[STREAM_USAGE_INDEX] = streamUsage_;
     data[FOLD_STATE_INDEX] = static_cast<int32_t>(foldState_);
+    data[LID_STATE_INDEX] = static_cast<int32_t>(lidState_);
     AUDIO_DEBUG_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
         "spatializationSceneType: %{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d",
@@ -496,6 +503,32 @@ void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDevice
 
     return;
 }
+void AudioEffectChain::GetInputChannelInfo(uint32_t &channels, uint64_t &channelLayout)
+{
+    channels = ioBufferConfig_.inputCfg.channels;
+    channelLayout = ioBufferConfig_.inputCfg.channelLayout;
+}
+
+void AudioEffectChain::CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info, AudioEffectConfig *tmpIoBufferConfig)
+{
+    AUDIO_INFO_LOG("begin CheckChannelLayoutByReplyInfo channel: %{public}u", ioBufferConfig_.inputCfg.channels);
+    if (info.data == nullptr) {
+        (*tmpIoBufferConfig).inputCfg.channels = DEFAULT_NUM_CHANNEL;
+        (*tmpIoBufferConfig).inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+        ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
+        ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+        return;
+    }
+    int32_t *channelLayoutSupportedFlage = static_cast<int32_t *>(info.data);
+    if (*channelLayoutSupportedFlage != SUCCESS) {
+        (*tmpIoBufferConfig).inputCfg.channels = DEFAULT_NUM_CHANNEL;
+        (*tmpIoBufferConfig).inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+        ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
+        ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    }
+    AUDIO_INFO_LOG("channel change to: %{public}u, channelLayoutSupportedFlage: %{public}d",
+        ioBufferConfig_.inputCfg.channels, *channelLayoutSupportedFlage);
+}
 
 int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 {
@@ -506,6 +539,12 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
     AudioEffectHandle preHandle = nullptr;
     tmpIoBufferConfig.outputCfg.channels = 0;
     tmpIoBufferConfig.outputCfg.channelLayout = 0;
+    if (standByEffectHandles_.size() != 0) {
+        AudioEffectHandle firstHandle = standByEffectHandles_.front();
+        int32_t ret = (*firstHandle)->command(firstHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
+        CheckChannelLayoutByReplyInfo(replyInfo, &tmpIoBufferConfig);
+    }
     for (AudioEffectHandle handle : standByEffectHandles_) {
         if (preHandle != nullptr) {
             int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);

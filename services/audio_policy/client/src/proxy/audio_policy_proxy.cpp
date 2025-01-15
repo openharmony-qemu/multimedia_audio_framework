@@ -77,7 +77,7 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode)
 }
 
 #ifdef FEATURE_DTMF_TONE
-std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
+std::vector<int32_t> AudioPolicyProxy::GetSupportedTones(const std::string &countryCode)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -87,6 +87,7 @@ std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
     std::vector<int> lSupportedToneList = {};
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, lSupportedToneList, "WriteInterfaceToken failed");
+    data.WriteString(countryCode);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_TONES), data, reply, option);
     if (error != ERR_NONE) {
@@ -102,7 +103,7 @@ std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
     return lSupportedToneList;
 }
 
-std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
+std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype, const std::string &countryCode)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -114,6 +115,7 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, spToneInfo, "WriteInterfaceToken failed");
     data.WriteInt32(ltonetype);
+    data.WriteString(countryCode);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_TONEINFO), data, reply, option);
     if (error != ERR_NONE) {
@@ -188,7 +190,8 @@ AudioScene AudioPolicyProxy::GetAudioScene()
     return static_cast<AudioScene>(reply.ReadInt32());
 }
 
-int32_t AudioPolicyProxy::SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute)
+int32_t AudioPolicyProxy::SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute,
+    const DeviceType &deviceType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -198,13 +201,15 @@ int32_t AudioPolicyProxy::SetStreamMuteLegacy(AudioVolumeType volumeType, bool m
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(volumeType));
     data.WriteBool(mute);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE_LEGACY), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set mute failed, error: %d", error);
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute)
+int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute,
+    const DeviceType &deviceType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -214,6 +219,7 @@ int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute)
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(volumeType));
     data.WriteBool(mute);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set mute failed, error: %d", error);
@@ -473,6 +479,21 @@ int32_t AudioPolicyProxy::SetVoiceRingtoneMute(bool isMute)
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetVirtualCall(const bool isVirtual)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteBool(isVirtual);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VIRTUAL_CALL), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SetVirtualCall failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
 bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
 {
     MessageParcel data;
@@ -697,7 +718,7 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
 }
 
 int32_t AudioPolicyProxy::ActivateAudioInterrupt(
-    const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
+    AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -709,7 +730,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(
     data.WriteBool(isUpdatedAudioStrategy);
     ret = AudioInterrupt::Marshalling(data, audioInterrupt);
     CHECK_AND_RETURN_RET_LOG(ret, -1, "Marshalling failed");
-    
+
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate interrupt failed, error: %{public}d", error);
@@ -1939,7 +1960,6 @@ void AudioPolicyProxy::SaveRemoteInfo(const std::string &networkId, DeviceType d
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("SendRequest failed, error: %{public}d", error);
     }
-    return;
 }
 
 int32_t AudioPolicyProxy::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)

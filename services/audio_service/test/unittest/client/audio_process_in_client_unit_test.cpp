@@ -1303,12 +1303,23 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_067, TestSize.Lev
     dstData.streamInfo.samplingRate = SAMPLE_RATE_16000;
     srcData.streamInfo.format = SAMPLE_S16LE;
     srcData.streamInfo.channels = STEREO;
+    dstData.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+    dstData.streamInfo.encoding = ENCODING_PCM;
     ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
     EXPECT_EQ(true, ret);
     srcData.streamInfo.channels = MONO;
     ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
     EXPECT_EQ(false, ret);
-    srcData.streamInfo.format = SAMPLE_F32LE;
+    srcData.streamInfo.channels = CHANNEL_3;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+    srcData.streamInfo.format = SAMPLE_S32LE;
+    srcData.streamInfo.channels = MONO;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+    srcData.streamInfo.channels = CHANNEL_3;
     ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
     EXPECT_EQ(false, ret);
     srcData.streamInfo.channels = STEREO;
@@ -1340,6 +1351,54 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_068, TestSize.Lev
     EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = ptrAudioProcessInClientInner->Resume();
     EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_069
+ * @tc.desc  : Test CheckIfSupport
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_069, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+    AudioProcessConfig audioProcConfig;
+    audioProcConfig.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    audioProcConfig.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    audioProcConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    audioProcConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    audioProcConfig.streamInfo.channels = MONO;
+    EXPECT_EQ(false, ptrAudioProcessInClientInner->CheckIfSupport(audioProcConfig));
+    audioProcConfig.streamInfo.encoding = ENCODING_PCM;
+    audioProcConfig.streamInfo.format = SAMPLE_S24LE;
+    EXPECT_EQ(false, ptrAudioProcessInClientInner->CheckIfSupport(audioProcConfig));
+    audioProcConfig.streamInfo.format = SAMPLE_S32LE;
+    EXPECT_EQ(true, ptrAudioProcessInClientInner->CheckIfSupport(audioProcConfig));
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_070
+ * @tc.desc  : Test CheckIfSupport
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_070, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = false;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+    bool ret = ptrAudioProcessInClientInner->Init(config);
+    EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

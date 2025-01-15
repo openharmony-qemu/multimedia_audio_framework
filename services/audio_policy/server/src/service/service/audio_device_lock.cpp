@@ -79,8 +79,8 @@ int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
     } else {
         audioVolumeManager_.SetVoiceRingtoneMute(false);
     }
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentOutputDeviceType(), "SetAudioScene");
+    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SetAudioScene");
     return SUCCESS;
 }
 
@@ -104,8 +104,8 @@ int32_t AudioDeviceLock::SetDeviceActive(InternalDeviceType deviceType, bool act
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentOutputDeviceType(), "SetDevcieActive");
+    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SetDevcieActive");
     return SUCCESS;
 }
 
@@ -136,7 +136,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceLock::GetActiveBluetoothDevice
         audioDeviceManager_.GetCommRenderPrivacyDevices();
     std::vector<shared_ptr<AudioDeviceDescriptor>> activeDeviceDescriptors;
 
-    for (auto &desc : audioPrivacyDeviceDescriptors) {
+    for (const auto &desc : audioPrivacyDeviceDescriptors) {
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->isEnable_) {
             activeDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
         }
@@ -320,6 +320,9 @@ void AudioDeviceLock::RegisteredTrackerClientDied(pid_t uid)
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
 
+    audioDeviceCommon_.ClientDiedDisconnectScoNormal();
+    audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
+
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
         audioOffloadStream_.DynamicUnloadOffloadModule();
     }
@@ -397,20 +400,23 @@ int32_t AudioDeviceLock::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRe
         audioConnectedDevice_.GetDevicesInner(OUTPUT_DEVICES_FLAG);
     DeviceType activeDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     DeviceRole activeDeviceRole = OUTPUT_DEVICE;
-    for (std::shared_ptr<AudioDeviceDescriptor> desc : outputDevices) {
+    std::string activeDeviceMac = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
+
+    const auto& itr = std::find_if(outputDevices.begin(), outputDevices.end(),
+        [&activeDeviceType, &activeDeviceRole, &activeDeviceMac](const std::shared_ptr<AudioDeviceDescriptor> &desc) {
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
-            if (activeDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
-                desc->macAddress_ != audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
-                // This A2DP device is not the active A2DP device. Skip it.
-                continue;
-            }
-            size_t rendererInfosSize = audioRendererChangeInfos.size();
-            for (size_t i = 0; i < rendererInfosSize; i++) {
-                UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
-                audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, desc,
-                    hasBTPermission, hasSystemPermission);
-            }
-            break;
+            // This A2DP device is not the active A2DP device. Skip it.
+            return activeDeviceType != DEVICE_TYPE_BLUETOOTH_A2DP || desc->macAddress_ == activeDeviceMac;
+        }
+        return false;
+    });
+
+    if (itr != outputDevices.end()) {
+        size_t rendererInfosSize = audioRendererChangeInfos.size();
+        for (size_t i = 0; i < rendererInfosSize; i++) {
+            UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
+            audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, *itr,
+                hasBTPermission, hasSystemPermission);
         }
     }
 

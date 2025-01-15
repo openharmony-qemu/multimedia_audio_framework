@@ -21,6 +21,7 @@
 #include "audio_service_log.h"
 #include "audio_utils.h"
 #include "none_mix_engine.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -265,9 +266,11 @@ void NoneMixEngine::MixStreams()
     int32_t appUid = stream_->GetAudioProcessConfig().appInfo.appUid;
     int32_t index = -1;
     int32_t result = stream_->Peek(&audioBuffer, index);
+    uint32_t sessionId = stream_->GetStreamIndex();
     writeCount_++;
     if (index < 0) {
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_DIRECT_OUT);
         stream_->ReturnIndex(index);
         failedCount_++;
         if (startFadeout_) {
@@ -278,6 +281,7 @@ void NoneMixEngine::MixStreams()
         ClockTime::RelativeSleep(PERIOD_NS);
         return;
     }
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT);
     failedCount_ = 0;
     uint64_t written = 0;
     // fade in or fade out

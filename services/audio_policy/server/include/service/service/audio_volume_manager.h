@@ -70,11 +70,13 @@ public:
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
     int32_t DisableSafeMediaVolume();
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
-        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN);
+        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
     bool GetStreamMute(AudioStreamType streamType) const;
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool internalCall = false);
@@ -115,7 +117,6 @@ private:
     void SetDeviceSafeVolumeStatus();
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel);
-    bool CheckMixActiveMusicTime(int32_t safeVolume);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
     void UpdateVolumeForLowLatency();

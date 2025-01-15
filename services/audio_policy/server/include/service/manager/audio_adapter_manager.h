@@ -77,7 +77,8 @@ public:
 
     float GetSystemVolumeDb(AudioStreamType streamType);
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
 
@@ -187,7 +188,8 @@ public:
 
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
 
-    void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
+    void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
     void HandleRingerMode(AudioRingerMode ringerMode);
 
@@ -196,6 +198,8 @@ public:
     void SetOffloadSessionId(uint32_t sessionId);
 
     void ResetOffloadSessionId();
+
+    int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
 private:
     friend class PolicyCallbackImpl;
 
@@ -249,7 +253,8 @@ private:
     void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
-    int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
+    int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
     void InitKVStoreInternal(void);
     void DeleteAudioPolicyKvStore();
     void TransferMuteStatus(void);
@@ -262,6 +267,7 @@ private:
     void UpdateSafeVolume();
     void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     void SetVolumeCallbackAfterClone();
+    void SetFirstBoot();
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {

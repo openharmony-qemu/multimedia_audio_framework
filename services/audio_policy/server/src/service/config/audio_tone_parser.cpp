@@ -29,6 +29,114 @@ AudioToneParser::~AudioToneParser()
 {
 }
 
+std::string Trim(const std::string& str)
+{
+    size_t start = str.find_first_not_of(" \t\n\r");
+    size_t end = str.find_last_not_of(" \t\n\r");
+    if (start == std::string::npos || end == std::string::npos || start > end) {
+        AUDIO_ERR_LOG("Failed to trim the string: %{public}s", str.c_str());
+        return "";
+    }
+
+    std::string trimStr = str.substr(start, end - start + 1);
+    for (char &c : trimStr) {
+        c = std::tolower(c);
+    }
+    return trimStr;
+}
+
+std::vector<std::string> SplitAndTrim(const std::string& str)
+{
+    std::stringstream ss(str);
+    std::string token;
+    std::vector<std::string> result;
+
+    while (std::getline(ss, token, ',')) {
+        std::string trimmedToken = Trim(token);
+        if (!trimmedToken.empty()) {
+            AUDIO_DEBUG_LOG("Trim string : %{public}s", trimmedToken.c_str());
+            result.push_back(trimmedToken);
+        }
+    }
+
+    if (result.empty()) {
+        AUDIO_ERR_LOG("Failed to split and trim the string: %{public}s", str.c_str());
+    }
+
+    return result;
+}
+
+int32_t AudioToneParser::LoadNewConfig(const std::string &configPath, ToneInfoMap &toneDescriptorMap,
+    std::unordered_map<std::string, ToneInfoMap> &customToneDescriptorMap)
+{
+    AUDIO_INFO_LOG("Enter");
+    xmlDoc *doc = xmlReadFile(configPath.c_str(), nullptr, 0);
+    CHECK_AND_RETURN_RET_LOG(doc != nullptr, ERROR, "error: could not parse file %{public}s", configPath.c_str());
+    xmlNode *rootElement = xmlDocGetRootElement(doc);
+    xmlNode *currNode = rootElement;
+    CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
+
+    if (xmlStrcmp(currNode->name, BAD_CAST"DTMF")) {
+        AUDIO_ERR_LOG("Missing tag - DTMF: %{public}s", configPath.c_str());
+        xmlFreeDoc(doc);
+        return ERROR;
+    }
+    if (currNode->xmlChildrenNode == nullptr) {
+        AUDIO_ERR_LOG("Missing child - DTMF: %{public}s", configPath.c_str());
+        xmlFreeDoc(doc);
+        return ERROR;
+    }
+    currNode = currNode->xmlChildrenNode;
+
+    while (currNode != nullptr) {
+        if (currNode->type != XML_ELEMENT_NODE) {
+            currNode = currNode->next;
+            continue;
+        }
+        if (!xmlStrcmp(currNode->name, BAD_CAST"Default") ||
+            !xmlStrcmp(currNode->name, BAD_CAST"Tones")) {
+            std::vector<ToneInfoMap*> toneDescriptorMaps;
+            toneDescriptorMaps.push_back(&toneDescriptorMap);
+            ParseToneInfo(currNode->xmlChildrenNode, toneDescriptorMaps);
+        } else if (!xmlStrcmp(currNode->name, BAD_CAST"Custom")) {
+            ParseCustom(currNode->xmlChildrenNode, customToneDescriptorMap);
+        }
+        currNode = currNode->next;
+    }
+
+    xmlFreeDoc(doc);
+    AUDIO_INFO_LOG("Done");
+    return SUCCESS;
+}
+
+void AudioToneParser::ParseCustom(xmlNode *node, std::unordered_map<std::string, ToneInfoMap> &customToneDescriptorMap)
+{
+    xmlNode *currNode = node;
+    AUDIO_DEBUG_LOG("Enter");
+    while (currNode != nullptr) {
+        if (currNode->type != XML_ELEMENT_NODE) {
+            currNode = currNode->next;
+            continue;
+        }
+        if (!xmlStrcmp(currNode->name, BAD_CAST"CountryInfo")) {
+            char *pCountryName = reinterpret_cast<char*>(xmlGetProp(currNode, BAD_CAST"names"));
+            if (pCountryName == nullptr) {
+                currNode = currNode->next;
+                continue;
+            }
+            AUDIO_DEBUG_LOG("ParseCustom names %{public}s", pCountryName);
+            std::vector<ToneInfoMap*> toneDescriptorMaps;
+            std::vector<std::string> cuntryNames = SplitAndTrim(pCountryName);
+            for (auto &countryName : cuntryNames) {
+                toneDescriptorMaps.push_back(&customToneDescriptorMap[countryName]);
+            }
+            ParseToneInfo(currNode->xmlChildrenNode, toneDescriptorMaps);
+            xmlFree(pCountryName);
+        }
+        currNode = currNode->next;
+    }
+}
+
 int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> &toneDescriptorMap)
 {
     AUDIO_INFO_LOG("Enter");
@@ -59,7 +167,9 @@ int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<
             currNode = currNode->xmlChildrenNode;
         } else if ((currNode->type == XML_ELEMENT_NODE) &&
             (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("ToneInfo")))) {
-            ParseToneInfo(currNode, toneDescriptorMap);
+            std::vector<ToneInfoMap*> toneDescriptorMaps;
+            toneDescriptorMaps.push_back(&toneDescriptorMap);
+            ParseToneInfo(currNode, toneDescriptorMaps);
             break;
         } else {
             currNode = currNode->next;
@@ -118,8 +228,8 @@ void AudioToneParser::ParseToneInfoAttribute(xmlNode *sNode, std::shared_ptr<Ton
         sNode = sNode->next;
     }
 }
-void AudioToneParser::ParseToneInfo(xmlNode *node, std::unordered_map<int32_t,
-    std::shared_ptr<ToneInfo>> &toneDescriptorMap)
+
+void AudioToneParser::ParseToneInfo(xmlNode *node, std::vector<ToneInfoMap*> &toneDescriptorMaps)
 {
     xmlNode *currNode = node;
     while (currNode != nullptr) {
@@ -127,19 +237,30 @@ void AudioToneParser::ParseToneInfo(xmlNode *node, std::unordered_map<int32_t,
             currNode = currNode->next;
             continue;
         }
-        if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("ToneInfo"))) {
-            std::shared_ptr<ToneInfo> ltoneDesc = std::make_shared<ToneInfo>(); // new ToneInfo();
-            AUDIO_DEBUG_LOG("node type: Element, name: %s", currNode->name);
-            char *pToneType = reinterpret_cast<char*>(xmlGetProp(currNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("toneType"))));
-            int toneType = atoi(pToneType);
-            AUDIO_DEBUG_LOG("ParseToneInfo toneType %{public}d", toneType);
-            xmlFree(pToneType);
-            if (currNode->xmlChildrenNode) {
-                xmlNode *sNode = currNode->xmlChildrenNode;
-                ParseToneInfoAttribute(sNode, ltoneDesc);
+        if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("ToneInfo"))) {
+            currNode = currNode->next;
+            continue;
+        }
+        std::shared_ptr<ToneInfo> ltoneDesc = std::make_shared<ToneInfo>();
+        AUDIO_DEBUG_LOG("node type: Element, name: %s", currNode->name);
+        char *pToneType = reinterpret_cast<char*>(xmlGetProp(currNode,
+            reinterpret_cast<xmlChar*>(const_cast<char*>("toneType"))));
+        if (pToneType == nullptr) {
+            AUDIO_DEBUG_LOG("toneType is null");
+            currNode = currNode->next;
+            continue;
+        }
+        int32_t toneType = atoi(pToneType);
+        AUDIO_DEBUG_LOG("toneType value: %{public}d", toneType);
+        xmlFree(pToneType);
+        if (currNode->xmlChildrenNode) {
+            xmlNode *sNode = currNode->xmlChildrenNode;
+            ParseToneInfoAttribute(sNode, ltoneDesc);
+        }
+        for (auto toneDescriptorMap : toneDescriptorMaps) {
+            if (toneDescriptorMap) {
+                (*toneDescriptorMap)[toneType] = ltoneDesc;
             }
-            toneDescriptorMap[toneType] = ltoneDesc;
         }
         currNode = currNode->next;
     }

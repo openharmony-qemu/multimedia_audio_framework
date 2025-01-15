@@ -50,22 +50,6 @@ static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     {SOURCE_TYPE_VOICE_RECOGNITION, 1},
 };
 
-static std::string GetEncryptAddr(const std::string &addr)
-{
-    const int32_t START_POS = 6;
-    const int32_t END_POS = 13;
-    const int32_t ADDRESS_STR_LEN = 17;
-    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
-        return std::string("");
-    }
-    std::string tmp = "**:**:**:**:**:**";
-    std::string out = addr;
-    for (int i = START_POS; i <= END_POS; i++) {
-        out[i] = tmp[i];
-    }
-    return out;
-}
-
 static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
 {
     if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0 ||
@@ -339,30 +323,32 @@ bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &strea
     return true;
 }
 
-bool AudioCapturerSession::IsVoipDeviceChanged(const DeviceType inputDevice, const DeviceType outputDevice)
+bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevice,
+    const AudioDeviceDescriptor &outputDevice)
 {
-    DeviceType realInputDevice = inputDevice;
-    DeviceType realOutputDevice = outputDevice;
+    AudioDeviceDescriptor realInputDevice = inputDevice;
+    AudioDeviceDescriptor realOutputDevice = outputDevice;
     shared_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
     if (inputDesc != nullptr) {
-        realInputDevice = inputDesc->deviceType_;
+        realInputDevice = *inputDesc;
     }
     vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
     if (outputDesc.size() > 0 && outputDesc.front() != nullptr) {
-        realOutputDevice = outputDesc.front()->deviceType_;
+        realOutputDevice = *outputDesc.front();
     }
     AudioEcInfo lastEcInfo = audioEcManager_.GetAudioEcInfo();
-    if (lastEcInfo.inputDevice != realInputDevice || lastEcInfo.outputDevice != realOutputDevice) {
+    if (!lastEcInfo.inputDevice.IsSameDeviceDesc(realInputDevice) ||
+        !lastEcInfo.outputDevice.IsSameDeviceDesc(realOutputDevice)) {
         return true;
     }
     AUDIO_INFO_LOG("voice source reload ignore for device not change");
     return false;
 }
 
-void AudioCapturerSession::ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
-    const std::string &caller)
+void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
+    const AudioDeviceDescriptor &outputDevice, const std::string &caller)
 {
     AUDIO_INFO_LOG("form caller: %{public}s", caller.c_str());
     if (!audioEcManager_.GetEcFeatureEnable()) {
@@ -380,7 +366,8 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const DeviceType inputDev
             return;
         }
     } else {
-        if (inputDevice == DEVICE_TYPE_DEFAULT || inputDevice == GetInputDeviceTypeForReload()) {
+        if (inputDevice.deviceType_ == DEVICE_TYPE_DEFAULT ||
+            inputDevice.IsSameDeviceDesc(GetInputDeviceTypeForReload())) {
             AUDIO_INFO_LOG("mic source reload ignore for device not changed");
             return;
         }
@@ -395,16 +382,29 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const DeviceType inputDev
     audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
 }
 
-void AudioCapturerSession::SetInputDeviceTypeForReload(DeviceType deviceType)
+void AudioCapturerSession::SetInputDeviceTypeForReload(const AudioDeviceDescriptor &inputDevice)
 {
     std::lock_guard<std::mutex> lock(inputDeviceReloadMutex_);
-    inputDeviceForReload_ = deviceType;
+    inputDeviceForReload_ = inputDevice;
 }
 
-DeviceType AudioCapturerSession::GetInputDeviceTypeForReload()
+const AudioDeviceDescriptor& AudioCapturerSession::GetInputDeviceTypeForReload()
 {
     std::lock_guard<std::mutex> lock(inputDeviceReloadMutex_);
     return inputDeviceForReload_;
+}
+
+std::string AudioCapturerSession::GetVoipUpPropV3(const AudioEffectPropertyArrayV3 &propertyArray)
+{
+    std::string voipUpProp = "";
+    auto iter = std::find_if(propertyArray.property.begin(), propertyArray.property.end(),
+        [](const AudioEffectPropertyV3 &prop) {
+            return prop.name == "voip_up";
+        });
+    if (iter != propertyArray.property.end()) {
+        voipUpProp = iter->category;
+    }
+    return voipUpProp;
 }
 
 void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
@@ -419,21 +419,22 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV
         return;
     }
 
-    std::string oldVoipUpProp = "";
-    std::string newVoipUpProp = "";
-    for (const AudioEffectPropertyV3 &prop : oldPropertyArray.property) {
-        if (prop.name == "voip_up") {
-            oldVoipUpProp = prop.category;
-        }
-    }
-    for (const AudioEffectPropertyV3 &prop : newPropertyArray.property) {
-        if (prop.name == "voip_up") {
-            newVoipUpProp = prop.category;
-        }
-    }
-    if ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR")) {
+    if ((GetVoipUpPropV3(oldPropertyArray) == "PNR") ^ (GetVoipUpPropV3(newPropertyArray) == "PNR")) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
     }
+}
+
+std::string AudioCapturerSession::GetVoipUpProp(const AudioEnhancePropertyArray &propertyArray)
+{
+    std::string voipUpProp = "";
+    auto iter = std::find_if(propertyArray.property.begin(), propertyArray.property.end(),
+        [](const AudioEnhanceProperty &prop) {
+            return prop.enhanceClass == "voip_up";
+        });
+    if (iter != propertyArray.property.end()) {
+        voipUpProp = iter->enhanceProp;
+    }
+    return voipUpProp;
 }
 
 void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
@@ -447,20 +448,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray
         AUDIO_INFO_LOG("reload ignore for source not voip");
         return;
     }
-
-    std::string oldVoipUpProp = "";
-    std::string newVoipUpProp = "";
-    for (const AudioEnhanceProperty &prop : oldPropertyArray.property) {
-        if (prop.enhanceClass == "voip_up") {
-            oldVoipUpProp = prop.enhanceProp;
-        }
-    }
-    for (const AudioEnhanceProperty &prop : newPropertyArray.property) {
-        if (prop.enhanceClass == "voip_up") {
-            newVoipUpProp = prop.enhanceProp;
-        }
-    }
-    if ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR")) {
+    if ((GetVoipUpProp(oldPropertyArray) == "PNR") ^ (GetVoipUpProp(newPropertyArray) == "PNR")) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
     }
 }

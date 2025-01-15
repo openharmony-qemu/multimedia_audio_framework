@@ -75,6 +75,7 @@ int32_t OfflineStreamInClient::GetOfflineAudioEffectChains(std::vector<std::stri
 
 OfflineStreamInClient::OfflineStreamInClient(const sptr<IpcOfflineStream> &ipcProxy) : streamProxy_(ipcProxy) {}
 
+#ifdef FEATURE_OFFLINE_EFFECT
 int32_t OfflineStreamInClient::CreateOfflineEffectChain(const std::string &effectName)
 {
     CHECK_AND_RETURN_RET_LOG(streamProxy_ != nullptr, ERR_OPERATION_FAILED, "Create failed with null ipcProxy.");
@@ -106,5 +107,6 @@ void OfflineStreamInClient::ReleaseOfflineEffectChain()
     CHECK_AND_RETURN_LOG(streamProxy_ != nullptr, "Release failed with null ipcProxy.");
     streamProxy_->ReleaseOfflineEffectChain();
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

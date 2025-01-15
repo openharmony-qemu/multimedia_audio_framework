@@ -68,8 +68,8 @@ constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
-constexpr uint32_t MIN_SESSIONID = 100000;
-constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIN_SESSIONID;
+constexpr uint32_t MIN_STREAMID = 100000;
+constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
 
 const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
@@ -146,6 +146,9 @@ public:
         parcel.WriteUint32(segmentCnt);
         parcel.WriteUint32(repeatCnt);
         parcel.WriteUint32(repeatSegment);
+        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            return false;
+        }
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Marshalling(parcel);
         }
@@ -156,6 +159,9 @@ public:
         segmentCnt = parcel.ReadUint32();
         repeatCnt = parcel.ReadUint32();
         repeatSegment = parcel.ReadUint32();
+        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            return;
+        }
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Unmarshalling(parcel);
         }

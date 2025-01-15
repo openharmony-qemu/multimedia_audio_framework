@@ -158,8 +158,8 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     audioDeviceCommon_.FetchDevice(false);
     audioCapturerSession_.ReloadSourceForDeviceChange(
-        audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectOutputDevice");
+        audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SelectOutputDevice");
     if ((selectedDesc[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (selectedDesc[0]->networkId_ != LOCAL_NETWORK_ID)) {
         audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
@@ -312,8 +312,8 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
             audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
         audioDeviceCommon_.FetchDevice(false);
         audioCapturerSession_.ReloadSourceForDeviceChange(
-            audioActiveDevice_.GetCurrentInputDeviceType(),
-            audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectInputDevice fast");
+            audioActiveDevice_.GetCurrentInputDevice(),
+            audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice fast");
         return SUCCESS;
     }
 
@@ -328,8 +328,8 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
 
     WriteSelectInputSysEvents(selectedDesc, srcType, scene);
     audioCapturerSession_.ReloadSourceForDeviceChange(
-        audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectInputDevice");
+        audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice");
     return SUCCESS;
 }
 

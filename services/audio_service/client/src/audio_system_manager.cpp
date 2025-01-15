@@ -521,7 +521,7 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
+int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType) const
 {
     AUDIO_INFO_LOG("SetStreamMute for volumeType [%{public}d], mute [%{public}d]", volumeType, mute);
     switch (volumeType) {
@@ -548,7 +548,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
     }
 
     /* Call Audio Policy SetStreamMute */
-    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true);
+    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true, deviceType);
 }
 
 bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
@@ -1003,16 +1003,36 @@ int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioVolumeType stre
     return SUCCESS;
 }
 
-int32_t AudioSystemManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+int32_t AudioSystemManager::ActivateAudioInterrupt(AudioInterrupt &audioInterrupt)
 {
     AUDIO_DEBUG_LOG("stub implementation");
-    return SUCCESS;
+    return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 }
 
 int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
 {
     AUDIO_DEBUG_LOG("stub implementation");
-    return SUCCESS;
+    return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
+}
+
+int32_t AudioSystemManager::GenerateSessionId(uint32_t &sessionId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    int32_t ret = gasp->GenerateSessionId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get sessionId failed");
+    return 0;
+}
+
+int32_t AudioSystemManager::SetAudioInterruptCallback(const uint32_t sessionID,
+    const std::shared_ptr<AudioInterruptCallback> &callback, uint32_t clientUid, const int32_t zoneID)
+{
+    return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID, callback, clientUid, zoneID);
+}
+
+int32_t AudioSystemManager::UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId)
+{
+    return AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(zoneId, sessionId);
 }
 
 int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_ptr<AudioManagerCallback> &callback)
@@ -1166,7 +1186,7 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
-    audioInterrupt.sessionId = static_cast<uint32_t>(clientId);
+    audioInterrupt.streamId = static_cast<uint32_t>(clientId);
     int32_t result = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 
     AUDIO_DEBUG_LOG("Rresult -> %{public}d", result);
@@ -1180,7 +1200,7 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
-    audioInterrupt.sessionId = static_cast<uint32_t>(clientId);
+    audioInterrupt.streamId = static_cast<uint32_t>(clientId);
     int32_t result = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     AUDIO_DEBUG_LOG("result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
@@ -1570,5 +1590,9 @@ int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const 
     return AudioPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
 }
 
+int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
+{
+    return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+}
 } // namespace AudioStandard
 } // namespace OHOS

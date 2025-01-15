@@ -30,7 +30,7 @@ bool g_hasServerInit = false;
 bool g_hasPermission = false;
 static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 const int32_t CONNECTING_NUMBER = 10;
-const int32_t TEST_SESSIONID = MIN_SESSIONID + 1010;
+const int32_t TEST_SESSIONID = MIN_STREAMID + 1010;
 const int32_t ROUTER_MAP_ID0 = 1000;
 const int32_t ROUTER_MAP_ID1 = 1001;
 const int32_t ROUTER_MAP_ID2 = 1002;
@@ -326,8 +326,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
         audioDeviceDescriptor.deviceType_ = deviceType;
         for (const auto& isConnected : isConnecteds) {
             AUDIO_INFO_LOG("AudioPolicyServiceTest_001 isConnected:%{public}d", static_cast<uint32_t>(isConnected));
-            GetServerPtr()->audioPolicyService_.audioDeviceStatus_.hasModulesLoaded = false;
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
             GetServerPtr()->audioPolicyService_.audioDeviceStatus_.hasModulesLoaded = true;
             GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
             GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected,

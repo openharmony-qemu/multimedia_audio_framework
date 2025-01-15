@@ -57,8 +57,10 @@ AudioCapturerPrivate::~AudioCapturerPrivate()
     }
     AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
     if (audioStream_ != nullptr) {
+        audioStream_->GetAudioSessionID(sessionID_);
         audioStream_->ReleaseAudioStream(true);
         audioStream_ = nullptr;
+        AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionID_);
     }
     if (audioStateChangeCallback_ != nullptr) {
         audioStateChangeCallback_->HandleCapturerDestructor();
@@ -393,17 +395,17 @@ void AudioCapturerPrivate::InitLatencyMeasurement(const AudioStreamParams &audio
 
 int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
 {
-    if (audioInterrupt_.sessionId != 0) {
+    if (audioInterrupt_.streamId != 0) {
         AUDIO_INFO_LOG("old session already has interrupt, need to reset");
         (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
-        (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.sessionId);
+        (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.streamId);
     }
 
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("GetAudioSessionID failed for INDEPENDENT_MODE");
         return ERR_INVALID_INDEX;
     }
-    audioInterrupt_.sessionId = sessionID_;
+    audioInterrupt_.streamId = sessionID_;
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
     audioInterrupt_.sessionStrategy = strategy_;
@@ -537,9 +539,9 @@ bool AudioCapturerPrivate::Start() const
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        audioInterrupt_.sessionId != INVALID_SESSION_ID, false);
-
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        audioInterrupt_.streamId != INVALID_SESSION_ID, false);
+    AudioInterrupt audioInterrupt = audioInterrupt_;
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
 
     // When the cellular call stream is starting, only need to activate audio interrupt.
@@ -758,7 +760,7 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 
     if (switching_) {
         AUDIO_INFO_LOG("Wait for SwitchStream");
-        bool ret = switchStreamCv_.wait_for(lock, std::chrono::microseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
+        bool ret = switchStreamCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
             [this] {return !switching_;});
         if (!ret) {
             switching_ = false;
@@ -1179,7 +1181,7 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         InitSwitchInfo(targetClass, info);
 
         // release old stream and restart audio stream
-        switchResult = audioStream_->ReleaseAudioStream();
+        switchResult = audioStream_->ReleaseAudioStream(true, true);
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, info.params,
@@ -1242,6 +1244,8 @@ void AudioCapturerPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
         interruptCbImpl->StartSwitch();
     }
     if (!SwitchToTargetStream(targetClass, newSessionId)) {
+        int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
         AUDIO_ERR_LOG("Switch to target stream failed");
     }
     if (interruptCbImpl) {

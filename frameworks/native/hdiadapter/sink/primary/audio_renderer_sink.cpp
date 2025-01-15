@@ -45,6 +45,8 @@
 #include "audio_enhance_chain_manager.h"
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
+#include "audio_performance_monitor.h"
+#include "ipc_skeleton.h"
 
 using namespace std;
 
@@ -69,6 +71,8 @@ const unsigned int FORMAT_1_BYTE = 1;
 const unsigned int FORMAT_2_BYTE = 2;
 const unsigned int FORMAT_3_BYTE = 3;
 const unsigned int FORMAT_4_BYTE = 4;
+constexpr uid_t UID_BLUETOOTH_SA = 1002;
+
 #ifdef FEATURE_POWER_MANAGER
 const unsigned int TIME_OUT_SECONDS = 10;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
@@ -259,6 +263,13 @@ private:
     std::mutex sinkMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
+    AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
+
+    // for sco recovery
+    bool hasAudioParamInfo_ = false;
+    AudioParamKey audioParamKey_ = AudioParamKey::NONE;
+    string audioParamCondition_ = "";
+    string audioParamValue_ = "";
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -307,7 +318,9 @@ AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
-    attr_ = {};
+    if (halName_ == DIRECT_HAL_NAME || halName_ == VOIP_HAL_NAME) {
+        sinkType_ = ADAPTER_TYPE_DIRECT;
+    }
 }
 
 AudioRendererSinkInner::~AudioRendererSinkInner()
@@ -322,6 +335,7 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
         AUDIO_WARNING_LOG("runningLockManager is null, playback can not work well!");
     }
 #endif
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(sinkType_);
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
@@ -377,7 +391,20 @@ void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const st
         condition.c_str(), value.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
 
-    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "SetAudioParameter failed, audioAdapter_ is null");
+// LCOV_EXCL_START
+    if (audioAdapter_ == nullptr) {
+        auto callerUid = IPCSkeleton::GetCallingUid();
+        AUDIO_ERR_LOG("audioAdapter_ is null, callerUid: %{public}d", callerUid);
+        CHECK_AND_RETURN_LOG(callerUid == UID_BLUETOOTH_SA && key == AudioParamKey::BT_WBS,
+            "Only allowed to set bt_wbs audio parameter when audioAdapter_ is null");
+        hasAudioParamInfo_ = true;
+        audioParamKey_ = key;
+        audioParamCondition_ = condition;
+        audioParamValue_ = value;
+        return;
+    }
+// LCOV_EXCL_STOP
+
     int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("SetAudioParameter failed, error code: %d", ret);
@@ -437,14 +464,13 @@ std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, c
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s, halName: %{public}s",
         key, condition.c_str(), halName_.c_str());
-    // for usb, condition is get_usb_info#CxD0 or need_change_usb_device#CxD0
-    if (key == USB_DEVICE) {
-        if (halName_ == USB_HAL_NAME) {
-            adapterNameCase_ = USB_HAL_NAME;
-        }
+    if (condition.starts_with("get_usb_info#C")) {
+        // Init adapter to get parameter before load sink module (need fix)
+        adapterNameCase_ = "usb";
         int32_t ret = InitAdapter();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init usb audio adapter failed. ret=%{public}d", ret);
-    } else if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init adapter failed for get usb info param");
+    }
+    if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
         // Init adapter and render to get parameter before load sink module (need fix)
         return GetDPDeviceAttrInfo(condition);
     }
@@ -807,6 +833,8 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, ClockTime::GetCurNano());
+
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrame failed ret: %{public}x", ret);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
@@ -891,6 +919,7 @@ int32_t AudioRendererSinkInner::Start(void)
         UpdateSinkState(true);
         started_ = true;
     }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -1289,7 +1318,7 @@ int32_t AudioRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -1461,6 +1490,13 @@ int32_t AudioRendererSinkInner::InitAdapter()
     adapterDesc_ = descs[index];
     CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) == SUCCESS),
         ERR_NOT_STARTED, "Load Adapter Fail.");
+
+// LCOV_EXCL_START
+    if (hasAudioParamInfo_) {
+        SetAudioParameter(audioParamKey_, audioParamCondition_, audioParamValue_);
+        hasAudioParamInfo_ = false;
+    }
+// LCOV_EXCL_STOP
 
     adapterInited_ = true;
 

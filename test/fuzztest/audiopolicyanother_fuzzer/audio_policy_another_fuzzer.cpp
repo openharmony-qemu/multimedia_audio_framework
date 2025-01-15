@@ -122,7 +122,8 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
 
 #ifdef FEATURE_DTMF_TONE
     int32_t ltonetype = *reinterpret_cast<const int32_t *>(rawData);
-    GetServerPtr()->GetToneConfig(ltonetype);
+    std::string countryCode(reinterpret_cast<const char*>(rawData), size - 1);
+    GetServerPtr()->GetToneConfig(ltonetype, countryCode);
 #endif
 
     AudioScene audioScene = *reinterpret_cast<const AudioScene *>(rawData);
@@ -223,7 +224,7 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     StreamSetState streamSetState = *reinterpret_cast<const StreamSetState *>(rawData);
     StreamUsage streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
     GetServerPtr()->UpdateStreamState(clientUid, streamSetState, streamUsage);
-    
+
     int32_t sessionId = *reinterpret_cast<const int32_t *>(rawData);
     GetServerPtr()->GetAudioCapturerMicrophoneDescriptors(sessionId);
 

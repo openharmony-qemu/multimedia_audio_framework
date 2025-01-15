@@ -42,7 +42,7 @@ public:
     virtual void OnMediaStackChanged(const BluetoothRemoteDevice &device, int action);
     virtual void OnVirtualDeviceChanged(int32_t action, std::string macAddress);
     virtual void OnCaptureConnectionStateChanged(const BluetoothRemoteDevice &device, int state,
-        const A2dpCodecInfo &info);
+        const A2dpCodecInfo &codecInfo);
 
 private:
     BLUETOOTH_DISALLOW_COPY_AND_ASSIGN(AudioA2dpListener);
@@ -145,6 +145,8 @@ public:
     static ScoCategory GetScoCategory();
     static RecognitionStatus GetRecognitionStatus();
     static int32_t Connect(const std::string &macAddress);
+    static int32_t SetVirtualCall(const bool isVirtual);
+    static bool IsVirtualCall();
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;
@@ -154,6 +156,7 @@ private:
     static BluetoothRemoteDevice activeHfpDevice_;
     static ScoCategory scoCategory;
     static RecognitionStatus recognitionStatus;
+    static bool isVirtualCall;
 };
 }
 }

@@ -52,9 +52,11 @@ public:
 
     virtual float GetSingleStreamVolume(int32_t streamId) = 0;
 
-    virtual int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute) = 0;
+    virtual int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
-    virtual int32_t SetStreamMute(AudioVolumeType volumeType, bool mute) = 0;
+    virtual int32_t SetStreamMute(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual bool GetStreamMute(AudioVolumeType volumeType) = 0;
 
@@ -82,9 +84,9 @@ public:
     virtual DeviceType GetActiveInputDevice() = 0;
 
 #ifdef FEATURE_DTMF_TONE
-    virtual std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) = 0;
+    virtual std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode) = 0;
 
-    virtual std::vector<int32_t> GetSupportedTones() = 0;
+    virtual std::vector<int32_t> GetSupportedTones(const std::string &countryCode) = 0;
 #endif
 
     virtual int32_t SetRingerModeLegacy(AudioRingerMode ringMode) = 0;
@@ -121,7 +123,7 @@ public:
     virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
+    virtual int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */,
         const bool isUpdatedAudioStrategy = false /* default value: false -- is update audio strategy */) = 0;
 
@@ -376,6 +378,7 @@ public:
 
     virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
 
+    virtual int32_t SetVirtualCall(const bool isVirtual) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

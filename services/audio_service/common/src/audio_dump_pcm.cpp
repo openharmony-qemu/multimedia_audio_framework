@@ -331,7 +331,6 @@ void AudioCacheMgrInner::GetCurMemoryCondition(size_t &dataLength, size_t &buffe
     size_t curBufferLength = 0;
     size_t curStructLength = 0;
     if (memChunkDeque_.empty()) {
-        AUDIO_INFO_LOG("cache memory is empty");
         return;
     }
 
@@ -379,7 +378,8 @@ bool AudioCacheMgrInner::GetDumpParameter(const std::vector<std::string> &subKey
     if (subKeys[0] == GET_STATUS_KEY) {
         int32_t audioCacheState = 0;
         GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
-        CHECK_AND_RETURN_RET_LOG(audioCacheState >= 0 && audioCacheState < AUDIO_CACHE_STATE.size(),
+        CHECK_AND_RETURN_RET_LOG(audioCacheState >= 0 &&
+            audioCacheState < static_cast<int32_t>(AUDIO_CACHE_STATE.size()),
             false, "get invalid audioCacheState %{public}d", audioCacheState);
         result.push_back({"STATUS", AUDIO_CACHE_STATE[audioCacheState]});
     } else if (subKeys[0] == GET_TIME_KEY) {

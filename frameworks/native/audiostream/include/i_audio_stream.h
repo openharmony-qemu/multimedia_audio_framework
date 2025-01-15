@@ -118,6 +118,13 @@ public:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
     static const std::string GetEffectSceneName(const StreamUsage &streamUsage);
+    static inline bool IsFastStreamClass(StreamClass streamClass)
+    {
+        if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
+            return true;
+        }
+        return false;
+    }
 
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) = 0;
     virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) = 0;

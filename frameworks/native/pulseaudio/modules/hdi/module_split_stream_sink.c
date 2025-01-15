@@ -51,6 +51,8 @@
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
 #include "audio_hdiadapter_info.h"
+#include "volume_tools_c.h"
+#include "audio_volume_c.h"
 #include "renderer_sink_adapter.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
@@ -68,6 +70,7 @@
 #define STREAM_TYPE_MEDIA "1"
 #define STREAM_TYPE_COMMUNICATION "2"
 #define STREAM_TYPE_NAVIGATION "13"
+#define STREAM_TYPE_VIDEO_COMMUNICATION "17"
 
 char *g_splitArr[MAX_PARTS];
 int g_splitNums = 0;
@@ -401,16 +404,80 @@ static int IsPeekCurrentSinkInput(char *streamType, const char *usageStr)
 
     if (g_splitNums == SPLIT_THREE_STREAM) {
         if (strcmp(usageStr, STREAM_TYPE_NAVIGATION) && strcmp(usageStr, STREAM_TYPE_COMMUNICATION) &&
-            !strcmp(streamType, STREAM_TYPE_MEDIA)) {
+            strcmp(usageStr, STREAM_TYPE_VIDEO_COMMUNICATION) && !strcmp(streamType, STREAM_TYPE_MEDIA)) {
             flag = 1;
         } else if (!strcmp(usageStr, STREAM_TYPE_NAVIGATION) && !strcmp(streamType, STREAM_TYPE_NAVIGATION)) {
             flag = 1;
-        } else if (!strcmp(usageStr, STREAM_TYPE_COMMUNICATION) && !strcmp(streamType, STREAM_TYPE_COMMUNICATION)) {
+        } else if ((!strcmp(usageStr, STREAM_TYPE_COMMUNICATION) ||
+            !strcmp(usageStr, STREAM_TYPE_VIDEO_COMMUNICATION)) &&
+            !strcmp(streamType, STREAM_TYPE_COMMUNICATION)) {
             flag = 1;
         }
     }
 
     return flag;
+}
+
+static const char *SafeProplistGets(const pa_proplist *p, const char *key, const char *defstr)
+{
+    const char *res = pa_proplist_gets(p, key);
+    if (res == NULL) {
+        return defstr;
+    }
+    return res;
+}
+
+static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk *pchunk, pa_sink *si)
+{
+    AUTO_CTRACE("module_split_stream_sink::ProcessAudioVolume: len:%zu", length);
+    struct userdata *u;
+    pa_assert_se(sinkIn);
+    pa_assert_se(pchunk);
+    pa_assert_se(si);
+    pa_assert_se(u = si->userdata);
+    const char *streamType = SafeProplistGets(sinkIn->proplist, "stream.type", "NULL");
+    const char *sessionIDStr = SafeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
+    const char *deviceClass = GetDeviceClass(u->sinkAdapter->deviceClass);
+    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
+    float volumeBeg = GetPreVolume(sessionID);
+    float fadeBeg = 1.0f;
+    float fadeEnd = 1.0f;
+    if (!pa_safe_streq(streamType, "ultrasonic")) {
+        GetStreamVolumeFade(sessionID, &fadeBeg, &fadeEnd);
+    }
+    if (pa_memblock_is_silence(pchunk->memblock)) {
+        AUTO_CTRACE("module_split_stream_sink::ProcessAudioVolume: is_silence");
+        AUDIO_PRERELEASE_LOGI("pa_memblock_is_silence");
+    } else {
+        AudioRawFormat rawFormat;
+        rawFormat.format = (uint32_t)ConvertPaToHdiAdapterFormat(si->sample_spec.format);
+        rawFormat.channels = (uint32_t)si->sample_spec.channels;
+
+        pa_memchunk_make_writable(pchunk, 0);
+        void *data = pa_memblock_acquire_chunk(pchunk);
+
+        AUDIO_DEBUG_LOG("length:%{public}zu channels:%{public}d format:%{public}d"
+            " volumeBeg:%{public}f, volumeEnd:%{public}f, fadeBeg:%{public}f, fadeEnd:%{public}f",
+            length, rawFormat.channels, rawFormat.format, volumeBeg, volumeEnd, fadeBeg, fadeEnd);
+        int32_t ret = ProcessVol(data, length, rawFormat, volumeBeg * fadeBeg, volumeEnd * fadeEnd);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("ProcessVol failed:%{public}d", ret);
+        }
+        pa_memblock_release(pchunk->memblock);
+    }
+    if (volumeBeg != volumeEnd || fadeBeg != fadeEnd) {
+        AUDIO_INFO_LOG("sessionID:%{public}s, length:%{public}zu, volumeBeg:%{public}f, volumeEnd:%{public}f"
+            ", fadeBeg:%{public}f, fadeEnd:%{public}f",
+            sessionIDStr, length, volumeBeg, volumeEnd, fadeBeg, fadeEnd);
+        if (volumeBeg != volumeEnd) {
+            SetPreVolume(sessionID, volumeEnd);
+            MonitorVolume(sessionID, true);
+        }
+        if (fadeBeg != fadeEnd) {
+            SetStreamVolumeFade(sessionID, fadeEnd, fadeEnd);
+        }
+    }
 }
 
 static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, unsigned maxInfo, char *streamType)
@@ -438,6 +505,8 @@ static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, 
 
             if (mixlength == 0 || info->chunk.length < mixlength)
                 mixlength = info->chunk.length;
+
+            ProcessAudioVolume(i, mixlength, &info->chunk, s);
 
             if (pa_memblock_is_silence(info->chunk.memblock)) {
                 pa_memblock_unref(info->chunk.memblock);
@@ -1154,4 +1223,12 @@ void pa__done(pa_module*m)
 
     pa_xfree(u);
     m->userdata = NULL;
+
+    for (int32_t i = 0; i < MAX_PARTS; ++i) {
+        if (g_splitArr[i] == NULL) {
+            continue;
+        }
+        free(g_splitArr[i]);
+        g_splitArr[i] = NULL;
+    }
 }

@@ -59,6 +59,8 @@ enum HdiSetParamCommandCode {
     HDI_SPATIALIZATION_SCENE_TYPE = 10,
     HDI_STREAM_USAGE = 11,
     HDI_FOLD_STATE = 12,
+    HDI_LID_STATE = 13,
+    HDI_QUERY_CHANNELLAYOUT = 14,
 };
 
 enum AudioSpatialDeviceType {

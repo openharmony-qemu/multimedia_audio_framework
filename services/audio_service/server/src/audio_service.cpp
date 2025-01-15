@@ -27,6 +27,7 @@
 #include "ipc_stream_in_server.h"
 #include "audio_capturer_source.h"
 #include "audio_volume.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -78,6 +79,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             AUDIO_INFO_LOG("SessionId %{public}u", (*paired).first->GetSessionId());
+            AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(process->GetAudioSessionId());
             auto processConfig = process->GetAudioProcessConfig();
             if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
                 SetDecMaxRendererStreamCnt();
@@ -177,7 +179,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
 
 void AudioService::UpdateMuteControlSet(uint32_t sessionId, bool muteFlag)
 {
-    if (sessionId < MIN_SESSIONID || sessionId > MAX_SESSIONID) {
+    if (sessionId < MIN_STREAMID || sessionId > MAX_STREAMID) {
         AUDIO_WARNING_LOG("Invalid sessionid %{public}u", sessionId);
         return;
     }
@@ -249,6 +251,7 @@ void AudioService::RemoveRenderer(uint32_t sessionId)
     }
     allRendererMap_.erase(sessionId);
     RemoveIdFromMuteControlSet(sessionId);
+    AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
 }
 
 void AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)
