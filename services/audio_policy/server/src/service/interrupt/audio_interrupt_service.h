@@ -114,6 +114,7 @@ private:
     static constexpr uid_t UID_AUDIO = 1041;
     static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
     std::mutex audioServerProxyMutex_;
+    void HandleAppStreamType(AudioInterrupt &audioInterrupt);
 
     // Inner class for death handler
     class AudioInterruptDeathRecipient : public IRemoteObject::DeathRecipient {
