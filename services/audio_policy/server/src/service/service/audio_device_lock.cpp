@@ -219,7 +219,7 @@ void AudioDeviceLock::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChan
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
     AUDIO_INFO_LOG("fetch device for track, sessionid:%{public}d start",
-        streamChangeInfo.audioRendererChangeInfo.sessionId);
+        streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
     vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(
