@@ -77,6 +77,7 @@ static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 static const int32_t INITIAL_VALUE = 1;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
+static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -8762,6 +8763,11 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
             outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
             audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
             ringerModeMute_.store(false);
+            if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
+                audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
+                audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
+                    audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
+            }
         } else {
             ringerModeMute_.store(true);
         }
