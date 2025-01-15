@@ -270,6 +270,9 @@ void NapiAudioSessionMgr::RegisterAudioSessionCallback(napi_env env, napi_value 
     std::shared_ptr<NapiAudioSessionCallback> cb =
         std::static_pointer_cast<NapiAudioSessionCallback>(napiSessionMgr->audioSessionCallbackNapi_);
     cb->SaveCallbackReference(args[PARAM1]);
+    if (!cb->GetAudioSessionTsfnFlag()) {
+        cb->CreateAudioSessionTsfn(env);
+    }
 
     AUDIO_INFO_LOG("OnRendererStateChangeCallback is successful");
 }
