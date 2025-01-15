@@ -488,7 +488,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_025, TestSize.Level1)
 
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
 
-    const AudioSessionStrategy strategy = {AudioConcurrencyMode::SLIENT};
+    const AudioSessionStrategy strategy = {AudioConcurrencyMode::SILENT};
     ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
 
     auto ret = ptrAudioPolicyServer->ActivateAudioSession(strategy);

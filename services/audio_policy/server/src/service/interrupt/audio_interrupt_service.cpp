@@ -344,8 +344,8 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
         return false;
     }
-    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SLIENT) {
-        AUDIO_INFO_LOG("incoming stream is explicitly SLIENT");
+    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SILENT) {
+        AUDIO_INFO_LOG("incoming stream is explicitly SILENT");
         return true;
     }
     if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
@@ -386,8 +386,8 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
         return false;
     }
-    if (activeInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SLIENT) {
-        AUDIO_INFO_LOG("The concurrency mode of active session is SLIENT");
+    if (activeInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SILENT) {
+        AUDIO_INFO_LOG("The concurrency mode of active session is SILENT");
         return true;
     }
     if (!sessionService_->IsAudioSessionActivated(activeInterrupt.pid)) {
