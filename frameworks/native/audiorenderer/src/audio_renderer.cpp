@@ -480,6 +480,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(const AudioStreamParams &audioS
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         audioStream_->SetApplicationCachePath(cachePath_);
+        isFastRenderer_ = IAudioStream::IsFastStreamClass(streamClass);
     }
     return SUCCESS;
 }
