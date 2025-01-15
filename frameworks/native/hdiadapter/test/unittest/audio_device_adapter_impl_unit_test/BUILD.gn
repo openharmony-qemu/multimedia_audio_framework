@@ -40,7 +40,7 @@ ohos_unittest("audio_device_adapter_impl_unit_test") {
   ]
 
   defines = []
-  if (audio_framework_feature_daudio_enable) {
+  if (audio_framework_feature_distributed_audio) {
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
   }
 

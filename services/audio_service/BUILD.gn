@@ -313,7 +313,7 @@ config("audio_service_config") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 
-  if (audio_framework_feature_daudio_enable == true) {
+  if (audio_framework_feature_distributed_audio == true) {
     cflags += [ "-DDAUDIO_ENABLE" ]
   }
 
@@ -375,7 +375,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
-  if (audio_framework_feature_daudio_enable == true) {
+  if (audio_framework_feature_distributed_audio == true) {
     deps += [
       "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
       "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",

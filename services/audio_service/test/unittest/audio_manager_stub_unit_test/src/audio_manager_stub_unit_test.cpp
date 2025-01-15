@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -117,6 +117,7 @@ private:
 bool MockIRemoteObject::bExchange = true;
 }
 
+#ifdef FEATURE_FILE_IO
 /**
 * @tc.name  : Test HandleFourthPartCode API
 * @tc.type  : FUNC
@@ -134,6 +135,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_010, TestSize.Level1)
     auto ret = audioServer->HandleThirdPartCode(format, data, reply, option);
     EXPECT_EQ(AUDIO_ERR, ret);
 }
+#endif
 
 /**
 * @tc.name  : Test HandleFourthPartCode API

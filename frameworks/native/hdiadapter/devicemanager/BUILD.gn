@@ -53,7 +53,7 @@ audio_ohos_library("audio_device_manager") {
   ]
 
   defines = []
-  if (audio_framework_feature_daudio_enable) {
+  if (audio_framework_feature_distributed_audio) {
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
   }
 

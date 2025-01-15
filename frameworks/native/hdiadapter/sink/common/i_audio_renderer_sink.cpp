@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -39,7 +39,9 @@ const char *DEVICE_CLASS_USB = "usb";
 const char *DEVICE_CLASS_DP = "dp";
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_A2DPFAST = "a2dp_fast";
+#ifdef FEATURE_FILE_IO
 const char *DEVICE_CLASS_FILE = "file_io";
+#endif
 #ifdef DAUDIO_ENABLE
 const char *DEVICE_CLASS_REMOTE = "remote";
 #endif
@@ -68,9 +70,11 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     if (!strcmp(devceClass, DEVICE_CLASS_A2DPFAST)) {
         iAudioRendererSink = BluetoothRendererSink::GetMmapInstance();
     }
+#ifdef FEATURE_FILE_IO
     if (!strcmp(devceClass, DEVICE_CLASS_FILE)) {
         iAudioRendererSink = AudioRendererFileSink::GetInstance();
     }
+#endif
 #ifdef DAUDIO_ENABLE
     if (!strcmp(devceClass, DEVICE_CLASS_REMOTE)) {
         iAudioRendererSink = RemoteAudioRendererSink::GetInstance(deviceNetworkId);

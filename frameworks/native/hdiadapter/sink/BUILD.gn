@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2022-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -208,7 +208,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
     "hilog:libhilog",
   ]
   defines = []
-  if (audio_framework_feature_daudio_enable) {
+  if (audio_framework_feature_distributed_audio) {
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
   }
 
@@ -256,7 +256,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
     "hilog:libhilog",
   ]
   defines = []
-  if (audio_framework_feature_daudio_enable) {
+  if (audio_framework_feature_distributed_audio) {
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
   }
 
@@ -429,7 +429,6 @@ ohos_shared_library("renderer_sink_adapter") {
   ]
 
   deps = [
-    ":audio_renderer_file_sink",
     ":audio_renderer_sink",
     ":bluetooth_renderer_sink",
     ":fast_audio_renderer_sink",
@@ -437,7 +436,12 @@ ohos_shared_library("renderer_sink_adapter") {
     ":offload_audio_renderer_sink",
   ]
 
-  if (audio_framework_feature_daudio_enable == true) {
+  if (audio_framework_feature_file_io == true) {
+    deps += [ ":audio_renderer_file_sink" ]
+    defines = [ "FEATURE_FILE_IO" ]
+  }
+
+  if (audio_framework_feature_distributed_audio == true) {
     deps += [
       ":remote_audio_renderer_sink",
       ":remote_fast_audio_renderer_sink",
