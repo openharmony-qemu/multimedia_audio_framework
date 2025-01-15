@@ -104,7 +104,7 @@ static std::string TranslateKeyEvent(const int32_t keyType)
     return event;
 }
 
-static uint32_t TranslateErrorCode(int32_t result)
+uint32_t AudioPolicyServer::TranslateErrorCode(int32_t result)
 {
     uint32_t resultForMonitor = 0;
     switch (result) {
