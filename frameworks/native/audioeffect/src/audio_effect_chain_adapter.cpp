@@ -243,7 +243,7 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
     std::string spatializationEnabledString = "";
 
     if (sceneType && pack.channelLayout && sessionID && pack.sceneMode &&
-        pack.spatializationEnabled && pack.streamUsage) {
+        pack.spatializationEnabled && pack.streamUsage && pack.systemVolumeType) {
         sceneTypeString = sceneType;
         channelLayoutNum = std::strtoull(pack.channelLayout, nullptr, BASE_TEN);
         sessionIDString = sessionID;
