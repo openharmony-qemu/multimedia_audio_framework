@@ -473,7 +473,7 @@ uint64_t NoneMixEngine::GetLatency() noexcept
     } else {
         latency_ = AUDIO_DEFAULT_LATENCY;
     }
-    AUDIO_INFO_LOG("latency value:%{public}ld", latency_);
+    AUDIO_INFO_LOG("latency value:%{public}" PRId64 " ns", latency_);
     return latency_;
 }
 } // namespace AudioStandard
