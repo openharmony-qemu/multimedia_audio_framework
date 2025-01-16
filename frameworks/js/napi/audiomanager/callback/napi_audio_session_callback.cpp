@@ -15,9 +15,11 @@
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioSessionCallback"
 #endif
-
+#include <thread>
+#include "js_native_api.h"
 #include "napi_audio_session_callback.h"
 #include "napi_param_utils.h"
+#include "napi/native_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,6 +31,9 @@ NapiAudioSessionCallback::NapiAudioSessionCallback(napi_env env)
 
 NapiAudioSessionCallback::~NapiAudioSessionCallback()
 {
+    if (regAmSessionChgTsfn_) {
+        napi_release_threadsafe_function(amSessionChgTsfn_, napi_tsfn_abort);
+    }
     AUDIO_DEBUG_LOG("NapiAudioSessionCallback::Destructor");
 }
 
@@ -59,28 +64,39 @@ void NapiAudioSessionCallback::SaveCallbackReference(napi_value args)
     audioSessionJsCallback_ = cb;
 }
 
-void NapiAudioSessionCallback::WorkCallbackAudioSessionChangeDone(uv_work_t *work, int status)
+void NapiAudioSessionCallback::CreateAudioSessionTsfn(napi_env env)
 {
-    std::shared_ptr<AudioSessionJsCallback> context(
-        static_cast<AudioSessionJsCallback*>(work->data),
-        [work](AudioSessionJsCallback* ptr) {
+    regAmSessionChgTsfn_ = true;
+    std::string callbackName = "AudioSession";
+    napi_value cbName;
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr, AudioSessionTsfnFinalize,
+        nullptr, SafeJsCallbackAudioSessionWork, &amSessionChgTsfn_);
+}
+
+bool NapiAudioSessionCallback::GetAudioSessionTsfnFlag()
+{
+    return regAmSessionChgTsfn_;
+}
+
+void NapiAudioSessionCallback::SafeJsCallbackAudioSessionWork(napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioSessionJsCallback *event = reinterpret_cast<AudioSessionJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackAudioSession: no memory");
+    std::shared_ptr<AudioSessionJsCallback> safeContext(
+        static_cast<AudioSessionJsCallback*>(data),
+        [](AudioSessionJsCallback *ptr) {
             delete ptr;
-            delete work;
     });
-    CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
-    AudioSessionJsCallback *event = reinterpret_cast<AudioSessionJsCallback *>(work->data);
-    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
+
     std::string request = event->callbackName;
-    CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-    napi_env env = event->callback->env_;
     napi_ref callback = event->callback->cb_;
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-    AUDIO_INFO_LOG("JsCallBack %{public}s, uv_queue_work_with_qos start", request.c_str());
+    AUDIO_INFO_LOG("SafeJsCallbackAudioSessionWork: safe js callback working.");
     do {
-        CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
-
         napi_value jsCallback = nullptr;
         napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
@@ -100,30 +116,23 @@ void NapiAudioSessionCallback::WorkCallbackAudioSessionChangeDone(uv_work_t *wor
     napi_close_handle_scope(env, scope);
 }
 
+void NapiAudioSessionCallback::AudioSessionTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("AudioSessionTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioSessionCallback::OnJsCallbackAudioSession(std::unique_ptr<AudioSessionJsCallback> &jsCb)
 {
-    uv_loop_s *loop = nullptr;
-    napi_get_uv_event_loop(env_, &loop);
-    CHECK_AND_RETURN_LOG(loop != nullptr, "loop is nullptr");
-
-    uv_work_t *work = new(std::nothrow) uv_work_t;
-    CHECK_AND_RETURN_LOG(work != nullptr, "OnJsCallbackDeviceChange: No memory");
-
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackDeviceChange: jsCb.get() is null");
-        delete work;
+        AUDIO_ERR_LOG("NapiAudioSessionCallback: OnJsCallbackAudioSession: jsCb.get() is null");
         return;
     }
 
-    work->data = reinterpret_cast<void *>(jsCb.get());
-    int ret = uv_queue_work_with_qos(loop, work, [] (uv_work_t *work) {}, WorkCallbackAudioSessionChangeDone,
-        uv_qos_default);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("Failed to execute libuv work queue");
-        delete work;
-    } else {
-        jsCb.release();
-    }
+    AudioSessionJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+
+    napi_acquire_threadsafe_function(amSessionChgTsfn_);
+    napi_call_threadsafe_function(amSessionChgTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

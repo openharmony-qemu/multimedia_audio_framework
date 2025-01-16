@@ -32,6 +32,8 @@ public:
     
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent);
     void SaveCallbackReference(napi_value args);
+    void CreateAudioSessionTsfn(napi_env env);
+    bool GetAudioSessionTsfnFlag();
     
 private:
     struct AudioSessionJsCallback {
@@ -42,10 +44,14 @@ private:
 
     void OnJsCallbackAudioSession(std::unique_ptr<AudioSessionJsCallback> &jsCb);
     static void WorkCallbackAudioSessionChangeDone(uv_work_t *work, int status);
+    static void AudioSessionTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackAudioSessionWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::shared_ptr<AutoRef> audioSessionJsCallback_ = nullptr;
     std::mutex mutex_;
     napi_env env_;
+    bool regAmSessionChgTsfn_ = false;
+    napi_threadsafe_function amSessionChgTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
