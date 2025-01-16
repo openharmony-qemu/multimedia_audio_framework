@@ -29,9 +29,11 @@
 #ifdef FEATURE_HITRACE_METER
 #include "hitrace_meter.h"
 #endif
+#include "bundle_mgr_interface.h"
 #include "parameter.h"
 #include "tokenid_kit.h"
 #include "ipc_skeleton.h"
+#include "iservice_registry.h"
 #include "access_token.h"
 #include "accesstoken_kit.h"
 #include "privacy_kit.h"
