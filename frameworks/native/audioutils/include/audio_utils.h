@@ -114,7 +114,7 @@ private:
 class CheckoutSystemAppUtil {
 public:
     static bool CheckoutSystemApp(int32_t uid);
-}
+};
 
 class ClockTime {
 public:
