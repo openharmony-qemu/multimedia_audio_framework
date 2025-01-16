@@ -72,6 +72,7 @@ const int32_t DATA_INDEX_3 = 3;
 const int32_t DATA_INDEX_4 = 4;
 const int32_t DATA_INDEX_5 = 5;
 const int32_t STEREO_CHANNEL_COUNT = 2;
+const int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -195,11 +196,11 @@ bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid) {
     guard.CheckCurrTimeout();
     sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "remoteObject is nullptr");
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExcFwk::IBundleMgr>(remoteObject);
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, false, "bundleMgrProxy is nullptr");
-    WatchTimeout guard("bundleMgrProxy->CheckIsSystemAppByUid:CheckoutSystemApp");
+    WatchTimeout reguard("bundleMgrProxy->CheckIsSystemAppByUid:CheckoutSystemApp");
     isSystemApp = bundleMgrProxy->CheckIsSystemAppByUid(uid);
-    reguard.CheckoCurrTimeout();
+    reguard.CheckCurrTimeout();
     return isSystemApp;
 }
 
