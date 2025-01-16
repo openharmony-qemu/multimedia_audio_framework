@@ -44,7 +44,6 @@ if (!audio_framework_feature_offline_effect) {
     sources = [
       "src/offline_audio_effect_chain_impl.cpp",
       "src/offline_audio_effect_manager.cpp",
-      "src/offline_audio_effect_server_chain.cpp",
     ]
 
     deps = [
@@ -54,12 +53,49 @@ if (!audio_framework_feature_offline_effect) {
 
     external_deps = [
       "c_utils:utils",
-      "drivers_interface_audio:libeffect_proxy_1.0",
       "hilog:libhilog",
       "ipc:ipc_single",
     ]
 
     public_configs = [ ":offline_audio_effect_config" ]
+
+    version_script = "../../../audio_framework.versionscript"
+    innerapi_tags = [ "platformsdk" ]
+
+    part_name = "audio_framework"
+    subsystem_name = "multimedia"
+  }
+
+  audio_ohos_library("offline_audio_effect_service") {
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+    }
+    install_enable = true
+
+    include_dirs = [
+      "include",
+      "../../../interfaces/inner_api/native/audiocommon/include",
+      "../../../interfaces/inner_api/native/audiocommon/include",
+      "../../../services/audio_service/common/include"
+    ]
+
+    sources = [
+      "src/offline_audio_effect_server_chain.cpp",
+    ]
+
+    deps = [
+      "../audioutils:audio_utils",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "drivers_interface_audio:libeffect_proxy_1.0",
+      "hilog:libhilog",
+      "ipc:ipc_single",
+    ]
 
     version_script = "../../../audio_framework.versionscript"
     innerapi_tags = [ "platformsdk" ]

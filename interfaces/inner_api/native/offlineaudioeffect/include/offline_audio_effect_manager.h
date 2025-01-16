@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "audio_info.h"
-#include "offline_stream_in_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
