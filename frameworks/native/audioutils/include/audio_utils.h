@@ -111,6 +111,11 @@ private:
     bool isCanceled_;
 };
 
+class CheckoutSystemAppUtil {
+public:
+    static bool CheckoutSystemApp(int32_t uid);
+};
+
 class ClockTime {
 public:
     static int64_t GetCurNano();
