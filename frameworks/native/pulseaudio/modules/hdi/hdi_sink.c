@@ -2180,7 +2180,7 @@ uint32_t GetFrameSize(const char *sinkSceneType, size_t sinkLengthDefault, int32
         uint32_t sinkLength = byteSize > 0 ? ((uint32_t)sinkByteLength / byteSize) : 0;
         return sinkLength;
     } else {
-        uint32_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
+        uint32_t effectFrameSize = (uint32_t)EFFECT_FRAME_LENGTH_MONO * (uint32_t)processChannels;
         return effectFrameSize;
     }
 }
