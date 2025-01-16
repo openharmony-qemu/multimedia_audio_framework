@@ -28,8 +28,8 @@ namespace AudioStandard {
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS = 20000000; // 20ms
 constexpr int32_t AUDIO_US_PER_MS = 1000;
-constexpr int32_t AUDIO_DEFAULT_LATENCY = 160000;
-constexpr int32_t AUDIO_FRAME_WORK_LATENCY = 40000;
+constexpr int32_t AUDIO_DEFAULT_LATENCY_US = 160000;
+constexpr int32_t AUDIO_FRAME_WORK_LATENCY_US = 40000;
 constexpr int32_t FADING_MS = 20; // 20ms
 constexpr int32_t MAX_ERROR_COUNT = 50;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
@@ -469,10 +469,10 @@ uint64_t NoneMixEngine::GetLatency() noexcept
     }
     uint32_t latency = 0;
     if (renderSink_->GetLatency(&latency) == 0) {
-        latency_ = latency * AUDIO_US_PER_MS + AUDIO_FRAME_WORK_LATENCY;
+        latency_ = latency * AUDIO_US_PER_MS + AUDIO_FRAME_WORK_LATENCY_US;
     } else {
         AUDIO_INFO_LOG("get latency failed,use default");
-        latency_ = AUDIO_DEFAULT_LATENCY;
+        latency_ = AUDIO_DEFAULT_LATENCY_US;
     }
     AUDIO_INFO_LOG("latency value:%{public}" PRId64 " ns", latency_);
     return latency_;
