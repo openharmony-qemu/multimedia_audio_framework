@@ -25,7 +25,6 @@
 #include "audio_stream_info.h"
 #include "bundle_mgr_interface.h"
 #include "media_monitor_manager.h"
-#include "ipc_skeleton.h"
 #include "iservice_registry.h"
 
 namespace OHOS {
