@@ -471,6 +471,7 @@ uint64_t NoneMixEngine::GetLatency() noexcept
     if (renderSink_->GetLatency(&latency) == 0) {
         latency_ = latency * AUDIO_US_PER_MS + AUDIO_FRAME_WORK_LATENCY;
     } else {
+        AUDIO_INFO_LOG("get latency failed,use default");
         latency_ = AUDIO_DEFAULT_LATENCY;
     }
     AUDIO_INFO_LOG("latency value:%{public}" PRId64 " ns", latency_);
