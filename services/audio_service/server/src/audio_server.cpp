@@ -2110,7 +2110,7 @@ int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effec
 int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(uid != MCU_UID, ERROR, "uid is %{public}d, not mcu uid", uid);
+    CHECK_AND_RETURN_RET_LOG(uid == MCU_UID, ERROR, "uid is %{public}d, not mcu uid", uid);
     sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
     return SUCCESS;
 }
