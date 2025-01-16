@@ -895,6 +895,8 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
             (changeInfo->rendererInfo).streamUsage);
         if (rendererVolumeType == volumeType) {
             // An active stream has been found, return true directly.
+            AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
+                changeInfo->clientUID, changeInfo->sessionId);
             return true;
         }
     }
