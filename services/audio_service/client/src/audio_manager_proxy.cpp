@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +31,9 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t MAX_OFFLINE_EFFECT_CHAIN_NUM = 10;
+#ifndef HAS_FEATURE_INNERCAPTURER
+constexpr int32_t ERROR = -1;
+#endif
 }
 AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioService>(impl)
@@ -794,6 +797,7 @@ void AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sin
 
 bool AudioManagerProxy::CreatePlaybackCapturerManager()
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t error;
     MessageParcel data;
     MessageParcel reply;
@@ -807,10 +811,14 @@ bool AudioManagerProxy::CreatePlaybackCapturerManager()
         "CreatePlaybackCapturerManager failed, error: %{public}d", error);
 
     return reply.ReadBool();
+#else
+    return false;
+#endif
 }
 
 int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t error;
     MessageParcel data;
     MessageParcel reply;
@@ -831,10 +839,14 @@ int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
         "SetSupportStreamUsage failed, error: %{public}d", error);
 
     return reply.ReadInt32();
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t error;
     MessageParcel data;
     MessageParcel reply;
@@ -849,6 +861,9 @@ int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
         "SetCaptureSilentState failed, error: %{public}d", error);
     return reply.ReadInt32();
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioManagerProxy::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)

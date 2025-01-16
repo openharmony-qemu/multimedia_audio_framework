@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,6 +28,9 @@
 #include "audio_capturer_source.h"
 #include "audio_volume.h"
 #include "audio_performance_monitor.h"
+#ifdef HAS_FEATURE_INNERCAPTURER
+#include "playback_capturer_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -146,11 +149,12 @@ int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoin
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
     Trace trace("AudioService::GetIpcStream");
-    if (innerCapturerMgr_ == nullptr) {
-        innerCapturerMgr_ = PlaybackCapturerManager::GetInstance(); // As mgr is a singleton, lock is needless here.
-        innerCapturerMgr_->RegisterCapturerFilterListener(this);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    if (!isRegisterCapturerFilterListened_) {
+        PlaybackCapturerManager::GetInstance()->RegisterCapturerFilterListener(this);
+        isRegisterCapturerFilterListened_ = true;
     }
-
+#endif
     // in plan: GetDeviceInfoForProcess(config) and stream limit check
     // in plan: call GetProcessDeviceInfo to load inner-cap-sink
     sptr<IpcStreamInServer> ipcStreamInServer = IpcStreamInServer::Create(config, ret);
@@ -161,7 +165,9 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
         std::shared_ptr<RendererInServer> renderer = ipcStreamInServer->GetRenderer();
         if (renderer != nullptr && renderer->GetSessionId(sessionId) == SUCCESS) {
             InsertRenderer(sessionId, renderer); // for all renderers
+#ifdef HAS_FEATURE_INNERCAPTURER
             CheckInnerCapForRenderer(sessionId, renderer);
+#endif
             CheckRenderSessionMuteState(sessionId, renderer);
         }
     }
@@ -273,6 +279,7 @@ void AudioService::RemoveCapturer(uint32_t sessionId)
     RemoveIdFromMuteControlSet(sessionId);
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     CHECK_AND_RETURN_LOG(renderer != nullptr, "renderer is null.");
@@ -342,6 +349,7 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
         rendererConfig.rendererInfo.streamUsage, res ? "true" : "false");
     return res;
 }
+#endif
 
 bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
 {
@@ -375,6 +383,7 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     return false;
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 void AudioService::FilterAllFastProcess()
 {
     std::unique_lock<std::mutex> lock(processListMutex_);
@@ -445,6 +454,7 @@ int32_t AudioService::OnUpdateInnerCapList()
     // EnableInnerCap will be called twice as it's already in filteredRendererMap_.
     return OnInitInnerCapList();
 }
+#endif
 
 int32_t AudioService::EnableDualToneList(uint32_t sessionId)
 {
@@ -484,6 +494,7 @@ int32_t AudioService::DisableDualToneList(uint32_t sessionId)
 // Only one session is working at the same time.
 int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     Trace trace("AudioService::OnCapturerFilterChange");
     // in plan:
     // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
@@ -501,11 +512,13 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
     }
 
     AUDIO_WARNING_LOG("%{public}u is working, comming %{public}u will not work!", workingInnerCapId_, sessionId);
+#endif
     return ERR_OPERATION_FAILED;
 }
 
 int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     if (workingInnerCapId_ != sessionId) {
         AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", workingInnerCapId_, sessionId);
         return SUCCESS;
@@ -539,7 +552,7 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
 
         filteredRendererMap_.clear();
     }
-
+#endif
     return SUCCESS;
 }
 
@@ -591,8 +604,9 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     ret = LinkProcessToEndpoint(process, audioEndpoint);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "LinkProcessToEndpoint failed");
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
-
+#ifdef HAS_FEATURE_INNERCAPTURER
     CheckInnerCapForProcess(process, audioEndpoint);
+#endif
     return process;
 }
 
@@ -610,7 +624,7 @@ void AudioService::ResetAudioEndpoint()
             audioEndpointNames.push_back(paired->second->GetEndpointName());
         }
     }
-    
+
     // release old endpoint
     for (auto &endpointName : audioEndpointNames) {
         if (endpointList_.count(endpointName) > 0) {
@@ -650,7 +664,9 @@ void AudioService::ReLinkProcessToEndpoint()
             // reset shared_ptr before to new
             paired->second.reset();
             paired->second = audioEndpoint;
+#ifdef HAS_FEATURE_INNERCAPTURER
             CheckInnerCapForProcess(paired->first, audioEndpoint);
+#endif
         }
     }
 
@@ -659,6 +675,7 @@ void AudioService::ReLinkProcessToEndpoint()
     }
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint)
 {
     Trace trace("AudioService::CheckInnerCapForProcess:" + std::to_string(process->processConfig_.appInfo.appPid));
@@ -674,6 +691,7 @@ void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, s
         process->SetInnerCapState(false);
     }
 }
+#endif
 
 int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {

@@ -33,7 +33,8 @@
           "audio_framework_feature_hitrace_enable",
           "audio_framework_feature_offline_effect",
           "audio_framework_feature_distributed_audio",
-          "audio_framework_feature_file_io"
+          "audio_framework_feature_file_io",
+          "audio_framework_feature_inner_capturer"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",

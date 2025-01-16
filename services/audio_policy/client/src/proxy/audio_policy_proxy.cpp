@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1325,6 +1325,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
 
 int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -1343,10 +1344,14 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCapt
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SetPlaybackCapturerFilterInfos failed, error: %d", error);
     return reply.ReadInt32();
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyProxy::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -1364,6 +1369,9 @@ int32_t AudioPolicyProxy::SetCaptureSilentState(bool state)
         return ERROR;
     }
     return reply.ReadInt32();
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyProxy::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)

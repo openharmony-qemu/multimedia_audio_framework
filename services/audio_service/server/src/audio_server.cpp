@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -52,7 +52,9 @@
 #include "audio_renderer_sink.h"
 #include "fast_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
+#ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
+#endif
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
 #include "offline_stream_in_server.h"
@@ -109,6 +111,11 @@ static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
 };
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;
+enum PermissionStatus {
+    PERMISSION_GRANTED = 0,
+    PERMISSION_DENIED = 1,
+    PERMISSION_UNKNOWN = 2,
+};
 
 const std::set<int32_t> RECORD_PASS_APPINFO_LIST = {
     UID_MEDIA_SA
@@ -1677,6 +1684,34 @@ bool AudioServer::CheckPlaybackPermission(const AudioProcessConfig &config)
     return true;
 }
 
+int32_t AudioServer::CheckInnerRecorderPermission(const AudioProcessConfig &config)
+{
+    SourceType sourceType = config.capturerInfo.sourceType;
+    if (sourceType != SOURCE_TYPE_REMOTE_CAST && sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        return PERMISSION_UNKNOWN;
+    }
+#ifdef HAS_FEATURE_INNERCAPTURER
+    Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
+    if (sourceType == SOURCE_TYPE_REMOTE_CAST) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, PERMISSION_DENIED,
+            "Create source remote cast failed: no system permission.");
+
+        bool hasCastAudioOutputPermission = VerifyClientPermission(CAST_AUDIO_OUTPUT_PERMISSION, tokenId);
+        CHECK_AND_RETURN_RET_LOG(hasCastAudioOutputPermission, PERMISSION_DENIED, "No cast audio output permission");
+        return PERMISSION_GRANTED;
+    }
+
+    if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && config.innerCapMode == MODERN_INNER_CAP) {
+        AUDIO_INFO_LOG("modern inner-cap source, no need to check.");
+        return PERMISSION_GRANTED;
+    }
+    return PERMISSION_UNKNOWN;
+#else
+    return PERMISSION_DENIED;
+#endif
+}
+
 bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
@@ -1701,19 +1736,12 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         return res;
     }
 
-    if (sourceType == SOURCE_TYPE_REMOTE_CAST) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false,
-            "Create source remote cast failed: no system permission.");
-
-        bool hasCastAudioOutputPermission = VerifyClientPermission(CAST_AUDIO_OUTPUT_PERMISSION, tokenId);
-        CHECK_AND_RETURN_RET_LOG(hasCastAudioOutputPermission, false, "No cast audio output permission");
+    int32_t permission = CheckInnerRecorderPermission(config);
+    AUDIO_INFO_LOG("CheckInnerRecorderPermission return %{public}d", permission);
+    if (permission == PERMISSION_GRANTED) {
         return true;
-    }
-
-    if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && config.innerCapMode == MODERN_INNER_CAP) {
-        AUDIO_INFO_LOG("modern inner-cap source, no need to check.");
-        return true;
+    } else if (permission == PERMISSION_DENIED) {
+        return false;
     }
 
     // All record streams should be checked for MICROPHONE_PERMISSION
@@ -1780,6 +1808,7 @@ void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
 
 bool AudioServer::CreatePlaybackCapturerManager()
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("not audio calling!");
         return false;
@@ -1788,10 +1817,14 @@ bool AudioServer::CreatePlaybackCapturerManager()
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
     playbackCapturerMgr->SetSupportStreamUsage(usage);
     return true;
+#else
+    return false;
+#endif
 }
 
 int32_t AudioServer::SetSupportStreamUsage(std::vector<int32_t> usage)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     AUDIO_INFO_LOG("SetSupportStreamUsage with usage num:%{public}zu", usage.size());
 
     if (!PermissionUtil::VerifyIsAudio()) {
@@ -1801,6 +1834,9 @@ int32_t AudioServer::SetSupportStreamUsage(std::vector<int32_t> usage)
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
     playbackCapturerMgr->SetSupportStreamUsage(usage);
     return SUCCESS;
+#else
+    return ERROR;
+#endif
 }
 
 void AudioServer::RegisterAudioCapturerSourceCallback()
@@ -1869,6 +1905,7 @@ void AudioServer::RegisterAudioRendererSinkCallback()
 
 int32_t AudioServer::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("not audio calling!");
         return ERR_OPERATION_FAILED;
@@ -1877,6 +1914,9 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
     playbackCapturerMgr->SetCaptureSilentState(state);
     return SUCCESS;
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)

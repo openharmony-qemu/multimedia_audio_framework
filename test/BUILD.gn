@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -64,7 +64,6 @@ group("audio_unit_test") {
     "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_routing_manager_test:audio_oh_routing_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
-    "../frameworks/native/playbackcapturer/test/unittest:playback_capturer_manager_unit_test",
     "../frameworks/native/toneplayer/test/unittest:audio_toneplayer_unit_test",
     "../services/audio_policy/test:audio_policy_unittest_packages",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
@@ -106,6 +105,10 @@ group("audio_unit_test") {
       "../services/audio_service/test/unittest:none_mix_engine_unit_test",
       "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test",
     ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    deps += [ "../frameworks/native/playbackcapturer/test/unittest:playback_capturer_manager_unit_test" ]
   }
 }
 

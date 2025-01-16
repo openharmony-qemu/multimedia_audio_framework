@@ -29,6 +29,7 @@ declare_args() {
   audio_telephony_core_service_enable = true
   audio_telephony_cellular_data_enable = true
   audio_framework_feature_file_io = true
+  audio_framework_feature_inner_capturer = true
 
   if (!defined(global_parts_info) ||
       defined(global_parts_info.hdf_drivers_interface_distributed_audio)) {

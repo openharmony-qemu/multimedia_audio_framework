@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,7 +35,9 @@ std::unique_ptr<AudioManagerProxy> audioManagerProxy;
 std::shared_ptr<AudioProcessInClient> processClient_;
 const int32_t TEST_RET_NUM = 0;
 const int32_t RENDERER_FLAGS = 0;
+#ifdef HAS_FEATURE_INNERCAPTURER
 const int32_t MEDIA_SERVICE_UID = 1013;
+#endif
 constexpr int32_t ERROR_62980101 = -62980101;
 
 class AudioServiceUnitTest : public testing::Test {
@@ -321,6 +323,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceUpdateMuteControlSet_001, TestSize.Leve
     AudioService::GetInstance()->RemoveIdFromMuteControlSet(MAX_STREAMID - 1);
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 /**
  * @tc.name  : Test ShouldBeInnerCap API
  * @tc.type  : FUNC
@@ -944,6 +947,7 @@ HWTEST(AudioServiceUnitTest, ShouldBeInnerCap_001, TestSize.Level1)
     ret = audioService->ShouldBeInnerCap(config);
     EXPECT_FALSE(ret);
 }
+#endif
 
 /**
  * @tc.name  : Test DelayCallReleaseEndpoint API
@@ -962,7 +966,7 @@ HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_002, TestSize.Level1)
 
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     audioService->SetIncMaxRendererStreamCnt(audioMode);
-    
+
     audioService->currentRendererStreamCnt_ = 0;
     int32_t res = audioService->GetCurrentRendererStreamCnt();
     EXPECT_EQ(res, 0);

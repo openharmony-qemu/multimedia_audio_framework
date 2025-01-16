@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -331,12 +331,16 @@ void AudioServerProxy::ResetRouteForDisconnectProxy(DeviceType type)
 
 bool AudioServerProxy::CreatePlaybackCapturerManagerProxy()
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool ret = gsp->CreatePlaybackCapturerManager();
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
+#else
+    return false;
+#endif
 }
 
 bool AudioServerProxy::LoadAudioEffectLibrariesProxy(const std::vector<Library> libraries,
@@ -450,22 +454,30 @@ void AudioServerProxy::SetAudioBalanceValueProxy(float audioBalance)
 
 int32_t AudioServerProxy::SetSupportStreamUsageProxy(std::vector<int32_t> usage)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t ret = gsp->SetSupportStreamUsage(usage);
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioServerProxy::SetCaptureSilentStateProxy(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t res = gsp->SetCaptureSilentState(state);
     IPCSkeleton::SetCallingIdentity(identity);
     return res;
+#else
+    return ERROR;
+#endif
 }
 
 }

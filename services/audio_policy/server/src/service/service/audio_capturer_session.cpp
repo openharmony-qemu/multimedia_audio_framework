@@ -76,6 +76,7 @@ void AudioCapturerSession::SetConfigParserFlag()
 
 void AudioCapturerSession::LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     AUDIO_INFO_LOG("Start");
     uint32_t bufferSize = streamInfo.samplingRate *
         AudioPolicyUtils::GetInstance().PcmFormatToBytes(streamInfo.format) *
@@ -91,15 +92,19 @@ void AudioCapturerSession::LoadInnerCapturerSink(std::string moduleName, AudioSt
     moduleInfo.bufferSize = std::to_string(bufferSize);
 
     audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+#endif
 }
 
 void AudioCapturerSession::UnloadInnerCapturerSink(std::string moduleName)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+#endif
 }
 
 void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     AudioDeviceDescriptor updatedDesc = AudioDeviceDescriptor(DEVICE_TYPE_REMOTE_CAST,
         AudioPolicyUtils::GetInstance().GetDeviceRole(DEVICE_TYPE_REMOTE_CAST));
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
@@ -122,6 +127,7 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
+#endif
 }
 
 int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,

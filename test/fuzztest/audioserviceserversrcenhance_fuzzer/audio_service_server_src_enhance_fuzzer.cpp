@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -115,13 +115,14 @@ void AudioServiceMoreFuzzTest()
     int32_t ret = GetData<int32_t>();
     audioServicePtr->workingInnerCapId_ = GetData<uint32_t>();
     audioServicePtr->GetIpcStream(config, ret);
+#ifdef HAS_FEATURE_INNERCAPTURER
     audioServicePtr->ShouldBeInnerCap(config);
     audioServicePtr->ShouldBeDualTone(config);
 
     audioServicePtr->OnInitInnerCapList();
     audioServicePtr->OnUpdateInnerCapList();
     audioServicePtr->ResetAudioEndpoint();
-
+#endif
     uint32_t sourceTypeInt = GetData<uint32_t>();
     sourceTypeInt = (sourceTypeInt % SOURCETYPE_ENUM_NUM) - NUM;
     SourceType sourceType = static_cast<SourceType>(sourceTypeInt);
@@ -144,9 +145,10 @@ void AudioCapturerInServerMoreFuzzTest()
 
     size_t length = COMMON_LENGTH_NUM;
     capturerInServer->ReadData(length);
-
+#ifdef HAS_FEATURE_INNERCAPTURER
     AudioPlaybackCaptureConfig captureconfig;
     capturerInServer->UpdatePlaybackCaptureConfig(captureconfig);
+#endif
     capturerInServer->SetNonInterruptMute(true);
     capturerInServer->RestoreSession();
 }
