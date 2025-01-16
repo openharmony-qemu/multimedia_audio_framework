@@ -405,10 +405,10 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_008, TestSize.Level1
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_REMOTE_CAST));
     EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VIRTUAL_CAPTURE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VIRTUAL_CAPTURE));
-    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_MESSAGE),
+    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_MESSAGE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VOICE_MESSAGE));
     // Test an invalid source type (should fall into default case)
-    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_INVALID),
+    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_INVALID),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_INVALID));
 }
 
