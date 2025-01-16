@@ -185,6 +185,22 @@ void WatchTimeout::CheckCurrTimeout()
     isChecked_ = true;
 }
 
+bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid) {
+    bool isSystemApp = false;
+    WatchTimeout guard("SystemAbilityManagerClient::Getinstance().GetSystemAbilityManager():CheckoutSystemApp");
+    auto systemAbilityManager = SystemAbilityManagerClient::Getinstance().GetSystemAbilityManager();
+    CHECKOUT_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, false, "systemAbilityManager is nullptr");
+    guard.CheckCurrTimeout();
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECKOUT_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "remoteObject is nullptr");
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExcFwk::IBundleMgr>(remoteObject);
+    CHECKOUT_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, false, "bundleMgrProxy is nullptr");
+    WatchTimeout guard("bundleMgrProxy->CheckIsSystemAppByUid:CheckoutSystemApp");
+    isSystemApp = bundleMgrProxy->CheckIsSystemAppByUid(uid);
+    reguard.CheckoCurrTimeout();
+    return isSystemApp;
+}
+
 int64_t ClockTime::GetCurNano()
 {
     int64_t result = -1; // -1 for bad result.
