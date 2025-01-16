@@ -78,7 +78,6 @@ if (!audio_framework_feature_offline_effect) {
     include_dirs = [
       "include",
       "../../../interfaces/inner_api/native/audiocommon/include",
-      "../../../interfaces/inner_api/native/audiocommon/include",
       "../../../services/audio_service/common/include"
     ]
 
