@@ -35,6 +35,8 @@ public:
     void RemoveRenderer(const std::shared_ptr<IRendererStream> &stream) override;
     bool IsPlaybackEngineRunning() const noexcept override;
 
+    uint64_t GetLatency() noexcept override;
+
 protected:
     void MixStreams() override;
 
@@ -60,6 +62,7 @@ private:
     std::atomic<uint32_t> failedCount_;
     uint64_t writeCount_;
     uint64_t fwkSyncTime_;
+    uint64_t latency_;
     std::shared_ptr<IRendererStream> stream_;
 
     std::mutex startMutex;

@@ -361,6 +361,9 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_012, TestSize.Level1
     shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
     ASSERT_TRUE(audioStreamManager != nullptr);
 
+    uint64_t latency = audioStreamManager->GetLatency();
+    EXPECT_EQ(latency, 0);
+
     AudioProcessConfig config;
     config.appInfo.appUid = CAPTURER_FLAG;
     config.appInfo.appPid = CAPTURER_FLAG;

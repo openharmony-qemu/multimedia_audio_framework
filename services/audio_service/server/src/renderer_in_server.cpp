@@ -986,6 +986,10 @@ int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timesta
 int32_t RendererInServer::GetLatency(uint64_t &latency)
 {
     std::unique_lock<std::mutex> lock(statusLock_);
+    if (managerType_ == DIRECT_PLAYBACK) {
+        latency = IStreamManager::GetPlaybackManager(managerType_).GetLatency();
+        return SUCCESS;
+    }
     return stream_->GetLatency(latency);
 }
 

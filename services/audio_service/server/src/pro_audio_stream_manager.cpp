@@ -214,5 +214,11 @@ int32_t ProAudioStreamManager::AddUnprocessStream(int32_t appUid)
     return SUCCESS;
 }
 
+uint64_t ProAudioStreamManager::GetLatency() noexcept
+{
+    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, 0, "engine not init");
+    return playbackEngine_->GetLatency();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
