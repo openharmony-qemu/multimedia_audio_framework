@@ -190,7 +190,7 @@ void WatchTimeout::CheckCurrTimeout()
 bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid) {
     bool isSystemApp = false;
     WatchTimeout guard("SystemAbilityManagerClient::Getinstance().GetSystemAbilityManager():CheckoutSystemApp");
-    auto systemAbilityManager = SystemAbilityManagerClient::Getinstance().GetSystemAbilityManager();
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECKOUT_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, false, "systemAbilityManager is nullptr");
     guard.CheckCurrTimeout();
     sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
