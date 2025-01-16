@@ -311,7 +311,7 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
     }
 }
 
-static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool mchFlag)
+static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool mchFlag, pa_sink *si)
 {
     uint32_t processChannels = DEFAULT_NUM_CHANNEL;
     uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
@@ -320,30 +320,33 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
         processChannels = u->multiChannel.sinkChannel;
         processChannelLayout = u->multiChannel.sinkChannelLayout;
     } else {
-        if (pa_safe_streq(sceneType, "EFFECT_NONE")) {
-            return;
-        }
         EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
     }
-    pa_resampler *r;
-    pa_sample_spec outSampleSpec = {
-        .channels = processChannels,
-        .rate = EFFECT_PROCESS_RATE,
-        .format = sinkIn->thread_info.resampler->o_ss.format
-    };
+
+    pa_sample_spec outSampleSpec;
     pa_channel_map outChannelMap;
-    ConvertChLayoutToPaChMap(processChannelLayout, &outChannelMap);
-    outChannelMap.channels = processChannels;
+    if (pa_safe_streq(sceneType, "EFFECT_NONE")) {
+        outSampleSpec = si->sample_spec;
+        outChannelMap = si->channel_map;
+    } else {
+        outSampleSpec.channels = processChannels;
+        outSampleSpec.rate = EFFECT_PROCESS_RATE;
+        outSampleSpec.format = sinkIn->thread_info.resampler->o_ss.format;
+        ConvertChLayoutToPaChMap(processChannelLayout, &outChannelMap);
+        outChannelMap.channels = processChannels;
+    }
+
     if (pa_sample_spec_equal(&sinkIn->thread_info.resampler->o_ss, &outSampleSpec) &&
         pa_channel_map_equal(&sinkIn->thread_info.resampler->o_cm, &outChannelMap)) {
-            return;
-        }
-    AUDIO_INFO_LOG("Update Resampler before effectchain: input sample rate [%{public}d], channels [%{public}d], "
-        "format [%{public}d]; output rate [%{public}d], channels [%{public}d], format [%{public}d]",
-        sinkIn->thread_info.resampler->i_ss.rate, sinkIn->thread_info.resampler->i_ss.channels,
-        sinkIn->thread_info.resampler->i_ss.format, outSampleSpec.rate, outSampleSpec.channels,
-        outSampleSpec.format);
-    r = pa_resampler_new(
+        return;
+    }
+    AUDIO_INFO_LOG("Update Resampler before effectchain: sceneType [%{public}s], sink name [%{public}s], "
+        "input sample rate [%{public}d], channels [%{public}d], format [%{public}d]; "
+        "output rate [%{public}d], channels [%{public}d], format [%{public}d]",
+        sceneType, si->name, sinkIn->thread_info.resampler->i_ss.rate, sinkIn->thread_info.resampler->i_ss.channels,
+        sinkIn->thread_info.resampler->i_ss.format, outSampleSpec.rate, outSampleSpec.channels, outSampleSpec.format);
+
+    pa_resampler *r = pa_resampler_new(
         sinkIn->thread_info.resampler->mempool,
         &sinkIn->thread_info.resampler->i_ss,
         &sinkIn->thread_info.resampler->i_cm,
@@ -1340,7 +1343,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             RecordEffectChainStatus(existFlag, sSceneType, sSceneMode);
             pa_sink_input_assert_ref(sinkIn);
-            updateResampler(sinkIn, sceneType, false);
+            updateResampler(sinkIn, sceneType, false, si);
 
             AUTO_CTRACE("hdi_sink::PrimaryCluster:%u len:%zu", sinkIn->index, *length);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
@@ -1464,7 +1467,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
         if (!existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             pa_sink_input_assert_ref(sinkIn);
-            updateResampler(sinkIn, NULL, true);
+            updateResampler(sinkIn, NULL, true, si);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
             if (mixlength == 0 || infoIn->chunk.length < mixlength) {mixlength = infoIn->chunk.length;}
@@ -2177,7 +2180,7 @@ uint32_t GetFrameSize(const char *sinkSceneType, size_t sinkLengthDefault, int32
         uint32_t sinkLength = byteSize > 0 ? ((uint32_t)sinkByteLength / byteSize) : 0;
         return sinkLength;
     } else {
-        size_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
+        uint32_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
         return effectFrameSize;
     }
 }
