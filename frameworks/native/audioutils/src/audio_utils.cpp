@@ -188,9 +188,10 @@ void WatchTimeout::CheckCurrTimeout()
     isChecked_ = true;
 }
 
-bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid) {
+bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid)
+{
     bool isSystemApp = false;
-    WatchTimeout guard("SystemAbilityManagerClient::Getinstance().GetSystemAbilityManager():CheckoutSystemApp");
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():CheckoutSystemApp");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, false, "systemAbilityManager is nullptr");
     guard.CheckCurrTimeout();
