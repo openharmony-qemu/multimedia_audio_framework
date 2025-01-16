@@ -922,6 +922,22 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
         if (uid != 0 && (iter->first).uid != uid) {
             continue;
         }
+        if ((iter->first).audioFocusType.streamType == STREAM_VOICE_ASSISTANT) {
+            WatchTimeout guard("SystemAbilityManagerClient::Getinstance().GetSystemAbilityManager():GetStreamInFocusInternal");
+            auto systemAbilityManager = SystemAbilityManagerClient::Getinstance().GetSystemAbilityManager();
+            CHECKOUT_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, STREAM_DEFAULT, "systemAbilityManager is nullptr");
+            guard.CheckCurrTimeout();
+            sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+            CHECKOUT_AND_RETURN_RET_LOG(remoteObject != nullptr, STREAM_DEFAULT, "remoteObject is nullptr");
+            sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExcFwk::IBundleMgr>(remoteObject);
+            CHECKOUT_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, STREAM_DEFAULT, "bundleMgrProxy is nullptr");
+            WatchTimeout guard("bundleMgrProxy->CheckIsSystemAppByUid:GetStreamInFocusInternal");
+            bool isSystemApp = bundleMgrProxy->CheckIsSystemAppByUid((iter->first).uid);
+            reguard.CheckoCurrTimeout();
+            if (!isSystemApp) {
+                (iter->first).audioFocusType.streamType = STREAM_MUSIC;
+            }
+        }
         int32_t curPriority = GetStreamTypePriority((iter->first).audioFocusType.streamType);
         if (curPriority < focusPriority) {
             focusPriority = curPriority;
