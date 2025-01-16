@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -2534,6 +2534,7 @@ int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supported
 int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
     uint32_t appTokenId)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     for (auto &usg : config.filterOptions.usages) {
         if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
             continue;
@@ -2545,16 +2546,23 @@ int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCap
         }
     }
     return audioPolicyService_.SetPlaybackCapturerFilterInfos(config);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyServer::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_CAST_ENGINE_SA) {
         AUDIO_ERR_LOG("SetCaptureSilentState callerUid is Error: not cast_engine");
         return ERROR;
     }
     return audioPolicyService_.SetCaptureSilentState(state);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)

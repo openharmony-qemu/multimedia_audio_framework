@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -843,8 +843,10 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 #endif
         audioEffectService_.SetMasterSinkAvailable();
     }
+#ifdef HAS_FEATURE_INNERCAPTURER
     // load inner-cap-sink
     LoadModernInnerCapSink();
+#endif
     // RegisterBluetoothListener() will be called when bluetooth_host is online
     // load hdi-effect-model
     LoadHdiEffectModel();
@@ -872,6 +874,7 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 void AudioPolicyService::LoadModernInnerCapSink()
 {
     AUDIO_INFO_LOG("Start");
@@ -886,6 +889,7 @@ void AudioPolicyService::LoadModernInnerCapSink()
 
     audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 }
+#endif
 
 void AudioPolicyService::LoadEffectLibrary()
 {
@@ -1493,6 +1497,7 @@ void AudioPolicyService::RegisterDataObserver()
 
 int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t ret = AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(config.silentCapture);
     CHECK_AND_RETURN_RET_LOG(!ret, ERR_OPERATION_FAILED, "SetCaptureSilentState failed");
 
@@ -1505,11 +1510,18 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
     }
 
     return AudioServerProxy::GetInstance().SetSupportStreamUsageProxy(targetUsages);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyService::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     return AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(state);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
