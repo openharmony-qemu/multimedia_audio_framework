@@ -97,7 +97,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
             sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExcFwk::IBundleMgr>(remoteObject);
             CHECKOUT_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, 0.0f, "bundleMgrProxy is nullptr");
             WatchTimeout guard("bundleMgrProxy->CheckIsSystemAppByUid:GetVolume");
-            bool isSystemApp = bundleMgrProxy->CheckIsSystemAppByUid(it->second.GetAppUid);
+            bool isSystemApp = bundleMgrProxy->CheckIsSystemAppByUid(it->second.GetAppUid());
             reguard.CheckoCurrTimeout();
             if (!isSystemApp) {
                 volumeType = STREAM_MUSIC;
