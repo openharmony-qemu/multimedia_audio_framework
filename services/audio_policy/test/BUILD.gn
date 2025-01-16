@@ -127,10 +127,6 @@ ohos_unittest("audio_interrupt_service_unit_test") {
 
   defines = []
 
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
-  }
-
   if (build_variant == "user") {
     defines += [ "AUDIO_BUILD_VARIANT_USER" ]
   } else if (build_variant == "root") {
@@ -294,10 +290,6 @@ ohos_unittest("audio_policy_service_all_unit_test") {
 
   defines = []
 
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
-  }
-
   if (build_variant == "user") {
     defines += [ "AUDIO_BUILD_VARIANT_USER" ]
   } else if (build_variant == "root") {
@@ -460,12 +452,6 @@ ohos_unittest("audio_pnp_server_unit_test") {
   ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
-
-  defines = []
-
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
-  }
 }
 
 ohos_unittest("audio_socket_thread_unit_test") {
@@ -528,8 +514,11 @@ ohos_unittest("audio_socket_thread_unit_test") {
     "samgr:samgr_proxy",
   ]
 
-  sources =
-      [ "./unittest/audio_socket_thread_test/src/audio_socket_thread_test.cpp" ]
+  if (audio_framework_feature_wired_audio) {
+    sources = [
+      "./unittest/audio_socket_thread_test/src/audio_socket_thread_test.cpp",
+    ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
@@ -987,10 +976,6 @@ ohos_unittest("stream_filter_router_unit_test") {
   if (audio_framework_feature_device_manager) {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
-  }
-
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
   }
 }
 

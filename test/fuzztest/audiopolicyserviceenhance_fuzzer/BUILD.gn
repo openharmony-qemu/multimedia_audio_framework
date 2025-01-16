@@ -122,10 +122,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     external_deps += [ "usb_manager:usbsrv_client" ]
   }
 
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
-  }
-
   if (build_variant == "user") {
     defines += [ "AUDIO_BUILD_VARIANT_USER" ]
   } else if (build_variant == "root") {

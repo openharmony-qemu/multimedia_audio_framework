@@ -180,12 +180,14 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener()
         "[DeviceStatusListener]: Register service status listener failed");
     AUDIO_INFO_LOG("Register service status listener finished");
 
+#ifdef AUDIO_WIRED_DETECT
     audioPnpServer_ = &AudioPnpServer::GetAudioPnpServer();
     pnpDeviceCB_ = std::make_shared<AudioPnpStatusCallback>();
     pnpDeviceCB_->SetDeviceStatusListener(this);
     int32_t cbstatus = audioPnpServer_->RegisterPnpStatusListener(pnpDeviceCB_);
     CHECK_AND_RETURN_RET_LOG(cbstatus == SUCCESS, ERR_OPERATION_FAILED,
         "[DeviceStatusListener]: Register Pnp Status Listener failed");
+#endif
     AUDIO_INFO_LOG("Done");
     return SUCCESS;
 }
@@ -202,6 +204,7 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
     hdiServiceManager_ = nullptr;
     listener_ = nullptr;
 
+#ifdef AUDIO_WIRED_DETECT
     int32_t cbstatus = audioPnpServer_->UnRegisterPnpStatusListener();
     if (cbstatus != SUCCESS) {
         AUDIO_ERR_LOG("[DeviceStatusListener]: UnRegister Pnp Status Listener failed");
@@ -209,9 +212,11 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
     }
     audioPnpServer_ = nullptr;
     pnpDeviceCB_ = nullptr;
+#endif
     return SUCCESS;
 }
 
+#ifdef AUDIO_WIRED_DETECT
 void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
 {
     CHECK_AND_RETURN_LOG(!info.empty(), "OnPnpDeviceStatusChange invalid info");
@@ -264,6 +269,7 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
         desc.deviceType_, isConnected, desc.deviceName_.c_str());
     deviceObserver_.OnPnpDeviceStatusUpdated(desc, isConnected);
 }
+#endif
 
 int32_t DeviceStatusListener::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
 {
@@ -313,6 +319,7 @@ void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
     deviceObserver_.OnMicrophoneBlockedUpdate(micBlockedDeviceType, status);
 }
 
+#ifdef AUDIO_WIRED_DETECT
 AudioPnpStatusCallback::AudioPnpStatusCallback()
 {
     AUDIO_INFO_LOG("ctor");
@@ -334,5 +341,6 @@ void AudioPnpStatusCallback::OnMicrophoneBlocked(const std::string &info)
 {
     listener_->OnMicrophoneBlocked(info);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

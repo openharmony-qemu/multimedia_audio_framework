@@ -185,9 +185,6 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/manager/audio_adapter_manager_handler.cpp",
     "server/src/service/manager/client_type_manager.cpp",
     "server/src/service/manager/client_type_manager_handler.cpp",
-    "server/src/service/manager/pnp_server/audio_input_thread.cpp",
-    "server/src/service/manager/pnp_server/audio_pnp_server.cpp",
-    "server/src/service/manager/pnp_server/audio_socket_thread.cpp",
     "server/src/service/manager/volume_data_maintainer.cpp",
     "server/src/service/routers/app_select_router.cpp",
     "server/src/service/routers/audio_router_center.cpp",
@@ -228,8 +225,13 @@ audio_ohos_library("audio_policy_service") {
   ]
 
   defines = []
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
+  if (audio_framework_feature_wired_audio) {
+    defines += [ "AUDIO_WIRED_DETECT" ]
+    sources += [
+      "server/src/service/manager/pnp_server/audio_input_thread.cpp",
+      "server/src/service/manager/pnp_server/audio_pnp_server.cpp",
+      "server/src/service/manager/pnp_server/audio_socket_thread.cpp",
+    ]
   }
 
   if (build_variant == "user") {

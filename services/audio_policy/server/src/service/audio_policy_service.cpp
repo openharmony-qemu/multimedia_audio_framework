@@ -115,7 +115,9 @@ bool AudioPolicyService::Init(void)
     audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
     audioAffinityManager_.ParseAffinityXml();
+#ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.init();
+#endif
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
 
@@ -194,7 +196,9 @@ void AudioPolicyService::Deinit(void)
     audioPolicyManager_.Deinit();
     audioIOHandleMap_.DeInit();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
+#ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.StopPnpServer();
+#endif
 
     if (isBtListenerRegistered) {
         UnregisterBluetoothListener();
