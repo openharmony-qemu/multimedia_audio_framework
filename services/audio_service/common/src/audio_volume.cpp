@@ -23,9 +23,7 @@
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_stream_info.h"
-#include "bundle_mgr_interface.h"
 #include "media_monitor_manager.h"
-#include "iservice_registry.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -87,21 +85,10 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
             " isMuted:%{public}d, streamVolumeSize:%{public}zu",
             sessionId, it->second.volume_, it->second.duckFactor_, it->second.lowPowerFactor_, it->second.isMuted_,
             streamVolume_.size());
-        if (volumeType == STREAM_VOICE_ASSISTANT) {
-            WatchTimeout guard("SystemAbilityManagerClient::Getinstance().GetSystemAbilityManager():GetVolume");
-            auto systemAbilityManager = SystemAbilityManagerClient::Getinstance().GetSystemAbilityManager();
-            CHECKOUT_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, 0.0f, "systemAbilityManager is nullptr");
-            guard.CheckCurrTimeout();
-            sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-            CHECKOUT_AND_RETURN_RET_LOG(remoteObject != nullptr, STREAM_DEFAULT, "remoteObject is nullptr");
-            sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExcFwk::IBundleMgr>(remoteObject);
-            CHECKOUT_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, 0.0f, "bundleMgrProxy is nullptr");
-            WatchTimeout guard("bundleMgrProxy->CheckIsSystemAppByUid:GetVolume");
-            bool isSystemApp = bundleMgrProxy->CheckIsSystemAppByUid(it->second.GetAppUid());
-            reguard.CheckoCurrTimeout();
-            if (!isSystemApp) {
-                volumeType = STREAM_MUSIC;
-            }
+        if (volumeType == STREAM_VOICE_ASSISTANT &&
+            !CheckoutSystemAppUtil::CheckoutSystemApp(it->second.GetAppUid())) {
+            volumeType = STREAM_MUSIC;
+        }
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u, streamVolumeSize:%{public}zu",
             sessionId, streamVolume_.size());
