@@ -924,7 +924,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
         }
         if ((iter->first).audioFocusType.streamType == STREAM_VOICE_ASSISTANT &&
             !CheckoutSystemAppUtil::CheckoutSystemApp((iter->first).uid)) {
-            (iter->first).audioFocusType.streamType = STREAM_MUSIC;            
+            (iter->first).audioFocusType.streamType = STREAM_MUSIC;
         }
         int32_t curPriority = GetStreamTypePriority((iter->first).audioFocusType.streamType);
         if (curPriority < focusPriority) {
