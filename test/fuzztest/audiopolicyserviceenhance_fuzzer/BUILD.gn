@@ -117,7 +117,7 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
 
   defines = []
 
-  if (usb_manager_enable) {
+  if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
   }

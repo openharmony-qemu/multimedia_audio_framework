@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2023-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,7 +18,7 @@ if (defined(global_parts_info) &&
   accessibility_enable = false
 }
 
-usb_manager_enable = false
+audio_framework_feature_usb_audio = false
 if (defined(global_parts_info) && defined(global_parts_info.usb_usb_manager)) {
-  usb_manager_enable = true
+  audio_framework_feature_usb_audio = true
 }

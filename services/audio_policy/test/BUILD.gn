@@ -145,7 +145,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     defines += [ "FEATURE_DTMF_TONE" ]
   }
 
-  if (usb_manager_enable) {
+  if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
   }
@@ -308,7 +308,7 @@ ohos_unittest("audio_policy_service_all_unit_test") {
     defines += [ "FEATURE_DTMF_TONE" ]
   }
 
-  if (usb_manager_enable) {
+  if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
   }
