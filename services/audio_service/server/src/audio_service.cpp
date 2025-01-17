@@ -959,7 +959,6 @@ std::shared_ptr<CapturerInServer> AudioService::GetCapturerBySessionID(const uin
 
 void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)
 {
-#ifdef SUPPORT_LOW_LATENCY
     AUDIO_INFO_LOG("SessionId: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
     std::unique_lock<std::mutex> rendererLock(rendererMapMutex_);
     if (allRendererMap_.count(sessionId)) {
@@ -987,6 +986,7 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
         return;
     }
     capturerLock.unlock();
+#ifdef SUPPORT_LOW_LATENCY
     std::unique_lock<std::mutex> processListLock(processListMutex_);
     for (auto paired : linkedPairedList_) {
         if (paired.first == nullptr) {
