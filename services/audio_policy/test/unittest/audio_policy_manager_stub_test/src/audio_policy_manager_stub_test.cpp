@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,7 +14,6 @@
  */
 
 #include "audio_policy_log.h"
-#include "audio_utils.h"
 #include "audio_policy_server.h"
 #include "audio_policy_manager_stub_test.h"
 
@@ -963,7 +962,7 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_028, TestS
     supportedEffectConfig.postProcessSceneMap.push_back(postProcessSceneMap);
     std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
     EXPECT_NE(AudioPolicyManage_, nullptr);
-    
+
     // Act
     AudioPolicyManage_->QueryEffectSceneModeInternal(data, reply);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -39,6 +39,10 @@ static constexpr int32_t INDEX_POSTPROCESS = 4;
 static constexpr int32_t INDEX_EXCEPTION = 5;
 static constexpr int32_t NODE_SIZE = 6;
 static constexpr int32_t MODULE_SIZE = 5;
+static constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
+static constexpr int32_t AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT = 1;
+static constexpr int32_t AUDIO_EFFECT_COUNT_PRE_SECOND_NODE_UPPER_LIMIT = 1;
+constexpr int32_t AUDIO_EFFECT_COUNT_STREAM_USAGE_UPPER_LIMIT = 200;
 #ifdef USE_CONFIG_POLICY
 static constexpr uint32_t XML_PARSE_NOERROR = 1 << 5;
 static constexpr uint32_t XML_PARSE_NOWARNING = 1 << 6;
@@ -459,7 +463,7 @@ static void LoadPreStreamScenesCheck(std::vector<PreStreamScene> &scenes, const 
         nodeCounter++;
     }
 }
- 
+
 static void LoadPreprocessExceptionCheck(OriginalEffectConfig &result, const xmlNode *currNode,
                                          int32_t (&countPreSecondNode)[NODE_SIZE_PRE])
 {
@@ -474,7 +478,7 @@ static void LoadPreprocessExceptionCheck(OriginalEffectConfig &result, const xml
         countPreSecondNode[INDEX_PRE_EXCEPTION]++;
     }
 }
- 
+
 static void LoadPreProcessCfg(OriginalEffectConfig &result, xmlNode *secondNode)
 {
     int32_t countPreSecondNode[NODE_SIZE_PRE] = {0};
@@ -484,7 +488,7 @@ static void LoadPreProcessCfg(OriginalEffectConfig &result, xmlNode *secondNode)
             currNode = currNode->next;
             continue;
         }
- 
+
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("defaultScene"))) {
             LoadPreStreamScenesCheck(result.preProcess.defaultScenes, currNode,
                 countPreSecondNode[INDEX_PRE_DEFAULT_SCENE]);
@@ -506,7 +510,7 @@ static void LoadPreProcessCfg(OriginalEffectConfig &result, xmlNode *secondNode)
         currNode = currNode->next;
     }
 }
- 
+
 static void LoadEffectConfigPreProcessCfg(OriginalEffectConfig &result,
     const xmlNode *currNode, int32_t (&countFirstNode)[NODE_SIZE])
 {

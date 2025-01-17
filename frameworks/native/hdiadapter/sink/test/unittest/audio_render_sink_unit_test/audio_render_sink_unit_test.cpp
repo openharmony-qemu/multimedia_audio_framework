@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,6 @@
 #include <gtest/gtest.h>
 #include "audio_errors.h"
 
-#include "audio_utils.h"
 #include "fast_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
 #include "bluetooth_renderer_sink.h"
@@ -27,7 +26,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-    
+
 class AudioRenderSinkUnitTest : public ::testing::Test {
 public:
     static void SetUpTestCase();
@@ -127,7 +126,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_002, TestSize.Level1)
     std::vector<DeviceType> outputDevices;
     ret = renderer->SetOutputRoutes(outputDevices);
     EXPECT_NE(ret, SUCCESS);
-    
+
     std::string condition;
     std::string value;
     renderer->SetAudioParameter(VOLUME, condition, value);
@@ -161,7 +160,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_002, TestSize.Level1)
 
     ret = renderer->SetRenderEmpty(20000);
     EXPECT_EQ(ret, SUCCESS);
-    
+
     ret = renderer->SetSinkMuteForSwitchDevice(false);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -242,7 +241,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_004, TestSize.Level1)
     std::vector<DeviceType> outputDevices;
     ret = renderer->SetOutputRoutes(outputDevices);
     EXPECT_NE(ret, SUCCESS);
-    
+
     std::string condition;
     std::string value;
     renderer->SetAudioParameter(VOLUME, condition, value);
@@ -276,7 +275,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_004, TestSize.Level1)
 
     ret = renderer->SetRenderEmpty(20000);
     EXPECT_EQ(ret, SUCCESS);
-    
+
     ret = renderer->SetSinkMuteForSwitchDevice(false);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -360,7 +359,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_006, TestSize.Level1)
     std::vector<DeviceType> outputDevices;
     ret = renderer->SetOutputRoutes(outputDevices);
     EXPECT_NE(ret, SUCCESS);
-    
+
     std::string condition;
     std::string value;
     renderer->SetAudioParameter(VOLUME, condition, value);
@@ -394,7 +393,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_006, TestSize.Level1)
 
     ret = renderer->SetRenderEmpty(20000);
     EXPECT_EQ(ret, SUCCESS);
-    
+
     ret = renderer->SetSinkMuteForSwitchDevice(false);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -478,7 +477,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_008, TestSize.Level1)
     std::vector<DeviceType> outputDevices;
     ret = renderer->SetOutputRoutes(outputDevices);
     EXPECT_NE(ret, SUCCESS);
-    
+
     std::string condition;
     std::string value;
     renderer->SetAudioParameter(VOLUME, condition, value);
@@ -512,7 +511,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_008, TestSize.Level1)
 
     ret = renderer->SetRenderEmpty(20000);
     EXPECT_EQ(ret, SUCCESS);
-    
+
     ret = renderer->SetSinkMuteForSwitchDevice(false);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -596,7 +595,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_010, TestSize.Level1)
     std::vector<DeviceType> outputDevices;
     ret = renderer->SetOutputRoutes(outputDevices);
     EXPECT_NE(ret, SUCCESS);
-    
+
     std::string condition;
     std::string value;
     renderer->SetAudioParameter(VOLUME, condition, value);
@@ -630,7 +629,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_010, TestSize.Level1)
 
     ret = renderer->SetRenderEmpty(20000);
     EXPECT_EQ(ret, SUCCESS);
-    
+
     ret = renderer->SetSinkMuteForSwitchDevice(false);
     EXPECT_EQ(ret, SUCCESS);
 }

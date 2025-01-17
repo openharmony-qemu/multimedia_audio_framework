@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,7 +34,6 @@
 
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
-#include "audio_utils.h"
 #include "volume_tools.h"
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
@@ -190,7 +189,7 @@ private:
     std::string dumpFileName_ = "";
     mutable int64_t volumeDataCount_ = 0;
 };
-    
+
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
     : rendererInited_(false), started_(false), isFlushing_(false), startDuringFlush_(false), renderPos_(0),
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL),
@@ -262,9 +261,10 @@ std::string OffloadAudioRendererSinkInner::GetAudioParameter(const AudioParamKey
     AUDIO_INFO_LOG("key %{public}d, condition: %{public}s", key,
         condition.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
-    char value[PARAM_VALUE_LENTH];
+    char value[DumpFileUtil::PARAM_VALUE_LENTH];
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, "", "GetAudioParameter failed, audioAdapter_ is null");
-    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value,
+        DumpFileUtil::PARAM_VALUE_LENTH);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "GetAudioParameter failed, error code: %{public}d", ret);
     return value;
 }
@@ -688,7 +688,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
             static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
         VolumeTools::DfxOperation(buffer, streamInfo, LOG_UTILS_TAG, volumeDataCount_, OFFLOAD_DFX_SPLIT);
-        if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
             DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
             AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), writeLen);
         }
@@ -762,7 +762,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
 
     dumpFileName_ = "offload_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     started_ = true;
     renderPos_ = 0;

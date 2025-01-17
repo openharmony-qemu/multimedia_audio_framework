@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,14 +21,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr int32_t CHANNEL_ONE = 0;
-static constexpr int32_t CHANNEL_TWO = 1;
-static constexpr int32_t CHANNEL_THREE = 2;
-static constexpr int32_t CHANNEL_FOUR = 3;
-static constexpr int32_t CHANNEL_FIVE = 4;
-static constexpr int32_t CHANNEL_SIX = 5;
-static constexpr int32_t CHANNEL_SEVEN = 6;
-static constexpr int32_t CHANNEL_EIGHT = 7;
 
 typedef struct {
     int8_t value[3];
@@ -42,6 +34,14 @@ public:
     void SetParams(ChannelBlendMode blendMode, uint8_t format, uint8_t channel);
 
 private:
+    static constexpr int32_t CHANNEL_ONE = 0;
+    static constexpr int32_t CHANNEL_TWO = 1;
+    static constexpr int32_t CHANNEL_THREE = 2;
+    static constexpr int32_t CHANNEL_FOUR = 3;
+    static constexpr int32_t CHANNEL_FIVE = 4;
+    static constexpr int32_t CHANNEL_SIX = 5;
+    static constexpr int32_t CHANNEL_SEVEN = 6;
+    static constexpr int32_t CHANNEL_EIGHT = 7;
     template <typename T>
     void BlendLR(T& left, T& right);
     template <>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,11 +19,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
-static const int32_t INT32_VOLUME_MIN = 0; // 0, min volume
-static const uint32_t VOLUME_SHIFT = 16;
-static constexpr int32_t INT32_VOLUME_MAX = 1 << VOLUME_SHIFT; // 1 << 16 = 65536, max volume
-
 
 static inline bool IsVolumeSame(const float& x, const float& y, const float& epsilon)
 {

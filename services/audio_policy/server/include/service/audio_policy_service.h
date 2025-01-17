@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,6 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_info.h"
 #include "audio_manager_base.h"
 #include "audio_policy_client_proxy.h"
 #include "audio_policy_manager_factory.h"
@@ -469,7 +468,9 @@ private:
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
+#ifdef AUDIO_WIRED_DETECT
         audioPnpServer_(AudioPnpServer::GetAudioPnpServer()),
+#endif
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
         audioConfigManager_(AudioConfigManager::GetInstance()),
@@ -538,9 +539,9 @@ private:
     bool GetAudioEffectOffloadFlag();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
-
+#ifdef HAS_FEATURE_INNERCAPTURER
     void LoadModernInnerCapSink();
-
+#endif
     int32_t GetUid(int32_t sessionId);
 
     void UnregisterBluetoothListener();
@@ -557,6 +558,7 @@ private:
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
     bool isFastControlled_ = true;
+    static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
 
@@ -596,7 +598,9 @@ private:
     AudioAffinityManager &audioAffinityManager_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+#ifdef AUDIO_WIRED_DETECT
     AudioPnpServer &audioPnpServer_;
+#endif
 
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,

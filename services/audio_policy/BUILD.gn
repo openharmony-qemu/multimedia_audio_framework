@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -185,9 +185,6 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/manager/audio_adapter_manager_handler.cpp",
     "server/src/service/manager/client_type_manager.cpp",
     "server/src/service/manager/client_type_manager_handler.cpp",
-    "server/src/service/manager/pnp_server/audio_input_thread.cpp",
-    "server/src/service/manager/pnp_server/audio_pnp_server.cpp",
-    "server/src/service/manager/pnp_server/audio_socket_thread.cpp",
     "server/src/service/manager/volume_data_maintainer.cpp",
     "server/src/service/routers/app_select_router.cpp",
     "server/src/service/routers/audio_router_center.cpp",
@@ -228,8 +225,13 @@ audio_ohos_library("audio_policy_service") {
   ]
 
   defines = []
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
+  if (audio_framework_feature_wired_audio) {
+    defines += [ "AUDIO_WIRED_DETECT" ]
+    sources += [
+      "server/src/service/manager/pnp_server/audio_input_thread.cpp",
+      "server/src/service/manager/pnp_server/audio_pnp_server.cpp",
+      "server/src/service/manager/pnp_server/audio_socket_thread.cpp",
+    ]
   }
 
   if (build_variant == "user") {
@@ -253,6 +255,10 @@ audio_ohos_library("audio_policy_service") {
 
   if (is_emulator) {
     defines += [ "IS_EMULATOR" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
   public_configs = [ ":audio_policy_public_config" ]
@@ -315,7 +321,7 @@ audio_ohos_library("audio_policy_service") {
     "openssl:libcrypto_shared",
   ]
 
-  if (usb_manager_enable) {
+  if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
     sources += [ "server/src/service/manager/audio_usb_manager.cpp" ]
@@ -470,6 +476,10 @@ audio_ohos_library("audio_policy_client") {
   defines = []
   if (audio_framework_feature_dtmf_tone) {
     defines += [ "FEATURE_DTMF_TONE" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
   sources = [

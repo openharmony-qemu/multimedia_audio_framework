@@ -115,8 +115,8 @@ ohos_fuzztest("AudioPolicyMoreFuzzTest") {
   }
 
   defines = []
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
+  if (audio_framework_feature_wired_audio) {
+    defines += [ "AUDIO_WIRED_DETECT" ]
   }
 
   if (build_variant == "user") {

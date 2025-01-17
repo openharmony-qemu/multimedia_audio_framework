@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,6 @@
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
 #include "audio_errors.h"
-#include "audio_info.h"
 #include "napi_audio_session_callback.h"
 #include "napi_audio_session_manager.h"
 
@@ -148,7 +147,8 @@ napi_value NapiAudioSessionMgr::ActivateAudioSession(napi_env env, napi_callback
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetAudioSessionStrategy(env, context->audioSessionStrategy, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "getAudioSessionStrategy failed",
             NAPI_ERR_INVALID_PARAM);
@@ -187,7 +187,8 @@ napi_value NapiAudioSessionMgr::DeactivateAudioSession(napi_env env, napi_callba
     auto context = std::make_shared<AudioSessionMgrAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("DeactivateAudioSession failed : no memory");
-        NapiAudioError::ThrowError(env, "DeactivateAudioSession failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "DeactivateAudioSession failed : no memory",
+            NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
     context->GetCbInfo(env, info);
@@ -220,7 +221,8 @@ napi_value NapiAudioSessionMgr::IsAudioSessionActivated(napi_env env, napi_callb
     auto context = std::make_shared<AudioSessionMgrAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("IsAudioSessionActivated failed : no memory");
-        NapiAudioError::ThrowError(env, "IsAudioSessionActivated failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "IsAudioSessionActivated failed : no memory",
+            NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
     context->GetCbInfo(env, info);
@@ -289,12 +291,14 @@ napi_value NapiAudioSessionMgr::On(napi_env env, napi_callback_info info)
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc == requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "status for arguments error");
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"),
+        "status for arguments error");
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, args[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of eventType must be string"), "eventType error");
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
+        "eventType error");
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
     AUDIO_DEBUG_LOG("AudioStreamMgrNapi: On callbackName: %{public}s", callbackName.c_str());
 
@@ -361,14 +365,16 @@ napi_value NapiAudioSessionMgr::Off(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     if (status != napi_ok || argc < requireArgc) {
         AUDIO_ERR_LOG("Off fail to napi_get_cb_info/Requires min 1 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "mandatory parameters are left unspecified");
         return undefinedResult;
     }
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, args[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of eventType must be string"), "event error");
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
+        "event error");
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
     if (!callbackName.compare(AUDIOSESSION_CALLBACK_NAME)) {
         napi_valuetype handler = napi_undefined;

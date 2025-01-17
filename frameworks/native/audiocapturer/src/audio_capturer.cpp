@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +22,6 @@
 
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
-#include "audio_utils.h"
 #include "audio_capturer_log.h"
 #include "audio_policy_manager.h"
 
@@ -34,6 +33,8 @@ static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_OVERFLOW_NUM = 100;
 static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
+static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
+static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -167,6 +168,7 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
         return ERR_INVALID_OPERATION;
     }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
     if (config.filterOptions.usages.size() == 0 && config.filterOptions.pids.size() == 0) {
         AUDIO_WARNING_LOG("Both usages and pids are empty!");
     }
@@ -174,6 +176,10 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_OPERATION_FAILED, "Failed with null audioStream_");
 
     return audioStream_->UpdatePlaybackCaptureConfig(config);
+#else
+    AUDIO_WARNING_LOG("Inner capture is not supported.");
+    return ERR_NOT_SUPPORTED;
+#endif
 }
 
 void AudioCapturer::SendCapturerCreateError(const SourceType &sourceType,
@@ -225,12 +231,22 @@ int32_t AudioCapturerPrivate::InitPlaybackCapturer(int32_t type, const AudioPlay
     if (type != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         return SUCCESS;
     }
+#ifdef HAS_FEATURE_INNERCAPTURER
     return AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(config, appInfo_.appTokenId);
+#else
+    AUDIO_WARNING_LOG("Inner capture is not supported.");
+    return ERR_NOT_SUPPORTED;
+#endif
 }
 
 int32_t AudioCapturerPrivate::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     return AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
+#else
+    AUDIO_WARNING_LOG("Inner capture is not supported.");
+    return ERR_NOT_SUPPORTED;
+#endif
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
@@ -300,7 +316,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     // eg: 100009_44100_2_1_cap_client_out.pcm
     std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.samplingRate) + "_" +
         std::to_string(params.audioChannel) + "_" + std::to_string(params.audioSampleFormat) + "_cap_client_out.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitInputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init input device change callback failed");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,6 @@
 #endif
 #endif
 #include "audio_errors.h"
-#include "audio_utils.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
@@ -256,7 +255,8 @@ napi_value NapiAudioCapturer::CreateAudioCapturer(napi_env env, napi_callback_in
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetCapturerOptions(env, &context->capturerOptions, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "CreateAudioCapturer failed",
             NAPI_ERR_INVALID_PARAM);
@@ -280,13 +280,14 @@ napi_value NapiAudioCapturer::CreateAudioCapturerSync(napi_env env, napi_callbac
     napi_value argv[ARGS_ONE] = {};
     napi_status status = NapiParamUtils::GetParam(env, info, argc, argv);
     CHECK_AND_RETURN_RET_LOG((status == napi_ok) && (argc == ARGS_ONE),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"),
-        "invaild param");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invaild param");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of options must be number"), "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of options must be number"),
+        "invaild valueType");
 
     AudioCapturerOptions capturerOptions;
     CHECK_AND_RETURN_RET_LOG(NapiParamUtils::GetCapturerOptions(env, &capturerOptions, argv[PARAM0]) == napi_ok,
@@ -333,8 +334,8 @@ napi_value NapiAudioCapturer::GetCapturerInfoSync(napi_env env, napi_callback_in
     size_t argc = PARAM0;
 
     auto *napiAudioCapturer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argsCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argsCount invaild");
 
     AudioCapturerInfo capturerInfo;
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
@@ -470,7 +471,8 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
         return NapiParamUtils::GetUndefinedValue(env);
     }
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueUInt32(env, context->userSize, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetValueUInt32 userSize failed",
             NAPI_ERR_INVALID_PARAM);
@@ -841,15 +843,16 @@ napi_value NapiAudioCapturer::On(napi_env env, napi_callback_info info)
     napi_value argv[requireArgc + PARAM1] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "napi_get_cb_info failed");
-    CHECK_AND_RETURN_RET_LOG(argc >= requireArgc, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argc requeset failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM), "napi_get_cb_info failed");
+    CHECK_AND_RETURN_RET_LOG(argc >= requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argc requeset failed");
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of eventType must be string"), "eventType invaild");
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
+        "eventType invaild");
 
     std::string callbackName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
     AUDIO_DEBUG_LOG("NapiAudioCapturer: On callbackName: %{public}s", callbackName.c_str());
@@ -883,10 +886,10 @@ napi_value NapiAudioCapturer::RegisterCallback(napi_env env, napi_value jsThis,
     NapiAudioCapturer *napiCapturer = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiCapturer));
 
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "napi_unwrap failed");
-    CHECK_AND_RETURN_RET_LOG(napiCapturer != nullptr, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
-        "napiCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM), "napi_unwrap failed");
+    CHECK_AND_RETURN_RET_LOG(napiCapturer != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_NO_MEMORY), "napiCapturer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiCapturer->audioCapturer_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
 
@@ -908,7 +911,8 @@ napi_value NapiAudioCapturer::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterCapturerReadDataCallback(env, argv, cbName, napiCapturer);
     } else {
         bool unknownCallback = true;
-        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_INVALID_PARAM,
+        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env,
+            NAPI_ERROR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported"), "audioCapturer_ is nullptr");
     }
 
@@ -959,7 +963,8 @@ napi_value NapiAudioCapturer::RegisterPositionCallback(napi_env env, napi_value 
         int32_t ret = napiCapturer->audioCapturer_->SetCapturerPositionCallback(markPosition,
             napiCapturer->positionCbNapi_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "SetCapturerPositionCallback failed");
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+            "SetCapturerPositionCallback failed");
 
         std::shared_ptr<NapiCapturerPositionCallback> cb =
             std::static_pointer_cast<NapiCapturerPositionCallback>(napiCapturer->positionCbNapi_);
@@ -988,12 +993,14 @@ napi_value NapiAudioCapturer::RegisterPeriodPositionCallback(napi_env env, napi_
         if (napiCapturer->periodPositionCbNapi_ == nullptr) {
             napiCapturer->periodPositionCbNapi_ = std::make_shared<NapiCapturerPeriodPositionCallback>(env);
             CHECK_AND_RETURN_RET_LOG(napiCapturer->periodPositionCbNapi_ != nullptr,
-                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "periodPositionCbNapi_ is nullptr");
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
+                "periodPositionCbNapi_ is nullptr");
 
             int32_t ret = napiCapturer->audioCapturer_->SetCapturerPeriodPositionCallback(frameCount,
                 napiCapturer->periodPositionCbNapi_);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "SetCapturerPeriodPositionCallback failed");
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+                "SetCapturerPeriodPositionCallback failed");
 
             std::shared_ptr<NapiCapturerPeriodPositionCallback> cb =
                 std::static_pointer_cast<NapiCapturerPeriodPositionCallback>(napiCapturer->periodPositionCbNapi_);
@@ -1001,7 +1008,8 @@ napi_value NapiAudioCapturer::RegisterPeriodPositionCallback(napi_env env, napi_
             cb->CreatePeriodPositionTsfn(env);
         } else {
             CHECK_AND_RETURN_RET_LOG(false,
-                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "periodReach already subscribed.");
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+                "periodReach already subscribed.");
         }
     } else {
         CHECK_AND_RETURN_RET_LOG(false, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
@@ -1105,15 +1113,16 @@ napi_value NapiAudioCapturer::Off(napi_env env, napi_callback_info info)
     napi_value argv[minArgCount + 1] = {nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "napi_get_cb_info failed");
-    CHECK_AND_RETURN_RET_LOG(argc >= minArgCount, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argc invaild");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM), "napi_get_cb_info failed");
+    CHECK_AND_RETURN_RET_LOG(argc >= minArgCount, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argc invaild");
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of eventType must be string"), "eventType invaild");
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
+        "eventType invaild");
 
     std::string callbackName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
     AUDIO_DEBUG_LOG("NapiAudioCapturer: Off callbackName: %{public}s", callbackName.c_str());
@@ -1126,10 +1135,10 @@ napi_value NapiAudioCapturer::UnregisterCallback(napi_env env, napi_value jsThis
 {
     NapiAudioCapturer *napiCapturer = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiCapturer));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "napi_unwrap failed");
-    CHECK_AND_RETURN_RET_LOG(napiCapturer != nullptr, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
-        "napiCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM), "napi_unwrap failed");
+    CHECK_AND_RETURN_RET_LOG(napiCapturer != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_NO_MEMORY), "napiCapturer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiCapturer->audioCapturer_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
 
@@ -1149,8 +1158,10 @@ napi_value NapiAudioCapturer::UnregisterCallback(napi_env env, napi_value jsThis
         UnregisterCapturerReadDataCallback(env, argc, argv, napiCapturer);
     } else {
         bool unknownCallback = true;
-        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of type is not supported"), "NAPI_ERR_UNSUPPORTED cbName");
+        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env,
+            NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of type is not supported"),
+            "NAPI_ERR_UNSUPPORTED cbName");
     }
 
     napi_value result = nullptr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,19 +37,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-constexpr int32_t MAX_NUM_STREAMS = 3;
-constexpr int32_t RENDERER_STREAM_USAGE_SHIFT = 16;
-constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
-constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
-constexpr int32_t MIN_SERVICE_COUNT = 2;
-constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
-constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
-constexpr int32_t RSS_UID = 1096;
-constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
-constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
 constexpr int32_t AUDIO_FLAG_INVALID = -1;
 constexpr int32_t AUDIO_FLAG_NORMAL = 0;
 constexpr int32_t AUDIO_FLAG_MMAP = 1;
@@ -59,9 +49,7 @@ constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
-constexpr uint32_t STREAM_FLAG_NORMAL = 0;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
-constexpr uint32_t STREAM_FLAG_DIRECT = 2;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr int32_t EMPTY_UID = 0;
@@ -75,29 +63,16 @@ const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
 
 const char* MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
-const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
-const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
-const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
 const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
-const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
-const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
-const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
-const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
-const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 
-const char* INNER_CAPTURER_SOURCE = "Speaker.monitor";
 const char* INNER_CAPTURER_SINK = "InnerCapturerSink";
-const char* NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
-const char* MONITOR_SOURCE_SUFFIX = ".monitor";
 const char* DUP_STREAM = "DupStream";
-const char* DUAL_TONE_STREAM = "DualToneStream";
-const char* NORMAL_STREAM = "NormalStream";
 }
 
 #ifdef FEATURE_DTMF_TONE

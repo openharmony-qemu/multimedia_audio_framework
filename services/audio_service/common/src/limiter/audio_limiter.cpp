@@ -86,10 +86,10 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
 
     dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);
     dumpFileNameOut_ = std::to_string(sinkIndex_) + "_limiter_out_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileNameOut_, &dumpFileOutput_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameOut_, &dumpFileOutput_);
 
     return SUCCESS;
 }

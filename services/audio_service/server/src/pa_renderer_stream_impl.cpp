@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +29,6 @@
 #include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
-#include "audio_utils.h"
 #include "i_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "audio_volume.h"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +27,7 @@ namespace OHOS {
 namespace Bluetooth {
 using namespace AudioStandard;
 
+const int WEAR_ENABLED = 1;
 const int DEFAULT_COD = -1;
 const int DEFAULT_MAJOR_CLASS = -1;
 const int DEFAULT_MAJOR_MINOR_CLASS = -1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,6 @@
 #include "audio_effect.h"
 #include "audio_errors.h"
 #include "audio_effect_log.h"
-#include "audio_utils.h"
 #include "audio_dump_pcm.h"
 #include "securec.h"
 #include "media_monitor_manager.h"
@@ -59,8 +58,8 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
         + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4_"
         + GetTime() + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
 }
 #else
 AudioEffectChain::AudioEffectChain(std::string scene)
@@ -85,8 +84,8 @@ AudioEffectChain::AudioEffectChain(std::string scene)
         + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4_"
         + GetTime() + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
 }
 #endif
 
@@ -425,7 +424,7 @@ uint32_t AudioEffectChain::GetLatency()
 
 void AudioEffectChain::DumpEffectProcessData(std::string fileName, void *buffer, size_t len)
 {
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         AudioCacheMgr::GetInstance().CacheData(fileName, buffer, len);
     }
 }

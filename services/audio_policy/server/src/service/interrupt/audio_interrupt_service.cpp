@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,6 @@
 
 #include "audio_focus_parser.h"
 #include "audio_policy_manager_listener_proxy.h"
-#include "audio_utils.h"
 #include "media_monitor_manager.h"
 
 namespace OHOS {
@@ -922,6 +921,10 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
         if (uid != 0 && (iter->first).uid != uid) {
             continue;
         }
+        if ((iter->first).audioFocusType.streamType == STREAM_VOICE_ASSISTANT &&
+            !CheckoutSystemAppUtil::CheckoutSystemApp((iter->first).uid)) {
+            (iter->first).audioFocusType.streamType = STREAM_MUSIC;
+        }
         int32_t curPriority = GetStreamTypePriority((iter->first).audioFocusType.streamType);
         if (curPriority < focusPriority) {
             focusPriority = curPriority;
@@ -1041,7 +1044,7 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
     AudioFocusEntry &focusEntry)
 {
     AudioConcurrencyMode concurrencyMode = incomingInterrupt.sessionStrategy.concurrencyMode;
-    
+
     if (CheckAudioSessionExistence(incomingInterrupt, focusEntry)) {
         std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
         concurrencyMode = (incomingSession->GetSessionStrategy()).concurrencyMode;

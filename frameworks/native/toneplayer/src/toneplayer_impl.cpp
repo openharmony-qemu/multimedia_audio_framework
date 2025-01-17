@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,6 +48,7 @@ constexpr int32_t BIT8 = 8;
 constexpr int32_t SYSPARA_SIZE = 128;
 const char DEBUG_COUNTRYCODE_NAME[] = "debug.toneplayer.country";
 const char DEFAULT_STRING[] = "error";
+const char DUMP_TONEPLAYER_FILENAME[] = "dump_toneplayer_audio.pcm";
 
 static const std::vector<ToneType> TONE_TYPE_LIST = {
     TONE_TYPE_DIAL_0,
@@ -185,7 +186,7 @@ bool TonePlayerImpl::LoadTone(ToneType toneType)
     result = InitToneWaveInfo();
     CHECK_AND_RETURN_RET_LOG(result, false, "InitToneWaveInfo failed");
     toneState_ = TONE_INIT;
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_TONEPLAYER_FILENAME, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, DUMP_TONEPLAYER_FILENAME, &dumpFile_);
     return result;
 }
 

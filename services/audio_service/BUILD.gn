@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -248,6 +248,10 @@ ohos_shared_library("audio_client") {
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
   }
 
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
   cflags = [ "-Os" ]
@@ -372,7 +376,6 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
   if (audio_framework_feature_distributed_audio == true) {
@@ -413,6 +416,11 @@ audio_ohos_library("audio_process_service") {
     deps +=
         [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect_service" ]
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    deps += [ "../../frameworks/native/playbackcapturer:playback_capturer" ]
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
   cflags = [ "-Os" ]
@@ -462,7 +470,6 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/hdiadapter/source:bluetooth_capturer_source",
     "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
   external_deps = [
@@ -520,6 +527,11 @@ audio_ohos_library("audio_service") {
 
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    deps += [ "../../frameworks/native/playbackcapturer:playback_capturer" ]
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
   cflags = [ "-Os" ]

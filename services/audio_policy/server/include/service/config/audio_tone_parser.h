@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,11 +29,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
-    static constexpr char AUDIO_TONE_CONFIG_FILE[] = "/system/etc/audio/audio_tone_dtmf_config.xml";
-
 using ToneInfoMap = std::unordered_map<int32_t, std::shared_ptr<ToneInfo>>;
 class AudioToneParser {
 public:
+    static constexpr char AUDIO_TONE_CONFIG_FILE[] = "/system/etc/audio/audio_tone_dtmf_config.xml";
     AudioToneParser();
     virtual ~AudioToneParser();
     int32_t LoadConfig(ToneInfoMap &toneDescriptorMap);

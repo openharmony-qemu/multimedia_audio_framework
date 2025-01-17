@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,7 +28,6 @@
 #include <chrono>
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "audio_utils.h"
 #include <cinttypes>
 #include "common/native_audiostreambuilder.h"
 #include "native_audiorenderer.h"
@@ -202,7 +201,7 @@ void SessionNdkTest::IsAudioSessionActivated()
         std::cout << "Is Activate AudioSession FAILED" << std::endl;
     }
 }
- 
+
 void SessionNdkTest::RegisterAndActive(OH_AudioSession_DeactivatedCallback callback,
     OH_AudioSession_Strategy strategy)
 {
@@ -246,7 +245,7 @@ OH_AudioRenderer* SessionNdkTest::StartPlay()
     // 4. setspeed
     ret = OH_AudioRenderer_SetSpeed(audioRenderer, g_speed);
     std::cout << "[Renderer] speed ret: " << ret << std::endl;
-    
+
     // 5. start
     ret = OH_AudioRenderer_Start(audioRenderer);
     std::cout << "[Renderer] start ret: " << ret << std::endl;
@@ -374,7 +373,7 @@ int main()
 {
     // Init Get AudioSessionManager
     g_sessionNdkTest = std::make_shared<SessionNdkTest>();
-    
+
     g_sessionNdkTest->Init();
 
     std::cout << "Init Completed, Start Test" << std::endl;

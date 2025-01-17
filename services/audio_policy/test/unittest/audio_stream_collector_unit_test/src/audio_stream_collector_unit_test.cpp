@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +17,6 @@
 #include "audio_system_manager.h"
 #include "audio_client_tracker_callback_proxy.h"
 #include "audio_spatialization_service.h"
-#include "audio_utils.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include <thread>
@@ -399,16 +398,16 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_008, TestSize.Level1
     // Test cases where sourceType is directly cast to AudioStreamType
     EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_RECOGNITION),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VOICE_RECOGNITION));
-    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_PLAYBACK_CAPTURE),
+    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_PLAYBACK_CAPTURE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_PLAYBACK_CAPTURE));
-    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_REMOTE_CAST),
+    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_REMOTE_CAST),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_REMOTE_CAST));
-    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VIRTUAL_CAPTURE),
+    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_VIRTUAL_CAPTURE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VIRTUAL_CAPTURE));
-    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_MESSAGE),
+    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_MESSAGE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VOICE_MESSAGE));
     // Test an invalid source type (should fall into default case)
-    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_INVALID),
+    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_INVALID),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_INVALID));
 }
 

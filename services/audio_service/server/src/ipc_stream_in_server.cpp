@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -259,11 +259,15 @@ int32_t IpcStreamInServer::Drain(bool stopFlag)
 
 int32_t IpcStreamInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     if (mode_ == AUDIO_MODE_RECORD && capturerInServer_ != nullptr) {
         return capturerInServer_->UpdatePlaybackCaptureConfig(config);
     }
     AUDIO_ERR_LOG("Failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;
+#else
+    return ERROR;
+#endif
 }
 
 int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)

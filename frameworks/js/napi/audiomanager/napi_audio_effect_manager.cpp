@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -156,8 +156,8 @@ napi_value NapiAudioEffectMgr::GetSupportedAudioEffectProperty(napi_env env, nap
         "interface operation failed"), "get support audio effect property failure!");
 
     napi_status status = NapiParamUtils::SetEffectProperty(env, propertyArray, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
-        "Combining property data fail"), "fill support effect property failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM, "Combining property data fail"), "fill support effect property failed");
 
     return result;
 }
@@ -177,8 +177,8 @@ napi_value NapiAudioEffectMgr::GetAudioEffectProperty(napi_env env, napi_callbac
         "interface operation failed"), "get audio enhance property failure!");
 
     napi_status status = NapiParamUtils::SetEffectProperty(env, propertyArray, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
-        "combining property data fail"), "fill effect property failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM, "combining property data fail"), "fill effect property failed");
 
     return result;
 }
@@ -190,12 +190,14 @@ napi_value NapiAudioEffectMgr::SetAudioEffectProperty(napi_env env, napi_callbac
     napi_value args[ARGS_ONE] = {};
     auto *napiEffectMgr = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE && napiEffectMgr != nullptr &&
-        napiEffectMgr->audioEffectMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        napiEffectMgr->audioEffectMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID,
         "parameter verification failed: mandatory parameters are left unspecified"), "argcCount invalid");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of options must be array"), "invaild valueType");
 
     AudioEffectPropertyArrayV3 propertyArray = {};

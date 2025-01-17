@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,6 @@
 #include "audio_effect.h"
 #include "audio_errors.h"
 #include "audio_effect_log.h"
-#include "audio_utils.h"
 #include "securec.h"
 
 namespace OHOS {
@@ -886,10 +885,7 @@ uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
         AUDIO_DEBUG_LOG("seceneMode is None, return 0");
         return 0;
     }
-    if (sessionIDToEffectInfoMap_[sessionId].spatializationEnabled == "0" &&
-        GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP") {
-        return 0;
-    }
+
     std::string sceneTypeAndDeviceKey = sessionIDToEffectInfoMap_[sessionId].sceneType + "_&_" + GetDeviceTypeName();
     CHECK_AND_RETURN_RET(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, 0);

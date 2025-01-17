@@ -25,6 +25,7 @@
           "SystemCapability.Multimedia.Audio.Spatialization"
         ],
         "features": [
+          "audio_framework_feature_wired_audio",
           "audio_framework_feature_double_pnp_detect",
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_opensl_es",
@@ -33,7 +34,9 @@
           "audio_framework_feature_hitrace_enable",
           "audio_framework_feature_offline_effect",
           "audio_framework_feature_distributed_audio",
-          "audio_framework_feature_file_io"
+          "audio_framework_feature_file_io",
+          "audio_framework_feature_inner_capturer",
+          "audio_framework_feature_usb_audio"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -204,6 +207,16 @@
                   "./offlineaudioeffect/include/offline_audio_effect_manager.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/frameworks/cj:cj_multimedia_audio_ffi",
+              "header": {
+                "header_files": [
+                  "multimedia_audio_ffi.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/frameworks/cj/include"
               }
             }
           ],

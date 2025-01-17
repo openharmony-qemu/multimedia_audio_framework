@@ -117,13 +117,9 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
 
   defines = []
 
-  if (usb_manager_enable) {
+  if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
-  }
-
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
   }
 
   if (build_variant == "user") {

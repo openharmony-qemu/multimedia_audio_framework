@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,9 +22,7 @@
 #include "parameter.h"
 #include "parameters.h"
 
-#include "audio_utils.h"
 #include "audio_log.h"
-#include "audio_utils.h"
 #include "audio_inner_call.h"
 #include "audio_tone_parser.h"
 #include "media_monitor_manager.h"
@@ -43,7 +41,8 @@ bool AudioToneManager::LoadToneDtmfConfig()
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Tone Load Configuration failed");
     }
     CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
-    if (audioToneParser->LoadNewConfig(AUDIO_TONE_CONFIG_FILE, toneDescriptorMap_, customToneDescriptorMap_)) {
+    if (audioToneParser->LoadNewConfig(AudioToneParser::AUDIO_TONE_CONFIG_FILE, toneDescriptorMap_,
+        customToneDescriptorMap_)) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::EventType::FAULT_EVENT);

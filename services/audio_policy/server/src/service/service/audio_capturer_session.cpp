@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,9 +21,7 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_utils.h"
 #include "audio_log.h"
-#include "audio_utils.h"
 
 #include "audio_policy_utils.h"
 
@@ -76,6 +74,7 @@ void AudioCapturerSession::SetConfigParserFlag()
 
 void AudioCapturerSession::LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     AUDIO_INFO_LOG("Start");
     uint32_t bufferSize = streamInfo.samplingRate *
         AudioPolicyUtils::GetInstance().PcmFormatToBytes(streamInfo.format) *
@@ -91,15 +90,19 @@ void AudioCapturerSession::LoadInnerCapturerSink(std::string moduleName, AudioSt
     moduleInfo.bufferSize = std::to_string(bufferSize);
 
     audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+#endif
 }
 
 void AudioCapturerSession::UnloadInnerCapturerSink(std::string moduleName)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+#endif
 }
 
 void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     AudioDeviceDescriptor updatedDesc = AudioDeviceDescriptor(DEVICE_TYPE_REMOTE_CAST,
         AudioPolicyUtils::GetInstance().GetDeviceRole(DEVICE_TYPE_REMOTE_CAST));
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
@@ -122,6 +125,7 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
+#endif
 }
 
 int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,

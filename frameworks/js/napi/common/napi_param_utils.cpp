@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +22,34 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+const std::vector<DeviceRole> DEVICE_ROLE_SET = {
+    DEVICE_ROLE_NONE,
+    INPUT_DEVICE,
+    OUTPUT_DEVICE
+};
+
+const std::vector<DeviceType> DEVICE_TYPE_SET = {
+    DEVICE_TYPE_NONE,
+    DEVICE_TYPE_INVALID,
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_WAKEUP,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_DP,
+    DEVICE_TYPE_REMOTE_CAST,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_FILE_SINK,
+    DEVICE_TYPE_FILE_SOURCE,
+    DEVICE_TYPE_EXTERN_CABLE,
+    DEVICE_TYPE_DEFAULT
+};
+
 napi_value NapiParamUtils::GetUndefinedValue(napi_env env)
 {
     napi_value result {};

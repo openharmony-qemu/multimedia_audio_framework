@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,7 +34,6 @@
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
-#include "audio_utils.h"
 #include "policy_handler.h"
 
 namespace OHOS {
@@ -202,6 +201,7 @@ private:
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
     bool CheckPlaybackPermission(const AudioProcessConfig &config);
+    int32_t CheckInnerRecorderPermission(const AudioProcessConfig &config);
     bool CheckRecorderPermission(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
 
@@ -250,6 +250,7 @@ private:
     static constexpr int32_t VASSISTANT_UID = 3001;
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
+    static constexpr int32_t ROOT_UID = 0;
     static uint32_t paDaemonTid_;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -843,6 +843,7 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
 
 void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     uint32_t maxUsageNum = 30;
     AudioPlaybackCaptureConfig config;
     int32_t flag = data.ReadInt32();
@@ -866,14 +867,17 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
 
     int32_t ret = SetPlaybackCapturerFilterInfos(config, appTokenId);
     reply.WriteInt32(ret);
+#endif
 }
 
 void AudioPolicyManagerStub::SetCaptureSilentStateInternal(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     bool flag = data.ReadBool();
 
     int32_t ret = SetCaptureSilentState(flag);
     reply.WriteInt32(ret);
+#endif
 }
 
 void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)

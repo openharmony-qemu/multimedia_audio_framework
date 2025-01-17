@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,6 @@
 #include <dlfcn.h>
 #include "iservice_registry.h"
 
-#include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
 #include "parameter.h"
 #include "parameters.h"
@@ -56,6 +55,7 @@ static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
 static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
+constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 }
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
@@ -115,7 +115,9 @@ bool AudioPolicyService::Init(void)
     audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
     audioAffinityManager_.ParseAffinityXml();
+#ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.init();
+#endif
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
 
@@ -194,7 +196,9 @@ void AudioPolicyService::Deinit(void)
     audioPolicyManager_.Deinit();
     audioIOHandleMap_.DeInit();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
+#ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.StopPnpServer();
+#endif
 
     if (isBtListenerRegistered) {
         UnregisterBluetoothListener();
@@ -843,8 +847,10 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 #endif
         audioEffectService_.SetMasterSinkAvailable();
     }
+#ifdef HAS_FEATURE_INNERCAPTURER
     // load inner-cap-sink
     LoadModernInnerCapSink();
+#endif
     // RegisterBluetoothListener() will be called when bluetooth_host is online
     // load hdi-effect-model
     LoadHdiEffectModel();
@@ -872,6 +878,7 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 void AudioPolicyService::LoadModernInnerCapSink()
 {
     AUDIO_INFO_LOG("Start");
@@ -886,6 +893,7 @@ void AudioPolicyService::LoadModernInnerCapSink()
 
     audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 }
+#endif
 
 void AudioPolicyService::LoadEffectLibrary()
 {
@@ -1493,6 +1501,7 @@ void AudioPolicyService::RegisterDataObserver()
 
 int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t ret = AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(config.silentCapture);
     CHECK_AND_RETURN_RET_LOG(!ret, ERR_OPERATION_FAILED, "SetCaptureSilentState failed");
 
@@ -1505,11 +1514,18 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
     }
 
     return AudioServerProxy::GetInstance().SetSupportStreamUsageProxy(targetUsages);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyService::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     return AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(state);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
@@ -2002,7 +2018,7 @@ int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, 
     CHECK_AND_RETURN_RET_LOG(audioConfigManager_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
-        audioDeviceCommon_.FetchDevice(true);
+        audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
         return SUCCESS;
     }
     return ret;

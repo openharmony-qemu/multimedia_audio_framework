@@ -35,7 +35,6 @@ public:
     static ssize_t AudioPnpReadUeventMsg(int sockFd, char *buffer, size_t length);
     static bool AudioPnpUeventParse(const char *msg, const ssize_t strLength);
     static void UpdateDeviceState(AudioEvent audioEvent);
-    static int32_t DetectUsbHeadsetState(AudioEvent *audioEvent);
     static int32_t DetectAnalogHeadsetState(AudioEvent *audioEvent);
     static int32_t DetectDPState(AudioEvent *audioEvent);
     static AudioEvent audioSocketEvent_;
@@ -43,15 +42,6 @@ public:
 private:
     static int32_t SetAudioPnpServerEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioAnalogHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent);
-    static int32_t CheckUsbDesc(struct UsbDevice *usbDevice);
-    static int32_t ReadAndScanUsbDev(const char *devPath);
-    static bool FindAudioUsbDevice(const char *devName);
-    static bool AddAudioUsbDevice(const char *devName);
-    static bool CheckAudioUsbDevice(const char *devName);
-    static bool DeleteAudioUsbDevice(const char *devName);
-    static int32_t AudioUsbHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent);
-    static inline bool IsBadName(const char *name);
-    static int32_t ScanUsbBusSubDir(const char *subDir);
     static int32_t AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioAnahsDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t SetAudioAnahsEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);

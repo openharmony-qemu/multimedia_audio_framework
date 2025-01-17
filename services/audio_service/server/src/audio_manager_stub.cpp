@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,6 +30,15 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT = 40;
+constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64;
+constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32;
+constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16;
+constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7;
+constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20;
+#ifndef HAS_FEATURE_INNERCAPTURER
+constexpr int32_t ERROR = -1;
+#endif
+
 const char *g_audioServerCodeStrs[] = {
     "GET_AUDIO_PARAMETER",
     "SET_AUDIO_PARAMETER",
@@ -490,6 +499,7 @@ static bool UnmarshallEffectChainMgrParam(EffectChainManagerParam &effectChainMg
     }
 
     containSize = data.ReadInt32();
+
     CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
         false, "Create audio effect chain name map failed, please check log");
     while (containSize--) {
@@ -556,13 +566,18 @@ int AudioManagerStub::HandleSetOutputDeviceSink(MessageParcel &data, MessageParc
 
 int AudioManagerStub::HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     bool ret = CreatePlaybackCapturerManager();
     reply.WriteBool(ret);
     return AUDIO_OK;
+#else
+    return ERROR;
+#endif
 }
 
 int AudioManagerStub::HandleSetSupportStreamUsage(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     vector<int32_t> usage;
     size_t cnt = static_cast<size_t>(data.ReadInt32());
     CHECK_AND_RETURN_RET_LOG(cnt <= AUDIO_SUPPORTED_STREAM_USAGES.size(), AUDIO_ERR,
@@ -578,6 +593,9 @@ int AudioManagerStub::HandleSetSupportStreamUsage(MessageParcel &data, MessagePa
     int32_t ret = SetSupportStreamUsage(usage);
     reply.WriteInt32(ret);
     return AUDIO_OK;
+#else
+    return ERROR;
+#endif
 }
 
 int AudioManagerStub::HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply)
@@ -601,6 +619,7 @@ int AudioManagerStub::HandleSetWakeupSourceCallback(MessageParcel &data, Message
 
 int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     bool state = false;
     int32_t flag = data.ReadInt32();
     if (flag == 1) {
@@ -609,6 +628,9 @@ int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessagePa
     int32_t ret = SetCaptureSilentState(state);
     reply.WriteInt32(ret);
     return AUDIO_OK;
+#else
+    return ERROR;
+#endif
 }
 
 int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply)

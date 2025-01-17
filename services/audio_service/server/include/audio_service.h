@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,7 @@
 #include "audio_process_in_server.h"
 #include "audio_endpoint.h"
 #include "ipc_stream_in_server.h"
-#include "playback_capturer_manager.h"
+#include "playback_capturer_filter_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -92,15 +92,19 @@ private:
 
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
+#ifdef HAS_FEATURE_INNERCAPTURER
     // for inner-capturer
     void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     void FilterAllFastProcess();
     InnerCapFilterPolicy GetInnerCapFilterPolicy();
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
+#endif
     bool ShouldBeDualTone(const AudioProcessConfig &config);
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
+#endif
     bool IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo);
     void RemoveIdFromMuteControlSet(uint32_t sessionId);
     void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
@@ -119,7 +123,7 @@ private:
     std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
 
     // for inner-capturer
-    PlaybackCapturerManager *innerCapturerMgr_ = nullptr;
+    bool isRegisterCapturerFilterListened_ = false;
     uint32_t workingInnerCapId_ = 0; // invalid sessionId
     uint32_t workingDualToneId_ = 0; // invalid sessionId
     AudioPlaybackCaptureConfig workingConfig_;

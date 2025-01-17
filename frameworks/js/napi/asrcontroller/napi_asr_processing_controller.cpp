@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,7 +25,6 @@
 #include "napi_param_utils.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "audio_utils.h"
 #include "napi_audio_capturer.h"
 
 namespace OHOS {
@@ -36,7 +35,7 @@ static __thread napi_ref g_asrConstructor = nullptr;
 
 static const std::map<int32_t, int32_t> ERR_MAP = {
     {ERR_SYSTEM_PERMISSION_DENIED, NAPI_ERR_PERMISSION_DENIED},
-    {ERR_INVALID_PARAM, NAPI_ERR_INVALID_PARAM},
+    {ERR_INVALID_PARAM, NAPI_ERR_INVALID_PARAM },
     {ERROR, NAPI_ERR_UNSUPPORTED},
     {-1, NAPI_ERR_UNSUPPORTED},
 };
@@ -242,8 +241,8 @@ napi_value NapiAsrProcessingController::CreateAsrProcessingController(napi_env e
     napi_value argv[ARGS_ONE] = {};
     napi_value thisVar = nullptr;
     napi_get_cb_info(env, info, &argc, argv, &thisVar, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invaild");
     bool isCapturerValid = CheckCapturerValid(env, argv[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(isCapturerValid,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED), "Operation not allowed. ");
@@ -256,16 +255,17 @@ napi_value NapiAsrProcessingController::SetAsrAecMode(napi_env env, napi_callbac
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invaild");
 
     int32_t asrAecMode = 0;
     int32_t retMode = NapiParamUtils::GetValueInt32(env, asrAecMode, argv[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of mode must be mode enum"), "Input parameter value error. ");
-    CHECK_AND_RETURN_RET_LOG(asrAecMode == 0 || asrAecMode == 1, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be enum AsrAecMode"),
+    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be mode enum"),
         "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(asrAecMode == 0 || asrAecMode == 1, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of mode must be enum AsrAecMode"), "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->SetAsrAecMode(static_cast<AsrAecMode>(asrAecMode));
@@ -297,14 +297,15 @@ napi_value NapiAsrProcessingController::SetAsrNoiseSuppressionMode(napi_env env,
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invaild");
 
     int32_t asrNoiseSuppressionMode = 0;
     int32_t asrVoiceControlModeMax = static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD);
     int32_t retMode = NapiParamUtils::GetValueInt32(env, asrNoiseSuppressionMode, argv[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of mode must be mode enum"), "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be mode enum"),
+        "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(asrNoiseSuppressionMode >= 0 && asrNoiseSuppressionMode <= asrVoiceControlModeMax,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of mode must be enum AsrNoiseSuppressionMode"),
@@ -341,15 +342,17 @@ napi_value NapiAsrProcessingController::SetAsrWhisperDetectionMode(napi_env env,
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argCount invaild");
 
     int32_t asrWhisperDetectionMode = 0;
     int32_t retMode = NapiParamUtils::GetValueInt32(env, asrWhisperDetectionMode, argv[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of mode must be mode enum"), "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be mode enum"),
+        "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(asrWhisperDetectionMode == 0 || asrWhisperDetectionMode == 1,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "Input parameter value error. ");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM),
+        "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->SetAsrWhisperDetectionMode(
@@ -382,18 +385,20 @@ napi_value NapiAsrProcessingController::SetAsrVoiceControlMode(napi_env env, nap
     size_t argc = ARGS_TWO;
     napi_value argv[ARGS_TWO] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invaild");
 
     int32_t asrVoiceControlMode = 0;
     bool on = false;
     int32_t asrVoiceControlModeMax = static_cast<int32_t>(AsrVoiceControlMode::VOICE_TXRX_DECREASE);
     int32_t retMode = NapiParamUtils::GetValueInt32(env, asrVoiceControlMode, argv[PARAM0]);
     int32_t retBool = NapiParamUtils::GetValueBoolean(env, on, argv[PARAM1]);
-    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of mode must be mode enum"), "Input parameter value error. ");
-    CHECK_AND_RETURN_RET_LOG(retBool == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of mode must be bool"), "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be mode enum"),
+        "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(retBool == 0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be bool"),
+        "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(asrVoiceControlMode >= 0 && asrVoiceControlMode <= asrVoiceControlModeMax,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of mode must be enum AsrVoiceControlMode"),
@@ -415,18 +420,20 @@ napi_value NapiAsrProcessingController::SetAsrVoiceMuteMode(napi_env env, napi_c
     size_t argc = ARGS_TWO;
     napi_value argv[ARGS_TWO] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invaild");
 
     int32_t asrVoiceMuteMode = 0;
     bool on = false;
     int32_t asrVoiceMuteModeMax = static_cast<int32_t>(AsrVoiceMuteMode::OUTPUT_MUTE_EX);
     int32_t retMode = NapiParamUtils::GetValueInt32(env, asrVoiceMuteMode, argv[PARAM0]);
     int32_t retBool = NapiParamUtils::GetValueBoolean(env, on, argv[PARAM1]);
-    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of mode must be mode enum"), "Input parameter value error. ");
-    CHECK_AND_RETURN_RET_LOG(retBool == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of mode must be bool"), "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be mode enum"),
+        "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(retBool == 0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be bool"),
+        "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(asrVoiceMuteMode >= 0 && asrVoiceMuteMode <= asrVoiceMuteModeMax,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of mode must be enum AsrVoiceMuteMode"),

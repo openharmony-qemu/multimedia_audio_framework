@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -428,12 +428,14 @@ void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
 
 int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     AUDIO_INFO_LOG("client set %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "IpcStream is already nullptr");
     int32_t ret = ipcStream_->UpdatePlaybackCaptureConfig(config);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
 
     filterConfig_ = config;
+#endif
     return SUCCESS;
 }
 
@@ -1954,7 +1956,7 @@ bool CapturerInClientInner::RestoreAudioStream(bool needStoreState)
     if (ret != SUCCESS) {
         goto error;
     }
-
+#ifdef HAS_FEATURE_INNERCAPTURER
     // for inner-capturer
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         ret = UpdatePlaybackCaptureConfig(filterConfig_);
@@ -1962,7 +1964,7 @@ bool CapturerInClientInner::RestoreAudioStream(bool needStoreState)
             goto error;
         }
     }
-
+#endif
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();

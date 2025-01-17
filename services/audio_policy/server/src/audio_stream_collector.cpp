@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,6 @@
 
 #include "audio_client_tracker_callback_proxy.h"
 #include "audio_spatialization_service.h"
-#include "audio_utils.h"
 
 #include "media_monitor_manager.h"
 
@@ -986,6 +985,8 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
             (changeInfo->rendererInfo).streamUsage);
         if (rendererVolumeType == volumeType) {
             // An active stream has been found, return true directly.
+            AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
+                changeInfo->clientUID, changeInfo->sessionId);
             return true;
         }
     }

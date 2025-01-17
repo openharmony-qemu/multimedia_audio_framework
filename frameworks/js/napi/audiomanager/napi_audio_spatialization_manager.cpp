@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,6 @@
 #include "napi_audio_enum.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
-#include "audio_utils.h"
 #include "napi_audio_spatialization_manager_callback.h"
 
 namespace OHOS {
@@ -205,12 +204,13 @@ napi_value NapiAudioSpatializationManager::IsSpatializationEnabled(napi_env env,
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[PARAM0], &valueType);
         CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of deviceDescriptor must be object"),
-            "invalid valueType");
+            NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of deviceDescriptor must be object"), "invalid valueType");
 
         std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
         NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
-        CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env,
+            NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
             "invalid parameter");
 
@@ -235,7 +235,8 @@ napi_value NapiAudioSpatializationManager::SetSpatializationEnabled(napi_env env
     auto context = std::make_shared<AudioSpatializationManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SetSpatializationEnabled failed : no memory");
-        NapiAudioError::ThrowError(env, "SetSpatializationEnabled failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "SetSpatializationEnabled failed : no memory",
+            NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -246,7 +247,8 @@ napi_value NapiAudioSpatializationManager::SetSpatializationEnabled(napi_env env
         if (argc == ARGS_ONE) {
             context->status = NapiParamUtils::GetValueBoolean(env, context->spatializationEnable, argv[PARAM0]);
             NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
-                "incorrect parameter types: The type of enable must be boolean", NAPI_ERR_INPUT_INVALID);
+                "incorrect parameter types: The type of enable must be boolean",
+                NAPI_ERR_INPUT_INVALID);
         } else if (argc == ARGS_TWO) {
             context->status = NapiParamUtils::GetValueBoolean(env, context->spatializationEnable, argv[PARAM0]);
             if (context->status == napi_ok) {
@@ -260,7 +262,8 @@ napi_value NapiAudioSpatializationManager::SetSpatializationEnabled(napi_env env
                     NAPI_ERR_INPUT_INVALID);
                 context->status = NapiParamUtils::GetValueBoolean(env, context->spatializationEnable, argv[PARAM1]);
                 NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
-                    "incorrect parameter types: The type of enable must be boolean", NAPI_ERR_INPUT_INVALID);
+                    "incorrect parameter types: The type of enable must be boolean",
+                    NAPI_ERR_INPUT_INVALID);
             }
         }
     };
@@ -326,12 +329,13 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingEnabled(napi_env env, n
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[PARAM0], &valueType);
         CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of deviceDescriptor must be object"),
-            "invalid valueType");
+        NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of deviceDescriptor must be object"), "invalid valueType");
 
         std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
         NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
-        CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env,
+            NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
             "invalid parameter");
 
@@ -356,7 +360,8 @@ napi_value NapiAudioSpatializationManager::SetHeadTrackingEnabled(napi_env env, 
     auto context = std::make_shared<AudioSpatializationManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SetHeadTrackingEnabled failed : no memory");
-        NapiAudioError::ThrowError(env, "SetHeadTrackingEnabled failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "SetHeadTrackingEnabled failed : no memory",
+            NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -367,7 +372,8 @@ napi_value NapiAudioSpatializationManager::SetHeadTrackingEnabled(napi_env env, 
         if (argc == ARGS_ONE) {
             context->status = NapiParamUtils::GetValueBoolean(env, context->headTrackingEnable, argv[PARAM0]);
             NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
-                "incorrect parameter types: The type of enable must be boolean", NAPI_ERR_INPUT_INVALID);
+                "incorrect parameter types: The type of enable must be boolean",
+                NAPI_ERR_INPUT_INVALID);
         } else if (argc == ARGS_TWO) {
             context->status = NapiParamUtils::GetValueBoolean(env, context->headTrackingEnable, argv[PARAM0]);
             if (context->status == napi_ok) {
@@ -381,7 +387,8 @@ napi_value NapiAudioSpatializationManager::SetHeadTrackingEnabled(napi_env env, 
                     NAPI_ERR_INPUT_INVALID);
                 context->status = NapiParamUtils::GetValueBoolean(env, context->headTrackingEnable, argv[PARAM1]);
                 NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
-                    "incorrect parameter types: The type of enable must be boolean", NAPI_ERR_INPUT_INVALID);
+                    "incorrect parameter types: The type of enable must be boolean",
+                    NAPI_ERR_INPUT_INVALID);
             }
         }
     };
@@ -434,8 +441,8 @@ napi_value NapiAudioSpatializationManager::IsSpatializationSupported(napi_env en
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "invalid arguments");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
         "napiAudioSpatializationManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,
@@ -458,17 +465,19 @@ napi_value NapiAudioSpatializationManager::IsSpatializationSupportedForDevice(na
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of deviceDescriptor must be object"), "invalid valueType");
 
     std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
         "invalid parameter");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
@@ -491,8 +500,8 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupported(napi_env env,
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "invalid arguments");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
         "napiAudioSpatializationManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,
@@ -513,23 +522,25 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupportedForDevice(napi
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
     if (napiAudioSpatializationManager == nullptr || napiAudioSpatializationManager
             ->audioSpatializationMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioSpatializationManager or audioSpatializationMngr_ is  nullptr");
         NapiAudioError::ThrowError(env, NAPI_ERR_SYSTEM);
         return nullptr;
     }
-    
+
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of deviceDescriptor must be object"), "invalid valueType");
 
     std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
         "invalid parameter");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
@@ -553,8 +564,8 @@ napi_value NapiAudioSpatializationManager::UpdateSpatialDeviceState(napi_env env
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
 
     AudioSpatialDeviceState audioSpatialDeviceState;
     if (NapiParamUtils::GetSpatialDeviceState(env, &audioSpatialDeviceState, args[PARAM0]) != napi_ok) {
@@ -583,8 +594,8 @@ napi_value NapiAudioSpatializationManager::GetSpatializationSceneType(napi_env e
 
     size_t argc = PARAM0;
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "invalid arguments");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
         "napiAudioSpatializationManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,
@@ -606,12 +617,13 @@ napi_value NapiAudioSpatializationManager::SetSpatializationSceneType(napi_env e
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of spatializationSceneType must be number"), "invalid valueType");
 
     int32_t sceneType;
@@ -728,7 +740,8 @@ napi_value NapiAudioSpatializationManager::On(napi_env env, napi_callback_info i
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     if (status != napi_ok || argc < requireArgc) {
         AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 2 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "mandatory parameters are left unspecified");
     }
 
     napi_valuetype eventType = napi_undefined;
@@ -838,7 +851,8 @@ napi_value NapiAudioSpatializationManager::Off(napi_env env, napi_callback_info 
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     if (status != napi_ok || argc < requireArgc) {
         AUDIO_ERR_LOG("Off fail to napi_get_cb_info/Requires min 1 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "mandatory parameters are left unspecified");
         return undefinedResult;
     }
 

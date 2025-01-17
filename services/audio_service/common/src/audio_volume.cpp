@@ -85,6 +85,10 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
             " isMuted:%{public}d, streamVolumeSize:%{public}zu",
             sessionId, it->second.volume_, it->second.duckFactor_, it->second.lowPowerFactor_, it->second.isMuted_,
             streamVolume_.size());
+        if (volumeType == STREAM_VOICE_ASSISTANT &&
+            !CheckoutSystemAppUtil::CheckoutSystemApp(it->second.GetAppUid())) {
+            volumeType = STREAM_MUSIC;
+        }
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u, streamVolumeSize:%{public}zu",
             sessionId, streamVolume_.size());
