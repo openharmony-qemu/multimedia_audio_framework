@@ -1590,6 +1590,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
             result = StartAudioStream() && StopAudioStream();
             break;
         default:
+            state_ = oldState;
             break;
     }
     if (!result) {
