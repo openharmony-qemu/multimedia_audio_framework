@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -202,13 +202,15 @@ napi_value NapiAudioRoutingManager::GetDevices(napi_env env, napi_callback_info 
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->deviceFlag, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get deviceFlag failed",
             NAPI_ERR_INVALID_PARAM);
         if (!NapiAudioEnum::IsLegalInputArgumentDeviceFlag(context->deviceFlag)) {
             context->SignError(context->errCode ==
-                NAPI_ERR_INVALID_PARAM? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
+                NAPI_ERR_INVALID_PARAM?
+                NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
         }
     };
     context->GetCbInfo(env, info, inputParser);
@@ -235,12 +237,13 @@ napi_value NapiAudioRoutingManager::GetDevicesSync(napi_env env, napi_callback_i
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invalid");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invalid");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of deviceFlag must be number"), "valueType invalid");
 
     int32_t deviceFlag;
@@ -269,7 +272,8 @@ napi_value NapiAudioRoutingManager::SelectOutputDevice(napi_env env, napi_callba
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
             context->bArgTransFlag, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->bArgTransFlag, "select output device failed",
@@ -305,7 +309,8 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         NapiParamUtils::GetAudioRendererFilter(env, context->audioRendererFilter,
             context->bArgTransFlag, argv[PARAM0]);
         NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
@@ -345,7 +350,8 @@ napi_value NapiAudioRoutingManager::SelectInputDevice(napi_env env, napi_callbac
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
             context->bArgTransFlag, argv[PARAM0]);
     };
@@ -362,7 +368,8 @@ napi_value NapiAudioRoutingManager::SelectInputDevice(napi_env env, napi_callbac
             context->SignError(NAPI_ERR_INVALID_PARAM);
         }
         context->intValue = napiAudioRoutingManager->audioMngr_->SelectInputDevice(context->deviceDescriptors);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SelectInputDevice failed", NAPI_ERR_SYSTEM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SelectInputDevice failed",
+            NAPI_ERR_SYSTEM);
     };
 
     auto complete = [env](napi_value &output) {
@@ -381,7 +388,8 @@ napi_value NapiAudioRoutingManager::SelectInputDeviceByFilter(napi_env env, napi
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetAudioCapturerFilter(env, context->audioCapturerFilter, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "select input device by filter failed",
             NAPI_ERR_INVALID_PARAM);
@@ -402,7 +410,8 @@ napi_value NapiAudioRoutingManager::SelectInputDeviceByFilter(napi_env env, napi
         }
         context->intValue = napiAudioRoutingManager->audioMngr_->SelectInputDevice(context->audioCapturerFilter,
             context->deviceDescriptors);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SelectInputDevice failed", NAPI_ERR_SYSTEM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SelectInputDevice failed",
+            NAPI_ERR_SYSTEM);
     };
 
     auto complete = [env](napi_value &output) {
@@ -421,13 +430,14 @@ napi_value NapiAudioRoutingManager::SetCommunicationDevice(napi_env env, napi_ca
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->deviceType, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "set communication device failed",
             NAPI_ERR_INVALID_PARAM);
         if (!NapiAudioEnum::IsLegalInputArgumentCommunicationDeviceType(context->deviceType)) {
-            context->SignError(context->errCode ==
-                NAPI_ERR_INVALID_PARAM? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
+            context->SignError(context->errCode == NAPI_ERR_INVALID_PARAM?
+                NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
         }
         context->status = NapiParamUtils::GetValueBoolean(env, context->isActive, argv[PARAM1]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "set communication device failed",
@@ -444,7 +454,8 @@ napi_value NapiAudioRoutingManager::SetCommunicationDevice(napi_env env, napi_ca
             "context object state is error.");
         context->intValue = napiAudioRoutingManager->audioMngr_->SetDeviceActive(
             static_cast<DeviceType>(context->deviceType), context->isActive);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SelectInputDevice failed", NAPI_ERR_SYSTEM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SelectInputDevice failed",
+            NAPI_ERR_SYSTEM);
     };
 
     auto complete = [env](napi_value &output) {
@@ -463,13 +474,14 @@ napi_value NapiAudioRoutingManager::IsCommunicationDeviceActive(napi_env env, na
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->deviceType, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "IsCommunicationDeviceActive failed",
             NAPI_ERR_INVALID_PARAM);
         if (!NapiAudioEnum::IsLegalInputArgumentActiveDeviceType(context->deviceType)) {
-            context->SignError(context->errCode ==
-                NAPI_ERR_INVALID_PARAM? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
+            context->SignError(context->errCode == NAPI_ERR_INVALID_PARAM?
+                NAPI_ERR_INVALID_PARAM: NAPI_ERR_UNSUPPORTED);
         }
     };
     context->GetCbInfo(env, info, inputParser);
@@ -498,13 +510,14 @@ napi_value NapiAudioRoutingManager::IsCommunicationDeviceActiveSync(napi_env env
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invalid");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invalid");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of deviceType must be number"), "valueType invalid");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of deviceType must be number"),
+        "valueType invalid");
 
     int32_t deviceType;
     napi_status status = NapiParamUtils::GetValueInt32(env, deviceType, argv[PARAM0]);
@@ -579,7 +592,8 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(napi
         CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
             "context object state is error.");
         if (context->rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
-            context->SignError(NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of usage invalid");
+            context->SignError(NAPI_ERR_INVALID_PARAM,
+                "parameter verification failed: The param of usage invalid");
         } else {
             context->intValue = napiAudioRoutingManager->audioRoutingMngr_->GetPreferredOutputDeviceForRendererInfo(
                 context->rendererInfo, context->outDeviceDescriptors);
@@ -607,13 +621,13 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfoSync(
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invalid");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invalid");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of rendererInfo must be object"),
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of rendererInfo must be object"),
         "valueType invalid");
 
     AudioRendererInfo rendererInfo;
@@ -650,7 +664,8 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceByFilter(napi_env en
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetAudioRendererFilter(env, context->audioRendererFilter,
             context->bArgTransFlag, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get AudioRendererFilter failed",
@@ -727,8 +742,8 @@ napi_value NapiAudioRoutingManager::GetPreferredInputDeviceForCapturerInfoSync(n
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invalid");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invalid");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
@@ -765,9 +780,9 @@ napi_value NapiAudioRoutingManager::GetPreferredInputDeviceByFilter(napi_env env
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
-        context->status = NapiParamUtils::GetAudioCapturerFilter(env, context->audioCapturerFilter,
-            argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetAudioCapturerFilter(env, context->audioCapturerFilter, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get GetAudioCapturerFilter failed",
             NAPI_ERR_INVALID_PARAM);
     };
@@ -794,8 +809,8 @@ napi_value NapiAudioRoutingManager::GetAvailableMicrophones(napi_env env, napi_c
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invalid");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invalid");
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr, result, "napiAudioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager->audioRoutingMngr_ != nullptr, result,
         "audioRoutingMngr_ is nullptr");
@@ -814,8 +829,8 @@ napi_value NapiAudioRoutingManager::GetAvailableDevices(napi_env env, napi_callb
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argcCount invalid");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
 
     napi_valuetype valueType = napi_undefined;
     napi_status status = napi_typeof(env, argv[PARAM0], &valueType);
@@ -884,8 +899,9 @@ void NapiAudioRoutingManager::RegisterDeviceChangeCallback(napi_env env, size_t 
     int32_t flag = ARGS_THREE;
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of deviceFlag must be number"), "invalid valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowError(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of deviceFlag must be number"),
+        "invalid valueType");
     if (valueType == napi_number) {
         NapiParamUtils::GetValueInt32(env, flag, args[PARAM1]);
         AUDIO_INFO_LOG("RegisterDeviceChangeCallback:On deviceFlag: %{public}d", flag);
@@ -1044,8 +1060,9 @@ void NapiAudioRoutingManager::RegisterAvaiableDeviceChangeCallback(napi_env env,
     int32_t flag = 0;
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of deviceUsage must be number"), "invalid Type");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowError(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of deviceUsage must be number"),
+        "invalid Type");
 
     NapiParamUtils::GetValueInt32(env, flag, args[PARAM1]);
     AUDIO_INFO_LOG("RegisterDeviceChangeCallback:On deviceFlag: %{public}d", flag);
@@ -1120,12 +1137,14 @@ napi_value NapiAudioRoutingManager::On(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     bool isArgcCountRight = argc == requireArgc || argc == maxArgc;
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && isArgcCountRight, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "status or isArgcCountRight error");
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"),
+        "status or isArgcCountRight error");
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, args[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of eventType must be string"), "eventType is invalid");
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
+        "eventType is invalid");
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
     AUDIO_INFO_LOG("On callbackName: %{public}s", callbackName.c_str());
 
@@ -1323,7 +1342,8 @@ napi_value NapiAudioRoutingManager::Off(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
     if (status != napi_ok || argCount < minArgCount) {
         AUDIO_ERR_LOG("Off fail to napi_get_cb_info/Requires min 1 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "mandatory parameters are left unspecified");
         return undefinedResult;
     }
 

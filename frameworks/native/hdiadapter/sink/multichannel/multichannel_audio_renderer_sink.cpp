@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,7 +37,6 @@
 
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
-#include "audio_utils.h"
 #include "parameters.h"
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
@@ -259,12 +258,13 @@ std::string MultiChannelRendererSinkInner::GetAudioParameter(const AudioParamKey
     }
 
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
-    char value[PARAM_VALUE_LENTH];
+    char value[DumpFileUtil::PARAM_VALUE_LENTH];
     if (audioAdapter_ == nullptr) {
         AUDIO_ERR_LOG("GetAudioParameter failed, audioAdapter_ is null");
         return "";
     }
-    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(),
+        value, DumpFileUtil::PARAM_VALUE_LENTH);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("GetAudioParameter failed, error code: %d", ret);
         return "";
@@ -641,7 +641,7 @@ int32_t MultiChannelRendererSinkInner::Start(void)
 #endif
     dumpFileName_ = "multichannel_renderersink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     if (!started_) {
         int32_t ret = audioRender_->Start(audioRender_);
@@ -1253,7 +1253,7 @@ int32_t MultiChannelRendererSinkInner::GetRenderId(uint32_t &renderId) const
 
 void MultiChannelRendererSinkInner::DumpData(std::string fileName, void *buffer, size_t len)
 {
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         AudioCacheMgr::GetInstance().CacheData(fileName, buffer, len);
     }
 }

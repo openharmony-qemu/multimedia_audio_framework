@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,7 +28,6 @@
 #include "audio_renderer_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_utils.h"
 
 #include "media_monitor_manager.h"
 
@@ -44,6 +43,8 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
 };
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
+static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
+static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
@@ -529,7 +530,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     // eg: 100005_44100_2_1_client_in.pcm
     std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.sampleRate) + "_" +
         std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitOutputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");

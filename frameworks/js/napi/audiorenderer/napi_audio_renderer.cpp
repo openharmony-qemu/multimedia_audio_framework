@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +17,6 @@
 #endif
 
 #include "napi_audio_renderer.h"
-#include "audio_utils.h"
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
 #include "errors.h"
 #else
@@ -279,12 +278,14 @@ napi_value NapiAudioRenderer::CreateAudioRenderer(napi_env env, napi_callback_in
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("CreateAudioRenderer failed : no memory");
-        NapiAudioError::ThrowError(env, "CreateAudioRenderer failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "CreateAudioRenderer failed : no memory",
+            NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetRendererOptions(env, &context->rendererOptions, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioRendererRate failed",
             NAPI_ERR_INVALID_PARAM);
@@ -335,7 +336,8 @@ napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info inf
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->audioRendererRate, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioRendererRate failed",
             NAPI_ERR_INVALID_PARAM);
@@ -397,8 +399,8 @@ napi_value NapiAudioRenderer::GetRenderRateSync(napi_env env, napi_callback_info
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -412,12 +414,14 @@ napi_value NapiAudioRenderer::SetRendererSamplingRate(napi_env env, napi_callbac
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SetRendererSamplingRate failed : no memory");
-        NapiAudioError::ThrowError(env, "SetRendererSamplingRate failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "SetRendererSamplingRate failed : no memory",
+            NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueUInt32(env, context->rendererSampleRate, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get RendererSamplingRate failed",
             NAPI_ERR_INVALID_PARAM);
@@ -454,7 +458,8 @@ napi_value NapiAudioRenderer::GetRendererSamplingRate(napi_env env, napi_callbac
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("GetRendererSamplingRate failed : no memory");
-        NapiAudioError::ThrowError(env, "GetRendererSamplingRate failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "GetRendererSamplingRate failed : no memory",
+            NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -522,7 +527,8 @@ napi_value NapiAudioRenderer::Write(napi_env env, napi_callback_info info)
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetArrayBuffer(env, context->data, context->bufferLen, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get buffer failed",
             NAPI_ERR_INVALID_PARAM);
@@ -616,8 +622,8 @@ napi_value NapiAudioRenderer::GetAudioTimeSync(napi_env env, napi_callback_info 
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -815,8 +821,8 @@ napi_value NapiAudioRenderer::GetBufferSizeSync(napi_env env, napi_callback_info
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -864,8 +870,8 @@ napi_value NapiAudioRenderer::GetAudioStreamIdSync(napi_env env, napi_callback_i
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -887,7 +893,8 @@ napi_value NapiAudioRenderer::SetVolume(napi_env env, napi_callback_info info)
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueDouble(env, context->volLevel, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get RendererSamplingRate failed",
             NAPI_ERR_INVALID_PARAM);
@@ -966,8 +973,8 @@ napi_value NapiAudioRenderer::GetRendererInfoSync(napi_env env, napi_callback_in
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -1013,8 +1020,8 @@ napi_value NapiAudioRenderer::GetStreamInfoSync(napi_env env, napi_callback_info
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -1036,7 +1043,8 @@ napi_value NapiAudioRenderer::SetInterruptMode(napi_env env, napi_callback_info 
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->interruptMode, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get interruptMode failed",
             NAPI_ERR_INVALID_PARAM);
@@ -1067,13 +1075,14 @@ napi_value NapiAudioRenderer::SetInterruptModeSync(napi_env env, napi_callback_i
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invaild");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of mode must be number"), "valueType invaild");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of mode must be number"),
+        "valueType invaild");
 
     int32_t interruptMode;
     NapiParamUtils::GetValueInt32(env, interruptMode, args[PARAM0]);
@@ -1122,8 +1131,8 @@ napi_value NapiAudioRenderer::GetMinStreamVolumeSync(napi_env env, napi_callback
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -1165,8 +1174,8 @@ napi_value NapiAudioRenderer::GetMaxStreamVolumeSync(napi_env env, napi_callback
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -1181,7 +1190,8 @@ napi_value NapiAudioRenderer::GetCurrentOutputDevices(napi_env env, napi_callbac
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("GetCurrentOutputDevices failed : no memory");
-        NapiAudioError::ThrowError(env, "GetCurrentOutputDevices failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "GetCurrentOutputDevices failed : no memory",
+            NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -1214,8 +1224,8 @@ napi_value NapiAudioRenderer::GetCurrentOutputDevicesSync(napi_env env, napi_cal
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -1260,8 +1270,8 @@ napi_value NapiAudioRenderer::GetUnderflowCountSync(napi_env env, napi_callback_
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "argcCount invaild");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -1313,7 +1323,8 @@ napi_value NapiAudioRenderer::SetAudioEffectMode(napi_env env, napi_callback_inf
             "incorrect parameter types: The type of mode must be number", NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context,
             NapiAudioEnum::IsLegalInputArgumentAudioEffectMode(context->audioEffectMode),
-            "parameter verification failed: The param of mode must be enum AudioEffectMode", NAPI_ERR_INVALID_PARAM);
+            "parameter verification failed: The param of mode must be enum AudioEffectMode",
+            NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -1348,13 +1359,14 @@ napi_value NapiAudioRenderer::SetChannelBlendMode(napi_env env, napi_callback_in
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invaild");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of mode must be number"), "valueType params");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of mode must be number"),
+        "valueType params");
 
     int32_t channelBlendMode;
     NapiParamUtils::GetValueInt32(env, channelBlendMode, argv[PARAM0]);
@@ -1379,16 +1391,18 @@ napi_value NapiAudioRenderer::SetVolumeWithRamp(napi_env env, napi_callback_info
     size_t argc = ARGS_TWO;
     napi_value argv[ARGS_TWO] = {};
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invaild");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of volume must be number"), "valueType param0 invaild");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of volume must be number"),
+        "valueType param0 invaild");
     napi_typeof(env, argv[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of duration must be number"), "valueType param1 invaild");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of duration must be number"),
+        "valueType param1 invaild");
 
     double volume;
     NapiParamUtils::GetValueDouble(env, volume, argv[PARAM0]);
@@ -1414,13 +1428,14 @@ napi_value NapiAudioRenderer::SetSpeed(napi_env env, napi_callback_info info)
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invaild");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of speed must be number"), "valueType param0 invaild");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of speed must be number"),
+        "valueType param0 invaild");
 
     double speed;
     NapiParamUtils::GetValueDouble(env, speed, argv[PARAM0]);
@@ -1456,8 +1471,8 @@ napi_value NapiAudioRenderer::GetState(napi_env env, napi_callback_info info)
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invaild params");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "invaild params");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer!= nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
@@ -1476,15 +1491,16 @@ napi_value NapiAudioRenderer::On(napi_env env, napi_callback_info info)
     napi_value argv[requireArgc + 1] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "status error");
-    CHECK_AND_RETURN_RET_LOG(argc >= requireArgc, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "requireArgc is invaild");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
+    CHECK_AND_RETURN_RET_LOG(argc >= requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "requireArgc is invaild");
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of eventType must be string"), "eventType is invaild");
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
+        "eventType is invaild");
 
     std::string callbackName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
     AUDIO_DEBUG_LOG("AudioRendererNapi: On callbackName: %{public}s", callbackName.c_str());
@@ -1520,15 +1536,16 @@ napi_value NapiAudioRenderer::Off(napi_env env, napi_callback_info info)
     napi_value argv[requireArgc + 1] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "status error");
-    CHECK_AND_RETURN_RET_LOG(argc <= requireArgc, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argc is invaild");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
+    CHECK_AND_RETURN_RET_LOG(argc <= requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argc is invaild");
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of eventType must be string"), "eventType is invaild");
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
+        "eventType is invaild");
 
     std::string callbackName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
     AUDIO_DEBUG_LOG("AudioRendererNapi: Off callbackName: %{public}s", callbackName.c_str());
@@ -1542,13 +1559,14 @@ napi_value NapiAudioRenderer::SetSilentModeAndMixWithOthers(napi_env env, napi_c
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argcCount invalid");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_boolean, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of on must be bool"), "valueType param0 invalid");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_boolean, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of on must be bool"),
+        "valueType param0 invalid");
 
     bool on;
     NapiParamUtils::GetValueBoolean(env, on, argv[PARAM0]);
@@ -1577,7 +1595,8 @@ napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback
 {
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
-        NapiAudioError::ThrowError(env, "SetDefaultOutputDevice failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "SetDefaultOutputDevice failed : no memory",
+            NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -1589,7 +1608,8 @@ napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback
             "incorrect parameter types: The type of mode must be number", NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context,
             NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(context->deviceType),
-            "parameter verification failed: The param of mode must be enum deviceType", NAPI_ERR_INVALID_PARAM);
+            "parameter verification failed: The param of mode must be enum deviceType",
+            NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -1624,10 +1644,10 @@ napi_value NapiAudioRenderer::RegisterCallback(napi_env env, napi_value jsThis,
 {
     NapiAudioRenderer *napiRenderer = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiRenderer));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "status error");
-    CHECK_AND_RETURN_RET_LOG(napiRenderer != nullptr, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
-        "rendererNapi is nullptr");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
+    CHECK_AND_RETURN_RET_LOG(napiRenderer != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "rendererNapi is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiRenderer->audioRenderer_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "audioRenderer_ is nullptr");
 
@@ -1652,7 +1672,8 @@ napi_value NapiAudioRenderer::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterRendererWriteDataCallback(env, argv, cbName, napiRenderer);
     } else {
         bool unknownCallback = true;
-        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_INVALID_PARAM,
+        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env,
+            NAPI_ERROR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported"), "audioRenderer_ is nullptr");
     }
 
@@ -1664,10 +1685,10 @@ napi_value NapiAudioRenderer::UnregisterCallback(napi_env env, napi_value jsThis
 {
     NapiAudioRenderer *napiRenderer = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiRenderer));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "status error");
-    CHECK_AND_RETURN_RET_LOG(napiRenderer != nullptr, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
-        "napiRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
+    CHECK_AND_RETURN_RET_LOG(napiRenderer != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiRenderer->audioRenderer_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "audioRenderer_ is nullptr");
 
@@ -1687,7 +1708,8 @@ napi_value NapiAudioRenderer::UnregisterCallback(napi_env env, napi_value jsThis
         UnregisterRendererWriteDataCallback(env, argc, argv, napiRenderer);
     } else {
         bool unknownCallback = true;
-        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env,
+            NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported"), "cbName is invaild");
     }
 
@@ -1726,8 +1748,9 @@ napi_value NapiAudioRenderer::RegisterPositionCallback(napi_env env, napi_value 
     int64_t markPosition = 0;
     NapiParamUtils::GetValueInt64(env, markPosition, argv[PARAM1]);
 
-    CHECK_AND_RETURN_RET_LOG(markPosition > 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "parameter verification failed: The param of frame is not supported"), "Mark Position value not supported!!");
+    CHECK_AND_RETURN_RET_LOG(markPosition > 0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "parameter verification failed: The param of frame is not supported"),
+        "Mark Position value not supported!!");
     napiRenderer->positionCbNapi_ = std::make_shared<NapiRendererPositionCallback>(env);
     CHECK_AND_RETURN_RET_LOG(napiRenderer->positionCbNapi_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "positionCbNapi_ is nullptr");
@@ -1764,7 +1787,8 @@ napi_value NapiAudioRenderer::RegisterPeriodPositionCallback(napi_env env, napi_
             int32_t ret = napiRenderer->audioRenderer_->SetRendererPeriodPositionCallback(frameCount,
                 napiRenderer->periodPositionCbNapi_);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "SetRendererPeriodPositionCallback failed");
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+                "SetRendererPeriodPositionCallback failed");
 
             std::shared_ptr<NapiRendererPeriodPositionCallback> cb =
                 std::static_pointer_cast<NapiRendererPeriodPositionCallback>(napiRenderer->periodPositionCbNapi_);
@@ -1786,7 +1810,8 @@ napi_value NapiAudioRenderer::RegisterDataRequestCallback(napi_env env, napi_val
     const std::string &cbName, NapiAudioRenderer *napiRenderer)
 {
     CHECK_AND_RETURN_RET_LOG(napiRenderer->dataRequestCbNapi_ == nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "dataRequest already subscribed.");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+            "dataRequest already subscribed.");
 
     napiRenderer->dataRequestCbNapi_ = std::make_shared<NapiRendererDataRequestCallback>(env, napiRenderer);
     napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);

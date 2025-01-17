@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,7 +14,6 @@
  */
 #include "multimedia_audio_stream_manager_impl.h"
 #include "cj_lambda.h"
-#include "audio_info.h"
 #include "audio_log.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"

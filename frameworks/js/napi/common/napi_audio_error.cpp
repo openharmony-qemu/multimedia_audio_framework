@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +17,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const std::string NAPI_ERROR_INVALID_PARAM_INFO = "input parameter value error";
+const std::string NAPI_ERROR_PERMISSION_DENIED_INFO = "not system app";
+const std::string NAPI_ERR_INPUT_INVALID_INFO = "input parameter type or number mismatch";
+const std::string NAPI_ERR_INVALID_PARAM_INFO = "invalid parameter";
+const std::string NAPI_ERR_NO_MEMORY_INFO = "allocate memory failed";
+const std::string NAPI_ERR_ILLEGAL_STATE_INFO = "Operation not permit at current state";
+const std::string NAPI_ERR_UNSUPPORTED_INFO = "unsupported option";
+const std::string NAPI_ERR_TIMEOUT_INFO = "time out";
+const std::string NAPI_ERR_STREAM_LIMIT_INFO = "stream number limited";
+const std::string NAPI_ERR_SYSTEM_INFO = "system error";
+const std::string NAPI_ERR_NO_PERMISSION_INFO = "permission denied";
+
 napi_status NapiAudioError::ThrowError(napi_env env, const char *napiMessage, int32_t napiCode)
 {
     napi_value message = nullptr;

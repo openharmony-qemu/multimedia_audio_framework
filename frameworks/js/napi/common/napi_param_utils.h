@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,7 +28,6 @@
 #include "napi/native_node_api.h"
 #include "napi_base_context.h"
 #include "audio_common_log.h"
-#include "audio_info.h"
 #include "audio_capturer.h"
 #include "audio_system_manager.h"
 #include "audio_stream_manager.h"
@@ -42,33 +41,6 @@ const int ARGS_THREE = 3;
 const int PARAM0 = 0;
 const int PARAM1 = 1;
 const int PARAM2 = 2;
-
-const std::vector<DeviceRole> DEVICE_ROLE_SET = {
-    DEVICE_ROLE_NONE,
-    INPUT_DEVICE,
-    OUTPUT_DEVICE
-};
-
-const std::vector<DeviceType> DEVICE_TYPE_SET = {
-    DEVICE_TYPE_NONE,
-    DEVICE_TYPE_INVALID,
-    DEVICE_TYPE_EARPIECE,
-    DEVICE_TYPE_SPEAKER,
-    DEVICE_TYPE_WIRED_HEADSET,
-    DEVICE_TYPE_WIRED_HEADPHONES,
-    DEVICE_TYPE_BLUETOOTH_SCO,
-    DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_MIC,
-    DEVICE_TYPE_WAKEUP,
-    DEVICE_TYPE_USB_HEADSET,
-    DEVICE_TYPE_DP,
-    DEVICE_TYPE_REMOTE_CAST,
-    DEVICE_TYPE_USB_ARM_HEADSET,
-    DEVICE_TYPE_FILE_SINK,
-    DEVICE_TYPE_FILE_SOURCE,
-    DEVICE_TYPE_EXTERN_CABLE,
-    DEVICE_TYPE_DEFAULT
-};
 
 /* check condition related to argc/argv, return and logging. */
 #define NAPI_CHECK_ARGS_RETURN_VOID(context, condition, message, code)               \

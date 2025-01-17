@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,6 @@
 #ifndef OH_AUDIO_ROUTING_MANAGER_H
 #define OH_AUDIO_ROUTING_MANAGER_H
 
-#include "audio_info.h"
 #include "audio_common_log.h"
 #include "native_audio_routing_manager.h"
 #include "native_audio_common.h"

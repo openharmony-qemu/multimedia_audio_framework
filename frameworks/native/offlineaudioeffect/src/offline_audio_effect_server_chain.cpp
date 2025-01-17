@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -118,8 +118,8 @@ void OfflineAudioEffectServerChain::InitDump()
     std::string dumpFileName = "OfflineEffectServer";
     std::string dumpFileInName = dumpFileName + "_" + std::to_string(chainId) + "_In.pcm";
     std::string dumpFileOutName = dumpFileName + "_" + std::to_string(chainId) + "_Out.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileInName, &dumpFileIn_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileOutName, &dumpFileOut_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileInName, &dumpFileIn_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileOutName, &dumpFileOut_);
     chainId++;
 }
 

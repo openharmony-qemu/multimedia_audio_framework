@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +29,6 @@
 
 #endif
 
-#include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 
@@ -239,12 +238,12 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
 
     AudioDeviceDescriptor desc = {};
- 
+
     if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d;", &pnpEventType, &pnpDeviceType) < EVENT_NUM_TYPE) {
         AUDIO_ERR_LOG("Failed to scan info string %{public}s", info.c_str());
         return;
     }
- 
+
     auto nameBegin = info.find("EVENT_NAME=");
     auto nameEnd = info.find_first_of(";", nameBegin);
     desc.deviceName_ = info.substr(nameBegin + std::strlen("EVENT_NAME="),
@@ -299,12 +298,12 @@ void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
 
     PnpDeviceType pnpDeviceType = PNP_DEVICE_UNKNOWN;
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
- 
+
     if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d;", &pnpEventType, &pnpDeviceType) < EVENT_NUM_TYPE) {
         AUDIO_ERR_LOG("Failed to scan info string %{public}s", info.c_str());
         return;
     }
- 
+
     DeviceType micBlockedDeviceType = GetInternalDeviceType(pnpDeviceType);
     if (micBlockedDeviceType == DEVICE_TYPE_NONE) {
         AUDIO_DEBUG_LOG("Unsupported device %{public}d", pnpDeviceType);

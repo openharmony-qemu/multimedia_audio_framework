@@ -28,7 +28,6 @@
 #include "tokenid_kit.h"
 #include "common_event_manager.h"
 #include "audio_policy_log.h"
-#include "audio_utils.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
@@ -42,6 +41,34 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+// for phone
+const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
+    STREAM_MUSIC,
+    STREAM_VOICE_CALL,
+    STREAM_RING,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ALARM,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC
+};
+
+const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
+    STREAM_VOICE_CALL,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ACCESSIBILITY,
+    STREAM_RING,
+    STREAM_ALARM,
+    STREAM_VOICE_RING,
+    STREAM_ULTRASONIC,
+    // adjust the type of music from the head of list to end, make sure music is updated last.
+    // avoid interference from ring updates on special platform.
+    // when the device is switched to headset,ring and alarm is dualtone type.
+    // dualtone type use fixed volume curve of speaker.
+    // the ring and alarm are classified into the music group.
+    // the music volume becomes abnormal when the db value of music is modified.
+    STREAM_MUSIC
+};
 
 constexpr int32_t SYSTEM_STATUS_START = 1;
 constexpr int32_t SYSTEM_STATUS_STOP = 0;
@@ -61,6 +88,10 @@ constexpr uid_t UID_CAR_DISTRIBUTED_ENGINE_SA = 65872;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
+const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
+const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
+const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -1530,6 +1561,7 @@ int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
 int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
 {
     AUDIO_INFO_LOG("[%{public}d] set to %{public}s", IPCSkeleton::GetCallingPid(), (isMute ? "true" : "false"));
+    const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
         "MANAGE_AUDIO_CONFIG permission denied");

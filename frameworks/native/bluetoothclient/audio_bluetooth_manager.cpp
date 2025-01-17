@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,6 +30,9 @@ namespace OHOS {
 namespace Bluetooth {
 using namespace AudioStandard;
 
+const int32_t BT_VIRTUAL_DEVICE_ADD = 0;
+const int32_t BT_VIRTUAL_DEVICE_REMOVE = 1;
+constexpr const uint8_t CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG = 0x03;
 A2dpSource *AudioA2dpManager::a2dpInstance_ = nullptr;
 std::shared_ptr<AudioA2dpListener> AudioA2dpManager::a2dpListener_ = std::make_shared<AudioA2dpListener>();
 int AudioA2dpManager::connectionState_ = static_cast<int>(BTConnectState::DISCONNECTED);

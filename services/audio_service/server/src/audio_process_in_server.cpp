@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -58,7 +58,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     dumpFileName_ = std::to_string(sessionId_) + '_' + "_dump_process_server_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
         ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -490,7 +490,7 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
 
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_, buffer, bufferSize);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,6 +47,18 @@ using OHOS::Security::AccessToken::AccessTokenKit;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+const int32_t YEAR_BASE = 1900;
+const size_t MOCK_INTERVAL = 2000;
+const int32_t DETECTED_ZERO_THRESHOLD = 1;
+const int32_t BLANK_THRESHOLD_MS = 100;
+const int32_t SIGNAL_THRESHOLD = 10;
+const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
+const int64_t PCM_MAYBE_SILENT = 1;
+const int64_t PCM_MAYBE_NOT_SILENT = 5;
+const int32_t SIGNAL_DATA_SIZE = 96;
+const int32_t DECIMAL_EXPONENT = 10;
+const size_t DATE_LENGTH = 17;
+static uint32_t g_sessionToMock = 0;
 constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
@@ -73,6 +85,11 @@ const int32_t DATA_INDEX_4 = 4;
 const int32_t DATA_INDEX_5 = 5;
 const int32_t STEREO_CHANNEL_COUNT = 2;
 const int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
+
+const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
+const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
+const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
+
 
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -1018,8 +1035,8 @@ std::string GetTime()
     curTime += (t->tm_sec < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_sec) :
         std::to_string(t->tm_sec));
     int64_t mSec = static_cast<int64_t>(tv.tv_usec / AUDIO_MS_PER_SECOND);
-    curTime += (mSec < (DECIMAL_EXPONENT * DECIMAL_EXPONENT) ? (mSec < DECIMAL_EXPONENT ? "00" : "0")
-        + std::to_string(mSec) : std::to_string(mSec));
+    curTime += (mSec < (DECIMAL_EXPONENT * DECIMAL_EXPONENT) ? (mSec < DECIMAL_EXPONENT ? "00" : "0") +
+        std::to_string(mSec) : std::to_string(mSec));
     return curTime;
 }
 

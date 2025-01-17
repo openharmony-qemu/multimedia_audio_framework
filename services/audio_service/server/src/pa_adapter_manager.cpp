@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,6 @@
 #include "pa_renderer_stream_impl.h"
 #include "pa_capturer_stream_impl.h"
 #include "audio_utils.h"
-#include "audio_info.h"
 #include "policy_handler.h"
 
 namespace OHOS {
@@ -36,6 +35,11 @@ const uint64_t BUF_LENGTH_IN_MSEC = 20;
 static const uint32_t PA_RECORD_MAX_LENGTH_NORMAL = 4;
 static const uint32_t PA_RECORD_MAX_LENGTH_WAKEUP = 30;
 static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 5; // 5S
+const char* INNER_CAPTURER_SOURCE = "Speaker.monitor";
+const char* NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
+const char* MONITOR_SOURCE_SUFFIX = ".monitor";
+const char* DUAL_TONE_STREAM = "DualToneStream";
+const char* NORMAL_STREAM = "NormalStream";
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
@@ -370,12 +374,15 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
         if (processConfig.isInnerCapturer) {
             if (processConfig.innerCapMode == MODERN_INNER_CAP) {
                 AUDIO_INFO_LOG("Create the modern inner-cap.");
-                deviceName = NEW_INNER_CAPTURER_SOURCE;
+                const char* newInnerCapturerSource = "InnerCapturerSink.monitor";
+                deviceName = newInnerCapturerSource;
             } else {
-                deviceName = INNER_CAPTURER_SOURCE;
+                const char* innerCapturerSource = "Speaker.monitor";
+                deviceName = innerCapturerSource;
             }
         } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
-            deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME) + std::string(MONITOR_SOURCE_SUFFIX);
+            const char* monitorSourceSuffix = ".monitor";
+            deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME) + std::string(monitorSourceSuffix);
         }
         return PolicyHandler::GetInstance().NotifyCapturerAdded(processConfig.capturerInfo,
             processConfig.streamInfo, sessionId);

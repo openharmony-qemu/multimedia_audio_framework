@@ -281,7 +281,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_009, TestSize.Level1
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
     capturerInServer_->spanSizeInFrame_ = -100;
     capturerInServer_->muteFlag_.store(true);
-    AudioDump::GetInstance().GetVersionType() = BETA_VERSION;
+    AudioDump::GetInstance().GetVersionType() = DumpFileUtil::BETA_VERSION;
     capturerInServer_->ReadData(length);
     EXPECT_NE(capturerInServer_, nullptr);
 }

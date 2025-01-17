@@ -22,7 +22,6 @@
 
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
-#include "audio_utils.h"
 #include "audio_capturer_log.h"
 #include "audio_policy_manager.h"
 
@@ -34,6 +33,8 @@ static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_OVERFLOW_NUM = 100;
 static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
+static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
+static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -315,7 +316,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     // eg: 100009_44100_2_1_cap_client_out.pcm
     std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.samplingRate) + "_" +
         std::to_string(params.audioChannel) + "_" + std::to_string(params.audioSampleFormat) + "_cap_client_out.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitInputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init input device change callback failed");

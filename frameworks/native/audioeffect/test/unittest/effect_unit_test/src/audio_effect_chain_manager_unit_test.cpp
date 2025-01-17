@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,6 @@
 #include <gmock/gmock.h>
 
 #include "audio_effect.h"
-#include "audio_utils.h"
 #include "audio_effect_log.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_effect_rotation.h"
@@ -43,7 +42,7 @@ namespace AudioStandard {
 namespace {
 constexpr uint32_t INFOCHANNELS = 2;
 constexpr uint64_t INFOCHANNELLAYOUT = 0x3;
-    
+
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {
     {"EFFECTCHAIN_SPK_MUSIC", {"apply1", "apply2", "apply3"}, ""},
     {"EFFECTCHAIN_BT_MUSIC", {}, ""}
@@ -83,7 +82,7 @@ void AudioEffectChainManagerUnitTest::TearDown(void) {}
 HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_001, TestSize.Level1)
 {
     string sceneType = "";
-    
+
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
 
@@ -1041,7 +1040,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_003, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_001, TestSize.Level1)
 {
     string sessionID = "123456";
-    
+
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -1055,7 +1054,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_001, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_002, TestSize.Level1)
 {
     string sessionID = "";
-    
+
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     EXPECT_EQ(ERROR, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -1070,7 +1069,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_001, TestSize.Level
 {
     string sceneType = "SCENE_MOVIE";
     string sessionID = "123456";
-    
+
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
     EXPECT_EQ(ERROR, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -1085,7 +1084,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_002, TestSize.Level
 {
     string sceneType = "SCENE_MOVIE";
     string sessionID = "123456";
-    
+
     int32_t addRes = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     EXPECT_EQ(SUCCESS, addRes);
 
@@ -1103,7 +1102,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_003, TestSize.Level
 {
     string sceneType = "123";
     string sessionID = "123456";
-    
+
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
     EXPECT_EQ(ERROR, result);
@@ -1119,7 +1118,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_004, TestSize.Level
 {
     string sceneType = "";
     string sessionID = "";
-    
+
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
     EXPECT_EQ(ERROR, result);

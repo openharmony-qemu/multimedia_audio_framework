@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,11 +20,6 @@
 
 namespace OHOS {
 namespace Bluetooth {
-
-constexpr int32_t WEAR_ENABLED = 1;
-const int32_t BT_VIRTUAL_DEVICE_ADD = 0;
-const int32_t BT_VIRTUAL_DEVICE_REMOVE = 1;
-constexpr const uint8_t CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG = 0x03;
 
 enum BluetoothDeviceAction : int32_t {
     WEAR_ACTION = 0,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -38,7 +38,6 @@
 #include "media_monitor_manager.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
-#include "audio_utils.h"
 #include "audio_proxy_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "audio_attribute.h"
@@ -410,7 +409,7 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
         static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
     VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
 
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void*>(frame), replyBytes);
     }
@@ -484,7 +483,7 @@ int32_t BluetoothCapturerSourceInner::Start(void)
     dumpFileName_ = halName_ + "_" + std::to_string(attr_.sourceType) + "_" + GetTime()
         + "_bluetooth_source_" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel)
         + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {
@@ -773,8 +772,8 @@ void BluetoothCapturerSourceInner::CheckLatencySignal(uint8_t *frame, size_t rep
         AudioParamKey key = NONE;
         AudioExtParamKey hdiKey = AudioExtParamKey(key);
         std::string condition = "debug_audio_latency_measurement";
-        int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(),
-            value, PARAM_VALUE_LENTH);
+        int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value,
+            DumpFileUtil::PARAM_VALUE_LENTH);
         AUDIO_INFO_LOG("GetExtraParam ret:%{public}d", ret);
         LatencyMonitor::GetInstance().UpdateDspTime(value);
         LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(false,

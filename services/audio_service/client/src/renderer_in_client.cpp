@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,7 +41,6 @@
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
-#include "audio_utils.h"
 #include "futex_tool.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -566,7 +565,7 @@ void RendererInClientInner::FirstFrameProcess()
         AUDIO_ERR_LOG("Error: ipcStream_ is not initialized!");
         return;
     }
- 
+
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_.exchange(false)) {
         ipcStream_->RegisterThreadPriority(gettid(),
@@ -647,7 +646,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         AUDIO_ERR_LOG("The stream status is null!");
         return ERR_INVALID_PARAM;
     }
-    
+
     if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
         Trace trace2(traceTag_+ " call start to exit stand-by");
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");

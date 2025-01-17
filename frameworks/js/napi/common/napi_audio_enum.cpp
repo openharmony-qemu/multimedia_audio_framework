@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,6 @@
 #include "audio_interrupt_info.h"
 #include "audio_device_info.h"
 #include "napi_param_utils.h"
-#include "audio_utils.h"
 #include "audio_asr.h"
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "parameters.h"
@@ -34,7 +33,7 @@ using OHOS::HiviewDFX::HiLogLabel;
 
 namespace OHOS {
 namespace AudioStandard {
-
+constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
 napi_ref NapiAudioEnum::sConstructor_ = nullptr;
 unique_ptr<AudioParameters> NapiAudioEnum::sAudioParameters_ = nullptr;
 
