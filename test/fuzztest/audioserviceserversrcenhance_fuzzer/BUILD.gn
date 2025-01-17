@@ -76,9 +76,15 @@ ohos_fuzztest("AudioServiceServerSrcEnhanceFuzzTest") {
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioServiceServerSrcEnhanceFuzzTest" ]
+  deps = []
+  if (audio_framework_feature_low_latency) {
+    deps += [ ":AudioServiceServerSrcEnhanceFuzzTest" ]
+  }
 }

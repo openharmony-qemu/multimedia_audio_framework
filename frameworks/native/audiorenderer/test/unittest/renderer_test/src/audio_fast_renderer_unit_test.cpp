@@ -26,7 +26,6 @@
 #include "audio_renderer_private.h"
 #include "audio_renderer_unit_test.h"
 
-
 using namespace std;
 using namespace std::chrono;
 using namespace testing::ext;

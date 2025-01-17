@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Copyright (c) 2024-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -69,9 +69,16 @@ ohos_fuzztest("AudioServiceClientFuzzTest") {
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
+
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioServiceClientFuzzTest" ]
+  deps = []
+  if (audio_framework_feature_low_latency) {
+    deps += [ ":AudioServiceClientFuzzTest" ]
+  }
 }
