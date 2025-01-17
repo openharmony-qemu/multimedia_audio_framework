@@ -48,14 +48,17 @@ public:
     void UpdateAnahsPlatformType(std::string anahsShowType);
 
 private:
+#ifdef AUDIO_WIRED_DETECT
     AudioPnpServer *audioPnpServer_;
     std::shared_ptr<AudioPnpStatusCallback> pnpDeviceCB_ = nullptr;
+#endif
     struct HDIServiceManager *hdiServiceManager_;
     struct ServiceStatusListener *listener_;
     sptr<IStandardAudioAnahsManagerListener> audioDeviceAnahsCb_;
     std::string anahsShowType_ = "Dialog";
 };
 
+#ifdef AUDIO_WIRED_DETECT
 class AudioPnpStatusCallback : public AudioPnpDeviceChangeCallback {
 public:
     AudioPnpStatusCallback();
@@ -70,6 +73,7 @@ public:
 private:
     DeviceStatusListener *listener_ = nullptr;
 };
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
 

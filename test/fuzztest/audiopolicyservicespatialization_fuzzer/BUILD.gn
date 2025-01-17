@@ -118,10 +118,6 @@ ohos_fuzztest("AudioPolicyServiceSpatializationFuzzTest") {
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
 
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
-  }
-
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }

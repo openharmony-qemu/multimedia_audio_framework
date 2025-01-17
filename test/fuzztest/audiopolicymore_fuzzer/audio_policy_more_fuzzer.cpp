@@ -154,6 +154,7 @@ static AudioRendererInfo getAudioRenderInfo()
     return rendererInfo;
 }
 
+#ifdef AUDIO_WIRED_DETECT
 AudioPnpServer* GetPnpServerPtr()
 {
     static AudioPnpServer pnpServer;
@@ -163,6 +164,7 @@ AudioPnpServer* GetPnpServerPtr()
     }
     return &pnpServer;
 }
+#endif
 
 void InitFuzzTest()
 {
@@ -429,6 +431,7 @@ void AudioVolumeKeyCallbackStubMoreFuzzTest()
 
 void AudioPolicyManagerFuzzTest()
 {
+#ifdef AUDIO_WIRED_DETECT
     AudioEvent audioEvent;
     uint32_t eventType = GetData<uint32_t>();
     uint32_t deviceType = GetData<uint32_t>();
@@ -443,7 +446,6 @@ void AudioPolicyManagerFuzzTest()
     AudioSocketThread::UpdatePnpDeviceState(&audioEvent);
     AudioSocketThread::AudioPnpUeventOpen(&fd);
     AudioSocketThread::UpdateDeviceState(audioEvent);
-    AudioSocketThread::DetectUsbHeadsetState(&audioEvent);
     AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
     AudioSocketThread::AudioPnpUeventParse(msg, strLength);
     AudioInputThread::AudioPnpInputOpen();
@@ -452,6 +454,7 @@ void AudioPolicyManagerFuzzTest()
     GetPnpServerPtr()->UnRegisterPnpStatusListener();
     GetPnpServerPtr()->OnPnpDeviceStatusChanged(DEFAULTINFO);
     AudioInputThread::AudioPnpInputPollAndRead();
+#endif
 }
 
 typedef void (*TestFuncs[15])();
