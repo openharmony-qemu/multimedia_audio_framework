@@ -282,7 +282,13 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+#ifdef SUPPORT_LOW_LATENCY
         streamClass = GetPreferredStreamClass(audioStreamParams);
+#else
+        capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+        capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+        streamClass = IAudioStream::PA_STREAM;
+#endif
     }
     ActivateAudioConcurrency(streamClass);
 

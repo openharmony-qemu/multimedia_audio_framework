@@ -25,8 +25,8 @@
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
-#include "fast_audio_stream.h"
 #include "audio_renderer.cpp"
+#include "fast_audio_stream.h"
 
 using namespace std;
 using namespace std::chrono;

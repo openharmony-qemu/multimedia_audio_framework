@@ -35,11 +35,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
+#ifdef SUPPORT_LOW_LATENCY
 static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
+#endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
 static const int32_t MEDIA_SERVICE_UID = 1013;
 namespace {
@@ -68,6 +70,7 @@ AudioService::~AudioService()
     AUDIO_INFO_LOG("~AudioService()");
 }
 
+#ifdef SUPPORT_LOW_LATENCY
 int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream)
 {
     std::lock_guard<std::mutex> processListLock(processListMutex_);
@@ -113,7 +116,6 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
     if (needRelease) {
         ReleaseProcess(endpointName, delayTime);
     }
-
     return SUCCESS;
 }
 
@@ -145,6 +147,7 @@ int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoin
     // An endpoint exists at check process, but it may be destroyed immediately - during the re-create process
     return A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME;
 }
+#endif
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
@@ -230,6 +233,8 @@ void AudioService::CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_
         capturer->SetNonInterruptMute(true);
     }
 }
+
+#ifdef SUPPORT_LOW_LATENCY
 void AudioService::CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
@@ -239,6 +244,7 @@ void AudioService::CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProce
         process->SetNonInterruptMute(true);
     }
 }
+#endif
 
 void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
@@ -384,6 +390,7 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
+#ifdef SUPPORT_LOW_LATENCY
 void AudioService::FilterAllFastProcess()
 {
     std::unique_lock<std::mutex> lock(processListMutex_);
@@ -406,11 +413,14 @@ void AudioService::FilterAllFastProcess()
         }
     }
 }
+#endif
 
 int32_t AudioService::OnInitInnerCapList()
 {
     AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
+#ifdef SUPPORT_LOW_LATENCY
     FilterAllFastProcess();
+#endif
 
     // strong ref to prevent destruct before unlock
     std::vector<std::shared_ptr<RendererInServer>> renderers;
@@ -494,7 +504,7 @@ int32_t AudioService::DisableDualToneList(uint32_t sessionId)
 // Only one session is working at the same time.
 int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig)
 {
-#ifdef HAS_FEATURE_INNERCAPTURER
+#if defined(HAS_FEATURE_INNERCAPTURER) && defined(SUPPORT_LOW_LATENCY)
     Trace trace("AudioService::OnCapturerFilterChange");
     // in plan:
     // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
@@ -512,13 +522,14 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
     }
 
     AUDIO_WARNING_LOG("%{public}u is working, comming %{public}u will not work!", workingInnerCapId_, sessionId);
-#endif
     return ERR_OPERATION_FAILED;
+#endif
+    return SUCCESS;
 }
 
 int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
 {
-#ifdef HAS_FEATURE_INNERCAPTURER
+#if defined(HAS_FEATURE_INNERCAPTURER) && defined(SUPPORT_LOW_LATENCY)
     if (workingInnerCapId_ != sessionId) {
         AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", workingInnerCapId_, sessionId);
         return SUCCESS;
@@ -553,6 +564,7 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
         filteredRendererMap_.clear();
     }
 #endif
+
     return SUCCESS;
 }
 
@@ -569,6 +581,7 @@ bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDev
     return false;
 }
 
+#ifdef SUPPORT_LOW_LATENCY
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
     int32_t ret =  SUCCESS;
@@ -692,19 +705,6 @@ void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, s
     }
 }
 #endif
-
-int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
-{
-    std::lock_guard<std::mutex> lock(processListMutex_);
-    int32_t ret = SUCCESS;
-    for (auto item : endpointList_) {
-        std::string endpointName = item.second->GetEndpointName();
-        if (endpointName == item.first) {
-            ret = ret != SUCCESS ? ret : item.second->SetVolume(streamType, volume);
-        }
-    }
-    return ret;
-}
 
 int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
     std::shared_ptr<AudioEndpoint> endpoint)
@@ -850,6 +850,22 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
         return endpoint;
     }
 }
+#endif
+
+int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
+{
+    std::lock_guard<std::mutex> lock(processListMutex_);
+    int32_t ret = SUCCESS;
+#ifdef SUPPORT_LOW_LATENCY
+    for (auto item : endpointList_) {
+        std::string endpointName = item.second->GetEndpointName();
+        if (endpointName == item.first) {
+            ret = ret != SUCCESS ? ret : item.second->SetVolume(streamType, volume);
+        }
+    }
+#endif
+    return ret;
+}
 
 void AudioService::Dump(std::string &dumpString)
 {
@@ -858,6 +874,7 @@ void AudioService::Dump(std::string &dumpString)
         AppendFormat(dumpString, "  - InnerCap filter: %s\n",
             ProcessConfig::DumpInnerCapConfig(workingConfig_).c_str());
     }
+#ifdef SUPPORT_LOW_LATENCY
     // dump process
     for (auto paired : linkedPairedList_) {
         paired.first->Dump(dumpString);
@@ -867,6 +884,7 @@ void AudioService::Dump(std::string &dumpString)
         AppendFormat(dumpString, "  - Endpoint device id: %s\n", item.first.c_str());
         item.second->Dump(dumpString);
     }
+#endif
     // dump voip and direct
     {
         std::lock_guard<std::mutex> lock(rendererMapMutex_);
@@ -893,8 +911,8 @@ void AudioService::Dump(std::string &dumpString)
 
 float AudioService::GetMaxAmplitude(bool isOutputDevice)
 {
+#ifdef SUPPORT_LOW_LATENCY
     std::lock_guard<std::mutex> lock(processListMutex_);
-
     if (linkedPairedList_.size() == 0) {
         return 0;
     }
@@ -915,6 +933,9 @@ float AudioService::GetMaxAmplitude(bool isOutputDevice)
         }
     }
     return fastAudioMaxAmplitude;
+#else
+    return 0;
+#endif
 }
 
 std::shared_ptr<RendererInServer> AudioService::GetRendererBySessionID(const uint32_t &sessionID)
@@ -938,6 +959,7 @@ std::shared_ptr<CapturerInServer> AudioService::GetCapturerBySessionID(const uin
 
 void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)
 {
+#ifdef SUPPORT_LOW_LATENCY
     AUDIO_INFO_LOG("SessionId: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
     std::unique_lock<std::mutex> rendererLock(rendererMapMutex_);
     if (allRendererMap_.count(sessionId)) {
@@ -979,6 +1001,7 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
     }
     processListLock.unlock();
     AUDIO_INFO_LOG("Cannot find sessionId");
+#endif
 }
 
 int32_t AudioService::SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack)
@@ -1100,11 +1123,15 @@ void AudioService::CleanAppUseNumMap(int32_t appUid)
 
 bool AudioService::HasBluetoothEndpoint()
 {
+#ifdef SUPPORT_LOW_LATENCY
     std::lock_guard<std::mutex> lock(processListMutex_);
     return std::any_of(linkedPairedList_.begin(), linkedPairedList_.end(),
         [](const auto & linkPair) {
             return linkPair.second->GetDeviceInfo().getType() == DEVICE_TYPE_BLUETOOTH_A2DP;
         });
+#else
+    return true;
+#endif
 }
 
 int32_t AudioService::GetCurrentRendererStreamCnt()

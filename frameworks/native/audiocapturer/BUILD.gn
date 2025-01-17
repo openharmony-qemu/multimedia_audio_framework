@@ -69,6 +69,11 @@ ohos_shared_library("audio_capturer") {
     "../audioutils:audio_utils",
   ]
 
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
   public_configs = [ ":audio_external_library_config" ]
 
   external_deps = [

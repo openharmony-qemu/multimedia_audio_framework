@@ -42,8 +42,6 @@ group("audio_unit_test") {
     "../frameworks/native/audiopolicy/test/unittest/stream_manager_test:audio_stream_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/volume_change_test:audio_volume_change_unit_test",
     "../frameworks/native/audiorenderer/test/multithreadtest:audio_renderer_multi_test",
-    "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_fast_renderer_unit_test",
-    "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_unit_test",
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:capture_renderer_interrupt_unit_test",
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:renderer_capture_interrupt_unit_test",
     "../frameworks/native/audioutils/test/unittest:audio_utils_plus_unit_test",
@@ -68,10 +66,6 @@ group("audio_unit_test") {
     "../services/audio_policy/test:audio_policy_unittest_packages",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
     "../services/audio_service/test/unittest:audio_dump_pcm_unit_test",
-    "../services/audio_service/test/unittest:audio_endpoint_separate_unit_test",
-    "../services/audio_service/test/unittest:audio_process_in_client_unit_test",
-    "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
-    "../services/audio_service/test/unittest:audio_service_unit_test",
     "../services/audio_service/test/unittest:audio_thread_task_unit_test",
     "../services/audio_service/test/unittest:capturer_in_client_unit_test",
     "../services/audio_service/test/unittest:capturer_in_server_unit_test",
@@ -81,7 +75,6 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
     "../services/audio_service/test/unittest:volume_tools_unit_test",
-    "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_plus_unit_test",
     "../services/audio_service/test/unittest/audio_manager_stub_unit_test:audio_manager_stub_unit_test",
     "../services/audio_service/test/unittest/audio_param_parser_unit_test:audio_param_parser_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
@@ -89,7 +82,6 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
     "../services/audio_service/test/unittest/pro_audio_stream_manager_unit_test:pro_audio_stream_manager_unit_test",
     "../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test:pro_renderer_stream_impl_unit_test",
-    "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_unit_test",
   ]
 
   if (audio_framework_feature_opensl_es) {
@@ -103,7 +95,24 @@ group("audio_unit_test") {
     deps += [
       "../services/audio_service/test/unittest:audio_direct_sink_unit_test",
       "../services/audio_service/test/unittest:none_mix_engine_unit_test",
+    ]
+
+    if (audio_framework_feature_low_latency) {
+      deps += [ "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test" ]
+    }
+  }
+
+  if (audio_framework_feature_low_latency) {
+    deps += [
+      "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_fast_renderer_unit_test",
+      "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_unit_test",
+      "../services/audio_service/test/unittest:audio_endpoint_separate_unit_test",
+      "../services/audio_service/test/unittest:audio_process_in_client_unit_test",
+      "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
+      "../services/audio_service/test/unittest:audio_service_unit_test",
+      "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_plus_unit_test",
       "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test",
+      "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_unit_test",
     ]
   }
 

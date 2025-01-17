@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("../../../../../../config.gni")
 
 module_output_path = "multimedia_audio_framework/audio_renderer"
 
@@ -90,6 +91,11 @@ ohos_unittest("audio_fast_renderer_unit_test") {
     "pulseaudio:pulse",
   ]
 
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }
@@ -128,6 +134,11 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
     "hilog:libhilog",
     "pulseaudio:pulse",
   ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"

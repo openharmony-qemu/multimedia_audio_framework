@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,10 +22,11 @@
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
 #include "message_parcel.h"
-#include "audio_process_in_client.h"
 #include "audio_param_parser.h"
 #include "audio_info.h"
 #include "audio_source_type.h"
+#include "audio_process_in_client.h"
+
 using namespace std;
 
 namespace OHOS {

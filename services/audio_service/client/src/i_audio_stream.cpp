@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,10 +22,13 @@
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
-#include "fast_audio_stream.h"
-
+#include "audio_policy_manager.h"
 #include "capturer_in_client.h"
 #include "renderer_in_client.h"
+
+#ifdef SUPPORT_LOW_LATENCY
+#include "fast_audio_stream.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -222,9 +225,14 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
 {
     Trace trace("IAudioStream::GetPlaybackStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
-        (void)params;
+#ifdef SUPPORT_LOW_LATENCY
         AUDIO_INFO_LOG("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
+#else
+        (void)params;
+        AUDIO_INFO_LOG("Unsupport create fast playback stream, so create ipc playback stream");
+        return RendererInClient::GetInstance(eStreamType, appUid);
+#endif
     }
 
     if (streamClass == PA_STREAM) {
@@ -239,9 +247,14 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
 {
     Trace trace("IAudioStream::GetRecordStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
-        (void)params;
+#ifdef SUPPORT_LOW_LATENCY
         AUDIO_INFO_LOG("Create fast record stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
+#else
+        (void)params;
+        AUDIO_INFO_LOG("Unsupport create fast record stream, so create ipc record stream");
+        return CapturerInClient::GetInstance(eStreamType, appUid);
+#endif
     }
     if (streamClass == PA_STREAM) {
         AUDIO_INFO_LOG("Create ipc record stream");
