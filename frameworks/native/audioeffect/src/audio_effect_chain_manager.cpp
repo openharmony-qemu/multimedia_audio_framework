@@ -458,7 +458,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
         if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) == 0 ||
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
             AUDIO_INFO_LOG("null audioEffectChain, sceneType: %{public}s", sceneTypeTemp.c_str());
-            continue; 
+            continue;
         }
         auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
         float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*sessionId);
@@ -1232,7 +1232,7 @@ void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string
         return;
     }
     if (sceneTypeToEffectChainMap_.count(defaultSceneTypeAndDeviceKey) != 0 &&
-        sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0
+        sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0 &&
         sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] ==
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
         if (defaultEffectChainCount_ <= 1) {
