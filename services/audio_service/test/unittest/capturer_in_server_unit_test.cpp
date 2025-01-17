@@ -799,5 +799,52 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_030, TestSize.Level1
     int32_t result = capturerInServer_->InitCacheBuffer(targetSize);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: DrainAudioBuffer_001.
+ * @tc.desc  : Test DrainAudioBuffer interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, DrainAudioBuffer_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->DrainAudioBuffer();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: ResolveBuffer_001.
+ * @tc.desc  : Test ResolveBuffer interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, ResolveBuffer_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    std::shared_ptr<OHAudioBuffer> buffer;
+    int32_t result = capturerInServer_->ResolveBuffer(buffer);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: OnReadData_001.
+ * @tc.desc  : Test OnReadData interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, OnReadData_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    size_t length = 0;
+    int32_t result = capturerInServer_->OnReadData(length);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

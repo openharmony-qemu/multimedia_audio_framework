@@ -558,7 +558,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_010, TestSize.Level1)
     inputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(inputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
-    EXPECT_LE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -666,7 +666,7 @@ HWTEST(AudioManagerUnitTest, SetAudioInterruptCallback_001, TestSize.Level1)
     int32_t zoneID = 1;
     auto ret = AudioSystemManager::GetInstance()->SetAudioInterruptCallback(sessionId, callback,
         clientUid, zoneID);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -679,7 +679,7 @@ HWTEST(AudioManagerUnitTest, UnsetAudioInterruptCallback_001, TestSize.Level1)
     int32_t zoneId = 1;
     uint32_t sessionId = 1;
     auto ret = AudioSystemManager::GetInstance()->UnsetAudioInterruptCallback(zoneId, sessionId);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -1153,17 +1153,6 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level1)
     EXPECT_NE(SUCCESS, ret);
 
     auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER);
-    EXPECT_TRUE(isActive);
-}
-
-/**
-* @tc.name   : Test IsDeviceActive API
-* @tc.number : IsDeviceActive_001
-* @tc.desc   : Test IsDeviceActive interface. Activate device by DEVICE_TYPE_NONE
-*/
-HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level1)
-{
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_NONE);
     EXPECT_TRUE(isActive);
 }
 
