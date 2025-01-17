@@ -101,6 +101,9 @@ ohos_shared_library("audio_setting_provider") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
 
@@ -141,6 +144,9 @@ audio_ohos_library("audio_policy_service") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
   sources = [
@@ -545,6 +551,9 @@ ohos_executable("audio_dump_test") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   sources = [ "test/example/audio_dump_test.cpp" ]
 
