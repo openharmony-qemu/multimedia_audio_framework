@@ -321,7 +321,7 @@ audio_ohos_library("audio_policy_service") {
     "openssl:libcrypto_shared",
   ]
 
-  if (usb_manager_enable) {
+  if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
     sources += [ "server/src/service/manager/audio_usb_manager.cpp" ]
