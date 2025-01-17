@@ -41,11 +41,12 @@ static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
 
 static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     // from high to low
-    {SOURCE_TYPE_VOICE_CALL, 5},
-    {SOURCE_TYPE_VOICE_COMMUNICATION, 4},
-    {SOURCE_TYPE_VOICE_TRANSCRIPTION, 3},
-    {SOURCE_TYPE_MIC, 2},
-    {SOURCE_TYPE_VOICE_RECOGNITION, 1},
+    {SOURCE_TYPE_VOICE_CALL, 6},
+    {SOURCE_TYPE_VOICE_COMMUNICATION, 5},
+    {SOURCE_TYPE_VOICE_TRANSCRIPTION, 4},
+    {SOURCE_TYPE_MIC, 3},
+    {SOURCE_TYPE_VOICE_RECOGNITION, 2},
+    {SOURCE_TYPE_UNPROCESSED, 1},
 };
 
 static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
