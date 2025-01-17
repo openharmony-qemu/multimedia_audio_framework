@@ -207,6 +207,16 @@
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
               }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/frameworks/cj:cj_multimedia_audio_ffi",
+              "header": {
+                "header_files": [
+                  "multimedia_audio_ffi.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/frameworks/cj/include"
+              }
             }
           ],
           "test": [

@@ -16,7 +16,13 @@ import("//build/ohos/ace/ace.gni")
 import("../../config.gni")
 import("../../multimedia_aafwk.gni")
 
+config("public_ffi_config") {
+  include_dirs = [ "include" ]
+}
+
 ohos_shared_library("cj_multimedia_audio_ffi") {
+  public_configs = [ ":public_ffi_config" ]
+
   sanitize = {
     cfi = true  # Enable/disable control flow integrity detection
     boundary_sanitize = true  # Enable boundary san detection
