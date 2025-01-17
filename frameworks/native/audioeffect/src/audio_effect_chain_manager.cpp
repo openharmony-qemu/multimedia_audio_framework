@@ -2,7 +2,7 @@
  * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obtain a copy of the License atsceneTypeToEffectChainMap_
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -412,8 +412,6 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
         std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
             if (sessionIDToEffectInfoMap_.find(*s) == sessionIDToEffectInfoMap_.end()) {
-                AUDIO_INFO_LOG("sessionID:%{public}s sceneType:%{public}s, no find in sessionIDToEffectInfoMap_",
-                    (*s).c_str(), it->first.c_str());
                 continue;
             }
             if (sessionIDToEffectInfoMap_[*s].sceneMode == "EFFECT_NONE") {
@@ -449,7 +447,6 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     for (auto sessionId = sessionIDSet_.begin(); sessionId != sessionIDSet_.end(); ++sessionId) {
         if (sessionIDToEffectInfoMap_.find(*sessionId) == sessionIDToEffectInfoMap_.end()) {
-            AUDIO_INFO_LOG("sessionID:%{public}s, no find in sessionIDToEffectInfoMap_", (*sessionId).c_str());
             continue;
         }
         if (sessionIDToEffectInfoMap_[*sessionId].sceneMode == "EFFECT_NONE") {
@@ -458,8 +455,11 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
         }
         std::string sceneTypeTemp = sessionIDToEffectInfoMap_[*sessionId].sceneType;
         std::string sceneTypeAndDeviceKey = sceneTypeTemp + "_&_" + GetDeviceTypeName();
-        CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&
-            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
+        if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) == 0 ||
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
+            AUDIO_INFO_LOG("null audioEffectChain, sceneType: %{public}s", sceneTypeTemp.c_str());
+            continue; 
+        }
         auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
         float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*sessionId);
         float systemVolumeTemp = audioEffectVolume->GetSystemVolume(
@@ -479,7 +479,10 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
     AUDIO_INFO_LOG("SendEffectApVolume");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
-        CHECK_AND_RETURN_RET_LOG(it->second != nullptr, ERROR, "null audioEffectChain");
+        if (it->second == nullptr) {
+            AUDIO_INFO_LOG("null audioEffectChain, sceneType: %{public}s", it->first.c_str());
+            continue;
+        }
         auto audioEffectChain = it->second;
         float volumeMax = audioEffectChain->GetCurrVolume();
         if ((static_cast<int32_t>(audioEffectChain->GetFinalVolume() * MAX_UINT_VOLUME_NUM) !=
@@ -487,14 +490,20 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
             audioEffectChain->GetFinalVolumeState() == true) {
             audioEffectChain->SetFinalVolume(volumeMax);
             int32_t ret = audioEffectChain->UpdateEffectParam();
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
+            if (ret != 0) {
+                AUDIO_ERR_LOG("set ap volume failed, ret: %{public}d", ret);
+                continue;
+            }
             AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}f",
                 it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
             audioEffectChain->SetFinalVolumeState(false);
         }
     }
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
-        CHECK_AND_RETURN_RET_LOG(it->second != nullptr, ERROR, "null audioEffectChain");
+        if (it->second == nullptr) {
+            AUDIO_INFO_LOG("null audioEffectChain, sceneType: %{public}s", it->first.c_str());
+            continue;
+        }
         auto audioEffectChain = it->second;
         float volume = 0.0f;
         audioEffectChain->SetCurrVolume(volume);
@@ -1222,7 +1231,10 @@ void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string
     if (!isDefaultEffectChainExisted_) {
         return;
     }
-    if (sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] == sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
+    if (sceneTypeToEffectChainMap_.count(defaultSceneTypeAndDeviceKey) != 0 &&
+        sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0
+        sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] ==
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
         if (defaultEffectChainCount_ <= 1) {
             sceneTypeToEffectChainMap_.erase(defaultSceneTypeAndDeviceKey);
             defaultEffectChainCount_= 0;
@@ -1468,7 +1480,8 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamicInner(const std::s
             AUDIO_WARNING_LOG("scene type %{public}s has null effect chain", sceneTypeAndDeviceKey.c_str());
         } else {
             sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]++;
-            if (isDefaultEffectChainExisted_ && sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
+            if (isDefaultEffectChainExisted_ && sceneTypeToEffectChainMap_.count(defaultSceneTypeAndDeviceKey) != 0 &&
+                sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
                 sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
                 defaultEffectChainCount_++;
             }
@@ -1510,7 +1523,8 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamicInner(const std::
     } else if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] > 1) {
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]--;
-        if (sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
+        if (sceneTypeToEffectChainMap_.count(defaultSceneTypeAndDeviceKey) != 0 &&
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
             sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
             defaultEffectChainCount_--;
         }
