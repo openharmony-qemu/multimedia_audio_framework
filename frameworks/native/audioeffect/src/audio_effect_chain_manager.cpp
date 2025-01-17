@@ -1232,7 +1232,6 @@ void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string
         return;
     }
     if (sceneTypeToEffectChainMap_.count(defaultSceneTypeAndDeviceKey) != 0 &&
-        sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0 &&
         sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] ==
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
         if (defaultEffectChainCount_ <= 1) {
