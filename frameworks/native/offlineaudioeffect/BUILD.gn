@@ -78,16 +78,12 @@ if (!audio_framework_feature_offline_effect) {
     include_dirs = [
       "include",
       "../../../interfaces/inner_api/native/audiocommon/include",
-      "../../../services/audio_service/common/include"
+      "../../../services/audio_service/common/include",
     ]
 
-    sources = [
-      "src/offline_audio_effect_server_chain.cpp",
-    ]
+    sources = [ "src/offline_audio_effect_server_chain.cpp" ]
 
-    deps = [
-      "../audioutils:audio_utils",
-    ]
+    deps = [ "../audioutils:audio_utils" ]
 
     external_deps = [
       "c_utils:utils",
