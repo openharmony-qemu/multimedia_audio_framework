@@ -1557,8 +1557,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
-        "state_ is %{public}d, no need for restore", state_.load());
-    bool result = false;
+        "state_ is %{public}d, no need for restore", state_.load()); 
     State oldState = state_;
     state_ = NEW;
     SetStreamTrackerState(false);
@@ -1578,6 +1577,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
 
     SetDefaultOutputDevice(defaultOutputDevice_);
 
+    bool result = true;
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();
