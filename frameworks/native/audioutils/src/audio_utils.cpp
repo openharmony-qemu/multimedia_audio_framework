@@ -496,7 +496,6 @@ int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* 
     return res;
 }
 
-static int32_t StopUsingPermission(uint32_t targetTokenId);
 bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS);
