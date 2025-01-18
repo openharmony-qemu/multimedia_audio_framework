@@ -357,7 +357,10 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerArgDataDump_002, TestSize.Level1)
                                    "  -p\t\t\t|dump pa playback streams\n"
                                    "  -r\t\t\t|dump pa record streams\n"
                                    "  -m\t\t\t|dump hdf input modules\n"
-                                   "  -ep\t\t\t|dump policyhandler info\n";
+                                   "  -ep\t\t\t|dump policyhandler info\n"
+                                   "  -ct\t\t\t|dump AudioCached time info\n"
+                                   "  -cm\t\t\t|dump AudioCached memory info\n"
+                                   "  -pm\t\t\t|dump AudioPerformMonitor info\n";
     audioServerDump.ArgDataDump(dumpString, argQue);
     EXPECT_EQ(expectedHelpInfo, dumpString);
 }
@@ -381,7 +384,10 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerArgDataDump_003, TestSize.Level1)
                                    "  -p\t\t\t|dump pa playback streams\n"
                                    "  -r\t\t\t|dump pa record streams\n"
                                    "  -m\t\t\t|dump hdf input modules\n"
-                                   "  -ep\t\t\t|dump policyhandler info\n";
+                                   "  -ep\t\t\t|dump policyhandler info\n"
+                                   "  -ct\t\t\t|dump AudioCached time info\n"
+                                   "  -cm\t\t\t|dump AudioCached memory info\n"
+                                   "  -pm\t\t\t|dump AudioPerformMonitor info\n";
     audioServerDump.ArgDataDump(dumpString, argQue);
     EXPECT_EQ(expectedHelpInfo, dumpString);
 }
