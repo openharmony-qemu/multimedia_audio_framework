@@ -462,6 +462,7 @@ int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
 int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
 {
     if (!clientThreadPriorityRequested_) {
+        clientPid_ = IPCSkeleton::GetCallingPid();
         clientTid_ = tid;
         clientBundleName_ = bundleName;
         ScheduleReportData(clientPid_, tid, bundleName.c_str());
