@@ -127,7 +127,6 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
     const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    AUDIO_DEBUG_LOG("ActivateAudioConcurrency incoming pipe %{public}d", incomingPipeType);
     if (concurrencyCfgMap_.empty()) {
         return SUCCESS;
     }
@@ -147,6 +146,7 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
             "pipe %{public}d, concede incoming pipe %{public}d", (*it)->sessionId, (*it)->capturerInfo.pipeType,
             incomingPipeType);
     }
+    bool concedeIncomingVoipCap = false;
     for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
         if ((*it)->rendererInfo.pipeType == incomingPipeType && (incomingPipeType == PIPE_TYPE_OFFLOAD ||
             incomingPipeType == PIPE_TYPE_MULTICHANNEL)) {
@@ -160,9 +160,14 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
         ConcurrencyAction action = concurrencyCfgMap_[std::make_pair((*it)->capturerInfo.pipeType, incomingPipeType)];
         if (action == CONCEDE_EXISTING && handler_ != nullptr) {
+            if (incomingPipeType == PIPE_TYPE_CALL_IN && (*it)->capturerInfo.pipeType == PIPE_TYPE_CALL_IN) {
+                concedeIncomingVoipCap = true;
+            }
             handler_->SendConcurrencyEventWithSessionIDCallback((*it)->sessionId);
         }
     }
+    CHECK_AND_RETURN_RET_LOG(!concedeIncomingVoipCap, ERR_CONCEDE_INCOMING_STREAM,
+        "Existing call in concede incoming call in");
     return SUCCESS;
 }
 } // namespace AudioStandard
