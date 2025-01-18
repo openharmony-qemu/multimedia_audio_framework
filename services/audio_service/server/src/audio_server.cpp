@@ -195,7 +195,6 @@ static std::string GetField(const std::string &src, const char* field, const cha
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
 
-#ifdef SUPPORT_LOW_LATENCY
 static void UpdateArmInstance(IAudioCapturerSource *&audioCapturerSourceInstance,
     IAudioRendererSink *&audioRendererSinkInstance)
 {
@@ -205,7 +204,6 @@ static void UpdateArmInstance(IAudioCapturerSource *&audioCapturerSourceInstance
     CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
     primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
 }
-#endif
 
 class CapturerStateOb final : public ICapturerStateCallback {
 public:
@@ -326,9 +324,7 @@ void AudioServer::OnStart()
 #endif
 
     RegisterAudioCapturerSourceCallback();
-#ifdef SUPPORT_LOW_LATENCY
     RegisterAudioRendererSinkCallback();
-#endif
 
     std::unique_ptr<AudioParamParser> audioParamParser = make_unique<AudioParamParser>();
     if (audioParamParser == nullptr) {
@@ -916,7 +912,6 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
 int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
     BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
 {
-#ifdef SUPPORT_LOW_LATENCY
     IAudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
     if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
@@ -925,7 +920,9 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
         if (!audioCapturerSourceInstance->IsInited()) {
+#ifdef SUPPORT_LOW_LATENCY
             audioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
+#endif
         }
         if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD &&
             deviceTypes.size() == 1 && deviceTypes[0] == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -962,7 +959,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
     }
-#endif
+
     return SUCCESS;
 }
 
@@ -1859,7 +1856,6 @@ int32_t AudioServer::SetSupportStreamUsage(std::vector<int32_t> usage)
 
 void AudioServer::RegisterAudioCapturerSourceCallback()
 {
-#ifdef SUPPORT_LOW_LATENCY
     IAudioCapturerSource* audioCapturerSourceWakeupInstance =
         IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_WAKEUP);
     if (audioCapturerSourceWakeupInstance != nullptr) {
@@ -1869,15 +1865,19 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
     IAudioCapturerSource* primaryAudioCapturerSourceInstance =
         IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_MIC);
     IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
+#ifdef SUPPORT_LOW_LATENCY
     IAudioCapturerSource *fastAudioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
     IAudioCapturerSource *voipFastAudioCapturerSourceInstance = FastAudioCapturerSource::GetVoipInstance();
+#endif
     IAudioCapturerSource *bluetoothAudioCapturerSourceInstance = BluetoothCapturerSource::GetInstance();
 
     for (auto audioCapturerSourceInstance : {
         primaryAudioCapturerSourceInstance,
         usbAudioCapturerSinkInstance,
+#ifdef SUPPORT_LOW_LATENCY
         fastAudioCapturerSourceInstance,
         voipFastAudioCapturerSourceInstance,
+#endif
         bluetoothAudioCapturerSourceInstance
     }) {
         if (audioCapturerSourceInstance != nullptr) {
@@ -1887,10 +1887,8 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
                 }));
         }
     }
-#endif
 }
 
-#ifdef SUPPORT_LOW_LATENCY
 void AudioServer::RegisterAudioRendererSinkCallback()
 {
     // Only watch primary and fast sink for now, watch other sinks later.
@@ -1903,8 +1901,10 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     IAudioRendererSink *mchSink = IAudioRendererSink::GetInstance("multichannel", "");
     IAudioRendererSink *a2dpSink = IAudioRendererSink::GetInstance("a2dp", "");
     IAudioRendererSink *a2dpFastSink = IAudioRendererSink::GetInstance("a2dp_fast", "");
+#ifdef SUPPORT_LOW_LATENCY
     IAudioRendererSink *fastSink = FastAudioRendererSink::GetInstance();
     IAudioRendererSink *fastVoipSink = FastAudioRendererSink::GetVoipInstance();
+#endif
 
     for (auto sinkInstance : {
         primarySink,
@@ -1916,15 +1916,16 @@ void AudioServer::RegisterAudioRendererSinkCallback()
         mchSink,
         a2dpSink,
         a2dpFastSink,
+#ifdef SUPPORT_LOW_LATENCY
         fastSink,
         fastVoipSink
+#endif
     }) {
         if (sinkInstance) {
             sinkInstance->RegisterAudioSinkCallback(this);
         }
     }
 }
-#endif
 
 int32_t AudioServer::SetCaptureSilentState(bool state)
 {

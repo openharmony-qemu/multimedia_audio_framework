@@ -504,7 +504,7 @@ int32_t AudioService::DisableDualToneList(uint32_t sessionId)
 // Only one session is working at the same time.
 int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig)
 {
-#if defined(HAS_FEATURE_INNERCAPTURER) && defined(SUPPORT_LOW_LATENCY)
+#ifdef HAS_FEATURE_INNERCAPTURER
     Trace trace("AudioService::OnCapturerFilterChange");
     // in plan:
     // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
@@ -529,7 +529,7 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
 
 int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
 {
-#if defined(HAS_FEATURE_INNERCAPTURER) && defined(SUPPORT_LOW_LATENCY)
+#ifdef HAS_FEATURE_INNERCAPTURER
     if (workingInnerCapId_ != sessionId) {
         AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", workingInnerCapId_, sessionId);
         return SUCCESS;
@@ -537,6 +537,7 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
     workingInnerCapId_ = 0;
     workingConfig_ = {};
 
+#ifdef SUPPORT_LOW_LATENCY
     std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
     for (auto pair : endpointList_) {
         if (pair.second->GetDeviceRole() == OUTPUT_DEVICE) {
@@ -544,6 +545,7 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
         }
     }
     lockEndpoint.unlock();
+#endif
 
     // strong ref to prevent destruct before unlock
     std::vector<std::shared_ptr<RendererInServer>> renderers;
