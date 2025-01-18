@@ -217,9 +217,8 @@ private:
     void AudioServerDied(pid_t pid, pid_t uid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
-#ifdef SUPPORT_LOW_LATENCY
     void RegisterAudioRendererSinkCallback();
-#endif
+
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
