@@ -479,7 +479,7 @@ int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char*
     Trace trace("PrivacyKit::StartUsingPermission");
     AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}d permission:%{public}s",
             targetTokenId, permission);
-    WatchTimeout guard("Security::AccessToken::PrivacyKit::StartUsingPermission:PermissionUtil::StartUsingPermission");
+    WatchTimeout guard("PrivacyKit::StartUsingPermission:PermissionUtil::StartUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, permission);
     guard.CheckCurrTimeout();
     return res;
@@ -490,7 +490,7 @@ int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* 
     Trace trace("PrivacyKit::StopUsingPermission");
     AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d permission:%{public}s",
             targetTokenId, permission);
-    WatchTimeout guard("Security::AccessToken::PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
+    WatchTimeout guard("PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, permission);
     guard.CheckCurrTimeout();
     return res;
@@ -511,8 +511,8 @@ bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t session
         AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
             "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        // Tempppppppp solution, Must Must Must be reverted after PrivacyKit implements reqs in v5.1!!!
-        CHECK_AND_RETURN_RET_LOG( res == 0 || res != Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
+        // Tempppppppp solution, Must Must Must be reverted after PrivacyKit implements reqs in feature!!!
+        CHECK_AND_RETURN_RET_LOG(res == 0 || res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
             "StartUsingPermission for tokenId:%{public}u, PrivacyKit error code:%{public}d", targetTokenId, res);
         if (res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
             AUDIO_ERR_LOG("The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING error code:%{public}d", res);
@@ -546,7 +546,7 @@ bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionI
         AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
             "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        CHECK_AND_RETURN_RET_LOG( res == 0, false,"StopUsingPermission for tokenId %{public}u!"
+        CHECK_AND_RETURN_RET_LOG( res == 0, false, "StopUsingPermission for tokenId %{public}u!"
             "The PrivacyKit error code:%{public}d", targetTokenId, res);
     }
     return true;
