@@ -548,10 +548,13 @@ bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, DeviceIn
 
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
-    AudioPipeType incomingPipe = config.audioMode == AUDIO_MODE_PLAYBACK ?
-        PIPE_TYPE_LOWLATENCY_OUT : PIPE_TYPE_LOWLATENCY_IN;
-    int32_t ret = PolicyHandler::GetInstance().ActivateConcurrencyFromServer(incomingPipe);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Concede incoming lowlatency stream from server");
+    int32_t ret =  SUCCESS;
+    if (config.streamType != STREAM_VOICE_CALL && config.streamType != STREAM_VOICE_COMMUNICATION) {
+        AudioPipeType incomingPipe = config.audioMode == AUDIO_MODE_PLAYBACK ?
+            PIPE_TYPE_LOWLATENCY_OUT : PIPE_TYPE_LOWLATENCY_IN;
+        ret = PolicyHandler::GetInstance().ActivateConcurrencyFromServer(incomingPipe);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Concede incoming lowlatency stream from server");
+    }
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
