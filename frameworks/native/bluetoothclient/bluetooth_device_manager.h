@@ -75,6 +75,8 @@ private:
     static std::vector<BluetoothRemoteDevice> negativeDevices_;
     static std::vector<BluetoothRemoteDevice> connectingDevices_;
     static std::vector<BluetoothRemoteDevice> virtualDevices_;
+    static void HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device);
+    static AudioStandard::AudioDeviceDescriptor HandleConnectDeviceInner(const BluetoothRemoteDevice &device);
 };
 
 class A2dpInBluetoothDeviceManager {
@@ -145,6 +147,8 @@ public:
     static std::vector<BluetoothRemoteDevice> GetHfpVirtualDeviceList();
 
 private:
+    static void HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device);
+    static AudioStandard::AudioDeviceDescriptor HandleConnectDeviceInner(const BluetoothRemoteDevice &device);
     static std::map<std::string, BluetoothRemoteDevice> hfpBluetoothDeviceMap_;
     static std::map<std::string, BluetoothDeviceAction> wearDetectionStateMap_;
     static std::vector<BluetoothRemoteDevice> privacyDevices_;

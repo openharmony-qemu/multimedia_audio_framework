@@ -30,6 +30,7 @@ enum BluetoothDeviceAction : int32_t {
     DISABLE_WEAR_DETECTION_ACTION,
     USER_SELECTION_ACTION,
     STOP_VIRTUAL_CALL,
+    CATEGORY_UPDATE_ACTION,
     CONNECTING_ACTION = 100,
     CONNECT_ACTION,
     DISCONNECT_ACTION,
@@ -63,6 +64,7 @@ enum RecognitionStatus : int32_t {
     RECOGNITION_DISCONNECTING = 2,
     RECOGNITION_DISCONNECTED = 3,
 };
+
 } // namespace Bluetooth
 } // namespace OHOS
 
