@@ -134,7 +134,7 @@ private:
     bool rendererInited_;
     bool started_;
     bool paused_;
-    bool suspend_;
+    std::atomic<bool> suspend_ = false;
     float leftVolume_;
     float rightVolume_;
     struct HDI::Audio_Bluetooth::AudioProxyManager *audioManager_;
@@ -898,12 +898,16 @@ int32_t BluetoothRendererSinkInner::Flush(void)
 
 int32_t BluetoothRendererSinkInner::SuspendRenderSink(void)
 {
+    AUDIO_INFO_LOG("in");
+    Trace trace("BluetoothRendererSinkInner::SuspendRenderSink");
     suspend_ = true;
     return SUCCESS;
 }
 
 int32_t BluetoothRendererSinkInner::RestoreRenderSink(void)
 {
+    AUDIO_INFO_LOG("in");
+    Trace trace("BluetoothRendererSinkInner::RestoreRenderSink");
     suspend_ = false;
     return SUCCESS;
 }
