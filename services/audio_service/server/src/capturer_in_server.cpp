@@ -51,6 +51,10 @@ CapturerInServer::~CapturerInServer()
     if (status_ != I_STATUS_RELEASED) {
         Release();
     }
+    if (needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+    }
     DumpFileUtil::CloseDumpFile(&dumpS2C_);
 }
 
@@ -312,8 +316,8 @@ int32_t CapturerInServer::Start()
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(tokenId, streamIndex_), ERR_PERMISSION_DENIED,
-            "NotifyPrivacy failed!");
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_), ERR_PERMISSION_DENIED,
+            "NotifyPrivacyStart failed!");
     }
 
     AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
@@ -334,7 +338,7 @@ int32_t CapturerInServer::Pause()
     }
     if (needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, streamIndex_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
@@ -394,7 +398,7 @@ int32_t CapturerInServer::Stop()
 
     if (needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, streamIndex_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
     }
 
     int ret = stream_->Stop();
@@ -432,7 +436,7 @@ int32_t CapturerInServer::Release()
 #endif
     if (needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, streamIndex_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
     }
     return SUCCESS;
 }

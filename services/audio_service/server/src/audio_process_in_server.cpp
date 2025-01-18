@@ -69,7 +69,7 @@ AudioProcessInServer::~AudioProcessInServer()
     }
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, sessionId_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -131,16 +131,16 @@ int32_t AudioProcessInServer::Start()
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING || streamStatus_->load() == STREAM_STAND_BY,
         ERR_ILLEGAL_STATE, "Start failed, invalid status.");
 
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && !needCheckBackground_ &&
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && !needCheckBackground_ &&
         PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
             processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(processConfig_.appInfo.appTokenId, sessionId_),
-            ERR_PERMISSION_DENIED, "NotifyPrivacy failed!");
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(processConfig_.appInfo.appTokenId, sessionId_),
+            ERR_PERMISSION_DENIED, "NotifyPrivacyStart failed!");
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -166,9 +166,9 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_PAUSING,
         ERR_ILLEGAL_STATE, "Pause failed, invalid status.");
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, sessionId_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
@@ -184,18 +184,18 @@ int32_t AudioProcessInServer::Resume()
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING,
         ERR_ILLEGAL_STATE, "Resume failed, invalid status.");
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && !needCheckBackground_ &&
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && !needCheckBackground_ &&
         PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(tokenId, sessionId_), ERR_PERMISSION_DENIED,
-            "NotifyPrivacy failed!");
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_), ERR_PERMISSION_DENIED,
+            "NotifyPrivacyStart failed!");
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -213,9 +213,9 @@ int32_t AudioProcessInServer::Stop()
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STOPPING,
         ERR_ILLEGAL_STATE, "Stop failed, invalid status.");
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, sessionId_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
@@ -234,9 +234,9 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
 
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, sessionId_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
     }
     int32_t ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
