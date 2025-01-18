@@ -478,7 +478,7 @@ int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char*
 {
     Trace trace("PrivacyKit::StartUsingPermission");
     AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}d permission:%{public}s",
-            targetTokenId, permission);
+        targetTokenId, permission);
     WatchTimeout guard("PrivacyKit::StartUsingPermission:PermissionUtil::StartUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, permission);
     guard.CheckCurrTimeout();
@@ -489,7 +489,7 @@ int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* 
 {
     Trace trace("PrivacyKit::StopUsingPermission");
     AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d permission:%{public}s",
-            targetTokenId, permission);
+        targetTokenId, permission);
     WatchTimeout guard("PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, permission);
     guard.CheckCurrTimeout();
@@ -511,7 +511,6 @@ bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t session
         AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
             "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        // Tempppppppp solution, Must Must Must be reverted after PrivacyKit implements reqs in feature!!!
         CHECK_AND_RETURN_RET_LOG(res == 0 || res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
             "StartUsingPermission for tokenId:%{public}u, PrivacyKit error code:%{public}d", targetTokenId, res);
         if (res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
@@ -520,7 +519,7 @@ bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t session
         WatchTimeout reguard("Security::AccessToken::PrivacyKit::AddPermissionUsedRecord:NotifyPrivacyStart");
         res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
         reguard.CheckCurrTimeout();
-        CHECK_AND_RETURN_RET_LOG( res == 0, false, "AddPermissionUsedRecord for tokenId %{public}u!"
+        CHECK_AND_RETURN_RET_LOG(res == 0, false, "AddPermissionUsedRecord for tokenId %{public}u!"
             "The PrivacyKit error code:%{public}d", targetTokenId, res);
         g_tokenIdRecordMap[targetTokenId] = {sessionId};
     }
@@ -546,7 +545,7 @@ bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionI
         AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
             "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        CHECK_AND_RETURN_RET_LOG( res == 0, false, "StopUsingPermission for tokenId %{public}u!"
+        CHECK_AND_RETURN_RET_LOG(res == 0, false, "StopUsingPermission for tokenId %{public}u!"
             "The PrivacyKit error code:%{public}d", targetTokenId, res);
     }
     return true;

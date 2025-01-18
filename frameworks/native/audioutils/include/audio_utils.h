@@ -146,8 +146,8 @@ public:
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
     static bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId);
     static bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId);
-    static uint32_t StartUsingPermission(uint32_t targetTokenId, const char* permission);
-    static uint32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
+    static int32_t StartUsingPermission(uint32_t targetTokenId, const char* permission);
+    static int32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
