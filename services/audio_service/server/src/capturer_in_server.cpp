@@ -53,7 +53,7 @@ CapturerInServer::~CapturerInServer()
     }
     if (needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
     }
     DumpFileUtil::CloseDumpFile(&dumpS2C_);
 }
