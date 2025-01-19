@@ -41,6 +41,7 @@ public:
 private:
     ProcessReleaseCallback *processHolder_ = nullptr;
     AudioProcessInServer *processInServer_ = nullptr;
+    int64_t createTime_ = 0;
 };
 
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
