@@ -1114,7 +1114,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
     if (endpointStatus_ == IDEL) {
         // call sink start
         if (!isStarted_) {
-            CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
+            CHECK_AND_RETURN_RET_LOG(StartDevice(RUNNING), ERR_OPERATION_FAILED, "StartDevice failed");
         }
     }
 
