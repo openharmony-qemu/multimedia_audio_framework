@@ -110,7 +110,7 @@ public:
     ~AudioEndpointInner();
 
     bool Config(const AudioDeviceDescriptor &deviceInfo) override;
-    bool StartDevice();
+    bool StartDevice(EndpointStatus preferredState = INVALID);
     void HandleStartDeviceFailed();
     bool StopDevice();
 
@@ -986,7 +986,7 @@ void AudioEndpointInner::ReSyncPosition()
     return;
 }
 
-bool AudioEndpointInner::StartDevice()
+bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
 {
     AUDIO_INFO_LOG("StartDevice enter.");
     // how to modify the status while unlinked and started?
@@ -1011,6 +1011,10 @@ bool AudioEndpointInner::StartDevice()
     std::unique_lock<std::mutex> lock(loopThreadLock_);
     needReSyncPosition_ = true;
     endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
+    if (preferredState != INVALID) {
+        AUDIO_INFO_LOG("Preferred state: %{public}d, current: %{public}d", preferredState, endpointStatus_.load());
+        endpointStatus_ = preferredState;
+    }
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
     return true;
