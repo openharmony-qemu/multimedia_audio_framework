@@ -271,7 +271,7 @@ bool AudioInterruptService::IsAudioSessionActivated(const int32_t callerPid)
     std::lock_guard<std::mutex> lock(mutex_);
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
-        return ERR_UNKNOWN;
+        return false;
     }
     return sessionService_->IsAudioSessionActivated(callerPid);
 }
