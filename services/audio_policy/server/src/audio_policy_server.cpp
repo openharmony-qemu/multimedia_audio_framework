@@ -2443,13 +2443,9 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCap
                 targetMuteState, appUid);
             int32_t res = SUCCESS;
             if (targetMuteState) {
-                WatchTimeout guard("PrivacyKit::StopUsingPermission:UpdateMicPrivacyByCapturerState");
-                res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-                guard.CheckCurrTimeout();
+                res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             } else {
-                WatchTimeout guard("PrivacyKit::StartUsingPermission:UpdateMicPrivacyByCapturerState");
-                res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-                guard.CheckCurrTimeout();
+                res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             }
             if (res != SUCCESS) {
                 AUDIO_ERR_LOG("update using permission failed, error code %{public}d", res);
