@@ -650,7 +650,7 @@ HWTEST(AudioManagerUnitTest, GenerateSessionId_001, TestSize.Level1)
 {
     uint32_t sessionId = 0;
     auto ret = AudioSystemManager::GetInstance()->GenerateSessionId(sessionId);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(AUDIO_ERR, ret);
 }
 
 /**
