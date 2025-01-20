@@ -351,13 +351,13 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
-    uint64_t readIndx = 0;
+    uint64_t readIdx = 0;
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(readIndx, timestampVal, latency);
+    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency);
 
-    uint64_t framePosition = readIndx > lastFlushReadIndex_ ? readIndx - lastFlushReadIndex_ : 0;
+    uint64_t framePosition = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
 
     // add MCR latency
