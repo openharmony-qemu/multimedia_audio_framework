@@ -26,9 +26,6 @@ ohos_shared_library("audio_utils") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   public_configs = [ ":audio_utils_public_config" ]
   install_enable = true
