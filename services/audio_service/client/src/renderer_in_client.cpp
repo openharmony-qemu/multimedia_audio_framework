@@ -695,11 +695,6 @@ void RendererInClientInner::ResetFramePosition()
         AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
         return;
     }
-    lastFramePosition_ = 0;
-    lastReadIdx_ = 0;
-    lastLatency_ = latency;
-    lastLatencyPosition_ = latency * speed_;
-    lastSpeed_ = speed_;
 }
 
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
