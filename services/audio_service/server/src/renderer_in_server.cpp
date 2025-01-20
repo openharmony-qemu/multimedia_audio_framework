@@ -1097,9 +1097,7 @@ int32_t RendererInServer::InitDupStream()
     if (audioServerBuffer_ != nullptr) {
         float clientVolume = audioServerBuffer_->GetStreamVolume();
         float duckFactor = audioServerBuffer_->GetDuckFactor();
-        float muteFactor = audioServerBuffer_->GetMuteFactor();
-        bool isMuted = (IsVolumeSame(MIN_FLOAT_VOLUME, muteFactor, AUDIO_VOLOMUE_EPSILON) ||
-            silentModeAndMixWithOthers_);
+        bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag_);
         // If some factors are not needed, remove them.
         AudioVolume::GetInstance()->SetStreamVolume(dupStreamIndex_, clientVolume);
         AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dupStreamIndex_, duckFactor);
@@ -1163,9 +1161,7 @@ int32_t RendererInServer::InitDualToneStream()
     if (audioServerBuffer_ != nullptr) {
         float clientVolume = audioServerBuffer_->GetStreamVolume();
         float duckFactor = audioServerBuffer_->GetDuckFactor();
-        float muteFactor = audioServerBuffer_->GetMuteFactor();
-        bool isMuted = (IsVolumeSame(MIN_FLOAT_VOLUME, muteFactor, AUDIO_VOLOMUE_EPSILON) ||
-            silentModeAndMixWithOthers_);
+        bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag_);
         // If some factors are not needed, remove them.
         AudioVolume::GetInstance()->SetStreamVolume(dualToneStreamIndex_, clientVolume);
         AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dualToneStreamIndex_, duckFactor);
@@ -1299,12 +1295,13 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", on);
-    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, on);
+    bool isMuted = (isMuted_ || on || muteFlag_);
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
     if (isInnerCapEnabled_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, on);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMuted);
     }
     if (isDualToneEnabled_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, on);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
     }
     if (offloadEnable_) {
         OffloadSetVolumeInner();
@@ -1336,13 +1333,15 @@ int32_t RendererInServer::SetClientVolume()
 
 int32_t RendererInServer::SetMute(bool isMute)
 {
+    isMuted_ = isMute;
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
-    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMute);
+    bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
     if (isInnerCapEnabled_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMute);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMuted);
     }
     if (isDualToneEnabled_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMute);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
     }
     if (offloadEnable_) {
         OffloadSetVolumeInner();
@@ -1496,6 +1495,18 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
     AUDIO_INFO_LOG("mute flag %{public}d", muteFlag);
     muteFlag_ = muteFlag;
     AudioService::GetInstance()->UpdateMuteControlSet(streamIndex_, muteFlag);
+
+    bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
+    if (isInnerCapEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMuted);
+    }
+    if (isDualToneEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
+    }
+    if (offloadEnable_) {
+        OffloadSetVolumeInner();
+    }
 }
 
 void RendererInServer::RestoreSession()

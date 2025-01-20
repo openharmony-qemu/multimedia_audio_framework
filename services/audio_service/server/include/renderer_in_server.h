@@ -158,6 +158,7 @@ private:
     std::atomic<size_t> needForceWrite_ = 0;
     bool afterDrain = false;
     float lowPowerVolume_ = 1.0f;
+    std::atomic<bool> isMuted_ = false;
     bool isNeedFade_ = false;
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
