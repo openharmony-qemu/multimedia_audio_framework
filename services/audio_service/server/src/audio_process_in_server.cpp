@@ -248,13 +248,15 @@ ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServ
 {
     processInServer_ = processInServer;
     processHolder_ = processHolder;
+    createTime_ = ClockTime::GetCurNano();
+    AUDIO_INFO_LOG("OnRemoteDied create time: %{public}" PRId64 "", createTime_);
 }
 
 void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
     int32_t ret = processHolder_->OnProcessRelease(processInServer_);
-    AUDIO_INFO_LOG("OnRemoteDied, call release ret: %{public}d", ret);
+    AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
 }
 
 int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
