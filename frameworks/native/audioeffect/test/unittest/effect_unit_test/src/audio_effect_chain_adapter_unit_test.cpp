@@ -482,7 +482,13 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerReturnEffectChannelInf
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = EffectChainManagerInitCb(sceneType);
     EXPECT_EQ(SUCCESS, result);
-
+    std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    audioEffectChain->ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
+    audioEffectChain->ioBufferConfig_.inputCfg.channelLayout = DEFAULT_CHANNELLAYOUT;
     const char *sessionid = "123456";
     SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
     result = EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
@@ -491,7 +497,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerReturnEffectChannelInf
     uint32_t processChannels = DEFAULT_NUM_CHANNEL;
     uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
     result = EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
-    EXPECT_EQ(ERROR, result);
+    EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
