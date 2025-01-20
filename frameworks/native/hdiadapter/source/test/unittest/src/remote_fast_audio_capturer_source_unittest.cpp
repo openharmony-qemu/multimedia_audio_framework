@@ -706,12 +706,15 @@ HWTEST_F(RemoteFastAudioCapturerSourceUnitTest, remote_fast_audio_capturer_sourc
     const std::string deviceNetworkId = "device_network_id";
     std::shared_ptr<RemoteFastAudioCapturerSourceInner> remoteFastAudioCapturerSourceInner =
         std::make_shared<RemoteFastAudioCapturerSourceInner>(deviceNetworkId);
+    ASSERT_NE(nullptr, remoteFastAudioCapturerSourceInner);
+
     const std::string adapterName = "adapterName";
     const std::string condition = "condition";
     const std::string value = "value";
     remoteFastAudioCapturerSourceInner->OnAudioParamChange(adapterName,
         AudioParamKey::PARAM_KEY_STATE, condition, value);
     remoteFastAudioCapturerSourceInner->OnAudioParamChange(adapterName, AudioParamKey::VOLUME, condition, value);
+    EXPECT_NE(remoteFastAudioCapturerSourceInner->paramCb_, nullptr);
 }
 
 /**
@@ -725,10 +728,13 @@ HWTEST_F(RemoteFastAudioCapturerSourceUnitTest, remote_fast_audio_capturer_sourc
     const std::string deviceNetworkId = "device_network_id";
     std::shared_ptr<RemoteFastAudioCapturerSourceInner> remoteFastAudioCapturerSourceInner =
         std::make_shared<RemoteFastAudioCapturerSourceInner>(deviceNetworkId);
+    ASSERT_NE(nullptr, remoteFastAudioCapturerSourceInner);
+
     remoteFastAudioCapturerSourceInner->bufferFd_ = RemoteFastAudioCapturerSourceInner::INVALID_FD;
     remoteFastAudioCapturerSourceInner->audioAdapter_ = nullptr;
     remoteFastAudioCapturerSourceInner->audioManager_ = nullptr;
     remoteFastAudioCapturerSourceInner->ClearCapture();
+    EXPECT_NE(remoteFastAudioCapturerSourceInner->capturerInited_.load(), false);
 }
 
 /**
@@ -742,12 +748,15 @@ HWTEST_F(RemoteFastAudioCapturerSourceUnitTest, remote_fast_audio_capturer_sourc
     const std::string deviceNetworkId = "device_network_id";
     std::shared_ptr<RemoteFastAudioCapturerSourceInner> remoteFastAudioCapturerSourceInner =
         std::make_shared<RemoteFastAudioCapturerSourceInner>(deviceNetworkId);
+    ASSERT_NE(nullptr, remoteFastAudioCapturerSourceInner);
+    
     remoteFastAudioCapturerSourceInner->bufferFd_ = RemoteFastAudioCapturerSourceInner::HALF_FACTOR;
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter = std::make_shared<IAudioDeviceAdapterInner>();
     remoteFastAudioCapturerSourceInner->audioAdapter_ = audioAdapter;
     std::shared_ptr<IAudioDeviceManager> audioManager = std::make_shared<IAudioDeviceManagerInner>();
     remoteFastAudioCapturerSourceInner->audioManager_ = audioManager;
     remoteFastAudioCapturerSourceInner->ClearCapture();
+    EXPECT_NE(remoteFastAudioCapturerSourceInner->capturerInited_.load(), false);
 }
 }
 }

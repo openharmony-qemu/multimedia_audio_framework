@@ -148,9 +148,11 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_00
 HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_001, TestSize.Level1)
 {
     auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
     server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
+    EXPECT_NE(dumpString, "666");
 }
 
 /**
@@ -161,10 +163,12 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_001, TestSize.Lev
 HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_002, TestSize.Level1)
 {
     auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
+    EXPECT_NE(dumpString, "666");
 }
 
 /**
@@ -175,10 +179,12 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_002, TestSize.Lev
 HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_003, TestSize.Level1)
 {
     auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
 
     std::string dumpString = "666";
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_HEADSET;
     server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
+    EXPECT_NE(dumpString, "666");
 }
 
 /**
@@ -189,10 +195,12 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_003, TestSize.Lev
 HWTEST_F(AudioPolicyServiceThirdUnitTest, GetOffloadStatusDump_004, TestSize.Level1)
 {
     auto server = GetServerPtr();
-
+    ASSERT_NE(nullptr, server);
     std::string dumpString = "666";
+
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyDump_.GetOffloadStatusDump(dumpString);
+    EXPECT_NE(dumpString, "666");
 }
 #ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
