@@ -102,6 +102,7 @@ int32_t AudioDeviceLock::SetDeviceActive(InternalDeviceType deviceType, bool act
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
+    audioDeviceCommon_.FetchDevice(false);
     audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "SetDevcieActive");
     return SUCCESS;
@@ -180,6 +181,7 @@ int32_t AudioDeviceLock::SetCallDeviceActive(InternalDeviceType deviceType, bool
     int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetCallDeviceActive failed");
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
+    audioDeviceCommon_.FetchDevice(false);
     return SUCCESS;
 }
 
