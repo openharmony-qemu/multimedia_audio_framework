@@ -202,7 +202,11 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
             desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType);
         }
     } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
-        desc = FetchCallCaptureDevice(sourceType, clientUID, routerType);
+        if (audioScene != AUDIO_SCENE_DEFAULT) {
+            desc = FetchCallCaptureDevice(sourceType, clientUID, routerType);
+        } else {
+            desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType);
+        }
     } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
         desc = FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType);
     } else {
