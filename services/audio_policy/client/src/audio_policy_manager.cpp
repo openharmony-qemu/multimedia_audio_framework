@@ -903,7 +903,7 @@ int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    std::unique_lock<std::mutex> lock(clientTrackerStubMutex_);
+    std::lock_guard<std::mutex> lock(clientTrackerStubMutex_);
     sptr<AudioClientTrackerCallbackStub> callback = new(std::nothrow) AudioClientTrackerCallbackStub();
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "clientTrackerCbStub: memory allocation failed");
 
@@ -911,7 +911,6 @@ int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 
     sptr<IRemoteObject> object = callback->AsObject();
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "clientTrackerCbStub: IPC object creation failed");
-    lock.unlock();
 
     int32_t ret = gsp->RegisterTracker(mode, streamChangeInfo, object);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RegisterTracker failed");
