@@ -117,6 +117,8 @@ private:
     int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
     int32_t DoSetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
     int32_t DoStop();
+    bool GetMuteState();
+    void SetMuteState(bool isMute);
 
     IAudioSourceAttr attr_ = {};
     bool sourceInited_ = false;
@@ -157,6 +159,7 @@ private:
     std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
+    std::mutex muteStateMutex_;
     bool muteState_ = false;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
@@ -625,7 +628,9 @@ int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 
     sourceInited_ = true;
 
-    SetMute(muteState_);
+    if (GetMuteState()) {
+        SetMute(true);
+    }
 
     return SUCCESS;
 }
@@ -781,9 +786,21 @@ int32_t AudioCapturerSourceInner::GetVolume(float &left, float &right)
     return SUCCESS;
 }
 
+void AudioCapturerSourceInner::SetMuteState(bool isMute)
+{
+    std::lock_guard<std::mutex> statusLock(muteStateMutex_);
+    muteState_ = isMute;
+}
+
+bool AudioCapturerSourceInner::GetMuteState()
+{
+    std::lock_guard<std::mutex> statusLock(muteStateMutex_);
+    return muteState_;
+}
+
 int32_t AudioCapturerSourceInner::SetMute(bool isMute)
 {
-    muteState_ = isMute;
+    SetMuteState(isMute);
 
     if (IsInited() && audioCapture_) {
         int32_t ret = audioCapture_->SetMute(audioCapture_, isMute);
@@ -807,7 +824,7 @@ int32_t AudioCapturerSourceInner::SetMute(bool isMute)
         }
     }
 
-    AUDIO_INFO_LOG("end isMute=%{public}d", isMute);
+    AUDIO_INFO_LOG("halName:%{public}s isMute=%{public}d", halName_.c_str(), isMute);
 
     return SUCCESS;
 }
@@ -823,7 +840,7 @@ int32_t AudioCapturerSourceInner::GetMute(bool &isMute)
         AUDIO_WARNING_LOG("GetMute failed from hdi");
     }
 
-    isMute = muteState_;
+    isMute = GetMuteState();
 
     return SUCCESS;
 }
