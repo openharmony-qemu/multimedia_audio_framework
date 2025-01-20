@@ -39,9 +39,6 @@ ohos_shared_library("ohaudio") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   include_dirs = [
     "../../../interfaces/kits/c/",
@@ -180,9 +177,6 @@ ohos_executable("oh_audio_session_manager_test") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
 
   install_enable = false
