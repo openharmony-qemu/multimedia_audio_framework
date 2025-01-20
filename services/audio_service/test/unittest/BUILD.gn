@@ -69,6 +69,11 @@ ohos_unittest("audio_endpoint_separate_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }
 
 ohos_unittest("audio_balance_unit_test") {
@@ -92,11 +97,14 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../../services/audio_service/server/include",
     "../../../../frameworks/native/playbackcapturer/include",
   ]
-  sources = [
-    "audio_balance_unit_test.cpp",
-    "audio_service_common_unit_test.cpp",
-    "audio_service_unit_test.cpp",
-  ]
+  sources = [ "audio_service_common_unit_test.cpp" ]
+
+  if (audio_framework_feature_low_latency) {
+    sources += [
+      "audio_balance_unit_test.cpp",
+      "audio_service_unit_test.cpp",
+    ]
+  }
 
   configs = [ ":module_private_config" ]
 
@@ -124,6 +132,9 @@ ohos_unittest("audio_balance_unit_test") {
   defines = []
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 }
 
@@ -263,7 +274,6 @@ ohos_unittest("audio_service_unit_test") {
   sources = [
     "./client/audio_stream_manager_unit_test.cpp",
     "./client/audio_system_manager_unit_test.cpp",
-    "./client/fast_audio_stream_unit_test.cpp",
     "./common/audio_common_converter_unit_test.cpp",
     "./common/audio_down_mix_stereo_unit_test.cpp",
     "./common/audio_volume_unit_test.cpp",
@@ -273,6 +283,10 @@ ohos_unittest("audio_service_unit_test") {
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
   ]
+
+  if (audio_framework_feature_low_latency) {
+    sources += [ "./client/fast_audio_stream_unit_test.cpp" ]
+  }
 
   deps = [
     "../../../../frameworks/native/audioeffect:audio_effect",
@@ -298,6 +312,11 @@ ohos_unittest("audio_service_unit_test") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }
 
 ohos_unittest("pa_renderer_stream_impl_unit_test") {
@@ -478,6 +497,11 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }
 
 ohos_unittest("capturer_in_client_unit_test") {
@@ -621,6 +645,11 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }
 
 ohos_unittest("ipc_stream_stub_unit_test") {

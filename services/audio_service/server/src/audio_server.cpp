@@ -37,7 +37,6 @@
 #include "parameters.h"
 
 #include "audio_capturer_source.h"
-#include "fast_audio_capturer_source.h"
 #include "bluetooth_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_common_log.h"
@@ -49,7 +48,6 @@
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
-#include "fast_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
@@ -58,6 +56,12 @@
 #include "media_monitor_manager.h"
 #include "offline_stream_in_server.h"
 #include "audio_dump_pcm.h"
+#include "audio_info.h"
+
+#ifdef SUPPORT_LOW_LATENCY
+#include "fast_audio_renderer_sink.h"
+#include "fast_audio_capturer_source.h"
+#endif
 
 #define PA
 #ifdef PA
@@ -916,7 +920,9 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
         if (!audioCapturerSourceInstance->IsInited()) {
+#ifdef SUPPORT_LOW_LATENCY
             audioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
+#endif
         }
         if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD &&
             deviceTypes.size() == 1 && deviceTypes[0] == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -953,6 +959,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
     }
+
     return SUCCESS;
 }
 
@@ -1391,6 +1398,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         return remoteObject;
     }
 
+#ifdef SUPPORT_LOW_LATENCY
     sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(config);
     if (process == nullptr) {
         if (config.audioMode == AUDIO_MODE_PLAYBACK) {
@@ -1402,6 +1410,10 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
     sptr<IRemoteObject> remoteObject= process->AsObject();
     return remoteObject;
+#else
+    AUDIO_ERR_LOG("GetAudioProcess failed.");
+    return nullptr;
+#endif
 }
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
@@ -1853,15 +1865,19 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
     IAudioCapturerSource* primaryAudioCapturerSourceInstance =
         IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_MIC);
     IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
+#ifdef SUPPORT_LOW_LATENCY
     IAudioCapturerSource *fastAudioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
     IAudioCapturerSource *voipFastAudioCapturerSourceInstance = FastAudioCapturerSource::GetVoipInstance();
+#endif
     IAudioCapturerSource *bluetoothAudioCapturerSourceInstance = BluetoothCapturerSource::GetInstance();
 
     for (auto audioCapturerSourceInstance : {
         primaryAudioCapturerSourceInstance,
         usbAudioCapturerSinkInstance,
+#ifdef SUPPORT_LOW_LATENCY
         fastAudioCapturerSourceInstance,
         voipFastAudioCapturerSourceInstance,
+#endif
         bluetoothAudioCapturerSourceInstance
     }) {
         if (audioCapturerSourceInstance != nullptr) {
@@ -1885,8 +1901,11 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     IAudioRendererSink *mchSink = IAudioRendererSink::GetInstance("multichannel", "");
     IAudioRendererSink *a2dpSink = IAudioRendererSink::GetInstance("a2dp", "");
     IAudioRendererSink *a2dpFastSink = IAudioRendererSink::GetInstance("a2dp_fast", "");
+#ifdef SUPPORT_LOW_LATENCY
     IAudioRendererSink *fastSink = FastAudioRendererSink::GetInstance();
     IAudioRendererSink *fastVoipSink = FastAudioRendererSink::GetVoipInstance();
+#endif
+
     for (auto sinkInstance : {
         primarySink,
         usbSink,
@@ -1897,8 +1916,10 @@ void AudioServer::RegisterAudioRendererSinkCallback()
         mchSink,
         a2dpSink,
         a2dpFastSink,
+#ifdef SUPPORT_LOW_LATENCY
         fastSink,
         fastVoipSink
+#endif
     }) {
         if (sinkInstance) {
             sinkInstance->RegisterAudioSinkCallback(this);
@@ -1998,9 +2019,11 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
 
 void AudioServer::ResetAudioEndpoint()
 {
+#ifdef SUPPORT_LOW_LATENCY
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
     AudioService::GetInstance()->ResetAudioEndpoint();
+#endif
 }
 
 void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)

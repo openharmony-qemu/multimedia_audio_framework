@@ -1120,13 +1120,6 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
             }
         }
         return SUCCESS;
-    } else if (streamType == STREAM_VOICE_CALL && VolumeUtils::IsPCVolumeEnable()) {
-        // when the voice call volume is adjusted on PC, adjust the music volume together.
-        int32_t setResult = SetSingleStreamVolume(STREAM_MUSIC, volumeLevel, isUpdateUi,
-            GetStreamMuteInternal(STREAM_MUSIC));
-        if (setResult != SUCCESS) {
-            AUDIO_WARNING_LOG("Fail to set STREAM_MUSIC volume");
-        }
     }
     return SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi, mute);
 }
@@ -2443,13 +2436,9 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCap
                 targetMuteState, appUid);
             int32_t res = SUCCESS;
             if (targetMuteState) {
-                WatchTimeout guard("PrivacyKit::StopUsingPermission:UpdateMicPrivacyByCapturerState");
-                res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-                guard.CheckCurrTimeout();
+                res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             } else {
-                WatchTimeout guard("PrivacyKit::StartUsingPermission:UpdateMicPrivacyByCapturerState");
-                res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-                guard.CheckCurrTimeout();
+                res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             }
             if (res != SUCCESS) {
                 AUDIO_ERR_LOG("update using permission failed, error code %{public}d", res);

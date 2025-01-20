@@ -22,6 +22,7 @@
 #include "audio_process_config.h"
 #include "renderer_in_server.h"
 #include "capturer_in_server.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -125,6 +126,7 @@ private:
 
 private:
     uint32_t clientTid_ = 0;
+    int32_t clientPid_ = 0;
     std::string clientBundleName_;
     bool clientThreadPriorityRequested_ = false;
     AudioProcessConfig config_;

@@ -161,6 +161,7 @@ private:
     std::mutex setCapturerCbMutex_;
     std::mutex setParamsMutex_;
     std::mutex captureMutex_;
+    std::mutex capturerPolicyServiceDiedCbMutex_;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

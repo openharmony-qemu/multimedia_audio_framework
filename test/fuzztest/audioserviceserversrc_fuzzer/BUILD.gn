@@ -68,9 +68,17 @@ ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioServiceServerSrcFuzzTest" ]
+  deps = []
+  if (audio_framework_feature_low_latency) {
+    deps += [ ":AudioServiceServerSrcFuzzTest" ]
+  }
 }

@@ -214,8 +214,8 @@ void NotifyPrivacyFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     uint32_t targetTokenId = *(reinterpret_cast<const uint32_t*>(rawData));
-    PermissionUtil::NotifyStart(targetTokenId, 0);
-    PermissionUtil::NotifyStop(targetTokenId, 0);
+    PermissionUtil::NotifyPrivacyStart(targetTokenId, 0);
+    PermissionUtil::NotifyPrivacyStop(targetTokenId, 0);
 }
 
 void GetTimeFuzzTest()

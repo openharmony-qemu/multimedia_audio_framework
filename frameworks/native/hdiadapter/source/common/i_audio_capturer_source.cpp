@@ -81,6 +81,8 @@ void IAudioCapturerSource::GetAllInstance(std::vector<IAudioCapturerSource *> &a
     RemoteAudioCapturerSource::GetAllInstance(allInstance);
 #endif
     allInstance.push_back(AudioCapturerSource::GetInstance());
+    allInstance.push_back(AudioCapturerSource::GetInstance("usb", SourceType::SOURCE_TYPE_MIC, "Usb_Arm_Speaker_In"));
+    allInstance.push_back(BluetoothCapturerSource::GetInstance());
 }
 
 IAudioCapturerSource *IAudioCapturerSource::Create(CaptureAttr *attr)

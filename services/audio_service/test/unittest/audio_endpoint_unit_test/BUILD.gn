@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
+import("../../../../../config.gni")
 
 module_output_path = "multimedia_audio_framework/audio_endpoint"
 
@@ -79,6 +80,11 @@ ohos_unittest("audio_endpoint_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }
 
 ohos_unittest("audio_endpoint_plus_unit_test") {
@@ -152,4 +158,9 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }

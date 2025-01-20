@@ -1037,5 +1037,33 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_003, TestSize.Lev
     bool mute = false;
     ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
 }
+
+/**
+* @tc.name  : Test NotifyProcessStatus.
+* @tc.number: NotifyProcessStatus_001
+* @tc.desc  : Test AudioPolicyServer::NotifyProcessStatus
+*/
+HWTEST(AudioPolicyUnitTest, NotifyProcessStatus_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    bool isStart = true;
+    ptrAudioPolicyServer->NotifyProcessStatus(isStart);
+}
+
+/**
+* @tc.name  : Test NotifyProcessStatus.
+* @tc.number: NotifyProcessStatus_002
+* @tc.desc  : Test AudioPolicyServer::NotifyProcessStatus
+*/
+HWTEST(AudioPolicyUnitTest, NotifyProcessStatus_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    bool isStart = false;
+    ptrAudioPolicyServer->NotifyProcessStatus(isStart);
+}
 } // AudioStandard
 } // OHOS

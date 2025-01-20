@@ -20,6 +20,9 @@ ohos_shared_library("audio_capturer_source") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
   sources = [ "primary/audio_capturer_source.cpp" ]
@@ -74,6 +77,9 @@ ohos_shared_library("fast_audio_capturer_source") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
   sources = [ "fast/fast_audio_capturer_source.cpp" ]
@@ -115,6 +121,9 @@ ohos_shared_library("bluetooth_capturer_source") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
 
@@ -173,6 +182,9 @@ ohos_shared_library("remote_audio_capturer_source") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
   sources = [ "remote/remote_audio_capturer_source.cpp" ]
@@ -216,6 +228,9 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
   sources = [ "remote_fast/remote_fast_audio_capturer_source.cpp" ]
@@ -258,6 +273,9 @@ ohos_shared_library("audio_capturer_file_source") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
 
@@ -289,6 +307,9 @@ ohos_shared_library("capturer_source_adapter") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
 

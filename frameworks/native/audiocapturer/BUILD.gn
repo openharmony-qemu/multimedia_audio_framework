@@ -47,6 +47,9 @@ ohos_shared_library("audio_capturer") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
 
@@ -68,6 +71,10 @@ ohos_shared_library("audio_capturer") {
     "../../../services/audio_service:audio_client",
     "../audioutils:audio_utils",
   ]
+
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 
   public_configs = [ ":audio_external_library_config" ]
 
@@ -114,6 +121,9 @@ ohos_executable("audio_inner_capturer_test") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   cflags = [
     "-Wall",

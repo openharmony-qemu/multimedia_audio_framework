@@ -129,7 +129,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
         if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
-            ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice())) {
+            ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
+            AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
             if (desc->deviceType_ == DEVICE_TYPE_NONE) {
                 StreamUsage callStreamUsage =
                     AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
