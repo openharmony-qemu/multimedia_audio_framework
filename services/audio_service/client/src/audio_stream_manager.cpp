@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@
 
 #include "audio_errors.h"
 #include "audio_common_log.h"
+#include "audio_manager_util.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"
@@ -139,7 +140,7 @@ static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
 
 int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo, StreamUsage streamUsage)
 {
-    std::string effectScene = IAudioStream::GetEffectSceneName(streamUsage);
+    std::string effectScene = AudioManagerUtil::GetEffectSceneName(streamUsage);
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
     uint32_t streamNum = supportedEffectConfig.postProcessNew.stream.size();

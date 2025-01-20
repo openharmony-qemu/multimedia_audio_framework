@@ -29,6 +29,7 @@
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
+#include "audio_policy_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,17 +107,6 @@ public:
      * @return Returns volume group info
      */
     static sptr<VolumeGroupInfo> Unmarshalling(Parcel &parcel);
-};
-
-/**
- * Describes the device change type and device information.
- *
- * @since 7
- */
-struct DeviceChangeAction {
-    DeviceChangeType type;
-    DeviceFlag flag;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
 };
 
 /**
@@ -199,25 +189,6 @@ private:
     std::shared_ptr<AudioManagerCallback> cb_;
 };
 
-class AudioManagerDeviceChangeCallback {
-public:
-    virtual ~AudioManagerDeviceChangeCallback() = default;
-    /**
-     * Called when an interrupt is received.
-     *
-     * @param deviceChangeAction Indicates the DeviceChangeAction information needed by client.
-     * For details, refer DeviceChangeAction struct
-     * @since 8
-     */
-    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
-};
-
-class AudioQueryClientTypeCallback {
-public:
-    virtual ~AudioQueryClientTypeCallback() = default;
-    virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
-};
-
 class AudioManagerAvailableDeviceChangeCallback {
 public:
     virtual ~AudioManagerAvailableDeviceChangeCallback() = default;
@@ -243,18 +214,6 @@ public:
      * @since 13
      */
     virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
-};
-
-class VolumeKeyEventCallback {
-public:
-    virtual ~VolumeKeyEventCallback() = default;
-    /**
-     * @brief VolumeKeyEventCallback will be executed when hard volume key is pressed up/down
-     *
-     * @param volumeEvent the volume event info.
-     * @since 8
-     */
-    virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
 };
 
 class AudioParameterCallback {
@@ -296,52 +255,6 @@ public:
 
 class AudioPreferredOutputDeviceChangeCallback;
 
-class AudioFocusInfoChangeCallback {
-public:
-    virtual ~AudioFocusInfoChangeCallback() = default;
-    /**
-     * Called when focus info change.
-     *
-     * @param focusInfoList Indicates the focusInfoList information needed by client.
-     * For details, refer audioFocusInfoList_ struct in audio_policy_server.h
-     * @since 9
-     */
-    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
-
-    virtual void OnAudioFocusRequested(const AudioInterrupt &) {}
-
-    virtual void OnAudioFocusAbandoned(const AudioInterrupt &) {}
-};
-
-class AudioFocusInfoChangeCallbackImpl : public AudioFocusInfoChangeCallback {
-public:
-    explicit AudioFocusInfoChangeCallbackImpl();
-    virtual ~AudioFocusInfoChangeCallbackImpl();
-
-    /**
-     * Called when focus info change.
-     *
-     * @param focusInfoList Indicates the focusInfoList information needed by client.
-     * For details, refer audioFocusInfoList_ struct in audio_policy_server.h
-     * @since 9
-     */
-    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
-    void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
-    void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
-    void SaveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
-
-    /**
-     *  Cancel when focus info change.
-     *
-     * @since 9
-     */
-    void RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
-private:
-    std::list<std::weak_ptr<AudioFocusInfoChangeCallback>> callbackList_;
-    std::shared_ptr<AudioFocusInfoChangeCallback> cb_;
-    std::mutex cbListMutex_;
-};
-
 class AudioDistributedRoutingRoleCallback {
 public:
     virtual ~AudioDistributedRoutingRoleCallback() = default;
@@ -378,16 +291,6 @@ private:
     std::list<std::shared_ptr<AudioDistributedRoutingRoleCallback>> callbackList_;
     std::shared_ptr<AudioDistributedRoutingRoleCallback> cb_;
     std::mutex cbListMutex_;
-};
-
-class AudioDeviceRefiner {
-public:
-    virtual ~AudioDeviceRefiner() = default;
-
-    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) = 0;
-    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
 };
 
 class AudioDeviceAnahs {

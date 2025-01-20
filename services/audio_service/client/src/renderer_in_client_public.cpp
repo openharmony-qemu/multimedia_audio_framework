@@ -52,6 +52,7 @@
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
 #include "volume_tools.h"
+#include "audio_manager_util.h"
 
 #include "media_monitor_manager.h"
 
@@ -181,7 +182,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 {
     rendererInfo_ = rendererInfo;
 
-    rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
+    rendererInfo_.sceneType = AudioManagerUtil::GetEffectSceneName(rendererInfo_.streamUsage);
 
     if (rendererInfo_.sceneType == AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second) {
         effectMode_ = EFFECT_NONE;

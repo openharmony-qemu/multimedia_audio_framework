@@ -116,7 +116,6 @@ public:
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
-    static const std::string GetEffectSceneName(const StreamUsage &streamUsage);
     static inline bool IsFastStreamClass(StreamClass streamClass)
     {
         if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
