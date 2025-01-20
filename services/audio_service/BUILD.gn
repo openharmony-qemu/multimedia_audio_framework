@@ -35,9 +35,6 @@ ohos_shared_library("audio_common") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
 
   install_enable = true
@@ -343,9 +340,6 @@ audio_ohos_library("audio_process_service") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   install_enable = true
 
@@ -463,9 +457,6 @@ audio_ohos_library("audio_service") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   install_enable = true
 
@@ -583,9 +574,6 @@ ohos_shared_library("audio_sasdk") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
 
   install_enable = true
