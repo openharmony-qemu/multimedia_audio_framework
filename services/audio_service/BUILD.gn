@@ -430,8 +430,9 @@ audio_ohos_library("audio_process_service") {
   }
 
   if (audio_framework_feature_offline_effect) {
-    deps +=
-        [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
+    deps += [
+      "../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
   }
 
@@ -523,8 +524,9 @@ audio_ohos_library("audio_service") {
   defines = []
 
   if (audio_framework_feature_offline_effect) {
-    public_deps =
-        [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
+    public_deps = [
+      "../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
   }
 

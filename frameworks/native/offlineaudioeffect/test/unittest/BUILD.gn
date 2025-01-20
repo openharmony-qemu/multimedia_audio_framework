@@ -39,6 +39,7 @@ if (!audio_framework_feature_offline_effect) {
 
     deps = [
       "../../:offline_audio_effect",
+      "../../:offline_audio_effect_service",
       "../../../../../services/audio_service:audio_client",
       "../../../audioutils:audio_utils",
     ]
