@@ -2473,7 +2473,7 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
     AudioStreamDeviceChangeReasonExt reason)
 {
     auto ringermode = GetRingerMode();
-    if (reason.isOverride()) {
+    if (reason.isOverride() || reason.isSetDefaultOutputDevice()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
@@ -9010,7 +9010,7 @@ int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, 
     CHECK_AND_RETURN_RET_LOG(hasEarpiece_, ERR_NOT_SUPPORTED, "the device has no earpiece");
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
-        FetchDevice(true);
+        FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
         return SUCCESS;
     }
     return ret;
