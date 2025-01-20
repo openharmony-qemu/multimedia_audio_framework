@@ -32,6 +32,12 @@ declare_args() {
   audio_framework_feature_file_io = true
   audio_framework_feature_inner_capturer = true
   audio_framework_feature_low_latency = true
+  audio_framework_feature_usb_audio = false
+
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.usb_usb_manager)) {
+    audio_framework_feature_usb_audio = true
+  }
 
   if (!defined(global_parts_info) ||
       defined(global_parts_info.hdf_drivers_interface_distributed_audio)) {

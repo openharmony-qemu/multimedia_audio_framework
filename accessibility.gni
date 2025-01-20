@@ -17,8 +17,3 @@ if (defined(global_parts_info) &&
 } else {
   accessibility_enable = false
 }
-
-audio_framework_feature_usb_audio = false
-if (defined(global_parts_info) && defined(global_parts_info.usb_usb_manager)) {
-  audio_framework_feature_usb_audio = true
-}
