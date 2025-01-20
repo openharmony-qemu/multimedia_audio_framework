@@ -19,9 +19,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   install_enable = true
   sources = [ "src/pulse_audio_service_adapter_impl.cpp" ]
