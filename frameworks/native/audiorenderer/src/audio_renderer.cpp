@@ -1636,6 +1636,7 @@ void AudioRendererPrivate::WriteUnderrunEvent() const
 
 int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
 {
+    std::lock_guard<std::mutex> lock(rendererPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("RegisterRendererPolicyServiceDiedCallback");
     if (!audioPolicyServiceDiedCallback_) {
         audioPolicyServiceDiedCallback_ = std::make_shared<RendererPolicyServiceDiedCallback>();
@@ -1652,6 +1653,7 @@ int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
 
 int32_t AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback()
 {
+    std::lock_guard<std::mutex> lock(rendererPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("RemoveRendererPolicyServiceDiedCallback");
     if (audioPolicyServiceDiedCallback_) {
         int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(

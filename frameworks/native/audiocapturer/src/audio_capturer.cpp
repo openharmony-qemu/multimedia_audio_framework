@@ -1056,6 +1056,7 @@ int32_t AudioCapturerPrivate::RemoveAudioCapturerInfoChangeCallback(
 
 int32_t AudioCapturerPrivate::RegisterCapturerPolicyServiceDiedCallback()
 {
+    std::lock_guard<std::mutex> lock(capturerPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("AudioCapturerPrivate::SetCapturerPolicyServiceDiedCallback");
     if (!audioPolicyServiceDiedCallback_) {
         audioPolicyServiceDiedCallback_ = std::make_shared<CapturerPolicyServiceDiedCallback>();
@@ -1072,6 +1073,7 @@ int32_t AudioCapturerPrivate::RegisterCapturerPolicyServiceDiedCallback()
 
 int32_t AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback()
 {
+    std::lock_guard<std::mutex> lock(capturerPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback");
     if (audioPolicyServiceDiedCallback_) {
         int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(
