@@ -880,7 +880,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
         if (activeOutputDevice == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
-            activeOutputDevices[0] = DEVICE_TYPE_SPEAKER;
+            activeOutputDevices[0] = DEVICE_TYPE_NONE;
         }
         audioRendererSinkInstance->SetAudioScene(audioScene, activeOutputDevices);
     }
