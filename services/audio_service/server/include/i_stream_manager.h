@@ -48,6 +48,7 @@ public:
     virtual int32_t GetStreamCount() const noexcept = 0;
     virtual int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) = 0;
     virtual int32_t ReleaseCapturer(uint32_t streamIndex_) = 0;
+    virtual uint64_t GetLatency() noexcept = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

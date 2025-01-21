@@ -36,6 +36,7 @@ public:
 
     int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;
     int32_t ReleaseCapturer(uint32_t streamIndex) override;
+    uint64_t GetLatency() noexcept override;
 
 private:
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig);
