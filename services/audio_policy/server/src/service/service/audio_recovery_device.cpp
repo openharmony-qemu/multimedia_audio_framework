@@ -19,7 +19,7 @@
 #include "audio_recovery_device.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "media_monitor_manager.h"
 
 #include "audio_server_proxy.h"

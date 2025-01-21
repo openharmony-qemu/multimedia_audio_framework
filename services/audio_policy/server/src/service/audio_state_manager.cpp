@@ -14,7 +14,7 @@
  */
 
 #include "audio_state_manager.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 
 using namespace std;
 

@@ -23,7 +23,7 @@
 #include "parameters.h"
 #include "data_share_observer_callback.h"
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 
 #include "iservice_registry.h"
 #include "audio_manager_listener_stub.h"

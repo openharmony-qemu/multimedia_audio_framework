@@ -19,7 +19,7 @@
 
 #include "audio_errors.h"
 #include "audio_limiter.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_stream_info.h"
 
 using namespace testing::ext;

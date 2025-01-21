@@ -19,7 +19,7 @@
 #include "audio_session_manager.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_policy_manager.h"
 
 namespace OHOS {

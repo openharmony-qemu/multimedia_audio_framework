@@ -22,7 +22,7 @@
 #include "parameter.h"
 #include "parameters.h"
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_inner_call.h"
 #include "audio_tone_parser.h"
 #include "media_monitor_manager.h"

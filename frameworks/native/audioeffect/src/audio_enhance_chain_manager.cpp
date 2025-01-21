@@ -25,7 +25,7 @@
 #include "securec.h"
 #include "system_ability_definition.h"
 
-#include "audio_log.h"
+#include "audio_effect_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
 #include "audio_enhance_chain.h"

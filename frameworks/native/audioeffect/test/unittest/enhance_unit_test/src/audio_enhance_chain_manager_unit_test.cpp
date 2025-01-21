@@ -27,7 +27,7 @@
 #include <gmock/gmock.h>
 
 #include "audio_effect.h"
-#include "audio_log.h"
+#include "audio_effect_log.h"
 #include "audio_errors.h"
 
 #define VALID_SCENEKEY_CODE 68864

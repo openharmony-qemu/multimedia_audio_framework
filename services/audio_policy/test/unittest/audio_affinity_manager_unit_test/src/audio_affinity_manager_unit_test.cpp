@@ -14,7 +14,7 @@
  */
 
 #include "audio_affinity_manager_unit_test.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_pnp_server.h"
 #include <thread>
