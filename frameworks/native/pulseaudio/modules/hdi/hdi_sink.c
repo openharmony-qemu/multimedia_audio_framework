@@ -1944,7 +1944,7 @@ static pa_resampler *UpdateResamplerInChannelMap(const char *sceneType, struct U
     return resampler;
 }
 
-static void ResampleAfterEffectChain(const char* sceneType, struct Userdata *u, size_t inBufferLen)
+static void ResampleAfterEffectChain(const char* sceneType, struct Userdata *u)
 {
     if (sceneType == NULL || pa_safe_streq(sceneType, "EFFECT_NONE") || u == NULL) {
         return;
@@ -1952,7 +1952,8 @@ static void ResampleAfterEffectChain(const char* sceneType, struct Userdata *u, 
     pa_resampler *resampler = UpdateResamplerInChannelMap(sceneType, u);
     CHECK_AND_RETURN_LOG(resampler != NULL, "ResampleAfterEffectChain: resampler is null!");
     pa_memchunk unsampledChunk;
-    unsampledChunk.length = inBufferLen * sizeof(float);
+    unsampledChunk.length = u->bufferAttr->frameLen * pa_resampler_input_sample_spec(resampler)->channels *
+        sizeof(float);
     unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
     void *dst = pa_memblock_acquire(unsampledChunk.memblock);
     if (dst == NULL) {
@@ -1981,13 +1982,12 @@ static void ResampleAfterEffectChain(const char* sceneType, struct Userdata *u, 
     pa_memblock_unref(sampledChunk.memblock);
 }
 
-static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType, const char *sceneType, size_t inBufferLen,
-    size_t outBufferLen)
+static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType, const char *sceneType, size_t outBufferLen)
 {
     AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", sinkSceneType);
     EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
     UpdateStreamAvailableMap(u, sinkSceneType);
-    ResampleAfterEffectChain(sceneType, u, inBufferLen);
+    ResampleAfterEffectChain(sceneType, u);
     for (uint32_t k = 0; k < outBufferLen; k++) {
         u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
     }
@@ -2227,7 +2227,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         CHECK_AND_RETURN_LOG(ret == 0, "SinkRenderPrimaryProcess: copy from bufIn to tempBufIn fail!");
         u->bufferAttr->numChanIn = (int32_t)processChannels;
         u->bufferAttr->frameLen = frameSize / u->bufferAttr->numChanIn;
-        PrimaryEffectProcess(u, sinkSceneType, sceneType, frameSize, length / byteSize);
+        PrimaryEffectProcess(u, sinkSceneType, sceneType, length / byteSize);
         pa_memblock_release(chunkIn->memblock);
     }
     if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) { g_effectProcessFrameCount = 0; }
