@@ -36,6 +36,7 @@ public:
     virtual int32_t Flush() override;
 
     virtual bool IsPlaybackEngineRunning() const noexcept override;
+    virtual uint64_t GetLatency() noexcept override;
 
 protected:
     virtual void MixStreams() {}

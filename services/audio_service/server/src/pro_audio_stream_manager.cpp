@@ -199,5 +199,11 @@ int32_t ProAudioStreamManager::ReleaseCapturer(uint32_t streamIndex)
     AUDIO_ERR_LOG("Unsupported operation: ReleaseCapturer");
     return SUCCESS;
 }
+
+uint64_t ProAudioStreamManager::GetLatency() noexcept
+{
+    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, 0, "engine not init");
+    return playbackEngine_->GetLatency();
+}
 } // namespace AudioStandard
 } // namespace OHOS

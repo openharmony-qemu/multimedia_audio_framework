@@ -68,5 +68,10 @@ bool AudioPlaybackEngine::IsPlaybackEngineRunning() const noexcept
 {
     return false;
 }
+
+uint64_t AudioPlaybackEngine::GetLatency() noexcept
+{
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

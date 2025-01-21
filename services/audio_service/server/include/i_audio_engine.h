@@ -28,6 +28,7 @@ public:
     virtual int32_t Pause() = 0;
     virtual int32_t Flush() = 0;
     virtual bool IsPlaybackEngineRunning() const noexcept = 0;
+    virtual uint64_t GetLatency() noexcept = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
