@@ -286,6 +286,8 @@ public:
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
 
     virtual DeviceType GetDefaultOutputDevice() = 0;
+
+    virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

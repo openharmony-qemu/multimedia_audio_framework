@@ -215,6 +215,7 @@ public:
     bool GetHighResolutionEnabled() override;
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -2001,6 +2002,12 @@ DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 {
     AUDIO_WARNING_LOG("not supported in capturer");
     return DEVICE_TYPE_NONE;
+}
+
+// diffrence from GetAudioPosition only when set speed
+int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    return GetAudioTime(timestamp, base);
 }
 } // namespace AudioStandard
 } // namespace OHOS
