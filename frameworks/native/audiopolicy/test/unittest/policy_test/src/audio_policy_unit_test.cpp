@@ -782,22 +782,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_HighResolutionExist_002, TestSi
 }
 
 /**
- * @tc.name  : Test Audio_Policy_Manager_GetSinkLatencyFromXml_001
- * @tc.number: Audio_Policy_Manager_GetSinkLatencyFromXml_001
- * @tc.desc  : Test GetSinkLatencyFromXml, return real value.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSinkLatencyFromXml_001, TestSize.Level1)
-{
-    AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
-
-    uint32_t ret = AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
-    EXPECT_TRUE(ret >= LOW_LATENCY_FROM_XML && ret <= HIGH_LATENCY_FROM_XML);
-
-    ret = AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
-    EXPECT_TRUE(ret >= LOW_LATENCY_FROM_XML && ret <= HIGH_LATENCY_FROM_XML);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_Manager_SetCaptureSlientState_001
  * @tc.number: Audio_Policy_Manager_SetCaptureSlientState_001
  * @tc.desc  : Test SetCaptureSlientState with no permission.

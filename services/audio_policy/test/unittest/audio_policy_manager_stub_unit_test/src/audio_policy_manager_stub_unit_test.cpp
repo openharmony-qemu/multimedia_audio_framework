@@ -1051,28 +1051,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_046, TestSize.Leve
 /**
  * @tc.name  : Test AudioPolicyManagerStub API
  * @tc.type  : FUNC
- * @tc.number: AudioPolicyManagerStub_047
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleTirRemoteRequest
- */
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_047, TestSize.Level1)
-{
-    int32_t systemAbilityId = 0;
-    bool runOnCreate = true;
-    auto ptrAudioPolicyManagerStub = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyManagerStub, nullptr);
-
-    uint32_t code = static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    ptrAudioPolicyManagerStub->OnMiddleTirRemoteRequest(code, data, reply, option);
-}
-
-/**
- * @tc.name  : Test AudioPolicyManagerStub API
- * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_048
  * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleTirRemoteRequest
  */
@@ -1239,50 +1217,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_055, TestSize.Leve
     EXPECT_NE(ptrAudioPolicyManagerStub, nullptr);
 
     uint32_t code = static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    ptrAudioPolicyManagerStub->OnMiddleFirRemoteRequest(code, data, reply, option);
-}
-
-/**
- * @tc.name  : Test AudioPolicyManagerStub API
- * @tc.type  : FUNC
- * @tc.number: AudioPolicyManagerStub_056
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFirRemoteRequest
- */
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_056, TestSize.Level1)
-{
-    int32_t systemAbilityId = 0;
-    bool runOnCreate = true;
-    auto ptrAudioPolicyManagerStub = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyManagerStub, nullptr);
-
-    uint32_t code = static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    ptrAudioPolicyManagerStub->OnMiddleFirRemoteRequest(code, data, reply, option);
-}
-
-/**
- * @tc.name  : Test AudioPolicyManagerStub API
- * @tc.type  : FUNC
- * @tc.number: AudioPolicyManagerStub_057
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFirRemoteRequest
- */
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_057, TestSize.Level1)
-{
-    int32_t systemAbilityId = 0;
-    bool runOnCreate = true;
-    auto ptrAudioPolicyManagerStub = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyManagerStub, nullptr);
-
-    uint32_t code = static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;

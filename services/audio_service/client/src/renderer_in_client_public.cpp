@@ -267,20 +267,6 @@ int32_t RendererInClientInner::GetAudioStreamInfo(AudioStreamParams &info)
     return SUCCESS;
 }
 
-bool RendererInClientInner::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    AUDIO_WARNING_LOG("CheckRecordingCreate is not supported");
-    return false;
-}
-
-bool RendererInClientInner::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    AUDIO_WARNING_LOG("CheckRecordingCreate is not supported");
-    return false;
-}
-
 int32_t RendererInClientInner::GetAudioSessionID(uint32_t &sessionID)
 {
     CHECK_AND_RETURN_RET_LOG((state_ != RELEASED) && (state_ != NEW), ERR_ILLEGAL_STATE,

@@ -35,7 +35,6 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-const unsigned int REQUEST_THREAD_PRIORITY_TIME_OUT_SECONDS = 10;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 
@@ -1206,16 +1205,6 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     return (result == SUCCESS) ? true:false;
 }
 
-int32_t AudioSystemManager::GetAudioLatencyFromXml() const
-{
-    return AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
-}
-
-uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
-{
-    return AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
-}
-
 int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, StreamUsage streamUsage)
 {
@@ -1250,16 +1239,6 @@ std::string AudioSystemManager::GetSelfBundleName()
     }
     reguard.CheckCurrTimeout();
     return bundleName;
-}
-
-void AudioSystemManager::RequestThreadPriority(uint32_t tid)
-{
-    AudioXCollie audioXCollie("RequestThreadPriority", REQUEST_THREAD_PRIORITY_TIME_OUT_SECONDS);
-
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
-    std::string bundleName = GetSelfBundleName();
-    gasp->RequestThreadPriority(tid, bundleName);
 }
 
 int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)

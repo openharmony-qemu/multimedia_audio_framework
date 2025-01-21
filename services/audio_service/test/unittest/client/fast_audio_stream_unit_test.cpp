@@ -169,40 +169,6 @@ HWTEST(FastSystemStreamUnitTest, UpdatePlaybackCaptureConfig_001, TestSize.Level
 }
 
 /**
- * @tc.name  : Test CheckRecordingCreate API
- * @tc.type  : FUNC
- * @tc.number: CheckRecordingCreate_001
- * @tc.desc  : Test CheckRecordingCreate interface.
- */
-HWTEST(FastSystemStreamUnitTest, CheckRecordingCreate_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest CheckRecordingCreate_001 start");
-    int32_t appUid = static_cast<int32_t>(getuid());
-    SourceType sourceType = SOURCE_TYPE_INVALID;
-    std::shared_ptr<FastAudioStream> fastAudioStream;
-    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    bool res = fastAudioStream->CheckRecordingCreate(0, 0, 0, sourceType);
-    EXPECT_EQ(res, false);
-}
-
-/**
- * @tc.name  : Test CheckRecordingStateChange API
- * @tc.type  : FUNC
- * @tc.number: CheckRecordingStateChange_001
- * @tc.desc  : Test CheckRecordingStateChange interface.
- */
-HWTEST(FastSystemStreamUnitTest, CheckRecordingStateChange_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest CheckRecordingStateChange_001 start");
-    int32_t appUid = static_cast<int32_t>(getuid());
-    AudioPermissionState state = AUDIO_PERMISSION_START;
-    std::shared_ptr<FastAudioStream> fastAudioStream;
-    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    bool res = fastAudioStream->CheckRecordingStateChange(0, 0, 0, state);
-    EXPECT_EQ(res, false);
-}
-
-/**
  * @tc.name  : Test GetAudioPipeType and SetAudioStreamType API
  * @tc.type  : FUNC
  * @tc.number: GetAudioPipeType_001

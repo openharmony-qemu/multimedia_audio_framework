@@ -485,10 +485,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_015, TestS
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
     AudioPolicyManage_->OnMiddleTirRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY), data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddleTirRemoteRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS), data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
@@ -565,14 +561,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_017_1, Tes
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
     AudioPolicyManage_->OnMiddleFirRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER), data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-        AudioPolicyManage_->OnMiddleFirRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION), data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddleFirRemoteRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_OUTPUT_DEVICE), data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
@@ -600,12 +588,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_017_2, Tes
     MessageParcel reply;
     MessageOption option;
     std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    AudioPolicyManage_->OnMiddleFirRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER), data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddleFirRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION), data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
     AudioPolicyManage_->OnMiddleFirRemoteRequest(

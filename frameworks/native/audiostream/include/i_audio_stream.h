@@ -132,10 +132,6 @@ public:
     virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) = 0;
     virtual int32_t GetAudioStreamInfo(AudioStreamParams &info) = 0;
-    virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC) = 0;
-    virtual bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) = 0;
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
     virtual void GetAudioPipeType(AudioPipeType &pipeType) = 0;
     virtual State GetState() = 0;

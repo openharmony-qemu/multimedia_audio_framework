@@ -127,8 +127,6 @@ public:
 
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
 
-    void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
-
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
 
     int32_t SetCaptureSilentState(bool state) override;

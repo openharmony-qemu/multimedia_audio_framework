@@ -697,22 +697,6 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
 
     return true;
 }
-
-void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
-    (void)data.WriteUint32(tid);
-    (void)data.WriteString(bundleName);
-    int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "RequestThreadPriority failed, error: %{public}d", error);
-}
-
 static void MarshallEffectChainMgrParam(const EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
 {
     data.WriteInt32(effectChainMgrParam.maxExtraNum);

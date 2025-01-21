@@ -274,26 +274,6 @@ void AudioServerSetOutputDeviceSinkTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerRequestThreadPriorityTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    uint32_t tid = *reinterpret_cast<const uint32_t*>(rawData);
-    std::string bundleName(reinterpret_cast<const char*>(rawData), size - 1);
-    data.WriteUint32(tid);
-    data.WriteString(bundleName);
-
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    MessageParcel reply;
-    MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY),
-        data, reply, option);
-}
-
 void AudioServerSetAudioMonoStateTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -539,7 +519,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioServerResetAudioEndpointTest,
     OHOS::AudioStandard::AudioServerCreatePlaybackCapturerManagerTest,
     OHOS::AudioStandard::AudioServerSetOutputDeviceSinkTest,
-    OHOS::AudioStandard::AudioServerRequestThreadPriorityTest,
     OHOS::AudioStandard::AudioServerSetAudioMonoStateTest,
     OHOS::AudioStandard::AudioServerSetVoiceVolumeTest,
     OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateTest,

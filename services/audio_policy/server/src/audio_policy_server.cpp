@@ -1336,16 +1336,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetInputD
     return deviceDescs;
 }
 
-int32_t AudioPolicyServer::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
-    uint32_t sessionId)
-{
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    // Temporarily allow only media service to use non-IPC route
-    CHECK_AND_RETURN_RET_LOG(callerUid == MEDIA_SERVICE_UID, ERR_PERMISSION_DENIED, "No permission");
-
-    return audioPolicyService_.NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
-}
-
 int32_t AudioPolicyServer::VerifyVoiceCallPermission(
     uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId)
 {
@@ -1798,12 +1788,6 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterr
     return ERR_UNKNOWN;
 }
 
-bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    return false;
-}
-
 bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint32_t tokenId, bool isRecording)
 {
     AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
@@ -1841,12 +1825,6 @@ bool AudioPolicyServer::VerifyBluetoothPermission()
     CHECK_AND_RETURN_RET(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, false);
 
     return true;
-}
-
-bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    return false;
 }
 
 int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
@@ -2001,16 +1979,6 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -xp\t\t\t|dump xml data map\n");
     AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager Info\n");
     AppendFormat(dumpString, "  -as\t\t\t|dump audio session info\n");
-}
-
-int32_t AudioPolicyServer::GetAudioLatencyFromXml()
-{
-    return audioPolicyService_.GetAudioLatencyFromXml();
-}
-
-uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
-{
-    return audioPolicyService_.GetSinkLatencyFromXml();
 }
 
 int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
