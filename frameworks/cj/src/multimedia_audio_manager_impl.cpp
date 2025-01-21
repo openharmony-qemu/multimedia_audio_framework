@@ -15,7 +15,7 @@
 
 #include "multimedia_audio_manager_impl.h"
 #include "cj_lambda.h"
-#include "audio_log.h"
+#include "audio_manager_log.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 #include "multimedia_audio_routing_manager_impl.h"

@@ -21,7 +21,7 @@
 #include <chrono>
 
 #include "securec.h"
-#include "audio_log.h"
+#include "audio_effect_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 

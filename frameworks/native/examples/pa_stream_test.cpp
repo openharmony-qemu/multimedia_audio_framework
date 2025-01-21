@@ -26,7 +26,7 @@
 #include <iostream>
 #include "securec.h"
 
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_renderer.h"
 #include "audio_capturer.h"
 #include "pcm2wav.h"

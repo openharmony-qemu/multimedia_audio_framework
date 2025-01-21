@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include "multimedia_audio_routing_manager_callback.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "multimedia_audio_common.h"
 
 namespace OHOS {

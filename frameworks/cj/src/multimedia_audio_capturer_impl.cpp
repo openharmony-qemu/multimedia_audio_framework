@@ -14,7 +14,7 @@
  */
 #include "multimedia_audio_capturer_impl.h"
 #include "cj_lambda.h"
-#include "audio_log.h"
+#include "audio_capturer_log.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 #include "timestamp.h"

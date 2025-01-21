@@ -23,7 +23,7 @@
 #include <fstream>
 #include <algorithm>
 #include <unistd.h>
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_pnp_server.h"
 using namespace std;

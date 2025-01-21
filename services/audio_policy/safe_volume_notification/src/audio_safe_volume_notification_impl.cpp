@@ -28,7 +28,7 @@
 #include "notification_bundle_option.h"
 #include "rstate.h"
 #include "ipc_skeleton.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "os_account_manager.h"
 #include "locale_config.h"
 #include "resource_manager_adapter.h"

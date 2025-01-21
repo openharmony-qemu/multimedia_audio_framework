@@ -15,7 +15,7 @@
 
 #include "audio_effect_config_parser_unit_test.h"
 #include "audio_policy_log.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
 #include <libxml/parser.h>

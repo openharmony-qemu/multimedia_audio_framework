@@ -19,7 +19,7 @@
 #include "audio_common_converter.h"
 #include "pro_renderer_stream_impl.h"
 #include "securec.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_down_mix_stereo.h"
 #include "audio_log_utils.h"
 #include "audio_volume.h"

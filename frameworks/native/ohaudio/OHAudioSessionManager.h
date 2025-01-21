@@ -16,7 +16,7 @@
 #ifndef OH_AUDIO_SESSION_MANAGER_H
 #define OH_AUDIO_SESSION_MANAGER_H
 
-#include "audio_log.h"
+#include "audio_manager_log.h"
 #include "native_audio_session_manager.h"
 #include "audio_session_manager.h"
 
