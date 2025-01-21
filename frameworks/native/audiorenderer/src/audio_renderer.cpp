@@ -86,6 +86,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
 
     if (rendererProxyObj_ != nullptr) {
         rendererProxyObj_->UnsetRendererObj();
+        AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionID_);
     }
 
     RemoveRendererPolicyServiceDiedCallback();

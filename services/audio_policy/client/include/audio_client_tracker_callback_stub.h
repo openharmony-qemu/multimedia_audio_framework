@@ -40,7 +40,9 @@ public:
 
     int OffloadRemoteRequest(uint32_t code, MessageParcel &data,
         MessageParcel &reply, MessageOption &option);
+    void UnsetClientTrackerCallback();
 private:
+    std::mutex clientTrackerMutex_;
     std::weak_ptr<AudioClientTracker> callback_;
 };
 } // namespace AudioStandard
