@@ -1597,6 +1597,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
 
 void RendererInClientInner::FirstFrameProcess()
 {
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
         ipcStream_->RegisterThreadPriority(gettid(),
