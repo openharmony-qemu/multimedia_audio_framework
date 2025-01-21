@@ -1052,7 +1052,7 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_014, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SetDeviceActive_001, TestSize.Level1)
 {
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER);
     EXPECT_TRUE(isActive);
 }
 
@@ -1063,10 +1063,10 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SetDeviceActive_002, TestSize.Level1)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, false);
+    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, false);
     EXPECT_EQ(SUCCESS, ret);
 
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER);
     EXPECT_TRUE(isActive);
 }
 
@@ -1077,25 +1077,25 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_002, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level1)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::ACTIVE_DEVICE_TYPE_NONE, true);
+    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_NONE, true);
     EXPECT_NE(SUCCESS, ret);
 
     // On bootup sco won't be connected. Hence activation should fail
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::BLUETOOTH_SCO, true);
+    ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, true);
     EXPECT_NE(SUCCESS, ret);
 
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER);
     EXPECT_TRUE(isActive);
 }
 
 /**
 * @tc.name   : Test IsDeviceActive API
 * @tc.number : IsDeviceActive_001
-* @tc.desc   : Test IsDeviceActive interface. Activate device by ACTIVE_DEVICE_TYPE_NONE
+* @tc.desc   : Test IsDeviceActive interface. Activate device by DEVICE_TYPE_NONE
 */
 HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level1)
 {
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::ACTIVE_DEVICE_TYPE_NONE);
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_NONE);
     EXPECT_FALSE(isActive);
 }
 
@@ -1147,22 +1147,22 @@ HWTEST(AudioManagerUnitTest, ReconfigureChannel_001, TestSize.Level1)
 {
     int32_t ret = SUCCESS;
 
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE);
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK);
     if (isActive) {
-        ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, false);
+        ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK, false);
         EXPECT_EQ(SUCCESS, ret);
     }
 
     ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(CHANNEL_4, DeviceType::DEVICE_TYPE_FILE_SINK);
     EXPECT_NE(SUCCESS, ret);
 
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, false);
+    ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK, false);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, true);
+    ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, true);
     EXPECT_EQ(SUCCESS, ret);
 
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
+    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER);
     EXPECT_TRUE(isActive);
 }
 
@@ -1175,9 +1175,9 @@ HWTEST(AudioManagerUnitTest, ReconfigureChannel_002, TestSize.Level1)
 {
     int32_t ret = SUCCESS;
 
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE);
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK);
     if (isActive) {
-        ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, false);
+        ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK, false);
         EXPECT_EQ(SUCCESS, ret);
     }
 
@@ -1195,7 +1195,7 @@ HWTEST(AudioManagerUnitTest, ReconfigureChannel_002, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, ReconfigureChannel_003, TestSize.Level1)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, false);
+    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK, false);
     EXPECT_EQ(SUCCESS, ret);
 
     ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(INV_CHANNEL, DeviceType::DEVICE_TYPE_FILE_SINK);
@@ -1210,10 +1210,10 @@ HWTEST(AudioManagerUnitTest, ReconfigureChannel_003, TestSize.Level1)
     ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(CHANNEL_10, DeviceType::DEVICE_TYPE_FILE_SINK);
     EXPECT_NE(SUCCESS, ret);
 
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, true);
+    ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, true);
     EXPECT_EQ(SUCCESS, ret);
 
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER);
     EXPECT_TRUE(isActive);
 }
 
@@ -2729,7 +2729,8 @@ HWTEST(AudioManagerUnitTest, SetCallDeviceActive_001, TestSize.Level1)
 {
     // On bootup sco won't be connected. Hence setup should fail.
     std::string address = "";
-    auto ret = AudioSystemManager::GetInstance()->SetCallDeviceActive(ActiveDeviceType::BLUETOOTH_SCO, true, address);
+    auto ret = AudioSystemManager::GetInstance()->SetCallDeviceActive(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, true,
+        address);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 

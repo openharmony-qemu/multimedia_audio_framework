@@ -228,7 +228,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     ```
 8. 使用 **SetDeviceActive** 和 **IsDeviceActive** 接口去激活/去激活音频设备和获取音频设备激活状态。
      ```
-    ActiveDeviceType deviceType = SPEAKER;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
     int32_t result = audioSystemMgr->SetDeviceActive(deviceType, true);
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```

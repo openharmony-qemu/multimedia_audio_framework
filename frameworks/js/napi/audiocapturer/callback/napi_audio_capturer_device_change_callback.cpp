@@ -63,7 +63,7 @@ bool NapiAudioCapturerDeviceChangeCallback::ContainSameJsCallback(napi_value arg
     return isEquals;
 }
 
-void NapiAudioCapturerDeviceChangeCallback::OnStateChange(const DeviceInfo &deviceInfo)
+void NapiAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
 {
     OnJsCallbackCapturerDeviceInfo(callback_, deviceInfo);
 }
@@ -106,7 +106,7 @@ void NapiAudioCapturerDeviceChangeCallback::WorkCallbackCompleted(uv_work_t *wor
 }
 
 void NapiAudioCapturerDeviceChangeCallback::OnJsCallbackCapturerDeviceInfo(napi_ref method,
-    const DeviceInfo &deviceInfo)
+    const AudioDeviceDescriptor &deviceInfo)
 {
     uv_loop_s *loop = nullptr;
     napi_get_uv_event_loop(env_, &loop);

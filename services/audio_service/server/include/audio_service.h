@@ -54,8 +54,8 @@ public:
     int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
-    DeviceInfo GetDeviceInfoForProcess(const AudioProcessConfig &config);
-    std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(DeviceInfo &deviceInfo,
+    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config);
+    std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
         const AudioProcessConfig &clientConfig, bool isVoipStream);
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
 
@@ -96,7 +96,7 @@ private:
     bool ShouldBeDualTone(const AudioProcessConfig &config);
     int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
-    bool IsEndpointTypeVoip(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+    bool IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo);
     void RemoveIdFromMuteControlSet(uint32_t sessionId);
     void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);

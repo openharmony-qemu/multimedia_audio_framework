@@ -789,7 +789,7 @@ bool AudioRendererPrivate::Stop()
         AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
     }
     (void)audioStream_->SetDuckVolume(1.0f);
-    
+
     return result;
 }
 
@@ -1279,7 +1279,7 @@ float AudioRendererPrivate::GetMaxStreamVolume() const
     return AudioPolicyManager::GetInstance().GetMaxStreamVolume();
 }
 
-int32_t AudioRendererPrivate::GetCurrentOutputDevices(DeviceInfo &deviceInfo) const
+int32_t AudioRendererPrivate::GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const
 {
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
@@ -1543,7 +1543,7 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
 }
 
 void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("OnRendererStateChange");
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks;
@@ -1560,7 +1560,7 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
     }
 
     AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d size: %{public}zu",
-        sessionId, static_cast<int>(deviceInfo.deviceType), static_cast<int>(reason), callbacks.size());
+        sessionId, static_cast<int>(deviceInfo.deviceType_), static_cast<int>(reason), callbacks.size());
 }
 
 void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,

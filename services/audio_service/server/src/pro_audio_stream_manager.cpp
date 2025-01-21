@@ -164,7 +164,7 @@ int32_t ProAudioStreamManager::GetStreamCount() const noexcept
 int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRendererStream> &stream)
 {
     int32_t ret = SUCCESS;
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioProcessConfig config = stream->GetAudioProcessConfig();
     bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, true, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(result, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");

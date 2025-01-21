@@ -24,6 +24,7 @@
 #include <timestamp.h>
 #include <mutex>
 #include "audio_effect.h"
+#include "audio_stream_change_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -125,7 +126,7 @@ public:
      * @param state Indicates updated device of the renderer.
      * since 10
      */
-    virtual void OnStateChange(const DeviceInfo &deviceInfo) = 0;
+    virtual void OnStateChange(const AudioDeviceDescriptor &deviceInfo) = 0;
     virtual void RemoveAllCallbacks() = 0;
 };
 
@@ -140,7 +141,8 @@ public:
      * @param Audio stream device change reason.
      * since 11
      */
-    virtual void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) = 0;
+    virtual void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReason reason) = 0;
 };
 
 class AudioRendererErrorCallback {
@@ -825,7 +827,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
     */
-    virtual int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const = 0;
+    virtual int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const = 0;
 
     /**
      * @brief Gets the audio effect mode.

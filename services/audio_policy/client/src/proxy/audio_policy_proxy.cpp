@@ -264,7 +264,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
 
     return deviceInfo;
@@ -286,7 +286,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevicesInner(Devic
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
 
     return deviceInfo;
@@ -312,7 +312,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDev
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
 
     return deviceInfo;
@@ -338,7 +338,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDevi
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     }
 
     return deviceInfo;
@@ -1307,7 +1307,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailab
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
         std::unique_ptr<AudioDeviceDescriptor> desc =
-            std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply));
+            std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply));
         audioDeviceDescriptors.push_back(move(desc));
     }
     return audioDeviceDescriptors;
@@ -1670,7 +1670,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyProxy::GetActiveBluetoothDevic
         "GetActiveBluetoothDevice failed, error: %d", error);
 
     std::unique_ptr<AudioDeviceDescriptor> desc =
-        std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply));
+        std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     return desc;
 }
 

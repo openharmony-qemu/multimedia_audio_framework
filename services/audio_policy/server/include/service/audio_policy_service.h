@@ -309,7 +309,7 @@ public:
     void RegisteredTrackerClientDied(pid_t uid);
 
     void ClientDiedDisconnectScoNormal();
-    
+
     void ClientDiedDisconnectScoRecognition();
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
@@ -329,7 +329,7 @@ public:
     void RegiestPolicy();
 
     // override for IPolicyProvider
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo);
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo);
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
 
@@ -496,14 +496,14 @@ public:
     bool IsRingerModeMute();
 
     AudioScene GetLastAudioScene() const;
-    
+
     void SetRotationToEffect(const uint32_t rotate);
     void FetchStreamForA2dpOffload(const bool &requireReset);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     bool getFastControlParam();
 
     int32_t SetVoiceRingtoneMute(bool isMute);
-    
+
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
@@ -528,8 +528,8 @@ private:
 
     ~AudioPolicyService();
 
-    void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
-        bool hasSystemPermission);
+    void UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo, const sptr<AudioDeviceDescriptor> &desc,
+        bool hasBTPermission, bool hasSystemPermission);
 
     std::string GetSinkPortName(InternalDeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
 
@@ -779,7 +779,7 @@ private:
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-    
+
     int32_t ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -792,7 +792,7 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
 
-    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
+    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo);
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc);
 
@@ -813,8 +813,6 @@ private:
 
     void MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
-
-    std::string GetSinkName(const DeviceInfo& desc, int32_t sessionId);
 
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
 
@@ -864,7 +862,7 @@ private:
 
     int32_t ShowDialog();
 
-    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo, int32_t type,
+    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
         std::vector<sptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
@@ -872,7 +870,7 @@ private:
 
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
         const std::string &networkId, const AudioSamplingRate &samplingRate);
-    
+
     int32_t GetPreferredInputStreamTypeFromDeviceInfo(AudioAdapterInfo &adapterInfo,
         DeviceType deviceType, int32_t flags);
 

@@ -68,7 +68,7 @@ public:
     void SetApplicationCachePath(const std::string cachePath) override;
     void SetValid(bool valid) override;
     int64_t GetFramesRead() const override;
-    int32_t GetCurrentInputDevices(DeviceInfo &deviceInfo) const override;
+    int32_t GetCurrentInputDevices(AudioDeviceDescriptor &deviceInfo) const override;
     int32_t GetCurrentCapturerChangeInfo(AudioCapturerChangeInfo &changeInfo) const override;
     int32_t SetAudioCapturerDeviceChangeCallback(
         const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback) override;
@@ -84,7 +84,7 @@ public:
     int32_t RegisterCapturerPolicyServiceDiedCallback();
     int32_t RemoveCapturerPolicyServiceDiedCallback();
 
-    bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
+    bool IsDeviceChanged(AudioDeviceDescriptor &newDeviceInfo);
     std::vector<sptr<MicrophoneDescriptor>> GetCurrentMicrophones() const override;
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
@@ -153,7 +153,7 @@ private:
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
     std::shared_ptr<CapturerPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     std::shared_ptr<AudioCapturerConcurrencyCallbackImpl> audioConcurrencyCallback_ = nullptr;
-    DeviceInfo currentDeviceInfo_ = {};
+    AudioDeviceDescriptor currentDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     mutable std::mutex signalDetectAgentMutex_;
@@ -225,8 +225,8 @@ public:
 
     virtual ~InputDeviceChangeWithInfoCallbackImpl() = default;
 
-    void OnDeviceChangeWithInfo(
-        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
+    void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReasonExt reason) override;
 
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
