@@ -103,6 +103,7 @@ private:
     bool capturerInited_ = false;
     bool started_ = false;
     bool paused_ = false;
+    std::mutex statusMutex_;
     std::atomic<bool> isCheckPositionSuccess_ = true;
 
     uint32_t captureId_ = 0;
@@ -533,6 +534,7 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
 
 int32_t FastAudioCapturerSourceInner::Start(void)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     AUDIO_INFO_LOG("Start.");
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
@@ -730,6 +732,7 @@ void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallbac
 
 int32_t FastAudioCapturerSourceInner::Stop(void)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     AUDIO_INFO_LOG("Enter, is check position success %{public}d", isCheckPositionSuccess_.load());
 #ifdef FEATURE_POWER_MANAGER
     if (runningLockManager_ != nullptr) {
