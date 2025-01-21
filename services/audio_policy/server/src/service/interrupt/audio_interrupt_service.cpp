@@ -892,11 +892,13 @@ unordered_map<AudioStreamType, int> AudioInterruptService::GetStreamPriorityMap(
 
 AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return GetStreamInFocusInternal(0, zoneId);
 }
 
 AudioStreamType AudioInterruptService::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return GetStreamInFocusInternal(uid, zoneId);
 }
 
