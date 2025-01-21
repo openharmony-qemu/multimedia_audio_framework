@@ -189,7 +189,7 @@ bool AudioStreamCollector::ExistStreamForPipe(AudioPipeType pipeType)
     return true;
 }
 
-int32_t AudioStreamCollector::GetRendererDeviceInfo(const int32_t sessionId, DeviceInfo &outputDeviceInfo)
+int32_t AudioStreamCollector::GetRendererDeviceInfo(const int32_t sessionId, AudioDeviceDescriptor &outputDeviceInfo)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
@@ -296,13 +296,13 @@ void AudioStreamCollector::ResetRendererStreamDeviceInfo(const AudioDeviceDescri
 {
     AUDIO_INFO_LOG("ResetRendererStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        if ((*it)->outputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
-            (*it)->outputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
-            (*it)->outputDeviceInfo.networkId == updatedDesc.networkId_ &&
+        if ((*it)->outputDeviceInfo.deviceType_ == updatedDesc.deviceType_ &&
+            (*it)->outputDeviceInfo.macAddress_ == updatedDesc.macAddress_ &&
+            (*it)->outputDeviceInfo.networkId_ == updatedDesc.networkId_ &&
             (*it)->rendererState != RENDERER_RUNNING) {
-            (*it)->outputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
-            (*it)->outputDeviceInfo.macAddress = "";
-            (*it)->outputDeviceInfo.networkId = LOCAL_NETWORK_ID;
+            (*it)->outputDeviceInfo.deviceType_ = DEVICE_TYPE_NONE;
+            (*it)->outputDeviceInfo.macAddress_ = "";
+            (*it)->outputDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
         }
     }
 }
@@ -311,13 +311,13 @@ void AudioStreamCollector::ResetCapturerStreamDeviceInfo(const AudioDeviceDescri
 {
     AUDIO_INFO_LOG("ResetCapturerStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        if ((*it)->inputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
-            (*it)->inputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
-            (*it)->inputDeviceInfo.networkId == updatedDesc.networkId_ &&
+        if ((*it)->inputDeviceInfo.deviceType_ == updatedDesc.deviceType_ &&
+            (*it)->inputDeviceInfo.macAddress_ == updatedDesc.macAddress_ &&
+            (*it)->inputDeviceInfo.networkId_ == updatedDesc.networkId_ &&
             (*it)->capturerState != CAPTURER_RUNNING) {
-            (*it)->inputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
-            (*it)->inputDeviceInfo.macAddress = "";
-            (*it)->inputDeviceInfo.networkId = LOCAL_NETWORK_ID;
+            (*it)->inputDeviceInfo.deviceType_ = DEVICE_TYPE_NONE;
+            (*it)->inputDeviceInfo.macAddress_ = "";
+            (*it)->inputDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
         }
     }
 }
@@ -385,7 +385,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                 "Memory Allocation Failed");
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
             rendererChangeInfo->channelCount = (*it)->channelCount;
-            if (rendererChangeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_INVALID) {
+            if (rendererChangeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_INVALID) {
                 streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo = (*it)->outputDeviceInfo;
                 rendererChangeInfo->outputDeviceInfo = (*it)->outputDeviceInfo;
             }
@@ -462,7 +462,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "CapturerChangeInfo Memory Allocation Failed");
             SetCapturerStreamParam(streamChangeInfo, capturerChangeInfo);
-            if (capturerChangeInfo->inputDeviceInfo.deviceType == DEVICE_TYPE_INVALID) {
+            if (capturerChangeInfo->inputDeviceInfo.deviceType_ == DEVICE_TYPE_INVALID) {
                 streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = (*it)->inputDeviceInfo;
                 capturerChangeInfo->inputDeviceInfo = (*it)->inputDeviceInfo;
             }
@@ -485,14 +485,14 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo)
+int32_t AudioStreamCollector::UpdateRendererDeviceInfo(AudioDeviceDescriptor &outputDeviceInfo)
 {
     bool deviceInfoUpdated = false;
 
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
         if (!(*it)->outputDeviceInfo.IsSameDeviceInfo(outputDeviceInfo)) {
             AUDIO_DEBUG_LOG("UpdateRendererDeviceInfo: old device: %{public}d new device: %{public}d",
-                (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
+                (*it)->outputDeviceInfo.deviceType_, outputDeviceInfo.deviceType_);
             (*it)->outputDeviceInfo = outputDeviceInfo;
             deviceInfoUpdated = true;
         }
@@ -508,14 +508,14 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(DeviceInfo &outputDeviceI
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceInfo)
+int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(AudioDeviceDescriptor &inputDeviceInfo)
 {
     bool deviceInfoUpdated = false;
 
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
         if (!(*it)->inputDeviceInfo.IsSameDeviceInfo(inputDeviceInfo)) {
             AUDIO_DEBUG_LOG("UpdateCapturerDeviceInfo: old device: %{public}d new device: %{public}d",
-                (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
+                (*it)->inputDeviceInfo.deviceType_, inputDeviceInfo.deviceType_);
             (*it)->inputDeviceInfo = inputDeviceInfo;
             deviceInfoUpdated = true;
         }
@@ -529,7 +529,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceIn
 }
 
 int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId,
-    DeviceInfo &outputDeviceInfo)
+    AudioDeviceDescriptor &outputDeviceInfo)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     bool deviceInfoUpdated = false;
@@ -538,7 +538,7 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
         if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
             !(*it)->outputDeviceInfo.IsSameDeviceInfo(outputDeviceInfo)) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
-                clientUID, sessionId, (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
+                clientUID, sessionId, (*it)->outputDeviceInfo.deviceType_, outputDeviceInfo.deviceType_);
             (*it)->outputDeviceInfo = outputDeviceInfo;
             deviceInfoUpdated = true;
         }
@@ -577,7 +577,7 @@ int32_t AudioStreamCollector::UpdateRendererPipeInfo(const int32_t sessionId, co
 }
 
 int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId,
-    DeviceInfo &inputDeviceInfo)
+    AudioDeviceDescriptor &inputDeviceInfo)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     bool deviceInfoUpdated = false;
@@ -586,7 +586,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_
         if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
             !(*it)->inputDeviceInfo.IsSameDeviceInfo(inputDeviceInfo)) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
-                (*it)->clientUID, (*it)->sessionId, (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
+                (*it)->clientUID, (*it)->sessionId, (*it)->inputDeviceInfo.deviceType_, inputDeviceInfo.deviceType_);
             (*it)->inputDeviceInfo = inputDeviceInfo;
             deviceInfoUpdated = true;
         }
@@ -599,7 +599,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo)
+int32_t AudioStreamCollector::UpdateTracker(const AudioMode &mode, AudioDeviceDescriptor &deviceInfo)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     if (mode == AUDIO_MODE_PLAYBACK) {
@@ -668,8 +668,8 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceByStreamUsage
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->rendererInfo.streamUsage == streamUsage &&
-            changeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_SPEAKER &&
-            changeInfo->outputDeviceInfo.networkId != LOCAL_NETWORK_ID) {
+            changeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_SPEAKER &&
+            changeInfo->outputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
             sessionIdSet.insert(changeInfo->sessionId);
         }
     }
@@ -682,8 +682,8 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceBySourceType(
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
         if (changeInfo->capturerInfo.sourceType == sourceType &&
-            changeInfo->inputDeviceInfo.deviceType == DEVICE_TYPE_MIC &&
-            changeInfo->inputDeviceInfo.networkId != LOCAL_NETWORK_ID) {
+            changeInfo->inputDeviceInfo.deviceType_ == DEVICE_TYPE_MIC &&
+            changeInfo->inputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
             sessionIdSet.insert(changeInfo->sessionId);
         }
     }
@@ -695,7 +695,7 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceByDeviceType(
     std::set<int32_t> sessionIdSet;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->outputDeviceInfo.deviceType == deviceType) {
+        if (changeInfo->outputDeviceInfo.deviceType_ == deviceType) {
             sessionIdSet.insert(changeInfo->sessionId);
         }
     }
@@ -707,7 +707,7 @@ int32_t AudioStreamCollector::GetSessionIdsPauseOnRemoteDeviceByRemote(Interrupt
     int32_t sessionIdVec = -1;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_REMOTE_CAST &&
+        if (changeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_REMOTE_CAST &&
             changeInfo->rendererState == RendererState::RENDERER_RUNNING) {
             return changeInfo->sessionId;
         }
@@ -1050,7 +1050,7 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
             bean->Add("ISOUTPUT", 0);
             bean->Add("STREAMID", (*it)->sessionId);
             bean->Add("STREAM_TYPE", (*it)->capturerInfo.sourceType);
-            bean->Add("DEVICETYPE", (*it)->inputDeviceInfo.deviceType);
+            bean->Add("DEVICETYPE", (*it)->inputDeviceInfo.deviceType_);
             bean->Add("MUTED", (*it)->muted);
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         }
@@ -1096,7 +1096,7 @@ void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInf
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType,
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
-        streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType, OUTPUT_DEVICE);
+        streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType_, OUTPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.sceneType) ?
@@ -1113,12 +1113,12 @@ void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInf
     bean->Add("TRANSACTIONID", transactionId);
     bean->Add("STREAMTYPE", streamType);
     bean->Add("STATE", streamChangeInfo.audioRendererChangeInfo.rendererState);
-    bean->Add("DEVICETYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType);
-    bean->Add("BT_TYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceCategory);
+    bean->Add("DEVICETYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType_);
+    bean->Add("BT_TYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceCategory_);
     bean->Add("PIPE_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType);
     bean->Add("STREAM_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
     bean->Add("SAMPLE_RATE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.samplingRate);
-    bean->Add("NETWORKID", ConvertNetworkId(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId));
+    bean->Add("NETWORKID", ConvertNetworkId(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId_));
     bean->Add("ENCODING_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", streamChangeInfo.audioRendererChangeInfo.rendererInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);
@@ -1131,7 +1131,7 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
     AudioStreamType streamType = GetStreamTypeFromSourceType(
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
-        streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType, INPUT_DEVICE);
+        streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType_, INPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sceneType) ?
@@ -1148,13 +1148,13 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
     bean->Add("TRANSACTIONID", transactionId);
     bean->Add("STREAMTYPE", streamType);
     bean->Add("STATE", streamChangeInfo.audioCapturerChangeInfo.capturerState);
-    bean->Add("DEVICETYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType);
-    bean->Add("BT_TYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceCategory);
+    bean->Add("DEVICETYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType_);
+    bean->Add("BT_TYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceCategory_);
     bean->Add("PIPE_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.pipeType);
     bean->Add("STREAM_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
     bean->Add("SAMPLE_RATE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.samplingRate);
     bean->Add("MUTED", streamChangeInfo.audioCapturerChangeInfo.muted);
-    bean->Add("NETWORKID", ConvertNetworkId(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId));
+    bean->Add("NETWORKID", ConvertNetworkId(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId_));
     bean->Add("ENCODING_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);
@@ -1168,7 +1168,7 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
     AudioStreamType streamType = GetVolumeTypeFromContentUsage(audioRendererChangeInfo->rendererInfo.contentType,
         audioRendererChangeInfo->rendererInfo.streamUsage);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
-        audioRendererChangeInfo->outputDeviceInfo.deviceType, OUTPUT_DEVICE);
+        audioRendererChangeInfo->outputDeviceInfo.deviceType_, OUTPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
         audioRendererChangeInfo->rendererInfo.sceneType) ?
@@ -1185,12 +1185,12 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
     bean->Add("TRANSACTIONID", transactionId);
     bean->Add("STREAMTYPE", streamType);
     bean->Add("STATE", audioRendererChangeInfo->rendererState);
-    bean->Add("DEVICETYPE", audioRendererChangeInfo->outputDeviceInfo.deviceType);
-    bean->Add("BT_TYPE", audioRendererChangeInfo->outputDeviceInfo.deviceCategory);
+    bean->Add("DEVICETYPE", audioRendererChangeInfo->outputDeviceInfo.deviceType_);
+    bean->Add("BT_TYPE", audioRendererChangeInfo->outputDeviceInfo.deviceCategory_);
     bean->Add("PIPE_TYPE", audioRendererChangeInfo->rendererInfo.pipeType);
     bean->Add("STREAM_TYPE", audioRendererChangeInfo->rendererInfo.streamUsage);
     bean->Add("SAMPLE_RATE", audioRendererChangeInfo->rendererInfo.samplingRate);
-    bean->Add("NETWORKID", ConvertNetworkId(audioRendererChangeInfo->outputDeviceInfo.networkId));
+    bean->Add("NETWORKID", ConvertNetworkId(audioRendererChangeInfo->outputDeviceInfo.networkId_));
     bean->Add("ENCODING_TYPE", audioRendererChangeInfo->rendererInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", audioRendererChangeInfo->rendererInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);
@@ -1202,7 +1202,7 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
 {
     AudioStreamType streamType = GetStreamTypeFromSourceType(audioCapturerChangeInfo->capturerInfo.sourceType);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
-        audioCapturerChangeInfo->inputDeviceInfo.deviceType, INPUT_DEVICE);
+        audioCapturerChangeInfo->inputDeviceInfo.deviceType_, INPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
         audioCapturerChangeInfo->capturerInfo.sceneType) ?
@@ -1219,13 +1219,13 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     bean->Add("TRANSACTIONID", transactionId);
     bean->Add("STREAMTYPE", streamType);
     bean->Add("STATE", audioCapturerChangeInfo->capturerState);
-    bean->Add("DEVICETYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceType);
-    bean->Add("BT_TYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceCategory);
+    bean->Add("DEVICETYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceType_);
+    bean->Add("BT_TYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceCategory_);
     bean->Add("PIPE_TYPE", audioCapturerChangeInfo->capturerInfo.pipeType);
     bean->Add("STREAM_TYPE", audioCapturerChangeInfo->capturerInfo.sourceType);
     bean->Add("SAMPLE_RATE", audioCapturerChangeInfo->capturerInfo.samplingRate);
     bean->Add("MUTED", audioCapturerChangeInfo->muted);
-    bean->Add("NETWORKID", ConvertNetworkId(audioCapturerChangeInfo->inputDeviceInfo.networkId));
+    bean->Add("NETWORKID", ConvertNetworkId(audioCapturerChangeInfo->inputDeviceInfo.networkId_));
     bean->Add("ENCODING_TYPE", audioCapturerChangeInfo->capturerInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", audioCapturerChangeInfo->capturerInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);

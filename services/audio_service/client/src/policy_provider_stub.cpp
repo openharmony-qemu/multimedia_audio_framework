@@ -72,7 +72,7 @@ int32_t PolicyProviderStub::HandleGetProcessDeviceInfo(MessageParcel &data, Mess
     int32_t ret = ProcessConfig::ReadConfigFromParcel(config, data);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ReadConfigFromParcel failed %{public}d", ret);
     bool flag = data.ReadBool();
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     ret = GetProcessDeviceInfo(config, flag, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessDeviceInfo failed %{public}d", ret);
     deviceInfo.Marshalling(reply);
@@ -177,7 +177,7 @@ PolicyProviderWrapper::PolicyProviderWrapper(IPolicyProvider *policyWorker) : po
 }
 
 int32_t PolicyProviderWrapper::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
-    DeviceInfo &deviceInfo)
+    AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->GetProcessDeviceInfo(config, lockFlag, deviceInfo);

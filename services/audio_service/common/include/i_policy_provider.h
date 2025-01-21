@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "audio_info.h"
+#include "audio_device_descriptor.h"
 #include "audio_shared_memory.h"
 
 namespace OHOS {
@@ -70,7 +71,8 @@ namespace {
 }
 class IPolicyProvider {
 public:
-    virtual int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) = 0;
+    virtual int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+        AudioDeviceDescriptor &deviceInfo) = 0;
 
     virtual int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) = 0;
 

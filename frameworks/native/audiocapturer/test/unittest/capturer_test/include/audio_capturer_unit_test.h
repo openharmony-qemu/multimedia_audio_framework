@@ -83,7 +83,7 @@ public:
      * @param state Indicates updated device of the capturer.
      * since 11
      */
-    virtual void OnStateChange(const DeviceInfo &deviceInfo) override {};
+    virtual void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override {};
 };
 
 class AudioCapturerInfoChangeCallbackTest : public AudioCapturerInfoChangeCallback {

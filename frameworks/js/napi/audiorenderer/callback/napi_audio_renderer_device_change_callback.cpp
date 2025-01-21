@@ -104,7 +104,7 @@ int32_t NapiAudioRendererDeviceChangeCallback::GetCallbackListSize() const
     return callbacks_.size();
 }
 
-void NapiAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+void NapiAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -151,7 +151,7 @@ void NapiAudioRendererDeviceChangeCallback::WorkCallbackCompleted(uv_work_t *wor
 }
 
 void NapiAudioRendererDeviceChangeCallback::OnJsCallbackRendererDeviceInfo(napi_ref method,
-    const DeviceInfo &deviceInfo)
+    const AudioDeviceDescriptor &deviceInfo)
 {
     uv_loop_s *loop = nullptr;
     napi_get_uv_event_loop(env_, &loop);
@@ -265,7 +265,7 @@ int32_t NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetCallbackListSize
     return callbacks_.size();
 }
 
-void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -321,7 +321,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::WorkCallbackCompleted(
 }
 
 void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnJsCallbackOutputDeviceInfo(napi_ref method,
-    const DeviceInfo &deviceInfo, AudioStreamDeviceChangeReason reason)
+    const AudioDeviceDescriptor &deviceInfo, AudioStreamDeviceChangeReason reason)
 {
     uv_loop_s *loop = nullptr;
     napi_get_uv_event_loop(env_, &loop);

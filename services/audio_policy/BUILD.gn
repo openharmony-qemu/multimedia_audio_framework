@@ -387,6 +387,7 @@ ohos_shared_library("audio_policy_client") {
 
   sources = [
     "../audio_service/client/src/audio_device_descriptor.cpp",
+    "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
     "client/src/audio_concurrency_state_listener_stub.cpp",

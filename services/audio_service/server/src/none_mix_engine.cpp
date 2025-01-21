@@ -74,14 +74,14 @@ NoneMixEngine::~NoneMixEngine()
     startFadeout_ = false;
 }
 
-int32_t NoneMixEngine::Init(const DeviceInfo &type, bool isVoip)
+int32_t NoneMixEngine::Init(const AudioDeviceDescriptor &type, bool isVoip)
 {
     if (!isInit_) {
         isVoip_ = isVoip;
         device_ = type;
         return SUCCESS;
     }
-    if (type.deviceType != device_.deviceType || isVoip_ != isVoip) {
+    if (type.deviceType_ != device_.deviceType_ || isVoip_ != isVoip) {
         isVoip_ = isVoip;
         device_ = type;
         if (renderSink_ && renderSink_->IsInited()) {
@@ -416,7 +416,7 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, HdiAdapterFormat format, uint3
     attr.channel = channel;
     attr.format = format;
     attr.channelLayout = channel >= STEREO_CHANNEL_COUNT ? HDI_STEREO_CHANNEL_LAYOUT : HDI_MONO_CHANNEL_LAYOUT;
-    attr.deviceType = device_.deviceType;
+    attr.deviceType = device_.deviceType_;
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
     AUDIO_INFO_LOG("sinkName:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d,channel:%{public}d",
