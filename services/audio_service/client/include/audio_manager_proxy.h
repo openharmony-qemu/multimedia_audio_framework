@@ -59,7 +59,6 @@ public:
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
     bool LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
         std::vector<Effect> &successEffects) override;
-    void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;

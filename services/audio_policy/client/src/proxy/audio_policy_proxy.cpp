@@ -850,50 +850,6 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, 
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    AUDIO_DEBUG_LOG("CheckRecordingCreate: [uid : %{public}d]", appUid);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
-    data.WriteUint32(appTokenId);
-    data.WriteUint64(appFullTokenId);
-    data.WriteInt32(appUid);
-    data.WriteInt32(sourceType);
-
-    int result = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, false, "CheckRecordingCreate failed, result: %{public}d", result);
-
-    return reply.ReadBool();
-}
-
-bool AudioPolicyProxy::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
-
-    data.WriteUint32(appTokenId);
-    data.WriteUint64(appFullTokenId);
-    data.WriteInt32(appUid);
-    data.WriteInt32(state);
-
-    int result = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, false, "CheckRecordingStateChange failed, result: %{public}d", result);
-
-    return reply.ReadBool();
-}
-
 int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
     MessageParcel data;
@@ -912,39 +868,6 @@ int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceT
         "ReconfigureAudioChannel failed, result: %{public}d", result);
 
     return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::GetAudioLatencyFromXml()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, IPC_PROXY_ERR, "WriteInterfaceToken failed");
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_LATENCY), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
-        "GetAudioLatencyFromXml, error: %d", error);
-
-    return reply.ReadInt32();
-}
-
-uint32_t AudioPolicyProxy::GetSinkLatencyFromXml()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, 0, "WriteInterfaceToken failed");
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SINK_LATENCY), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, 0, "GetSinkLatencyFromXml, error: %d", error);
-
-    return reply.ReadUint32();
 }
 
 int32_t AudioPolicyProxy::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
@@ -1780,24 +1703,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyProxy::GetActiveBluetoothDevic
     std::shared_ptr<AudioDeviceDescriptor> desc =
         std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply));
     return desc;
-}
-
-int32_t AudioPolicyProxy::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
-    uint32_t sessionId)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    capturerInfo.Marshalling(data);
-    streamInfo.Marshalling(data);
-    data.WriteUint32(sessionId);
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed, error: %d", error);
-    return reply.ReadInt32();
 }
 
 ConverterConfig AudioPolicyProxy::GetConverterConfig()

@@ -320,11 +320,6 @@ public:
     virtual int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) = 0;
 
     /**
-     * Request thread priority for client thread.
-     */
-    virtual void RequestThreadPriority(uint32_t tid, std::string bundleName) = 0;
-
-    /**
      * Create playback capturer manager.
      *
      * @return true/false.
@@ -521,7 +516,6 @@ private:
     int HandleSetAudioBalanceValue(MessageParcel &data, MessageParcel &reply);
     int HandleCreateAudioProcess(MessageParcel &data, MessageParcel &reply);
     int HandleLoadAudioEffectLibraries(MessageParcel &data, MessageParcel &reply);
-    int HandleRequestThreadPriority(MessageParcel &data, MessageParcel &reply);
     int HandleCreateAudioEffectChainManager(MessageParcel &data, MessageParcel &reply);
     int HandleSetOutputDeviceSink(MessageParcel &data, MessageParcel &reply);
     int HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply);

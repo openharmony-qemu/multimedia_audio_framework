@@ -138,9 +138,6 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
 
-    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
-        uint32_t sessionId) override;
-
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
@@ -221,17 +218,7 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC) override;
-
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) override;
-
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
-
-    int32_t GetAudioLatencyFromXml() override;
-
-    uint32_t GetSinkLatencyFromXml() override;
 
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
 

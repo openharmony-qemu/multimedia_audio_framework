@@ -88,7 +88,6 @@ const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
-const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
@@ -1810,15 +1809,6 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
             AUDIO_ERR_LOG("Failed to add deathRecipient");
         }
     }
-}
-
-void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
-{
-    AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
-
-    int32_t pid = IPCSkeleton::GetCallingPid();
-    AudioXCollie audioXCollie("AudioServer::ScheduleReportData", SCHEDULE_REPORT_TIME_OUT_SECONDS);
-    ScheduleReportData(pid, tid, bundleName.c_str());
 }
 
 bool AudioServer::CreatePlaybackCapturerManager()

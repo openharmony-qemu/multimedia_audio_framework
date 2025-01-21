@@ -195,8 +195,7 @@ int32_t AudioPolicyProxy::AdjustVolumeByStep(VolumeAdjustType adjustType)
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ADJUST_VOLUME_BY_STEP), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
-        "GetAudioLatencyFromXml, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED, "error: %d", error);
 
     return reply.ReadInt32();
 }
@@ -214,8 +213,7 @@ int32_t AudioPolicyProxy::AdjustSystemVolumeByStep(AudioVolumeType volumeType, V
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ADJUST_SYSTEM_VOLUME_BY_STEP), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
-        "GetAudioLatencyFromXml, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED, "error: %d", error);
 
     return reply.ReadInt32();
 }

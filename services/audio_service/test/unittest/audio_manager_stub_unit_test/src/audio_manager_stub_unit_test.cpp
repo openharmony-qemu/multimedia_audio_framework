@@ -939,23 +939,6 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_006, TestSize.Level1)
 /**
 * @tc.name  : Test HandleSecondPartCode API
 * @tc.type  : FUNC
-* @tc.number: HandleSecondPartCode_007
-* @tc.desc  : Test HandleSecondPartCode interface. Set code value to REQUEST_THREAD_PRIORITY
-*/
-HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_007, TestSize.Level1)
-{
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
-    EXPECT_EQ(AUDIO_OK, ret);
-}
-
-/**
-* @tc.name  : Test HandleSecondPartCode API
-* @tc.type  : FUNC
 * @tc.number: HandleSecondPartCode_008
 * @tc.desc  : Test HandleSecondPartCode interface. Set code value to CREATE_AUDIO_EFFECT_CHAIN_MANAGER
 */

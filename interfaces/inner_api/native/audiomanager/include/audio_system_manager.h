@@ -1043,24 +1043,6 @@ public:
     bool AbandonIndependentInterrupt(FocusType focusType);
 
     /**
-     * @brief Get audio latency from Xml
-     *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    int32_t GetAudioLatencyFromXml() const;
-
-    /**
-     * @brief Get audio sink from Xml
-     *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    uint32_t GetSinkLatencyFromXml() const;
-
-    /**
      * @brief Update stream state
      *
      * @param clientUid client Uid
@@ -1152,14 +1134,6 @@ public:
      */
     int32_t UnregisterFocusInfoChangeCallback(
         const std::shared_ptr<AudioFocusInfoChangeCallback> &callback = nullptr);
-
-    /**
-     * @brief Ask audio native process to request thread priority for client
-     *
-     * @param tid Target thread id
-     * @since 10
-     */
-    void RequestThreadPriority(uint32_t tid);
 
     int32_t SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback);
 

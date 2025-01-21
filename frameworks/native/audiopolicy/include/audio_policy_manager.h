@@ -193,17 +193,7 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
 
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC);
-
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state);
-
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    int32_t GetAudioLatencyFromXml();
-
-    uint32_t GetSinkLatencyFromXml();
 
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
 
@@ -392,8 +382,6 @@ public:
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
-
-    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
 
     ConverterConfig GetConverterConfig();
 

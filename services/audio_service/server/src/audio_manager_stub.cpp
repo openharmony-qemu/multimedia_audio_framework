@@ -60,7 +60,6 @@ const char *g_audioServerCodeStrs[] = {
     "SET_AUDIO_BALANCE_VALUE",
     "CREATE_AUDIOPROCESS",
     "LOAD_AUDIO_EFFECT_LIBRARIES",
-    "REQUEST_THREAD_PRIORITY",
     "CREATE_AUDIO_EFFECT_CHAIN_MANAGER",
     "SET_OUTPUT_DEVICE_SINK",
     "CREATE_PLAYBACK_CAPTURER_MANAGER",
@@ -478,14 +477,6 @@ int AudioManagerStub::HandleLoadAudioEffectLibraries(MessageParcel &data, Messag
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleRequestThreadPriority(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t tid = data.ReadUint32();
-    string bundleName = data.ReadString();
-    RequestThreadPriority(tid, bundleName);
-    return AUDIO_OK;
-}
-
 static bool UnmarshallEffectChainMgrParam(EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
 {
     effectChainMgrParam.maxExtraNum = static_cast<uint32_t>(data.ReadInt32());
@@ -887,8 +878,6 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleCreateAudioProcess(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_AUDIO_EFFECT_LIBRARIES):
             return HandleLoadAudioEffectLibraries(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY):
-            return HandleRequestThreadPriority(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIO_EFFECT_CHAIN_MANAGER):
             return HandleCreateAudioEffectChainManager(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK):
