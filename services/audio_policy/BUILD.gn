@@ -156,6 +156,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/audio_client_tracker_callback_proxy.cpp",
     "server/src/audio_concurrency_state_listener_proxy.cpp",
     "server/src/audio_group_handle.cpp",
+    "server/src/audio_policy_async_action_handler.cpp",
     "server/src/audio_policy_client_proxy.cpp",
     "server/src/audio_policy_manager_device_stub.cpp",
     "server/src/audio_policy_manager_listener_proxy.cpp",
