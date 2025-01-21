@@ -39,6 +39,7 @@ std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
+std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> AudioPolicyManager::clientTrackerStubMap_;
 
 inline bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
 {
@@ -179,6 +180,7 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
 {
+    GetInstance().ResetClientTrackerStubMap();
     {
         std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
         AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
@@ -1161,7 +1163,7 @@ int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    std::unique_lock<std::mutex> lock(clientTrackerStubMutex_);
+    std::lock_guard<std::mutex> lock(clientTrackerStubMutex_);
     sptr<AudioClientTrackerCallbackStub> callback = new(std::nothrow) AudioClientTrackerCallbackStub();
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "clientTrackerCbStub: memory allocation failed");
 
@@ -1169,9 +1171,13 @@ int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 
     sptr<IRemoteObject> object = callback->AsObject();
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "clientTrackerCbStub: IPC object creation failed");
-    lock.unlock();
 
-    return gsp->RegisterTracker(mode, streamChangeInfo, object);
+    int32_t ret = gsp->RegisterTracker(mode, streamChangeInfo, object);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RegisterTracker failed");
+    int32_t sessionId = mode == AUDIO_MODE_PLAYBACK ? streamChangeInfo.audioRendererChangeInfo.sessionId :
+        streamChangeInfo.audioCapturerChangeInfo.sessionId;
+    clientTrackerStubMap_[sessionId] = callback;
+    return ret;
 }
 
 int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
@@ -1179,7 +1185,9 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     AUDIO_DEBUG_LOG("AudioPolicyManager::UpdateTracker");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->UpdateTracker(mode, streamChangeInfo);
+    int32_t ret = gsp->UpdateTracker(mode, streamChangeInfo);
+    CheckAndRemoveClientTrackerStub(mode, streamChangeInfo);
+    return ret;
 }
 
 void AudioPolicyManager::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
@@ -2161,6 +2169,46 @@ int32_t AudioPolicyManager::ActivateAudioConcurrency(const AudioPipeType &pipeTy
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->ActivateAudioConcurrency(pipeType);
+}
+
+// When AudioPolicyServer died, clear client tracker stubs. New tracker stubs will be added
+// in IAudioStream::RestoreAudioStream. Only called in AudioPolicyServerDied().
+void AudioPolicyManager::ResetClientTrackerStubMap()
+{
+    std::lock_guard<std::mutex> lock(clientTrackerStubMutex_);
+    for (auto it : clientTrackerStubMap_) {
+        if (it.second != nullptr) {
+            it.second->UnsetClientTrackerCallback();
+        } else {
+            AUDIO_WARNING_LOG("Client tracker stub is nullptr in local map");
+        }
+    }
+    clientTrackerStubMap_.clear();
+}
+
+void AudioPolicyManager::CheckAndRemoveClientTrackerStub(const AudioMode &mode,
+    const AudioStreamChangeInfo &streamChangeInfo)
+{
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState != RENDERER_RELEASED &&
+        streamChangeInfo.audioCapturerChangeInfo.capturerState != CAPTURER_RELEASED) {
+        return;
+    }
+    int32_t sessionId = mode == AUDIO_MODE_PLAYBACK ? streamChangeInfo.audioRendererChangeInfo.sessionId :
+        streamChangeInfo.audioCapturerChangeInfo.sessionId;
+    RemoveClientTrackerStub(sessionId);
+}
+
+void AudioPolicyManager::RemoveClientTrackerStub(int32_t sessionId)
+{
+    std::unique_lock<std::mutex> lock(clientTrackerStubMutex_);
+    if (clientTrackerStubMap_.find(sessionId) != clientTrackerStubMap_.end() &&
+        clientTrackerStubMap_[sessionId] != nullptr) {
+        clientTrackerStubMap_[sessionId]->UnsetClientTrackerCallback();
+        clientTrackerStubMap_.erase(sessionId);
+        AUDIO_INFO_LOG("Client tracker for session %{public}d removed", sessionId);
+    } else {
+        AUDIO_WARNING_LOG("Client tracker for session %{public}d not exist", sessionId);
+    }
 }
 
 int32_t AudioPolicyManager::InjectInterruption(const std::string networkId, InterruptEvent &event)
