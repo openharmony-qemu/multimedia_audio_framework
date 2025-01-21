@@ -6877,9 +6877,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_001, TestSize
     EXPECT_GE(bytesWritten, VALUE_ZERO);
 
     Timestamp timestamp;
-    bool GetAudioTimestampInfoRet =
+    int32_t getAudioTimestampInfoRet =
         audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
-    EXPECT_EQ(true, GetAudioTimestampInfoRet);
+    EXPECT_EQ(SUCCESS, getAudioTimestampInfoRet);
     EXPECT_GE(timestamp.time.tv_sec, (const long)VALUE_ZERO);
     EXPECT_GE(timestamp.time.tv_nsec, (const long)VALUE_ZERO);
 
@@ -6903,8 +6903,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_002, TestSize
     ASSERT_NE(nullptr, audioRenderer);
 
     Timestamp timestamp;
-    bool ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
-    EXPECT_EQ(false, ret);
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
 
 /**
@@ -6924,8 +6924,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_003, TestSize
     EXPECT_EQ(true, isStarted);
 
     Timestamp timestamp;
-    bool ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
-    EXPECT_EQ(true, ret);
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 
     audioRenderer->Release();
 }
@@ -6950,8 +6950,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_004, TestSize
     EXPECT_EQ(true, isStopped);
 
     Timestamp timestamp;
-    bool ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
-    EXPECT_EQ(false, ret);
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 
     audioRenderer->Release();
 }
@@ -6979,8 +6979,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_005, TestSize
     EXPECT_EQ(true, isReleased);
 
     Timestamp timestamp;
-    bool ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
-    EXPECT_EQ(false, ret);
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
 
 /**
@@ -7003,8 +7003,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_006, TestSize
     EXPECT_EQ(true, isPaused);
 
     Timestamp timestamp;
-    bool ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
-    EXPECT_EQ(false, ret);
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 
     audioRenderer->Release();
 }
