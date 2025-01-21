@@ -431,10 +431,11 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
 {
     AUTO_CTRACE("module_split_stream_sink::ProcessAudioVolume: len:%zu", length);
     struct userdata *u;
-    pa_assert_se(sinkIn);
-    pa_assert_se(pchunk);
-    pa_assert_se(si);
     pa_assert_se(u = si->userdata);
+    if (sinkIn == NULL || pchunk == NULL || si == NULL) {
+        AUDIO_ERR_LOG("Null pointer");
+        return;
+    }
     const char *streamType = SafeProplistGets(sinkIn->proplist, "stream.type", "NULL");
     const char *sessionIDStr = SafeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
     const char *deviceClass = GetDeviceClass(u->sinkAdapter->deviceClass);
