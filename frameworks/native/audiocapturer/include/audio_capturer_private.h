@@ -162,6 +162,7 @@ private:
     bool isFastVoipSupported_ = false;
     std::mutex setCapturerCbMutex_;
     std::mutex setParamsMutex_;
+    std::mutex capturerPolicyServiceDiedCbMutex_;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
