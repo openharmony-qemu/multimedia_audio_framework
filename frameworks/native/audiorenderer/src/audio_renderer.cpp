@@ -2192,7 +2192,7 @@ int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timest
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->GetAudioPosition(timestamp, base);
+    return currentStream->GetAudioTimestampInfo(timestamp, base);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
