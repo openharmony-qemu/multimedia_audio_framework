@@ -224,7 +224,7 @@ int32_t IpcStreamInServer::Stop()
 
 int32_t IpcStreamInServer::Release()
 {
-    UnscheduleReportData(config_.appInfo.appPid, clientTid_, clientBundleName_.c_str());
+    UnscheduleReportData(clientPid_, clientTid_, clientBundleName_.c_str());
     clientThreadPriorityRequested_ = false;
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Release();
@@ -459,9 +459,10 @@ int32_t IpcStreamInServer::SetMute(bool isMute)
 int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
 {
     if (!clientThreadPriorityRequested_) {
+        clientPid_ = IPCSkeleton::GetCallingPid();
         clientTid_ = tid;
         clientBundleName_ = bundleName;
-        ScheduleReportData(config_.appInfo.appPid, tid, bundleName.c_str());
+        ScheduleReportData(clientPid_, tid, bundleName.c_str());
         return SUCCESS;
     } else {
         AUDIO_ERR_LOG("client thread priority requested");
