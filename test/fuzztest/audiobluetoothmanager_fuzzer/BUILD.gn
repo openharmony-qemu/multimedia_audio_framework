@@ -36,7 +36,10 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
 
   sources = [ "audiobluetoothmanager_fuzzer.cpp" ]
 
-  deps = [ "../../../services/audio_policy:audio_policy_service" ]
+  deps = [
+    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_service:audio_client",
+  ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:extension_manager",

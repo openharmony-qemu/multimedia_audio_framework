@@ -30,7 +30,7 @@ public:
 
 class AudioRendererDeviceChangeCallbackTest : public AudioRendererDeviceChangeCallback {
 public:
-    virtual void OnStateChange(const DeviceInfo &deviceInfo) override {}
+    virtual void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override {}
     virtual void RemoveAllCallbacks() override {}
 };
 

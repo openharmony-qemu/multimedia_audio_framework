@@ -29,7 +29,8 @@ public:
     virtual ~NapiAudioRendererDeviceChangeCallback();
     void AddCallbackReference(napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value args);
-    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
 
@@ -37,11 +38,11 @@ private:
     struct AudioRendererDeviceChangeJsCallback {
         napi_ref callback_;
         napi_env env_;
-        DeviceInfo deviceInfo_;
+        AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     };
 
     static void WorkCallbackCompleted(uv_work_t* work, int status);
-    void OnJsCallbackRendererDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo);
+    void OnJsCallbackRendererDeviceInfo(napi_ref method, const AudioDeviceDescriptor &deviceInfo);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
@@ -54,7 +55,8 @@ public:
     virtual ~NapiAudioRendererOutputDeviceChangeWithInfoCallback();
     void AddCallbackReference(napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value args);
-    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
 
@@ -62,12 +64,12 @@ private:
     struct AudioRendererOutputDeviceChangeWithInfoJsCallback {
         napi_ref callback_;
         napi_env env_;
-        DeviceInfo deviceInfo_;
+        AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
         AudioStreamDeviceChangeReason reason_;
     };
 
     static void WorkCallbackCompleted(uv_work_t* work, int status);
-    void OnJsCallbackOutputDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo,
+    void OnJsCallbackOutputDeviceInfo(napi_ref method, const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReason reason);
 
     std::mutex mutex_;

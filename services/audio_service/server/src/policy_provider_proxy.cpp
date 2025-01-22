@@ -31,7 +31,7 @@ PolicyProviderProxy::~PolicyProviderProxy()
 }
 
 int32_t PolicyProviderProxy::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
-    DeviceInfo &deviceInfo)
+    AudioDeviceDescriptor &deviceInfo)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -162,12 +162,12 @@ int32_t PolicyProviderProxy::GetMaxRendererInstances()
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
- 
+
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
- 
+
     int ret = Remote()->SendRequest(IPolicyProviderMsg::GET_MAX_RENDERER_INSTANCES, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
- 
+
     return reply.ReadInt32();
 }
 

@@ -69,7 +69,7 @@ private:
         DeviceRole deviceRole;
         int32_t deviceType;
         AudioRendererOptions rendererOptions;
-        DeviceInfo deviceInfo;
+        AudioDeviceDescriptor deviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
         AudioRendererInfo rendererInfo;
         AudioStreamInfo streamInfo;
     };

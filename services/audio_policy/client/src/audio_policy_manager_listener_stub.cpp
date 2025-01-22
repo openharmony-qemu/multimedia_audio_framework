@@ -54,7 +54,7 @@ void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &da
     CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
-        deviceChangeDesc.push_back(AudioDeviceDescriptor::Unmarshalling(data));
+        deviceChangeDesc.push_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
     }
 
     devChange.type = static_cast<DeviceChangeType>(type);
