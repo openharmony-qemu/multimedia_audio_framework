@@ -169,7 +169,11 @@ void AudioUsbManager::Init(IDeviceStatusObserver *observer)
 {
     lock_guard<mutex> lock(mutex_);
     if (!initialized_) {
-        AUDIO_INFO_LOG("Entry");
+#ifdef DETECT_SOUNDBOX
+        AUDIO_INFO_LOG("Entry. DETECT_SOUNDBOX=true");
+#else
+        AUDIO_INFO_LOG("Entry. DETECT_SOUNDBOX=false");
+#endif
         observer_ = observer;
         RefreshUsbAudioDevices();
         initialized_ = true;

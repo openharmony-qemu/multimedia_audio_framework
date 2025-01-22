@@ -657,6 +657,14 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevice()
     return devDesc;
 }
 
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::FindConnectedDeviceById(const int32_t deviceId)
+{
+    auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [deviceId](auto &item) {
+        return item->deviceId_ == deviceId;
+    });
+    return it == connectedDevices_.cend() ? nullptr : *it;
+}
+
 // LCOV_EXCL_START
 void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
     const DevicePrivacyInfo &deviceInfo, const std::shared_ptr<AudioDeviceDescriptor> &dev,

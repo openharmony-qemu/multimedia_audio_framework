@@ -327,6 +327,10 @@ audio_ohos_library("audio_policy_service") {
     sources += [ "server/src/service/manager/audio_usb_manager.cpp" ]
   }
 
+  if (audio_framework_feature_detect_soundbox) {
+    defines += [ "DETECT_SOUNDBOX" ]
+  }
+
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
     external_deps += [ "config_policy:configpolicy_util" ]

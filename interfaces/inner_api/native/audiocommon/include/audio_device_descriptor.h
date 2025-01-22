@@ -116,7 +116,7 @@ public:
 
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
-    static DeviceType MapInternalToExternalDeviceType(DeviceType deviceType);
+    DeviceType MapInternalToExternalDeviceType() const;
 };
 } // namespace AudioStandard
 } // namespace OHOS
