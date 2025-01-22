@@ -34,6 +34,7 @@ using namespace std;
 class AudioUsageStrategyParser : public Parser {
 public:
     static constexpr char DEVICE_CONFIG_FILE[] = "/system/etc/audio/audio_usage_strategy.xml";
+    static constexpr char DEVICE_CONFIG_PROD_FILE[] = "/sys_prod/etc/audio/audio_device_privacy.xml";
 
     bool LoadConfiguration() final;
     bool Parse() final;

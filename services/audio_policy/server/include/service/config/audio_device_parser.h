@@ -43,6 +43,7 @@ public:
     static constexpr char PRIVACY_TYPE[] = "privacy";
     static constexpr char PUBLIC_TYPE[] = "public";
     static constexpr char DEVICE_CONFIG_FILE[] = "/system/etc/audio/audio_device_privacy.xml";
+    static constexpr char DEVICE_CONFIG_PROD_FILE[] = "/sys_prod/etc/audio/audio_device_privacy.xml";
 
     bool LoadConfiguration() final;
     bool Parse() final;

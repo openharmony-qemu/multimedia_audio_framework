@@ -23,7 +23,10 @@ namespace OHOS {
 namespace AudioStandard {
 bool AudioUsageStrategyParser::LoadConfiguration()
 {
-    doc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
+    doc_ = xmlReadFile(DEVICE_CONFIG_PROD_FILE, nullptr, 0);
+    if (doc_ == nullptr) {
+        doc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
+    }
     if (doc_ == nullptr) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,

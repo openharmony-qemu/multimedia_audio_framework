@@ -33,6 +33,7 @@ using namespace std;
 class AudioStrategyRouterParser : public Parser {
 public:
     static constexpr char DEVICE_CONFIG_FILE[] = "/system/etc/audio/audio_strategy_router.xml";
+    static constexpr char DEVICE_CONFIG_PROD_FILE[] = "/sys_prod/etc/audio/audio_device_privacy.xml";
 
     bool LoadConfiguration() final;
     bool Parse() final;
