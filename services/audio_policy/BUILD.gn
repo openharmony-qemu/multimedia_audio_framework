@@ -162,6 +162,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/audio_policy_manager_stub.cpp",
     "server/src/audio_policy_server.cpp",
     "server/src/audio_policy_server_handler.cpp",
+    "server/src/audio_policy_state_monitor.cpp",
     "server/src/audio_routing_manager_listener_proxy.cpp",
     "server/src/audio_spatialization_state_change_listener_proxy.cpp",
     "server/src/audio_stream_collector.cpp",
@@ -226,7 +227,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/service/audio_volume_manager.cpp",
     "server/src/service/session/audio_session.cpp",
     "server/src/service/session/audio_session_service.cpp",
-    "server/src/service/session/audio_session_timer.cpp",
+    "server/src/service/session/audio_session_state_monitor.cpp",
     "server/src/service/spatialization/audio_spatialization_service.cpp",
     "util/src/audio_ability_manager.cpp",
   ]
