@@ -872,7 +872,7 @@ static void ThreadFuncProcessTimer(void *userdata)
         } else {
             pa_rtpoll_set_timer_disabled(u->rtpoll);
         }
-        AUTO_CTRACE("PaRtpollProcessFunc");
+        AUTO_CTRACE("Process Capture Data Loop");
         /* Hmm, nothing to do. Let's sleep */
         int ret = pa_rtpoll_run(u->rtpoll);
         if (ret < 0) {
