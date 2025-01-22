@@ -612,7 +612,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
         }
-        MuteSinkForSwtichBluetoothDevice(rendererChangeInfo, descs, reason);
+        MuteSinkForSwitchBluetoothDevice(rendererChangeInfo, descs, reason);
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
@@ -703,10 +703,10 @@ int32_t AudioDeviceCommon::HandleDeviceChangeForFetchOutputDevice(std::shared_pt
     return SUCCESS;
 }
 
-void AudioDeviceCommon::MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
-    Trace trace("AudioDeviceCommon::MuteSinkPortForSwtichDevice");
+    Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
     audioIOHandleMap_.SetDeviceInfos(rendererChangeInfo->outputDeviceInfo.deviceType_,
         outputDevices.front()->deviceType_);
     if (outputDevices.size() != 1) {
@@ -716,7 +716,9 @@ void AudioDeviceCommon::MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendere
         }
         return;
     }
-    if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
+    if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo) ||
+        (outputDevices.front()->deviceType_ == audioActiveDevice_.GetCurrentOutputDeviceType() &&
+        outputDevices.front()->networkId_ == audioActiveDevice_.GetCurrentOutputDeviceNetworkId())) return;
 
     audioIOHandleMap_.SetMoveFinish(false);
 
@@ -733,21 +735,21 @@ void AudioDeviceCommon::MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendere
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
 
-void AudioDeviceCommon::MuteSinkForSwtichGeneralDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioDeviceCommon::MuteSinkForSwitchGeneralDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
         outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO)) {
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+        MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
     }
 }
 
-void AudioDeviceCommon::MuteSinkForSwtichBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioDeviceCommon::MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+        MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
     }
 }
 
@@ -893,7 +895,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
-    MuteSinkForSwtichGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
+    MuteSinkForSwitchGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
 
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     // MoveSinkInputByIndexOrName
