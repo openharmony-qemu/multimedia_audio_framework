@@ -2149,6 +2149,9 @@ void AudioRendererPrivate::ConcedeStream()
     currentStream->SetRendererInfo(rendererInfo_);
     switch (pipeType) {
         case PIPE_TYPE_LOWLATENCY_OUT:
+            // todo: fix wrong pipe type in server
+            CHECK_AND_RETURN_LOG(currentStream->GetStreamClass() != IAudioStream::PA_STREAM,
+                "Session %{public}u is pa stream, no need for concede", sessionId);
         case PIPE_TYPE_DIRECT_MUSIC:
             SwitchStream(sessionId, IAudioStream::PA_STREAM, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
             break;
