@@ -580,6 +580,25 @@ int32_t AudioVolumeManager::CheckActiveMusicTime()
     return 0;
 }
 
+bool AudioVolumeManager::CheckMixActiveMusicTime(int32_t safeVolume)
+{
+    int64_t mixSafeTime = activeSafeTimeBt_ + activeSafeTime_;
+    AUDIO_INFO_LOG("mix device cumulative time: %{public}lld", mixSafeTime);
+    if (mixSafeTime >= ONE_MINUTE * audioPolicyManager_.GetSafeVolumeTimeout()) {
+        AUDIO_INFO_LOG("mix device safe volume timeout");
+        ChangeDeviceSafeStatus(SAFE_ACTIVE);
+        RestoreSafeVolume(STREAM_MUSIC, safeVolume);
+        startSafeTimeBt_ = 0;
+        startSafeTime_ = 0;
+        activeSafeTimeBt_ = 0;
+        activeSafeTime_ = 0;
+        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
+        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
+        return true;
+    }
+    return false;
+}
+
 void AudioVolumeManager::CheckBlueToothActiveMusicTime(int32_t safeVolume)
 {
     if (startSafeTimeBt_ == 0) {
@@ -587,21 +606,23 @@ void AudioVolumeManager::CheckBlueToothActiveMusicTime(int32_t safeVolume)
     }
     int32_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     if (activeSafeTimeBt_ >= ONE_MINUTE * audioPolicyManager_.GetSafeVolumeTimeout()) {
-        AUDIO_INFO_LOG("safe volume timeout");
-        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, SAFE_ACTIVE);
-        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
-        startSafeTimeBt_ = 0;
-        safeStatusBt_ = SAFE_ACTIVE;
+        AUDIO_INFO_LOG("bluetooth device safe volume timeout");
+        ChangeDeviceSafeStatus(SAFE_ACTIVE);
         RestoreSafeVolume(STREAM_MUSIC, safeVolume);
+        startSafeTimeBt_ = 0;
         activeSafeTimeBt_ = 0;
+        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
+        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        restoreNIsShowing_ = true;
+    } else if (CheckMixActiveMusicTime(safeVolume)) {
         PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else if (currentTime - startSafeTimeBt_ >= ONE_MINUTE) {
-        AUDIO_INFO_LOG("safe volume 1 min timeout");
         activeSafeTimeBt_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
         activeSafeTimeBt_ += currentTime - startSafeTimeBt_;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, activeSafeTimeBt_);
         startSafeTimeBt_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        AUDIO_INFO_LOG("bluetooth safe volume 1 min timeout, cumulative time: %{public}lld", activeSafeTimeBt_);
     }
     startSafeTime_ = 0;
 }
@@ -613,21 +634,23 @@ void AudioVolumeManager::CheckWiredActiveMusicTime(int32_t safeVolume)
     }
     int32_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     if (activeSafeTime_ >= ONE_MINUTE * audioPolicyManager_.GetSafeVolumeTimeout()) {
-        AUDIO_INFO_LOG("safe volume timeout");
-        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, SAFE_ACTIVE);
-        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
-        startSafeTime_ = 0;
-        safeStatus_ = SAFE_ACTIVE;
+        AUDIO_INFO_LOG("wired device safe volume timeout");
+        ChangeDeviceSafeStatus(SAFE_ACTIVE);
         RestoreSafeVolume(STREAM_MUSIC, safeVolume);
+        startSafeTime_ = 0;
         activeSafeTime_ = 0;
+        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
+        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        restoreNIsShowing_ = true;
+    } else if (CheckMixActiveMusicTime(safeVolume)) {
         PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else if (currentTime - startSafeTime_ >= ONE_MINUTE) {
-        AUDIO_INFO_LOG("safe volume 1 min timeout");
         activeSafeTime_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
         activeSafeTime_ += currentTime - startSafeTime_;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, activeSafeTime_);
         startSafeTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        AUDIO_INFO_LOG("wired safe volume 1 min timeout, cumulative time: %{public}lld", activeSafeTime_);
     }
     startSafeTimeBt_ = 0;
 }
@@ -643,7 +666,9 @@ void AudioVolumeManager::RestoreSafeVolume(AudioStreamType streamType, int32_t s
     }
 
     AUDIO_INFO_LOG("restore safe volume.");
+    audioPolicyManager_.SetRestoreVolumeFlag(true);
     SetSystemVolumeLevel(streamType, safeVolume);
+    audioPolicyManager_.SetRestoreVolumeFlag(false);
     SetSafeVolumeCallback(streamType);
 }
 
@@ -672,8 +697,7 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
         std::lock_guard<std::mutex> lock(notifyMutex_);
         CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = false;
-        userSelect_ = true;
-        SetDeviceSafeVolumeStatus();
+        ChangeDeviceSafeStatus(SAFE_INACTIVE);
         DealWithEventVolume(RESTORE_VOLUME_NOTIFICATION_ID);
         SetSafeVolumeCallback(STREAM_MUSIC);
     } else if (action == AUDIO_INCREASE_VOLUME_EVENT) {
@@ -681,8 +705,7 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
         std::lock_guard<std::mutex> lock(notifyMutex_);
         CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
         increaseNIsShowing_ = false;
-        userSelect_ = true;
-        SetDeviceSafeVolumeStatus();
+        ChangeDeviceSafeStatus(SAFE_INACTIVE);
         DealWithEventVolume(INCREASE_VOLUME_NOTIFICATION_ID);
         SetSafeVolumeCallback(STREAM_MUSIC);
     }
@@ -714,6 +737,19 @@ void AudioVolumeManager::SetDeviceSafeVolumeStatus()
             AUDIO_INFO_LOG("safeVolume unsupported device:%{public}d", curOutputDeviceType);
             break;
     }
+}
+
+void AudioVolumeManager::ChangeDeviceSafeStatus(SafeStatus safeStatus)
+{
+    AUDIO_INFO_LOG("change all support safe volume devices status.");
+
+    safeStatusBt_ = safeStatus;
+    audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
+
+    safeStatus_ = safeStatus;
+    audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
+
+    CreateCheckMusicActiveThread();
 }
 
 int32_t AudioVolumeManager::DisableSafeMediaVolume()
