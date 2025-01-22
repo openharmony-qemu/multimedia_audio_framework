@@ -752,7 +752,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     }
 
     {
-        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
+        std::lock_guard<std::mutex> lockSilentMode(silentModeAndMixWithOthersMutex_);
         if (audioStream_->GetSilentModeAndMixWithOthers()) {
             audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
