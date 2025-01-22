@@ -1361,7 +1361,7 @@ void AudioDeviceManager::Dump(std::string &dumpString)
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
     AppendFormat(dumpString, " MediaDefaultOutputDevices:\n");
     for (auto it : mediaDefaultOutputDevices_) {
-        AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
+        AppendFormat(dumpString, "  sessionId: %u, device type: %s\n", it.first,
             AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
     }
     AppendFormat(dumpString, "current media default output device: %s\n",
@@ -1369,7 +1369,7 @@ void AudioDeviceManager::Dump(std::string &dumpString)
 
     AppendFormat(dumpString, " CallDefaultOutputDevices:\n");
     for (auto it : callDefaultOutputDevices_) {
-        AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
+        AppendFormat(dumpString, "  sessionId: %u, device type: %s\n", it.first,
             AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
     }
     AppendFormat(dumpString, "current call default output device: %s\n",
