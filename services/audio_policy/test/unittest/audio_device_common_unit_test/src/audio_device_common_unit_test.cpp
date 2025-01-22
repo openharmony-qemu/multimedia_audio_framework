@@ -19,6 +19,8 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+static const int32_t GET_RESULT_NO_VALUE = 0;
+static const int32_t GET_RESULT_HAS_VALUE = 1;
 
 void AudioDeviceCommonUnitTest::SetUpTestCase(void) {}
 void AudioDeviceCommonUnitTest::TearDownTestCase(void) {}
@@ -126,11 +128,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_003, TestSize.Level1)
 
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "LocalDevice");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "LocalDevice");
+    EXPECT_EQ(GET_RESULT_HAS_VALUE, ret.size());
 
     AudioCapturerInfo captureInfo;
     captureInfo.sourceType = SOURCE_TYPE_MAX;
-    audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "");
+    ret = audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "");
+    EXPECT_EQ(GET_RESULT_NO_VALUE, ret.size());
 }
 
 /**
@@ -150,11 +155,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_004, TestSize.Level1)
 
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "");
+    EXPECT_EQ(GET_RESULT_NO_VALUE, ret.size());
 
     AudioCapturerInfo captureInfo;
     captureInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "");
+    ret = audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "");
+    EXPECT_EQ(GET_RESULT_HAS_VALUE, ret.size());
 }
 
 /**
@@ -174,11 +182,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_005, TestSize.Level1)
 
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "");
+    EXPECT_EQ(GET_RESULT_NO_VALUE, ret.size());
 
     AudioCapturerInfo captureInfo;
     captureInfo.sourceType = SOURCE_TYPE_MIC;
-    audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "LocalDevice");
+    ret = audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "LocalDevice");
+    EXPECT_EQ(GET_RESULT_HAS_VALUE, ret.size());
 }
 
 /**
@@ -198,11 +209,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_006, TestSize.Level1)
 
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, "");
+    EXPECT_EQ(GET_RESULT_NO_VALUE, ret.size());
 
     AudioCapturerInfo captureInfo;
     captureInfo.sourceType = SOURCE_TYPE_MIC;
-    audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "");
+    ret = audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "");
+    EXPECT_EQ(GET_RESULT_NO_VALUE, ret.size());
 }
 
 /**
