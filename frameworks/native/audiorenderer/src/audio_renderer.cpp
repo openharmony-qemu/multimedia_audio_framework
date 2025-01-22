@@ -1810,6 +1810,9 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
         case AUDIO_FLAG_DIRECT:
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
             break;
+        default:
+            AUDIO_INFO_LOG("unknown stream flag");
+            break;
     }
     if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;

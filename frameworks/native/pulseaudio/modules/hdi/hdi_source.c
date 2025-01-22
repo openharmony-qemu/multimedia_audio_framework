@@ -1264,6 +1264,10 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     struct Userdata *u = pa_xnew0(struct Userdata, 1);
+    if (u == NULL) {
+        AUDIO_ERR_LOG("userdata alloc failed");
+        goto fail;
+    }
 
     u->core = m->core;
     u->module = m;
