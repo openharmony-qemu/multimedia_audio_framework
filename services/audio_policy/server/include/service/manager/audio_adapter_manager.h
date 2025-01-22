@@ -200,6 +200,10 @@ public:
     void ResetOffloadSessionId();
 
     int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
+
+    void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
+
+    void SetRestoreVolumeFlag(const bool safeVolumeCall);
 private:
     friend class PolicyCallbackImpl;
 
@@ -305,6 +309,7 @@ private:
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
     int32_t curActiveCount_ = 0;
+    bool safeVolumeCall_ = false;
 
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
 

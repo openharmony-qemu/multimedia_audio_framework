@@ -62,6 +62,7 @@ public:
     bool GetVolume(DeviceType deviceType, AudioStreamType streamType);
     void SetStreamVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetStreamVolume(AudioStreamType streamType);
+    int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType);
     std::unordered_map<AudioStreamType, int32_t> GetVolumeMap();
 
     bool SaveMuteStatus(DeviceType deviceType, AudioStreamType streamType,
