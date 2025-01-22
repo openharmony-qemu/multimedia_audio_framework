@@ -26,6 +26,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_schedule.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -346,25 +347,32 @@ void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
 {
     Trace trace("AudioCacheMgrInner::ReleaseOverTimeMemBlock");
     SafeSendCallBackEvent(RELEASE_OVERTIME_MEMBLOCK, 0, MEMBLOCK_CHECK_TIME_MS);
-    std::lock_guard<std::mutex> processLock(g_Mutex);
-    if (isDumpingData_.load()) {
-        AUDIO_INFO_LOG("now dumping memblock, no need ReleaseOverTimeMemBlock");
-        return;
-    }
 
     int32_t recycleNums = 0;
     int64_t curTime = ClockTime::GetRealNano();
     int64_t startTime, endTime;
 
-    while (!memChunkDeque_.empty()) {
-        memChunkDeque_.front()->GetMemChunkDuration(startTime, endTime);
-        if (curTime - endTime < MEMBLOCK_RELEASE_TIME * AUDIO_MS_PER_SECOND) {
-            break;
+    while (true) {
+        {
+            std::lock_guard<std::mutex> processLock(g_Mutex);
+            if (memChunkDeque_.empty()) {
+                break;
+            }
+            if (isDumpingData_.load()) {
+                AUDIO_INFO_LOG("now dumping memblock, no need ReleaseOverTimeMemBlock");
+                return;
+            }
+            memChunkDeque_.front()->GetMemChunkDuration(startTime, endTime);
+            if (curTime - endTime < MEMBLOCK_RELEASE_TIME * AUDIO_MS_PER_SECOND) {
+                break;
+            }
+            memChunkDeque_.pop_front();
+            ++recycleNums;
+            Trace::Count("UsedMemChunk", memChunkDeque_.size());
         }
-        memChunkDeque_.pop_front();
-        ++recycleNums;
-        Trace::Count("UsedMemChunk", memChunkDeque_.size());
+        usleep(7000); // 7ms, can still cache data when releasing memblocks
     }
+    
     if (recycleNums != 0) {
         AUDIO_INFO_LOG("CheckMemBlock Recycle %{public}d memBlocks", recycleNums);
     }
@@ -437,6 +445,7 @@ void AudioCacheMgrInner::InitCallbackHandler()
     lock.unlock();
     SafeSendCallBackEvent(RELEASE_OVERTIME_MEMBLOCK, 0, MEMBLOCK_CHECK_TIME_MS);
     SafeSendCallBackEvent(PRINT_MEMORY_CONDITION, 0, MEMORY_PRINT_TIME_MS);
+    SafeSendCallBackEvent(RAISE_PRIORITY, 0, 0);
 }
 
 void AudioCacheMgrInner::SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int64_t delayTime)
@@ -456,6 +465,9 @@ void AudioCacheMgrInner::OnHandle(uint32_t code, int64_t data)
             break;
         case PRINT_MEMORY_CONDITION:
             PrintCurMemoryCondition();
+            break;
+        case RAISE_PRIORITY:
+            ScheduleThreadInServer(getpid(), gettid());
             break;
         default:
             break;
