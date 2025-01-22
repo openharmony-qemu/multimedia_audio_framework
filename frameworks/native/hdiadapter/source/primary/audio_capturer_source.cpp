@@ -213,6 +213,7 @@ private:
     int32_t ProcessCaptureBlockingEc(FrameDesc *fdescEc, uint64_t &replyBytesEc);
     int32_t StartNonblockingCapture();
     int32_t StopNonblockingCapture();
+    void DumpCapturerSourceData(char *frame, uint64_t &replyBytes);
 
     int32_t DoStop();
     int32_t StartCapture();
@@ -854,14 +855,8 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
 
-    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
-    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
-        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-    VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
-    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
-        DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
-        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void*>(frame), replyBytes);
-    }
+    DumpCapturerSourceData(frame, replyBytes);
+
     CheckUpdateState(frame, requestBytes);
 
     int64_t stampThreshold = 50; // 50ms
@@ -919,20 +914,15 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t 
 
     // same adapter reply length is mic + ec, different adapter is only ec, so we can't use reply bytes to copy
     if (attr_.sourceType != SOURCE_TYPE_EC && frameInfo.frame != nullptr) {
+        if (frameInfo.replyBytes - fdescEc->frameLen < fdesc->frameLen) {
+            replyBytes = 0;
+            return ERR_INVALID_READ;
+        }
         if (memcpy_s(fdesc->frame, fdesc->frameLen, frameInfo.frame, fdesc->frameLen) != EOK) {
             AUDIO_ERR_LOG("memcpy error");
         } else {
             replyBytes = (attr_.sourceType == SOURCE_TYPE_EC) ? 0 : fdesc->frameLen;
-            DumpFileUtil::WriteDumpFile(dumpFile_, fdesc->frame, replyBytes);
-            BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(fdesc->frame), replyBytes, replyBytes};
-            AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate),
-                AudioEncodingType::ENCODING_PCM, static_cast<AudioSampleFormat>(attr_.format),
-                static_cast<AudioChannel>(attr_.channel));
-            VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
-            if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
-                Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-                    static_cast<void*>(fdesc->frame), replyBytes);
-            }
+            DumpCapturerSourceData(fdesc->frame, replyBytes);
         }
     }
     if (frameInfo.frameEc != nullptr) {
@@ -947,6 +937,20 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t 
     AudioCaptureFrameInfoFree(&frameInfo, false);
 
     return SUCCESS;
+}
+
+void AudioCapturerSourceInner::DumpCapturerSourceData(char *frame, uint64_t &replyBytes)
+{
+    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate),
+        AudioEncodingType::ENCODING_PCM, static_cast<AudioSampleFormat>(attr_.format),
+        static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            static_cast<void*>(frame), replyBytes);
+    }
 }
 
 void AudioCapturerSourceInner::CaptureFrameEcInternal(std::vector<uint8_t> &ecData)
