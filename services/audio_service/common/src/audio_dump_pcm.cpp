@@ -40,6 +40,7 @@ constexpr int64_t MEMORY_PRINT_MININUM_SIZE = 5 * 1024 * 1024;  // print memory 
 constexpr uint16_t FILENAME_ID_MAX_INDEX = 65530;               // FileNameId 0 - 65530
 constexpr size_t FILENAME_AND_ID_SIZE = 128;                    // estimate each entry size in map
 constexpr size_t NAME_MAP_NUM = 2;                              // FileNameIdMap and idFileNameMap
+constexpr int32_t MAX_RECYCLE_TIMES = 1000;
 
 MemChunk::MemChunk() : totalBufferSize_(EACH_CHUNK_SIZE), pointerOffset_(0), curFileNameId_(0)
 {
@@ -352,31 +353,27 @@ void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
     int64_t curTime = ClockTime::GetRealNano();
     int64_t startTime, endTime;
 
-    while (true) {
+    while (recycleNums < MAX_RECYCLE_TIMES) {
         Trace trace1("AudioCacheMgrInner::ReleaseOneMemChunk");
         std::unique_lock<std::mutex> processLock(g_Mutex);
         if (isDumpingData_.load()) {
             AUDIO_INFO_LOG("now dumping memblock, no need ReleaseOverTimeMemBlock");
-            processLock.unlock();
             return;
         }
         if (memChunkDeque_.empty()) {
-            processLock.unlock();
             break;
         }
         std::shared_ptr<MemChunk> releaseChunk = memChunkDeque_.front();
         releaseChunk->GetMemChunkDuration(startTime, endTime);
         if (curTime - endTime < MEMBLOCK_RELEASE_TIME * AUDIO_MS_PER_SECOND) {
-            processLock.unlock();
             break;
         }
         memChunkDeque_.pop_front();
-        ++recycleNums;
-        // ~memchunk needs 500ns but is no need to keep lock; in this way we delay the destruct when out the loop;
         Trace::Count("UsedMemChunk", memChunkDeque_.size());
+        // ~memchunk needs 500ns but is no need to keep lock; in this way we delay the destruct time until out the loop
         processLock.unlock();
+        ++recycleNums;
     }
-    
     if (recycleNums != 0) {
         AUDIO_INFO_LOG("CheckMemBlock Recycle %{public}d memBlocks", recycleNums);
     }
