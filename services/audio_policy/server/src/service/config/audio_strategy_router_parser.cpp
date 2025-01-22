@@ -32,7 +32,10 @@ namespace OHOS {
 namespace AudioStandard {
 bool AudioStrategyRouterParser::LoadConfiguration()
 {
-    doc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
+    doc_ = xmlReadFile(DEVICE_CONFIG_PROD_FILE, nullptr, 0);
+    if (doc_ == nullptr) {
+        doc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
+    }
     if (doc_ == nullptr) {
         AUDIO_ERR_LOG("Not found audio_strategy_router.xml!");
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
