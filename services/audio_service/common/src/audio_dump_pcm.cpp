@@ -353,24 +353,28 @@ void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
     int64_t startTime, endTime;
 
     while (true) {
-        {
-            std::lock_guard<std::mutex> processLock(g_Mutex);
-            if (memChunkDeque_.empty()) {
-                break;
-            }
-            if (isDumpingData_.load()) {
-                AUDIO_INFO_LOG("now dumping memblock, no need ReleaseOverTimeMemBlock");
-                return;
-            }
-            memChunkDeque_.front()->GetMemChunkDuration(startTime, endTime);
-            if (curTime - endTime < MEMBLOCK_RELEASE_TIME * AUDIO_MS_PER_SECOND) {
-                break;
-            }
-            memChunkDeque_.pop_front();
-            ++recycleNums;
-            Trace::Count("UsedMemChunk", memChunkDeque_.size());
+        Trace trace1("AudioCacheMgrInner::ReleaseOneMemChunk");
+        std::unique_lock<std::mutex> processLock(g_Mutex);
+        if (isDumpingData_.load()) {
+            AUDIO_INFO_LOG("now dumping memblock, no need ReleaseOverTimeMemBlock");
+            processLock.unlock();
+            return;
         }
-        usleep(7000); // 7ms, can still cache data when releasing memblocks
+        if (memChunkDeque_.empty()) {
+            processLock.unlock();
+            break;
+        }
+        std::shared_ptr<MemChunk> releaseChunk = memChunkDeque_.front();
+        releaseChunk->GetMemChunkDuration(startTime, endTime);
+        if (curTime - endTime < MEMBLOCK_RELEASE_TIME * AUDIO_MS_PER_SECOND) {
+            processLock.unlock();
+            break;
+        }
+        memChunkDeque_.pop_front();
+        ++recycleNums;
+        // ~memchunk needs 500ns but is no need to keep lock; in this way we delay the destruct when out the loop;
+        Trace::Count("UsedMemChunk", memChunkDeque_.size());
+        processLock.unlock();
     }
     
     if (recycleNums != 0) {
