@@ -257,6 +257,9 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
+    audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
+        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
     audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;

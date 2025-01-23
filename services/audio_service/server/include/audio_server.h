@@ -230,7 +230,7 @@ private:
         const std::string &extraSceneType);
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     const std::string GetBundleNameFromUid(int32_t uid);
-    bool IsFastBlocked(int32_t uid);
+    bool IsFastBlocked(int32_t uid, PlayerType playerType);
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
     void InitMaxRendererStreamCntPerUid();

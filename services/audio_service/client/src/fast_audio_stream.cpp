@@ -92,6 +92,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
         config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
+        config.rendererInfo.playerType = rendererInfo_.playerType;
+        config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;

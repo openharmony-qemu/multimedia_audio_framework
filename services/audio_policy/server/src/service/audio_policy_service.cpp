@@ -1143,9 +1143,10 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
     }
 
     int32_t flag = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
-        preferredDeviceList[0]->deviceType_,
-        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_, rendererInfo.samplingRate);
-    if (isFastControlled_ && (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
+        preferredDeviceList[0]->deviceType_, rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_,
+        rendererInfo.samplingRate);
+    if (isFastControlled_ && (rendererInfo.playerType != PLAYER_TYPE_SOUND_POOL) &&
+        (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
         std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
         std::string result = AudioServerProxy::GetInstance().GetAudioParameterProxy(bundleNamePre);
         if (result == "true") {

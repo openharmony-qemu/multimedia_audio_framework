@@ -36,6 +36,7 @@
 #include "audio_volume.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
+#include "audio_volume_c.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,6 +55,7 @@ namespace {
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t DEFAULT_SPAN_SIZE = 1;
+    constexpr size_t MSEC_PER_SEC = 1000;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -529,7 +531,10 @@ int32_t RendererInServer::WriteData()
             AUDIO_ERR_LOG("The buffer is null!");
             return ERR_INVALID_PARAM;
         }
-        if (processConfig_.streamType != STREAM_ULTRASONIC) {
+        uint64_t durationMs = ((byteSizePerFrame_ * processConfig_.rendererInfo.samplingRate) == 0) ? 0
+            : ((MSEC_PER_SEC * processConfig_.rendererInfo.expectedPlaybackDurationBytes) /
+            (byteSizePerFrame_ * processConfig_.rendererInfo.samplingRate));
+        if (processConfig_.streamType != STREAM_ULTRASONIC && (GetFadeStrategy(durationMs) == FADE_STRATEGY_DEFAULT)) {
             if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
                 DoFadingOut(bufferDesc);
             }
