@@ -38,7 +38,8 @@ bool AudioParamParser::LoadConfiguration(
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys)
 {
     AUDIO_INFO_LOG("start LoadConfiguration");
-    xmlDoc *doc = nullptr;
+    std::shared_ptr<AudioXmlNode> curNode = AudioXmlNode::Create();
+    int32_t ret = 0;
 
 #ifdef USE_CONFIG_POLICY
     CfgFiles *cfgFiles = GetCfgFiles(CONFIG_FILE);
@@ -50,97 +51,90 @@ bool AudioParamParser::LoadConfiguration(
     for (int32_t i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; i--) {
         if (cfgFiles->paths[i] && *(cfgFiles->paths[i]) != '\0') {
             AUDIO_INFO_LOG("extra parameter config file path: %{public}s", cfgFiles->paths[i]);
-            doc = xmlReadFile(cfgFiles->paths[i], nullptr, 0);
+            ret = curNode->Config(cfgFiles->paths[i], nullptr, 0);
             break;
         }
     }
     FreeCfgFiles(cfgFiles);
 #endif
 
-    if (doc == nullptr) {
-        AUDIO_ERR_LOG("xmlReadFile Failed");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Load Config Failed");
+        curNode = nullptr;
         return false;
     }
 
-    xmlNode *root = xmlDocGetRootElement(doc);
-    if (root == nullptr) {
-        AUDIO_ERR_LOG("xmlDocGetRootElement Failed");
-        xmlFreeDoc(doc);
+    if (!ParseInternal(curNode->GetCopyNode(), audioParameterKeys)) {
+        curNode = nullptr;
         return false;
     }
 
-    if (!ParseInternal(root, audioParameterKeys)) {
-        xmlFreeDoc(doc);
-        return false;
-    }
-
-    xmlFreeDoc(doc);
+    curNode = nullptr;
     return true;
 }
 
-bool AudioParamParser::ParseInternal(xmlNode *node,
+bool AudioParamParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNode,
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys)
 {
-    xmlNode *currNode = node;
-    if (currNode == nullptr) {
+    if (curNode->IsNodeValid()) {
         AUDIO_ERR_LOG("parse node is null");
         return false;
     }
 
-    for (; currNode; currNode = currNode->next) {
-        if (XML_ELEMENT_NODE == currNode->type &&
-            !xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("mainkeys"))) {
-            ParseMainKeys(currNode, audioParameterKeys);
+    for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
+        if (curNode->CompareName("mainkeys")) {
+            ParseMainKeys(curNode->GetCopyNode(), audioParameterKeys);
         } else {
-            ParseInternal(currNode->xmlChildrenNode, audioParameterKeys);
+            ParseInternal(curNode->GetChildrenNode(), audioParameterKeys);
         }
     }
 
     return true;
 }
 
-void AudioParamParser::ParseMainKeys(xmlNode *node,
+void AudioParamParser::ParseMainKeys(std::shared_ptr<AudioXmlNode> curNode,
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys)
 {
-    xmlNode* mainKeysNode = node->xmlChildrenNode;
-    while (mainKeysNode != nullptr) {
-        if (mainKeysNode->type == XML_ELEMENT_NODE) {
-            ParseMainKey(mainKeysNode, audioParameterKeys);
+    curNode->MoveToChildren();
+    while (curNode->IsNodeValid()) {
+        if (curNode->IsElementNode()) {
+            ParseMainKey(curNode->GetCopyNode(), audioParameterKeys);
         }
-        mainKeysNode = mainKeysNode->next;
+        curNode->MoveToNext();
     }
 }
 
-void AudioParamParser::ParseMainKey(xmlNode *node,
+void AudioParamParser::ParseMainKey(std::shared_ptr<AudioXmlNode> curNode,
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys)
 {
-    std::string mainKeyName = ExtractPropertyValue("name", *node);
-    if (mainKeyName.empty()) {
-        AUDIO_ERR_LOG("No name provided for the main key %{public}s", node->name);
-        return;
-    }
+    std::string mainKeyName;
+    CHECK_AND_RETURN_LOG(curNode->GetProp("name", mainKeyName) == SUCCESS,
+        "get mainKeyName: %{public}s fail", mainKeyName);
 
-    xmlNode *mainKeyNode = node->xmlChildrenNode;
-    while (mainKeyNode != nullptr) {
-        if (mainKeyNode->type == XML_ELEMENT_NODE) {
-            ParseSubKeys(mainKeyNode, mainKeyName, audioParameterKeys);
+    curNode->MoveToChildren();
+    while (curNode->IsNodeValid()) {
+        if (curNode->IsElementNode()) {
+            ParseSubKeys(curNode->GetCopyNode(), mainKeyName, audioParameterKeys);
         }
-        mainKeyNode = mainKeyNode->next;
+        curNode->MoveToNext();
     }
 }
 
-void AudioParamParser::ParseSubKeys(xmlNode *node, std::string &mainKeyName,
+void AudioParamParser::ParseSubKeys(std::shared_ptr<AudioXmlNode> curNode, std::string &mainKeyName,
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys)
 {
     std::unordered_map<std::string, std::set<std::string>> subKeyMap = {};
     std::set<std::string> supportedUsage;
-    xmlNode *subKeyNode = node->xmlChildrenNode;
+    curNode->MoveToChildren();
 
-    while (subKeyNode != nullptr) {
-        if (subKeyNode->type == XML_ELEMENT_NODE) {
-            std::string subKeyName = ExtractPropertyValue("name", *subKeyNode);
+    while (curNode->IsNodeValid()) {
+        if (curNode->IsElementNode()) {
+            std::string subKeyName;
+            std::string usage;
             std::regex regexDelimiter(",");
-            std::string usage = ExtractPropertyValue("usage", *subKeyNode);
+            CHECK_AND_RETURN_LOG(curNode->GetProp("name", subKeyName) == SUCCESS, "get subKeyName fail");
+            CHECK_AND_RETURN_LOG(curNode->GetProp("usage", usage) == SUCCESS, "get usage fail");
+
             const std::sregex_token_iterator itEnd;
             for (std::sregex_token_iterator it(usage.begin(), usage.end(), regexDelimiter, -1); it != itEnd; it++) {
                 supportedUsage.insert(it->str());
@@ -148,26 +142,9 @@ void AudioParamParser::ParseSubKeys(xmlNode *node, std::string &mainKeyName,
             subKeyMap.emplace(subKeyName, supportedUsage);
             supportedUsage.clear();
         }
-        subKeyNode = subKeyNode->next;
+        curNode->MoveToNext();
     }
     audioParameterKeys.emplace(mainKeyName, subKeyMap);
-}
-
-std::string AudioParamParser::ExtractPropertyValue(const std::string &propName, xmlNode &node)
-{
-    std::string propValue = "";
-    xmlChar *tempValue = nullptr;
-
-    if (xmlHasProp(&node, reinterpret_cast<const xmlChar*>(propName.c_str()))) {
-        tempValue = xmlGetProp(&node, reinterpret_cast<const xmlChar*>(propName.c_str()));
-    }
-
-    if (tempValue != nullptr) {
-        propValue = reinterpret_cast<const char*>(tempValue);
-        xmlFree(tempValue);
-    }
-
-    return propValue;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -17,8 +17,6 @@
 
 #include <map>
 #include <string>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -26,6 +24,7 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_policy_log.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,11 +39,12 @@ public:
         std::unordered_map<std::string, ToneInfoMap> &customToneDescriptorMap);
 
 private:
-    void ParseSegment(xmlNode *node, int32_t segInx, std::shared_ptr<ToneInfo> ltoneDesc);
-    void ParseToneInfoAttribute(xmlNode *sNode, std::shared_ptr<ToneInfo> ltoneDesc);
-    void ParseToneInfo(xmlNode *node, std::vector<ToneInfoMap*> &toneDescriptorMaps);
+    void ParseSegment(std::shared_ptr<AudioXmlNode> curNode, int32_t segInx, std::shared_ptr<ToneInfo> ltoneDesc);
+    void ParseToneInfoAttribute(std::shared_ptr<AudioXmlNode>, std::shared_ptr<ToneInfo> ltoneDesc);
+    void ParseToneInfo(std::shared_ptr<AudioXmlNode>, std::vector<ToneInfoMap*> &toneDescriptorMaps);
     void ParseFrequency(std::string freqList, ToneSegment &ltoneSeg);
-    void ParseCustom(xmlNode *node, std::unordered_map<std::string, ToneInfoMap> &customToneDescriptorMap);
+    void ParseCustom(std::shared_ptr<AudioXmlNode>,
+        std::unordered_map<std::string, ToneInfoMap> &customToneDescriptorMap);
 };
 } // namespace AudioStandard
 } // namespace OHOS

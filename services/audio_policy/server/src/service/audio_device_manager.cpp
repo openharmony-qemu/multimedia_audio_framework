@@ -69,7 +69,6 @@ void AudioDeviceManager::ParseDeviceXml()
     unique_ptr<AudioDeviceParser> audioDeviceParser = make_unique<AudioDeviceParser>(this);
     if (audioDeviceParser->LoadConfiguration()) {
         AUDIO_INFO_LOG("Audio device manager load configuration successfully.");
-        audioDeviceParser->Parse();
     }
     AUDIO_INFO_LOG("Out");
 }

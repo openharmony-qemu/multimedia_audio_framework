@@ -121,11 +121,13 @@ std::map<std::string, InterruptForceType> AudioFocusParser::forceMap = {
 
 AudioFocusParser::AudioFocusParser()
 {
+    curNode_ = AudioXmlNode::Create();
     AUDIO_DEBUG_LOG("AudioFocusParser ctor");
 }
 
 AudioFocusParser::~AudioFocusParser()
 {
+    curNode_ = nullptr;
     AUDIO_DEBUG_LOG("AudioFocusParser dtor");
 }
 
@@ -137,49 +139,40 @@ void AudioFocusParser::LoadDefaultConfig(std::map<std::pair<AudioFocusType, Audi
 int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFocusType>,
     AudioFocusEntry> &focusMap)
 {
-    xmlDoc *doc = nullptr;
-    xmlNode *rootElement = nullptr;
 #ifdef USE_CONFIG_POLICY
     char buf[MAX_PATH_LEN];
     char *path = GetOneCfgFile(AUDIO_FOCUS_CONFIG_FILE, buf, MAX_PATH_LEN);
 #else
     const char *path = AUDIO_FOCUS_CONFIG_FILE;
 #endif
-    if (path != nullptr && *path != '\0') {
-        doc = xmlReadFile(path, nullptr, 0);
-    }
-    if (doc == nullptr) {
-        AUDIO_ERR_LOG("error: could not parse audio_interrupt_policy_config.xml");
+    CHECK_AND_RETURN_RET_LOG(path != nullptr && *path != '\0', ERROR, "invalid path!");
+    if (curNode_->Config(path, nullptr, 0) != SUCCESS) {
+        AUDIO_ERR_LOG("load path: %{public}s fail!", path);
         LoadDefaultConfig(focusMap);
         WriteConfigErrorEvent();
         return ERROR;
     }
-    rootElement = xmlDocGetRootElement(doc);
-    xmlNode *currNode = rootElement;
-    CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
-    if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_focus_policy"))) {
+    CHECK_AND_RETURN_RET_LOG(curNode_->IsNodeValid(), ERROR, "root element is null");
+
+    if (!curNode_->CompareName("audio_focus_policy")) {
         AUDIO_ERR_LOG("Missing tag - focus_policy in : %s", AUDIO_FOCUS_CONFIG_FILE);
         WriteConfigErrorEvent();
-        xmlFreeDoc(doc);
+        curNode_ = nullptr;
         return ERROR;
     }
-    if (currNode->children) {
-        currNode = currNode->children;
-    } else {
-        AUDIO_ERR_LOG("Missing child: %s", AUDIO_FOCUS_CONFIG_FILE);
-        xmlFreeDoc(doc);
-        return ERROR;
-    }
-    while (currNode != nullptr) {
-        if ((currNode->type == XML_ELEMENT_NODE) &&
-            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_type")))) {
-            ParseStreams(currNode, focusMap);
+
+    curNode_->MoveToChildren();
+    CHECK_AND_RETURN_RET_LOG(curNode_->IsNodeValid(), ERROR, "Missing child: %s", AUDIO_FOCUS_CONFIG_FILE);
+
+    while (curNode_->IsNodeValid()) {
+        if (curNode_->CompareName("focus_type")) {
+            ParseStreams(curNode_->GetCopyNode(), focusMap);
             break;
         } else {
-            currNode = currNode->next;
+            curNode_->MoveToNext();
         }
     }
-    xmlFreeDoc(doc);
+    curNode_ = nullptr;
     return SUCCESS;
 }
 
@@ -222,33 +215,28 @@ void AudioFocusParser::ParseFocusMap(xmlNode *node, const std::string &curStream
     }
 }
 
-void AudioFocusParser::ParseStreams(xmlNode *node,
+void AudioFocusParser::ParseStreams(std::shared_ptr<AudioXmlNode> curNode,
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
-    xmlNode *currNode = node;
-    while (currNode) {
-        if (currNode->type == XML_ELEMENT_NODE) {
-            char *sType = reinterpret_cast<char*>(xmlGetProp(currNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("value"))));
-            std::string typeStr(sType);
+    while (curNode->IsNodeValid()) {
+        if (curNode->IsElementNode()) {
+            std::string typeStr;
+            CHECK_AND_RETURN_LOG(curNode->GetProp("value", typeStr), "get prop value fail!");
             std::map<std::string, AudioFocusType>::iterator it = audioFocusMap.find(typeStr);
             if (it != audioFocusMap.end()) {
-                AUDIO_DEBUG_LOG("stream type: %{public}s",  sType);
-                ParseFocusMap(currNode->children, typeStr, focusMap);
+                AUDIO_DEBUG_LOG("stream type: %{public}s",  typeStr.c_str());
+                ParseFocusMap(curNode->GetChildrenNode(), typeStr, focusMap);
             }
-            xmlFree(sType);
         }
-        currNode = currNode->next;
+        curNode->MoveToNext();
     }
 }
 
-void AudioFocusParser::AddRejectedFocusEntry(xmlNode *currNode, const std::string &curStream,
+void AudioFocusParser::AddRejectedFocusEntry(std::shared_ptr<AudioXmlNode> curNode, const std::string &curStream,
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
-    char *newStream = reinterpret_cast<char*>(xmlGetProp(currNode,
-        reinterpret_cast<xmlChar*>(const_cast<char*>("value"))));
-
-    std::string newStreamStr(newStream);
+    std::string newStreamStr;
+    CHECK_AND_RETURN_LOG(curNode->GetProp("value", newStreamStr) == SUCCESS, "get prop value fail!");
     std::map<std::string, AudioFocusType>::iterator it1 = audioFocusMap.find(newStreamStr);
     if (it1 != audioFocusMap.end()) {
         std::pair<AudioFocusType, AudioFocusType> rejectedStreamsPair =
@@ -265,44 +253,36 @@ void AudioFocusParser::AddRejectedFocusEntry(xmlNode *currNode, const std::strin
             rejectedFocusEntry.actionOn, rejectedFocusEntry.hintType,
             rejectedFocusEntry.forceType, rejectedFocusEntry.isReject);
     }
-    xmlFree(newStream);
 }
 
-void AudioFocusParser::ParseRejectedStreams(xmlNode *node, const std::string &curStream,
+void AudioFocusParser::ParseRejectedStreams(std::shared_ptr<AudioXmlNode> curNode, const std::string &curStream,
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
-    xmlNode *currNode = node;
-
-    while (currNode) {
-        if (currNode->type == XML_ELEMENT_NODE) {
-            if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_type"))) {
-                AddRejectedFocusEntry(currNode, curStream, focusMap);
-            }
+    while (curNode->IsNodeValid()) {
+        if (curNode->CompareName("focus_type")) {
+            AddRejectedFocusEntry(currNode, curStream, focusMap);
         }
-        currNode = currNode->next;
+        curNode->MoveToNext();
     }
 }
 
-void AudioFocusParser::AddAllowedFocusEntry(xmlNode *currNode, const std::string &curStream,
+void AudioFocusParser::AddAllowedFocusEntry(std::shared_ptr<AudioXmlNode> curNode, const std::string &curStream,
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
-    char *newStream = reinterpret_cast<char*>(xmlGetProp(currNode,
-        reinterpret_cast<xmlChar*>(const_cast<char*>("value"))));
-    char *aType = reinterpret_cast<char*>(xmlGetProp(currNode,
-        reinterpret_cast<xmlChar*>(const_cast<char*>("action_type"))));
-    char *aTarget = reinterpret_cast<char*>(xmlGetProp(currNode,
-        reinterpret_cast<xmlChar*>(const_cast<char*>("action_on"))));
-    char *isForced = reinterpret_cast<char*>(xmlGetProp(currNode,
-        reinterpret_cast<xmlChar*>(const_cast<char*>("is_forced"))));
+    std::string newStreamStr;
+    std::string aTargetStr;
+    std::string aTypeStr;
+    std::string isForcedStr;
+    CHECK_AND_RETURN_LOG(curNode->GetProp("value", newStreamStr), "get prop value fail!");
+    CHECK_AND_RETURN_LOG(curNode->GetProp("action_type", aTargetStr), "get prop action_type fail!");
+    CHECK_AND_RETURN_LOG(curNode->GetProp("action_on", aTypeStr), "get prop action_on fail!");
+    CHECK_AND_RETURN_LOG(curNode->GetProp("is_forced", isForcedStr), "get prop is_forced fail!");
 
-    std::string newStreamStr(newStream);
     std::map<std::string, AudioFocusType>::iterator it1 = audioFocusMap.find(newStreamStr);
-    std::string aTargetStr(aTarget);
     std::map<std::string, ActionTarget>::iterator it2 = targetMap.find(aTargetStr);
-    std::string aTypeStr(aType);
     std::map<std::string, InterruptHint>::iterator it3 = actionMap.find(aTypeStr);
-    std::string isForcedStr(isForced);
     std::map<std::string, InterruptForceType>::iterator it4 = forceMap.find(isForcedStr);
+
     if ((it1 != audioFocusMap.end()) && (it2 != targetMap.end()) && (it3 != actionMap.end()) &&
         (it4 != forceMap.end())) {
         std::pair<AudioFocusType, AudioFocusType> allowedStreamsPair =
@@ -319,24 +299,16 @@ void AudioFocusParser::AddAllowedFocusEntry(xmlNode *currNode, const std::string
             allowedFocusEntry.actionOn, allowedFocusEntry.hintType,
             allowedFocusEntry.forceType, allowedFocusEntry.isReject);
     }
-    xmlFree(newStream);
-    xmlFree(aType);
-    xmlFree(aTarget);
-    xmlFree(isForced);
 }
 
-void AudioFocusParser::ParseAllowedStreams(xmlNode *node, const std::string &curStream,
+void AudioFocusParser::ParseAllowedStreams(std::shared_ptr<AudioXmlNode> curNode, const std::string &curStream,
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
-    xmlNode *currNode = node;
-
-    while (currNode) {
-        if (currNode->type == XML_ELEMENT_NODE) {
-            if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_type"))) {
-                AddAllowedFocusEntry(currNode, curStream, focusMap);
-            }
+    while (curNode->IsNodeValid()) {
+        if (curNode->CompareName("focus_type")) {
+            AddAllowedFocusEntry(currNode, curStream, focusMap);
         }
-        currNode = currNode->next;
+        curNode->MoveToNext();
     }
 }
 } // namespace AudioStandard

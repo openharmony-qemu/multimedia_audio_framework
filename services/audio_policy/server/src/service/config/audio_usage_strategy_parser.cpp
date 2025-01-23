@@ -23,28 +23,20 @@ namespace OHOS {
 namespace AudioStandard {
 bool AudioUsageStrategyParser::LoadConfiguration()
 {
-    doc_ = xmlReadFile(DEVICE_CONFIG_PROD_FILE, nullptr, 0);
-    if (doc_ == nullptr) {
-        doc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
+    curNode_ = AudioXmlNode::Create();
+    int32_t ret = curNode_->Config(DEVICE_CONFIG_PROD_FILE, nullptr, 0);
+    if (ret != SUCCESS) {
+        ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
     }
-    if (doc_ == nullptr) {
+    if (ret != SUCCESS) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::FAULT_EVENT);
         bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_USAGE_STRATEGY);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        return false;
     }
-    CHECK_AND_RETURN_RET_LOG(doc_ != nullptr, false, "xmlReadFile failed");
-
-    return true;
-}
-
-bool AudioUsageStrategyParser::Parse()
-{
-    xmlNode *root = xmlDocGetRootElement(doc_);
-    CHECK_AND_RETURN_RET_LOG(root != nullptr, false, "xmlDocGetRootElement Failed");
-
-    if (!ParseInternal(root)) {
+    if (!ParseInternal(curNode_->GetCopyNode())) {
         return false;
     }
     return true;
@@ -52,65 +44,52 @@ bool AudioUsageStrategyParser::Parse()
 
 void AudioUsageStrategyParser::Destroy()
 {
-    if (doc_ != nullptr) {
-        xmlFreeDoc(doc_);
-    }
+    curNode_->FreeDoc();
 }
 
-bool AudioUsageStrategyParser::ParseInternal(xmlNode *node)
+bool AudioUsageStrategyParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNode)
 {
-    xmlNode *currNode = node;
-    for (; currNode; currNode = currNode->next) {
-        if (XML_ELEMENT_NODE == currNode->type &&
-            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("adapter")))) {
-                char *pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
-                if (strcmp(pValue, "streamUsage") == 0) {
-                    ParserStreamUsageList(currNode->xmlChildrenNode);
-                } else if (strcmp(pValue, "sourceType") == 0) {
-                    ParserSourceTypeList(currNode->xmlChildrenNode);
-                }
-            } else {
-                ParseInternal((currNode->xmlChildrenNode));
+    for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
+        if (curNode->CompareName("adapter")) {
+            std::string pValueStr;
+            CHECK_AND_RETURN_LOG(curNode->GetProp("name", pValueStr) == SUCCESS, "get name fail");
+            if (pValueStr == "streamUsage") {
+                ParserStreamUsageList(curNode->GetChildrenNode());
+            } else if (pValueStr == "sourceType") {
+                ParserSourceTypeList(curNode->GetChildrenNode());
             }
+        } else {
+            ParseInternal(curNode->GetChildrenNode());
+        }
     }
     return true;
 }
 
-void AudioUsageStrategyParser::ParserStreamUsageList(xmlNode *node)
+void AudioUsageStrategyParser::ParserStreamUsageList(std::shared_ptr<AudioXmlNode> curNode)
 {
-    xmlNode *strategyNode = node;
-    while (strategyNode != nullptr) {
-        if (strategyNode->type == XML_ELEMENT_NODE &&
-            (!xmlStrcmp(strategyNode->name, reinterpret_cast<const xmlChar*>("strategy")))) {
-            char *strategyName = reinterpret_cast<char*>(xmlGetProp(strategyNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
-
-            char *streamUsages = reinterpret_cast<char*>(xmlGetProp(strategyNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("streamUsage"))));
+    while (curNode->IsNodeValid()) {
+        if (curNode->CompareName("strategy")) {
+            std::string strategyName;
+            std::string streamUsages;
+            CHECK_AND_RETURN_LOG(curNode->GetProp("name", strategyName) == SUCCESS, "get strategyName fail");
+            CHECK_AND_RETURN_LOG(curNode->GetProp("streamUsage", streamUsages) == SUCCESS, "get streamUsage fail");
             ParserStreamUsageInfo(strategyName, streamUsages);
-            xmlFree(strategyName);
-            xmlFree(streamUsages);
         }
-        strategyNode = strategyNode->next;
+        curNode->MoveToNext();
     }
 }
 
-void AudioUsageStrategyParser::ParserSourceTypeList(xmlNode *node)
+void AudioUsageStrategyParser::ParserSourceTypeList(std::shared_ptr<AudioXmlNode> curNode)
 {
-    xmlNode *strategyNode = node;
-    while (strategyNode != nullptr) {
-        if (strategyNode->type == XML_ELEMENT_NODE &&
-            (!xmlStrcmp(strategyNode->name, reinterpret_cast<const xmlChar*>("strategy")))) {
-            char *strategyName = reinterpret_cast<char*>(xmlGetProp(strategyNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
-            char *sourceTypes = reinterpret_cast<char*>(xmlGetProp(strategyNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("sourceType"))));
+    while (curNode->IsNodeValid()) {
+        if (curNode->CompareName("strategy")) {
+            std::string strategyName;
+            std::string sourceTypes;
+            CHECK_AND_RETURN_LOG(curNode->GetProp("name", strategyName) == SUCCESS, "get strategyName fail");
+            CHECK_AND_RETURN_LOG(curNode->GetProp("sourceType", sourceTypes) == SUCCESS, "get sourceTypes fail");
             ParserSourceTypeInfo(strategyName, sourceTypes);
-            xmlFree(strategyName);
-            xmlFree(sourceTypes);
         }
-        strategyNode = strategyNode->next;
+        curNode->MoveToNext();
     }
 }
 

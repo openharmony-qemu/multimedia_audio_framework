@@ -18,11 +18,10 @@
 
 #include <map>
 #include <string>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_policy_log.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,24 +37,22 @@ public:
     static constexpr char AUDIO_CONCURRENCY_CONFIG_FILE[] = "/vendor/etc/audio/audio_concurrency_config.xml";
     AudioConcurrencyParser()
     {
+        curNode_ = AudioXmlNode::Create();
         AUDIO_INFO_LOG("AudioConcurrencyParser ctor");
     }
     virtual ~AudioConcurrencyParser()
     {
-        if (doc_ != nullptr) {
-            xmlFreeDoc(doc_);
-            AUDIO_DEBUG_LOG("xml doc freed in dtor");
-        }
+        curNode_ = nullptr;
         AUDIO_DEBUG_LOG("AudioConcurrencyParser dtor");
     }
     int32_t LoadConfig(std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> &concurrencyMap);
 
 private:
-    void ParseInternal(xmlNode *node, std::map<std::pair<AudioPipeType, AudioPipeType>,
-        ConcurrencyAction> &concurrencyMap);
-    void ParseIncoming(const std::string &existing, xmlNode *node,
+    void ParseInternal(std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> &concurrencyMap,
+        std::shared_ptr<AudioXmlNode> audioXmlNode);
+    void ParseIncoming(const std::string &existing, std::shared_ptr<AudioXmlNode> audioXmlNode,
         std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> &concurrencyMap);
-    xmlDoc *doc_ = nullptr;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     std::map<std::string, AudioPipeType> audioPipeTypeMap_ = {
         {"primary out", PIPE_TYPE_NORMAL_OUT},
         {"primary in", PIPE_TYPE_NORMAL_IN},

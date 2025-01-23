@@ -16,13 +16,12 @@
 #ifndef AUDIO_PARAM_PARSER_H
 #define AUDIO_PARAM_PARSER_H
 
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 #include <list>
 #include <unordered_map>
 #include <string>
 #include <regex>
 #include <set>
+#include <audio_xml_parser.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,16 +38,14 @@ public:
         std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys);
 
 private:
-    bool ParseInternal(xmlNode *node,
+    bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode,
         std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys);
-    void ParseMainKeys(xmlNode *node,
+    void ParseMainKeys(std::shared_ptr<AudioXmlNode> curNode,
         std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys);
-    void ParseMainKey(xmlNode *node,
+    void ParseMainKey(std::shared_ptr<AudioXmlNode> curNode,
         std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys);
-    void ParseSubKeys(xmlNode *node, std::string &className,
+    void ParseSubKeys(std::shared_ptr<AudioXmlNode> curNode, std::string &className,
         std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys);
-
-    std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

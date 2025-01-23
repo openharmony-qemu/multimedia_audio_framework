@@ -39,7 +39,6 @@ void AudioAffinityManager::ParseAffinityXml()
     unique_ptr<audioAffinityParser> affinityParser = make_unique<audioAffinityParser>(this);
     if (affinityParser->LoadConfiguration()) {
         AUDIO_INFO_LOG("Audio Affinity manager load configuration successfully.");
-        affinityParser->Parse();
     }
     OnXmlParsingCompleted(affinityParser->GetAffinityDeviceInfo());
 }

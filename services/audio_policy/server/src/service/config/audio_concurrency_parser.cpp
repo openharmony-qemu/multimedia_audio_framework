@@ -20,52 +20,45 @@ namespace AudioStandard {
 int32_t AudioConcurrencyParser::LoadConfig(std::map<std::pair<AudioPipeType, AudioPipeType>,
     ConcurrencyAction> &concurrencyMap)
 {
-    doc_ = xmlReadFile(AUDIO_CONCURRENCY_CONFIG_FILE, nullptr, 0);
-    CHECK_AND_RETURN_RET_LOG(doc_ != nullptr, ERR_OPERATION_FAILED, "xmlRead AudioConcurrencyConfigFile failed!");
-    xmlNode *root = xmlDocGetRootElement(doc_);
-    CHECK_AND_RETURN_RET_LOG(root != nullptr, ERR_OPERATION_FAILED, "xmlDocGetRootElement failed!");
-    if (xmlStrcmp(root->name, reinterpret_cast<const xmlChar*>("audioConcurrencyPolicy"))) {
+    AUDIO_INFO_LOG("start.");
+    curNode_->Config(AUDIO_CONCURRENCY_CONFIG_FILE, nullptr, 0);
+    if (!curNode_->CompareName("audioConcurrencyPolicy")) {
         AUDIO_ERR_LOG("Missing tag - audioConcurrencyPolicy");
-        xmlFreeDoc(doc_);
+        curNode_->FreeDoc();
         return ERR_OPERATION_FAILED;
     }
-    ParseInternal(root, concurrencyMap);
+    ParseInternal(concurrencyMap, curNode_);
     return SUCCESS;
 }
 
-void AudioConcurrencyParser::ParseInternal(xmlNode *node, std::map<std::pair<AudioPipeType, AudioPipeType>,
-    ConcurrencyAction> &concurrencyMap)
+void AudioConcurrencyParser::ParseInternal(std::map<std::pair<AudioPipeType, AudioPipeType>,
+    ConcurrencyAction> &concurrencyMap, std::shared_ptr<AudioXmlNode> curNode)
 {
-    xmlNode *curNode = node;
-    for (; curNode; curNode = curNode->next) {
-        if (curNode->type == XML_ELEMENT_NODE &&
-            !xmlStrcmp(curNode->name, reinterpret_cast<const xmlChar*>("existingStream"))) {
-            char *nodeName = reinterpret_cast<char*>(xmlGetProp(curNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
-            std::string existingStream = nodeName;
+    for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
+        if (curNode->CompareName("existingStream")) {
+            std::string existingStream;
+            CHECK_AND_RETURN_LOG(curNode->GetProp("name", existingStream) == SUCCESS, "GetProp name fail!");
             AUDIO_DEBUG_LOG("existingStream: %{public}s", existingStream.c_str());
-            xmlFree(nodeName);
-            ParseIncoming(existingStream, curNode->children, concurrencyMap);
+
+            std::shared_ptr<AudioXmlNode> childrenNode = curNode->GetChildrenNode();
+            ParseIncoming(existingStream, childrenNode, concurrencyMap);
         } else {
-            ParseInternal((curNode->children), concurrencyMap);
+            std::shared_ptr<AudioXmlNode> childrenNode = curNode->GetChildrenNode();
+            ParseInternal(concurrencyMap, childrenNode);
         }
     }
     return;
 }
 
-void AudioConcurrencyParser::ParseIncoming(const std::string &existing, xmlNode *node,
+void AudioConcurrencyParser::ParseIncoming(const std::string &existing, std::shared_ptr<AudioXmlNode> curNode,
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> &concurrencyMap)
 {
-    xmlNode *incomingNode = node;
-    while (incomingNode != nullptr) {
-        if (incomingNode->type == XML_ELEMENT_NODE &&
-            !xmlStrcmp(incomingNode->name, reinterpret_cast<const xmlChar*>("incomingStream"))) {
-            char *incomingName = reinterpret_cast<char*>(xmlGetProp(incomingNode,
-            reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
-            char *actionName = reinterpret_cast<char*>(xmlGetProp(incomingNode,
-            reinterpret_cast<xmlChar*>(const_cast<char*>("action"))));
-            std::string incoming = incomingName;
-            std::string action = actionName;
+    while (curNode->IsNodeValid()) {
+        if (curNode->CompareName("incomingStream")) {
+            std::string incoming;
+            std::string action;
+            CHECK_AND_RETURN_LOG(curNode->GetProp("name", incoming) == SUCCESS, "getprop name fail!");
+            CHECK_AND_RETURN_LOG(curNode->GetProp("action", action) == SUCCESS, "getprop action fail!");
             AUDIO_DEBUG_LOG("existing: %{public}s %{public}d, incoming: %{public}s %{public}d, action: %{public}s",
                 existing.c_str(), audioPipeTypeMap_[existing], incoming.c_str(),
                 audioPipeTypeMap_[incoming], action.c_str());
@@ -74,10 +67,8 @@ void AudioConcurrencyParser::ParseIncoming(const std::string &existing, xmlNode 
             ConcurrencyAction concurrencyAction = (action == "play both" || action == "mix") ? PLAY_BOTH :
                 (action == "concede existing" ? CONCEDE_EXISTING : CONCEDE_INCOMING);
             concurrencyMap.emplace(concurrencyPair, concurrencyAction);
-            xmlFree(incomingName);
-            xmlFree(actionName);
         }
-        incomingNode = incomingNode->next;
+        curNode->MoveToNext();
     }
 }
 } // namespace AudioStandard
