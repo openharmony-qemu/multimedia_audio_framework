@@ -522,6 +522,26 @@ uint32_t GetFadeoutState(uint32_t streamIndex)
 {
     return AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
 }
+
+FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationMs)
+{
+    // 0 is default; duration > 40ms do default fade
+    if (expectedPlaybackDurationMs == 0 || expectedPlaybackDurationMs > 40) {
+        return FADE_STRATEGY_DEFAULT;
+    }
+
+    // duration <= 10 ms no fade
+    if (expectedPlaybackDurationMs <= 10 && expectedPlaybackDurationMs > 0) {
+        return FADE_STRATEGY_NONE;
+    }
+
+    // duration > 10ms && duration <= 40ms do 5ms fade
+    if (expectedPlaybackDurationMs <= 40 && expectedPlaybackDurationMs > 10) {
+        return FADE_STRATEGY_SHORTER;
+    }
+
+    return FADE_STRATEGY_DEFAULT;
+}
 #ifdef __cplusplus
 }
 #endif

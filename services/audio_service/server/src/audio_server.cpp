@@ -1183,8 +1183,12 @@ const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
     return bundleName;
 }
 
-bool AudioServer::IsFastBlocked(int32_t uid)
+bool AudioServer::IsFastBlocked(int32_t uid, PlayerType playerType)
 {
+    // if call from soundpool without the need for check.
+    if (playerType == PLAYER_TYPE_SOUND_POOL) {
+        return false;
+    }
     std::string bundleName = GetBundleNameFromUid(uid);
     std::string result = GetAudioParameter(CHECK_FAST_BLOCK_PREFIX + bundleName);
     return result == "true";
@@ -1262,7 +1266,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
     }
-    if (IsNormalIpcStream(config) || (isFastControlled_ && IsFastBlocked(config.appInfo.appUid))) {
+    if (IsNormalIpcStream(config) ||
+        (isFastControlled_ && IsFastBlocked(config.appInfo.appUid, config.rendererInfo.playerType))) {
         AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
