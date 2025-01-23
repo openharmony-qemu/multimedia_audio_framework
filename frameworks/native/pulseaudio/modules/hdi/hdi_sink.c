@@ -3272,6 +3272,8 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
+    EffectChainManagerQueryHdiSupportedChannelLayout(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
+
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     size_t tmpLength = length * u->multiChannel.sinkChannel / DEFAULT_IN_CHANNEL_NUM;
     chunkIn->index = 0;
@@ -4037,6 +4039,34 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
     }
 }
 
+static void MultiChannelSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
+{
+    struct Userdata *u = (struct Userdata *)(sink->userdata);
+    CHECK_AND_RETURN_LOG(u != NULL, "u is null");
+    if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
+        newState == PA_SINK_RUNNING) {
+        if (EffectChainManagerCheckEffectOffload()) {
+            SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
+        }
+    } else if (PA_SINK_OPEND(sink->thread_info.state)) {
+        if (newState == PA_SINK_SUSPENDED) {
+            return;
+        }
+        // Continuously dropping data (clear counter on entering suspended state.
+        if (u->bytes_dropped != 0) {
+            AUDIO_INFO_LOG("HDI-sink continuously dropping data - clear statistics (%zu -> 0 bytes dropped)",
+                           u->bytes_dropped);
+            u->bytes_dropped = 0;
+        }
+
+        if (u->multiChannel.isHDISinkStarted) {
+            u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+            AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
+            u->multiChannel.isHDISinkStarted = false;
+        }
+    }
+}
+
 // Called from the IO thread.
 static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa_suspend_cause_t newSuspendCause)
 {
@@ -4059,11 +4089,13 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
         return 0;
     }
 
+    if (!strcmp(u->sink->name, MCH_SINK_NAME)) {
+        MultiChannelSinkStateChangeCb(s, newState);
+        return 0;
+    }
+
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
         newState == PA_SINK_RUNNING) {
-        if (EffectChainManagerCheckEffectOffload() && (!strcmp(u->sink->name, "Speaker"))) {
-            SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
-        }
         if (strcmp(u->sink->name, BT_SINK_NAME) || newState == PA_SINK_RUNNING) {
             return SinkSetStateInIoThreadCbStartPrimary(u, newState);
         }
@@ -4080,12 +4112,6 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 
         if (pa_atomic_load(&u->primary.isHDISinkStarted) == 1) {
             pa_asyncmsgq_post(u->primary.dq, NULL, HDI_STOP, NULL, 0, NULL, NULL);
-        }
-
-        if (u->multiChannel.isHDISinkStarted) {
-            u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
-            AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
-            u->multiChannel.isHDISinkStarted = false;
         }
     }
 
