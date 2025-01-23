@@ -470,7 +470,7 @@ int pa__init(pa_module *m)
     CHECK_AND_RETURN_RET_LOG(m != NULL, PA_HOOK_OK, "pa core is null");
 
     if (!(ma = pa_modargs_new(m->argument, VALID_MODARGS))) {
-        pa_log("Failed to parse module arguments");
+        AUDIO_ERR_LOG("Failed to parse module arguments");
         goto fail;
     }
 
