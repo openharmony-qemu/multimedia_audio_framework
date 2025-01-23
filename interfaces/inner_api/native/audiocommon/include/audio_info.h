@@ -364,15 +364,19 @@ struct A2dpDeviceConfigInfo {
     bool mute = false;
 };
 
-enum CallerFlag : int32_t {
-    DEFAULT_CALLER_FLAG = 0,
-    OH_AUDIO_RENDERER = 100,
-    NAPI_AUDIO_RENDERER = 101,
-    CJ_AUDIO_RENDERER = 102,
-    OPENSL_ES = 103,
-    SOUND_POOL = 1000,
-    AV_PLAYER = 1001,
-    SYSTEM_WEBVIEW = 1002,
+enum PlayerType : int32_t {
+    PLAYER_TYPE_DEFAULT = 0,
+
+    // AudioFramework internal type.
+    PLAYER_TYPE_OH_AUDIO_RENDERER = 100,
+    PLAYER_TYPE_ARKTS_AUDIO_RENDERER = 101,
+    PLAYER_TYPE_CJ_AUDIO_RENDERER = 102,
+    PLAYER_TYPE_OPENSL_ES = 103,
+
+    // Indicates a type from the system internals, but not from the AudioFramework.
+    PLAYER_TYPE_SOUND_POOL = 1000,
+    PLAYER_TYPE_AV_PLAYER = 1001,
+    PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
 };
 
 struct AudioRendererInfo {
@@ -390,7 +394,7 @@ struct AudioRendererInfo {
     uint64_t channelLayout = 0ULL;
     bool isOffloadAllowed = true;
     bool isSatellite = false;
-    CallerFlag callerFlag = DEFAULT_CALLER_FLAG;
+    PlayerType playerType = PLAYER_TYPE_DEFAULT;
     // Expected length of audio stream to be played.
     // Currently only used for making decisions on fade-in and fade-out strategies.
     // 0 is the default value, it is considered that no
@@ -411,7 +415,7 @@ struct AudioRendererInfo {
             && parcel.WriteUint8(encodingType)
             && parcel.WriteUint64(channelLayout)
             && parcel.WriteBool(isOffloadAllowed)
-            && parcel.WriteInt32(callerFlag)
+            && parcel.WriteInt32(playerType)
             && parcel.WriteUint64(expectedPlaybackDurationBytes);
     }
     void Unmarshalling(Parcel &parcel)
@@ -429,7 +433,7 @@ struct AudioRendererInfo {
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
         isOffloadAllowed = parcel.ReadBool();
-        callerFlag = static_cast<CallerFlag>(parcel.ReadInt32());
+        playerType = static_cast<PlayerType>(parcel.ReadInt32());
         expectedPlaybackDurationBytes = parcel.ReadUint64();
     }
 };
