@@ -364,6 +364,17 @@ struct A2dpDeviceConfigInfo {
     bool mute = false;
 };
 
+enum CallerFlag : int32_t {
+    DEFAULT = 0,
+    OH_AUDIO_RENDERER = 100,
+    NAPI_AUDIO_RENDERER = 101,
+    CJ_AUDIO_RENDERER = 102,
+    OPENSL_ES = 103,
+    SOUND_POOL = 1000,
+    AV_PLAYER = 1001,
+    SYSTEM_WEBVIEW = 1002,
+};
+
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -378,6 +389,11 @@ struct AudioRendererInfo {
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
     bool isOffloadAllowed = true;
+    CallerFlag callerFlag = DEFAULT;
+    // Expected length of audio stream to be played.
+    // Currently only used for making decisions on fade-in and fade-out strategies.
+    // 0 is the default value, it is considered that no
+    uint64_t expectedPlaybackDurationBytes = 0;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -393,7 +409,9 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(format)
             && parcel.WriteUint8(encodingType)
             && parcel.WriteUint64(channelLayout)
-            && parcel.WriteBool(isOffloadAllowed);
+            && parcel.WriteBool(isOffloadAllowed)
+            && parcel.WriteInt32(callerFlag)
+            && parcel.WriteUint64(expectedPlaybackDurationBytes);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -410,6 +428,8 @@ struct AudioRendererInfo {
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
         isOffloadAllowed = parcel.ReadBool();
+        callerFlag = static_cast<CallerFlag>(parcel.ReadInt32());
+        expectedPlaybackDurationBytes = parcel.ReadUint64();
     }
 };
 
