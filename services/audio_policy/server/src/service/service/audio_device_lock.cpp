@@ -31,6 +31,8 @@
 namespace OHOS {
 namespace AudioStandard {
 const int32_t DATA_LINK_CONNECTED = 11;
+static constexpr int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 200; // 200ms
+static constexpr int32_t RETRY_TIMES = 25;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -606,8 +608,18 @@ int32_t AudioDeviceLock::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt rea
 
 std::vector<sptr<VolumeGroupInfo>> AudioDeviceLock::GetVolumeGroupInfos()
 {
-    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-    return audioVolumeManager_.GetVolumeGroupInfos();
+    std::vector<sptr<VolumeGroupInfo>> infos = {};
+    for (int32_t i = 0; i < RETRY_TIMES; i++) {
+        std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
+        if (audioVolumeManager_.GetVolumeGroupInfosNotWait(infos)) {
+            return infos;
+        } else {
+            deviceLock.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_LOAD_DEFAULT_DEVICE_TIME_MS));
+        }
+    }
+    AUDIO_ERR_LOG("timeout");
+    return infos;
 }
 
 }

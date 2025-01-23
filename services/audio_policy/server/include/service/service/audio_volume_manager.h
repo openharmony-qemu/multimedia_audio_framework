@@ -90,7 +90,7 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     int32_t SetVoiceRingtoneMute(bool isMute);
     void SetVoiceCallVolume(int32_t volume);
-    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+    bool GetVolumeGroupInfosNotWait(std::vector<sptr<VolumeGroupInfo>> &infos);
     void SetDefaultDeviceLoadFlag(bool isLoad);
     void NotifyVolumeGroup();
     bool GetLoadFlag();
@@ -166,7 +166,6 @@ private:
     bool increaseNIsShowing_ = false;
 
     std::mutex defaultDeviceLoadMutex_;
-    std::condition_variable loadDefaultDeviceCV_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
 
     IAudioPolicyInterface& audioPolicyManager_;

@@ -36,7 +36,6 @@ namespace OHOS {
 namespace AudioStandard {
 
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
-static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
 const int32_t DUAL_TONE_RING_VOLUME = 0;
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -982,22 +981,14 @@ void AudioVolumeManager::SetRingerModeMute(bool flag)
     ringerModeMute_.store(flag);
 }
 
-std::vector<sptr<VolumeGroupInfo>> AudioVolumeManager::GetVolumeGroupInfos()
+bool AudioVolumeManager::GetVolumeGroupInfosNotWait(std::vector<sptr<VolumeGroupInfo>> &infos)
 {
-    if (!isPrimaryMicModuleInfoLoaded_.load()) {
-        std::unique_lock<std::mutex> lock(defaultDeviceLoadMutex_);
-        bool loadWaiting = loadDefaultDeviceCV_.wait_for(lock,
-            std::chrono::milliseconds(WAIT_LOAD_DEFAULT_DEVICE_TIME_MS),
-            [this] { return isPrimaryMicModuleInfoLoaded_.load(); }
-        );
-        if (!loadWaiting) {
-            AUDIO_ERR_LOG("load default device time out");
-        }
+    if (!isPrimaryMicModuleInfoLoaded_) {
+        return false;
     }
 
-    std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
-    GetVolumeGroupInfo(volumeGroupInfos);
-    return volumeGroupInfos;
+    GetVolumeGroupInfo(infos);
+    return true;
 }
 
 void AudioVolumeManager::SetDefaultDeviceLoadFlag(bool isLoad)
@@ -1014,7 +1005,6 @@ void AudioVolumeManager::NotifyVolumeGroup()
 {
     std::lock_guard<std::mutex> lock(defaultDeviceLoadMutex_);
     SetDefaultDeviceLoadFlag(true);
-    loadDefaultDeviceCV_.notify_all();
 }
 
 }
