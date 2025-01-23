@@ -4048,8 +4048,8 @@ static void MultiChannelSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newStat
         if (EffectChainManagerCheckEffectOffload()) {
             SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
         }
-    } else if (PA_SINK_OPEND(sink->thread_info.state)) {
-        if (newState == PA_SINK_SUSPENDED) {
+    } else if (PA_SINK_IS_OPENED(sink->thread_info.state)) {
+        if (newState != PA_SINK_SUSPENDED) {
             return;
         }
         // Continuously dropping data (clear counter on entering suspended state.
