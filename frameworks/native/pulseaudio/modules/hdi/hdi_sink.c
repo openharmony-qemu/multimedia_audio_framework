@@ -4043,7 +4043,7 @@ static void MultiChannelSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newStat
 {
     struct Userdata *u = (struct Userdata *)(sink->userdata);
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
-    if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
+    if (sink->thread_info.state == PA_SINK_SUSPENDED || sink->thread_info.state == PA_SINK_INIT ||
         newState == PA_SINK_RUNNING) {
         if (EffectChainManagerCheckEffectOffload()) {
             SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
