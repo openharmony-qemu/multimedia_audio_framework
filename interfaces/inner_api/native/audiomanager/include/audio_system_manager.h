@@ -1272,6 +1272,17 @@ public:
     */
     int32_t SetVoiceRingtoneMute(bool isMute);
 
+    /**
+    * @brief Get standby state.
+    *
+    * @param sessionId Specifies which stream to be check.
+    * @param isStandby true means the stream is in standby status.
+    * @param enterStandbyTime Specifies when the stream enter standby status, in MONOTONIC time.
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
+    * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
+    */
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

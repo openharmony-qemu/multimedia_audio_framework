@@ -160,6 +160,8 @@ public:
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
 
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
+
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
