@@ -1114,7 +1114,7 @@ static bool DoStopDrainFadeout(pa_sink_input *sinkIn, uint32_t streamIndex, int3
         uint32_t sinkStopFadeout = GetStopFadeoutState(streamIndex);
         if (sinkStopFadeout == DO_FADE) {
             const size_t bqlAlin = GetbqlAlinLength(ps, sinkIn);
-            if (bqlAlin > 0 && bqlAlin == length) {
+            if (bqlAlin > 0 && (int32_t)bqlAlin == length) {
                 AUDIO_INFO_LOG("drain_request bqlalin:%{public}zu", bqlAlin);
                 RemoveStopFadeoutState(streamIndex);
                 return true;
