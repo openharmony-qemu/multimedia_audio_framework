@@ -23,6 +23,7 @@
 #include "media_monitor_manager.h"
 #include "audio_xml_parser.h"
 #include "audio_utils.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -487,7 +488,7 @@ static void LoadPreProcessCfg(OriginalEffectConfig &result, std::shared_ptr<Audi
             CHECK_AND_RETURN_LOG(curNode->GetProp("maxExtSceneNumber", maxExtraNumStr) == SUCCESS,
                 "getProp maxExtSceneNumber fail");
             CHECK_AND_RETURN_LOG(StringConverter(maxExtraNumStr, result.preProcess.maxExtSceneNum) == SUCCESS,
-                "convert maxExtraNumStr: %{public}s fail!", maxExtraNumStr.c_str())
+                "convert maxExtraNumStr: %{public}s fail!", maxExtraNumStr.c_str());
             LoadPreStreamScenesCheck(result.preProcess.normalScenes, curNode->GetCopyNode(),
                 countPreSecondNode[INDEX_PRE_NORMAL_SCENE]);
         } else {
@@ -722,12 +723,12 @@ static void LoadPostProcessCfg(OriginalEffectConfig &result, std::shared_ptr<Aud
             CHECK_AND_RETURN_LOG(curNode->GetProp("maxExtSceneNumber", maxExtraNumStr) == SUCCESS,
                 "getProp maxExtSceneNumber fail");
             CHECK_AND_RETURN_LOG(StringConverter(maxExtraNumStr, result.postProcess.maxExtSceneNum) == SUCCESS,
-                "convert maxExtraNumStr: %{public}s fail!", maxExtraNumStr.c_str())
+                "convert maxExtraNumStr: %{public}s fail!", maxExtraNumStr.c_str());
             LoadPostStreamScenesCheck(result.postProcess.normalScenes, curNode->GetCopyNode(),
                 countPostSecondNode[INDEX_POST_NORMAL_SCENE]);
         } else if (curNode->CompareName("effectSceneStreams")) {
             // TO BE COMPATIBLE WITH OLDER VERSION XML
-            LoadPostStreamScenesCheck(result.postProcess.normalScenes, currNode->GetCopyNode(),
+            LoadPostStreamScenesCheck(result.postProcess.normalScenes, curNode->GetCopyNode(),
                 countPostSecondNode[INDEX_POST_NORMAL_SCENE]);
         } else if (curNode->CompareName("sceneMap")) {
             LoadStreamUsageMappingCheck(result, curNode->GetCopyNode(), countPostSecondNode);
@@ -747,7 +748,7 @@ static void LoadEffectConfigPostProcessCfg(OriginalEffectConfig &result, std::sh
             AUDIO_WARNING_LOG("the number of postProcess nodes exceeds limit: %{public}d",
                 AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT);
         }
-    } else if (curNode->GetChildrenNode().IsNodeValid()) {
+    } else if (curNode->GetChildrenNode()->IsNodeValid()) {
         LoadPostProcessCfg(result, curNode->GetChildrenNode());
         countFirstNode[INDEX_POSTPROCESS]++;
     } else {
@@ -780,7 +781,8 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "error: could not parse audio effect config file");
 
     if (LoadConfigCheck(curNode->GetCopyNode()) == 0) {
-        CHECK_AND_RETURN_LOG(curNode->GetProp("version", result.version) == SUCCESS, "getProp version fail");
+        CHECK_AND_RETURN_RET_LOG(curNode->GetProp("version", result.version) == SUCCESS,
+            ERROR, "getProp version fail");
         curNode->MoveToChildren();
     } else {
         return FILE_CONTENT_ERROR;
@@ -793,17 +795,17 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
         }
 
         if (curNode->CompareName("libraries")) {
-            LoadEffectConfigLibraries(result, currNode->GetCopyNode(), countFirstNode);
+            LoadEffectConfigLibraries(result, curNode->GetCopyNode(), countFirstNode);
         } else if (curNode->CompareName("effects")) {
-            LoadEffectConfigEffects(result, currNode->GetCopyNode(), countFirstNode);
+            LoadEffectConfigEffects(result, curNode->GetCopyNode(), countFirstNode);
         } else if (curNode->CompareName("effectChains")) {
-            LoadEffectConfigEffectChains(result, currNode->GetCopyNode(), countFirstNode);
+            LoadEffectConfigEffectChains(result, curNode->GetCopyNode(), countFirstNode);
         } else if (curNode->CompareName("preProcess")) {
-            LoadEffectConfigPreProcessCfg(result, currNode->GetCopyNode(), countFirstNode);
+            LoadEffectConfigPreProcessCfg(result, curNode->GetCopyNode(), countFirstNode);
         } else if (curNode->CompareName("postProcess")) {
-            LoadEffectConfigPostProcessCfg(result, currNode->GetCopyNode(), countFirstNode);
+            LoadEffectConfigPostProcessCfg(result, curNode->GetCopyNode(), countFirstNode);
         } else {
-            LoadEffectConfigException(result, currNode->GetCopyNode(), countFirstNode);
+            LoadEffectConfigException(result, curNode->GetCopyNode(), countFirstNode);
         }
         curNode->MoveToNext();
     }

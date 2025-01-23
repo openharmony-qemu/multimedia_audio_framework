@@ -184,34 +184,30 @@ void AudioFocusParser::WriteConfigErrorEvent()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioFocusParser::ParseFocusChildrenMap(xmlNode *node, const std::string &curStream,
+void AudioFocusParser::ParseFocusChildrenMap(std::shared_ptr<AudioXmlNode> curNode, const std::string &curStream,
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
-    xmlNode *sNode = node;
-    while (sNode) {
-        if (sNode->type == XML_ELEMENT_NODE) {
-            if (!xmlStrcmp(sNode->name, reinterpret_cast<const xmlChar*>("deny"))) {
-                ParseRejectedStreams(sNode->children, curStream, focusMap);
+    while (curNode->IsNodeValid()) {
+        if (curNode->IsElementNode()) {
+            if (curNode->CompareName("deny")) {
+                ParseRejectedStreams(curNode->GetChildrenNode(), curStream, focusMap);
             } else {
-                ParseAllowedStreams(sNode->children, curStream, focusMap);
+                ParseAllowedStreams(curNode->GetChildrenNode(), curStream, focusMap);
             }
         }
-        sNode = sNode->next;
+        curNode->MoveToNext();
     }
 }
 
-void AudioFocusParser::ParseFocusMap(xmlNode *node, const std::string &curStream,
+void AudioFocusParser::ParseFocusMap(std::shared_ptr<AudioXmlNode> curNode, const std::string &curStream,
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
-    xmlNode *currNode = node;
-    while (currNode != nullptr) {
-        if (currNode->type == XML_ELEMENT_NODE) {
-            if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_table"))) {
-                AUDIO_DEBUG_LOG("node type: Element, name: %s", currNode->name);
-                ParseFocusChildrenMap(currNode->children, curStream, focusMap);
-            }
+    while (curNode->IsNodeValid()) {
+        if (curNode->CompareName("focus_table")) {
+            AUDIO_DEBUG_LOG("node type: Element, name: %s", curNode->GetName().c_str());
+            ParseFocusChildrenMap(curNode->GetChildrenNode(), curStream, focusMap);
         }
-        currNode = currNode->next;
+        curNode->MoveToNext();
     }
 }
 
@@ -306,7 +302,7 @@ void AudioFocusParser::ParseAllowedStreams(std::shared_ptr<AudioXmlNode> curNode
 {
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("focus_type")) {
-            AddAllowedFocusEntry(currNode, curStream, focusMap);
+            AddAllowedFocusEntry(curNode->GetCopyNode(), curStream, focusMap);
         }
         curNode->MoveToNext();
     }

@@ -18,6 +18,7 @@
 
 #include "audio_usage_strategy_parser.h"
 #include "media_monitor_manager.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,7 +53,7 @@ bool AudioUsageStrategyParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNo
     for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
         if (curNode->CompareName("adapter")) {
             std::string pValueStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", pValueStr) == SUCCESS, "get name fail");
+            CHECK_AND_RETURN_RET_LOG(curNode->GetProp("name", pValueStr) == SUCCESS, false, "get name fail");
             if (pValueStr == "streamUsage") {
                 ParserStreamUsageList(curNode->GetChildrenNode());
             } else if (pValueStr == "sourceType") {

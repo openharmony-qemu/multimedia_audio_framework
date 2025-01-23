@@ -19,6 +19,7 @@
 
 #include "audio_policy_parser.h"
 #include "audio_utils.h"
+#include "audio_errors.h"
 
 #include <sstream>
 
@@ -580,7 +581,7 @@ void AudioPolicyParser::ParseGlobalConfigs(std::shared_ptr<AudioXmlNode> curNode
                     ParseDefaultMaxInstances(curNode->GetCopyNode());
                     break;
                 default:
-                    ParseGlobalConfigs(curNode->MoveToChildren());
+                    ParseGlobalConfigs(curNode->GetChildrenNode());
                     break;
             }
         }
@@ -678,7 +679,7 @@ void AudioPolicyParser::ParseOutputMaxInstances(std::shared_ptr<AudioXmlNode> cu
     globalConfigs_.outputConfigInfos_ = configInfos;
 }
 
-void AudioPolicyParser::ParseInputMaxInstances(xmlNode &node)
+void AudioPolicyParser::ParseInputMaxInstances(std::shared_ptr<AudioXmlNode> curNode)
 {
     curNode_->MoveToChildren();
     std::list<ConfigInfo> configInfos;

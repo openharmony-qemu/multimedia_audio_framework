@@ -162,20 +162,20 @@ int32_t AudioVolumeParser::ParseStreamVolumeInfoAttr(std::shared_ptr<AudioXmlNod
     CHECK_AND_RETURN_RET_LOG(curNode->GetProp("minidx", pValueStr) == SUCCESS,
         ERR_INVALID_PARAM, "invalid minidx parameter");
     CHECK_AND_RETURN_RET_LOG(StringConverter<int32_t>(pValueStr, streamVolInfo->minLevel), ERROR,
-        "convert streamVolInfo->minLevel fail!")
-    AUDIO_DEBUG_LOG("minidx: %{public}d", atoi(streamVolInfo->minLevel));
+        "convert streamVolInfo->minLevel fail!");
+    AUDIO_DEBUG_LOG("minidx: %{public}d", streamVolInfo->minLevel);
 
     CHECK_AND_RETURN_RET_LOG(curNode->GetProp("maxidx", pValueStr) == SUCCESS,
         ERR_INVALID_PARAM, "invalid maxidx parameter");
     CHECK_AND_RETURN_RET_LOG(StringConverter<int32_t>(pValueStr, streamVolInfo->maxLevel), ERROR,
-        "convert streamVolInfo->maxLevel fail!")
-    AUDIO_DEBUG_LOG("maxidx: %{public}d", atoi(streamVolInfo->maxLevel));
+        "convert streamVolInfo->maxLevel fail!");
+    AUDIO_DEBUG_LOG("maxidx: %{public}d", streamVolInfo->maxLevel);
 
     CHECK_AND_RETURN_RET_LOG(curNode->GetProp("defaultidx", pValueStr) == SUCCESS,
         ERR_INVALID_PARAM, "invalid defaultidx parameter");
     CHECK_AND_RETURN_RET_LOG(StringConverter<int32_t>(pValueStr, streamVolInfo->defaultLevel), ERROR,
-        "convert streamVolInfo->defaultLevel fail!")
-    AUDIO_DEBUG_LOG("defaultidx: %{public}d", atoi(streamVolInfo->defaultLevel));
+        "convert streamVolInfo->defaultLevel fail!");
+    AUDIO_DEBUG_LOG("defaultidx: %{public}d", streamVolInfo->defaultLevel);
 
     return AUDIO_OK;
 }

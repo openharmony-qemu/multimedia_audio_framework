@@ -45,8 +45,8 @@ bool AudioStrategyRouterParser::LoadConfiguration()
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         return false;
     }
-    bool ret = ParseInternal(curNode_->GetCopyNode());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio strategy router xml parse failed.");
+    bool result = ParseInternal(curNode_->GetCopyNode());
+    CHECK_AND_RETURN_RET_LOG(result, false, "Audio strategy router xml parse failed.");
     return true;
 }
 
@@ -64,7 +64,7 @@ bool AudioStrategyRouterParser::ParseInternal(std::shared_ptr<AudioXmlNode> curN
         if (curNode->CompareName("strategy")) {
             ParserStrategyInfo(curNode->GetCopyNode());
         } else {
-            ParseInternal(curNode->MoveToChildren());
+            ParseInternal(curNode->GetChildrenNode());
         }
     }
     return true;

@@ -82,7 +82,6 @@ private:
     void SplitStringToList(std::string &str, std::list<std::string> &result);
     void SplitChannelStringToSet(std::string &str, std::set<uint32_t> &result);
 
-    std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
     AdaptersType GetAdaptersType(const std::string &adapterClass);
 
     std::string GetAudioModuleInfoName(std::string &pipeInfoName, std::list<AudioPipeDeviceInfo> &deviceInfos);

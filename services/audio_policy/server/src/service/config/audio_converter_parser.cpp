@@ -109,7 +109,7 @@ AudioConverterParser::AudioConverterParser()
     AUDIO_INFO_LOG("AudioConverterParser created");
 }
 
-static void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlNode> &curNode)
+static void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
 {
     std::string libName;
     std::string libPath;
@@ -118,7 +118,7 @@ static void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlN
     result.library = {libName, libPath};
 }
 
-static void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> &curNode)
+static void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
 {
     if (!curNode->HasProp("out_channel_layout")) {
         AUDIO_ERR_LOG("missing information: config has no out_channel_layout attribute, set to default STEREO");
