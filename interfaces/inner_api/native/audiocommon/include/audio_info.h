@@ -344,6 +344,21 @@ struct A2dpDeviceConfigInfo {
     bool mute = false;
 };
 
+enum PlayerType : int32_t {
+    PLAYER_TYPE_DEFAULT = 0,
+
+    // AudioFramework internal type.
+    PLAYER_TYPE_OH_AUDIO_RENDERER = 100,
+    PLAYER_TYPE_ARKTS_AUDIO_RENDERER = 101,
+    PLAYER_TYPE_CJ_AUDIO_RENDERER = 102,
+    PLAYER_TYPE_OPENSL_ES = 103,
+
+    // Indicates a type from the system internals, but not from the AudioFramework.
+    PLAYER_TYPE_SOUND_POOL = 1000,
+    PLAYER_TYPE_AV_PLAYER = 1001,
+    PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
+};
+
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -359,6 +374,11 @@ struct AudioRendererInfo {
     AudioSampleFormat format = SAMPLE_S16LE;
     bool isOffloadAllowed = true;
     bool isSatellite = false;
+    PlayerType playerType = PLAYER_TYPE_DEFAULT;
+    // Expected length of audio stream to be played.
+    // Currently only used for making decisions on fade-in and fade-out strategies.
+    // 0 is the default value, it is considered that no
+    uint64_t expectedPlaybackDurationBytes = 0;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -374,7 +394,9 @@ struct AudioRendererInfo {
             && parcel.WriteUint8(encodingType)
             && parcel.WriteUint64(channelLayout)
             && parcel.WriteInt32(format)
-            && parcel.WriteBool(isOffloadAllowed);
+            && parcel.WriteBool(isOffloadAllowed)
+            && parcel.WriteInt32(playerType)
+            && parcel.WriteUint64(expectedPlaybackDurationBytes);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -391,6 +413,8 @@ struct AudioRendererInfo {
         channelLayout = parcel.ReadUint64();
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         isOffloadAllowed = parcel.ReadBool();
+        playerType = static_cast<PlayerType>(parcel.ReadInt32());
+        expectedPlaybackDurationBytes = parcel.ReadUint64();
     }
 };
 
