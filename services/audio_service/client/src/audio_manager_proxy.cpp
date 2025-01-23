@@ -20,6 +20,7 @@
 
 #include <cinttypes>
 
+#include <audio_errors.h>
 #include "audio_system_manager.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
@@ -1388,6 +1389,29 @@ void AudioManagerProxy::CheckHibernateState(bool onHibernate)
         static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_HIBERNATE_STATE), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "CheckHibernateState failed, error: %{public}d", error);
     return;
+}
+
+int32_t AudioManagerProxy::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t result = ERROR;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, result, "WriteInterfaceToken failed");
+
+    data.WriteUint32(sessionId);
+
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS), data,
+        reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, result, "get transaction id failed, error: %d", error);
+
+    result = reply.ReadInt32();
+    isStandby = reply.ReadBool();
+    enterStandbyTime = reply.ReadInt64();
+
+    return result;
 }
 
 int32_t AudioManagerProxy::GenerateSessionId(uint32_t &sessionId)

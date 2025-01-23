@@ -2163,6 +2163,21 @@ int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effec
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t AudioServer::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
+{
+    Trace trace("AudioServer::GetStandbyStatus:" + std::to_string(sessionId));
+
+    // only for native sa calling
+    auto type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(IPCSkeleton::GetCallingTokenID());
+    bool isAllowed = type == Security::AccessToken::TOKEN_NATIVE;
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    isAllowed = isAllowed || type == Security::AccessToken::TOKEN_SHELL; // for DT
+#endif
+    CHECK_AND_RETURN_RET_LOG(isAllowed, ERR_INVALID_OPERATION, "not allowed");
+
+    return AudioService::GetInstance()->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+}
+
 int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();

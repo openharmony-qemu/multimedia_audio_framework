@@ -72,6 +72,8 @@ public:
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
     void CheckAndWriterRenderStreamStandbySysEvent(bool standbyEnable);
 
+    int32_t GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime);
+
     int32_t Init();
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
@@ -165,6 +167,7 @@ private:
     int64_t startedTime_ = 0;
     uint32_t underrunCount_ = 0;
     std::atomic<uint32_t> standByCounter_ = 0;
+    int64_t enterStandbyTime_ = 0;
     int64_t lastWriteTime_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
