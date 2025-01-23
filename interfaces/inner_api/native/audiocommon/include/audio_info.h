@@ -365,7 +365,7 @@ struct A2dpDeviceConfigInfo {
 };
 
 enum CallerFlag : int32_t {
-    DEFAULT = 0,
+    DEFAULT_CALLER_FLAG = 0,
     OH_AUDIO_RENDERER = 100,
     NAPI_AUDIO_RENDERER = 101,
     CJ_AUDIO_RENDERER = 102,
@@ -389,7 +389,8 @@ struct AudioRendererInfo {
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
     bool isOffloadAllowed = true;
-    CallerFlag callerFlag = DEFAULT;
+    bool isSatellite = false;
+    CallerFlag callerFlag = DEFAULT_CALLER_FLAG;
     // Expected length of audio stream to be played.
     // Currently only used for making decisions on fade-in and fade-out strategies.
     // 0 is the default value, it is considered that no
