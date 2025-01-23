@@ -230,7 +230,6 @@ private:
     int32_t maxEffectChainCount_ = 1;
     uint32_t maxSessionID_ = 0;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
-    uint64_t channelLayout_ = DEFAULT_MCH_NUM_CHANNELLAYOUT;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

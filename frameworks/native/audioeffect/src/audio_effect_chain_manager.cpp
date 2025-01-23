@@ -758,7 +758,6 @@ int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     uint32_t tmpChannelCount = DEFAULT_NUM_CHANNEL;
     uint64_t tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    bool channelUpdateFlag = false;
     for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
         std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); ++s) {
@@ -768,15 +767,10 @@ int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels
                 !ExistAudioEffectChainInner(it->first, info.sceneMode)) {
                 tmpChannelCount = info.channels;
                 tmpChannelLayout = info.channelLayout;
-                channelUpdateFlag = true;
             }
         }
     }
-    if (channelUpdateFlag) {
-        channels = tmpChannelCount;
-        channelLayout = tmpChannelLayout;
-    }
-    if (channelLayout != channelLayout_) {
+    if (tmpChannelLayout != channelLayout) {
         if (!isInitialized_) {
             if (initializedLogFlag_) {
                 AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
@@ -788,15 +782,17 @@ int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels
 
         effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
         uint64_t* tempChannelLayout = (uint64_t *)(effectHdiInput_ + 1);
-        *tempChannelLayout = channelLayout;
+        *tempChannelLayout = tmpChannelLayout;
         AUDIO_PRERELEASE_LOGI("set hdi channel: %{public}d", channels);
         int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
         if (ret != SUCCESS) {
             channels = DEFAULT_MCH_NUM_CHANNEL;
             channelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
-            AUDIO_INFO_LOG("set hdi channel change to: %{public}d, ret: %{public}d", channels, ret);
+        } else {
+            channels = tmpChannelCount;
+            channelLayout = tmpChannelLayout;
         }
-        channelLayout_ = channelLayout;
+        AUDIO_INFO_LOG("set hdi channel change to: %{public}d, ret: %{public}d", channels, ret);
     }
     return SUCCESS;
 }
