@@ -83,6 +83,7 @@ void AudioRoutingManagerListenerStub::SetDistributedRoutingRoleCallback(
 
 void AudioRoutingManagerListenerStub::SetAudioDeviceRefinerCallback(const std::weak_ptr<AudioDeviceRefiner> &callback)
 {
+    std::lock_guard<std::mutex> lock(deviceRefinerCallbackMutex_);
     audioDeviceRefinerCallback_ = callback;
     std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
     CHECK_AND_RETURN_LOG(audioDeviceRefinerCallback != nullptr, "audioDeviceRefinerCallback_ is nullptr");
@@ -142,9 +143,11 @@ int32_t AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefined(
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
     int32_t clientUid, AudioPipeType audioPipeType)
 {
+    std::unique_lock<std::mutex> lock(deviceRefinerCallbackMutex_);
     std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr,
         ERR_CALLBACK_NOT_REGISTERED, "audioDeviceRefinerCallback_ is nullptr");
+    lock.unlock();
 
     return audioDeviceRefinerCallback->OnAudioOutputDeviceRefined(descs, routerType, streamUsage, clientUid,
         audioPipeType);
@@ -154,9 +157,11 @@ int32_t AudioRoutingManagerListenerStub::OnAudioInputDeviceRefined(
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
     int32_t clientUid, AudioPipeType audioPipeType)
 {
+    std::unique_lock<std::mutex> lock(deviceRefinerCallbackMutex_);
     std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr, ERR_CALLBACK_NOT_REGISTERED,
         "audioDeviceRefinerCallback_ is nullptr");
+    lock.unlock();
 
     return audioDeviceRefinerCallback->OnAudioInputDeviceRefined(descs, routerType,
         sourceType, clientUid, audioPipeType);
