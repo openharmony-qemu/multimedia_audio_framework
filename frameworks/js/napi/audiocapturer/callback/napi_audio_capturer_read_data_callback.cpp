@@ -168,7 +168,7 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
 
 void NapiCapturerReadDataCallback::CaptureReadDataTsfnFinalize(napi_env env, void *data, void *hint)
 {
-    AUDIO_INFO_LOG("CaptureReadDataTsfnFinalize: safe thread resource release.");
+    AUDIO_DEBUG_LOG("CaptureReadDataTsfnFinalize: safe thread resource release.");
 }
 
 void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(
