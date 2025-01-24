@@ -38,6 +38,7 @@ public:
 private:
     void OnAudioOutputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply);
     void OnAudioInputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply);
+    std::mutex deviceRefinerCallbackMutex_;
     std::weak_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_;
     std::weak_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback_;
 };
