@@ -83,6 +83,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
     int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
@@ -724,6 +725,12 @@ int32_t FastAudioRendererSinkInner::GetVolume(float &left, float &right)
 int32_t FastAudioRendererSinkInner::SetVoiceVolume(float volume)
 {
     AUDIO_ERR_LOG("FastAudioRendererSink SetVoiceVolume not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t FastAudioRendererSinkInner::GetAudioScene()
+{
+    AUDIO_ERR_LOG("FastAudioRendererSink GetAudioScene not supported.");
     return ERR_NOT_SUPPORTED;
 }
 

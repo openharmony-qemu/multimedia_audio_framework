@@ -75,6 +75,7 @@ public:
 
     virtual int32_t GetTransactionId(uint64_t *transactionId) = 0;
 
+    virtual int32_t GetAudioScene() = 0;
     virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) = 0;
     virtual int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) = 0;
 
