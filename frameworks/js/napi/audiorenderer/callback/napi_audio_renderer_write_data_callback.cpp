@@ -207,7 +207,7 @@ void NapiRendererWriteDataCallback::SafeJsCallbackWriteDataWork(
 
 void NapiRendererWriteDataCallback::WriteDataTsfnFinalize(napi_env env, void *data, void *hint)
 {
-    AUDIO_INFO_LOG("WriteDataTsfnFinalize: safe thread resource release.");
+    AUDIO_DEBUG_LOG("WriteDataTsfnFinalize: safe thread resource release.");
 }
 
 void NapiRendererWriteDataCallback::WorkCallbackRendererWriteDataInner(RendererWriteDataJsCallback *event)
@@ -220,7 +220,6 @@ void NapiRendererWriteDataCallback::WorkCallbackRendererWriteDataInner(RendererW
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "%{public}s scope is nullptr", request.c_str());
-    AUDIO_INFO_LOG("SafeJsCallbackWriteDataWork: safe js callback working.");
 
     do {
         napi_value jsCallback = nullptr;
