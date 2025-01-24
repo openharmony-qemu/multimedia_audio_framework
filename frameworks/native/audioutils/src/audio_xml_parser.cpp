@@ -188,6 +188,7 @@ AudioXmlNodeInner::~AudioXmlNodeInner()
 {
     if (xmlFuncHandle_ != nullptr && doc_ != nullptr) {
         xmlFuncHandle_->xmlFreeDoc(doc_);
+        xmlFuncHandle_->xmlCleanupParser();
         doc_ = nullptr;
     }
     curNode_ = nullptr;
@@ -199,7 +200,7 @@ int32_t AudioXmlNodeInner::Config(const char *fileName, const char *encoding, in
 {
     CHECK_AND_RETURN_RET_LOG(xmlFuncHandle_ != nullptr, ERROR, "xmlFuncHandle is nullptr!");
     doc_ = xmlFuncHandle_->xmlReadFile(fileName, encoding, options);
-    CHECK_AND_RETURN_RET_LOG(doc_ != nullptr, ERROR, "xmlReadFile failed!");
+    CHECK_AND_RETURN_RET_LOG(doc_ != nullptr, ERROR, "xmlReadFile failed! fileName :%{public}s", fileName);
     curNode_ = xmlFuncHandle_->xmlDocGetRootElement(doc_);
     CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, ERROR, "xmlDocGetRootElement failed!"); 
     return SUCCESS;
@@ -241,7 +242,6 @@ int32_t AudioXmlNodeInner::GetProp(const char *propName, std::string &result)
     xmlChar *tempValue = xmlFunc(curNode_, reinterpret_cast<const xmlChar*>(propName));
     CHECK_AND_RETURN_RET_LOG(tempValue != nullptr, ERROR, "GetProp Fail! curNode has no prop: %{public}s", propName);
     result = reinterpret_cast<char*>(tempValue);
-    xmlFuncHandle_->xmlFree(tempValue);
     return SUCCESS;
 }
 
@@ -251,13 +251,12 @@ int32_t AudioXmlNodeInner::GetContent(std::string &result)
     xmlChar *tempContent = xmlFuncHandle_->xmlNodeGetContent(curNode_);
     CHECK_AND_RETURN_RET_LOG(tempContent != nullptr, ERROR, "GetContent Fail!");
     result = reinterpret_cast<char*>(tempContent);
-    xmlFuncHandle_->xmlFree(tempContent);
     return SUCCESS;
 }
 
 std::string AudioXmlNodeInner::GetName()
 {
-    return reinterpret_cast<char*>(curNode_->name);
+    return reinterpret_cast<char*>(const_cast<xmlChar*>(curNode_->name));
 }
 
 void AudioXmlNodeInner::FreeDoc()
@@ -265,6 +264,7 @@ void AudioXmlNodeInner::FreeDoc()
     CHECK_AND_RETURN_LOG(xmlFuncHandle_ != nullptr, "xmlFuncHandle is nullptr!");
     if (doc_ != nullptr) {
         xmlFuncHandle_->xmlFreeDoc(doc_);
+        doc_ = nullptr;
     }
 }
 

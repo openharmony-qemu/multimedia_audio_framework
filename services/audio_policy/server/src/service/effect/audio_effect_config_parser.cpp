@@ -287,14 +287,13 @@ static void LoadEffectChain(OriginalEffectConfig &result, std::shared_ptr<AudioX
         if (curNode->CompareName("effectChain")) {
             std::string label = "";
             if (curNode->HasProp("label")) {
-                CHECK_AND_RETURN_LOG(curNode->GetProp("label", label) == SUCCESS, "getProp label fail");
+                curNode->GetProp("label", label);
             }
-            if (curNode->HasProp("name")) {
+            if (!curNode->HasProp("name")) {
                 AUDIO_WARNING_LOG("missing information: effectChain has no name attribute");
             } else {
                 std::string peffectChainName;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("name", peffectChainName) == SUCCESS,
-                    "getProp peffectChainName fail");
+                curNode->GetProp("name", peffectChainName);
                 EffectChain tmp = {peffectChainName, apply, label};
                 result.effectChains.push_back(tmp);
                 LoadApply(result, curNode->GetCopyNode(), segInx);
@@ -487,7 +486,7 @@ static void LoadPreProcessCfg(OriginalEffectConfig &result, std::shared_ptr<Audi
             std::string maxExtraNumStr;
             CHECK_AND_RETURN_LOG(curNode->GetProp("maxExtSceneNumber", maxExtraNumStr) == SUCCESS,
                 "getProp maxExtSceneNumber fail");
-            CHECK_AND_RETURN_LOG(StringConverter(maxExtraNumStr, result.preProcess.maxExtSceneNum) == SUCCESS,
+            CHECK_AND_RETURN_LOG(StringConverter(maxExtraNumStr, result.preProcess.maxExtSceneNum),
                 "convert maxExtraNumStr: %{public}s fail!", maxExtraNumStr.c_str());
             LoadPreStreamScenesCheck(result.preProcess.normalScenes, curNode->GetCopyNode(),
                 countPreSecondNode[INDEX_PRE_NORMAL_SCENE]);
@@ -532,7 +531,7 @@ static void LoadStreamUsageMapping(OriginalEffectConfig &result, std::shared_ptr
                 AUDIO_WARNING_LOG("missing information: streamUsage misses attribute");
             } else {
                 CHECK_AND_RETURN_LOG(curNode->GetProp("name", tmp.name) == SUCCESS, "get tmp.name fail");
-                CHECK_AND_RETURN_LOG(curNode->GetProp("name", tmp.sceneType) == SUCCESS, "get tmp.sceneType fail");
+                CHECK_AND_RETURN_LOG(curNode->GetProp("scene", tmp.sceneType) == SUCCESS, "get tmp.sceneType fail");
                 result.postProcess.sceneMap.push_back(tmp);
             }
         } else {
@@ -722,7 +721,7 @@ static void LoadPostProcessCfg(OriginalEffectConfig &result, std::shared_ptr<Aud
             std::string maxExtraNumStr;
             CHECK_AND_RETURN_LOG(curNode->GetProp("maxExtSceneNumber", maxExtraNumStr) == SUCCESS,
                 "getProp maxExtSceneNumber fail");
-            CHECK_AND_RETURN_LOG(StringConverter(maxExtraNumStr, result.postProcess.maxExtSceneNum) == SUCCESS,
+            CHECK_AND_RETURN_LOG(StringConverter(maxExtraNumStr, result.postProcess.maxExtSceneNum),
                 "convert maxExtraNumStr: %{public}s fail!", maxExtraNumStr.c_str());
             LoadPostStreamScenesCheck(result.postProcess.normalScenes, curNode->GetCopyNode(),
                 countPostSecondNode[INDEX_POST_NORMAL_SCENE]);

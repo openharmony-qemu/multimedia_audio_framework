@@ -217,7 +217,7 @@ void AudioFocusParser::ParseStreams(std::shared_ptr<AudioXmlNode> curNode,
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             std::string typeStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("value", typeStr), "get prop value fail!");
+            CHECK_AND_RETURN_LOG(curNode->GetProp("value", typeStr) == SUCCESS, "get prop value fail!");
             std::map<std::string, AudioFocusType>::iterator it = audioFocusMap.find(typeStr);
             if (it != audioFocusMap.end()) {
                 AUDIO_DEBUG_LOG("stream type: %{public}s",  typeStr.c_str());
@@ -256,7 +256,7 @@ void AudioFocusParser::ParseRejectedStreams(std::shared_ptr<AudioXmlNode> curNod
 {
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("focus_type")) {
-            AddRejectedFocusEntry(currNode, curStream, focusMap);
+            AddRejectedFocusEntry(curNode->GetCopyNode(), curStream, focusMap);
         }
         curNode->MoveToNext();
     }
@@ -269,10 +269,10 @@ void AudioFocusParser::AddAllowedFocusEntry(std::shared_ptr<AudioXmlNode> curNod
     std::string aTargetStr;
     std::string aTypeStr;
     std::string isForcedStr;
-    CHECK_AND_RETURN_LOG(curNode->GetProp("value", newStreamStr), "get prop value fail!");
-    CHECK_AND_RETURN_LOG(curNode->GetProp("action_type", aTargetStr), "get prop action_type fail!");
-    CHECK_AND_RETURN_LOG(curNode->GetProp("action_on", aTypeStr), "get prop action_on fail!");
-    CHECK_AND_RETURN_LOG(curNode->GetProp("is_forced", isForcedStr), "get prop is_forced fail!");
+    CHECK_AND_RETURN_LOG(curNode->GetProp("value", newStreamStr) == SUCCESS, "get prop value fail!");
+    CHECK_AND_RETURN_LOG(curNode->GetProp("action_on", aTargetStr) == SUCCESS, "get prop action_on fail!");
+    CHECK_AND_RETURN_LOG(curNode->GetProp("action_type", aTypeStr) == SUCCESS, "get prop action_type fail!");
+    CHECK_AND_RETURN_LOG(curNode->GetProp("is_forced", isForcedStr) == SUCCESS, "get prop is_forced fail!");
 
     std::map<std::string, AudioFocusType>::iterator it1 = audioFocusMap.find(newStreamStr);
     std::map<std::string, ActionTarget>::iterator it2 = targetMap.find(aTargetStr);

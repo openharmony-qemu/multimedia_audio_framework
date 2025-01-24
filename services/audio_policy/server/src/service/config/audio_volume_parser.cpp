@@ -207,12 +207,12 @@ void AudioVolumeParser::ParseVolumePoints(std::shared_ptr<AudioXmlNode> curNode,
             struct VolumePoint volumePoint;
             std::string pValueStr;
             CHECK_AND_RETURN_LOG(curNode->GetProp("idx", pValueStr) == SUCCESS, "get idx fail");
-            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, volumePoint.index) == SUCCESS,
+            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, volumePoint.index),
                 "convert volumePoint.index fail!");
             AUDIO_DEBUG_LOG("idx: %{public}d", volumePoint.index);
 
             CHECK_AND_RETURN_LOG(curNode->GetProp("decibel", pValueStr) == SUCCESS, "get decibel fail");
-            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, volumePoint.dbValue) == SUCCESS,
+            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, volumePoint.dbValue),
                 "convert volumePoint.dbValue fail!");
             AUDIO_DEBUG_LOG("decibel: %{public}d", volumePoint.dbValue);
 

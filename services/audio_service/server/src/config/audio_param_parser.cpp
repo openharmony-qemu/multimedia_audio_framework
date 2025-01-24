@@ -18,6 +18,7 @@
 
 #include "audio_service_log.h"
 #include "config/audio_param_parser.h"
+#include "audio_errors.h"
 #ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"
 #endif
@@ -109,7 +110,7 @@ void AudioParamParser::ParseMainKey(std::shared_ptr<AudioXmlNode> curNode,
 {
     std::string mainKeyName;
     CHECK_AND_RETURN_LOG(curNode->GetProp("name", mainKeyName) == SUCCESS,
-        "get mainKeyName: %{public}s fail", mainKeyName);
+        "get mainKeyName: %{public}s fail", mainKeyName.c_str());
 
     curNode->MoveToChildren();
     while (curNode->IsNodeValid()) {

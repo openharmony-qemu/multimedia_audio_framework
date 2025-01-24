@@ -286,7 +286,7 @@ void AudioPolicyParser::ParseAdapter(std::shared_ptr<AudioXmlNode> curNode)
     adapterInfoMap_[adaptersType] = {};
 
     std::string supportScene;
-    CHECK_AND_RETURN_LOG(curNode->GetProp("supportScene", supportScene) == SUCCESS, "get prop supportScene fail!");
+    curNode->GetProp("supportSelectScene", supportScene);
 
     AudioAdapterInfo adapterInfo = {};
     adapterInfo.adapterName_ = adapterName;
@@ -321,10 +321,10 @@ void AudioPolicyParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode, AudioA
         if (curNode->IsElementNode()) {
             PipeInfo pipeInfo {};
 
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", pipeInfo.name_) == SUCCESS, "get prop name fail!");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("role", pipeInfo.pipeRole_) == SUCCESS, "get prop role fail!");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("flags", pipeInfo.pipeFlags_) == SUCCESS, "get prop flags fail!");
-
+            int32_t ret = 0;
+            curNode->GetProp("name", pipeInfo.name_);
+            curNode->GetProp("role", pipeInfo.pipeRole_);
+            curNode->GetProp("flags", pipeInfo.pipeFlags_);
             ParsePipeInfos(curNode->GetCopyNode(), pipeInfo);
             pipeInfos.push_back(pipeInfo);
         }
@@ -350,14 +350,11 @@ void AudioPolicyParser::ParsePipeInfos(std::shared_ptr<AudioXmlNode> curNode, Pi
         if (curNode->IsElementNode()){
             switch (GetPipeInfoTypeAsInt(curNode)) {
                 case PipeType::PA_PROP:
-                    CHECK_AND_RETURN_LOG(curNode->GetProp("lib", pipeInfo.lib_) == SUCCESS, "get pipeInfo fail!");
-                    CHECK_AND_RETURN_LOG(curNode->GetProp("role", pipeInfo.paPropRole_) == SUCCESS, "get role fail!");
-                    CHECK_AND_RETURN_LOG(curNode->GetProp("fixed_latency", pipeInfo.fixedLatency_) == SUCCESS,
-                        "get fixed_latency fail!");
-                    CHECK_AND_RETURN_LOG(curNode->GetProp("render_in_idle_state",
-                        pipeInfo.renderInIdleState_) == SUCCESS, "get render_in_idle_state fail!");
-                    CHECK_AND_RETURN_LOG(curNode->GetProp("moduleName", pipeInfo.moduleName_) == SUCCESS,
-                        "get moduleName fail!");
+                    curNode->GetProp("lib", pipeInfo.lib_);
+                    curNode->GetProp("role", pipeInfo.paPropRole_);
+                    curNode->GetProp("fixed_latency", pipeInfo.fixedLatency_);
+                    curNode->GetProp("render_in_idle_state", pipeInfo.renderInIdleState_);
+                    curNode->GetProp("moduleName", pipeInfo.moduleName_);
                     break;
                 case PipeType::STREAM_PROP:
                     ParseStreamProps(curNode->GetCopyNode(), pipeInfo);
@@ -406,29 +403,26 @@ void AudioPolicyParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> curNode, 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             StreamPropInfo streamPropInfo = {};
-            CHECK_AND_RETURN_LOG(curNode->GetProp("format", streamPropInfo.format_) == SUCCESS, "get format fail!");
+            curNode->GetProp("format", streamPropInfo.format_);
+
             std::string sampleRateStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("sampleRates", sampleRateStr) == SUCCESS, "get sampleRates fail!");
-            CHECK_AND_RETURN_LOG(StringConverter(sampleRateStr, streamPropInfo.sampleRate_),
-                "convert invalid sampleRate: %{public}s", sampleRateStr.c_str());
+            curNode->GetProp("sampleRates", sampleRateStr);
+            StringConverter(sampleRateStr, streamPropInfo.sampleRate_)
             pipeInfo.sampleRates_.push_back(streamPropInfo.sampleRate_);
 
             std::string periodInMsStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("periodInMs", periodInMsStr) == SUCCESS, "get periodInMs fail!");
-            CHECK_AND_RETURN_LOG(StringConverter(periodInMsStr, streamPropInfo.periodInMs_),
-                "convert invalid periodInMsStr: %{public}s", periodInMsStr.c_str());
+            curNode->GetProp("periodInMs", periodInMsStr);
+            StringConverter(periodInMsStr, streamPropInfo.periodInMs_);
 
             std::string channelLayoutStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("channelLayout", channelLayoutStr) == SUCCESS,
-                "get channelLayout fail!");
+            curNode->GetProp("channelLayout", channelLayoutStr);
             streamPropInfo.channelLayout_ = layoutStrToChannels[channelLayoutStr];
             pipeInfo.channelLayouts_.push_back(streamPropInfo.channelLayout_);
 
             std::string bufferSizeStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("bufferSize", bufferSizeStr) == SUCCESS, "get bufferSize fail!");
-            if (bufferSizeStr != "") {
-                CHECK_AND_RETURN_LOG(StringConverter(bufferSizeStr, streamPropInfo.bufferSize_),
-                    "convert invalid bufferSizeStr: %{public}s", bufferSizeStr.c_str());
+            int32_t ret = curNode->GetProp("bufferSize", bufferSizeStr);
+            if (ret == SUCCESS) {
+                StringConverter(bufferSizeStr, streamPropInfo.bufferSize_);
             } else {
                 streamPropInfo.bufferSize_ = formatStrToEnum[streamPropInfo.format_] * streamPropInfo.sampleRate_ *
                     streamPropInfo.periodInMs_ * streamPropInfo.channelLayout_ / AUDIO_MS_PER_S;
@@ -448,8 +442,8 @@ void AudioPolicyParser::ParseConfigs(std::shared_ptr<AudioXmlNode> curNode, Pipe
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             ConfigInfo configInfo = {};
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", configInfo.name_) == SUCCESS, "get prop name fail!");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("value", configInfo.value_) == SUCCESS, "get prop value fail!");
+            curNode->GetProp("name", configInfo.name_);
+            curNode->GetProp("value", configInfo.value_);
             configInfos.push_back(configInfo);
             HandleConfigFlagAndUsage(configInfo, pipeInfo);
         }
@@ -484,18 +478,13 @@ void AudioPolicyParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode, Audi
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             AudioPipeDeviceInfo deviceInfo = {};
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", deviceInfo.name_) == SUCCESS,
-                "get prop deviceInfo.name_ fail!");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("type", deviceInfo.type_) == SUCCESS,
-                "get prop deviceInfo.type_ fail!");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("pin", deviceInfo.pin_) == SUCCESS,
-                "get prop deviceInfo.pin_ fail!");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("role", deviceInfo.role_) == SUCCESS,
-                "get prop deviceInfo.role_ fail!");
+            curNode->GetProp("name", deviceInfo.name_);
+            curNode->GetProp("type", deviceInfo.type_);
+            curNode->GetProp("pin", deviceInfo.pin_);
+            curNode->GetProp("role", deviceInfo.role_);
 
             std::string supportPipeInStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("supportPipes", supportPipeInStr) == SUCCESS,
-                "get prop supportPipes fail!");
+            curNode->GetProp("supportPipes", supportPipeInStr);
             SplitStringToList(supportPipeInStr, deviceInfo.supportPipes_);
             deviceInfos.push_back(deviceInfo);
         }
@@ -564,12 +553,9 @@ void AudioPolicyParser::ParseGlobalConfigs(std::shared_ptr<AudioXmlNode> curNode
         if (curNode->IsElementNode()) {
             switch (GetGlobalConfigTypeAsInt(curNode)) {
                 case GlobalConfigType::DEFAULT_OUTPUT:
-                    CHECK_AND_RETURN_LOG(curNode->GetProp("adapter", globalConfigs_.adapter_) == SUCCESS,
-                        "get globalConfigs_.adapter_ fail!");
-                    CHECK_AND_RETURN_LOG(curNode->GetProp("pipe", globalConfigs_.pipe_) == SUCCESS,
-                        "get globalConfigs_.pipe_ fail!");
-                    CHECK_AND_RETURN_LOG(curNode->GetProp("device", globalConfigs_.device_) == SUCCESS,
-                        "get globalConfigs_.device_ fail!");
+                    curNode->GetProp("adapter", globalConfigs_.adapter_);
+                    curNode->GetProp("pipe", globalConfigs_.pipe_);
+                    curNode->GetProp("device", globalConfigs_.device_);
                     break;
                 case GlobalConfigType::COMMON_CONFIGS:
                     ParseCommonConfigs(curNode->GetCopyNode());
@@ -669,9 +655,9 @@ void AudioPolicyParser::ParseOutputMaxInstances(std::shared_ptr<AudioXmlNode> cu
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             ConfigInfo configInfo = {};
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", configInfo.name_) == SUCCESS, "get configInfo.name_ fail");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("flag", configInfo.type_) == SUCCESS, "get configInfo.type_ fail");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("value", configInfo.value_) == SUCCESS, "get configInfo.value_ fail");
+            curNode->GetProp("name", configInfo.name_);
+            curNode->GetProp("flag", configInfo.type_);
+            curNode->GetProp("value", configInfo.value_);
             configInfos.push_back(configInfo);
         }
         curNode->MoveToNext();
@@ -681,18 +667,18 @@ void AudioPolicyParser::ParseOutputMaxInstances(std::shared_ptr<AudioXmlNode> cu
 
 void AudioPolicyParser::ParseInputMaxInstances(std::shared_ptr<AudioXmlNode> curNode)
 {
-    curNode_->MoveToChildren();
+    curNode->MoveToChildren();
     std::list<ConfigInfo> configInfos;
 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             ConfigInfo configInfo = {};
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", configInfo.name_) == SUCCESS, "get configInfo.name_ fail");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("flag", configInfo.type_) == SUCCESS, "get configInfo.type_ fail");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("value", configInfo.value_) == SUCCESS, "get configInfo.value_ fail");
+            curNode->GetProp("name", configInfo.name_);
+            curNode->GetProp("flag", configInfo.type_);
+            curNode->GetProp("value", configInfo.value_);
             configInfos.push_back(configInfo);
         }
-        curNode_->MoveToNext();
+        curNode->MoveToNext();
     }
     globalConfigs_.inputConfigInfos_ = configInfos;
 }
@@ -705,10 +691,8 @@ void AudioPolicyParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> curNode
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             ConfigInfo configInfo = {};
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", configInfo.name_) == SUCCESS,
-                "get configInfo.name_ fail!");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("value", configInfo.value_) == SUCCESS,
-                "get configInfo.value_ fail!");
+            curNode->GetProp("name", configInfo.name_);
+            curNode->GetProp("value", configInfo.value_);
             configInfos.push_back(configInfo);
             if (configInfo.name_ == "updateRouteSupport") {
                 AUDIO_INFO_LOG("update route support: %{public}s", configInfo.value_.c_str());

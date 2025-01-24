@@ -111,8 +111,8 @@ void AudioToneParser::ParseCustom(std::shared_ptr<AudioXmlNode> curNode,
 {
     AUDIO_DEBUG_LOG("Enter");
     while (curNode->IsNodeValid()) {
-        if (curNode->IsElementNode()) {
-            curNode->MoveToNext()
+        if (!curNode->IsElementNode()) {
+            curNode->MoveToNext();
             continue;
         }
         if (curNode->CompareName("CountryInfo")) {
@@ -122,13 +122,13 @@ void AudioToneParser::ParseCustom(std::shared_ptr<AudioXmlNode> curNode,
                 curNode->MoveToNext();
                 continue;
             }
-            AUDIO_DEBUG_LOG("ParseCustom names %{public}s", pCountryName);
+            AUDIO_DEBUG_LOG("ParseCustom names %{public}s", pCountryName.c_str());
             std::vector<ToneInfoMap*> toneDescriptorMaps;
             std::vector<std::string> cuntryNames = SplitAndTrim(pCountryName);
             for (auto &countryName : cuntryNames) {
                 toneDescriptorMaps.push_back(&customToneDescriptorMap[countryName]);
             }
-            ParseToneInfo(currNode->xmlChildrenNode, toneDescriptorMaps);
+            ParseToneInfo(curNode->GetChildrenNode(), toneDescriptorMaps);
         }
         curNode->MoveToNext();
     }
@@ -176,7 +176,7 @@ void AudioToneParser::ParseToneInfoAttribute(std::shared_ptr<AudioXmlNode> curNo
     int segCnt = 0;
     int segInx = 0;
     while (curNode->IsNodeValid()) {
-        if (curNode->IsElementNode()) {
+        if (!curNode->IsElementNode()) {
             curNode->MoveToNext();
             continue;
         }
@@ -188,20 +188,20 @@ void AudioToneParser::ParseToneInfoAttribute(std::shared_ptr<AudioXmlNode> curNo
             if (pValueStr == "INF") {
                 ltoneDesc->repeatCnt = TONEINFO_INF;
             } else {
-                CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->repeatCnt) == SUCCESS,
+                CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->repeatCnt),
                     "convert ltoneDesc->repeatCnt fail!");
             }
             AUDIO_DEBUG_LOG("ParseToneInfo repeatCnt %{public}d", ltoneDesc->repeatCnt);
         } else if (curNode->CompareName("RepeatSegment")) {
             AUDIO_DEBUG_LOG("RepeatSegment node type: Element, name: RepeatSegment");
             CHECK_AND_RETURN_LOG(curNode->GetProp("value", pValueStr) == SUCCESS, "get value fail");
-            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->repeatSegment) == SUCCESS,
+            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->repeatSegment),
                 "convert ltoneDesc->repeatSegment fail!");
             AUDIO_DEBUG_LOG("ParseToneInfo repeatSegment %{public}d", ltoneDesc->repeatSegment);
         } else if (curNode->CompareName("SegmentCount")) {
             AUDIO_DEBUG_LOG("SegmentCount node type: Element, name: SegmentCount");
             CHECK_AND_RETURN_LOG(curNode->GetProp("value", pValueStr) == SUCCESS, "get value fail");
-            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, segCnt) == SUCCESS,
+            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, segCnt),
                 "convert segCnt fail!");
             ltoneDesc->segmentCnt = segCnt;
             AUDIO_DEBUG_LOG("ParseToneInfo segmentCnt %{public}d", ltoneDesc->segmentCnt);
@@ -223,19 +223,19 @@ void AudioToneParser::ParseToneInfo(std::shared_ptr<AudioXmlNode> curNode,
             curNode->MoveToNext();
             continue;
         }
-        if (curNode->CompareName("ToneInfo")) {
+        if (!curNode->CompareName("ToneInfo")) {
             curNode->MoveToNext();
             continue;
         }
         std::shared_ptr<ToneInfo> ltoneDesc = std::make_shared<ToneInfo>();
         std::string pToneType;
-        if (curNode->Getprop("toneType", pToneType) != SUCCESS) {
+        if (curNode->GetProp("toneType", pToneType) != SUCCESS) {
             AUDIO_DEBUG_LOG("getprop toneType fail");
             curNode->MoveToNext();
             continue;
         }
         int32_t toneType = 0;
-        CHECK_AND_RETURN_LOG(StringConverter(pToneType, toneType) == SUCCESS,
+        CHECK_AND_RETURN_LOG(StringConverter(pToneType, toneType),
             "convert pToneType: %{public}s Fail!", pToneType.c_str());
         AUDIO_DEBUG_LOG("toneType value: %{public}d", toneType);
         
@@ -262,18 +262,18 @@ void AudioToneParser::ParseSegment(std::shared_ptr<AudioXmlNode> curNode,
         if (pValueStr == "INF") {
             ltoneDesc->segments[SegInx].duration = TONEINFO_INF;
         } else {
-            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->segments[SegInx].duration) == SUCCESS,
+            CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->segments[SegInx].duration),
                 "convert ltoneDesc->segments[SegInx].duration fail!");
         }
         AUDIO_DEBUG_LOG("duration: %{public}d", ltoneDesc->segments[SegInx].duration);
 
         CHECK_AND_RETURN_LOG(curNode->GetProp("loopCount", pValueStr) == SUCCESS, "get loopCount fail");
-        CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->segments[SegInx].loopCnt) == SUCCESS,
+        CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->segments[SegInx].loopCnt),
                 "convert ltoneDesc->segments[SegInx].loopCnt fail!");
         AUDIO_DEBUG_LOG("loopCnt: %{public}d", ltoneDesc->segments[SegInx].loopCnt);
 
         CHECK_AND_RETURN_LOG(curNode->GetProp("loopIndex", pValueStr) == SUCCESS, "get loopIndex fail");
-        CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->segments[SegInx].loopIndx) == SUCCESS,
+        CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->segments[SegInx].loopIndx),
                 "convert ltoneDesc->segments[SegInx].loopIndx fail!");
         AUDIO_DEBUG_LOG("loopIndx: %{public}d", ltoneDesc->segments[SegInx].loopIndx);
 
