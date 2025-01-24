@@ -28,6 +28,9 @@ ohos_unittest("audio_render_sink_unit_test") {
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/remote/",
     "../../../../../../../services/audio_service/common/include/",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/devicemanager/interface/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/multichannel/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/offload/",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/file/",
   ]
 
   cflags = [
@@ -39,9 +42,12 @@ ohos_unittest("audio_render_sink_unit_test") {
   sources = [ "audio_render_sink_unit_test.cpp" ]
 
   deps = [
+    "../../../:audio_renderer_file_sink",
     "../../../:audio_renderer_sink",
     "../../../:bluetooth_renderer_sink",
     "../../../:fast_audio_renderer_sink",
+    "../../../:multichannel_audio_renderer_sink",
+    "../../../:offload_audio_renderer_sink",
     "../../../:remote_audio_renderer_sink",
     "../../../../../audioutils:audio_utils",
     "../../../../devicemanager:audio_device_manager",

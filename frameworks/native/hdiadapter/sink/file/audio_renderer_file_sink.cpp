@@ -63,6 +63,11 @@ int32_t AudioRendererFileSink::SetVoiceVolume(float volume)
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t AudioRendererFileSink::GetAudioScene()
+{
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t AudioRendererFileSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     return ERR_NOT_SUPPORTED;

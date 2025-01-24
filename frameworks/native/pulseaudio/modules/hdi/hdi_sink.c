@@ -1848,7 +1848,8 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
         time(&u->primary.speakerPaAllStreamStartVolZeroTime);
     }
     if (u->primary.speakerPaAllStreamVolumeZero && PA_SINK_IS_RUNNING(u->sink->thread_info.state) &&
-        difftime(currentTime, u->primary.speakerPaAllStreamStartVolZeroTime) > WAIT_CLOSE_PA_OR_EFFECT_TIME) {
+        difftime(currentTime, u->primary.speakerPaAllStreamStartVolZeroTime) > WAIT_CLOSE_PA_OR_EFFECT_TIME &&
+        u->primary.sinkAdapter->RendererSinkGetAudioScene(u->primary.sinkAdapter) == 0) {
         HandleClosePa(u);
     } else {
         HandleOpenPa(u);
