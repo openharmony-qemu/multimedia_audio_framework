@@ -832,7 +832,8 @@ int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
     audioCaptureMode_ = captureMode;
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && captureMode == CAPTURE_MODE_CALLBACK &&
-        AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo_) == AUDIO_FLAG_VOIP_FAST) {
+        AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo_) == AUDIO_FLAG_VOIP_FAST &&
+        firstConcurrencyResult_ == SUCCESS) {
         AUDIO_INFO_LOG("Switch to fast voip stream");
         uint32_t sessionId = 0;
         int32_t ret = audioStream_->GetAudioSessionID(sessionId);
@@ -1225,6 +1226,7 @@ void AudioCapturerPrivate::ActivateAudioConcurrency(IAudioStream::StreamClass &s
         streamClass = IAudioStream::PA_STREAM;
         capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
     }
+    firstConcurrencyResult_ = ret;
     return;
 }
 
