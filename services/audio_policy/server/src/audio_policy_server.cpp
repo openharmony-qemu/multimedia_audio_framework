@@ -1163,7 +1163,8 @@ int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
         "MANAGE_AUDIO_CONFIG permission denied");
     lastMicMuteSettingPid_ = IPCSkeleton::GetCallingPid();
     WatchTimeout guard("PrivacyKit::SetMutePolicy:SetMicrophoneMuteAudioConfig");
-    PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[TEMPORARY_POLCIY_TYPE], MICPHONE_CALLER, isMute);
+    PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[TEMPORARY_POLCIY_TYPE], MICPHONE_CALLER, isMute,
+        IPCSkeleton::GetCallingTokenID());
     guard.CheckCurrTimeout();
     return SetMicrophoneMuteCommon(isMute, false);
 }
@@ -1175,7 +1176,8 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const 
     CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
         "MICROPHONE_CONTROL_PERMISSION permission denied");
     WatchTimeout guard("PrivacyKit::SetMutePolicy:SetMicrophoneMutePersistent");
-    int32_t ret = PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[type], MICPHONE_CALLER, isMute);
+    int32_t ret = PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[type], MICPHONE_CALLER, isMute,
+        IPCSkeleton::GetCallingTokenID());
     guard.CheckCurrTimeout();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("PrivacyKit SetMutePolicy failed ret is %{public}d", ret);
