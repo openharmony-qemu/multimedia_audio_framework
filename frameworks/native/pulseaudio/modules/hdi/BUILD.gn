@@ -20,6 +20,7 @@ config("hdi_config") {
 
   include_dirs = [
     ".",
+    "../../../audioqosmanager/include",
     "../../../audioschedule/include",
     "../../../hdiadapter/common/include",
     "../../../hdiadapter/manager/include",
@@ -74,6 +75,7 @@ ohos_shared_library("module-hdi-sink") {
   deps = [
     "../../../../../services/audio_service:audio_common",
     "../../../audioeffect:audio_effect",
+    "../../../audioqosmanager:audio_qosmanager",
     "../../../audioschedule:audio_schedule",
     "../../../audioutils:audio_utils",
     "../../../hdiadapter/sink:renderer_sink_adapter",
