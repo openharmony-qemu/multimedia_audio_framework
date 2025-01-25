@@ -53,7 +53,7 @@ ohos_shared_library("audio_capturer") {
   configs = [ ":audio_capturer_config" ]
 
   sources = [
-    "../../../services/audio_service/client/src/audio_device_descriptor.cpp",
+    "../../../services/audio_policy/server/src/service/device/audio_device_descriptor.cpp",
     "src/audio_capturer.cpp",
     "src/audio_capturer_proxy_obj.cpp",
   ]

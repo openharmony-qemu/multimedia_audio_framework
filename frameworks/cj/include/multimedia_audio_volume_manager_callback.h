@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,7 @@
 #ifndef MULTIMEDIA_AUDIO_VOLUME_MANAGER_CALLBACK_H
 #define MULTIMEDIA_AUDIO_VOLUME_MANAGER_CALLBACK_H
 #include "audio_group_manager.h"
+#include "audio_policy_interface.h"
 #include "audio_system_manager.h"
 #include "multimedia_audio_ffi.h"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,6 +28,7 @@
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
 #include "audio_anahs_manager_listener_stub.h"
+#include "audio_policy_interface.h"
 #include "audio_system_manager.h"
 #include "i_standard_client_tracker.h"
 #include "audio_policy_log.h"

@@ -32,6 +32,7 @@ ohos_unittest("audio_manager_unit_test") {
   sources = [ "src/audio_manager_unit_test.cpp" ]
 
   deps = [
+    "../../../../../../services/audio_policy:audio_foundation",
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",

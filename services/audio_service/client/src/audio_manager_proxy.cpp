@@ -32,9 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t MAX_OFFLINE_EFFECT_CHAIN_NUM = 10;
-#ifndef HAS_FEATURE_INNERCAPTURER
-constexpr int32_t ERROR = -1;
-#endif
+
 }
 AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioService>(impl)

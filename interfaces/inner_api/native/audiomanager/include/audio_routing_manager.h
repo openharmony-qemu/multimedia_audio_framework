@@ -21,6 +21,7 @@
 #include "audio_system_manager.h"
 #include "audio_group_manager.h"
 #include "microphone_descriptor.h"
+#include "audio_policy_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -28,27 +29,6 @@ namespace AudioStandard {
 class AudioDeviceDescriptor;
 class AudioRendererFilter;
 class AudioDeviceRefiner;
-class AudioPreferredOutputDeviceChangeCallback {
-public:
-    virtual ~AudioPreferredOutputDeviceChangeCallback() = default;
-    /**
-     * Called when the prefer output device changes
-     *
-     * @param vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor.
-     */
-    virtual void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
-};
-
-class AudioPreferredInputDeviceChangeCallback {
-    public:
-    virtual ~AudioPreferredInputDeviceChangeCallback() = default;
-    /**
-     * Called when the prefer input device changes
-     *
-     * @param vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor.
-     */
-    virtual void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
-};
 
 class AudioRoutingManager {
 public:
