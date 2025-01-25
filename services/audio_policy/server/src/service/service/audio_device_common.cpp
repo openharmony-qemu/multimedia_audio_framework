@@ -1284,8 +1284,7 @@ bool AudioDeviceCommon::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
             audioActiveDevice_.GetCurrentInputDeviceType(), capturerChangeInfo->capturerInfo.originalFlag,
             audioActiveDevice_.GetCurrentInputDevice().networkId_, capturerChangeInfo->capturerInfo.samplingRate);
-        TriggerRecreateCapturerStreamCallback(capturerChangeInfo->callerPid,
-            capturerChangeInfo->sessionId, streamClass, reason);
+        TriggerRecreateCapturerStreamCallback(capturerChangeInfo, streamClass, reason);
         return true;
     }
     return false;
@@ -1395,18 +1394,30 @@ void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDevice
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "load a2dp input module failed");
 }
 
-void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId,
+void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(
+    const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
     int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::TriggerRecreateCapturerStreamCallback");
+    SwitchStreamInfo info = {
+        static_cast<uint32_t>(capturerChangeInfo->sessionId),
+        capturerChangeInfo->createrUID,
+        capturerChangeInfo->clientUID,
+        capturerChangeInfo->clientPid,
+        capturerChangeInfo->appTokenId,
+        capturerChangeInfo->capturerState,
+    };
     AUDIO_WARNING_LOG("Trigger recreate capturer stream, pid: %{public}d, sessionId: %{public}d, flag: %{public}d",
-        callerPid, sessionId, streamFlag);
+        capturerChangeInfo->callerPid, capturerChangeInfo->sessionId, streamFlag);
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(callerPid, sessionId, streamFlag, reason);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(capturerChangeInfo->callerPid,
+            capturerChangeInfo->sessionId, streamFlag, reason);
     } else {
         AUDIO_WARNING_LOG("No audio policy server handler");
     }
 }
+
 
 int32_t AudioDeviceCommon::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
     std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor)

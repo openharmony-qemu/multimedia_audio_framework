@@ -203,6 +203,7 @@ private:
     bool CheckPlaybackPermission(const AudioProcessConfig &config);
     int32_t CheckInnerRecorderPermission(const AudioProcessConfig &config);
     bool CheckRecorderPermission(const AudioProcessConfig &config);
+    bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
 
     void ResetRecordConfig(AudioProcessConfig &config);

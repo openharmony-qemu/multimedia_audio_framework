@@ -150,6 +150,19 @@ public:
     static int32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
 };
 
+class SwitchStreamUtil {
+public:
+    static bool InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState);
+    static bool UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState);
+    static bool RemoveSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState);
+    static bool IsSwitchStreamSwtching(SwitchStreamInfo info, SwitchState targetState);
+    static bool HandelCreatedSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState);
+    static bool HandelStartedSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState);
+    static bool HandelSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState);
+    static void TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState);
+    static bool RemoveAllRecordBySessionId(uint32_t sessionId);
+};
+
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM24Bit(uint8_t *data, uint64_t len);
