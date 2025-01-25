@@ -22,6 +22,7 @@
 #include <sstream>
 #include <ostream>
 #include <climits>
+#include <thread>
 #include <string>
 #include "audio_utils_c.h"
 #include "audio_errors.h"
