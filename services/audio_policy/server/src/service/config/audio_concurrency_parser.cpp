@@ -21,7 +21,8 @@ int32_t AudioConcurrencyParser::LoadConfig(std::map<std::pair<AudioPipeType, Aud
     ConcurrencyAction> &concurrencyMap)
 {
     AUDIO_INFO_LOG("start.");
-    curNode_->Config(AUDIO_CONCURRENCY_CONFIG_FILE, nullptr, 0);
+    CHECK_AND_RETURN_RET_LOG(curNode_->Config(AUDIO_CONCURRENCY_CONFIG_FILE, nullptr, 0) == SUCCESS, ERROR,
+        "AudioConcurrencyParser loadXmlFile Failed!");
     if (!curNode_->CompareName("audioConcurrencyPolicy")) {
         AUDIO_ERR_LOG("Missing tag - audioConcurrencyPolicy");
         curNode_->FreeDoc();

@@ -75,9 +75,9 @@ ohos_unittest("audio_param_parser_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "libxml2:libxml2",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "libxml2:libxml2",
   ]
 }
