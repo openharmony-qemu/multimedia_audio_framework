@@ -510,9 +510,10 @@ bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
 }
 
 void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState)
-{
+{   
+    const std::chrono::seconds TIMEOUT_DURATION(2);
     AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.");
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::this_thread::sleep_for(TIMEOUT_DURATION);
 
     {
         std::lock_guard<std::mutex> lock(g_switchMapMutex);
@@ -557,7 +558,6 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
     std::lock_guard<std::mutex> lock(g_switchMapMutex);
     auto iter = g_switchStreamRecordMap.find(info);
     bool isInfoInRecord = (iter != g_switchStreamRecordMap.end());
-
     if (!isInfoInRecord) {
         if (targetState == SWITCH_STATE_WAITING) {
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
@@ -607,7 +607,7 @@ bool SwitchStreamUtil::HandelCreatedSwitchInfoInRecord(SwitchStreamInfo info, Sw
         g_switchStreamRecordMap[info] = targetState;
         AUDIO_INFO_LOG("SwitchStream will reCreated!Update Record switchState:%{public}d for"
             "stream:%{public}u uid:%{public}d streamState:%{public}d success",
-                targetState, info.sessionId, info.appUid, info.nextState);
+            targetState, info.sessionId, info.appUid, info.nextState);
     } else {
         CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
             false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
