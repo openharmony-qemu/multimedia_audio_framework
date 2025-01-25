@@ -35,7 +35,7 @@ namespace AudioStandard {
 const char *LIBXML_SO_PATH = "libxml2.z.so";
 
 struct XmlFuncHandle {
-    void *libHandle_ = nullptr;
+    void *libHandle = nullptr;
     xmlDoc *(*xmlReadFile)(const char *fileName, const char *encoding, int32_t options);
     xmlNode *(*xmlDocGetRootElement)(xmlDoc *doc);
     bool (*xmlHasProp)(const xmlNode *node, const xmlChar *propName);
@@ -53,39 +53,39 @@ public:
     static void DeInit();
     static std::shared_ptr<XmlFuncHandle> GetHandle();
 private:
-    static std::atomic<int32_t> g_refCount_;
+    static std::atomic<int32_t> gRefCount_;
     static std::shared_ptr<XmlFuncHandle> xmlFuncHandle_;
 };
 
-std::atomic<int32_t> DlopenUtils::g_refCount_{0};
+std::atomic<int32_t> DlopenUtils::gRefCount_{0};
 std::shared_ptr<XmlFuncHandle> DlopenUtils::xmlFuncHandle_ = nullptr;
 
 class AudioXmlNodeInner : public AudioXmlNode {
 public:
-    virtual std::shared_ptr<AudioXmlNode> GetChildrenNode() override;
-    virtual std::shared_ptr<AudioXmlNode> GetCopyNode() override;
+    std::shared_ptr<AudioXmlNode> GetChildrenNode() override;
+    std::shared_ptr<AudioXmlNode> GetCopyNode() override;
     AudioXmlNodeInner();
     AudioXmlNodeInner(const AudioXmlNodeInner &obj);
     AudioXmlNodeInner &operator=(const AudioXmlNodeInner &obj);
     ~AudioXmlNodeInner() override;
 
     int32_t Config(const char *fileName, const char *encoding, int32_t options) override;
-    virtual void MoveToNext() override;
-    virtual void MoveToChildren() override;
-    virtual bool IsNodeValid() override;
-    virtual int32_t GetNodeType() override;
+    void MoveToNext() override;
+    void MoveToChildren() override;
+    bool IsNodeValid() override;
+    int32_t GetNodeType() override;
 
-    virtual bool HasProp(const char *propName) override;
-    virtual int32_t GetProp(const char *propName, std::string &result) override;
-    virtual int32_t GetContent(std::string &result) override;
-    virtual std::string GetName() override;
+    bool HasProp(const char *propName) override;
+    int32_t GetProp(const char *propName, std::string &result) override;
+    int32_t GetContent(std::string &result) override;
+    std::string GetName() override;
 
-    virtual void FreeDoc() override;
-    virtual void FreeProp(char *propName) override;
-    virtual void CleanUpParser() override;
+    void FreeDoc() override;
+    void FreeProp(char *propName) override;
+    void CleanUpParser() override;
 
-    virtual bool CompareName(const char *propName) override;
-    virtual bool IsElementNode() override;
+    bool CompareName(const char *propName) override;
+    bool IsElementNode() override;
 
     int32_t StrcmpXml(const xmlChar *propName1, const xmlChar *propName2);
     xmlDoc *doc_ = nullptr;
@@ -95,17 +95,17 @@ public:
 
 bool DlopenUtils::Init()
 {
-    if (g_refCount_.load() == 0) {
+    if (gRefCount_.load() == 0) {
         void *libHandle = dlopen(LIBXML_SO_PATH, RTLD_NOW);
         CHECK_AND_RETURN_RET_LOG(libHandle != nullptr, false, "dlopen failed!");
         xmlFuncHandle_ = std::make_shared<XmlFuncHandle>();
-        xmlFuncHandle_->libHandle_ = libHandle;
+        xmlFuncHandle_->libHandle = libHandle;
         xmlFuncHandle_->xmlReadFile =
-            reinterpret_cast<decltype(xmlFuncHandle_->xmlReadFile)>(dlsym(libHandle, "xmlReadFile")); 
+            reinterpret_cast<decltype(xmlFuncHandle_->xmlReadFile)>(dlsym(libHandle, "xmlReadFile"));
         xmlFuncHandle_->xmlDocGetRootElement =
-            reinterpret_cast<decltype(xmlFuncHandle_->xmlDocGetRootElement)>(dlsym(libHandle, "xmlDocGetRootElement")); 
+            reinterpret_cast<decltype(xmlFuncHandle_->xmlDocGetRootElement)>(dlsym(libHandle, "xmlDocGetRootElement"));
         xmlFuncHandle_->xmlHasProp =
-            reinterpret_cast<decltype(xmlFuncHandle_->xmlHasProp)>(dlsym(libHandle, "xmlHasProp")); 
+            reinterpret_cast<decltype(xmlFuncHandle_->xmlHasProp)>(dlsym(libHandle, "xmlHasProp"));
         xmlFuncHandle_->xmlGetProp =
             reinterpret_cast<decltype(xmlFuncHandle_->xmlGetProp)>(dlsym(libHandle, "xmlGetProp"));
         xmlFuncHandle_->xmlFreeDoc =
@@ -120,15 +120,15 @@ bool DlopenUtils::Init()
             reinterpret_cast<decltype(xmlFuncHandle_->xmlNodeGetContent)>(dlsym(libHandle, "xmlNodeGetContent"));
         AUDIO_INFO_LOG("Libxml2 open success");
     }
-    g_refCount_.store(g_refCount_.load() + 1);
+    gRefCount_.store(gRefCount_.load() + 1);
     return true;
 }
 
 void DlopenUtils::DeInit()
 {
-    g_refCount_.store(g_refCount_.load() - 1);
-    if (g_refCount_.load() == 0 && xmlFuncHandle_.use_count() == 1) {
-        dlclose(xmlFuncHandle_->libHandle_);
+    gRefCount_.store(gRefCount_.load() - 1);
+    if (gRefCount_.load() == 0 && xmlFuncHandle_.use_count() == 1) {
+        dlclose(xmlFuncHandle_->libHandle);
         xmlFuncHandle_ = nullptr;
         AUDIO_INFO_LOG("Libxml2 close success");
     }
@@ -202,7 +202,7 @@ int32_t AudioXmlNodeInner::Config(const char *fileName, const char *encoding, in
     doc_ = xmlFuncHandle_->xmlReadFile(fileName, encoding, options);
     CHECK_AND_RETURN_RET_LOG(doc_ != nullptr, ERROR, "xmlReadFile failed! fileName :%{public}s", fileName);
     curNode_ = xmlFuncHandle_->xmlDocGetRootElement(doc_);
-    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, ERROR, "xmlDocGetRootElement failed!"); 
+    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, ERROR, "xmlDocGetRootElement failed!");
     return SUCCESS;
 }
 
@@ -238,7 +238,7 @@ int32_t AudioXmlNodeInner::GetProp(const char *propName, std::string &result)
 {
     CHECK_AND_RETURN_RET_LOG(xmlFuncHandle_ != nullptr, ERROR, "xmlFuncHandle is nullptr!");
     auto xmlFunc = reinterpret_cast<xmlChar *(*)(const xmlNode *node, const xmlChar *propName)>
-        (dlsym(xmlFuncHandle_->libHandle_, "xmlGetProp"));
+        (dlsym(xmlFuncHandle_->libHandle, "xmlGetProp"));
     xmlChar *tempValue = xmlFunc(curNode_, reinterpret_cast<const xmlChar*>(propName));
     CHECK_AND_RETURN_RET_LOG(tempValue != nullptr, ERROR, "GetProp Fail! curNode has no prop: %{public}s", propName);
     result = reinterpret_cast<char*>(tempValue);

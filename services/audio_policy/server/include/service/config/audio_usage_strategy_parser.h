@@ -107,7 +107,7 @@ private:
         {"SOURCE_TYPE_UNPROCESSED", SOURCE_TYPE_UNPROCESSED},
     };
 
-    std::shared_ptr<AudioXmlNode> curNode_= nullptr;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

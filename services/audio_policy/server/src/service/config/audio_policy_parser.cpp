@@ -347,7 +347,7 @@ void AudioPolicyParser::ParsePipeInfos(std::shared_ptr<AudioXmlNode> curNode, Pi
 {
     curNode->MoveToChildren();
     while (curNode->IsNodeValid()) {
-        if (curNode->IsElementNode()){
+        if (curNode->IsElementNode()) {
             switch (GetPipeInfoTypeAsInt(curNode)) {
                 case PipeType::PA_PROP:
                     curNode->GetProp("lib", pipeInfo.lib_);
@@ -407,7 +407,7 @@ void AudioPolicyParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> curNode, 
 
             std::string sampleRateStr;
             curNode->GetProp("sampleRates", sampleRateStr);
-            StringConverter(sampleRateStr, streamPropInfo.sampleRate_)
+            StringConverter(sampleRateStr, streamPropInfo.sampleRate_);
             pipeInfo.sampleRates_.push_back(streamPropInfo.sampleRate_);
 
             std::string periodInMsStr;

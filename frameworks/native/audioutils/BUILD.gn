@@ -97,17 +97,11 @@ ohos_shared_library("audio_xml_utils") {
     "../../../interfaces/inner_api/native/audiocommon/include/",
   ]
 
-  sources = [
-    "./src/audio_xml_parser.cpp",
-  ]
+  sources = [ "./src/audio_xml_parser.cpp" ]
 
-  public_external_deps = [
-    "libxml2:libxml2",
-  ]
+  public_external_deps = [ "libxml2:libxml2" ]
 
-  external_deps = [
-    "hilog:libhilog",
-  ]
+  external_deps = [ "hilog:libhilog" ]
 
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]

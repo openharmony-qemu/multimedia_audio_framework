@@ -278,7 +278,6 @@ void AudioFocusParser::AddAllowedFocusEntry(std::shared_ptr<AudioXmlNode> curNod
     std::map<std::string, ActionTarget>::iterator it2 = targetMap.find(aTargetStr);
     std::map<std::string, InterruptHint>::iterator it3 = actionMap.find(aTypeStr);
     std::map<std::string, InterruptForceType>::iterator it4 = forceMap.find(isForcedStr);
-
     if ((it1 != audioFocusMap.end()) && (it2 != targetMap.end()) && (it3 != actionMap.end()) &&
         (it4 != forceMap.end())) {
         std::pair<AudioFocusType, AudioFocusType> allowedStreamsPair =

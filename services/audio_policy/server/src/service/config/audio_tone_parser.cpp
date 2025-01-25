@@ -269,12 +269,12 @@ void AudioToneParser::ParseSegment(std::shared_ptr<AudioXmlNode> curNode,
 
         CHECK_AND_RETURN_LOG(curNode->GetProp("loopCount", pValueStr) == SUCCESS, "get loopCount fail");
         CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->segments[SegInx].loopCnt),
-                "convert ltoneDesc->segments[SegInx].loopCnt fail!");
+            "convert ltoneDesc->segments[SegInx].loopCnt fail!");
         AUDIO_DEBUG_LOG("loopCnt: %{public}d", ltoneDesc->segments[SegInx].loopCnt);
 
         CHECK_AND_RETURN_LOG(curNode->GetProp("loopIndex", pValueStr) == SUCCESS, "get loopIndex fail");
         CHECK_AND_RETURN_LOG(StringConverter(pValueStr, ltoneDesc->segments[SegInx].loopIndx),
-                "convert ltoneDesc->segments[SegInx].loopIndx fail!");
+            "convert ltoneDesc->segments[SegInx].loopIndx fail!");
         AUDIO_DEBUG_LOG("loopIndx: %{public}d", ltoneDesc->segments[SegInx].loopIndx);
 
         CHECK_AND_RETURN_LOG(curNode->GetProp("freq", pValueStr) == SUCCESS, "get freq fail");
