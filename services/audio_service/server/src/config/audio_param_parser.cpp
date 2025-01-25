@@ -77,7 +77,7 @@ bool AudioParamParser::LoadConfiguration(
 bool AudioParamParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNode,
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys)
 {
-    if (curNode->IsNodeValid()) {
+    if (!curNode->IsNodeValid()) {
         AUDIO_ERR_LOG("parse node is null");
         return false;
     }

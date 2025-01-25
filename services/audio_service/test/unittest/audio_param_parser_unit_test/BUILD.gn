@@ -61,6 +61,7 @@ ohos_unittest("audio_param_parser_unit_test") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
+    "../../../../../frameworks/native/audioutils:audio_xml_utils",
     "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service_static",
   ]
@@ -77,5 +78,6 @@ ohos_unittest("audio_param_parser_unit_test") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "libxml2:libxml2",
   ]
 }
