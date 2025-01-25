@@ -133,8 +133,8 @@ void AudioParamParser::ParseSubKeys(std::shared_ptr<AudioXmlNode> curNode, std::
             std::string subKeyName;
             std::string usage;
             std::regex regexDelimiter(",");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", subKeyName) == SUCCESS, "get subKeyName fail");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("usage", usage) == SUCCESS, "get usage fail");
+            curNode->GetProp("name", subKeyName);
+            curNode->GetProp("usage", usage);
 
             const std::sregex_token_iterator itEnd;
             for (std::sregex_token_iterator it(usage.begin(), usage.end(), regexDelimiter, -1); it != itEnd; it++) {

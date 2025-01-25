@@ -53,7 +53,7 @@ bool AudioUsageStrategyParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNo
     for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
         if (curNode->CompareName("adapter")) {
             std::string pValueStr;
-            CHECK_AND_RETURN_RET_LOG(curNode->GetProp("name", pValueStr) == SUCCESS, false, "get name fail");
+            curNode->GetProp("name", pValueStr);
             if (pValueStr == "streamUsage") {
                 ParserStreamUsageList(curNode->GetChildrenNode());
             } else if (pValueStr == "sourceType") {
@@ -72,8 +72,8 @@ void AudioUsageStrategyParser::ParserStreamUsageList(std::shared_ptr<AudioXmlNod
         if (curNode->CompareName("strategy")) {
             std::string strategyName;
             std::string streamUsages;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", strategyName) == SUCCESS, "get strategyName fail");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("streamUsage", streamUsages) == SUCCESS, "get streamUsage fail");
+            curNode->GetProp("name", strategyName);
+            curNode->GetProp("streamUsage", streamUsages);
             ParserStreamUsageInfo(strategyName, streamUsages);
         }
         curNode->MoveToNext();
@@ -86,8 +86,8 @@ void AudioUsageStrategyParser::ParserSourceTypeList(std::shared_ptr<AudioXmlNode
         if (curNode->CompareName("strategy")) {
             std::string strategyName;
             std::string sourceTypes;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", strategyName) == SUCCESS, "get strategyName fail");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("sourceType", sourceTypes) == SUCCESS, "get sourceTypes fail");
+            curNode->GetProp("name", strategyName);
+            curNode->GetProp("sourceType", sourceTypes);
             ParserSourceTypeInfo(strategyName, sourceTypes);
         }
         curNode->MoveToNext();

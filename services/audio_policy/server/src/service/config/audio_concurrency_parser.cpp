@@ -37,7 +37,7 @@ void AudioConcurrencyParser::ParseInternal(std::map<std::pair<AudioPipeType, Aud
     for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
         if (curNode->CompareName("existingStream")) {
             std::string existingStream;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", existingStream) == SUCCESS, "GetProp name fail!");
+            curNode->GetProp("name", existingStream);
             AUDIO_DEBUG_LOG("existingStream: %{public}s", existingStream.c_str());
 
             std::shared_ptr<AudioXmlNode> childrenNode = curNode->GetChildrenNode();
@@ -57,8 +57,8 @@ void AudioConcurrencyParser::ParseIncoming(const std::string &existing, std::sha
         if (curNode->CompareName("incomingStream")) {
             std::string incoming;
             std::string action;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", incoming) == SUCCESS, "getprop name fail!");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("action", action) == SUCCESS, "getprop action fail!");
+            curNode->GetProp("name", incoming);
+            curNode->GetProp("action", action);
             AUDIO_DEBUG_LOG("existing: %{public}s %{public}d, incoming: %{public}s %{public}d, action: %{public}s",
                 existing.c_str(), audioPipeTypeMap_[existing], incoming.c_str(),
                 audioPipeTypeMap_[incoming], action.c_str());

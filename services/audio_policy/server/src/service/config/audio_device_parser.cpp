@@ -84,23 +84,23 @@ void AudioDeviceParser::ParseDevicePrivacyInfo(std::shared_ptr<AudioXmlNode> cur
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             DevicePrivacyInfo deviceInfo = {};
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", deviceInfo.deviceName) == SUCCESS, "get prop name fail!");
+            curNode->GetProp("name", deviceInfo.deviceName);
 
             std::string pValue;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("type", pValue) == SUCCESS, "get prop type fail!");
+            curNode->GetProp("type", pValue);
             deviceInfo.deviceType = deviceTypeMap_[pValue];
 
-            CHECK_AND_RETURN_LOG(curNode->GetProp("role", pValue) == SUCCESS, "get prop role fail!");
+            curNode->GetProp("role", pValue);
             uint32_t intValue = 0;
             ParseDeviceRole(pValue, intValue);
             deviceInfo.deviceRole = static_cast<DeviceRole>(intValue);
 
-            CHECK_AND_RETURN_LOG(curNode->GetProp("Category", pValue) == SUCCESS, "get prop Category fail!");
+            curNode->GetProp("Category", pValue);
             intValue = 0;
             ParseDeviceCategory(pValue, intValue);
             deviceInfo.deviceCategory = static_cast<DeviceCategory>(intValue);
 
-            CHECK_AND_RETURN_LOG(curNode->GetProp("usage", pValue) == SUCCESS, "get prop usage fail!");
+            curNode->GetProp("usage", pValue);
             intValue = 0;
             ParseDeviceUsage(pValue, intValue);
             deviceInfo.deviceUsage = static_cast<DeviceUsage>(intValue);

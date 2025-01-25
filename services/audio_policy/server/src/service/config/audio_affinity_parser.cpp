@@ -116,18 +116,15 @@ void audioAffinityParser::ParserAffinityGroupDeviceInfos(std::shared_ptr<AudioXm
 
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("Affinity")) {
-            CHECK_AND_RETURN_LOG(curNode->GetProp("networkId", deviceInfo.networkID) == SUCCESS,
-                "get prop deviceinfo.networkID failed!");
+            curNode->GetProp("networkId", deviceInfo.networkID);
 
             std::string deviceType;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("deviceType", deviceType) == SUCCESS,
-                "get prop deviceType failed!");
+            curNode->GetProp("deviceType", deviceType);
             std::map<std::string, DeviceType>::iterator item = deviceTypeMap_.find(deviceType);
             deviceInfo.deviceType = (item != deviceTypeMap_.end() ? item->second : DEVICE_TYPE_INVALID);
 
             std::string supportedConcurrency;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("supportedConcurrency", supportedConcurrency) == SUCCESS,
-                "get prop supportedConcurrency failed!");
+            curNode->GetProp("supportedConcurrency", supportedConcurrency);
             deviceInfo.SupportedConcurrency = (supportedConcurrency == "True") ? true : false;
             
             affinityDeviceInfoArray_.push_back(deviceInfo);

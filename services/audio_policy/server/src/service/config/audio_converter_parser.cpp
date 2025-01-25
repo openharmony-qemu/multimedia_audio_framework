@@ -113,8 +113,8 @@ static void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlN
 {
     std::string libName;
     std::string libPath;
-    CHECK_AND_RETURN_LOG(curNode->GetProp("name", libName) == SUCCESS, "get prop libName fail!");
-    CHECK_AND_RETURN_LOG(curNode->GetProp("path", libPath) == SUCCESS, "get prop libPath fail!");
+    curNode->GetProp("name", libName);
+    curNode->GetProp("path", libPath);
     result.library = {libName, libPath};
 }
 
@@ -125,8 +125,7 @@ static void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<Aud
         result.outChannelLayout = CH_LAYOUT_STEREO;
     } else {
         std::string strChannelLayout;
-        CHECK_AND_RETURN_LOG(curNode->GetProp("out_channel_layout", strChannelLayout) == SUCCESS,
-            "get prop ou_channel_layout fail!");
+        curNode->GetProp("out_channel_layout", strChannelLayout);
         if (str2layout.count(strChannelLayout) == 0) {
             AUDIO_ERR_LOG("unsupported format: invalid channel layout, set to STEREO");
             result.outChannelLayout = CH_LAYOUT_STEREO;
@@ -162,8 +161,7 @@ ConverterConfig AudioConverterParser::LoadConfig()
 
     CHECK_AND_RETURN_RET_LOG(curNode->CompareName("audio_converter_conf"), result,
         "Missing tag - audio_converter_conf: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("version", result.version) == SUCCESS, result,
-        "get prop version failed!");
+    curNode->GetProp("version", result.version);
 
     curNode->MoveToChildren();
     while (curNode->IsNodeValid()) {

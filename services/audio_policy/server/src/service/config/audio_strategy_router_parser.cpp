@@ -74,8 +74,8 @@ void AudioStrategyRouterParser::ParserStrategyInfo(std::shared_ptr<AudioXmlNode>
 {
     string name;
     string routers;
-    CHECK_AND_RETURN_LOG(curNode->GetProp("name", name) == SUCCESS, "get name fail");
-    CHECK_AND_RETURN_LOG(curNode->GetProp("routers", routers) == SUCCESS, "get routers fail");
+    curNode->GetProp("name", name);
+    curNode->GetProp("routers", routers);
 
     if (name == "MEDIA_RENDER") {
         AddRouters(mediaRenderRouters_, routers);

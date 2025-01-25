@@ -187,7 +187,7 @@ void AudioVolumeParser::ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> cur
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("volumecurve")) {
             std::string pValueStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("deviceClass", pValueStr) == SUCCESS, "getProp deviceClass fail");
+            curNode->GetProp("deviceClass", pValueStr);
             std::shared_ptr<DeviceVolumeInfo> deviceVolInfo = std::make_shared<DeviceVolumeInfo>();
             deviceVolInfo->deviceType = audioDeviceMap_[pValueStr];
             AUDIO_DEBUG_LOG("deviceVolInfo->deviceType %{public}d;", deviceVolInfo->deviceType);
@@ -206,12 +206,12 @@ void AudioVolumeParser::ParseVolumePoints(std::shared_ptr<AudioXmlNode> curNode,
         if (curNode->CompareName("point")) {
             struct VolumePoint volumePoint;
             std::string pValueStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("idx", pValueStr) == SUCCESS, "get idx fail");
+            curNode->GetProp("idx", pValueStr);
             CHECK_AND_RETURN_LOG(StringConverter(pValueStr, volumePoint.index),
                 "convert volumePoint.index fail!");
             AUDIO_DEBUG_LOG("idx: %{public}d", volumePoint.index);
 
-            CHECK_AND_RETURN_LOG(curNode->GetProp("decibel", pValueStr) == SUCCESS, "get decibel fail");
+            curNode->GetProp("decibel", pValueStr);
             CHECK_AND_RETURN_LOG(StringConverter(pValueStr, volumePoint.dbValue),
                 "convert volumePoint.dbValue fail!");
             AUDIO_DEBUG_LOG("decibel: %{public}d", volumePoint.dbValue);

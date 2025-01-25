@@ -217,7 +217,7 @@ void AudioFocusParser::ParseStreams(std::shared_ptr<AudioXmlNode> curNode,
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             std::string typeStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("value", typeStr) == SUCCESS, "get prop value fail!");
+            curNode->GetProp("value", typeStr);
             std::map<std::string, AudioFocusType>::iterator it = audioFocusMap.find(typeStr);
             if (it != audioFocusMap.end()) {
                 AUDIO_DEBUG_LOG("stream type: %{public}s",  typeStr.c_str());
@@ -232,7 +232,7 @@ void AudioFocusParser::AddRejectedFocusEntry(std::shared_ptr<AudioXmlNode> curNo
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
     std::string newStreamStr;
-    CHECK_AND_RETURN_LOG(curNode->GetProp("value", newStreamStr) == SUCCESS, "get prop value fail!");
+    curNode->GetProp("value", newStreamStr);
     std::map<std::string, AudioFocusType>::iterator it1 = audioFocusMap.find(newStreamStr);
     if (it1 != audioFocusMap.end()) {
         std::pair<AudioFocusType, AudioFocusType> rejectedStreamsPair =
@@ -269,10 +269,10 @@ void AudioFocusParser::AddAllowedFocusEntry(std::shared_ptr<AudioXmlNode> curNod
     std::string aTargetStr;
     std::string aTypeStr;
     std::string isForcedStr;
-    CHECK_AND_RETURN_LOG(curNode->GetProp("value", newStreamStr) == SUCCESS, "get prop value fail!");
-    CHECK_AND_RETURN_LOG(curNode->GetProp("action_on", aTargetStr) == SUCCESS, "get prop action_on fail!");
-    CHECK_AND_RETURN_LOG(curNode->GetProp("action_type", aTypeStr) == SUCCESS, "get prop action_type fail!");
-    CHECK_AND_RETURN_LOG(curNode->GetProp("is_forced", isForcedStr) == SUCCESS, "get prop is_forced fail!");
+    curNode->GetProp("value", newStreamStr);
+    curNode->GetProp("action_on", aTargetStr);
+    curNode->GetProp("action_type", aTypeStr);
+    curNode->GetProp("is_forced", isForcedStr);
 
     std::map<std::string, AudioFocusType>::iterator it1 = audioFocusMap.find(newStreamStr);
     std::map<std::string, ActionTarget>::iterator it2 = targetMap.find(aTargetStr);

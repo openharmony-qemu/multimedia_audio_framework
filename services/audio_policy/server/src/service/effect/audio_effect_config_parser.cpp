@@ -117,8 +117,8 @@ static void LoadLibrary(OriginalEffectConfig &result, std::shared_ptr<AudioXmlNo
             } else {
                 std::string pLibName;
                 std::string pLibPath;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("name", pLibName) == SUCCESS, "getProp name fail");
-                CHECK_AND_RETURN_LOG(curNode->GetProp("path", pLibPath) == SUCCESS, "getProp path fail");
+                curNode->GetProp("name", pLibName);
+                curNode->GetProp("path", pLibPath);
                 Library tmp = {pLibName, pLibPath};
                 result.libraries.push_back(tmp);
             }
@@ -170,7 +170,7 @@ static void LoadEffectProperty(OriginalEffectConfig &result,
                 AUDIO_WARNING_LOG("missing information: EFFECTPROPERTY has no MODE attribute");
             } else {
                 std::string pModeStr;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("mode", pModeStr) == SUCCESS, "get mode fail");
+                curNode->GetProp("mode", pModeStr);
                 result.effects[effectIdx].effectProperty.push_back(pModeStr);
             }
         } else {
@@ -205,8 +205,8 @@ static void LoadEffect(OriginalEffectConfig &result, std::shared_ptr<AudioXmlNod
             } else {
                 std::string pEffectName;
                 std::string pEffectLib;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("name", pEffectName) == SUCCESS, "getProp pEffectName fail");
-                CHECK_AND_RETURN_LOG(curNode->GetProp("library", pEffectLib) == SUCCESS, "getProp pEffectLib fail");
+                curNode->GetProp("name", pEffectName);
+                curNode->GetProp("library", pEffectLib);
                 Effect tmp = {pEffectName, pEffectLib, effectProperty};
                 result.effects.push_back(tmp);
                 LoadEffectProperty(result, curNode->GetCopyNode(), effectIdx);
@@ -258,7 +258,7 @@ static void LoadApply(OriginalEffectConfig &result, std::shared_ptr<AudioXmlNode
                 AUDIO_WARNING_LOG("missing information: apply has no effect attribute");
             } else {
                 std::string ppValue;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("effect", ppValue) == SUCCESS, "getprop effect fail");
+                curNode->GetProp("effect", ppValue);
                 result.effectChains[segInx].apply.push_back(ppValue);
             }
         } else {
@@ -347,8 +347,8 @@ static void LoadPreDevice(std::vector<Device> &devices, std::shared_ptr<AudioXml
             } else {
                 std::string pDevType;
                 std::string pChain;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("type", pDevType) == SUCCESS, "get pDevType fail");
-                CHECK_AND_RETURN_LOG(curNode->GetProp("effectChain", pChain) == SUCCESS, "get pChain fail");
+                curNode->GetProp("type", pDevType);
+                curNode->GetProp("effectChain", pChain);
                 Device tmpdev = {pDevType, pChain};
                 devices.push_back(tmpdev);
             }
@@ -380,7 +380,7 @@ static void LoadPreMode(PreStreamScene &scene, std::shared_ptr<AudioXmlNode> cur
                 AUDIO_WARNING_LOG("missing information: streamEffectMode has no mode attribute");
             } else {
                 std::string pStreamAEMode;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("mode", pStreamAEMode) == SUCCESS, "get pStreamAEMode fail");
+                curNode->GetProp("mode", pStreamAEMode);
                 scene.mode.push_back(pStreamAEMode);
                 scene.device.push_back({});
                 LoadPreDevice(scene.device[modeNum], curNode->GetCopyNode());
@@ -417,7 +417,7 @@ static void LoadPreStreamScenes(std::vector<PreStreamScene> &scenes, std::shared
                 AUDIO_WARNING_LOG("missing information: stream has no scene attribute");
             } else {
                 std::string pStreamType;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("scene", pStreamType) == SUCCESS, "get pStreamType fail");
+                curNode->GetProp("scene", pStreamType);
                 tmp.stream = pStreamType;
                 scenes.push_back(tmp);
                 LoadPreMode(scenes[streamNum], curNode->GetCopyNode());
@@ -484,8 +484,7 @@ static void LoadPreProcessCfg(OriginalEffectConfig &result, std::shared_ptr<Audi
                 countPreSecondNode[INDEX_PRE_PRIOR_SCENE]);
         } else if (curNode->CompareName("normalScene")) {
             std::string maxExtraNumStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("maxExtSceneNumber", maxExtraNumStr) == SUCCESS,
-                "getProp maxExtSceneNumber fail");
+            curNode->GetProp("maxExtSceneNumber", maxExtraNumStr);
             CHECK_AND_RETURN_LOG(StringConverter(maxExtraNumStr, result.preProcess.maxExtSceneNum),
                 "convert maxExtraNumStr: %{public}s fail!", maxExtraNumStr.c_str());
             LoadPreStreamScenesCheck(result.preProcess.normalScenes, curNode->GetCopyNode(),
@@ -530,8 +529,8 @@ static void LoadStreamUsageMapping(OriginalEffectConfig &result, std::shared_ptr
             if (!curNode->HasProp("name") || !curNode->HasProp("scene")) {
                 AUDIO_WARNING_LOG("missing information: streamUsage misses attribute");
             } else {
-                CHECK_AND_RETURN_LOG(curNode->GetProp("name", tmp.name) == SUCCESS, "get tmp.name fail");
-                CHECK_AND_RETURN_LOG(curNode->GetProp("scene", tmp.sceneType) == SUCCESS, "get tmp.sceneType fail");
+                curNode->GetProp("name", tmp.name);
+                curNode->GetProp("scene", tmp.sceneType);
                 result.postProcess.sceneMap.push_back(tmp);
             }
         } else {
@@ -564,8 +563,8 @@ static void LoadPostDevice(std::vector<Device> &devices, std::shared_ptr<AudioXm
             } else {
                 std::string pDevType;
                 std::string pChain;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("type", pDevType) == SUCCESS, "get pDevType fail");
-                CHECK_AND_RETURN_LOG(curNode->GetProp("effectChain", pChain) == SUCCESS, "get pChain fail");
+                curNode->GetProp("type", pDevType);
+                curNode->GetProp("effectChain", pChain);
                 Device tmpdev = {pDevType, pChain};
                 devices.push_back(tmpdev);
             }
@@ -597,7 +596,7 @@ static void LoadPostMode(PostStreamScene &scene, std::shared_ptr<AudioXmlNode> c
                 AUDIO_ERR_LOG("missing information: streamEffectMode has no mode attribute");
             } else {
                 std::string pStreamAEMode;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("mode", pStreamAEMode) == SUCCESS, "get pStreamAEMode fail");
+                curNode->GetProp("mode", pStreamAEMode);
                 scene.mode.push_back(pStreamAEMode);
                 scene.device.push_back({});
                 LoadPostDevice(scene.device[modeNum], curNode->GetCopyNode());
@@ -634,7 +633,7 @@ static void LoadPostStreamScenes(std::vector<PostStreamScene> &scenes, std::shar
                 AUDIO_WARNING_LOG("missing information: stream has no scene attribute");
             } else {
                 std::string pStreamType;
-                CHECK_AND_RETURN_LOG(curNode->GetProp("scene", pStreamType) == SUCCESS, "get pStreamType fail");
+                curNode->GetProp("scene", pStreamType);
                 tmp.stream = pStreamType;
                 scenes.push_back(tmp);
                 LoadPostMode(scenes[streamNum], curNode->GetCopyNode());
@@ -719,8 +718,7 @@ static void LoadPostProcessCfg(OriginalEffectConfig &result, std::shared_ptr<Aud
                 countPostSecondNode[INDEX_POST_PRIOR_SCENE]);
         } else if (curNode->CompareName("normalScene")) {
             std::string maxExtraNumStr;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("maxExtSceneNumber", maxExtraNumStr) == SUCCESS,
-                "getProp maxExtSceneNumber fail");
+            curNode->GetProp("maxExtSceneNumber", maxExtraNumStr);
             CHECK_AND_RETURN_LOG(StringConverter(maxExtraNumStr, result.postProcess.maxExtSceneNum),
                 "convert maxExtraNumStr: %{public}s fail!", maxExtraNumStr.c_str());
             LoadPostStreamScenesCheck(result.postProcess.normalScenes, curNode->GetCopyNode(),
@@ -780,8 +778,7 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "error: could not parse audio effect config file");
 
     if (LoadConfigCheck(curNode->GetCopyNode()) == 0) {
-        CHECK_AND_RETURN_RET_LOG(curNode->GetProp("version", result.version) == SUCCESS,
-            ERROR, "getProp version fail");
+        curNode->GetProp("version", result.version);
         curNode->MoveToChildren();
     } else {
         return FILE_CONTENT_ERROR;

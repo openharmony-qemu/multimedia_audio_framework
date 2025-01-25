@@ -521,7 +521,7 @@ void AudioPolicyParser::ParseGroup(std::shared_ptr<AudioXmlNode> curNode, XmlNod
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             std::string groupName;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", groupName) == SUCCESS, "get name fail!");
+            curNode->GetProp("name", groupName);
             ParseGroupSink(curNode->GetCopyNode(), type, groupName);
         }
         curNode->MoveToNext();
@@ -535,7 +535,7 @@ void AudioPolicyParser::ParseGroupSink(std::shared_ptr<AudioXmlNode> curNode, Xm
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             std::string sinkName;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", sinkName) == SUCCESS, "get sinkName fail!");
+            curNode->GetProp("name", sinkName);
             if (type == XmlNodeType::VOLUME_GROUPS) {
                 volumeGroupMap_[sinkName] = groupName;
             } else if (type == XmlNodeType::INTERRUPT_GROUPS) {
@@ -598,8 +598,8 @@ void AudioPolicyParser::ParsePAConfigs(std::shared_ptr<AudioXmlNode> curNode)
         if (curNode->IsElementNode()) {
             std::string name;
             std::string value;
-            CHECK_AND_RETURN_LOG(curNode->GetProp("name", name) == SUCCESS, "get name fail!");
-            CHECK_AND_RETURN_LOG(curNode->GetProp("value", value) == SUCCESS, "get value fail!");
+            curNode->GetProp("name", name);
+            curNode->GetProp("value", value);
             uint64_t convertValue = 0;
 
             switch (GetPaConfigType(name)) {
@@ -630,7 +630,7 @@ void AudioPolicyParser::ParseDefaultMaxInstances(std::shared_ptr<AudioXmlNode> c
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             std::string sExtendInfo;
-            CHECK_AND_RETURN_LOG(curNode->GetContent(sExtendInfo) == SUCCESS, "GetContent Fail!");
+            curNode->GetContent(sExtendInfo);
             switch (GetDefaultMaxInstanceTypeAsInt(curNode)) {
                 case DefaultMaxInstanceType::OUTPUT:
                     ParseOutputMaxInstances(curNode->GetCopyNode());
