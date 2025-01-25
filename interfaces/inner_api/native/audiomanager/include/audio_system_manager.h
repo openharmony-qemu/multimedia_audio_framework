@@ -1272,6 +1272,18 @@ public:
     */
     int32_t SetVoiceRingtoneMute(bool isMute);
 
+    /**
+    * @brief Get standby state.
+    *
+    * @param sessionId Specifies which stream to be check.
+    * @param isStandby true means the stream is in standby status.
+    * @param enterStandbyTime Specifies when the stream enter standby status, in MONOTONIC time.
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
+    * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
+    */
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
+
     int32_t GenerateSessionId(uint32_t &sessionId);
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const std::shared_ptr<AudioInterruptCallback> &callback,
         uint32_t clientUid, const int32_t zoneID);

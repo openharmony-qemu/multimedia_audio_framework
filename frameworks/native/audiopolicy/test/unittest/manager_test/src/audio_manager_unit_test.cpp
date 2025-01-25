@@ -34,6 +34,7 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+    constexpr size_t WRTTE_BUFFER_SIZE = 38400;
     constexpr uint32_t MIN_DEVICE_COUNT = 2;
     constexpr uint32_t MIN_DEVICE_ID = 1;
     constexpr uint32_t MIN_DEVICE_NUM = 1;
@@ -639,6 +640,84 @@ HWTEST(AudioManagerUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
     audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     auto ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name   : Test GetStandbyStatus API
+* @tc.number : GetStandbyStatus_001
+* @tc.desc   : Test GetStandbyStatus_001 interface.
+*/
+HWTEST(AudioManagerUnitTest, GetStandbyStatus_001, TestSize.Level1)
+{
+    uint32_t sessionId = 0;
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    auto ret = AudioSystemManager::GetInstance()->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name   : Test GetStandbyStatus API
+* @tc.number : GetStandbyStatus_002
+* @tc.desc   : Test GetStandbyStatus_002 interface.
+*/
+HWTEST(AudioManagerUnitTest, GetStandbyStatus_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions = {};
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_RINGTONE;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+    unique_ptr<AudioRenderer> renderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, renderer);
+
+    renderer->Start();
+    std::unique_ptr<uint8_t[]> tempBuffer = std::make_unique<uint8_t[]>(WRTTE_BUFFER_SIZE);
+    renderer->Write(tempBuffer.get(), WRTTE_BUFFER_SIZE);
+
+    uint32_t sessionId = 0;
+    renderer->GetAudioStreamId(sessionId);
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    auto ret = AudioSystemManager::GetInstance()->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+    ASSERT_EQ(ret, SUCCESS) << "GetStandbyStatus call failed";
+    ASSERT_EQ(isStandby, false) << "renderer should not be standby";
+}
+
+/**
+* @tc.name   : Test GetStandbyStatus API
+* @tc.number : GetStandbyStatus_003
+* @tc.desc   : Test GetStandbyStatus_003 interface.
+*/
+HWTEST(AudioManagerUnitTest, GetStandbyStatus_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions = {};
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_RINGTONE;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+    unique_ptr<AudioRenderer> renderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, renderer);
+
+    renderer->Start();
+    std::unique_ptr<uint8_t[]> tempBuffer = std::make_unique<uint8_t[]>(WRTTE_BUFFER_SIZE);
+    renderer->Write(tempBuffer.get(), WRTTE_BUFFER_SIZE);
+
+    usleep(2000000); // 2000000 for sleep 2s, wait for steam enter standby
+
+    uint32_t sessionId = 0;
+    renderer->GetAudioStreamId(sessionId);
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    auto ret = AudioSystemManager::GetInstance()->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+    ASSERT_EQ(ret, SUCCESS) << "GetStandbyStatus call failed";
+    ASSERT_EQ(isStandby, true) << "renderer should be in standby";
 }
 
 /**

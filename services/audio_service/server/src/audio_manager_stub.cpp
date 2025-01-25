@@ -107,6 +107,7 @@ const char *g_audioServerCodeStrs[] = {
     "RESTORE_SESSION",
     "CREATE_IPC_OFFLINE_STREAM",
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
+    "GET_STANDBY_STATUS",
     "GENERATE_SESSION_ID",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
@@ -809,6 +810,8 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleCreateIpcOfflineStream(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS):
             return HandleGetOfflineAudioEffectChains(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS):
+            return HandleGetStandbyStatus(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID):
             return HandleGenerateSessionId(data, reply);
         default:
@@ -1078,6 +1081,19 @@ int AudioManagerStub::HandleSetNonInterruptMute(MessageParcel &data, MessageParc
     uint32_t sessionId = data.ReadUint32();
     bool muteFlag = data.ReadBool();
     SetNonInterruptMute(sessionId, muteFlag);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    int32_t result = GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+
+    reply.WriteInt32(result);
+    reply.WriteBool(isStandby);
+    reply.WriteInt64(enterStandbyTime);
     return AUDIO_OK;
 }
 

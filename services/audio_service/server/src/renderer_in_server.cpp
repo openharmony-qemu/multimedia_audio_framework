@@ -332,6 +332,7 @@ void RendererInServer::StandByCheck()
 
     // call enable stand by
     standByEnable_ = true;
+    enterStandbyTime_ = ClockTime::GetCurNano();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
     if (managerType_ == PLAYBACK) {
         stream_->Pause(true);
@@ -354,6 +355,19 @@ bool RendererInServer::ShouldEnableStandBy()
         return true;
     }
     return false;
+}
+
+int32_t RendererInServer::GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime)
+{
+    Trace trace("RendererInServer::GetStandbyStatus:" + std::to_string(streamIndex_) + (standByEnable_ ? " Enabled" :
+        "Disabled"));
+    isStandby = standByEnable_;
+    if (isStandby) {
+        enterStandbyTime = enterStandbyTime_;
+    } else {
+        enterStandbyTime = 0;
+    }
+    return SUCCESS;
 }
 
 void RendererInServer::HandleOperationFlushed()
@@ -715,6 +729,7 @@ int32_t RendererInServer::Start()
             dupStream_->Start();
         }
     }
+    enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
@@ -752,6 +767,7 @@ int32_t RendererInServer::Pause()
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
             ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
+        enterStandbyTime_ = 0;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
     }
     standByCounter_ = 0;
@@ -887,6 +903,7 @@ int32_t RendererInServer::Stop()
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
             ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
+        enterStandbyTime_ = 0;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
     }
     {

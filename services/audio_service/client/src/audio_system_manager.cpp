@@ -1014,6 +1014,15 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
     return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
 }
 
+int32_t AudioSystemManager::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_ILLEGAL_STATE, "Audio service unavailable.");
+    int32_t ret = gasp->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "failed: %{public}d", ret);
+    return ret;
+}
+
 int32_t AudioSystemManager::GenerateSessionId(uint32_t &sessionId)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();

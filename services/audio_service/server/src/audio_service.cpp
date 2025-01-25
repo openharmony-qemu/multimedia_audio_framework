@@ -253,6 +253,33 @@ void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererIn
     allRendererMap_[sessionId] = renderer;
 }
 
+int32_t AudioService::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
+{
+    // for normal renderer.
+    std::unique_lock<std::mutex> lockRender(rendererMapMutex_);
+    if (allRendererMap_.count(sessionId)) {
+        std::shared_ptr<RendererInServer> render = allRendererMap_[sessionId].lock();
+        if (render == nullptr) {
+            return ERR_INVALID_PARAM;
+        }
+        return render->GetStandbyStatus(isStandby, enterStandbyTime);
+    }
+    lockRender.unlock();
+
+    // for fast process.
+#ifdef SUPPORT_LOW_LATENCY
+    std::unique_lock<std::mutex> lockProcess(processListMutex_);
+    for (auto paired : linkedPairedList_) {
+        sptr<AudioProcessInServer> process = paired.first;
+        if (process->GetSessionId() == sessionId) {
+            return process->GetStandbyStatus(isStandby, enterStandbyTime);
+        }
+    }
+#endif
+    // not found target sessionId
+    return ERR_INVALID_PARAM;
+}
+
 void AudioService::RemoveRenderer(uint32_t sessionId)
 {
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
