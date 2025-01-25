@@ -510,7 +510,7 @@ bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
 }
 
 void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState)
-{   
+{
     const std::chrono::seconds TIMEOUT_DURATION(2);
     AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.");
     std::this_thread::sleep_for(TIMEOUT_DURATION);
