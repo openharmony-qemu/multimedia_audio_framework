@@ -20,12 +20,11 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 
 #include "audio_policy_log.h"
 #include "iport_observer.h"
 #include "parser.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,11 +36,11 @@ public:
     static constexpr char DEVICE_CONFIG_PROD_FILE[] = "/sys_prod/etc/audio/audio_device_privacy.xml";
 
     bool LoadConfiguration() final;
-    bool Parse() final;
     void Destroy() final;
 
     AudioUsageStrategyParser()
     {
+        curNode_ = AudioXmlNode::Create();
         AUDIO_DEBUG_LOG("AudioUsageStrategyParser ctor");
     }
 
@@ -49,15 +48,16 @@ public:
     {
         AUDIO_DEBUG_LOG("AudioUsageStrategyParser dtor");
         Destroy();
+        curNode_ = nullptr;
     }
 
     std::unordered_map<StreamUsage, std::string> renderConfigMap_;
     std::unordered_map<SourceType, std::string> capturerConfigMap_;
 
 private:
-    bool ParseInternal(xmlNode *node);
-    void ParserStreamUsageList(xmlNode *node);
-    void ParserSourceTypeList(xmlNode *node);
+    bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
+    void ParserStreamUsageList(std::shared_ptr<AudioXmlNode> curNode);
+    void ParserSourceTypeList(std::shared_ptr<AudioXmlNode> curNode);
     void ParserStreamUsageInfo(const std::string &strategyName, const std::string &streamUsage);
     void ParserStreamUsage(const std::vector<std::string> &buf, const std::string &routerName);
     void ParserSourceTypeInfo(const std::string &sourceType, const std::string &nameSourceType);
@@ -107,7 +107,7 @@ private:
         {"SOURCE_TYPE_UNPROCESSED", SOURCE_TYPE_UNPROCESSED},
     };
 
-    xmlDoc *doc_;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

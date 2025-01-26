@@ -32,11 +32,12 @@ namespace OHOS {
 namespace AudioStandard {
 bool AudioStrategyRouterParser::LoadConfiguration()
 {
-    doc_ = xmlReadFile(DEVICE_CONFIG_PROD_FILE, nullptr, 0);
-    if (doc_ == nullptr) {
-        doc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
+    curNode_ = AudioXmlNode::Create();
+    int32_t ret = curNode_->Config(DEVICE_CONFIG_PROD_FILE, nullptr, 0);
+    if (ret != SUCCESS) {
+        ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
     }
-    if (doc_ == nullptr) {
+    if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Not found audio_strategy_router.xml!");
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR, Media::MediaMonitor::FAULT_EVENT);
@@ -44,47 +45,37 @@ bool AudioStrategyRouterParser::LoadConfiguration()
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         return false;
     }
-    return true;
-}
-
-bool AudioStrategyRouterParser::Parse()
-{
-    xmlNode *root = xmlDocGetRootElement(doc_);
-    CHECK_AND_RETURN_RET_LOG(root != nullptr, false, "xmlDocGetRootElement failed");
-
-    bool ret = ParseInternal(root);
-    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio strategy router xml parse failed.");
+    bool result = ParseInternal(curNode_->GetCopyNode());
+    CHECK_AND_RETURN_RET_LOG(result, false, "Audio strategy router xml parse failed.");
     return true;
 }
 
 void AudioStrategyRouterParser::Destroy()
 {
-    if (doc_ != nullptr) {
-        xmlFreeDoc(doc_);
-    }
+    curNode_->FreeDoc();
 }
 
-bool AudioStrategyRouterParser::ParseInternal(xmlNode *node)
+bool AudioStrategyRouterParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNode)
 {
-    xmlNode *currNode = node;
-
-    for (; currNode; currNode = currNode->next) {
-        if (XML_ELEMENT_NODE == currNode->type) {
-            if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("strategy"))) {
-                ParserStrategyInfo(currNode);
-            } else {
-                ParseInternal((currNode->xmlChildrenNode));
-            }
+    for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
+        if (!curNode->IsElementNode()) {
+            continue;
+        }
+        if (curNode->CompareName("strategy")) {
+            ParserStrategyInfo(curNode->GetCopyNode());
+        } else {
+            ParseInternal(curNode->GetChildrenNode());
         }
     }
     return true;
 }
 
-void AudioStrategyRouterParser::ParserStrategyInfo(xmlNode *node)
+void AudioStrategyRouterParser::ParserStrategyInfo(std::shared_ptr<AudioXmlNode> curNode)
 {
-    xmlNode *strategyNode = node;
-    string name = ExtractPropertyValue("name", strategyNode);
-    string routers = ExtractPropertyValue("routers", strategyNode);
+    string name;
+    string routers;
+    curNode->GetProp("name", name);
+    curNode->GetProp("routers", routers);
 
     if (name == "MEDIA_RENDER") {
         AddRouters(mediaRenderRouters_, routers);
@@ -101,23 +92,6 @@ void AudioStrategyRouterParser::ParserStrategyInfo(xmlNode *node)
     } else if (name == "VOICE_MESSAGE_CAPTURE") {
         AddRouters(voiceMessageRouters_, routers);
     }
-}
-
-std::string AudioStrategyRouterParser::ExtractPropertyValue(const std::string &propName, xmlNode *node)
-{
-    std::string propValue = "";
-    xmlChar *tempValue = nullptr;
-
-    if (xmlHasProp(node, reinterpret_cast<const xmlChar*>(propName.c_str()))) {
-        tempValue = xmlGetProp(node, reinterpret_cast<const xmlChar*>(propName.c_str()));
-    }
-
-    if (tempValue != nullptr) {
-        propValue = reinterpret_cast<const char*>(tempValue);
-        xmlFree(tempValue);
-    }
-
-    return propValue;
 }
 
 std::vector<std::string> AudioStrategyRouterParser::split(const std::string &line, const std::string &sep)

@@ -274,6 +274,7 @@ audio_ohos_library("audio_policy_service") {
     "../../frameworks/native/audioadapter:pulse_audio_service_adapter",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioutils:audio_utils",
+    "../../frameworks/native/audioutils:audio_xml_utils",
     "../audio_policy:audio_config.para",
     "../audio_policy:audio_config.para.dac",
     "../audio_policy:audio_foundation",

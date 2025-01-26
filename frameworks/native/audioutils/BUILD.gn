@@ -81,3 +81,29 @@ ohos_shared_library("audio_utils") {
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
 }
+
+ohos_shared_library("audio_xml_utils") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  public_configs = [ ":audio_utils_public_config" ]
+  install_enable = true
+  include_dirs = [
+    "./include/audio_xml_parser.h",
+    "../../../interfaces/inner_api/native/audiocommon/include/",
+  ]
+
+  sources = [ "./src/audio_xml_parser.cpp" ]
+
+  public_external_deps = [ "libxml2:libxml2" ]
+
+  external_deps = [ "hilog:libhilog" ]
+
+  subsystem_name = "multimedia"
+  innerapi_tags = [ "platformsdk_indirect" ]
+  part_name = "audio_framework"
+}

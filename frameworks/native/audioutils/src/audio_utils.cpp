@@ -851,6 +851,7 @@ bool StringConverter(const std::string &str, T &result)
 template bool StringConverter(const std::string &str, uint64_t &result);
 template bool StringConverter(const std::string &str, uint32_t &result);
 template bool StringConverter(const std::string &str, int32_t &result);
+template bool StringConverter(const std::string &str, uint16_t &result);
 template bool StringConverter(const std::string &str, uint8_t &result);
 template bool StringConverter(const std::string &str, int8_t &result);
 

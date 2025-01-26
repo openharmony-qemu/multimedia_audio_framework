@@ -19,13 +19,12 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 
 #include "audio_policy_log.h"
 #include "iport_observer.h"
 #include "parser.h"
 #include "router_base.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,11 +35,11 @@ public:
     static constexpr char DEVICE_CONFIG_PROD_FILE[] = "/sys_prod/etc/audio/audio_device_privacy.xml";
 
     bool LoadConfiguration() final;
-    bool Parse() final;
     void Destroy() final;
 
     AudioStrategyRouterParser()
     {
+        curNode_ = AudioXmlNode::Create();
         AUDIO_DEBUG_LOG("AudioStrategyRouterParser ctor");
     }
 
@@ -48,6 +47,7 @@ public:
     {
         AUDIO_DEBUG_LOG("AudioStrategyRouterParser dtor");
         Destroy();
+        curNode_ = nullptr;
     }
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
@@ -59,13 +59,11 @@ public:
     std::vector<std::unique_ptr<RouterBase>> voiceMessageRouters_;
 
 private:
-    bool ParseInternal(xmlNode *node);
-    void ParserStrategyInfo(xmlNode *node);
+    bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
+    void ParserStrategyInfo(std::shared_ptr<AudioXmlNode> curNode);
     void AddRouters(std::vector<std::unique_ptr<RouterBase>> &routers, string &routeName);
-    string ExtractPropertyValue(const string &propName, xmlNode *node);
     std::vector<std::string> split(const std::string &line, const std::string &sep);
-
-    xmlDoc *doc_;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

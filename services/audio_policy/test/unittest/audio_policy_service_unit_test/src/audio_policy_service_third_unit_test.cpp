@@ -565,7 +565,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioToneParser_003, TestSize.Level1)
     ASSERT_NE(nullptr, audioToneParser);
 
     std::shared_ptr<ToneInfo> ltoneDesc = std::make_shared<ToneInfo>();
-    xmlNode *node = nullptr;
+    std::shared_ptr<AudioXmlNode> node = AudioXmlNode::Create();
     audioToneParser->ParseToneInfoAttribute(node, ltoneDesc);
     EXPECT_NE(nullptr, ltoneDesc);
 

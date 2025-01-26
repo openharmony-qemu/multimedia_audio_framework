@@ -44,11 +44,6 @@ bool AudioConfigManager::Init()
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
-    ret = audioPolicyConfigParser->Parse();
-    if (!ret) {
-        AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
-        AUDIO_ERR_LOG("Audio Policy Config Parse Configuration failed");
-    }
     return ret;
 }
 
