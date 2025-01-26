@@ -177,7 +177,7 @@ int32_t AudioProcessInServer::Start()
             processConfig_.appInfo.appTokenId,
             CAPTURER_RUNNING,
         };
-        if (!SwitchStreamUtil::IsSwitchStreamSwtching(info, SWITCH_STATE_STARTED)) {
+        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
             CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
                 processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
         }
@@ -253,9 +253,9 @@ int32_t AudioProcessInServer::Resume()
         };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        if (!SwitchStreamUtil::IsSwitchStreamSwtching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
-            "VerifyBackgroundCapture failed!");
+        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
+                ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
         }
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_), ERR_PERMISSION_DENIED,
             "NotifyPrivacyStart failed!");

@@ -1418,7 +1418,6 @@ void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(
     }
 }
 
-
 int32_t AudioDeviceCommon::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
     std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor)
 {

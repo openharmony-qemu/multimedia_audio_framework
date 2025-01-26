@@ -475,7 +475,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 std::mutex g_switchMapMutex;
 static std::map<SwitchStreamInfo, SwitchState> g_switchStreamRecordMap = {};
 
-bool SwitchStreamUtil::IsSwitchStreamSwtching(SwitchStreamInfo info, SwitchState targetState)
+bool SwitchStreamUtil::IsSwitchStreamSwitching(SwitchStreamInfo info, SwitchState targetState)
 {
     std::lock_guard<std::mutex> lock(g_switchMapMutex);
     auto iter = g_switchStreamRecordMap.find(info);
@@ -518,8 +518,9 @@ void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, S
     {
         std::lock_guard<std::mutex> lock(g_switchMapMutex);
         auto it = g_switchStreamRecordMap.find(info);
-        if (it != g_switchStreamRecordMap.end() && it->second == SWITCH_STATE_WAITING) {
+        if (it != g_switchStreamRecordMap.end()) {
             it->second = SWITCH_STATE_TIMEOUT;
+            g_switchStreamRecordMap.erase(it);
             AUDIO_INFO_LOG("SwitchStream:%{public}u uid:%{public}d CapturerState:%{public}d was timeout! "
                 "Update Record switchState:%{public}d success",
                 info.sessionId, info.appUid, info.nextState, SWITCH_STATE_TIMEOUT);
@@ -591,7 +592,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
             AUDIO_INFO_LOG("SwitchStream will finish!Remove Record for stream:%{public}u uid:%{public}d ",
                 info.sessionId, info.appUid);
         }
-        if (iter->second == SWITCH_STATE_TIMEOUT || iter->second ==SWITCH_STATE_FINISHED) {
+        if (iter->second == SWITCH_STATE_TIMEOUT || iter->second == SWITCH_STATE_FINISHED) {
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState), false,
                 "Remove TIMEOUT or FINISHED Record for Stream:%{public}u Failed!", iter->first.sessionId);
             return false;

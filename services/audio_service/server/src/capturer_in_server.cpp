@@ -320,7 +320,7 @@ int32_t CapturerInServer::Start()
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
-    if (needCheckBackground_) {
+    if (needCheckBackground_) { 
         SwitchStreamInfo info = {
             streamIndex_,
             processConfig_.callerUid,
@@ -330,9 +330,9 @@ int32_t CapturerInServer::Start()
             CAPTURER_RUNNING,
         };
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        if (!SwitchStreamUtil::IsSwitchStreamSwtching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(info.appTokenId, fullTokenId),
-            ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
+        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(info.appTokenId,
+                fullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
         }
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(info.appTokenId, streamIndex_),
             ERR_PERMISSION_DENIED, "NotifyPrivacyStart failed!");

@@ -155,7 +155,7 @@ public:
     static bool InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState);
     static bool UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState);
     static bool RemoveSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState);
-    static bool IsSwitchStreamSwtching(SwitchStreamInfo info, SwitchState targetState);
+    static bool IsSwitchStreamSwitching(SwitchStreamInfo info, SwitchState targetState);
     static bool HandelCreatedSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState);
     static bool HandelStartedSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState);
     static bool HandelSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState);
