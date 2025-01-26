@@ -967,6 +967,17 @@ public:
      */
     virtual bool Unmute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const {return false;};
 
+    /**
+     * @brief Obtains the position info after speed convert.
+     *
+     * @param timestamp Indicates a {@link Timestamp} instance reference provided by the caller.
+     * @param base Indicates the time base, which can be {@link Timestamp.Timestampbase#BOOTTIME} or
+     * {@link Timestamp.Timestampbase#MONOTONIC}.
+     * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
+     * @since 15
+     */
+    virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
+
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);

@@ -2195,5 +2195,13 @@ int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
     CHECK_AND_RETURN_RET_LOG(isSupportedStreamUsage, ERR_NOT_SUPPORTED, "stream usage not supported");
     return currentStream->SetDefaultOutputDevice(deviceType);
 }
+
+// diffrence from GetAudioPosition only when set speed
+int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->GetAudioTimestampInfo(timestamp, base);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
