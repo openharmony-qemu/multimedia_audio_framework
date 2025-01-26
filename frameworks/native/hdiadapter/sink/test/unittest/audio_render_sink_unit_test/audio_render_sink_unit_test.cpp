@@ -20,6 +20,9 @@
 #include "audio_renderer_sink.h"
 #include "bluetooth_renderer_sink.h"
 #include "remote_audio_renderer_sink.h"
+#include "audio_renderer_file_sink.h"
+#include "offload_audio_renderer_sink.h"
+#include "multichannel_audio_renderer_sink.h"
 
 
 using namespace testing::ext;
@@ -118,6 +121,9 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_002, TestSize.Level1)
     uint32_t latency = 0;
     ret = renderer->GetLatency(&latency);
     EXPECT_NE(ret, SUCCESS);
+
+    ret = renderer->GetAudioScene();
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
 
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
@@ -233,6 +239,9 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_004, TestSize.Level1)
     uint32_t latency = 0;
     ret = renderer->GetLatency(&latency);
     EXPECT_NE(ret, SUCCESS);
+
+    ret = renderer->GetAudioScene();
+    EXPECT_NE(ret, AUDIO_SCENE_INVALID);
 
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
@@ -352,6 +361,9 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_006, TestSize.Level1)
     ret = renderer->GetLatency(&latency);
     EXPECT_NE(ret, SUCCESS);
 
+    ret = renderer->GetAudioScene();
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
     EXPECT_NE(ret, SUCCESS);
@@ -469,6 +481,9 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_008, TestSize.Level1)
     uint32_t latency = 0;
     ret = renderer->GetLatency(&latency);
     EXPECT_NE(ret, SUCCESS);
+
+    ret = renderer->GetAudioScene();
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
 
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
@@ -588,6 +603,9 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_010, TestSize.Level1)
     ret = renderer->GetLatency(&latency);
     EXPECT_EQ(ret, SUCCESS);
 
+    ret = renderer->GetAudioScene();
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
     EXPECT_NE(ret, SUCCESS);
@@ -632,6 +650,48 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_010, TestSize.Level1)
 
     ret = renderer->SetSinkMuteForSwitchDevice(false);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Template AudioRendererSink
+ * @tc.number: AudioRendererSink_011
+ * @tc.desc  : Test Template AudioRendererSink call Create Then Get Or Set Value
+ */
+HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_011, TestSize.Level1)
+{
+    MultiChannelRendererSink *renderer = MultiChannelRendererSink::GetInstance("multichannel");
+    ASSERT_NE(renderer, nullptr);
+
+    auto ret = renderer->GetAudioScene();
+    EXPECT_NE(ret, AUDIO_SCENE_INVALID);
+}
+
+/**
+ * @tc.name  : Test Template AudioRendererSink
+ * @tc.number: AudioRendererSink_012
+ * @tc.desc  : Test Template AudioRendererSink call Create Then Get Or Set Value
+ */
+HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_012, TestSize.Level1)
+{
+    OffloadRendererSink *renderer = OffloadRendererSink::GetInstance();
+    ASSERT_NE(renderer, nullptr);
+
+    auto ret = renderer->GetAudioScene();
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test Template AudioRendererSink
+ * @tc.number: AudioRendererSink_013
+ * @tc.desc  : Test Template AudioRendererSink call Create Then Get Or Set Value
+ */
+HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_013, TestSize.Level1)
+{
+    AudioRendererFileSink *renderer = AudioRendererFileSink::GetInstance();
+    ASSERT_NE(renderer, nullptr);
+
+    auto ret = renderer->GetAudioScene();
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

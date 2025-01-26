@@ -105,6 +105,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
@@ -852,6 +853,12 @@ int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
 int32_t OffloadAudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
 {
     AUDIO_DEBUG_LOG("SetOutputRoutes not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t OffloadAudioRendererSinkInner::GetAudioScene()
+{
+    AUDIO_WARNING_LOG("not supported.");
     return ERR_NOT_SUPPORTED;
 }
 
