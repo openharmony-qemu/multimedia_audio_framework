@@ -124,6 +124,7 @@ time_t g_effectStartVolZeroTimeMap[SCENE_TYPE_NUM] = {0};
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_DEFAULT", "SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
     "SCENE_SPEECH", "SCENE_RING", "SCENE_VOIP", "SCENE_OTHERS", "EFFECT_NONE"};
 const int32_t COMMON_SCENE_TYPE_INDEX = 0;
+const uint64_t FADE_OUT_TIME = 5000; // 5ms
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -1109,7 +1110,7 @@ static int32_t GetFadeLenth(enum FadeStrategy fadeStrategy, size_t chunkLength, 
 
     if (fadeStrategy == FADE_STRATEGY_SHORTER) {
         // do 5ms fade-in fade-out
-        size_t fadeLenth = pa_usec_to_bytes(5000, &ss);
+        size_t fadeLenth = pa_usec_to_bytes(FADE_OUT_TIME, &ss);
         return ((fadeLenth < chunkLength) ? fadeLenth : chunkLength);
     }
 
