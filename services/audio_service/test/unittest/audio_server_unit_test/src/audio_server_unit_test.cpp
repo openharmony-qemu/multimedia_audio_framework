@@ -761,7 +761,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
     config.audioMode = AUDIO_MODE_RECORD;
     remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID);
     EXPECT_EQ(nullptr, remoteObject);
-    bool ret = audioServer->IsFastBlocked(1);
+    bool ret = audioServer->IsFastBlocked(1, PLAYER_TYPE_DEFAULT);
     EXPECT_EQ(false, ret);
     config.audioMode = static_cast<AudioMode>(-1);
     ret = audioServer->IsNormalIpcStream(config);
