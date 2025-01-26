@@ -475,7 +475,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 std::mutex g_switchMapMutex;
 static std::map<SwitchStreamInfo, SwitchState> g_switchStreamRecordMap = {};
 
-bool SwitchStreamUtil::IsSwitchStreamSwitching(SwitchStreamInfo info, SwitchState targetState)
+bool SwitchStreamUtil::IsSwitchStreamSwitching(SwitchStreamInfo &info, SwitchState targetState)
 {
     std::lock_guard<std::mutex> lock(g_switchMapMutex);
     auto iter = g_switchStreamRecordMap.find(info);
@@ -494,7 +494,7 @@ bool SwitchStreamUtil::IsSwitchStreamSwitching(SwitchStreamInfo info, SwitchStat
     return false;
 }
 
-bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState)
+bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     if (RECORD_ALLOW_BACKGROUND_LIST.count(info.callerUid)) {
         AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", info.callerUid);
@@ -509,7 +509,7 @@ bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
     return true;
 }
 
-void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState)
+void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     const std::chrono::seconds TIMEOUT_DURATION(2);
     AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.");
@@ -528,7 +528,7 @@ void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, S
     }
 }
 //Remove switchStreamInfo from  switchStreamRecordMap must be called with g_switchMapMutex held
-bool SwitchStreamUtil::RemoveSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState)
+bool SwitchStreamUtil::RemoveSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     if (g_switchStreamRecordMap.count(info) != 0) {
         g_switchStreamRecordMap.erase(info);
@@ -554,7 +554,7 @@ bool SwitchStreamUtil::RemoveAllRecordBySessionId(uint32_t sessionId)
     return true;
 }
 
-bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState)
+bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     std::lock_guard<std::mutex> lock(g_switchMapMutex);
     auto iter = g_switchStreamRecordMap.find(info);
@@ -566,7 +566,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
             AUDIO_INFO_LOG("Insert SwitchStream into Record success!");
         }
         return true;
-    } 
+    }
         
     switch (targetState) {
         case SWITCH_STATE_WAITING:
@@ -602,7 +602,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
     return true;
 }
 
-bool SwitchStreamUtil::HandelCreatedSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState)
+bool SwitchStreamUtil::HandelCreatedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     auto iter = g_switchStreamRecordMap.find(info);
     if (iter->second == SWITCH_STATE_WAITING && (info.nextState == CAPTURER_PREPARED)) {
@@ -617,7 +617,7 @@ bool SwitchStreamUtil::HandelCreatedSwitchInfoInRecord(SwitchStreamInfo info, Sw
     return true;
 }
 
-bool SwitchStreamUtil::HandelSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState)
+bool SwitchStreamUtil::HandelSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     auto iter = g_switchStreamRecordMap.find(info);
     if (((iter->second == SWITCH_STATE_CREATED) || (iter->second == SWITCH_STATE_STARTED)) &&
@@ -638,7 +638,7 @@ bool SwitchStreamUtil::HandelSwitchInfoInRecord(SwitchStreamInfo info, SwitchSta
     return true;
 }
 
-bool SwitchStreamUtil::HandelStartedSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState)
+bool SwitchStreamUtil::HandelStartedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     auto iter = g_switchStreamRecordMap.find(info);
     if ((iter->second == SWITCH_STATE_CREATED) && (info.nextState == CAPTURER_RUNNING)) {
