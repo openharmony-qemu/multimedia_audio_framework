@@ -328,6 +328,30 @@ ohos_unittest("audio_policy_service_all_unit_test") {
     external_deps += [ "bluetooth:btframework" ]
   }
 
+  if (audio_framework_feature_wired_audio) {
+    defines += [ "AUDIO_WIRED_DETECT" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
+  if (audio_framework_feature_offline_effect) {
+    defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
+  if (audio_framework_feature_distributed_audio) {
+    defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
+  }
+
+  if (audio_framework_feature_file_io == true) {
+    defines += [ "FEATURE_FILE_IO" ]
+  }
+
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
   if (avsession_part_enable == true) {
     external_deps += [
       "ability_base:want",

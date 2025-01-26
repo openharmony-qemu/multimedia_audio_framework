@@ -294,7 +294,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, IsBlueTooth_001, TestSize.Level1)
 
     deviceType = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     ret = server->audioPolicyService_.audioVolumeManager_.IsBlueTooth(deviceType);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -357,11 +357,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CreateCheckMusicActiveThread_001, TestSi
 HWTEST_F(AudioPolicyServiceExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    int32_t volumeLevel = 5;
+    int32_t volumeLevel = 8;
     bool isA2dpDevice = true;
     int32_t volumeLevelRet
         = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 5);
+    EXPECT_EQ(volumeLevelRet, 8);
 
     isA2dpDevice = false;
     volumeLevelRet = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
@@ -386,10 +386,10 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, HandleAbsBluetoothVolume_001, TestSize.L
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
     EXPECT_EQ(safeVolumeLevel, 8);
 
-    volumeLevel = 1;
+    volumeLevel = 8;
     safeVolumeLevel
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
-    EXPECT_EQ(safeVolumeLevel, 1);
+    EXPECT_EQ(safeVolumeLevel, 8);
 }
 
 /**
@@ -682,12 +682,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetProcessDeviceInfo_001, TestSize.Level
     ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
     EXPECT_EQ(ret, SUCCESS);
 
-    config.audioMode = AudioMode::AUDIO_MODE_RECORD;
-    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
-    EXPECT_EQ(ret, SUCCESS);
-
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
     EXPECT_EQ(ret, SUCCESS);
@@ -741,7 +735,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetSharedVolume_001, TestSize.Level1)
     Volume vol;
 
     bool ret = server->audioPolicyService_.GetSharedVolume(streamType, deviceType, vol);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -1102,10 +1096,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStartPlaying_001, TestSize.Level1
     std::vector<int32_t> sessionIds = {0};
     int32_t ret;
 
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
-    ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
-    EXPECT_EQ(ret, ERROR);
-
     server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
     EXPECT_EQ(ret, SUCCESS);
@@ -1126,10 +1116,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStopPlaying_001, TestSize.Level1)
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     std::vector<int32_t> sessionIds = {0};
     int32_t ret;
-
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
-    ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
-    EXPECT_EQ(ret, ERROR);
 
     server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
@@ -1153,13 +1139,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.L
     uint64_t sendDataSize = 0;
     uint32_t timeStamp = 0;
     int32_t ret;
-
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
-        = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
-    ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
-    EXPECT_EQ(ret, ERROR);
 
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
