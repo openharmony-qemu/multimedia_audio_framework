@@ -576,15 +576,15 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
                 false, "Insert SwitchStream into Record fail!");
             break;
         case SWITCH_STATE_CREATED:
-            CHECK_AND_RETURN_RET_LOG(HandelCreatedSwitchInfoInRecord(info, targetState), false,
+            CHECK_AND_RETURN_RET_LOG(HandleCreatedSwitchInfoInRecord(info, targetState), false,
                 "Handle switch record to SWITCH_STATE_CREATED failed!");
             break;
         case SWITCH_STATE_STARTED:
-            CHECK_AND_RETURN_RET_LOG(HandelStartedSwitchInfoInRecord(info, targetState), false,
+            CHECK_AND_RETURN_RET_LOG(HandleStartedSwitchInfoInRecord(info, targetState), false,
                 "Handle switch record to SWITCH_STATE_STARTED failed!");
             break;
         default:
-            CHECK_AND_RETURN_RET_LOG(HandelSwitchInfoInRecord(info, targetState), false,
+            CHECK_AND_RETURN_RET_LOG(HandleSwitchInfoInRecord(info, targetState), false,
                 "Handle switch info in record failed!");
             break;
     }
