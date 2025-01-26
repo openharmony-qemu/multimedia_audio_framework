@@ -509,7 +509,7 @@ bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
     return true;
 }
 
-void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo &info, SwitchState targetState)
+void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState)
 {
     const std::chrono::seconds TIMEOUT_DURATION(2);
     AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.");
@@ -527,6 +527,7 @@ void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo &info, 
         }
     }
 }
+
 //Remove switchStreamInfo from  switchStreamRecordMap must be called with g_switchMapMutex held
 bool SwitchStreamUtil::RemoveSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
 {

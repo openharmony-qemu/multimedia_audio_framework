@@ -160,7 +160,7 @@ private:
     static bool HandleCreatedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
     static bool HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
     static bool HandleSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
-    static void TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo &info, SwitchState targetState);
+    static void TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState);
     static bool RemoveAllRecordBySessionId(uint32_t sessionId);
 };
 
