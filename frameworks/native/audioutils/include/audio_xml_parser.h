@@ -35,7 +35,6 @@ public:
     virtual void MoveToChildren() = 0;
 
     virtual bool IsNodeValid() = 0;
-    virtual int32_t GetNodeType() = 0;
     virtual bool HasProp(const char *propName) = 0;
     virtual int32_t GetProp(const char *propName, std::string &result) = 0;
     virtual int32_t GetContent(std::string &result) = 0;

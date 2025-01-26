@@ -77,7 +77,6 @@ public:
     void MoveToChildren() override;
 
     bool IsNodeValid() override;
-    int32_t GetNodeType() override;
     bool CompareName(const char *propName) override;
     bool IsElementNode() override;
     bool HasProp(const char *propName) override;
@@ -229,12 +228,6 @@ bool AudioXmlNodeInner::IsNodeValid()
     return curNode_ != nullptr;
 }
 
-int32_t AudioXmlNodeInner::GetNodeType()
-{
-    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot GetNodeType!");
-    return curNode_->type;
-}
-
 // need check curNode_ isvalid before use
 bool AudioXmlNodeInner::HasProp(const char *propName)
 {
@@ -266,7 +259,7 @@ int32_t AudioXmlNodeInner::GetContent(std::string &result)
 
 std::string AudioXmlNodeInner::GetName()
 {
-    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot GetName!");
+    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, "", "curNode_ is nullptr! Cannot GetName!");
     return reinterpret_cast<char*>(const_cast<xmlChar*>(curNode_->name));
 }
 
@@ -299,14 +292,14 @@ int32_t AudioXmlNodeInner::StrcmpXml(const xmlChar *propName1, const xmlChar *pr
 
 bool AudioXmlNodeInner::CompareName(const char *propName)
 {
-    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot CompareName!");
+    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, false, "curNode_ is nullptr! Cannot CompareName!");
     return curNode_->type == XML_ELEMENT_NODE &&
         (StrcmpXml(curNode_->name, reinterpret_cast<const xmlChar*>(propName)) == 0);
 }
 
 bool AudioXmlNodeInner::IsElementNode()
 {
-    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot CompareElementNode!");
+    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, false, "curNode_ is nullptr! Cannot CompareElementNode!");
     return curNode_->type == XML_ELEMENT_NODE;
 }
 
