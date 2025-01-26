@@ -51,11 +51,20 @@ CapturerInServer::~CapturerInServer()
     if (status_ != I_STATUS_RELEASED) {
         Release();
     }
+    DumpFileUtil::CloseDumpFile(&dumpS2C_);
     if (needCheckBackground_) {
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_INVALID,
+        };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
-    DumpFileUtil::CloseDumpFile(&dumpS2C_);
 }
 
 int32_t CapturerInServer::ConfigServerBuffer()
@@ -312,12 +321,22 @@ int32_t CapturerInServer::Start()
         needCheckBackground_ = true;
     }
     if (needCheckBackground_) {
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_RUNNING,
+        };
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
-            "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_), ERR_PERMISSION_DENIED,
-            "NotifyPrivacyStart failed!");
+        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(info.appTokenId,
+                fullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
+        }
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(info.appTokenId, streamIndex_),
+            ERR_PERMISSION_DENIED, "NotifyPrivacyStart failed!");
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
 
     AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
@@ -337,8 +356,16 @@ int32_t CapturerInServer::Pause()
         return ERR_ILLEGAL_STATE;
     }
     if (needCheckBackground_) {
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_PAUSED,
+        };
+        PermissionUtil::NotifyPrivacyStop(info.appTokenId, streamIndex_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
@@ -397,8 +424,16 @@ int32_t CapturerInServer::Stop()
     status_ = I_STATUS_STOPPING;
 
     if (needCheckBackground_) {
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_STOPPED,
+        };
+        PermissionUtil::NotifyPrivacyStop(info.appTokenId, streamIndex_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
 
     int ret = stream_->Stop();
@@ -435,8 +470,16 @@ int32_t CapturerInServer::Release()
     }
 #endif
     if (needCheckBackground_) {
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_STOPPED,
+        };
+        PermissionUtil::NotifyPrivacyStop(info.appTokenId, streamIndex_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
     return SUCCESS;
 }
