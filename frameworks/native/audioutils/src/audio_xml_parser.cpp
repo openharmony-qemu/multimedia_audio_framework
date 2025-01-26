@@ -18,16 +18,17 @@
 #endif
 
 #include "audio_xml_parser.h"
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 
-#include "audio_errors.h"
 #include <dlfcn.h>
 #include <string>
 #include <map>
 #include <set>
 #include <atomic>
+#include <mutex>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
+#include "audio_errors.h"
 #include "audio_common_log.h"
 namespace OHOS {
 namespace AudioStandard {
@@ -40,8 +41,8 @@ struct XmlFuncHandle {
     xmlNode *(*xmlDocGetRootElement)(xmlDoc *doc);
     bool (*xmlHasProp)(const xmlNode *node, const xmlChar *propName);
     xmlChar *(*xmlGetProp)(const xmlNode *node, const xmlChar *propName);
-    void (*xmlFreeDoc)(xmlDoc *doc); // need check if works
-    void (*xmlFree)(xmlChar *content); // need check if works
+    void (*xmlFreeDoc)(xmlDoc *doc);
+    void (*xmlFree)(xmlChar *content);
     void (*xmlCleanupParser)();
     int32_t (*xmlStrcmp)(const xmlChar *propName1, const xmlChar *propName2);
     xmlChar *(*xmlNodeGetContent)(const xmlNode *cur);
@@ -49,32 +50,36 @@ struct XmlFuncHandle {
 
 class DlopenUtils {
 public:
-    static bool  Init();
+    static bool Init();
     static void DeInit();
     static std::shared_ptr<XmlFuncHandle> GetHandle();
 private:
-    static std::atomic<int32_t> gRefCount_;
+    static std::atomic<int32_t> refCount_;
     static std::shared_ptr<XmlFuncHandle> xmlFuncHandle_;
+    static std::mutex dlMutex_;
 };
 
-std::atomic<int32_t> DlopenUtils::gRefCount_{0};
+std::atomic<int32_t> DlopenUtils::refCount_{0};
 std::shared_ptr<XmlFuncHandle> DlopenUtils::xmlFuncHandle_ = nullptr;
+std::mutex DlopenUtils::dlMutex_;
 
 class AudioXmlNodeInner : public AudioXmlNode {
 public:
-    std::shared_ptr<AudioXmlNode> GetChildrenNode() override;
-    std::shared_ptr<AudioXmlNode> GetCopyNode() override;
     AudioXmlNodeInner();
     AudioXmlNodeInner(const AudioXmlNodeInner &obj);
     AudioXmlNodeInner &operator=(const AudioXmlNodeInner &obj);
     ~AudioXmlNodeInner() override;
 
+    std::shared_ptr<AudioXmlNode> GetChildrenNode() override;
+    std::shared_ptr<AudioXmlNode> GetCopyNode() override;
     int32_t Config(const char *fileName, const char *encoding, int32_t options) override;
     void MoveToNext() override;
     void MoveToChildren() override;
+
     bool IsNodeValid() override;
     int32_t GetNodeType() override;
-
+    bool CompareName(const char *propName) override;
+    bool IsElementNode() override;
     bool HasProp(const char *propName) override;
     int32_t GetProp(const char *propName, std::string &result) override;
     int32_t GetContent(std::string &result) override;
@@ -84,9 +89,7 @@ public:
     void FreeProp(char *propName) override;
     void CleanUpParser() override;
 
-    bool CompareName(const char *propName) override;
-    bool IsElementNode() override;
-
+private:
     int32_t StrcmpXml(const xmlChar *propName1, const xmlChar *propName2);
     xmlDoc *doc_ = nullptr;
     xmlNode *curNode_ = nullptr;
@@ -95,7 +98,8 @@ public:
 
 bool DlopenUtils::Init()
 {
-    if (gRefCount_.load() == 0) {
+    std::lock_guard<std::mutex> lock(dlMutex_);
+    if (refCount_.load() == 0) {
         void *libHandle = dlopen(LIBXML_SO_PATH, RTLD_NOW);
         CHECK_AND_RETURN_RET_LOG(libHandle != nullptr, false, "dlopen failed!");
         xmlFuncHandle_ = std::make_shared<XmlFuncHandle>();
@@ -120,14 +124,15 @@ bool DlopenUtils::Init()
             reinterpret_cast<decltype(xmlFuncHandle_->xmlNodeGetContent)>(dlsym(libHandle, "xmlNodeGetContent"));
         AUDIO_INFO_LOG("Libxml2 open success");
     }
-    gRefCount_.store(gRefCount_.load() + 1);
+    refCount_.store(refCount_.load() + 1);
     return true;
 }
 
 void DlopenUtils::DeInit()
 {
-    gRefCount_.store(gRefCount_.load() - 1);
-    if (gRefCount_.load() == 0 && xmlFuncHandle_.use_count() == 1) {
+    std::lock_guard<std::mutex> lock(dlMutex_);
+    refCount_.store(refCount_.load() - 1);
+    if (refCount_.load() == 0 && xmlFuncHandle_.use_count() == 1) {
         dlclose(xmlFuncHandle_->libHandle);
         xmlFuncHandle_ = nullptr;
         AUDIO_INFO_LOG("Libxml2 close success");
@@ -136,6 +141,7 @@ void DlopenUtils::DeInit()
 
 std::shared_ptr<XmlFuncHandle> DlopenUtils::GetHandle()
 {
+    std::lock_guard<std::mutex> lock(dlMutex_);
     return xmlFuncHandle_;
 }
 
@@ -208,11 +214,13 @@ int32_t AudioXmlNodeInner::Config(const char *fileName, const char *encoding, in
 
 void AudioXmlNodeInner::MoveToNext()
 {
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot MoveToNext!");
     curNode_ = curNode_->next;
 }
 
 void AudioXmlNodeInner::MoveToChildren()
 {
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot MoveToChildren!");
     curNode_ = curNode_->children;
 }
 
@@ -223,6 +231,7 @@ bool AudioXmlNodeInner::IsNodeValid()
 
 int32_t AudioXmlNodeInner::GetNodeType()
 {
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot GetNodeType!");
     return curNode_->type;
 }
 
@@ -236,6 +245,7 @@ bool AudioXmlNodeInner::HasProp(const char *propName)
 // need check curNode_ isvalid before use
 int32_t AudioXmlNodeInner::GetProp(const char *propName, std::string &result)
 {
+    result = "";
     CHECK_AND_RETURN_RET_LOG(xmlFuncHandle_ != nullptr, ERROR, "xmlFuncHandle is nullptr!");
     auto xmlFunc = reinterpret_cast<xmlChar *(*)(const xmlNode *node, const xmlChar *propName)>
         (dlsym(xmlFuncHandle_->libHandle, "xmlGetProp"));
@@ -256,6 +266,7 @@ int32_t AudioXmlNodeInner::GetContent(std::string &result)
 
 std::string AudioXmlNodeInner::GetName()
 {
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot GetName!");
     return reinterpret_cast<char*>(const_cast<xmlChar*>(curNode_->name));
 }
 
@@ -288,12 +299,14 @@ int32_t AudioXmlNodeInner::StrcmpXml(const xmlChar *propName1, const xmlChar *pr
 
 bool AudioXmlNodeInner::CompareName(const char *propName)
 {
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot CompareName!");
     return curNode_->type == XML_ELEMENT_NODE &&
         (StrcmpXml(curNode_->name, reinterpret_cast<const xmlChar*>(propName)) == 0);
 }
 
 bool AudioXmlNodeInner::IsElementNode()
 {
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is nullptr! Cannot CompareElementNode!");
     return curNode_->type == XML_ELEMENT_NODE;
 }
 

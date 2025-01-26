@@ -30,20 +30,20 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-class audioAffinityParser : public Parser {
+class AudioAffinityParser : public Parser {
 public:
     static constexpr char AFFINITY_CONFIG_FILE[] = "/system/etc/audio/audio_affinity_config.xml";
 
     bool LoadConfiguration() final;
     void Destroy() final;
 
-    audioAffinityParser(AudioAffinityManager *affinityManager)
+    AudioAffinityParser(AudioAffinityManager *affinityManager)
     {
         audioAffinityManager_ = affinityManager;
         curNode_ = AudioXmlNode::Create();
     }
 
-    virtual ~audioAffinityParser()
+    virtual ~AudioAffinityParser()
     {
         Destroy();
         curNode_ = nullptr;

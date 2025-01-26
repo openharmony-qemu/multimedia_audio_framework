@@ -24,30 +24,28 @@ namespace AudioStandard {
 class AudioXmlNode {
 public:
     static std::shared_ptr<AudioXmlNode> Create();
-    virtual std::shared_ptr<AudioXmlNode> GetChildrenNode() = 0;
-    virtual std::shared_ptr<AudioXmlNode> GetCopyNode() = 0;
+
     AudioXmlNode() = default;
     virtual ~AudioXmlNode() = default;
 
-    static bool CheckPathValid(const std::string &path);
-
+    virtual std::shared_ptr<AudioXmlNode> GetChildrenNode() = 0;
+    virtual std::shared_ptr<AudioXmlNode> GetCopyNode() = 0;
     virtual int32_t Config(const char *fileName, const char *encoding, int32_t options) = 0;
     virtual void MoveToNext() = 0;
     virtual void MoveToChildren() = 0;
+
     virtual bool IsNodeValid() = 0;
     virtual int32_t GetNodeType() = 0;
-
     virtual bool HasProp(const char *propName) = 0;
     virtual int32_t GetProp(const char *propName, std::string &result) = 0;
     virtual int32_t GetContent(std::string &result) = 0;
     virtual std::string GetName() = 0;
+    virtual bool CompareName(const char *propName) = 0;
+    virtual bool IsElementNode() = 0;
 
     virtual void FreeDoc() = 0;
     virtual void FreeProp(char *propName) = 0;
     virtual void CleanUpParser() = 0;
-
-    virtual bool CompareName(const char *propName) = 0;
-    virtual bool IsElementNode() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

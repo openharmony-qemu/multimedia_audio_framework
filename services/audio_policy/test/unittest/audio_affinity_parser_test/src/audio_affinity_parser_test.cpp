@@ -34,7 +34,7 @@ void AudioAffinityParserTest::TearDown(void) {}
 HWTEST(AudioAffinityParserTest, audioAffinityParser_001, TestSize.Level1)
 {
     auto affinityManager = std::make_shared<AudioAffinityManager>();
-    auto audioAffinity_ = std::make_shared<audioAffinityParser>(affinityManager.get());
+    auto audioAffinity_ = std::make_shared<AudioAffinityParser>(affinityManager.get());
     audioAffinity_->LoadConfiguration();
     EXPECT_NE(audioAffinity_, nullptr);
 }
@@ -47,7 +47,7 @@ HWTEST(AudioAffinityParserTest, audioAffinityParser_001, TestSize.Level1)
 HWTEST(AudioAffinityParserTest, audioAffinityParser_003, TestSize.Level1)
 {
     auto affinityManager = std::make_shared<AudioAffinityManager>();
-    auto audioAffinity_ = std::make_shared<audioAffinityParser>(affinityManager.get());
+    auto audioAffinity_ = std::make_shared<AudioAffinityParser>(affinityManager.get());
     audioAffinity_->Destroy();
     EXPECT_NE(audioAffinity_, nullptr);
 
@@ -62,7 +62,7 @@ HWTEST(AudioAffinityParserTest, audioAffinityParser_003, TestSize.Level1)
 HWTEST(AudioAffinityParserTest, audioAffinityParser_004, TestSize.Level1)
 {
     auto affinityManager = std::make_shared<AudioAffinityManager>();
-    auto audioAffinity_ = std::make_shared<audioAffinityParser>(affinityManager.get());
+    auto audioAffinity_ = std::make_shared<AudioAffinityParser>(affinityManager.get());
     std::shared_ptr<AudioXmlNode> node = AudioXmlNode::Create();
     audioAffinity_->ParseInternal(node);
     EXPECT_NE(audioAffinity_, nullptr);
