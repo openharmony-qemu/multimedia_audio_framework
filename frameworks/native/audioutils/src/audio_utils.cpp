@@ -602,7 +602,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
     return true;
 }
 
-bool SwitchStreamUtil::HandelCreatedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
+bool SwitchStreamUtil::HandleCreatedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     auto iter = g_switchStreamRecordMap.find(info);
     if (iter->second == SWITCH_STATE_WAITING && (info.nextState == CAPTURER_PREPARED)) {
@@ -617,7 +617,7 @@ bool SwitchStreamUtil::HandelCreatedSwitchInfoInRecord(SwitchStreamInfo &info, S
     return true;
 }
 
-bool SwitchStreamUtil::HandelSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
+bool SwitchStreamUtil::HandleSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     auto iter = g_switchStreamRecordMap.find(info);
     if (((iter->second == SWITCH_STATE_CREATED) || (iter->second == SWITCH_STATE_STARTED)) &&
@@ -638,7 +638,7 @@ bool SwitchStreamUtil::HandelSwitchInfoInRecord(SwitchStreamInfo &info, SwitchSt
     return true;
 }
 
-bool SwitchStreamUtil::HandelStartedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
+bool SwitchStreamUtil::HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     auto iter = g_switchStreamRecordMap.find(info);
     if ((iter->second == SWITCH_STATE_CREATED) && (info.nextState == CAPTURER_RUNNING)) {
