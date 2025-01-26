@@ -320,7 +320,7 @@ int32_t CapturerInServer::Start()
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
-    if (needCheckBackground_) { 
+    if (needCheckBackground_) {
         SwitchStreamInfo info = {
             streamIndex_,
             processConfig_.callerUid,

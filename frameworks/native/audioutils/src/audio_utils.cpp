@@ -484,7 +484,7 @@ bool SwitchStreamUtil::IsSwitchStreamSwitching(SwitchStreamInfo info, SwitchStat
         AUDIO_WARNING_LOG("stream:%{public}u is recreating , need not check using mic in background !",
             info.sessionId);
         return true;
-        }
+    }
     if (iter != g_switchStreamRecordMap.end() && targetState == SWITCH_STATE_STARTED
         && iter->second == SWITCH_STATE_CREATED && (info.nextState == CAPTURER_RUNNING)) {
         AUDIO_WARNING_LOG("stream:%{public}u is restarting , need not check using mic in background !",
