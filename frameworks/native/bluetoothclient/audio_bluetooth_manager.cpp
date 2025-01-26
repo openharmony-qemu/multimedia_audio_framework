@@ -605,7 +605,6 @@ int32_t AudioHfpManager::DisconnectSco()
     int32_t ret;
     if (currentScoCategory == ScoCategory::SCO_VIRTUAL && !IsVirtualCall()) {
         ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(ScoCategory::SCO_CALLULAR));
-        SetVirtualCall(true);
     } else {
         ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(currentScoCategory));
     }
