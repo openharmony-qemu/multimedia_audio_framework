@@ -783,9 +783,19 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
     return SUCCESS;
 }
 
+void AudioAdapterManager::MaximizeVoiceAssistantVolume(InternalDeviceType deviceType)
+{
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeMute()) {
+        volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
+        SetVolumeDb(STREAM_VOICE_ASSISTANT);
+        AUDIO_INFO_LOG("MaximizeVoiceAssistantVolume ok");
+    }
+}
+
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
+    MaximizeVoiceAssistantVolume(deviceType);
     // The same device does not set the volume
     bool isSameVolumeGroup = GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType);
     if (currentActiveDevice_ == deviceType) {

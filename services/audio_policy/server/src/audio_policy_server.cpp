@@ -373,6 +373,14 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
 }
 #endif
 
+void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus)
+{
+    if (streamInFocus == AudioStreamType::STREAM_VOICE_ASSISTANT &&
+        audioPolicyService_.GetActiveOutputDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        streamInFocus = AudioStreamType::STREAM_MUSIC;
+    }
+}
+
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 {
@@ -419,6 +427,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+        ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
         AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
