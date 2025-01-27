@@ -604,6 +604,7 @@ private:
     // for updating default device selection state when game audio stream is muted
     void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
+    void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
 
     AudioPolicyService& audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
