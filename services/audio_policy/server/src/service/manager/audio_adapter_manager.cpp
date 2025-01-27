@@ -785,7 +785,7 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
 
 void AudioAdapterManager::MaximizeVoiceAssistantVolume(InternalDeviceType deviceType)
 {
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeMute()) {
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
         volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
         SetVolumeDb(STREAM_VOICE_ASSISTANT);
         AUDIO_INFO_LOG("MaximizeVoiceAssistantVolume ok");
