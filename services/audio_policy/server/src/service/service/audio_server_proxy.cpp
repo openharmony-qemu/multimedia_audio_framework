@@ -478,7 +478,7 @@ int32_t AudioServerProxy::SetCaptureSilentStateProxy(bool state)
 #endif
 }
 
-+void AudioServerProxy::NotifyAccountsChanged()
+void AudioServerProxy::NotifyAccountsChanged()
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");

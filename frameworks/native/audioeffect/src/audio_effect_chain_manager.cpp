@@ -341,11 +341,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
         effectChain = effectNone;
     }
 
-    audioEffectChain->SetEffectMode(effectMode);
-    audioEffectChain->SetExtraSceneType(extraSceneType_);
-    audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
-    audioEffectChain->SetSpatializationSceneType(spatializationSceneType_);
-    audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
+    ConfigureAudioEffectChain(audioEffectChain, effectMode);
     if (!hasLoadedEffectProperties_) {
         LoadEffectProperties();
     }
@@ -374,6 +370,16 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
 
     AUDIO_INFO_LOG("SceneType %{public}s delay %{public}u", sceneType.c_str(), audioEffectChain->GetLatency());
     return SUCCESS;
+}
+
+void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
+    const std::string &effectMode)
+{
+    audioEffectChain->SetEffectMode(effectMode);
+    audioEffectChain->SetExtraSceneType(extraSceneType_);
+    audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
+    audioEffectChain->SetSpatializationSceneType(spatializationSceneType_);
+    audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)
