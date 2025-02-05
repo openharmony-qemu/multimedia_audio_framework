@@ -1776,6 +1776,7 @@ void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
     }
     AUDIO_WARNING_LOG("Client died disconnect sco for normal");
     Bluetooth::AudioHfpManager::DisconnectSco();
+    Bluetooth::AudioHfpManager::SetVirtualCall(true);
 }
 
 void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
