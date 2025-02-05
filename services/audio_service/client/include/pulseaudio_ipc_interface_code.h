@@ -89,6 +89,7 @@ namespace AudioStandard {
         GET_OFFLINE_AUDIO_EFFECT_CHAINS,
         GET_STANDBY_STATUS,
         GENERATE_SESSION_ID,
+        NOTIFY_ACCOUNTS_CHANGED,
         AUDIO_SERVER_CODE_MAX = GENERATE_SESSION_ID,
     };
 } // namespace AudioStandard

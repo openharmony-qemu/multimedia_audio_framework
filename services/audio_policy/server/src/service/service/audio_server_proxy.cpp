@@ -478,5 +478,14 @@ int32_t AudioServerProxy::SetCaptureSilentStateProxy(bool state)
 #endif
 }
 
++void AudioServerProxy::NotifyAccountsChanged()
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->NotifyAccountsChanged();
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+ 
 }
 }

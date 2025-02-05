@@ -787,6 +787,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleLoadHdiEffectModel(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED):
             return HandleUpdateEffectBtOffloadSupported(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED):
+            return HandleNotifyAccountsChanged(data, reply);
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }
@@ -1105,5 +1107,12 @@ int AudioManagerStub::HandleGenerateSessionId(MessageParcel &data, MessageParcel
     reply.WriteUint32(sessionId);
     return AUDIO_OK;
 }
+
+int AudioManagerStub::HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply)
+{
+    NotifyAccountsChanged();
+    return AUDIO_OK;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

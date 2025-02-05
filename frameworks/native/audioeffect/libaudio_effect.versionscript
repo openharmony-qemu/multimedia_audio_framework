@@ -76,6 +76,7 @@
     *EnhanceChainManagerSendInitCommand*;
     *InitEffectBuffer*;
     *EffectChainManagerQueryHdiSupportedChannelLayout*;
+    *LoadEffectProperties*;
   local:
     *;
 };

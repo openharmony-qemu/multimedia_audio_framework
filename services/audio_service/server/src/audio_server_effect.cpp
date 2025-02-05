@@ -322,5 +322,13 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
     }
     return loadSuccess;
 }
+
+void AudioServer::NotifyAccountsChanged()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->LoadEffectProperties();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

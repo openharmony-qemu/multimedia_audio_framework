@@ -150,6 +150,7 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Get streamType %{public}d, deviceType %{public}d, Volume FromDataBase volumeMap failed.",
             streamType, deviceType);
+        CHECK_AND_RETURN_RET_LOG(audioSettingProvider.CheckOsAccountReady(), ERROR, "os account not ready");
         return false;
     } else {
         volumeLevelMap_[streamType] = volumeValue;

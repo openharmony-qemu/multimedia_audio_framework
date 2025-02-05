@@ -1696,6 +1696,7 @@ void AudioPolicyService::NotifyAccountsChanged(const int &id)
     audioPolicyManager_.NotifyAccountsChanged(id);
     RegisterDataObserver();
     SubscribeAccessibilityConfigObserver();
+    AudioServerProxy::GetInstance().NotifyAccountsChanged();
 }
 
 int32_t AudioPolicyService::GetCurActivateCount()
