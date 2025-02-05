@@ -110,18 +110,16 @@ static void LoadLibrary(OriginalEffectConfig &result, std::shared_ptr<AudioXmlNo
             continue;
         }
         if (curNode->CompareName("library")) {
-            if (!curNode->HasProp("name")) {
+            std::string pLibName;
+            std::string pLibPath;
+            if (curNode->GetProp("name", pLibName) != SUCCESS) {
                 AUDIO_ERR_LOG("missing information: library has no name attribute");
-            } else if (!curNode->HasProp("path")) {
-                AUDIO_ERR_LOG("missing information: library has no path attribute");
-            } else {
-                std::string pLibName;
-                std::string pLibPath;
-                curNode->GetProp("name", pLibName);
-                curNode->GetProp("path", pLibPath);
-                Library tmp = {pLibName, pLibPath};
-                result.libraries.push_back(tmp);
             }
+            if (curNode->GetProp("path", pLibPath) != SUCCESS) {
+                AUDIO_ERR_LOG("missing information: library has no path attribute");
+            }
+            Library tmp = {pLibName, pLibPath};
+            result.libraries.push_back(tmp);
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be library", curNode->GetName().c_str());
         }
@@ -166,13 +164,11 @@ static void LoadEffectProperty(OriginalEffectConfig &result,
             continue;
         }
         if (curNode->CompareName("effectProperty")) {
-            if (!curNode->HasProp("mode")) {
+            std::string pModeStr;
+            if (curNode->GetProp("mode", pModeStr) != SUCCESS) {
                 AUDIO_WARNING_LOG("missing information: EFFECTPROPERTY has no MODE attribute");
-            } else {
-                std::string pModeStr;
-                curNode->GetProp("mode", pModeStr);
-                result.effects[effectIdx].effectProperty.push_back(pModeStr);
             }
+            result.effects[effectIdx].effectProperty.push_back(pModeStr);
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be effectProperty", curNode->GetName().c_str());
         }
@@ -198,20 +194,18 @@ static void LoadEffect(OriginalEffectConfig &result, std::shared_ptr<AudioXmlNod
             continue;
         }
         if (curNode->CompareName("effect")) {
-            if (!curNode->HasProp("name")) {
+            std::string pEffectName;
+            std::string pEffectLib;
+            if (curNode->GetProp("name", pEffectName) != SUCCESS) {
                 AUDIO_ERR_LOG("missing information: effect has no name attribute");
-            } else if (!curNode->HasProp("library")) {
-                AUDIO_ERR_LOG("missing information: effect has no library attribute");
-            } else {
-                std::string pEffectName;
-                std::string pEffectLib;
-                curNode->GetProp("name", pEffectName);
-                curNode->GetProp("library", pEffectLib);
-                Effect tmp = {pEffectName, pEffectLib, effectProperty};
-                result.effects.push_back(tmp);
-                LoadEffectProperty(result, curNode->GetCopyNode(), effectIdx);
-                effectIdx++;
             }
+            if (curNode->GetProp("library", pEffectLib) != SUCCESS) {
+                AUDIO_ERR_LOG("missing information: effect has no library attribute");
+            }
+            Effect tmp = {pEffectName, pEffectLib, effectProperty};
+            result.effects.push_back(tmp);
+            LoadEffectProperty(result, curNode->GetCopyNode(), effectIdx);
+            effectIdx++;
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be effect", curNode->GetName().c_str());
         }
@@ -254,13 +248,11 @@ static void LoadApply(OriginalEffectConfig &result, std::shared_ptr<AudioXmlNode
             continue;
         }
         if (curNode->CompareName("apply")) {
-            if (!curNode->HasProp("effect")) {
+            std::string ppValue;
+            if (curNode->GetProp("effect", ppValue) != SUCCESS) {
                 AUDIO_WARNING_LOG("missing information: apply has no effect attribute");
-            } else {
-                std::string ppValue;
-                curNode->GetProp("effect", ppValue);
-                result.effectChains[segInx].apply.push_back(ppValue);
             }
+            result.effectChains[segInx].apply.push_back(ppValue);
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be apply", curNode->GetName().c_str());
         }
@@ -286,19 +278,17 @@ static void LoadEffectChain(OriginalEffectConfig &result, std::shared_ptr<AudioX
         }
         if (curNode->CompareName("effectChain")) {
             std::string label = "";
-            if (curNode->HasProp("label")) {
-                curNode->GetProp("label", label);
+            if (curNode->GetProp("label", label) != SUCCESS) {
+                AUDIO_WARNING_LOG("missing information: effectChain has no label attribute");
             }
-            if (!curNode->HasProp("name")) {
+            std::string peffectChainName;
+            if (curNode->GetProp("name", peffectChainName) != SUCCESS) {
                 AUDIO_WARNING_LOG("missing information: effectChain has no name attribute");
-            } else {
-                std::string peffectChainName;
-                curNode->GetProp("name", peffectChainName);
-                EffectChain tmp = {peffectChainName, apply, label};
-                result.effectChains.push_back(tmp);
-                LoadApply(result, curNode->GetCopyNode(), segInx);
-                segInx++;
             }
+            EffectChain tmp = {peffectChainName, apply, label};
+            result.effectChains.push_back(tmp);
+            LoadApply(result, curNode->GetCopyNode(), segInx);
+            segInx++;
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be effectChain", curNode->GetName().c_str());
         }
@@ -340,18 +330,16 @@ static void LoadPreDevice(std::vector<Device> &devices, std::shared_ptr<AudioXml
             continue;
         }
         if (curNode->CompareName("devicePort")) {
-            if (!curNode->HasProp("type")) {
+            std::string pDevType;
+            std::string pChain;
+            if (curNode->GetProp("type", pDevType) != SUCCESS) {
                 AUDIO_ERR_LOG("missing information: devicePort has no type attribute");
-            } else if (!curNode->HasProp("effectChain")) {
-                AUDIO_ERR_LOG("missing information: devicePort has no effectChain attribute");
-            } else {
-                std::string pDevType;
-                std::string pChain;
-                curNode->GetProp("type", pDevType);
-                curNode->GetProp("effectChain", pChain);
-                Device tmpdev = {pDevType, pChain};
-                devices.push_back(tmpdev);
             }
+            if (curNode->GetProp("effectChain", pChain) != SUCCESS) {
+                AUDIO_ERR_LOG("missing information: devicePort has no effectChain attribute");
+            }
+            Device tmpdev = {pDevType, pChain};
+            devices.push_back(tmpdev);
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be devicePort", curNode->GetName().c_str());
         }
@@ -376,16 +364,14 @@ static void LoadPreMode(PreStreamScene &scene, std::shared_ptr<AudioXmlNode> cur
             continue;
         }
         if (curNode->CompareName("streamEffectMode")) {
-            if (!curNode->HasProp("mode")) {
+            std::string pStreamAEMode;
+            if (curNode->GetProp("mode", pStreamAEMode) != SUCCESS) {
                 AUDIO_WARNING_LOG("missing information: streamEffectMode has no mode attribute");
-            } else {
-                std::string pStreamAEMode;
-                curNode->GetProp("mode", pStreamAEMode);
-                scene.mode.push_back(pStreamAEMode);
-                scene.device.push_back({});
-                LoadPreDevice(scene.device[modeNum], curNode->GetCopyNode());
-                modeNum++;
             }
+            scene.mode.push_back(pStreamAEMode);
+            scene.device.push_back({});
+            LoadPreDevice(scene.device[modeNum], curNode->GetCopyNode());
+            modeNum++;
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be streamEffectMode", curNode->GetName().c_str());
         }
@@ -413,16 +399,14 @@ static void LoadPreStreamScenes(std::vector<PreStreamScene> &scenes, std::shared
             continue;
         }
         if (curNode->CompareName("stream")) {
-            if (!curNode->HasProp("scene")) {
+            std::string pStreamType;
+            if (curNode->GetProp("scene", pStreamType) != SUCCESS) {
                 AUDIO_WARNING_LOG("missing information: stream has no scene attribute");
-            } else {
-                std::string pStreamType;
-                curNode->GetProp("scene", pStreamType);
-                tmp.stream = pStreamType;
-                scenes.push_back(tmp);
-                LoadPreMode(scenes[streamNum], curNode->GetCopyNode());
-                streamNum++;
             }
+            tmp.stream = pStreamType;
+            scenes.push_back(tmp);
+            LoadPreMode(scenes[streamNum], curNode->GetCopyNode());
+            streamNum++;
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be stream", curNode->GetName().c_str());
         }
@@ -526,13 +510,13 @@ static void LoadStreamUsageMapping(OriginalEffectConfig &result, std::shared_ptr
             continue;
         }
         if (curNode->CompareName("streamUsage")) {
-            if (!curNode->HasProp("name") || !curNode->HasProp("scene")) {
-                AUDIO_WARNING_LOG("missing information: streamUsage misses attribute");
-            } else {
-                curNode->GetProp("name", tmp.name);
-                curNode->GetProp("scene", tmp.sceneType);
-                result.postProcess.sceneMap.push_back(tmp);
+            if (curNode->GetProp("name", tmp.name) != SUCCESS) {
+                AUDIO_WARNING_LOG("missing information: streamUsage misses name");
             }
+            if (curNode->GetProp("scene", tmp.sceneType) != SUCCESS) {
+                AUDIO_WARNING_LOG("missing information: streamUsage misses scene");
+            }
+            result.postProcess.sceneMap.push_back(tmp);
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be streamUsage", curNode->GetName().c_str());
         }
@@ -556,18 +540,16 @@ static void LoadPostDevice(std::vector<Device> &devices, std::shared_ptr<AudioXm
             continue;
         }
         if (curNode->CompareName("devicePort")) {
-            if (!curNode->HasProp("type")) {
+            std::string pDevType;
+            std::string pChain;
+            if (curNode->GetProp("type", pDevType) != SUCCESS) {
                 AUDIO_WARNING_LOG("missing information: devicePort has no type attribute");
-            } else if (!curNode->HasProp("effectChain")) {
-                AUDIO_WARNING_LOG("missing information: devicePort has no effectChain attribute");
-            } else {
-                std::string pDevType;
-                std::string pChain;
-                curNode->GetProp("type", pDevType);
-                curNode->GetProp("effectChain", pChain);
-                Device tmpdev = {pDevType, pChain};
-                devices.push_back(tmpdev);
             }
+            if (curNode->GetProp("effectChain", pChain) != SUCCESS) {
+                AUDIO_WARNING_LOG("missing information: devicePort has no effectChain attribute");
+            }
+            Device tmpdev = {pDevType, pChain};
+            devices.push_back(tmpdev);
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be devicePort", curNode->GetName().c_str());
         }
@@ -592,16 +574,14 @@ static void LoadPostMode(PostStreamScene &scene, std::shared_ptr<AudioXmlNode> c
             continue;
         }
         if (curNode->CompareName("streamEffectMode")) {
-            if (!curNode->HasProp("mode")) {
+            std::string pStreamAEMode;
+            if (curNode->GetProp("mode", pStreamAEMode) != SUCCESS) {
                 AUDIO_ERR_LOG("missing information: streamEffectMode has no mode attribute");
-            } else {
-                std::string pStreamAEMode;
-                curNode->GetProp("mode", pStreamAEMode);
-                scene.mode.push_back(pStreamAEMode);
-                scene.device.push_back({});
-                LoadPostDevice(scene.device[modeNum], curNode->GetCopyNode());
-                modeNum++;
             }
+            scene.mode.push_back(pStreamAEMode);
+            scene.device.push_back({});
+            LoadPostDevice(scene.device[modeNum], curNode->GetCopyNode());
+            modeNum++;
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be streamEffectMode", curNode->GetName().c_str());
         }
@@ -629,16 +609,14 @@ static void LoadPostStreamScenes(std::vector<PostStreamScene> &scenes, std::shar
             continue;
         }
         if (curNode->CompareName("stream")) {
-            if (!curNode->HasProp("scene")) {
+            std::string pStreamType;
+            if (curNode->GetProp("scene", pStreamType) != SUCCESS) {
                 AUDIO_WARNING_LOG("missing information: stream has no scene attribute");
-            } else {
-                std::string pStreamType;
-                curNode->GetProp("scene", pStreamType);
-                tmp.stream = pStreamType;
-                scenes.push_back(tmp);
-                LoadPostMode(scenes[streamNum], curNode->GetCopyNode());
-                streamNum++;
             }
+            tmp.stream = pStreamType;
+            scenes.push_back(tmp);
+            LoadPostMode(scenes[streamNum], curNode->GetCopyNode());
+            streamNum++;
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be stream", curNode->GetName().c_str());
         }
