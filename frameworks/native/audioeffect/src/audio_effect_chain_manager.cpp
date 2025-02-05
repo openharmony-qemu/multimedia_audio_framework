@@ -30,6 +30,7 @@ namespace {
 const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
     {"voip_down", "settings.sound_ai_voip_down_selection"},
 };
+const std::vector<std::string> AUDIO_PERSISTENCE_SCENE {"SCENE_VOIP_DOWN"};
 }
 static int32_t CheckValidEffectLibEntry(const std::shared_ptr<AudioEffectLibEntry> &libEntry, const std::string &effect,
     const std::string &libName)
@@ -342,7 +343,9 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
     }
 
     ConfigureAudioEffectChain(audioEffectChain, effectMode);
-    if (!hasLoadedEffectProperties_) {
+    bool exists = std::find(AUDIO_PERSISTENCE_SCENE.begin(), AUDIO_PERSISTENCE_SCENE.end(), sceneType) !=
+        AUDIO_PERSISTENCE_SCENE.end();
+    if (exists && !hasLoadedEffectProperties_) {
         LoadEffectProperties();
     }
     std::string tSceneType = (sceneType == DEFAULT_SCENE_TYPE ? DEFAULT_PRESET_SCENE : sceneType);
