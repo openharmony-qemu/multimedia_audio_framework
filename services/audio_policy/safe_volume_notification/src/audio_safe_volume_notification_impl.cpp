@@ -117,6 +117,20 @@ static void SetActionButton(int32_t notificationId, const std::string& buttonNam
     request.AddActionButton(actionButtonDeal);
 }
 
+static void SetExtraParam(int32_t notificationId, Notification::NotificationRequest& request)
+{
+    std::shared_ptr<AAFwk::WantParams> wantParams = std::make_shared<AAFwk::WantParams>();
+    if (notificationId == RESTORE_VOLUME_NOTIFICATION_ID) {
+        AUDIO_INFO_LOG("SetExtraParam AUDIO_RESTORE_VOLUME_EVENT.");
+        wantParams->SetParam(SAVE_VOLUME_SYS_ABILITY_NAME, AAFwk::String::Box(AUDIO_RESTORE_VOLUME_EVENT));
+    } else {
+        AUDIO_INFO_LOG("SetExtraParam AUDIO_INCREASE_VOLUME_EVENT.");
+        wantParams->SetParam(SAVE_VOLUME_SYS_ABILITY_NAME, AAFwk::String::Box(AUDIO_INCREASE_VOLUME_EVENT));
+    }
+
+    request.SetAdditionalData(wantParams);
+}
+
 bool AudioSafeVolumeNotificationImpl::GetPixelMap()
 {
     if (iconPixelMap_ != nullptr) {
@@ -203,6 +217,8 @@ void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t noti
     if (!buttonName.empty()) {
         SetActionButton(notificationId, buttonName, request);
     }
+
+    SetExtraParam(notificationId, request);
 
     auto ret = Notification::NotificationHelper::PublishNotification(request);
     AUDIO_INFO_LOG("safe volume service publish notification result = %{public}d", ret);
