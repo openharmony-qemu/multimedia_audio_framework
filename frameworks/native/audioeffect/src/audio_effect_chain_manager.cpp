@@ -245,9 +245,6 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu, SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         effectChainToEffectsMap_.size(), sceneTypeAndModeToEffectChainNameMap_.size());
     InitHdiStateInner();
-#ifdef WINDOW_MANAGER_ENABLE
-    AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
-#endif
     isInitialized_ = true;
     RecoverAllChains();
 }
@@ -1366,7 +1363,10 @@ void AudioEffectChainManager::LoadEffectProperties()
             effectPropertyMap_[effect] = prop;
         } else {
             AUDIO_ERR_LOG("get prop failed for key %{public}s", key.c_str());
-            effectPropertyMap_[effect] = defaultPropertyMap_[effect];
+            if(defaultPropertyMap_.count(effect) != 0) {
+                AUDIO_INFO_LOG("effect->name %{public}s defaultProp %{public}s", effect.c_str(), prop.c_str());
+                effectPropertyMap_[effect] = defaultPropertyMap_[effect];
+            }
         }
     }
     hasLoadedEffectProperties_ = true;
