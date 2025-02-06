@@ -1101,6 +1101,7 @@ static int InitFailed(pa_module *m, pa_modargs *ma)
 {
     AUDIO_ERR_LOG("Split Stream Sink Init Failed");
     UserdataFree(m->userdata);
+    m->userdata = NULL;
     if (ma)
         pa_modargs_free(ma);
 
