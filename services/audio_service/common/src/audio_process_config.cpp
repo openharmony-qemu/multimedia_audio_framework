@@ -221,6 +221,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.rendererInfo.pipeType);
     parcel.WriteInt32(config.rendererInfo.playerType);
     parcel.WriteUint64(config.rendererInfo.expectedPlaybackDurationBytes);
+    parcel.WriteInt32(config.rendererInfo.effectMode);
 
     //AudioPrivacyType
     parcel.WriteInt32(config.privacyType);
@@ -277,6 +278,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.rendererInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
     config.rendererInfo.playerType = static_cast<PlayerType>(parcel.ReadInt32());
     config.rendererInfo.expectedPlaybackDurationBytes = parcel.ReadUint64();
+    config.rendererInfo.effectMode = parcel.ReadInt32();
 
     //AudioPrivacyType
     config.privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());

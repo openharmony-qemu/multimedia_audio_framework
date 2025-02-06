@@ -68,7 +68,7 @@ public:
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
     int32_t SetClientVolume(float clientVolume) override;
     void BlockStream() noexcept override;
-    bool IsEffectNone(StreamUsage streamUsage);
+    bool IsEffectNone(int32_t effectMode);
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
