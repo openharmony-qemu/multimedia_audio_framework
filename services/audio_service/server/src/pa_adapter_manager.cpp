@@ -469,14 +469,6 @@ void PaAdapterManager::ReleasePaStream(pa_stream *paStream)
     AUDIO_INFO_LOG("Release paStream because of errs");
 }
 
-bool PaAdapterManager::IsEffectNone(int32_t effectMode)
-{
-    if (effectMode == EFFECT_NONE) {
-        return true;
-    }
-    return false;
-}
-
 bool PaAdapterManager::CheckHighResolution(const AudioProcessConfig &processConfig)
 {
     DeviceType deviceType = processConfig.deviceType;
@@ -514,7 +506,7 @@ void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConf
 void PaAdapterManager::SetPlaybackProplist(pa_proplist *propList, AudioProcessConfig &processConfig)
 {
         pa_proplist_sets(propList, "scene.mode",
-            IsEffectNone(processConfig.rendererInfo.effectMode) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
+            processConfig.rendererInfo.effectMode == EFFECT_NONE ? "EFFECT_NONE" : "EFFECT_DEFAULT");
         // mark dup stream for dismissing volume handle
         std::string streamMode = managerType_ == DUP_PLAYBACK ? DUP_STREAM
             : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
