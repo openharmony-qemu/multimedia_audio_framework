@@ -539,7 +539,7 @@ bool AudioCapturerPrivate::Start() const
 
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(!isVoiceCallCapturer_, true);
-
+    CHECK_AND_RETURN_RET(audioStream_ != nullptr, false, "audioStream_ is null");
     bool result = audioStream_->StartAudioStream();
     if (!result) {
         AUDIO_ERR_LOG("Start audio stream failed");
