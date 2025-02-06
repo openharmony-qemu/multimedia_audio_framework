@@ -181,9 +181,6 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
     }
 
     if (sessionWithNormalSourceType_.count(sessionID) > 0) {
-        if (Util::IsScoSupportSource(sessionWithNormalSourceType_[sessionID].sourceType)) {
-            audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
-        }
         if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             audioEcManager_.ResetAudioEcInfo();
         }
