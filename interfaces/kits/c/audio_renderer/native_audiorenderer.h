@@ -219,8 +219,8 @@ OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
     clockid_t clockId, int64_t* framePosition, int64_t* timestamp);
 
 /*
- * Query the timestamp at which a particular frame was presented in clock monotonic timebase, the frame at 
- * the returned position was just committed to hardware. This is often used in video synchronization and 
+ * Query the timestamp at which a particular frame was presented in clock monotonic timebase, the frame at
+ * the returned position was just committed to hardware. This is often used in video synchronization and
  * recording stream alignment.
  *
  * Position is 0 and timestamp is fixed until stream really runs and frame is committed. Position will
