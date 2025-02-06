@@ -1355,6 +1355,7 @@ int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropert
 
 void AudioEffectChainManager::LoadEffectProperties()
 {
+    hasLoadedEffectProperties_ = false;
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     CHECK_AND_RETURN_LOG(settingProvider.CheckOsAccountReady(), "os account not ready");
     for (const auto &[effect, key] : AUDIO_PERSISTENCE_EFFECT_KEY) {
