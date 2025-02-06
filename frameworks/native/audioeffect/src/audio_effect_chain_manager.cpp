@@ -1363,7 +1363,7 @@ void AudioEffectChainManager::LoadEffectProperties()
             effectPropertyMap_[effect] = prop;
         } else {
             AUDIO_ERR_LOG("get prop failed for key %{public}s", key.c_str());
-            if(defaultPropertyMap_.count(effect) != 0) {
+            if (defaultPropertyMap_.count(effect) != 0) {
                 AUDIO_INFO_LOG("effect->name %{public}s defaultProp %{public}s", effect.c_str(), prop.c_str());
                 effectPropertyMap_[effect] = defaultPropertyMap_[effect];
             }
