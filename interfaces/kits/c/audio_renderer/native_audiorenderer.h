@@ -218,6 +218,9 @@ OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* render
 OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
     clockid_t clockId, int64_t* framePosition, int64_t* timestamp);
 
+OH_AudioStream_Result OH_AudioRenderer_GetAudioTimestampInfo(OH_AudioRenderer* renderer,
+    int64_t* framePosition, int64_t* timestamp);
+
 /*
  * Query the frame size in callback, it is a fixed length that the stream want to be filled for each callback.
  *

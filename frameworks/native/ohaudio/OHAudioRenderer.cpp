@@ -204,10 +204,26 @@ OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer *renderer,
     CHECK_AND_RETURN_RET_LOG(clockId == CLOCK_MONOTONIC, AUDIOSTREAM_ERROR_INVALID_PARAM, "error clockId value");
     Timestamp stamp;
     Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
-    bool ret = audioRenderer->GetAudioTime(stamp, base);
+    bool ret = audioRenderer->GetTimestamp(stamp, base);
     if (!ret) {
-        AUDIO_ERR_LOG("GetAudioTime error!");
+        AUDIO_ERR_LOG("GetTimestamp error!");
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    }
+    *framePosition = stamp.framePosition;
+    *timestamp = stamp.time.tv_sec * SECOND_TO_NANOSECOND + stamp.time.tv_nsec;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_GetAudioTimestampInfo(OH_AudioRenderer *renderer,
+    int64_t *framePosition, int64_t *timestamp)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    Timestamp stamp;
+    Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
+    int32_t errcode = audioRenderer->GetAudioTimestampInfo(stamp, base);
+    if (errcode != SUCCESS) {
+        return ConvertError(errcode);
     }
     *framePosition = stamp.framePosition;
     *timestamp = stamp.time.tv_sec * SECOND_TO_NANOSECOND + stamp.time.tv_nsec;
@@ -494,10 +510,16 @@ int64_t OHAudioRenderer::GetFramesWritten()
     return audioRenderer_->GetFramesWritten();
 }
 
-bool OHAudioRenderer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool OHAudioRenderer::GetTimestamp(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
     return audioRenderer_->GetAudioPosition(timestamp, base);
+}
+
+bool OHAudioRenderer::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
+    return audioRenderer_->GetAudioTimestampInfo(timestamp, base);
 }
 
 int32_t OHAudioRenderer::GetFrameSizeInCallback()
