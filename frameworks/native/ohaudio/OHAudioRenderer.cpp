@@ -222,7 +222,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetAudioTimestampInfo(OH_AudioRenderer *r
     Timestamp stamp;
     Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
     int32_t errcode = audioRenderer->GetAudioTimestampInfo(stamp, base);
-    if (errcode != SUCCESS) {
+    if (errcode != OHOS::AudioStandard::SUCCESS) {
         return ConvertError(errcode);
     }
     *framePosition = stamp.framePosition;
@@ -516,7 +516,7 @@ bool OHAudioRenderer::GetTimestamp(Timestamp &timestamp, Timestamp::Timestampbas
     return audioRenderer_->GetAudioPosition(timestamp, base);
 }
 
-bool OHAudioRenderer::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+int32_t OHAudioRenderer::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
     return audioRenderer_->GetAudioTimestampInfo(timestamp, base);
