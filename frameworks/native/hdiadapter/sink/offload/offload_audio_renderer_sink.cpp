@@ -790,6 +790,7 @@ int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
     AudioXCollie audioXCollie("OffloadAudioRendererSinkInner::SetVolumeInner", TIME_OUT_SECONDS,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("set offload vol left is %{public}f, right is %{public}f", left, right);
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     float thevolume;
     int32_t ret;
     if (audioRender_ == nullptr) {
