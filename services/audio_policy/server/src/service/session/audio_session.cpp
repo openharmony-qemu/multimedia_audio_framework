@@ -19,16 +19,17 @@
 
 #include "audio_policy_log.h"
 #include "audio_errors.h"
+#include "audio_session_state_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioSession::AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
-    const std::shared_ptr<AudioSessionTimer> sessionTimer)
+    const std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor)
 {
     AUDIO_INFO_LOG("AudioSession()");
     callerPid_ = callerPid;
     strategy_ = strategy;
-    sessionTimer_ = sessionTimer;
+    audioSessionStateMonitor_ = audioSessionStateMonitor;
     state_ = AudioSessionState::SESSION_NEW;
 }
 
@@ -87,8 +88,9 @@ int32_t AudioSession::AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocu
         AUDIO_WARNING_LOG("The streamId has been added. The old interrupt will be coverd.");
     }
     interruptMap_[streamId] = interruptPair;
-    if (sessionTimer_ != nullptr && sessionTimer_->IsSessionTimerRunning(callerPid_)) {
-        sessionTimer_->StopTimer(callerPid_);
+    auto monitor = audioSessionStateMonitor_.lock();
+    if (monitor != nullptr) {
+        monitor->StopMonitor(callerPid_);
     }
     return SUCCESS;
 }
@@ -104,8 +106,10 @@ int32_t AudioSession::RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioF
         return SUCCESS;
     }
     interruptMap_.erase(streamId);
-    if (interruptMap_.empty() && sessionTimer_ != nullptr && !sessionTimer_->IsSessionTimerRunning(callerPid_)) {
-        sessionTimer_->StartTimer(callerPid_);
+
+    auto monitor = audioSessionStateMonitor_.lock();
+    if (interruptMap_.empty() && monitor != nullptr) {
+        monitor->StartMonitor(callerPid_);
     }
     return SUCCESS;
 }
@@ -120,9 +124,12 @@ int32_t AudioSession::RemoveAudioInterrptByStreamId(const uint32_t &streamId)
         return SUCCESS;
     }
     interruptMap_.erase(streamId);
-    if (interruptMap_.empty() && sessionTimer_ != nullptr && !sessionTimer_->IsSessionTimerRunning(callerPid_)) {
-        sessionTimer_->StartTimer(callerPid_);
+
+    auto monitor = audioSessionStateMonitor_.lock();
+    if (interruptMap_.empty() && monitor != nullptr) {
+        monitor->StartMonitor(callerPid_);
     }
+
     return SUCCESS;
 }
 

@@ -52,14 +52,6 @@ AudioSessionService::~AudioSessionService()
 {
 }
 
-void AudioSessionService::Init()
-{
-    AUDIO_INFO_LOG("AudioSessionService::Init");
-
-    sessionTimer_ = std::make_shared<AudioSessionTimer>();
-    sessionTimer_->SetAudioSessionTimerCallback(shared_from_this());
-}
-
 bool AudioSessionService::IsSameTypeForAudioSession(const AudioStreamType incomingType,
     const AudioStreamType existedType)
 {
@@ -80,12 +72,12 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
         AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created! Update strategy.", callerPid);
         sessionMap_[callerPid]->SetSessionStrategy(strategy);
     } else {
-        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, sessionTimer_);
+        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, shared_from_this());
         sessionMap_[callerPid]->Activate();
     }
 
     if (sessionMap_[callerPid]->IsAudioSessionEmpty()) {
-        sessionTimer_->StartTimer(callerPid);
+        StartMonitor(callerPid);
     }
 
     return SUCCESS;
@@ -110,7 +102,7 @@ int32_t AudioSessionService::DeactivateAudioSessionInternal(const int32_t caller
     sessionMap_.erase(callerPid);
 
     if (!isSessionTimeout) {
-        sessionTimer_->StopTimer(callerPid);
+        StopMonitor(callerPid);
     }
 
     return SUCCESS;
@@ -151,8 +143,8 @@ std::shared_ptr<AudioSession> AudioSessionService::GetAudioSessionByPid(const in
     return sessionMap_[callerPid];
 }
 
-// Audio session timer callback
-void AudioSessionService::OnAudioSessionTimeOut(const int32_t callerPid)
+// Audio session monitor callback
+void AudioSessionService::OnAudioSessionTimeOut(int32_t callerPid)
 {
     AUDIO_INFO_LOG("OnAudioSessionTimeOut: callerPid %{public}d", callerPid);
     std::unique_lock<std::mutex> lock(sessionServiceMutex_);
@@ -165,6 +157,11 @@ void AudioSessionService::OnAudioSessionTimeOut(const int32_t callerPid)
         return;
     }
     cb->OnSessionTimeout(callerPid);
+}
+
+std::shared_ptr<AudioSessionStateMonitor> AudioSessionService::GetSelfSharedPtr()
+{
+    return shared_from_this();
 }
 
 void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)

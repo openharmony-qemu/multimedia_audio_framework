@@ -119,7 +119,6 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     CreateAudioInterruptZoneInternal(ZONEID_DEFAULT, {});
 
     sessionService_ = std::make_shared<AudioSessionService>();
-    sessionService_->Init();
     sessionService_->SetSessionTimeOutCallback(shared_from_this());
 }
 

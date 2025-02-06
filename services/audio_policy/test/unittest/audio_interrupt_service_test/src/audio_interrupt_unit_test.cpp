@@ -1439,9 +1439,8 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForActiveSession_001, 
     AudioInterrupt activeInterrupt(STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, audioFocusTypeTest, SESSION_ID_TEST);
     AudioFocusEntry focusEntry;
     AudioSessionStrategy strategy;
-    const std::shared_ptr<AudioSessionTimer> sessionTimer = nullptr;
     strategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, sessionTimer);
+    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, nullptr);
     activeInterrupt.pid = { 0 };
     audioInterruptService->sessionService_->sessionMap_.insert({0, audioSession});
     focusEntry.actionOn = INCOMING;
@@ -1508,8 +1507,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForActiveSession_004, 
     AudioInterrupt activeInterrupt(STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, audioFocusTypeTest, SESSION_ID_TEST);
     AudioFocusEntry focusEntry;
     AudioSessionStrategy strategy;
-    const std::shared_ptr<AudioSessionTimer> sessionTimer = nullptr;
-    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, sessionTimer);
+    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, nullptr);
     activeInterrupt.pid = { 0 };
     audioInterruptService->sessionService_->sessionMap_.insert({0, audioSession});
     std::shared_ptr<AudioSession> activeSession =
@@ -1538,9 +1536,8 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForActiveSession_005, 
     focusEntry.actionOn = CURRENT;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
     AudioSessionStrategy strategy;
-    const std::shared_ptr<AudioSessionTimer> sessionTimer = nullptr;
     strategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, sessionTimer);
+    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, nullptr);
     activeInterrupt.pid = { 0 };
     audioInterruptService->sessionService_->sessionMap_.insert({0, audioSession});
     incomingInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
@@ -1568,9 +1565,8 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForActiveSession_006, 
     focusEntry.actionOn = CURRENT;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
     AudioSessionStrategy strategy;
-    const std::shared_ptr<AudioSessionTimer> sessionTimer = nullptr;
     strategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, sessionTimer);
+    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, nullptr);
     activeInterrupt.pid = { 0 };
     audioInterruptService->sessionService_->sessionMap_.insert({0, audioSession});
     incomingInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
