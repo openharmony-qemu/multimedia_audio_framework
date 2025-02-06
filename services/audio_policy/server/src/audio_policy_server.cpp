@@ -2793,9 +2793,9 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
 
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
-    audioPolicyService_.NotifyAccountsChanged(id);
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
+    audioPolicyService_.NotifyAccountsChanged(id);
 }
 
 int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
