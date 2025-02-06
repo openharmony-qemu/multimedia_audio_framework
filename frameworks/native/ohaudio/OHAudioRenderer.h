@@ -177,7 +177,8 @@ class OHAudioRenderer {
         AudioPrivacyType GetRendererPrivacy();
         int64_t GetFramesWritten();
         void GetRendererInfo(AudioRendererInfo& rendererInfo);
-        bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+        bool GetTimestamp(Timestamp &timestamp, Timestamp::Timestampbase base);
+        int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base);
         int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
