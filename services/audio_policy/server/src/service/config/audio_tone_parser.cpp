@@ -143,16 +143,17 @@ int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<
     CHECK_AND_RETURN_RET_LOG(curNode->Config(AUDIO_TONE_CONFIG_FILE, nullptr, 0) == SUCCESS, ERROR,
         "error: could not parse file %s", AUDIO_TONE_CONFIG_FILE);
 
-    if (curNode->CompareName("DTMF")) {
+    if (!curNode->CompareName("DTMF")) {
         AUDIO_ERR_LOG("Missing tag - DTMF: %s", AUDIO_TONE_CONFIG_FILE);
         curNode = nullptr;
         return ERROR;
     }
     curNode->MoveToChildren();
-    AUDIO_ERR_LOG("Missing child - DTMF: %s", AUDIO_TONE_CONFIG_FILE);
-    curNode = nullptr;
-    return ERROR;
-
+    if (!curNode->IsNodeValid()) {
+        AUDIO_ERR_LOG("Missing child - DTMF: %s", AUDIO_TONE_CONFIG_FILE);
+        curNode = nullptr;
+        return ERROR;
+    }
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("Tones")) {
             curNode->MoveToChildren();
