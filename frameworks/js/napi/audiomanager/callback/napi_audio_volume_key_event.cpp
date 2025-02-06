@@ -29,15 +29,12 @@ namespace AudioStandard {
 NapiAudioVolumeKeyEvent::NapiAudioVolumeKeyEvent(napi_env env)
     :env_(env)
 {
-    AUDIO_DEBUG_LOG("NapiAudioVolumeKeyEvent::Constructor");
+    AUDIO_INFO_LOG("NapiAudioVolumeKeyEvent::Constructor");
 }
 
 NapiAudioVolumeKeyEvent::~NapiAudioVolumeKeyEvent()
 {
-    if (regVolumeTsfn_) {
-        napi_release_threadsafe_function(amVolEntTsfn_, napi_tsfn_abort);
-    }
-    AUDIO_DEBUG_LOG("NapiAudioVolumeKeyEvent::Destructor");
+    AUDIO_INFO_LOG("NapiAudioVolumeKeyEvent::Destructor");
 }
 
 void NapiAudioVolumeKeyEvent::CreateVolumeTsfn(napi_env env)
@@ -46,6 +43,7 @@ void NapiAudioVolumeKeyEvent::CreateVolumeTsfn(napi_env env)
     napi_value cbName;
     std::string callbackName = "volumeChange";
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_add_env_cleanup_hook(env, Cleanup, this);
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
         VolumeEventTsfnFinalize, nullptr, SafeJsCallbackVolumeEventWork, &amVolEntTsfn_);
 }
@@ -53,6 +51,12 @@ void NapiAudioVolumeKeyEvent::CreateVolumeTsfn(napi_env env)
 bool NapiAudioVolumeKeyEvent::GetVolumeTsfnFlag()
 {
     return regVolumeTsfn_;
+}
+
+napi_threadsafe_function NapiAudioVolumeKeyEvent::GetTsfn()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return amVolEntTsfn_;
 }
 
 void NapiAudioVolumeKeyEvent::OnVolumeKeyEvent(VolumeEvent volumeEvent)
@@ -130,7 +134,24 @@ void NapiAudioVolumeKeyEvent::SafeJsCallbackVolumeEventWork(napi_env env, napi_v
 
 void NapiAudioVolumeKeyEvent::VolumeEventTsfnFinalize(napi_env env, void *data, void *hint)
 {
-    AUDIO_INFO_LOG("VolumeEventTsfnFinalize: safe thread resource release.");
+    AUDIO_INFO_LOG("VolumeEventTsfnFinalize: Cleanup is removed.");
+    NapiAudioVolumeKeyEvent *context = reinterpret_cast<NapiAudioVolumeKeyEvent*>(data);
+    napi_remove_env_cleanup_hook(env, NapiAudioVolumeKeyEvent::Cleanup, context);
+    if (context->GetTsfn() != nullptr) {
+        AUDIO_INFO_LOG("VolumeEventTsfnFinalize: context is released.");
+        delete context;
+    }
+}
+
+void NapiAudioVolumeKeyEvent::Cleanup(void *data)
+{
+    NapiAudioVolumeKeyEvent *context = reinterpret_cast<NapiAudioVolumeKeyEvent*>(data);
+    napi_threadsafe_function tsfn = context->GetTsfn();
+    std::unique_lock<std::mutex> lock(context->mutex_);
+    context->amVolEntTsfn_ = nullptr;
+    lock.unlock();
+    AUDIO_INFO_LOG("Cleanup: safe thread resource release.");
+    napi_release_threadsafe_function(tsfn, napi_tsfn_abort);
 }
 
 void NapiAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb)
@@ -142,7 +163,10 @@ void NapiAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
 
     AudioVolumeKeyEventJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-
+    if (amVolEntTsfn_ == nullptr) {
+        AUDIO_INFO_LOG("OnJsCallbackVolumeEvent: tsfn nullptr.");
+        return;
+    }
     napi_acquire_threadsafe_function(amVolEntTsfn_);
     napi_call_threadsafe_function(amVolEntTsfn_, event, napi_tsfn_blocking);
 }

@@ -36,6 +36,7 @@ public:
     bool ContainSameJsCallback(napi_value args);
     void CreateVolumeTsfn(napi_env env);
     bool GetVolumeTsfnFlag();
+    napi_threadsafe_function GetTsfn();
     
 private:
     struct AudioVolumeKeyEventJsCallback {
@@ -45,6 +46,7 @@ private:
     };
 
     void OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb);
+    static void Cleanup(void *data);
     static void SafeJsCallbackVolumeEventWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void VolumeEventTsfnFinalize(napi_env env, void *data, void *hint);
 
