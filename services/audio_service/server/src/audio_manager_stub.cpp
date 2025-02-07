@@ -109,6 +109,7 @@ const char *g_audioServerCodeStrs[] = {
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
     "GET_STANDBY_STATUS",
     "GENERATE_SESSION_ID",
+    "NOTIFY_ACCOUNTS_CHANGED",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
