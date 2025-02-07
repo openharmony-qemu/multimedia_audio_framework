@@ -202,6 +202,7 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
     std::string deviceTypeName = "";
     GetDeviceTypeName(deviceType, deviceTypeName);
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_LOG(settingProvider.CheckOsAccountReady(), "os account not ready");
     for (auto &[enhance, prop] : enhancePropertyMap_) {
         std::string property = "";
         if (deviceTypeName == "") {
@@ -214,13 +215,13 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
         } else {
             key = enhance +  "_&_" + deviceTypeName;
         }
-        ErrCode ret = settingProvider.GetStringValue(key, property);
+        ErrCode ret = settingProvider.GetStringValue(key, property, "system");
         if (ret == SUCCESS) {
             prop = property;
             AUDIO_INFO_LOG("Get Effect_&_DeviceType:%{public}s is Property:%{public}s",
                 key.c_str(), property.c_str());
         } else {
-            ret = settingProvider.PutStringValue(key, defaultPropertyMap_[enhance]);
+            ret = settingProvider.PutStringValue(key, defaultPropertyMap_[enhance], "system");
             if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("set to default Property:%{public}s, failed, ErrCode : %{public}d",
                     defaultPropertyMap_[enhance].c_str(), ret);
@@ -884,7 +885,8 @@ int32_t AudioEnhanceChainManager::SetAudioEnhancePropertyToChains(AudioEnhancePr
 int32_t AudioEnhanceChainManager::WriteEnhancePropertyToDb(const std::string &key, const std::string &property)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = settingProvider.PutStringValue(key, property);
+    CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), ERROR, "os account not ready");
+    ErrCode ret = settingProvider.PutStringValue(key, property, "system");
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Write Enhance Property to Database failed");
     AUDIO_INFO_LOG("success, write Enhance_&_DeviceType:%{public}s is Property:%{public}s to Database",
         key.c_str(), property.c_str());

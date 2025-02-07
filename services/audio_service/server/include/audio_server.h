@@ -185,6 +185,8 @@ public:
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 
     int32_t GenerateSessionId(uint32_t &sessionId) override;
+    
+    void NotifyAccountsChanged() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

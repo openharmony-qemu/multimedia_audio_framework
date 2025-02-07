@@ -94,6 +94,7 @@ public:
     void SetAudioBalanceValueProxy(float audioBalance);
     int32_t SetSupportStreamUsageProxy(std::vector<int32_t> usage);
     int32_t SetCaptureSilentStateProxy(bool state);
+    void NotifyAccountsChanged();
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

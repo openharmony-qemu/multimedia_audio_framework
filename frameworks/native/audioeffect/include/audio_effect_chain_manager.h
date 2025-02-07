@@ -112,6 +112,9 @@ public:
     void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectChainManagerParam,
         std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
+    void ConstructEffectChainMgrMaps(std::vector<EffectChain> &effectChains,
+        const EffectChainManagerParam &effectChainManagerParam,
+        std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
     bool CheckAndAddSessionID(const std::string &sessionID);
     int32_t CreateAudioEffectChainDynamic(const std::string &sceneType);
     bool CheckAndRemoveSessionID(const std::string &sessionID);
@@ -150,6 +153,7 @@ public:
     int32_t InitEffectBuffer(const std::string &sessionID);
     int32_t QueryEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t QueryHdiSupportedChannelInfo(uint32_t &channels, uint64_t &channelLayout);
+    void LoadEffectProperties();
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -194,6 +198,8 @@ private:
     int32_t EffectVolumeUpdateInner(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     void InitHdiStateInner();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
+    void ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
+        const std::string &effectMode);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> effectChainToEffectsMap_;
@@ -207,6 +213,7 @@ private:
     std::set<std::string> sceneTypeToSpecialEffectSet_;
     std::vector<std::string> priorSceneList_;
     std::unordered_map<std::string, std::string> effectPropertyMap_;
+    std::unordered_map<std::string, std::string> defaultPropertyMap_;
     std::vector<std::pair<std::string, int32_t>> sceneTypeCountList_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
@@ -230,6 +237,7 @@ private:
     int32_t maxEffectChainCount_ = 1;
     uint32_t maxSessionID_ = 0;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
+    bool hasLoadedEffectProperties_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

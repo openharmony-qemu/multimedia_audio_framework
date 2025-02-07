@@ -1428,5 +1428,19 @@ int32_t AudioManagerProxy::GenerateSessionId(uint32_t &sessionId)
     sessionId = reply.ReadUint32();
     return 0;
 }
+
+void AudioManagerProxy::NotifyAccountsChanged()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
+}
 } // namespace AudioStandard
 } // namespace OHOS
