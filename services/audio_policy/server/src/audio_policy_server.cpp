@@ -685,6 +685,11 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
             AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
             InitMicrophoneMute();
         }
+        if (isInitSettingsData_ == false) {
+            AUDIO_INFO_LOG("First receive DATA_SHARE_READY action and need init SettingsData");
+            InitKVStore();
+            isInitSettingsData_ = true;
+        }
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);

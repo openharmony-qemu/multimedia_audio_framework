@@ -614,6 +614,7 @@ private:
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
     std::atomic<bool> isInitMuteState_ = false;
+    std::atomic<bool> isInitSettingsData_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
