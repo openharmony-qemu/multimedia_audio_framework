@@ -445,6 +445,7 @@ ohos_shared_library("renderer_sink_adapter") {
   include_dirs = [
     "common",
     "primary",
+    "fast",
     "file",
     "bluetooth",
     "remote",

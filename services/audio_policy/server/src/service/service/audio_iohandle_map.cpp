@@ -37,6 +37,8 @@ std::map<std::string, std::string> AudioIOHandleMap::sinkPortStrToClassStrMap_ =
     {USB_SPEAKER, USB_CLASS},
     {DP_SINK, DP_CLASS},
     {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
+    {PRIMARY_DIRECT_VOIP, DIRECT_VOIP_CLASS},
+    {PRIMARY_MMAP_VOIP, MMAP_VOIP_CLASS},
 };
 
 void AudioIOHandleMap::DeInit()

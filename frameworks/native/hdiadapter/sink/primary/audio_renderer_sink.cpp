@@ -1766,6 +1766,9 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
             return SUCCESS;
         }
         switchDeviceMute_ = true;
+        if (halName_ == VOIP_HAL_NAME) {
+            SetVolume(0.0f, 0.0f);
+        }
     } else {
         muteCount_--;
         if (muteCount_ > 0) {
@@ -1774,6 +1777,9 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
         }
         switchDeviceMute_ = false;
         muteCount_ = 0;
+        if (halName_ == VOIP_HAL_NAME) {
+            SetVolume(leftVolume_, rightVolume_);
+        }
     }
 
     return SUCCESS;

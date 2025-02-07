@@ -39,6 +39,7 @@ public:
 
 protected:
     void MixStreams() override;
+    void AdjustVoipVolume();
 
 private:
     void StandbySleep();
@@ -74,6 +75,7 @@ private:
     uint32_t uChannel_;
     int32_t uFormat_;
     uint32_t uSampleRate_;
+    bool firstSetVolume_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
