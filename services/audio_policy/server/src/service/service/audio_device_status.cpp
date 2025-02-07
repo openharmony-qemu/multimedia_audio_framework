@@ -980,18 +980,6 @@ void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 }
 #endif
 
-AudioStreamDeviceChangeReason AudioDeviceStatus::GetDeviceChangeReason(AudioDeviceDescriptor &desc,
-    const DeviceInfoUpdateCommand command)
-{
-    AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    if (command == CONNECTSTATE_UPDATE && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        desc.connectState_ != ConnectState::CONNECTED &&
-        audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
-        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-    }
-    return reason;
-}
-
 void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     AUDIO_WARNING_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
@@ -1025,7 +1013,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
     CheckForA2dpSuspend(desc);
 
-    AudioStreamDeviceChangeReasonExt reason = GetDeviceChangeReason(desc, command);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     OnPreferredStateUpdated(desc, command, reason);
     audioDeviceCommon_.FetchDevice(true, reason);
     audioDeviceCommon_.FetchDevice(false);
