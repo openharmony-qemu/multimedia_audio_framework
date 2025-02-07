@@ -405,6 +405,19 @@ int32_t IAudioRendererSinkUpdateAppsUid(struct RendererSinkAdapter *adapter, con
     return ret;
 }
 
+int32_t IAudioRendererSinkGetAudioScene(struct RendererSinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");
+
+    IAudioRendererSink *audioRendererSink = static_cast<IAudioRendererSink *>(adapter->wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    bool isInited = audioRendererSink->IsInited();
+    CHECK_AND_RETURN_RET_LOG(isInited, ERR_NOT_STARTED,
+        "audioRenderer Not Inited! Init the renderer first, Renderer GetAudioScene failed");
+
+    int32_t ret = audioRendererSink->GetAudioScene();
+    return ret;
+}
 #ifdef __cplusplus
 }
 #endif

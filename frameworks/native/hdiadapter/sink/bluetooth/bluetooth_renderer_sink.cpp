@@ -107,6 +107,7 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     int32_t SetVoiceVolume(float volume) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
     int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
@@ -237,6 +238,12 @@ bool BluetoothRendererSinkInner::IsInited(void)
 
 int32_t BluetoothRendererSinkInner::SetVoiceVolume(float volume)
 {
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t BluetoothRendererSinkInner::GetAudioScene()
+{
+    AUDIO_DEBUG_LOG("not supported.");
     return ERR_NOT_SUPPORTED;
 }
 
