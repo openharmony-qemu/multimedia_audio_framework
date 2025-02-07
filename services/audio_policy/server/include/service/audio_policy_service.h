@@ -805,13 +805,13 @@ private:
 
     void SetVoiceCallMuteForSwitchDevice();
 
-    void MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+    void MuteSinkPortForSwitchDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
 
-    void MuteSinkForSwtichGeneralDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+    void MuteSinkForSwitchGeneralDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
 
-    void MuteSinkForSwtichBluetoothDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+    void MuteSinkForSwitchBluetoothDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
 
     std::string GetSinkName(const DeviceInfo& desc, int32_t sessionId);

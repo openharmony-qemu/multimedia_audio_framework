@@ -2233,10 +2233,10 @@ void AudioPolicyService::SetVoiceCallMuteForSwitchDevice()
     // Unmute in SetVolumeForSwitchDevice after update route.
 }
 
-void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioPolicyService::MuteSinkPortForSwitchDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
-    Trace trace("AudioPolicyService::MuteSinkPortForSwtichDevice");
+    Trace trace("AudioPolicyService::MuteSinkPortForSwitchDevice");
     SetDeviceInfos(rendererChangeInfo->outputDeviceInfo.deviceType, outputDevices.front()->deviceType_);
     if (outputDevices.size() != 1) {
         // mute primary when play music and ring
@@ -2245,7 +2245,9 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererCha
         }
         return;
     }
-    if (outputDevices.front()->isSameDevice(rendererChangeInfo->outputDeviceInfo)) return;
+    if (outputDevices.front()->isSameDevice(rendererChangeInfo->outputDeviceInfo) ||
+        (outputDevices.front()->deviceType_ == GetCurrentOutputDeviceType() &&
+        outputDevices.front()->networkId_ == GetCurrentOutputDeviceNetworkId())) return;
 
     moveDeviceFinished_ = false;
 
@@ -2259,21 +2261,21 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererCha
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
 
-void AudioPolicyService::MuteSinkForSwtichGeneralDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioPolicyService::MuteSinkForSwitchGeneralDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
         outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO)) {
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+        MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
     }
 }
 
-void AudioPolicyService::MuteSinkForSwtichBluetoothDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioPolicyService::MuteSinkForSwitchBluetoothDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+        MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
     }
 }
 
@@ -2304,7 +2306,7 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
-    MuteSinkForSwtichGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
+    MuteSinkForSwitchGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
 
     UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     // MoveSinkInputByIndexOrName
@@ -2601,7 +2603,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
         }
-        MuteSinkForSwtichBluetoothDevice(rendererChangeInfo, descs, reason);
+        MuteSinkForSwitchBluetoothDevice(rendererChangeInfo, descs, reason);
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
