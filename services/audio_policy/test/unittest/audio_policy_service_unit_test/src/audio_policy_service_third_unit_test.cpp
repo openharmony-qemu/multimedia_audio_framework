@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "audio_policy_service_first_unit_test.h"
+#include "get_server_util.h"
 #include "audio_policy_service_third_unit_test.h"
 #include <thread>
 #include <memory>
@@ -34,7 +34,7 @@ void AudioPolicyServiceThirdUnitTest::TearDown(void) {}
 
 static AudioPolicyServer* GetServerPtr()
 {
-    return AudioPolicyServiceUnitTest::GetServerPtr();
+    return GetServerUtil::GetServerPtr();
 }
 
 /**

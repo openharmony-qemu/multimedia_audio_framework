@@ -38,7 +38,6 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
-    static AudioPolicyServer* GetServerPtr();
 };
 } // namespace AudioStandard
 } // namespace OHOS
