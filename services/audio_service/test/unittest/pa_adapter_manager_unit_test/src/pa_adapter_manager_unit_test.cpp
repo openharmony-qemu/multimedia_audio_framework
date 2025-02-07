@@ -726,7 +726,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_027, TestSize.Level1)
 
 /**
 * @tc.name   : Test CheckHighResolution API
-* @tc.number : PaAdapterManager_035
+* @tc.number : PaAdapterManager_028
 * @tc.desc   : Test CheckHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_035, TestSize.Level1)
@@ -750,7 +750,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_035, TestSize.Level1)
 
 /**
 * @tc.name   : Test CheckHighResolution API
-* @tc.number : PaAdapterManager_036
+* @tc.number : PaAdapterManager_029
 * @tc.desc   : Test CheckHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_036, TestSize.Level1)
@@ -774,7 +774,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_036, TestSize.Level1)
 
 /**
 * @tc.name   : Test CheckHighResolution API
-* @tc.number : PaAdapterManager_037
+* @tc.number : PaAdapterManager_030
 * @tc.desc   : Test CheckHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_037, TestSize.Level1)
@@ -798,7 +798,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_037, TestSize.Level1)
 
 /**
 * @tc.name   : Test CheckHighResolution API
-* @tc.number : PaAdapterManager_038
+* @tc.number : PaAdapterManager_031
 * @tc.desc   : Test CheckHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_038, TestSize.Level1)
@@ -822,7 +822,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_038, TestSize.Level1)
 
 /**
 * @tc.name   : Test CheckHighResolution API
-* @tc.number : PaAdapterManager_039
+* @tc.number : PaAdapterManager_032
 * @tc.desc   : Test CheckHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_039, TestSize.Level1)
@@ -846,7 +846,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_039, TestSize.Level1)
 
 /**
 * @tc.name   : Test CheckHighResolution API
-* @tc.number : PaAdapterManager_040
+* @tc.number : PaAdapterManager_033
 * @tc.desc   : Test CheckHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_040, TestSize.Level1)
@@ -870,7 +870,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_040, TestSize.Level1)
 
 /**
 * @tc.name   : Test SetHighResolution API
-* @tc.number : PaAdapterManager_041
+* @tc.number : PaAdapterManager_034
 * @tc.desc   : Test SetHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_041, TestSize.Level1)
@@ -898,7 +898,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_041, TestSize.Level1)
 
 /**
 * @tc.name   : Test SetHighResolution API
-* @tc.number : PaAdapterManager_042
+* @tc.number : PaAdapterManager_035
 * @tc.desc   : Test SetHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_042, TestSize.Level1)
@@ -926,7 +926,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_042, TestSize.Level1)
 
 /**
 * @tc.name   : Test SetHighResolution API
-* @tc.number : PaAdapterManager_043
+* @tc.number : PaAdapterManager_036
 * @tc.desc   : Test SetHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_043, TestSize.Level1)
@@ -954,7 +954,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_043, TestSize.Level1)
 
 /**
 * @tc.name   : Test SetHighResolution API
-* @tc.number : PaAdapterManager_044
+* @tc.number : PaAdapterManager_037
 * @tc.desc   : Test SetHighResolution interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_044, TestSize.Level1)
@@ -982,7 +982,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_044, TestSize.Level1)
 
 /**
 * @tc.name   : Test SetRecordProplist API
-* @tc.number : PaAdapterManager_045
+* @tc.number : PaAdapterManager_038
 * @tc.desc   : Test SetRecordProplist interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_045, TestSize.Level1)
@@ -1008,7 +1008,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_045, TestSize.Level1)
 
 /**
 * @tc.name   : Test CreateRendererStream API
-* @tc.number : PaAdapterManager_046
+* @tc.number : PaAdapterManager_039
 * @tc.desc   : Test CreateRendererStream interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_046, TestSize.Level1)
@@ -1026,7 +1026,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_046, TestSize.Level1)
 
 /**
 * @tc.name   : Test CreateCapturerStream API
-* @tc.number : PaAdapterManager_047
+* @tc.number : PaAdapterManager_040
 * @tc.desc   : Test CreateCapturerStream interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_047, TestSize.Level1)
@@ -1042,7 +1042,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_047, TestSize.Level1)
 
 /**
 * @tc.name   : Test SetStreamAudioEnhanceMode API
-* @tc.number : PaAdapterManager_048
+* @tc.number : PaAdapterManager_041
 * @tc.desc   : Test SetStreamAudioEnhanceMode interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_048, TestSize.Level1)
@@ -1058,7 +1058,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_048, TestSize.Level1)
 
 /**
 * @tc.name   : Test PAStreamStateCb API
-* @tc.number : PaAdapterManager_049
+* @tc.number : PaAdapterManager_042
 * @tc.desc   : Test PAStreamStateCb interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_049, TestSize.Level1)
@@ -1075,7 +1075,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_049, TestSize.Level1)
 
 /**
 * @tc.name   : Test ConvertChLayoutToPaChMap API
-* @tc.number : PaAdapterManager_050
+* @tc.number : PaAdapterManager_043
 * @tc.desc   : Test ConvertChLayoutToPaChMap interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_050, TestSize.Level1)
@@ -1089,7 +1089,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_050, TestSize.Level1)
 
 /**
 * @tc.name   : Test GetEnhanceSceneName API
-* @tc.number : PaAdapterManager_051
+* @tc.number : PaAdapterManager_044
 * @tc.desc   : Test GetEnhanceSceneName interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_051, TestSize.Level1)
@@ -1101,7 +1101,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_051, TestSize.Level1)
 
 /**
 * @tc.name   : Test GetEnhanceSceneName API
-* @tc.number : PaAdapterManager_052
+* @tc.number : PaAdapterManager_045
 * @tc.desc   : Test GetEnhanceSceneName interface.
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_052, TestSize.Level1)
