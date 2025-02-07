@@ -332,7 +332,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
     // Save the volume to settingsdata.
     if (handler_ != nullptr) {
-        if (Util::IsDualToneStreamType(streamType)) {
+        if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
             AUDIO_INFO_LOG("DualToneStreamType. Save volume for speaker.");
             handler_->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel);
         } else {
@@ -432,7 +432,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
-        if (Util::IsDualToneStreamType(streamType)) {
+        if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
             volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
         } else {
             volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
@@ -540,7 +540,7 @@ int32_t AudioAdapterManager::SetDoubleRingVolumeDb(const AudioStreamType &stream
 {
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
-        if (Util::IsDualToneStreamType(streamType)) {
+        if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
             volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
         } else {
             volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
@@ -1452,7 +1452,7 @@ bool AudioAdapterManager::LoadVolumeMap(void)
 
     bool result = false;
     for (auto &streamType: VOLUME_TYPE_LIST) {
-        if (Util::IsDualToneStreamType(streamType)) {
+        if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
             result = volumeDataMaintainer_.GetVolume(DEVICE_TYPE_SPEAKER, streamType);
         } else {
             result = volumeDataMaintainer_.GetVolume(currentActiveDevice_, streamType);
