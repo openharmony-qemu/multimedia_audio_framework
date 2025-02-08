@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioEffectService"
 #endif
 
-#include "audio_effect_manager.h"
+#include "audio_effect_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
