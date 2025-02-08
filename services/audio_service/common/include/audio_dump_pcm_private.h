@@ -106,6 +106,7 @@ private:
     enum {
         RELEASE_OVERTIME_MEMBLOCK = 0,
         PRINT_MEMORY_CONDITION,
+        RAISE_PRIORITY,
     };
 };
 
