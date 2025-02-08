@@ -794,6 +794,7 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
 {
     AUDIO_INFO_LOG("set offload vol left is %{public}f, right is %{public}f", left, right);
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     float thevolume;
     int32_t ret;
     if (audioRender_ == nullptr) {
