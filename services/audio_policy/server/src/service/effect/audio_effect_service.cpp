@@ -13,52 +13,52 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioEffectManager"
+#define LOG_TAG "AudioEffectService"
 #endif
 
-#include "audio_effect_manager.h"
+#include "audio_effect_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
-AudioEffectManager::AudioEffectManager()
+AudioEffectService::AudioEffectService()
 {
-    AUDIO_INFO_LOG("AudioEffectManager ctor");
+    AUDIO_INFO_LOG("AudioEffectService ctor");
 }
 
-AudioEffectManager::~AudioEffectManager()
+AudioEffectService::~AudioEffectService()
 {
 }
 
-void AudioEffectManager::EffectManagerInit()
+void AudioEffectService::EffectServiceInit()
 {
     // load XML
     std::unique_ptr<AudioEffectConfigParser> effectConfigParser = std::make_unique<AudioEffectConfigParser>();
     int32_t ret = effectConfigParser->LoadEffectConfig(oriEffectConfig_);
-    CHECK_AND_RETURN_LOG(ret == 0, "AudioEffectManager->effectConfigParser failed: %{public}d", ret);
+    CHECK_AND_RETURN_LOG(ret == 0, "AudioEffectService->effectConfigParser failed: %{public}d", ret);
 }
 
-void AudioEffectManager::GetAvailableEffects(std::vector<Effect> &availableEffects)
+void AudioEffectService::GetAvailableEffects(std::vector<Effect> &availableEffects)
 {
     availableEffects = availableEffects_;
 }
 
-void AudioEffectManager::GetOriginalEffectConfig(OriginalEffectConfig &oriEffectConfig)
+void AudioEffectService::GetOriginalEffectConfig(OriginalEffectConfig &oriEffectConfig)
 {
     oriEffectConfig = oriEffectConfig_;
 }
 
-void AudioEffectManager::UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects)
+void AudioEffectService::UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects)
 {
     availableEffects_ = newAvailableEffects;
 }
 
-int32_t AudioEffectManager::QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig)
+int32_t AudioEffectService::QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
     supportedEffectConfig = supportedEffectConfig_;
     return existDefault_;
 }
 
-void AudioEffectManager::GetSupportedEffectConfig(SupportedEffectConfig &supportedEffectConfig)
+void AudioEffectService::GetSupportedEffectConfig(SupportedEffectConfig &supportedEffectConfig)
 {
     supportedEffectConfig = supportedEffectConfig_;
 }
@@ -198,13 +198,13 @@ static int32_t UpdateAvailableSceneMapPost(SceneMappingItem &item, std::vector<S
     return isDuplicate;
 }
 
-bool AudioEffectManager::VerifySceneMappingItem(const SceneMappingItem &item)
+bool AudioEffectService::VerifySceneMappingItem(const SceneMappingItem &item)
 {
     return STREAM_USAGE_MAP.find(item.name) != STREAM_USAGE_MAP.end() &&
         std::find(postSceneTypeSet_.begin(), postSceneTypeSet_.end(), item.sceneType) != postSceneTypeSet_.end();
 }
 
-void AudioEffectManager::UpdateEffectChains(std::vector<std::string> &availableLayout)
+void AudioEffectService::UpdateEffectChains(std::vector<std::string> &availableLayout)
 {
     int32_t count = 0;
     std::vector<int> deviceDelIdx;
@@ -232,7 +232,7 @@ void AudioEffectManager::UpdateEffectChains(std::vector<std::string> &availableL
     }
 }
 
-void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
+void AudioEffectService::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
 {
     int32_t ret = 0;
     supportedEffectConfig_.effectChains = aeConfig.effectChains;
@@ -283,7 +283,7 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
     supportedEffectConfig_.postProcessSceneMap = postSceneMap;
 }
 
-void AudioEffectManager::UpdateDuplicateBypassMode(ProcessNew &processNew)
+void AudioEffectService::UpdateDuplicateBypassMode(ProcessNew &processNew)
 {
     int32_t flag = 0;
     std::vector<int32_t> deviceDelIdx;
@@ -306,7 +306,7 @@ void AudioEffectManager::UpdateDuplicateBypassMode(ProcessNew &processNew)
     }
 }
 
-void AudioEffectManager::UpdateDuplicateMode(ProcessNew &processNew)
+void AudioEffectService::UpdateDuplicateMode(ProcessNew &processNew)
 {
     std::unordered_set<std::string> seen;
     std::vector<int32_t> toRemove;
@@ -351,7 +351,7 @@ static void UpdateDuplicateDeviceRecord(StreamEffectMode &streamEffectMode, Stre
     }
 }
 
-void AudioEffectManager::UpdateDuplicateDevice(ProcessNew &processNew)
+void AudioEffectService::UpdateDuplicateDevice(ProcessNew &processNew)
 {
     for (auto &stream: processNew.stream) {
         for (auto &streamEffectMode: stream.streamEffectMode) {
@@ -360,7 +360,7 @@ void AudioEffectManager::UpdateDuplicateDevice(ProcessNew &processNew)
     }
 }
 
-void AudioEffectManager::UpdateDuplicateScene(ProcessNew &processNew)
+void AudioEffectService::UpdateDuplicateScene(ProcessNew &processNew)
 {
     // erase duplicate scene
     std::unordered_set<std::string> scenes;
@@ -379,7 +379,7 @@ void AudioEffectManager::UpdateDuplicateScene(ProcessNew &processNew)
     }
 }
 
-void AudioEffectManager::UpdateDuplicateDefaultScene(ProcessNew &processNew)
+void AudioEffectService::UpdateDuplicateDefaultScene(ProcessNew &processNew)
 {
     // erase duplicate default scene
     bool flag = false;
@@ -468,7 +468,7 @@ static void UpdateUnavailableEffectChainsRecord(std::vector<std::string> &availa
     }
 }
 
-int32_t AudioEffectManager::UpdateUnavailableEffectChains(std::vector<std::string> &availableLayout,
+int32_t AudioEffectService::UpdateUnavailableEffectChains(std::vector<std::string> &availableLayout,
     ProcessNew &processNew)
 {
     int32_t ret = 0;
@@ -485,7 +485,7 @@ int32_t AudioEffectManager::UpdateUnavailableEffectChains(std::vector<std::strin
     return ret;
 }
 
-void AudioEffectManager::BuildAvailableAEConfig()
+void AudioEffectService::BuildAvailableAEConfig()
 {
     int32_t ret = 0 ;
     std::vector<std::string> availableLayout;
@@ -538,17 +538,17 @@ void AudioEffectManager::BuildAvailableAEConfig()
     }
 }
 
-void AudioEffectManager::SetMasterSinkAvailable()
+void AudioEffectService::SetMasterSinkAvailable()
 {
     isMasterSinkAvailable_ = true;
 }
 
-void AudioEffectManager::SetEffectChainManagerAvailable()
+void AudioEffectService::SetEffectChainManagerAvailable()
 {
     isEffectChainManagerAvailable_ = true;
 }
 
-bool AudioEffectManager::CanLoadEffectSinks()
+bool AudioEffectService::CanLoadEffectSinks()
 {
     return (isMasterSinkAvailable_ && isEffectChainManagerAvailable_);
 }
@@ -562,7 +562,7 @@ void AddKeyValueIntoMap(std::unordered_map<T, std::string> &map, std::string &ke
     map[key] = value;
 }
 
-void AudioEffectManager::ConstructEffectChainManagerParam(EffectChainManagerParam &effectChainMgrParam)
+void AudioEffectService::ConstructEffectChainManagerParam(EffectChainManagerParam &effectChainMgrParam)
 {
     std::unordered_map<std::string, std::string> &map = effectChainMgrParam.sceneTypeToChainNameMap;
     effectChainMgrParam.maxExtraNum = static_cast <uint32_t>(oriEffectConfig_.postProcess.maxExtSceneNum);
@@ -589,7 +589,7 @@ void AudioEffectManager::ConstructEffectChainManagerParam(EffectChainManagerPara
         (int32_t)map.size());
 }
 
-void AudioEffectManager::ConstructEnhanceChainManagerParam(EffectChainManagerParam &enhanceChainMgrParam)
+void AudioEffectService::ConstructEnhanceChainManagerParam(EffectChainManagerParam &enhanceChainMgrParam)
 {
     std::unordered_map<std::string, std::string> &map = enhanceChainMgrParam.sceneTypeToChainNameMap;
     enhanceChainMgrParam.maxExtraNum = static_cast <uint32_t>(oriEffectConfig_.preProcess.maxExtSceneNum);

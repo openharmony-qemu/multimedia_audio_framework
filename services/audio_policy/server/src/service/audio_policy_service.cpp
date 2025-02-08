@@ -318,7 +318,7 @@ bool AudioPolicyService::Init(void)
     AUDIO_INFO_LOG("Audio policy service init enter");
     serviceFlag_.reset();
     audioPolicyManager_.Init();
-    audioEffectManager_.EffectManagerInit();
+    audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
     audioPnpServer_.init();
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>(this);
@@ -4742,7 +4742,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
             OnPnpDeviceStatusUpdated((*it).first, (*it).second);
         }
-        audioEffectManager_.SetMasterSinkAvailable();
+        audioEffectService_.SetMasterSinkAvailable();
     }
     // load inner-cap-sink
     LoadModernInnerCapSink();
@@ -4904,7 +4904,7 @@ void AudioPolicyService::LoadEffectLibrary()
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "LoadEffectLibrary, Audio Server Proxy is null");
     OriginalEffectConfig oriEffectConfig = {};
-    audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
+    audioEffectService_.GetOriginalEffectConfig(oriEffectConfig);
     vector<Effect> successLoadedEffects;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool loadSuccess = gsp->LoadAudioEffectLibraries(oriEffectConfig.libraries,
@@ -4915,16 +4915,16 @@ void AudioPolicyService::LoadEffectLibrary()
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
 
-    audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
-    audioEffectManager_.BuildAvailableAEConfig();
+    audioEffectService_.UpdateAvailableEffects(successLoadedEffects);
+    audioEffectService_.BuildAvailableAEConfig();
 
     // Initialize EffectChainManager in audio service through IPC
     SupportedEffectConfig supportedEffectConfig;
-    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
+    audioEffectService_.GetSupportedEffectConfig(supportedEffectConfig);
     EffectChainManagerParam effectChainManagerParam;
     EffectChainManagerParam enhanceChainManagerParam;
-    audioEffectManager_.ConstructEffectChainManagerParam(effectChainManagerParam);
-    audioEffectManager_.ConstructEnhanceChainManagerParam(enhanceChainManagerParam);
+    audioEffectService_.ConstructEffectChainManagerParam(effectChainManagerParam);
+    audioEffectService_.ConstructEnhanceChainManagerParam(enhanceChainManagerParam);
 
     identity = IPCSkeleton::ResetCallingIdentity();
     bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains,
@@ -4932,14 +4932,14 @@ void AudioPolicyService::LoadEffectLibrary()
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 
-    audioEffectManager_.SetEffectChainManagerAvailable();
+    audioEffectService_.SetEffectChainManagerAvailable();
     AudioSpatializationService::GetAudioSpatializationService().Init(supportedEffectConfig.effectChains);
 }
 
 void AudioPolicyService::GetEffectManagerInfo()
 {
     converterConfig_ = GetConverterConfig();
-    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig_);
+    audioEffectService_.GetSupportedEffectConfig(supportedEffectConfig_);
 }
 
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)
@@ -7095,7 +7095,7 @@ float AudioPolicyService::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_
 
 int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& supportedEffectConfig)
 {
-    int32_t ret = audioEffectManager_.QueryEffectManagerSceneMode(supportedEffectConfig);
+    int32_t ret = audioEffectService_.QueryEffectManagerSceneMode(supportedEffectConfig);
     return ret;
 }
 
