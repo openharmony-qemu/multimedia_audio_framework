@@ -318,7 +318,7 @@ bool AudioPolicyService::Init(void)
     AUDIO_INFO_LOG("Audio policy service init enter");
     serviceFlag_.reset();
     audioPolicyManager_.Init();
-    audioEffectService_.EffectManagerInit();
+    audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
     audioPnpServer_.init();
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>(this);

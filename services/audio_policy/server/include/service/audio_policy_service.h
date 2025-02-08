@@ -514,7 +514,7 @@ private:
         audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
-        audioEffectService_(AudioEffectService::GetAudioEffectManager()),
+        audioEffectService_(AudioEffectService::GetAudioEffectService()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),

@@ -52,7 +52,7 @@ void AudioEffectService::UpdateAvailableEffects(std::vector<Effect> &newAvailabl
     availableEffects_ = newAvailableEffects;
 }
 
-int32_t AudioEffectService::QueryEffectServiceSceneMode(SupportedEffectConfig &supportedEffectConfig)
+int32_t AudioEffectService::QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
     supportedEffectConfig = supportedEffectConfig_;
     return existDefault_;
