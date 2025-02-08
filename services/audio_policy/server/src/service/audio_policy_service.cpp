@@ -1974,7 +1974,8 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
         return ERR_INVALID_PARAM;
     }
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, OUTPUT_DEVICE);
-
+    std::string currentActivePort = REMOTE_CLASS;
+    audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
     audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
 
     AudioModuleInfo moudleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
