@@ -666,7 +666,6 @@ ohos_shared_library("audio_manager_client") {
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_anahs_manager.cpp",
-    "../audio_service/client/src/audio_manager_proxy.cpp",
     "util/src/audio_general_manager.cpp",
     "util/src/audio_manager_util.cpp",
   ]
