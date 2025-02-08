@@ -852,6 +852,8 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
             if (clientCallbacksMap_.count(clientPid) > 0 &&
                 clientCallbacksMap_[clientPid].count(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) > 0 &&
                 clientCallbacksMap_[clientPid][CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE]) {
+                AUDIO_INFO_LOG("Send preferred0utputDevice deviceType[%{public}d] change to clientPid[%{public}d]",
+                    deviceDescs[0]->deviceType_, clientPid);
                 it->second->OnPreferredOutputDeviceUpdated(rendererInfo, deviceDescs);
             }
         }
