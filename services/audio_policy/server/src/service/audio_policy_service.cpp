@@ -2235,7 +2235,9 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererCha
         }
         return;
     }
-    if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
+    if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo) ||
+        (outputDevices.front()->deviceType_ == GetCurrentOutputDeviceType() &&
+        outputDevices.front()->networkId_ == GetCurrentOutputDeviceNetworkId())) return;
 
     moveDeviceFinished_ = false;
 
