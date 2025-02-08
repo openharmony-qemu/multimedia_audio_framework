@@ -33,10 +33,7 @@ namespace AudioStandard {
 bool AudioStrategyRouterParser::LoadConfiguration()
 {
     curNode_ = AudioXmlNode::Create();
-    int32_t ret = curNode_->Config(DEVICE_CONFIG_PROD_FILE, nullptr, 0);
-    if (ret != SUCCESS) {
-        ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
-    }
+    int32_t ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Not found audio_strategy_router.xml!");
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
