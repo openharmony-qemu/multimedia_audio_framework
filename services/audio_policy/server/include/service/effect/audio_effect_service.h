@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_EFFECT_MANAGER_H
-#define ST_AUDIO_EFFECT_MANAGER_H
+#ifndef ST_AUDIO_EFFECT_SERVICE_H
+#define ST_AUDIO_EFFECT_SERVICE_H
 
 #include "audio_policy_log.h"
 #include "audio_effect.h"
@@ -22,16 +22,16 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioEffectManager {
+class AudioEffectService {
 public:
-    explicit AudioEffectManager();
-    ~AudioEffectManager();
-    static AudioEffectManager& GetAudioEffectManager()
+    explicit AudioEffectService();
+    ~AudioEffectService();
+    static AudioEffectService& GetAudioEffectService()
     {
-        static AudioEffectManager audioEffectManager;
-        return audioEffectManager;
+        static AudioEffectService audioEffectService;
+        return audioEffectService;
     }
-    void EffectManagerInit();
+    void EffectServiceInit();
     void GetOriginalEffectConfig(OriginalEffectConfig &oriEffectConfig);
     void GetAvailableEffects(std::vector<Effect> &availableEffects);
     void UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects);
@@ -64,4 +64,4 @@ private:
 };
 } // namespce AudioStandard
 } // namespace OHOS
-#endif // ST_AUDIO_EFFECT_MANAGER_H
+#endif // ST_AUDIO_EFFECT_SERVICE_H
