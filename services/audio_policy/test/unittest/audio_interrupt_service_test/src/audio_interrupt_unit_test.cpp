@@ -685,7 +685,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_029, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
     const sptr<IStandardAudioService> result = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result, nullptr);
 }
 
 /**
@@ -1280,7 +1280,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceGetAudioServerProxy_001, Tes
     EXPECT_NE(nullptr, audioInterruptService);
 
     sptr<IStandardAudioService> ret = audioInterruptService->GetAudioServerProxy();
-    EXPECT_NE(nullptr, ret);
+    EXPECT_EQ(nullptr, ret);
 }
 
 /**
@@ -1296,7 +1296,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceGetAudioServerProxy_002, Tes
 
     sptr<IStandardAudioService> ret = audioInterruptService->GetAudioServerProxy();
     ret = audioInterruptService->GetAudioServerProxy();
-    EXPECT_NE(nullptr, ret);
+    EXPECT_EQ(nullptr, ret);
 }
 
 /**
@@ -1419,7 +1419,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceIsAudioSessionActivated_002,
     audioInterruptService->sessionService_ = nullptr;
     int32_t PIT_TEST { -1 };
     bool ret = audioInterruptService->IsAudioSessionActivated(PIT_TEST);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**

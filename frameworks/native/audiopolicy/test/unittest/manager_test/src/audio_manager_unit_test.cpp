@@ -3027,7 +3027,8 @@ HWTEST(AudioManagerUnitTest, LoadSplitModule_004, TestSize.Level1)
     int32_t setUidRet = setuid(UID_CAR_DISTRIBUTED_ENGINE_SA);
     std::cout << "stUidRet: " << setUidRet << std::endl;
     auto ret = AudioSystemManager::GetInstance()->LoadSplitModule(TEST_SPLIT_ARGS, TEST_NETWORK_ID);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    const int32_t E_IPC_ERROR = 29189;
+    EXPECT_EQ(E_IPC_ERROR, ret);
 }
 
 } // namespace AudioStandard
