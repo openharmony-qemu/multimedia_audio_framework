@@ -30,6 +30,7 @@
 #endif
 #include "offload_audio_renderer_sink.h"
 #include "multichannel_audio_renderer_sink.h"
+#include "fast_audio_renderer_sink.h"
 
 
 namespace OHOS {
@@ -47,6 +48,8 @@ const char *DEVICE_CLASS_REMOTE = "remote";
 #endif
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
+const char *DEVICE_CLASS_DIRECT_VOIP = "primary_direct_voip";
+const char *DEVICE_CLASS_MMAP_VOIP = "primary_mmap_voip";
 
 IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, const char *deviceNetworkId)
 {
@@ -85,6 +88,12 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     }
     if (!strcmp(devceClass, DEVICE_CLASS_MULTICHANNEL)) {
         iAudioRendererSink = MultiChannelRendererSink::GetInstance("multichannel");
+    }
+    if (!strcmp(devceClass, DEVICE_CLASS_DIRECT_VOIP)) {
+        iAudioRendererSink = AudioRendererSink::GetInstance("voip");
+    }
+    if (!strcmp(devceClass, DEVICE_CLASS_MMAP_VOIP)) {
+        iAudioRendererSink = FastAudioRendererSink::GetVoipInstance();
     }
 
     if (iAudioRendererSink == nullptr) {

@@ -194,6 +194,29 @@ uint32_t AudioPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
     }
 }
 
+std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
+{
+    std::string portName = PORT_NONE;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            portName = USB_SPEAKER;
+            break;
+        case DeviceType::DEVICE_TYPE_DP:
+            portName = DP_SINK;
+            break;
+        case DeviceType::DEVICE_TYPE_FILE_SINK:
+            portName = FILE_SINK;
+            break;
+        case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+            portName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
+            break;
+        default:
+            portName = PORT_NONE;
+            break;
+    }
+    return portName;
+}
+
 std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType)
 {
     std::string portName = PORT_NONE;
@@ -222,24 +245,16 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
                 portName = OFFLOAD_PRIMARY_SPEAKER;
             } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
                 portName = MCH_PRIMARY_SPEAKER;
+            } else if (pipeType == PIPE_TYPE_DIRECT_VOIP) {
+                portName = PRIMARY_DIRECT_VOIP;
+            } else if (pipeType == PIPE_TYPE_CALL_OUT) {
+                portName = PRIMARY_MMAP_VOIP;
             } else {
                 portName = PRIMARY_SPEAKER;
             }
             break;
-        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
-            portName = USB_SPEAKER;
-            break;
-        case DeviceType::DEVICE_TYPE_DP:
-            portName = DP_SINK;
-            break;
-        case DeviceType::DEVICE_TYPE_FILE_SINK:
-            portName = FILE_SINK;
-            break;
-        case DeviceType::DEVICE_TYPE_REMOTE_CAST:
-            portName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
-            break;
         default:
-            portName = PORT_NONE;
+            portName = GetNewSinkPortName(deviceType);
             break;
     }
 

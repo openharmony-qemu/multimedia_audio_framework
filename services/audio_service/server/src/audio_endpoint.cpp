@@ -404,7 +404,12 @@ std::string AudioEndpointInner::GetEndpointName()
 
 int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
 {
-    // No need set hdi volume in shared stream mode.
+    if (streamType == AudioStreamType::STREAM_VOICE_CALL && endpointType_ == TYPE_VOIP_MMAP) {
+        if (fastSink_ != nullptr) {
+            AUDIO_INFO_LOG("SetVolume:%{public}f, streamType:%{public}d", volume, streamType);
+            fastSink_->SetVolume(volume, volume);
+        }
+    }
     return SUCCESS;
 }
 
@@ -1514,7 +1519,7 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
     dataLength /= 2; // SAMPLE_S16LE--> 2 byte
     int16_t *dstPtr = reinterpret_cast<int16_t *>(dstData.bufferDesc.buffer);
     for (size_t offset = 0; dataLength > 0; dataLength--) {
-        int32_t vol = srcData.volumeStart; // change to modify volume of each channel
+        int32_t vol = 1 << VOLUME_SHIFT_NUMBER;
         int16_t *srcPtr = reinterpret_cast<int16_t *>(srcData.bufferDesc.buffer) + offset;
         int32_t sum = applyVol ? (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER : *srcPtr; // 1/65536
         ZeroVolumeCheck(vol);
