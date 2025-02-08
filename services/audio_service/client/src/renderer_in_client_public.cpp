@@ -186,6 +186,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 
     if (rendererInfo_.sceneType == AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second) {
         effectMode_ = EFFECT_NONE;
+        rendererInfo_.effectMode = EFFECT_NONE;
     }
 
     AUDIO_PRERELEASE_LOGI("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,

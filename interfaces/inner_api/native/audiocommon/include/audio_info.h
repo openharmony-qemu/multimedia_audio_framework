@@ -379,6 +379,7 @@ struct AudioRendererInfo {
     // Currently only used for making decisions on fade-in and fade-out strategies.
     // 0 is the default value, it is considered that no
     uint64_t expectedPlaybackDurationBytes = 0;
+    int32_t effectMode = 1;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -396,7 +397,8 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(format)
             && parcel.WriteBool(isOffloadAllowed)
             && parcel.WriteInt32(playerType)
-            && parcel.WriteUint64(expectedPlaybackDurationBytes);
+            && parcel.WriteUint64(expectedPlaybackDurationBytes)
+            && parcel.WriteInt32(effectMode);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -415,6 +417,7 @@ struct AudioRendererInfo {
         isOffloadAllowed = parcel.ReadBool();
         playerType = static_cast<PlayerType>(parcel.ReadInt32());
         expectedPlaybackDurationBytes = parcel.ReadUint64();
+        effectMode = parcel.ReadInt32();
     }
 };
 

@@ -66,6 +66,7 @@ PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConf
     mainloop_ = mainloop;
     paStream_ = paStream;
     processConfig_ = processConfig;
+    effectMode_ = processConfig.rendererInfo.effectMode;
 }
 
 PaRendererStreamImpl::~PaRendererStreamImpl()
@@ -211,8 +212,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     palock.Unlock();
 
-    if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
@@ -229,16 +229,6 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
         audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
     }
     return SUCCESS;
-}
-
-bool PaRendererStreamImpl::IsEffectNone(StreamUsage streamUsage)
-{
-    if (streamUsage == STREAM_USAGE_SYSTEM || streamUsage == STREAM_USAGE_DTMF ||
-        streamUsage == STREAM_USAGE_ENFORCED_TONE || streamUsage == STREAM_USAGE_ULTRASONIC ||
-        streamUsage == STREAM_USAGE_NAVIGATION || streamUsage == STREAM_USAGE_NOTIFICATION) {
-        return true;
-    }
-    return false;
 }
 
 int32_t PaRendererStreamImpl::Flush()
@@ -264,8 +254,7 @@ int32_t PaRendererStreamImpl::Flush()
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
 
-    if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
@@ -332,8 +321,7 @@ int32_t PaRendererStreamImpl::Stop()
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     pa_operation_unref(operation);
 
-    if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
@@ -373,8 +361,7 @@ int32_t PaRendererStreamImpl::Release()
     }
     state_ = RELEASED;
 
-    if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
