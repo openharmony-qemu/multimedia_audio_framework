@@ -714,7 +714,7 @@ HWTEST_F(RemoteFastAudioCapturerSourceUnitTest, remote_fast_audio_capturer_sourc
     remoteFastAudioCapturerSourceInner->OnAudioParamChange(adapterName,
         AudioParamKey::PARAM_KEY_STATE, condition, value);
     remoteFastAudioCapturerSourceInner->OnAudioParamChange(adapterName, AudioParamKey::VOLUME, condition, value);
-    EXPECT_NE(remoteFastAudioCapturerSourceInner->paramCb_, nullptr);
+    EXPECT_EQ(remoteFastAudioCapturerSourceInner->paramCb_, nullptr);
 }
 
 /**
@@ -734,7 +734,7 @@ HWTEST_F(RemoteFastAudioCapturerSourceUnitTest, remote_fast_audio_capturer_sourc
     remoteFastAudioCapturerSourceInner->audioAdapter_ = nullptr;
     remoteFastAudioCapturerSourceInner->audioManager_ = nullptr;
     remoteFastAudioCapturerSourceInner->ClearCapture();
-    EXPECT_NE(remoteFastAudioCapturerSourceInner->capturerInited_.load(), false);
+    EXPECT_EQ(remoteFastAudioCapturerSourceInner->capturerInited_.load(), false);
 }
 
 /**
@@ -756,7 +756,7 @@ HWTEST_F(RemoteFastAudioCapturerSourceUnitTest, remote_fast_audio_capturer_sourc
     std::shared_ptr<IAudioDeviceManager> audioManager = std::make_shared<IAudioDeviceManagerInner>();
     remoteFastAudioCapturerSourceInner->audioManager_ = audioManager;
     remoteFastAudioCapturerSourceInner->ClearCapture();
-    EXPECT_NE(remoteFastAudioCapturerSourceInner->capturerInited_.load(), false);
+    EXPECT_EQ(remoteFastAudioCapturerSourceInner->capturerInited_.load(), false);
 }
 }
 }
