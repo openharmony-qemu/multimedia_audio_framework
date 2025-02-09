@@ -169,8 +169,10 @@ int32_t RendererInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
     AudioVolume::GetInstance()->AddStreamVolume(streamIndex_, processConfig_.streamType,
-        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid);
+        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+        isSystemApp);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
@@ -1105,8 +1107,10 @@ int32_t RendererInServer::InitDupStream()
     int32_t ret = IStreamManager::GetDupPlaybackManager().CreateRender(processConfig_, dupStream_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dupStream_ != nullptr, ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     dupStreamIndex_ = dupStream_->GetStreamIndex();
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
     AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex_, processConfig_.streamType,
-        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid);
+        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+        isSystemApp);
 
     dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex_);
     dupStream_->RegisterStatusCallback(dupStreamCallback_);
@@ -1174,8 +1178,10 @@ int32_t RendererInServer::InitDualToneStream()
             ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
         AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
+        bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
         AudioVolume::GetInstance()->AddStreamVolume(dualToneStreamIndex_, processConfig_.streamType,
-            processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid);
+            processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+            isSystemApp);
 
         isDualToneEnabled_ = true;
     }

@@ -88,8 +88,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
             " isMuted:%{public}d, streamVolumeSize:%{public}zu",
             sessionId, it->second.volume_, it->second.duckFactor_, it->second.lowPowerFactor_, it->second.isMuted_,
             streamVolume_.size());
-        if (volumeType == STREAM_VOICE_ASSISTANT &&
-            !CheckoutSystemAppUtil::CheckoutSystemApp(it->second.GetAppUid())) {
+        if (volumeType == STREAM_VOICE_ASSISTANT && !it->second.isSystemApp()) {
             volumeType = STREAM_MUSIC;
         }
     } else {
@@ -173,13 +172,13 @@ void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
 }
 
 void AudioVolume::AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage,
-    int32_t uid, int32_t pid)
+    int32_t uid, int32_t pid, bool isSystemApp)
 {
     AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", sessionId);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it == streamVolume_.end()) {
-        streamVolume_.emplace(sessionId, StreamVolume(sessionId, streamType, streamUsage, uid, pid));
+        streamVolume_.emplace(sessionId, StreamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp));
         historyVolume_.emplace(sessionId, 0.0f);
         monitorVolume_.emplace(sessionId, std::make_pair(0.0f, 0));
     } else {
