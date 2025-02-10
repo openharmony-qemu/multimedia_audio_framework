@@ -394,6 +394,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include/service/service",
     "../../audio_policy/server/include",
+    "../../audio_policy/client/include",
   ]
 
   use_exceptions = true
@@ -457,6 +458,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
   ]
 
   sources = [
+    "../../audio_policy/client/src/audio_client_tracker_callback_stub.cpp",
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_second_unit_test.cpp",
     "./unittest/audio_policy_service_unit_test/src/get_server_util.cpp",
   ]
@@ -464,7 +466,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   deps = [
-    "../../../services/audio_policy:audio_policy_client",
+    "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
   ]
