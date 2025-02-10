@@ -204,7 +204,7 @@ void AudioToneParser::ParseToneInfoAttribute(std::shared_ptr<AudioXmlNode> curNo
             curNode->GetProp("value", pValueStr);
             CHECK_AND_RETURN_LOG(StringConverter(pValueStr, segCnt),
                 "convert segCnt fail!");
-            ltoneDesc->segmentCnt = segCnt;
+            ltoneDesc->segmentCnt = static_cast<uint32_t>(segCnt);
             AUDIO_DEBUG_LOG("ParseToneInfo segmentCnt %{public}d", ltoneDesc->segmentCnt);
         } else if (curNode->CompareName("Segment")) {
             if (segInx < segCnt) {
