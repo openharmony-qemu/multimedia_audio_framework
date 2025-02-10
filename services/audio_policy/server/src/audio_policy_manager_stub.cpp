@@ -160,6 +160,9 @@ const char *g_audioPolicyCodeStrs[] = {
     "ACTIVATE_AUDIO_CONCURRENCY",
     "SET_MICROPHONE_MUTE_PERSISTENT",
     "GET_MICROPHONE_MUTE_PERSISTENT",
+    "GET_SUPPORT_AUDIO_EFFECT_PROPERTY_V3",
+    "GET_AUDIO_EFFECT_PROPERTY_V3",
+    "SET_AUDIO_EFFECT_PROPERTY_V3",
     "INJECT_INTERRUPTION",
     "ACTIVATE_AUDIO_SESSION",
     "DEACTIVATE_AUDIO_SESSION",
@@ -1324,6 +1327,26 @@ void AudioPolicyManagerStub::SetQueryClientTypeCallbackInternal(MessageParcel &d
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORT_AUDIO_EFFECT_PROPERTY_V3):
+            GetSupportedAudioEffectPropertyV3Internal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_EFFECT_PROPERTY_V3):
+            GetAudioEffectPropertyV3Internal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_EFFECT_PROPERTY_V3):
+            SetAudioEffectPropertyV3Internal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
 void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1356,8 +1379,7 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
             SaveRemoteInfoInternal(data, reply);
             break;
         default:
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            OnMiddleTenRemoteRequest(code, data, reply, option);
             break;
     }
 }
@@ -2021,6 +2043,52 @@ void AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal(MessageParcel &
 {
     bool result = GetPersistentMicMuteState();
     reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyV3Internal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    int32_t result = GetSupportedAudioEffectProperty(propertyArray);
+    reply.WriteInt32(result);
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        "get supported audio effect property size invalid.");
+    reply.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    return;
+}
+
+void AudioPolicyManagerStub::SetAudioEffectPropertyV3Internal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        "set audio effect property size invalid.");
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    for (int32_t i = 0; i < size; i++) {
+        AudioEffectPropertyV3 prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEffectProperty(propertyArray);
+    reply.WriteInt32(result);
+    return;
+}
+
+void AudioPolicyManagerStub::GetAudioEffectPropertyV3Internal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    int32_t result = GetAudioEffectProperty(propertyArray);
+    reply.WriteInt32(result);
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        "get audio effect property size invalid.");
+    reply.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    return;
 }
 
 void AudioPolicyManagerStub::InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply)

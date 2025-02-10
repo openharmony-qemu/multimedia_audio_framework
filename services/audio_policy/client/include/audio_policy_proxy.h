@@ -331,6 +331,12 @@ public:
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
+
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
+
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

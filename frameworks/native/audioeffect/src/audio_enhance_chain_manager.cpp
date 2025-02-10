@@ -270,6 +270,18 @@ bool AudioEnhanceChainManager::ExistAudioEnhanceChain(const std::string &sceneTy
     return !audioEnhanceChain->IsEmptyEnhanceHandles();
 }
 
+int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    DeviceType deviceType)
+{
+    return AUDIO_OK;
+}
+
+int32_t AudioEnhanceChainManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+    DeviceType deviceType)
+{
+    return AUDIO_OK;
+}
+
 std::string AudioEnhanceChainManager::GetUpAndDownDevice()
 {
     return upAndDownDevice_;

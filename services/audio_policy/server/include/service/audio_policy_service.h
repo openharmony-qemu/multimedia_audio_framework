@@ -495,6 +495,11 @@ public:
 
     bool IsRingerModeMute();
 
+    // for effect V3
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+
     AudioScene GetLastAudioScene() const;
 
     void SetRotationToEffect(const uint32_t rotate);
