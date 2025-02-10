@@ -2128,6 +2128,13 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
         AppendFormat(dumpString, "  - AudioStreamType: %d", streamType);
         AppendFormat(dumpString, "   streamMuteStatus: %d\n", volumeDataMaintainer_.GetStreamMute(streamType));
     }
+    if (isSafeBoot_) {
+        safeStatusBt_ = GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
+        safeStatus_ = GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
+        safeActiveBtTime_ = GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
+        safeActiveTime_ = GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
+        isSafeBoot_ = false;
+    }
     std::string statusBt = (safeStatusBt_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
     std::string status = (safeStatus_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
     AppendFormat(dumpString, "  - ringerMode: %d\n", ringerMode_);
