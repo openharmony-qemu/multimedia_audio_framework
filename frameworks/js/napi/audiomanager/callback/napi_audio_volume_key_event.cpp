@@ -45,7 +45,7 @@ void NapiAudioVolumeKeyEvent::CreateVolumeTsfn(napi_env env)
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
     napi_add_env_cleanup_hook(env, Cleanup, this);
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
-        VolumeEventTsfnFinalize, nullptr, SafeJsCallbackVolumeEventWork, &amVolEntTsfn_);
+        VolumeEventTsfnFinalize, this, SafeJsCallbackVolumeEventWork, &amVolEntTsfn_);
 }
 
 bool NapiAudioVolumeKeyEvent::GetVolumeTsfnFlag()
