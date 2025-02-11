@@ -1505,6 +1505,9 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
 
 void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
 {
+    if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
+        return;
+    }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
         if (!zeroVolumeStopDevice_ && !isVolumeAlreadyZero_) {
             AUDIO_INFO_LOG("Begin zero volume, will stop device.");
