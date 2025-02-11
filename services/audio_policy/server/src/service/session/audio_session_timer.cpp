@@ -17,7 +17,7 @@
 
 #include "audio_session_timer.h"
 
-#include "audio_log.h"
+include "audio_policy_log.h"
 #include "audio_errors.h"
 
 namespace OHOS {
