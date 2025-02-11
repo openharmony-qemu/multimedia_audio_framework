@@ -439,7 +439,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_009, TestSize.Level1)
     int32_t result = AudioSocketThread::SetAudioPnpServerEventValue(&event, &uevent);
 
     EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(event.eventType, PNP_EVENT_MIC_BLOCKED);
+    EXPECT_EQ(event.eventType, PNP_EVENT_DEVICE_ADD);
     EXPECT_EQ(event.deviceType, PNP_DEVICE_MIC);
     EXPECT_EQ(event.name, "TestDevice");
     EXPECT_EQ(event.address, "TestDevName");
@@ -469,7 +469,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_010, TestSize.Level1)
     int32_t result = AudioSocketThread::SetAudioPnpServerEventValue(&event, &uevent);
 
     EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(event.eventType, PNP_EVENT_MIC_UNBLOCKED);
+    EXPECT_EQ(event.eventType, PNP_EVENT_DEVICE_ADD);
     EXPECT_EQ(event.deviceType, PNP_DEVICE_MIC);
     EXPECT_EQ(event.name, "TestDevice");
     EXPECT_EQ(event.address, "TestDevName");
