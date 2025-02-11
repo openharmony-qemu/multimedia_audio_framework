@@ -488,6 +488,8 @@ public:
 
     // for hibernate callback
     void CheckHibernateState(bool hibernate);
+    // for S4 reboot update safevolume
+    void UpdateSafeVolumeByS4();
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

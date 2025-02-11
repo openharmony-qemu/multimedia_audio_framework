@@ -94,6 +94,7 @@ public:
     void SetDefaultDeviceLoadFlag(bool isLoad);
     void NotifyVolumeGroup();
     bool GetLoadFlag();
+    void UpdateSafeVolumeByS4();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
