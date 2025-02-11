@@ -196,11 +196,10 @@ static void ConvertToSplitArr(const char *str)
     for (int i = 0; i < MAX_PARTS; ++i) {
         g_splitArr[i] = NULL;
     }
-
     char *token;
     char *copy = strdup(str);
+    CHECK_AND_RETURN_LOG(copy != NULL, "copy is null");
     int count = 0;
-
     token = strtok(copy, ":");
     while (token != NULL && count < MAX_PARTS) {
         g_splitArr[count] = (char *)malloc(strlen(token) + 1);
