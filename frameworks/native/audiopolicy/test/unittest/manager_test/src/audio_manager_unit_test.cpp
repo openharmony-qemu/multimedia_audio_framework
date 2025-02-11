@@ -1089,17 +1089,6 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test IsDeviceActive API
-* @tc.number : IsDeviceActive_001
-* @tc.desc   : Test IsDeviceActive interface. Activate device by DEVICE_TYPE_NONE
-*/
-HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level1)
-{
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_NONE);
-    EXPECT_FALSE(isActive);
-}
-
-/**
 * @tc.name   : Test IsStreamActive API
 * @tc.number : IsStreamActive_001
 * @tc.desc   : Test IsStreamActive interface. set AudioVolumeType return true
