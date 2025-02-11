@@ -180,6 +180,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
     {"DISPLAY_PORT", DEVICE_TYPE_DP},
     {"REMOTE_CAST", DEVICE_TYPE_REMOTE_CAST},
+    {"HDMI", DEVICE_TYPE_HDMI},
+    {"LINE_DIGITAL", DEVICE_TYPE_LINE_DIGITAL},
     {"DEFAULT", DEVICE_TYPE_DEFAULT},
     {"MAX", DEVICE_TYPE_MAX},
 };
