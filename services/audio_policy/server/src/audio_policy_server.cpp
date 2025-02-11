@@ -3321,6 +3321,11 @@ void AudioPolicyServer::CheckHibernateState(bool hibernate)
     audioPolicyService_.CheckHibernateState(hibernate);
 }
 
+void AudioPolicyServer::UpdateSafeVolumeByS4()
+{
+    audioPolicyService_.UpdateSafeVolumeByS4();
+}
+
 int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();

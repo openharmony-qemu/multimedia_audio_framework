@@ -2064,5 +2064,10 @@ void AudioPolicyService::CheckHibernateState(bool hibernate)
 {
     AudioServerProxy::GetInstance().CheckHibernateStateProxy(hibernate);
 }
+
+void AudioPolicyService::UpdateSafeVolumeByS4()
+{
+    return audioVolumeManager_.UpdateSafeVolumeByS4();
+}
 } // namespace AudioStandard
 } // namespace OHOS

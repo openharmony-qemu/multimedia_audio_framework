@@ -1007,5 +1007,12 @@ void AudioVolumeManager::NotifyVolumeGroup()
     SetDefaultDeviceLoadFlag(true);
 }
 
+void AudioVolumeManager::UpdateSafeVolumeByS4()
+{
+    AUDIO_INFO_LOG("Reset isBtFirstBoot by S4 reboot");
+    isBtFirstBoot_ = true;
+    return audioPolicyManager_.UpdateSafeVolumeByS4();
+}
+
 }
 }

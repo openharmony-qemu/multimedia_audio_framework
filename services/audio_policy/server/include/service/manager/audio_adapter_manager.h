@@ -204,6 +204,8 @@ public:
     void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
 
     void SetRestoreVolumeFlag(const bool safeVolumeCall);
+
+    void UpdateSafeVolumeByS4();
 private:
     friend class PolicyCallbackImpl;
 

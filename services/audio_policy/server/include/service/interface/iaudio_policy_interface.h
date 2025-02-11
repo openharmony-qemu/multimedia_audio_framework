@@ -175,6 +175,8 @@ public:
     virtual void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel) = 0;
 
     virtual void SetRestoreVolumeFlag(const bool safeVolumeCall) = 0;
+
+    virtual void UpdateSafeVolumeByS4() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

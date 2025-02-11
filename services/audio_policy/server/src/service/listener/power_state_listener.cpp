@@ -182,6 +182,7 @@ void SyncHibernateListener::OnSyncWakeup(bool hibernateResult)
     ControlAudioFocus(false);
     CHECK_AND_RETURN_LOG(audioPolicyServer_, "audioPolicyServer_ is nullptr");
     audioPolicyServer_->CheckHibernateState(false);
+    audioPolicyServer_->UpdateSafeVolumeByS4();
 }
  
 void SyncHibernateListener::ControlAudioFocus(bool isHibernate)

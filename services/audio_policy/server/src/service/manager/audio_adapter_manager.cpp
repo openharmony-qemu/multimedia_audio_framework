@@ -304,6 +304,14 @@ void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
     volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
 }
 
+void AudioAdapterManager::UpdateSafeVolumeByS4()
+{
+    AUDIO_INFO_LOG("Update Safevolume by S4 reboot,reset wired and bt once");
+    isWiredBoot_ = true;
+    isBtBoot_ = true;
+    UpdateSafeVolume();
+}
+
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
@@ -1205,6 +1213,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
             return HEADSET_VOLUME_TYPE;
         default:
             return SPEAKER_VOLUME_TYPE;
