@@ -311,6 +311,7 @@ private:
     bool isBtBoot_ = true;
     int32_t curActiveCount_ = 0;
     bool safeVolumeCall_ = false;
+    bool isSafeBoot_ = true;
 
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
 
