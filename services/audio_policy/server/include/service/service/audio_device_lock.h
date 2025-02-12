@@ -111,6 +111,7 @@ public:
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
+    void SetDeviceConnectionStatus(AudioDeviceDescriptor &desc, bool isConnected);
     /*****IDeviceStatusObserver*****/
 private:
     AudioDeviceLock() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

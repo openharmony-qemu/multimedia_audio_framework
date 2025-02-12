@@ -1038,6 +1038,34 @@ void AudioDeviceStatus::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
     }
 }
 
+void AudioDeviceStatus::SetDeviceConnectionStatus(AudioDeviceDescriptor &desc, bool isConnected)
+{
+    AUDIO_WARNING_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d], mac[%{public}s]",
+        desc.deviceType_, isConnected, GetEncryptStr(desc.macAddress_).c_str());
+
+    UpdateLocalGroupInfo(isConnected, desc.macAddress_, desc.deviceName_, desc.audioStreamInfo_, desc);
+    // fill device change action for callback
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    UpdateDeviceList(desc, isConnected, descForCb, reason);
+
+    TriggerDeviceChangedCallback(descForCb, isConnected);
+    TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
+
+    // if (!isActualConnection) {
+    //     return;
+    // }
+    // fetch input&output device
+    audioDeviceCommon_.FetchDevice(true, reason);
+    audioDeviceCommon_.FetchDevice(false);
+    // update a2dp offload
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && audioA2dpOffloadManager_) {
+        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
+    }
+    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2 param");
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceStatus::UserSelectDeviceMapInit()
 {
     AudioStateManager& stateManager = AudioStateManager::GetAudioStateManager();
