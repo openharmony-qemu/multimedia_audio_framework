@@ -2387,6 +2387,11 @@ int32_t AudioPolicyService::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor>
         AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
         deviceDesc->exceptionFlag_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
+        {
+            std::unique_lock<std::mutex> lock(moveDeviceMutex_);
+            moveDeviceFinished_ = true;
+            moveDeviceCV_.notify_all();
+        }
         FetchOutputDevice(rendererChangeInfos, reason);
         return ERROR;
     }
