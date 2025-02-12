@@ -187,6 +187,8 @@ public:
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     
     void NotifyAccountsChanged() override;
+
+    int32_t SetDeviceConnectionStatus(AudioDeviceDescriptor &desc, bool isConnected) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

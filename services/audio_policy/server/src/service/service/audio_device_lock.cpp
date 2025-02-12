@@ -172,12 +172,6 @@ void AudioDeviceLock::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const Dev
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
 }
 
-void AudioDeviceLock::SetDeviceConnectionStatus(AudioDeviceDescriptor &desc, bool isConnected)
-{
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    audioDeviceStatus_.SetDeviceConnectionStatus(desc, isConnected);
-}
-
 int32_t AudioDeviceLock::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);

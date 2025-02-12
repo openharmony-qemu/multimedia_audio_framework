@@ -827,11 +827,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
     audioDeviceLock_.OnDeviceStatusUpdated(statusInfo, isStop);
 }
 
-void AudioPolicyService::SetDeviceConnectionStatus(AudioDeviceDescriptor &desc, bool isConnected)
-{
-    audioDeviceLock_.SetDeviceConnectionStatus(desc, isConnected);
-}
-
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
     AUDIO_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);

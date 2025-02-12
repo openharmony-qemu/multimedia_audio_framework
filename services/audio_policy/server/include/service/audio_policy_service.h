@@ -231,8 +231,6 @@ public:
 
     void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
 
-    void SetDeviceConnectionStatus(AudioDeviceDescriptor &desc, bool isConnected);
-
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
