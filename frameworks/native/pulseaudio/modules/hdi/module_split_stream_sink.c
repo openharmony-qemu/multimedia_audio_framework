@@ -47,7 +47,7 @@
 #include <pulsecore/memblock.h>
 
 #include <pthread.h>
-#include "audio_pulseaudio_log.h"
+#include "audio_renderer_log.h"
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
 #include "audio_hdiadapter_info.h"
