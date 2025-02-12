@@ -716,9 +716,7 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
         }
         return;
     }
-    if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo) ||
-        (outputDevices.front()->deviceType_ == audioActiveDevice_.GetCurrentOutputDeviceType() &&
-        outputDevices.front()->networkId_ == audioActiveDevice_.GetCurrentOutputDeviceNetworkId())) return;
+    if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
 
     audioIOHandleMap_.SetMoveFinish(false);
 
