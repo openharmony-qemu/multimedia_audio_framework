@@ -1601,12 +1601,6 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency);
-    // first enter, reset latency and timestamp
-    if (lastFrameTimestamp_ == 0) {
-        lastFrameTimestamp_ = timestampVal;
-        lastLatency_ = latency;
-        lastLatencyPosition_ = latency * speed_;
-    }
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     uint64_t framePosition = lastFramePosition_;
     if (readIdx >= latency + lastReadIdx_) { // happen when last speed latency consumed
