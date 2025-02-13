@@ -1047,7 +1047,6 @@ static int32_t InitRemoteSink(struct userdata *u, const char *filePath)
     ret = u->sinkAdapter->RendererSinkInit(u->sinkAdapter, &sample_attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("audiorenderer Init failed!");
-        u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter);
         return -1;
     }
 
@@ -1119,7 +1118,7 @@ static int32_t PaHdiSinkNewInit(pa_module *m, pa_modargs *ma, struct userdata *u
     u->buffer_size = DEFAULT_BUFFER_SIZE;
 
     mg = pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size);
-    CHECK_AND_RETURN_RET_LOG(mg >= 0, InitFailed(m, ma),
+    CHECK_AND_RETURN_RET_LOG(mg >= 0, PA_ERR,
         "Failed to parse buffer_size arg in capturer sink");
 
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
