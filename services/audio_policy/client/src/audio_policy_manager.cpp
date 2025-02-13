@@ -175,9 +175,28 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
         auto &[mutex, isEnable] = callbackChangeInfos_[enumIndex];
         std::lock_guard<std::mutex> lock(mutex);
         if (isEnable) {
+            SetCallbackStreamInfo(enumIndex);
             gsp->SetClientCallbacksEnable(enumIndex, true);
         }
     }
+}
+
+int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callbackChange)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    int32_t ret = SUCCESS;
+    if (callbackChange == CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) {
+        for (auto &rendererInfo : rendererInfos_) {
+            ret = gsp->SetCallbackRendererInfo(rendererInfo);
+        }
+    } else if (callbackChange == CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) {
+        for (auto &capturerInfo : capturerInfos_) {
+            ret = gsp->SetCallbackCapturerInfo(capturerInfo);
+        }
+    }
+    return ret;
 }
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
