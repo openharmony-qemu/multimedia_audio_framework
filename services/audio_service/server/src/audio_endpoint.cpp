@@ -1331,12 +1331,12 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             // Status is RUNNING
             int64_t current = ClockTime::GetCurNano();
             int64_t lastWrittenTime = tempBuffer->GetLastWrittenTime();
+            uint32_t sessionId = processList_[i]->GetAudioSessionId();
             if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS) {
-                Trace trace("AudioEndpoint::MarkClientStandby");
-                AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", tempBuffer->GetSessionId());
-                CHECK_AND_RETURN_RET_LOG(tempBuffer->GetStreamStatus() != nullptr, false, "GetStreamStatus failed");
-                tempBuffer->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
-                WriterRenderStreamStandbySysEvent(tempBuffer->GetSessionId(), 1);
+                Trace trace("AudioEndpoint::MarkClientStandby:" + std::to_string(sessionId));
+                AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", sessionId);
+                processList_[i]->EnableStandby();
+                WriterRenderStreamStandbySysEvent(sessionId, 1);
                 needCheckStandby = true;
                 continue;
             }
@@ -1505,6 +1505,9 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
 
 void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
 {
+    if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
+        return;
+    }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
         if (!zeroVolumeStopDevice_ && !isVolumeAlreadyZero_) {
             AUDIO_INFO_LOG("Begin zero volume, will stop device.");

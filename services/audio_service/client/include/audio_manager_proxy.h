@@ -101,6 +101,7 @@ public:
     void SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag) override;
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

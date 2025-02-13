@@ -52,6 +52,8 @@ public:
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 
+    virtual void EnableStandby() = 0;
+
     virtual ~IAudioProcessStream() = default;
 };
 } // namespace AudioStandard

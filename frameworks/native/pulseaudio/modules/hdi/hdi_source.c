@@ -354,20 +354,15 @@ static int PaHdiCapturerInit(struct Userdata *u)
         return ret;
     }
 
-    // No start test for remote device.
-    if (strcmp(GetDeviceClass(u->sourceAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
-        ret = u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("Audio capturer start failed!");
-            goto fail;
-        }
-    }
+#ifdef IS_EMULATOR
+    // Due to the peculiar implementation of the emulator's HDI,
+    // an initial start and stop sequence is required to circumvent protential issues and ensure proper functionality.
+    AUDIO_INFO_LOG("do start and stop");
+    u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
+    u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
+#endif
 
-    u->IsCapturerStarted = true;
-    return ret;
-
-fail:
-    PaHdiCapturerExit(u);
+    u->IsCapturerStarted = false;
     return ret;
 }
 

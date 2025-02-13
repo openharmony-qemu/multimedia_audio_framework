@@ -464,6 +464,13 @@ public:
      * @return Returns result of querying, 0 if success, error number else.
      */
     virtual int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) = 0;
+
+    /**
+     * check standby status.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -534,6 +541,7 @@ private:
     int HandleSetNonInterruptMute(MessageParcel &data, MessageParcel &reply);
     int HandleCreateIpcOfflineStream(MessageParcel &data, MessageParcel &reply);
     int HandleGetOfflineAudioEffectChains(MessageParcel &data, MessageParcel &reply);
+    int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

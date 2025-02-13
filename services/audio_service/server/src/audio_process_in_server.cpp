@@ -96,6 +96,29 @@ uint32_t AudioProcessInServer::GetSessionId()
     return sessionId_;
 }
 
+int32_t AudioProcessInServer::GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime)
+{
+    if (processBuffer_ == nullptr || processBuffer_->GetStreamStatus() == nullptr) {
+        AUDIO_ERR_LOG("GetStandbyStatus failed, buffer is nullptr.");
+        return ERR_OPERATION_FAILED;
+    }
+    isStandby = processBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY;
+    if (isStandby) {
+        enterStandbyTime = enterStandbyTime_;
+    } else {
+        enterStandbyTime = 0;
+    }
+
+    return SUCCESS;
+}
+
+void AudioProcessInServer::EnableStandby()
+{
+    CHECK_AND_RETURN_LOG(processBuffer_ != nullptr && processBuffer_->GetStreamStatus() != nullptr, "failed: nullptr");
+    processBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
+    enterStandbyTime_ = ClockTime::GetCurNano();
+}
+
 int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
     AUDIO_INFO_LOG("ResolveBuffer start");
@@ -150,6 +173,7 @@ int32_t AudioProcessInServer::Start()
         AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
+        enterStandbyTime_ = 0;
     }
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
 

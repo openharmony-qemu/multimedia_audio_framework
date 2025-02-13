@@ -53,6 +53,9 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
     {"navigation", STREAM_NAVIGATION}
 };
 
+uint64_t DURATION_TIME_DEFAULT = 40;
+uint64_t DURATION_TIME_SHORT = 10;
+
 AudioVolume *AudioVolume::GetInstance()
 {
     static AudioVolume instance;
@@ -521,6 +524,26 @@ void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
 uint32_t GetFadeoutState(uint32_t streamIndex)
 {
     return AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+}
+
+FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationMs)
+{
+    // 0 is default; duration > 40ms do default fade
+    if (expectedPlaybackDurationMs == 0 || expectedPlaybackDurationMs > DURATION_TIME_DEFAULT) {
+        return FADE_STRATEGY_DEFAULT;
+    }
+
+    // duration <= 10 ms no fade
+    if (expectedPlaybackDurationMs <= DURATION_TIME_SHORT && expectedPlaybackDurationMs > 0) {
+        return FADE_STRATEGY_NONE;
+    }
+
+    // duration > 10ms && duration <= 40ms do 5ms fade
+    if (expectedPlaybackDurationMs <= DURATION_TIME_DEFAULT && expectedPlaybackDurationMs > DURATION_TIME_SHORT) {
+        return FADE_STRATEGY_SHORTER;
+    }
+
+    return FADE_STRATEGY_DEFAULT;
 }
 #ifdef __cplusplus
 }

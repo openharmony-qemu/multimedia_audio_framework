@@ -1183,8 +1183,12 @@ const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
     return bundleName;
 }
 
-bool AudioServer::IsFastBlocked(int32_t uid)
+bool AudioServer::IsFastBlocked(int32_t uid, PlayerType playerType)
 {
+    // if call from soundpool without the need for check.
+    if (playerType == PLAYER_TYPE_SOUND_POOL) {
+        return false;
+    }
     std::string bundleName = GetBundleNameFromUid(uid);
     std::string result = GetAudioParameter(CHECK_FAST_BLOCK_PREFIX + bundleName);
     return result == "true";
@@ -1262,7 +1266,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
     }
-    if (IsNormalIpcStream(config) || (isFastControlled_ && IsFastBlocked(config.appInfo.appUid))) {
+    if (IsNormalIpcStream(config) ||
+        (isFastControlled_ && IsFastBlocked(config.appInfo.appUid, config.rendererInfo.playerType))) {
         AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
@@ -2052,6 +2057,21 @@ int32_t AudioServer::GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &pr
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, deviceType);
+}
+
+int32_t AudioServer::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
+{
+    Trace trace("AudioServer::GetStandbyStatus:" + std::to_string(sessionId));
+
+    // only for native sa calling
+    auto type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(IPCSkeleton::GetCallingTokenID());
+    bool isAllowed = type == Security::AccessToken::TOKEN_NATIVE;
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    isAllowed = isAllowed || type == Security::AccessToken::TOKEN_SHELL; // for DT
+#endif
+    CHECK_AND_RETURN_RET_LOG(isAllowed, ERR_INVALID_OPERATION, "not allowed");
+
+    return AudioService::GetInstance()->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
 }
 } // namespace AudioStandard
 } // namespace OHOS

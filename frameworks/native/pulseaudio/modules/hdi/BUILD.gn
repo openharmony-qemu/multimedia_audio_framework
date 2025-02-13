@@ -107,6 +107,12 @@ ohos_shared_library("module-hdi-source") {
     "module_hdi_source.c",
   ]
 
+  defines = []
+
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
+  }
+
   configs = [ ":hdi_config" ]
 
   cflags = [ "-DPA_MODULE_NAME=libmodule_hdi_source_z_so" ]

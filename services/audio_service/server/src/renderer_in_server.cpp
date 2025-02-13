@@ -34,6 +34,7 @@
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
 #include "audio_dump_pcm.h"
+#include "audio_volume_c.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,6 +53,7 @@ namespace {
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     const int32_t XCOLLIE_FLAG_DEFAULT = (1 | 2); // dump stack and kill self
+    constexpr size_t MSEC_PER_SEC = 1000;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -322,6 +324,7 @@ void RendererInServer::StandByCheck()
 
     // call enable stand by
     standByEnable_ = true;
+    enterStandbyTime_ = ClockTime::GetCurNano();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
     if (managerType_ == PLAYBACK) {
         stream_->Pause(true);
@@ -344,6 +347,19 @@ bool RendererInServer::ShouldEnableStandBy()
         return true;
     }
     return false;
+}
+
+int32_t RendererInServer::GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime)
+{
+    Trace trace("RendererInServer::GetStandbyStatus:" + std::to_string(streamIndex_) + (standByEnable_ ? " Enabled" :
+        "Disabled"));
+    isStandby = standByEnable_;
+    if (isStandby) {
+        enterStandbyTime = enterStandbyTime_;
+    } else {
+        enterStandbyTime = 0;
+    }
+    return SUCCESS;
 }
 
 void RendererInServer::HandleOperationFlushed()
@@ -494,7 +510,10 @@ int32_t RendererInServer::WriteData()
             return ERR_INVALID_PARAM;
         }
         Trace::CountVolume(traceTag_, *bufferDesc.buffer);
-        if (processConfig_.streamType != STREAM_ULTRASONIC) {
+        uint64_t durationMs = ((byteSizePerFrame_ * processConfig_.rendererInfo.samplingRate) == 0) ? 0
+            : ((MSEC_PER_SEC * processConfig_.rendererInfo.expectedPlaybackDurationBytes) /
+            (byteSizePerFrame_ * processConfig_.rendererInfo.samplingRate));
+        if (processConfig_.streamType != STREAM_ULTRASONIC && (GetFadeStrategy(durationMs) == FADE_STRATEGY_DEFAULT)) {
             if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
                 DoFadingOut(bufferDesc);
             }
@@ -680,6 +699,7 @@ int32_t RendererInServer::Start()
             dupStream_->Start();
         }
     }
+    enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
     return SUCCESS;
@@ -716,6 +736,7 @@ int32_t RendererInServer::Pause()
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
             ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
+        enterStandbyTime_ = 0;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
     }
     standByCounter_ = 0;
@@ -850,6 +871,7 @@ int32_t RendererInServer::Stop()
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
             ERR_OPERATION_FAILED, "stream status is nullptr");
         standByEnable_ = false;
+        enterStandbyTime_ = 0;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
     }
     {

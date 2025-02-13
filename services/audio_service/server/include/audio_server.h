@@ -165,6 +165,8 @@ public:
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
 
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
+
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -205,7 +207,9 @@ private:
         const std::string &extraSceneType);
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     const std::string GetBundleNameFromUid(int32_t uid);
-    bool IsFastBlocked(int32_t uid);
+
+    bool IsFastBlocked(int32_t uid, PlayerType playerType);
+
     void InitMaxRendererStreamCntPerUid();
     int32_t CheckParam(const AudioProcessConfig &config);
     void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,

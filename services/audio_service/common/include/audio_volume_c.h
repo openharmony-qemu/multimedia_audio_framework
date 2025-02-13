@@ -29,6 +29,16 @@ enum FadePauseState {
     INVALID_STATE
 };
 
+enum FadeStrategy {
+    FADE_STRATEGY_DEFAULT,
+
+    // no fade-in, no fade-out
+    FADE_STRATEGY_NONE,
+
+    // do 5ms fade-in and fade-out
+    FADE_STRATEGY_SHORTER
+};
+
 float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass);
 
 float GetStreamVolume(uint32_t sessionId);
@@ -48,6 +58,8 @@ void MonitorVolume(uint32_t sessionId, bool isOutput);
 void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState);
 
 uint32_t GetFadeoutState(uint32_t streamIndex);
+
+enum FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationMs);
 
 #ifdef __cplusplus
 }

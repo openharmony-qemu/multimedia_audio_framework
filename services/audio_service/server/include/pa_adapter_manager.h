@@ -118,6 +118,7 @@ private:
     void SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig, uint32_t sessionId);
     bool CheckHighResolution(const AudioProcessConfig &processConfig);
     void SetRecordProplist(pa_proplist *propList, AudioProcessConfig &processConfig);
+    void SetPlaybackProplist(pa_proplist *propList, AudioProcessConfig &processConfig);
 
     std::mutex paElementsMutex_;
     pa_threaded_mainloop *mainLoop_;
