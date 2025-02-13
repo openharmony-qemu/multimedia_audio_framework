@@ -58,6 +58,7 @@ public:
     int32_t SetPreferredDevice(const PreferredType preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, bool isConnected);
 private:
     int32_t GetCallingPid();
 };

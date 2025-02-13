@@ -2208,13 +2208,5 @@ int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
     sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
     return SUCCESS;
 }
-
-int32_t AudioServer::SetDeviceConnectionStatus(AudioDeviceDescriptor &desc, bool isConnected)
-{
-    // check ohos.permission.NAMAGE_AUDIO_CONFIG
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(), ERR_PERMISSION_DENIED, "permission denied");
-
-    return AudioService::GetInstance()->SetDeviceConnectionStatus(desc, isConnected);
-}
 } // namespace AudioStandard
 } // namespace OHOS

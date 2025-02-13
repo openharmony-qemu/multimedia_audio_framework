@@ -1201,13 +1201,5 @@ void AudioService::GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mo
     }
     return;
 }
-
-int32_t AudioService::SetDeviceConnectionStatus(AudioDeviceDescriptor &desc, bool isConnected)
-{
-    std::shared_ptr<AudioPolicyService> audioPolicyService = AudioPolicyService::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioPolicyService != nullptr, ERROR, "audioPolicyService is null");
-    audioPolicyService->OnDeviceStatusUpdated(desc, isConnected);
-    return SUCCESS;
-}
 } // namespace AudioStandard
 } // namespace OHOS
