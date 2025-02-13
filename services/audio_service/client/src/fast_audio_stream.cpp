@@ -899,5 +899,11 @@ bool FastAudioStream::GetHighResolutionEnabled()
     AUDIO_WARNING_LOG("not supported in fast audio stream");
     return false;
 }
+
+// diffrence from GetAudioPosition only when set speed
+int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    return GetAudioTime(timestamp, base);
+}
 } // namespace AudioStandard
 } // namespace OHOS

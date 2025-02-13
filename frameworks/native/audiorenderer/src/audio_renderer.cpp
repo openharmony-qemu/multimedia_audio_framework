@@ -687,6 +687,7 @@ bool AudioRendererPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const
 {
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return audioStream_->GetAudioPosition(timestamp, base);
 }
 
@@ -1889,6 +1890,13 @@ int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
         rendererInfo_.streamUsage, GetStatus() == RENDERER_RUNNING);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select default output device failed");
     return SUCCESS;
+}
+
+// diffrence from GetAudioPosition only when set speed
+int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return audioStream_->GetAudioTimestampInfo(timestamp, base);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

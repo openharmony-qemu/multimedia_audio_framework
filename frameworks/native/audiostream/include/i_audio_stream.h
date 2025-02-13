@@ -283,6 +283,8 @@ public:
     virtual void SetSilentModeAndMixWithOthers(bool on) = 0;
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
+
+    virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
