@@ -50,6 +50,7 @@ const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 const char *DEVICE_CLASS_DIRECT_VOIP = "primary_direct_voip";
 const char *DEVICE_CLASS_MMAP_VOIP = "primary_mmap_voip";
+const int32_t CLASS_TYPE_REMOTE = 3;
 
 IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, const char *deviceNetworkId)
 {
@@ -158,7 +159,7 @@ void IAudioRendererSinkDeInit(struct RendererSinkAdapter *adapter)
     IAudioRendererSink *audioRendererSink = static_cast<IAudioRendererSink *>(adapter->wapper);
     CHECK_AND_RETURN_LOG(audioRendererSink != nullptr, "null audioRendererSink");
     // remove the sink in allsinks.
-    if (audioRendererSink->IsInited()) {
+    if ((adapter->deviceClass == CLASS_TYPE_REMOTE) || audioRendererSink->IsInited()) {
         audioRendererSink->DeInit();
     }
 }
