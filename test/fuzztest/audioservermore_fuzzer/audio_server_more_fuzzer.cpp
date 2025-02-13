@@ -477,6 +477,9 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
 {
     bool isAppBack = GetData<bool>();
     bool headTrackingEnabled = GetData<bool>();
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = static_cast<RestoreReason>(GetData<int32_t>());
+    restoreInfo.targetStreamFlag = GetData<int32_t>();
     renderer->UpdateSpatializationState(isAppBack, headTrackingEnabled);
     renderer->CheckAndWriterRenderStreamStandbySysEvent(GetData<bool>());
     uint64_t timeStamp = COMMON_UINT64_NUM;
@@ -507,7 +510,7 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     renderer->Dump(dumpString);
     bool muteFlag = false;
     renderer->SetNonInterruptMute(muteFlag);
-    renderer->RestoreSession();
+    renderer->RestoreSession(restoreInfo);
     renderer->Pause();
     renderer->Flush();
     renderer->Drain(headTrackingEnabled);

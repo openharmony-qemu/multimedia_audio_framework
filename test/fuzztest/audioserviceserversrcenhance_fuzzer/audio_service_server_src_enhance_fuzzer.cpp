@@ -138,6 +138,9 @@ void AudioCapturerInServerMoreFuzzTest()
         return;
     }
 
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = static_cast<RestoreReason>(GetData<int32_t>());
+    restoreInfo.targetStreamFlag = GetData<int32_t>();
     uint32_t operationInt = GetData<uint32_t>();
     operationInt = (operationInt % OPERATION_ENUM_NUM) - NUM;
     IOperation operation = static_cast<IOperation>(operationInt);
@@ -150,7 +153,7 @@ void AudioCapturerInServerMoreFuzzTest()
     capturerInServer->UpdatePlaybackCaptureConfig(captureconfig);
 #endif
     capturerInServer->SetNonInterruptMute(true);
-    capturerInServer->RestoreSession();
+    capturerInServer->RestoreSession(restoreInfo);
 }
 
 void AudioNoneMixEngineMoreFuzzTest()

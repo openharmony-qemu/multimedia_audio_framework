@@ -1709,5 +1709,42 @@ void RendererInClientInner::SetSwitchingStatus(bool isSwitching)
         switchingInfo_ = {false, INVALID};
     }
 }
+
+void RendererInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    clientBuffer_->GetRestoreInfo(restoreInfo);
+    return;
+}
+
+void RendererInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    if (restoreInfo.restoreReason == SERVER_DIED) {
+        cbThreadReleased_ = true;
+    }
+    clientBuffer_->SetRestoreInfo(restoreInfo);
+    return;
+}
+
+RestoreStatus RendererInClientInner::CheckRestoreStatus()
+{
+    return clientBuffer_->CheckRestoreStatus();
+}
+
+RestoreStatus RendererInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
+{
+    return clientBuffer_->SetRestoreStatus(restoreStatus);
+}
+
+void RendererInClientInner::FetchDeviceForSplitStream()
+{
+    AUDIO_INFO_LOG("Fetch output device for split stream %{public}u", sessionId_);
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
+        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
+            state_, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    } else {
+        AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
+    }
+    SetRestoreStatus(NO_NEED_FOR_RESTORE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -91,7 +91,7 @@ public:
         return sharedAudioRenderer_->GetAudioTime(timestamp, base);
     }
 
-    bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const override
+    bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override
     {
         return sharedAudioRenderer_->GetAudioPosition(timestamp, base);
     }
@@ -234,12 +234,12 @@ public:
         return sharedAudioRenderer_->SetRendererFirstFrameWritingCallback(callback);
     }
 
-    int32_t GetBufferDesc(BufferDesc &bufDesc) const override
+    int32_t GetBufferDesc(BufferDesc &bufDesc) override
     {
         return sharedAudioRenderer_->GetBufferDesc(bufDesc);
     }
 
-    int32_t Enqueue(const BufferDesc &bufDesc) const override
+    int32_t Enqueue(const BufferDesc &bufDesc) override
     {
         return sharedAudioRenderer_->Enqueue(bufDesc);
     }

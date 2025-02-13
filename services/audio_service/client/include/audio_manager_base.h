@@ -444,7 +444,7 @@ public:
     /**
      * Restore Session
      */
-    virtual void RestoreSession(const int32_t &sessionID, bool isOutput) = 0;
+    virtual void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) = 0;
 
     /**
      * Set Rotation To Effect.

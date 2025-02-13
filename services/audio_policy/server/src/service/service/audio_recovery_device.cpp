@@ -381,7 +381,9 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceByFilterInner(sptr<AudioRendererF
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     for (auto &changeInfo : rendererChangeInfos) {
         if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
-            AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, true);
+            RestoreInfo restoreInfo;
+            restoreInfo.restoreReason = STREAM_SPLIT;
+            AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, restoreInfo);
         }
     }
     return SUCCESS;
@@ -402,7 +404,9 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
         for (auto &changeInfo : capturerChangeInfos) {
             if (changeInfo->clientUID == audioCapturerFilter->uid && changeInfo->sessionId != 0) {
-                AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, false);
+                RestoreInfo restoreInfo;
+                restoreInfo.restoreReason = STREAM_SPLIT;
+                AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, restoreInfo);
             }
         }
         return SUCCESS;

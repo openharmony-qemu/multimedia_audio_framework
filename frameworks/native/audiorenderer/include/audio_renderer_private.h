@@ -48,7 +48,7 @@ public:
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
-    bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+    bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool Drain() const override;
     bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
@@ -82,8 +82,8 @@ public:
     int32_t SetRendererFirstFrameWritingCallback(
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
-    int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
-    int32_t Enqueue(const BufferDesc &bufDesc) const override;
+    int32_t GetBufferDesc(BufferDesc &bufDesc) override;
+    int32_t Enqueue(const BufferDesc &bufDesc) override;
     int32_t Clear() const override;
     int32_t GetBufQueueState(BufferQueueState &bufState) const override;
     void SetInterruptMode(InterruptMode mode) override;
@@ -98,8 +98,7 @@ public:
     float GetMaxStreamVolume() const override;
     int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
-    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
-        const AudioStreamDeviceChangeReasonExt reason);
+    IAudioStream::StreamClass GetTargetStreamClass(int32_t streamFlag);
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
@@ -173,22 +172,26 @@ public:
     AudioRendererPrivate(AudioRendererPrivate &&) = delete;
     AudioRendererPrivate &operator=(AudioRendererPrivate &&) = delete;
 protected:
-    // Method for switching between normal and low latency paths
-    void SwitchStream(bool isLowLatencyDevice, bool isHalNeedChange);
 
 private:
+    int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
     int32_t PrepareAudioStream(const AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
-    int32_t InitAudioConcurrencyCallback();
-    int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
+    bool SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &newAudioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
-    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
-        const AudioStreamDeviceChangeReasonExt reason);
+    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo);
+    bool FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
+        IAudioStream::SwitchInfo &info);
+    bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
+        IAudioStream::SwitchInfo &info);
+    bool ContinueAfterConcede(IAudioStream::StreamClass &targetClass, RestoreInfo restoreInfo);
+    bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
+    void HandleAudioInterruptWhenServerDied();
     void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
@@ -206,11 +209,11 @@ private:
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
     float GetVolumeInner() const;
     uint32_t GetUnderflowCountInner() const;
+    int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
-    std::shared_ptr<AudioRendererConcurrencyCallbackImpl> audioConcurrencyCallback_ = nullptr;
     AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};

@@ -218,6 +218,11 @@ public:
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     void SetSwitchingStatus(bool isSwitching) override;
+    void GetRestoreInfo(RestoreInfo &restoreInfo) override;
+    void SetRestoreInfo(RestoreInfo &restoreInfo) override;
+    RestoreStatus CheckRestoreStatus() override;
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+    void FetchDeviceForSplitStream() override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -1567,7 +1572,9 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         }
         cbThreadCv_.notify_all();
         readDataCV_.notify_all();
-        callbackLoop_.detach();
+        if (callbackLoop_.joinable()) {
+            callbackLoop_.detach();
+        }
     }
     paramsIsSet_ = false;
 
@@ -2054,6 +2061,39 @@ int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
 void CapturerInClientInner::SetSwitchingStatus(bool isSwitching)
 {
     AUDIO_WARNING_LOG("not supported in capturer");
+}
+
+void CapturerInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    clientBuffer_->GetRestoreInfo(restoreInfo);
+    return;
+}
+
+void CapturerInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    clientBuffer_->SetRestoreInfo(restoreInfo);
+    return;
+}
+
+RestoreStatus CapturerInClientInner::CheckRestoreStatus()
+{
+    return clientBuffer_->CheckRestoreStatus();
+}
+
+RestoreStatus CapturerInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
+{
+    return clientBuffer_->SetRestoreStatus(restoreStatus);
+}
+
+void CapturerInClientInner::FetchDeviceForSplitStream()
+{
+    AUDIO_INFO_LOG("Fetch input device for split stream %{public}u", sessionId_);
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
+        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
+    } else {
+        AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
+    }
+    SetRestoreStatus(NO_NEED_FOR_RESTORE);
 }
 } // namespace AudioStandard
 } // namespace OHOS

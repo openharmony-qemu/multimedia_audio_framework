@@ -58,12 +58,12 @@ public:
         return sharedAudioCapturer_->GetStreamInfo(streamInfo);
     }
 
-    bool Start() const override
+    bool Start() override
     {
         return sharedAudioCapturer_->Start();
     }
 
-    int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const override
+    int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override
     {
         return sharedAudioCapturer_->Read(buffer, userSize, isBlockingRead);
     }
@@ -155,12 +155,12 @@ public:
         return sharedAudioCapturer_->SetCapturerReadCallback(callback);
     }
 
-    int32_t GetBufferDesc(BufferDesc &bufDesc) const override
+    int32_t GetBufferDesc(BufferDesc &bufDesc) override
     {
         return sharedAudioCapturer_->GetBufferDesc(bufDesc);
     }
 
-    int32_t Enqueue(const BufferDesc &bufDesc) const override
+    int32_t Enqueue(const BufferDesc &bufDesc) override
     {
         return sharedAudioCapturer_->Enqueue(bufDesc);
     }

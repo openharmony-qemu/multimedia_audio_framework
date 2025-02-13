@@ -110,7 +110,7 @@ public:
     
     bool Dump(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
-    void RestoreSession();
+    RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     void dualToneStreamInStart();
 
 public:

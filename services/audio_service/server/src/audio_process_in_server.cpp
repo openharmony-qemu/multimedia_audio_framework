@@ -661,5 +661,14 @@ void AudioProcessInServer::SetStandbyState(RendererStage state)
     standByState_ = state;
 }
 
+RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
+{
+    RestoreStatus restoreStatus = processBuffer_->SetRestoreStatus(NEED_RESTORE);
+    if (restoreStatus == NEED_RESTORE) {
+        processBuffer_->SetRestoreInfo(restoreInfo);
+    }
+    return restoreStatus;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

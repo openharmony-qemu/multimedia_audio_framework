@@ -81,6 +81,9 @@ struct BasicBufferInfo {
     std::atomic<float> streamVolume;
     std::atomic<float> duckFactor;
     std::atomic<float> muteFactor;
+    std::atomic<RestoreStatus> restoreStatus = NO_NEED_FOR_RESTORE;
+
+    RestoreInfo restoreInfo;
 };
 
 enum SpanStatus : uint32_t {
@@ -179,6 +182,10 @@ public:
     std::atomic<uint32_t> *GetFutex();
     uint8_t *GetDataBase();
     size_t GetDataSize();
+    RestoreStatus CheckRestoreStatus();
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus);
+    void GetRestoreInfo(RestoreInfo &restoreInfo);
+    void SetRestoreInfo(RestoreInfo restoreInfo);
 private:
     int32_t Init(int dataFd, int infoFd);
     int32_t SizeCheck();

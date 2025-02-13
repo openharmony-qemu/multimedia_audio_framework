@@ -2033,12 +2033,10 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_001, TestSize.
     uint32_t originalSessionId = INVALID_SESSION_ID;
     audioCapturer->GetAudioStreamId(originalSessionId);
 
-    uint32_t newSessionId = 0;
-    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
+    RestoreInfo restoreInfo;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, restoreInfo);
 
     EXPECT_EQ(true, switchResult);
-    EXPECT_NE(newSessionId, originalSessionId);
-    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -2063,12 +2061,10 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_002, TestSize.
     uint32_t originalSessionId = INVALID_SESSION_ID;
     audioCapturer->GetAudioStreamId(originalSessionId);
 
-    uint32_t newSessionId = 0;
-    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
+    RestoreInfo restoreInfo;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, restoreInfo);
 
     EXPECT_EQ(true, switchResult);
-    EXPECT_NE(newSessionId, originalSessionId);
-    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
     EXPECT_EQ(CAPTURER_RUNNING, audioCapturer->GetStatus());
 
     bool isReleased = audioCapturer->Release();
@@ -2090,12 +2086,10 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.
     uint32_t originalSessionId = INVALID_SESSION_ID;
     audioCapturer->GetAudioStreamId(originalSessionId);
 
-    uint32_t newSessionId = 0;
-    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::VOIP_STREAM, newSessionId);
+    RestoreInfo restoreInfo;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::VOIP_STREAM, restoreInfo);
 
     EXPECT_EQ(true, switchResult);
-    EXPECT_NE(newSessionId, originalSessionId);
-    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -2270,30 +2264,6 @@ HWTEST(AudioCapturerUnitTest, RemoveCapturerPolicyServiceDiedCallback_001, TestS
 
     int32_t ret = audioCapturer->RemoveCapturerPolicyServiceDiedCallback();
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test SwitchStream.
-* @tc.number: SwitchStream
-* @tc.desc  : Test SwitchStream.
-*/
-HWTEST(AudioCapturerUnitTest, SwitchStream_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    const uint32_t sessionId = 0;
-    const int32_t streamFlag = AUDIO_FLAG_NORMAL;
-    const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE;
-
-    audioCapturer->SwitchStream(sessionId, streamFlag, reason);
-    const int32_t streamFlag_2 = AUDIO_FLAG_MMAP;
-    audioCapturer->SwitchStream(sessionId, streamFlag_2, reason);
-    const int32_t streamFlag_3 = AUDIO_FLAG_VOIP_FAST;
-    audioCapturer->SwitchStream(sessionId, streamFlag_3, reason);
-    const int32_t streamFlag_4 = AUDIO_FLAG_INVALID;
-    audioCapturer->SwitchStream(sessionId, streamFlag_4, reason);
-    EXPECT_EQ(streamFlag, 0);
 }
 
 /**

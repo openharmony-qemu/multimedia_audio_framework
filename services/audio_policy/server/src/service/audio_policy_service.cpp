@@ -435,9 +435,9 @@ bool AudioPolicyService::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
     return audioDeviceLock_.IsArmUsbDevice(desc);
 }
 
-void AudioPolicyService::RestoreSession(const int32_t &sessionID, bool isOutput)
+void AudioPolicyService::RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo)
 {
-    AudioServerProxy::GetInstance().RestoreSessionProxy(sessionID, isOutput);
+    AudioServerProxy::GetInstance().RestoreSessionProxy(sessionID, restoreInfo);
 }
 
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

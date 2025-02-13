@@ -200,6 +200,11 @@ public:
 
     void SetSwitchingStatus(bool isSwitching) override;
 
+    void GetRestoreInfo(RestoreInfo &restoreInfo) override;
+    void SetRestoreInfo(RestoreInfo &restoreInfo) override;
+    RestoreStatus CheckRestoreStatus() override;
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+    void FetchDeviceForSplitStream() override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);

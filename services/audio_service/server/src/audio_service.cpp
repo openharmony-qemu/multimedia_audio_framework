@@ -1275,5 +1275,43 @@ int32_t AudioService::UnloadModernInnerCapSink(int32_t innerCapId)
     return PolicyHandler::GetInstance().UnloadModernInnerCapSink(innerCapId);
 }
 #endif
+
+RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo)
+{
+    {
+        std::lock_guard<std::mutex> lock(rendererMapMutex_);
+        if (allRendererMap_.find(sessionId) != allRendererMap_.end()) {
+            std::shared_ptr<RendererInServer> rendererInServer = allRendererMap_[sessionId].lock();
+            CHECK_AND_RETURN_RET_LOG(rendererInServer != nullptr, RESTORE_ERROR,
+                "Session could be released, restore failed");
+            return rendererInServer->RestoreSession(restoreInfo);
+        }
+    }
+    {
+        std::lock_guard<std::mutex> lock(capturerMapMutex_);
+        if (allCapturerMap_.find(sessionId) != allCapturerMap_.end()) {
+            std::shared_ptr<CapturerInServer> capturerInServer = allCapturerMap_[sessionId].lock();
+            CHECK_AND_RETURN_RET_LOG(capturerInServer != nullptr, RESTORE_ERROR,
+                "Session could be released, restore failed");
+            return capturerInServer->RestoreSession(restoreInfo);
+        }
+    }
+#ifdef SUPPORT_LOW_LATENCY
+    {
+        std::lock_guard<std::mutex> lock(processListMutex_);
+        for (auto processEndpointPair : linkedPairedList_) {
+            if (processEndpointPair.first->GetSessionId() != sessionId) {
+                continue;
+            }
+            auto audioProcessInServer = processEndpointPair.first;
+            CHECK_AND_RETURN_RET_LOG(audioProcessInServer != nullptr, RESTORE_ERROR,
+                "Session could be released, restore failed");
+            return audioProcessInServer->RestoreSession(restoreInfo);
+        }
+    }
+#endif
+    AUDIO_WARNING_LOG("Session not exists, restore failed");
+    return RESTORE_ERROR;
+}
 } // namespace AudioStandard
 } // namespace OHOS

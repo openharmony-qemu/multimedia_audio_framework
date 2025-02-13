@@ -624,11 +624,13 @@ void CapturerInServer::SetNonInterruptMute(const bool muteFlag)
     AudioService::GetInstance()->UpdateMuteControlSet(streamIndex_, muteFlag);
 }
 
-void CapturerInServer::RestoreSession()
+RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
 {
-    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
-    stateListener->OnOperationHandled(RESTORE_SESSION, 0);
+    RestoreStatus restoreStatus = audioServerBuffer_->SetRestoreStatus(NEED_RESTORE);
+    if (restoreStatus == NEED_RESTORE) {
+        audioServerBuffer_->SetRestoreInfo(restoreInfo);
+    }
+    return restoreStatus;
 }
 
 int64_t CapturerInServer::GetLastAudioDuration()
