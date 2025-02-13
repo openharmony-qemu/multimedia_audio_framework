@@ -6707,5 +6707,17 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSilentModeAndMixWithOthers_001, 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
 }
+
+/**
+ * @tc.name  : Test IsFastStreamClass
+ * @tc.number: IsFastStreamClass
+ * @tc.desc  : Test IsFastStreamClass
+ */
+HWTEST(AudioRendererUnitTest, IsFastStreamClass_001, TestSize.Level1)
+{
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::PA_STREAM), false);
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::FAST_STREAM), true);
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::VOIP_STREAM), true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

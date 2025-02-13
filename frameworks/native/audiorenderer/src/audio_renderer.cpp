@@ -193,6 +193,9 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
+    audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
+    audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
+        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
     audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
@@ -480,6 +483,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(const AudioStreamParams &audioS
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         audioStream_->SetApplicationCachePath(cachePath_);
+        isFastRenderer_ = IAudioStream::IsFastStreamClass(streamClass);
     }
     return SUCCESS;
 }
@@ -1475,6 +1479,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         oldAudioStream = audioStream_;
         audioStream_ = newAudioStream;
         UpdateRendererAudioStream(audioStream_);
+        isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;

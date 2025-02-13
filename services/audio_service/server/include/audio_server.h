@@ -194,7 +194,9 @@ private:
         const std::string &extraSceneType);
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     const std::string GetBundleNameFromUid(int32_t uid);
-    bool IsFastBlocked(int32_t uid);
+
+    bool IsFastBlocked(int32_t uid, PlayerType playerType);
+
     void InitMaxRendererStreamCntPerUid();
     int32_t CheckParam(const AudioProcessConfig &config);
     void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
