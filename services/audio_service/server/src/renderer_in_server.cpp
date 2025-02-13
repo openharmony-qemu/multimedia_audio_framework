@@ -547,9 +547,9 @@ int32_t RendererInServer::WriteData()
             AUDIO_ERR_LOG("The buffer is null!");
             return ERR_INVALID_PARAM;
         }
-        uint64_t durationMs = ((byteSizePerFrame_ * processConfig_.rendererInfo.samplingRate) == 0) ? 0
+        uint64_t durationMs = ((byteSizePerFrame_ * processConfig_.streamInfo.samplingRate) == 0) ? 0
             : ((MSEC_PER_SEC * processConfig_.rendererInfo.expectedPlaybackDurationBytes) /
-            (byteSizePerFrame_ * processConfig_.rendererInfo.samplingRate));
+            (byteSizePerFrame_ * processConfig_.streamInfo.samplingRate));
         if (processConfig_.streamType != STREAM_ULTRASONIC && (GetFadeStrategy(durationMs) == FADE_STRATEGY_DEFAULT)) {
             if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
                 DoFadingOut(bufferDesc);
