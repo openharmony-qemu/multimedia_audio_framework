@@ -80,7 +80,8 @@ namespace AudioStandard {
         SET_SINGLE_STREAM_MUTE,
         CREATE_IPC_OFFLINE_STREAM,
         GET_OFFLINE_AUDIO_EFFECT_CHAINS,
-        AUDIO_SERVER_CODE_MAX = GET_OFFLINE_AUDIO_EFFECT_CHAINS,
+        GET_STANDBY_STATUS,
+        AUDIO_SERVER_CODE_MAX = GET_STANDBY_STATUS,
     };
 } // namespace AudioStandard
 } // namespace OHOS

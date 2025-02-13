@@ -74,6 +74,7 @@ public:
     uint32_t GetAudioSessionId() override;
     AudioStreamType GetAudioStreamType() override;
     AudioProcessConfig GetAudioProcessConfig() override;
+    void EnableStandby() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
     void Dump(std::string &dumpString);
@@ -87,6 +88,7 @@ public:
     void SetNonInterruptMute(const bool muteFlag);
     bool GetMuteState() override;
     uint32_t GetSessionId();
+    int32_t GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime);
 
     // for inner-cap
     void SetInnerCapState(bool isInnerCapped) override;
@@ -135,6 +137,7 @@ private:
     BufferDesc convertedBuffer_ = {};
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
+    int64_t enterStandbyTime_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

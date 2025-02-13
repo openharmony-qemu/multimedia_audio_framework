@@ -89,6 +89,7 @@ const char *g_audioServerCodeStrs[] = {
     "SET_SINGLE_STREAM_MUTE",
     "CREATE_IPC_OFFLINE_STREAM",
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
+    "GET_STANDBY_STATUS",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -722,6 +723,8 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleUpdateSessionConnectionState(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINGLE_STREAM_MUTE):
             return HandleSetNonInterruptMute(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS):
+            return HandleGetStandbyStatus(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -906,6 +909,19 @@ int AudioManagerStub::HandleSetNonInterruptMute(MessageParcel &data, MessageParc
     uint32_t sessionId = data.ReadUint32();
     bool muteFlag = data.ReadBool();
     SetNonInterruptMute(sessionId, muteFlag);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    int32_t result = GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+
+    reply.WriteInt32(result);
+    reply.WriteBool(isStandby);
+    reply.WriteInt64(enterStandbyTime);
     return AUDIO_OK;
 }
 } // namespace AudioStandard
