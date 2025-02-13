@@ -253,14 +253,14 @@ void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isCo
             "macAddress=%{public}s, deviceName=%{public}s, role=%{public}d", devType, isConnected,
             EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::OUTPUT_DEVICE);
         observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
-            deviceName, streamInfo, OUTPUT_DEVICE);
+            deviceName, streamInfo, OUTPUT_DEVICE, card.isCapturer_);
     }
     if (card.isCapturer_) {
         AUDIO_INFO_LOG("Call observer_->OnDeviceStatusUpdated. devType=%{public}d, isConnected=%{public}d, "
             "macAddress=%{public}s, deviceName=%{public}s, role=%{public}d", devType, isConnected,
             EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::INPUT_DEVICE);
         observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
-            deviceName, streamInfo, INPUT_DEVICE);
+            deviceName, streamInfo, INPUT_DEVICE, card.isPlayer_);
     }
 }
 

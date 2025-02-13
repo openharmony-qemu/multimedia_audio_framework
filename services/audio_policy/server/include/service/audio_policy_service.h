@@ -220,7 +220,7 @@ public:
 #endif
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE);
+        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
     void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
