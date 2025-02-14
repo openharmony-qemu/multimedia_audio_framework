@@ -36,6 +36,8 @@ static const char* REMOTE_CLASS = "remote";
 static const char* OFFLOAD_CLASS = "offload";
 static const char* MCH_CLASS = "multichannel";
 static const char* INVALID_CLASS = "invalid";
+static const char* DIRECT_VOIP_CLASS = "primary_direct_voip";
+static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
 static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const char* BLUETOOTH_MIC = "Bt_Mic";
 static const char* PRIMARY_SPEAKER = "Speaker";
@@ -54,6 +56,8 @@ static const char* INTERNAL_PORT = "internal";
 static const char* ROLE_SOURCE = "source";
 static const char* ROLE_SINK = "sink";
 static const char* PORT_NONE = "none";
+static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
+static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
 }
 
 enum NodeName {

@@ -373,6 +373,14 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
 }
 #endif
 
+void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus)
+{
+    if (streamInFocus == AudioStreamType::STREAM_VOICE_ASSISTANT &&
+        audioPolicyService_.GetActiveOutputDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        streamInFocus = AudioStreamType::STREAM_MUSIC;
+    }
+}
+
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 {
@@ -419,6 +427,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+        ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
         AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
@@ -675,6 +684,11 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         if (isInitMuteState_ == false) {
             AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
             InitMicrophoneMute();
+        }
+        if (isInitSettingsData_ == false) {
+            AUDIO_INFO_LOG("First receive DATA_SHARE_READY action and need init SettingsData");
+            InitKVStore();
+            isInitSettingsData_ = true;
         }
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
@@ -1234,8 +1248,11 @@ bool AudioPolicyServer::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
 
 void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc)
 {
-    if (IsArmUsbDevice(desc)) {
-        desc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    if (desc.deviceType_ == DEVICE_TYPE_USB_HEADSET || desc.deviceType_ == DEVICE_TYPE_USB_DEVICE) {
+        auto item = audioDeviceManager_.FindConnectedDeviceById(desc.deviceId_);
+        if (item) {
+            desc.deviceType_ = item->deviceType_;
+        }
     } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
     }
@@ -1334,16 +1351,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetInputD
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
         audioPolicyService_.GetInputDevice(audioCapturerFilter);
     return deviceDescs;
-}
-
-int32_t AudioPolicyServer::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
-    uint32_t sessionId)
-{
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    // Temporarily allow only media service to use non-IPC route
-    CHECK_AND_RETURN_RET_LOG(callerUid == MEDIA_SERVICE_UID, ERR_PERMISSION_DENIED, "No permission");
-
-    return audioPolicyService_.NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
 }
 
 int32_t AudioPolicyServer::VerifyVoiceCallPermission(
@@ -1798,12 +1805,6 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterr
     return ERR_UNKNOWN;
 }
 
-bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    return false;
-}
-
 bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint32_t tokenId, bool isRecording)
 {
     AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
@@ -1841,12 +1842,6 @@ bool AudioPolicyServer::VerifyBluetoothPermission()
     CHECK_AND_RETURN_RET(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, false);
 
     return true;
-}
-
-bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    return false;
 }
 
 int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
@@ -2001,16 +1996,6 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -xp\t\t\t|dump xml data map\n");
     AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager Info\n");
     AppendFormat(dumpString, "  -as\t\t\t|dump audio session info\n");
-}
-
-int32_t AudioPolicyServer::GetAudioLatencyFromXml()
-{
-    return audioPolicyService_.GetAudioLatencyFromXml();
-}
-
-uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
-{
-    return audioPolicyService_.GetSinkLatencyFromXml();
 }
 
 int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
@@ -3306,9 +3291,9 @@ int32_t AudioPolicyServer::UnsetAudioDeviceAnahsCallback()
 
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
-    audioPolicyService_.NotifyAccountsChanged(id);
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
+    audioPolicyService_.NotifyAccountsChanged(id);
 }
 
 int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
@@ -3334,6 +3319,11 @@ int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeTyp
 void AudioPolicyServer::CheckHibernateState(bool hibernate)
 {
     audioPolicyService_.CheckHibernateState(hibernate);
+}
+
+void AudioPolicyServer::UpdateSafeVolumeByS4()
+{
+    audioPolicyService_.UpdateSafeVolumeByS4();
 }
 
 int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)

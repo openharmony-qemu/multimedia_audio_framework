@@ -92,6 +92,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
         config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
+        config.rendererInfo.playerType = rendererInfo_.playerType;
+        config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
@@ -143,20 +145,6 @@ int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     AUDIO_INFO_LOG("GetAudioStreamInfo enter.");
     audioStreamInfo = streamInfo_;
     return SUCCESS;
-}
-
-bool FastAudioStream::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    AUDIO_ERR_LOG("Not supported operation");
-    return false;
-}
-
-bool FastAudioStream::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    AUDIO_ERR_LOG("Not supported operation");
-    return false;
 }
 
 int32_t FastAudioStream::GetAudioSessionID(uint32_t &sessionID)
@@ -910,6 +898,12 @@ int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOuputDev
 DeviceType FastAudioStream::GetDefaultOutputDevice()
 {
     return DEVICE_TYPE_NONE;
+}
+
+// diffrence from GetAudioPosition only when set speed
+int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    return GetAudioTime(timestamp, base);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -49,7 +49,7 @@ void AudioVolumeUnitTest::SetUp(void)
     int32_t streamUsage = STREAM_USAGE_MEDIA;
     int32_t uid = 1000;
     int32_t pid = 1000;
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid);
+    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false);
 }
 
 void AudioVolumeUnitTest::TearDown(void)
@@ -354,7 +354,7 @@ HWTEST_F(AudioVolumeUnitTest, AddStreamVolume_001, TestSize.Level1)
     int32_t streamUsage = STREAM_USAGE_MEDIA;
     int32_t uid = 1000;
     int32_t pid = 1000;
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid);
+    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false);
     int32_t ret = AudioVolume::GetInstance()->streamVolume_.size();
     EXPECT_EQ(ret, sample);
 }

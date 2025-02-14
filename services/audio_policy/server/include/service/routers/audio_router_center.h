@@ -51,7 +51,6 @@ private:
         unique_ptr<AudioStrategyRouterParser> audioStrategyRouterParser = make_unique<AudioStrategyRouterParser>();
         if (audioStrategyRouterParser->LoadConfiguration()) {
             AUDIO_INFO_LOG("audioStrategyRouterParser load configuration successfully.");
-            audioStrategyRouterParser->Parse();
             for (auto &mediaRounter : audioStrategyRouterParser->mediaRenderRouters_) {
                 AUDIO_INFO_LOG("mediaRenderRouters_, class %{public}s", mediaRounter->GetClassName().c_str());
                 mediaRenderRouters_.push_back(std::move(mediaRounter));
@@ -85,7 +84,6 @@ private:
         unique_ptr<AudioUsageStrategyParser> audioUsageStrategyParser = make_unique<AudioUsageStrategyParser>();
         if (audioUsageStrategyParser->LoadConfiguration()) {
             AUDIO_INFO_LOG("AudioUsageStrategyParser load configuration successfully.");
-            audioUsageStrategyParser->Parse();
             renderConfigMap_ = audioUsageStrategyParser->renderConfigMap_;
             capturerConfigMap_ = audioUsageStrategyParser->capturerConfigMap_;
             for (auto &renderConfig : renderConfigMap_) {

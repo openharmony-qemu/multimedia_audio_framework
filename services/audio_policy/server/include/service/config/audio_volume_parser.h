@@ -15,8 +15,6 @@
 #ifndef AUDIO_VOLUME_PARSER_H
 #define AUDIO_VOLUME_PARSER_H
 
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -25,6 +23,7 @@
 #include "audio_info.h"
 #include "audio_policy_log.h"
 #include "audio_volume_config.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,10 +42,12 @@ private:
     std::map<std::string, AudioVolumeType> audioStreamMap_;
     std::map<std::string, DeviceVolumeType> audioDeviceMap_;
 
-    void ParseStreamInfos(xmlNode *node, StreamVolumeInfoMap &streamVolumeInfoMap);
-    int32_t ParseStreamVolumeInfoAttr(xmlNode *node, std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
-    void ParseDeviceVolumeInfos(xmlNode *node, std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
-    void ParseVolumePoints(xmlNode *node, std::shared_ptr<DeviceVolumeInfo> &deviceVolInfo);
+    void ParseStreamInfos(std::shared_ptr<AudioXmlNode> curNode, StreamVolumeInfoMap &streamVolumeInfoMap);
+    int32_t ParseStreamVolumeInfoAttr(std::shared_ptr<AudioXmlNode> curNode,
+        std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
+    void ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> curNode,
+        std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
+    void ParseVolumePoints(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<DeviceVolumeInfo> &deviceVolInfo);
     int32_t ParseVolumeConfig(const char *path, StreamVolumeInfoMap &streamVolumeInfoMap);
     void WriteVolumeConfigErrorEvent();
 };

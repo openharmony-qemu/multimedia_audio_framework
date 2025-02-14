@@ -320,11 +320,6 @@ public:
     virtual int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) = 0;
 
     /**
-     * Request thread priority for client thread.
-     */
-    virtual void RequestThreadPriority(uint32_t tid, std::string bundleName) = 0;
-
-    /**
      * Create playback capturer manager.
      *
      * @return true/false.
@@ -486,11 +481,20 @@ public:
     virtual int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) = 0;
 
     /**
+     * check standby status.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) = 0;
+
+    /**
      * generate sessionId.
      *
      * @return Returns result 0 if success, error number else.
      */
     virtual int32_t GenerateSessionId(uint32_t &sessionId) = 0;
+
+    virtual void NotifyAccountsChanged() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -521,7 +525,6 @@ private:
     int HandleSetAudioBalanceValue(MessageParcel &data, MessageParcel &reply);
     int HandleCreateAudioProcess(MessageParcel &data, MessageParcel &reply);
     int HandleLoadAudioEffectLibraries(MessageParcel &data, MessageParcel &reply);
-    int HandleRequestThreadPriority(MessageParcel &data, MessageParcel &reply);
     int HandleCreateAudioEffectChainManager(MessageParcel &data, MessageParcel &reply);
     int HandleSetOutputDeviceSink(MessageParcel &data, MessageParcel &reply);
     int HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply);
@@ -569,7 +572,9 @@ private:
     int HandleRestoreSession(MessageParcel &data, MessageParcel &reply);
     int HandleCreateIpcOfflineStream(MessageParcel &data, MessageParcel &reply);
     int HandleGetOfflineAudioEffectChains(MessageParcel &data, MessageParcel &reply);
+    int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

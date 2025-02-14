@@ -803,11 +803,10 @@ static void PaRtpollProcessFunc(struct Userdata *u)
 {
     AUTO_CTRACE("PaRtpollProcessFunc");
 
-    if (u->source->thread_info.state == PA_SOURCE_RUNNING) {
-        eventfd_t value;
-        int32_t readRet = eventfd_read(u->eventFd, &value);
-        CHECK_AND_RETURN_LOG(readRet == 0, "Failed to read from eventfd");
-    }
+    eventfd_t value;
+    int32_t readRet = eventfd_read(u->eventFd, &value);
+    CHECK_AND_RETURN_LOG((u->source->thread_info.state == PA_SOURCE_RUNNING) || (readRet == 0),
+        "Failed to read from eventfd");
 
     pa_memchunk chunk;
     int32_t code = 0;
@@ -868,9 +867,12 @@ static void ThreadFuncProcessTimer(void *userdata)
             (u->source->thread_info.state == PA_SOURCE_RUNNING && u->isCapturerStarted) :
             (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->isCapturerStarted);
         pa_atomic_store(&u->captureFlag, flag);
-
-        pa_rtpoll_set_timer_relative(u->rtpoll, RTPOLL_RUN_WAKEUP_INTERVAL_USEC);
-        
+        if (flag) {
+            pa_rtpoll_set_timer_relative(u->rtpoll, RTPOLL_RUN_WAKEUP_INTERVAL_USEC);
+        } else {
+            pa_rtpoll_set_timer_disabled(u->rtpoll);
+        }
+        AUTO_CTRACE("Process Capture Data Loop");
         /* Hmm, nothing to do. Let's sleep */
         int ret = pa_rtpoll_run(u->rtpoll);
         if (ret < 0) {
@@ -909,6 +911,14 @@ static int PaHdiCapturerInit(struct Userdata *u)
         AUDIO_ERR_LOG("Audio capturer get capturer id failed!");
         return ret;
     }
+
+#ifdef IS_EMULATOR
+    // Due to the peculiar implementation of the emulator's HDI,
+    // an initial start and stop sequence is required to circumvent protential issues and ensure proper functionality.
+    AUDIO_INFO_LOG("do start and stop");
+    u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
+    u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
+#endif
 
     u->isCapturerStarted = false;
     return ret;
@@ -1264,6 +1274,10 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     struct Userdata *u = pa_xnew0(struct Userdata, 1);
+    if (u == NULL) {
+        AUDIO_ERR_LOG("userdata alloc failed");
+        goto fail;
+    }
 
     u->core = m->core;
     u->module = m;

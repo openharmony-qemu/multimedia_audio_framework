@@ -21,7 +21,7 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
@@ -43,11 +43,6 @@ bool AudioConfigManager::Init()
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
-    }
-    ret = audioPolicyConfigParser->Parse();
-    if (!ret) {
-        AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
-        AUDIO_ERR_LOG("Audio Policy Config Parse Configuration failed");
     }
     return ret;
 }

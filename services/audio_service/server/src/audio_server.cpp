@@ -88,7 +88,6 @@ const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
-const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
@@ -881,7 +880,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
         if (activeOutputDevice == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
-            activeOutputDevices[0] = DEVICE_TYPE_SPEAKER;
+            activeOutputDevices[0] = DEVICE_TYPE_NONE;
         }
         audioRendererSinkInstance->SetAudioScene(audioScene, activeOutputDevices);
     }
@@ -1303,8 +1302,12 @@ const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
     return bundleName;
 }
 
-bool AudioServer::IsFastBlocked(int32_t uid)
+bool AudioServer::IsFastBlocked(int32_t uid, PlayerType playerType)
 {
+    // if call from soundpool without the need for check.
+    if (playerType == PLAYER_TYPE_SOUND_POOL) {
+        return false;
+    }
     std::string bundleName = GetBundleNameFromUid(uid);
     std::string result = GetAudioParameter(CHECK_FAST_BLOCK_PREFIX + bundleName);
     return result == "true";
@@ -1382,7 +1385,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
     }
-    if (IsNormalIpcStream(config) || (isFastControlled_ && IsFastBlocked(config.appInfo.appUid))) {
+    if (IsNormalIpcStream(config) ||
+        (isFastControlled_ && IsFastBlocked(config.appInfo.appUid, config.rendererInfo.playerType))) {
         AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
@@ -1730,7 +1734,6 @@ int32_t AudioServer::CheckInnerRecorderPermission(const AudioProcessConfig &conf
 bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
-    uint64_t fullTokenId = config.appInfo.appFullTokenId;
     SourceType sourceType = config.capturerInfo.sourceType;
     CHECK_AND_RETURN_RET_LOG(VALID_SOURCE_TYPE.count(sourceType), false, "invalid source type:%{public}d", sourceType);
 
@@ -1771,12 +1774,31 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         return true;
     }
 
-    if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, sourceType) &&
-        !PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
-        AUDIO_ERR_LOG("VerifyBackgroundCapture failed uid:%{public}d", config.callerUid);
+    CHECK_AND_RETURN_RET(HandleCheckRecorderBackgroundCapture(config), false,
+        "VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+    return true;
+}
+
+bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config)
+{
+    SwitchStreamInfo info = {
+        config.originalSessionId,
+        config.callerUid,
+        config.appInfo.appUid,
+        config.appInfo.appPid,
+        config.appInfo.appTokenId,
+        CAPTURER_PREPARED,
+    };
+    if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, config.capturerInfo.sourceType) &&
+        !PermissionUtil::VerifyBackgroundCapture(info.appTokenId, config.appInfo.appFullTokenId)) {
+        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
+            AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
+                config.callerUid);
+            return true;
+        }
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
         return false;
     }
-
     return true;
 }
 
@@ -1810,15 +1832,6 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
             AUDIO_ERR_LOG("Failed to add deathRecipient");
         }
     }
-}
-
-void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
-{
-    AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
-
-    int32_t pid = IPCSkeleton::GetCallingPid();
-    AudioXCollie audioXCollie("AudioServer::ScheduleReportData", SCHEDULE_REPORT_TIME_OUT_SECONDS);
-    ScheduleReportData(pid, tid, bundleName.c_str());
 }
 
 bool AudioServer::CreatePlaybackCapturerManager()
@@ -2171,6 +2184,21 @@ int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effec
     return OfflineStreamInServer::GetOfflineAudioEffectChains(effectChains);
 #endif
     return ERR_NOT_SUPPORTED;
+}
+
+int32_t AudioServer::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
+{
+    Trace trace("AudioServer::GetStandbyStatus:" + std::to_string(sessionId));
+
+    // only for native sa calling
+    auto type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(IPCSkeleton::GetCallingTokenID());
+    bool isAllowed = type == Security::AccessToken::TOKEN_NATIVE;
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    isAllowed = isAllowed || type == Security::AccessToken::TOKEN_SHELL; // for DT
+#endif
+    CHECK_AND_RETURN_RET_LOG(isAllowed, ERR_INVALID_OPERATION, "not allowed");
+
+    return AudioService::GetInstance()->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
 }
 
 int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)

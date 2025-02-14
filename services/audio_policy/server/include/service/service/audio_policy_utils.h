@@ -54,6 +54,7 @@ public:
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void ClearScoDeviceSuspendState(std::string macAddress = "");
     int64_t GetCurrentTimeMS();
+    std::string GetNewSinkPortName(DeviceType deviceType);
     std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
     string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);

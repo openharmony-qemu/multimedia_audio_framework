@@ -38,7 +38,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     } else {
         int32_t audioId = perDev_->deviceId_;
         AUDIO_INFO_LOG(" PreferredMediaRenderDevice audioId is %{public}d", audioId);
-        return RouterBase::GetPairCaptureDevice(perDev_, mediaDevices);
+        return RouterBase::GetPairDevice(perDev_, mediaDevices);
     }
 }
 
@@ -54,7 +54,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
     } else {
         int32_t audioId = perDev_->deviceId_;
         AUDIO_INFO_LOG(" PreferredCallRenderDevice audioId is %{public}d", audioId);
-        return RouterBase::GetPairCaptureDevice(perDev_, callDevices);
+        return RouterBase::GetPairDevice(perDev_, callDevices);
     }
 }
 
@@ -70,7 +70,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
     } else {
         int32_t audioId = perDev_->deviceId_;
         AUDIO_INFO_LOG(" PreferredCallCaptureDevice audioId is %{public}d", audioId);
-        return RouterBase::GetPairCaptureDevice(perDev_, callDevices);
+        return RouterBase::GetPairDevice(perDev_, callDevices);
     }
 }
 
@@ -93,7 +93,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
     } else {
         int32_t audioId = perDev_->deviceId_;
         AUDIO_INFO_LOG(" PreferredRecordCaptureDevice audioId is %{public}d", audioId);
-        return RouterBase::GetPairCaptureDevice(perDev_, recordDevices);
+        return RouterBase::GetPairDevice(perDev_, recordDevices);
     }
 }
 

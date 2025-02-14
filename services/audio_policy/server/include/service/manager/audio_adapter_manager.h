@@ -200,6 +200,12 @@ public:
     void ResetOffloadSessionId();
 
     int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
+
+    void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
+
+    void SetRestoreVolumeFlag(const bool safeVolumeCall);
+
+    void UpdateSafeVolumeByS4();
 private:
     friend class PolicyCallbackImpl;
 
@@ -268,6 +274,7 @@ private:
     void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot();
+    void MaximizeVoiceAssistantVolume(InternalDeviceType deviceType);
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -305,6 +312,8 @@ private:
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
     int32_t curActiveCount_ = 0;
+    bool safeVolumeCall_ = false;
+    bool isSafeBoot_ = true;
 
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
 

@@ -71,10 +71,6 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC) override;
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
     State GetState() override;
@@ -184,6 +180,8 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
 
     DeviceType GetDefaultOutputDevice() override;
+
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);

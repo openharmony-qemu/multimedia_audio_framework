@@ -8292,5 +8292,219 @@ HWTEST(AudioRendererUnitTest, IsFastStreamClass_001, TestSize.Level1)
     EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::FAST_STREAM), true);
     EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::VOIP_STREAM), true);
 }
+
+/*
+ * @tc.name  : Test GetAudioTimestampInfo API via legal input.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_001
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns true, if the getting is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    EXPECT_EQ(SUCCESS, audioRenderer->SetSpeed(2.0));
+
+    size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
+    EXPECT_GE(bytesWritten, VALUE_ZERO);
+
+    Timestamp timestamp;
+    int32_t getAudioTimestampInfoRet =
+        audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(SUCCESS, getAudioTimestampInfoRet);
+    EXPECT_GE(timestamp.time.tv_sec, (const long)VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_nsec, (const long)VALUE_ZERO);
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    free(buffer);
+    fclose(wavFile);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via illegal state, RENDERER_NEW: GetAudioTimestampInfo without
+ *             initializing the renderer.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_002
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns false, if the renderer state is RENDERER_NEW
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_002, TestSize.Level1)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via legal state, RENDERER_RUNNING.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_003
+ * @tc.desc  : test GetAudioTimestampInfo interface. Returns true, if the getting is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via illegal state, RENDERER_STOPPED: GetAudioTimestampInfo after Stop.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_004
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns false, if the renderer state is RENDERER_STOPPED.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_004, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via illegal state, RENDERER_RELEASED: GetAudioTimestampInfo after Release.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_005
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns false, if the renderer state is RENDERER_RELEASED
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_005, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via illegal state, RENDERER_PAUSED: GetAudioTimestampInfo after Stop.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_006
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns false, if the renderer state is RENDERER_PAUSED.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_006, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isPaused = audioRenderer->Pause();
+    EXPECT_EQ(true, isPaused);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via legal state, RENDERER_PAUSED.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_007
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Timestamp should be larger after pause 1s.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_007, TestSize.Level2)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferSize = 3528; // 44.1 khz, 20ms
+    std::unique_ptr<uint8_t[]> tempBuffer = std::make_unique<uint8_t[]>(bufferSize);
+    int loopCount = 20; // 400ms
+    while (loopCount-- > 0) {
+        audioRenderer->Write(tempBuffer.get(), bufferSize);
+    }
+    Timestamp timestamp1;
+    audioRenderer->GetAudioTimestampInfo(timestamp1, Timestamp::Timestampbase::MONOTONIC);
+
+    bool isPaused = audioRenderer->Pause();
+    EXPECT_EQ(true, isPaused);
+
+    size_t sleepTime = 1000000; // sleep 1s
+    usleep(sleepTime);
+
+    isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    loopCount = 10; // 200ms
+    while (loopCount-- > 0) {
+        audioRenderer->Write(tempBuffer.get(), bufferSize);
+    }
+    Timestamp timestamp2;
+    audioRenderer->GetAudioTimestampInfo(timestamp2, Timestamp::Timestampbase::MONOTONIC);
+
+    int64_t duration = (timestamp2.time.tv_sec - timestamp1.time.tv_sec) * 1000000 + (timestamp2.time.tv_nsec -
+        timestamp1.time.tv_nsec) / VALUE_THOUSAND; // ns -> us
+    EXPECT_GE(duration, sleepTime);
+
+    audioRenderer->Release();
+}
 } // namespace AudioStandard
 } // namespace OHOS

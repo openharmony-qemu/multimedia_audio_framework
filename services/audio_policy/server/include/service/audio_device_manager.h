@@ -63,6 +63,7 @@ public:
     shared_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
     shared_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
     shared_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
+    shared_ptr<AudioDeviceDescriptor> FindConnectedDeviceById(const int32_t deviceId);
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> GetDevicePrivacyMaps();
     vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesByUsage(AudioDeviceUsage usage);
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,

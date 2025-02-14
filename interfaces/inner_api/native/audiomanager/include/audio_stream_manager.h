@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,18 +24,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRendererStateChangeCallback {
-public:
-    virtual ~AudioRendererStateChangeCallback() = default;
-    /**
-     * Called when the renderer state changes
-     *
-     * @param rendererChangeInfo Contains the renderer state information.
-     */
-    virtual void OnRendererStateChange(
-        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
-};
-
 class DeviceChangeWithInfoCallback {
 public:
     virtual ~DeviceChangeWithInfoCallback() = default;
@@ -45,19 +33,6 @@ public:
 
     virtual void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) = 0;
-};
-
-class AudioCapturerStateChangeCallback {
-public:
-    virtual ~AudioCapturerStateChangeCallback() = default;
-    /**
-     * Called when the capturer state changes
-     *
-     * @param capturerChangeInfo Contains the renderer state information.
-     */
-    virtual void OnCapturerStateChange(
-        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
-    std::mutex cbMutex_;
 };
 
 class AudioClientTracker {

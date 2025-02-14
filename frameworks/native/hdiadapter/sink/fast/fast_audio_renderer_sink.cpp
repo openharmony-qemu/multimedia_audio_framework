@@ -87,6 +87,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
     int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
@@ -97,6 +98,7 @@ public:
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+    int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
@@ -157,6 +159,10 @@ private:
     uint32_t eachReadFrameSize_ = 0;
     std::mutex mutex_;
     IAudioSinkCallback *callback_ = nullptr;
+    // for device switch
+    std::mutex switchDeviceMutex_;
+    int32_t muteCount_ = 0;
+    std::atomic<bool> switchDeviceMute_ = false;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -332,6 +338,38 @@ int32_t FastAudioRendererSinkInner::GetMmapBufferInfo(int &fd, uint32_t &totalSi
     totalSizeInframe = bufferTotalFrameSize_;
     spanSizeInframe = eachReadFrameSize_;
     byteSizePerFrame = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
+    return SUCCESS;
+}
+
+int32_t FastAudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
+{
+    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
+    AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
+
+    if (mute) {
+        muteCount_++;
+        if (switchDeviceMute_) {
+            AUDIO_INFO_LOG("%{public}s already muted", halName_.c_str());
+            return SUCCESS;
+        }
+        switchDeviceMute_ = true;
+        if (halName_ == MMAP_VOIP_HAL_NAME) {
+            float vlolumeSt = 0.0f;
+            SetVolume(vlolumeSt, vlolumeSt);
+        }
+    } else {
+        muteCount_--;
+        if (muteCount_ > 0) {
+            AUDIO_WARNING_LOG("%{public}s not all unmuted", halName_.c_str());
+            return SUCCESS;
+        }
+        switchDeviceMute_ = false;
+        muteCount_ = 0;
+        if (halName_ == MMAP_VOIP_HAL_NAME) {
+            SetVolume(leftVolume_, rightVolume_);
+        }
+    }
+
     return SUCCESS;
 }
 
@@ -763,6 +801,12 @@ int32_t FastAudioRendererSinkInner::GetVolume(float &left, float &right)
 int32_t FastAudioRendererSinkInner::SetVoiceVolume(float volume)
 {
     AUDIO_ERR_LOG("FastAudioRendererSink SetVoiceVolume not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t FastAudioRendererSinkInner::GetAudioScene()
+{
+    AUDIO_ERR_LOG("FastAudioRendererSink GetAudioScene not supported.");
     return ERR_NOT_SUPPORTED;
 }
 

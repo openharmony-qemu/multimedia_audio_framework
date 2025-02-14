@@ -19,7 +19,7 @@
 #include "audio_a2dp_device.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_policy_manager_factory.h"
 
 #include "audio_policy_utils.h"

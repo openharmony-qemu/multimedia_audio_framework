@@ -404,7 +404,12 @@ std::string AudioEndpointInner::GetEndpointName()
 
 int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
 {
-    // No need set hdi volume in shared stream mode.
+    if (streamType == AudioStreamType::STREAM_VOICE_CALL && endpointType_ == TYPE_VOIP_MMAP) {
+        if (fastSink_ != nullptr) {
+            AUDIO_INFO_LOG("SetVolume:%{public}f, streamType:%{public}d", volume, streamType);
+            fastSink_->SetVolume(volume, volume);
+        }
+    }
     return SUCCESS;
 }
 
@@ -1345,11 +1350,10 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             int64_t lastWrittenTime = tempBuffer->GetLastWrittenTime();
             uint32_t sessionId = processList_[i]->GetAudioSessionId();
             if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS) {
-                Trace trace("AudioEndpoint::MarkClientStandby");
-                AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", tempBuffer->GetSessionId());
-                CHECK_AND_RETURN_RET_LOG(tempBuffer->GetStreamStatus() != nullptr, false, "GetStreamStatus failed");
-                tempBuffer->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
-                WriterRenderStreamStandbySysEvent(tempBuffer->GetSessionId(), 1);
+                Trace trace("AudioEndpoint::MarkClientStandby:" + std::to_string(sessionId));
+                AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", sessionId);
+                processList_[i]->EnableStandby();
+                WriterRenderStreamStandbySysEvent(sessionId, 1);
                 needCheckStandby = true;
                 continue;
             }
@@ -1466,6 +1470,9 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
 
 void AudioEndpointInner::HandleZeroVolumeCheckEvent()
 {
+    if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
+        return;
+    }
     if (!zeroVolumeStopDevice_ && (ClockTime::GetCurNano() >= delayStopTimeForZeroVolume_)) {
         if (isStarted_) {
             if (fastSink_ != nullptr && fastSink_->Stop() == SUCCESS) {
@@ -1515,7 +1522,7 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
     dataLength /= 2; // SAMPLE_S16LE--> 2 byte
     int16_t *dstPtr = reinterpret_cast<int16_t *>(dstData.bufferDesc.buffer);
     for (size_t offset = 0; dataLength > 0; dataLength--) {
-        int32_t vol = srcData.volumeStart; // change to modify volume of each channel
+        int32_t vol = 1 << VOLUME_SHIFT_NUMBER;
         int16_t *srcPtr = reinterpret_cast<int16_t *>(srcData.bufferDesc.buffer) + offset;
         int32_t sum = applyVol ? (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER : *srcPtr; // 1/65536
         ZeroVolumeCheck(vol);
@@ -1527,6 +1534,9 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
 
 void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
 {
+    if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
+        return;
+    }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
         if (!zeroVolumeStopDevice_ && !isVolumeAlreadyZero_) {
             AUDIO_INFO_LOG("Begin zero volume, will stop device.");

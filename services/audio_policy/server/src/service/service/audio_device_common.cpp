@@ -612,7 +612,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
         }
-        MuteSinkForSwtichBluetoothDevice(rendererChangeInfo, descs, reason);
+        MuteSinkForSwitchBluetoothDevice(rendererChangeInfo, descs, reason);
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
@@ -703,10 +703,10 @@ int32_t AudioDeviceCommon::HandleDeviceChangeForFetchOutputDevice(std::shared_pt
     return SUCCESS;
 }
 
-void AudioDeviceCommon::MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
-    Trace trace("AudioDeviceCommon::MuteSinkPortForSwtichDevice");
+    Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
     audioIOHandleMap_.SetDeviceInfos(rendererChangeInfo->outputDeviceInfo.deviceType_,
         outputDevices.front()->deviceType_);
     if (outputDevices.size() != 1) {
@@ -733,21 +733,21 @@ void AudioDeviceCommon::MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendere
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
 
-void AudioDeviceCommon::MuteSinkForSwtichGeneralDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioDeviceCommon::MuteSinkForSwitchGeneralDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
         outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO)) {
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+        MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
     }
 }
 
-void AudioDeviceCommon::MuteSinkForSwtichBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioDeviceCommon::MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+        MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
     }
 }
 
@@ -796,6 +796,7 @@ int32_t AudioDeviceCommon::ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescrip
         AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
         deviceDesc->exceptionFlag_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
+        audioIOHandleMap_.NotifyUnmutePort();
         FetchOutputDevice(rendererChangeInfos, reason);
         return ERROR;
     }
@@ -893,7 +894,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
-    MuteSinkForSwtichGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
+    MuteSinkForSwitchGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
 
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     // MoveSinkInputByIndexOrName
@@ -1282,8 +1283,7 @@ bool AudioDeviceCommon::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
             audioActiveDevice_.GetCurrentInputDeviceType(), capturerChangeInfo->capturerInfo.originalFlag,
             audioActiveDevice_.GetCurrentInputDevice().networkId_, capturerChangeInfo->capturerInfo.samplingRate);
-        TriggerRecreateCapturerStreamCallback(capturerChangeInfo->callerPid,
-            capturerChangeInfo->sessionId, streamClass, reason);
+        TriggerRecreateCapturerStreamCallback(capturerChangeInfo, streamClass, reason);
         return true;
     }
     return false;
@@ -1393,14 +1393,25 @@ void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDevice
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "load a2dp input module failed");
 }
 
-void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId,
+void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(
+    const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
     int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::TriggerRecreateCapturerStreamCallback");
+    SwitchStreamInfo info = {
+        static_cast<uint32_t>(capturerChangeInfo->sessionId),
+        capturerChangeInfo->createrUID,
+        capturerChangeInfo->clientUID,
+        capturerChangeInfo->clientPid,
+        capturerChangeInfo->appTokenId,
+        capturerChangeInfo->capturerState,
+    };
     AUDIO_WARNING_LOG("Trigger recreate capturer stream, pid: %{public}d, sessionId: %{public}d, flag: %{public}d",
-        callerPid, sessionId, streamFlag);
+        capturerChangeInfo->callerPid, capturerChangeInfo->sessionId, streamFlag);
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(callerPid, sessionId, streamFlag, reason);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(capturerChangeInfo->callerPid,
+            capturerChangeInfo->sessionId, streamFlag, reason);
     } else {
         AUDIO_WARNING_LOG("No audio policy server handler");
     }
@@ -1764,6 +1775,7 @@ void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
     }
     AUDIO_WARNING_LOG("Client died disconnect sco for normal");
     Bluetooth::AudioHfpManager::DisconnectSco();
+    Bluetooth::AudioHfpManager::SetVirtualCall(true);
 }
 
 void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,9 +28,10 @@
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
 #include "audio_anahs_manager_listener_stub.h"
+#include "audio_policy_interface.h"
 #include "audio_system_manager.h"
 #include "i_standard_client_tracker.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "microphone_descriptor.h"
 #include "audio_spatialization_manager.h"
 #include "audio_spatialization_state_change_listener_stub.h"
@@ -193,17 +194,7 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
 
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC);
-
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state);
-
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    int32_t GetAudioLatencyFromXml();
-
-    uint32_t GetSinkLatencyFromXml();
 
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
 
@@ -392,8 +383,6 @@ public:
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
-
-    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
 
     ConverterConfig GetConverterConfig();
 

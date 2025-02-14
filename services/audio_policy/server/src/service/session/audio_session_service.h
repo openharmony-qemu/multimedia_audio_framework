@@ -19,7 +19,7 @@
 #include <mutex>
 
 #include "audio_session.h"
-#include "audio_session_timer.h"
+#include "audio_session_state_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,7 +30,7 @@ public:
     virtual void OnSessionTimeout(const int32_t pid) = 0; // 超时释放
 };
 
-class AudioSessionService : public AudioSessionTimerCallback, public std::enable_shared_from_this<AudioSessionService> {
+class AudioSessionService : public AudioSessionStateMonitor, public std::enable_shared_from_this<AudioSessionService> {
 public:
     AudioSessionService();
     ~AudioSessionService() override;
@@ -41,21 +41,22 @@ public:
     bool IsAudioSessionActivated(const int32_t callerPid);
 
     // Audio session timer callback
-    void OnAudioSessionTimeOut(const int32_t callerPid) override;
+    void OnAudioSessionTimeOut(int32_t callerPid) override;
 
     // other public interfaces
-    void Init();
     int32_t SetSessionTimeOutCallback(const std::shared_ptr<SessionTimeOutCallback> &timeOutCallback);
     std::shared_ptr<AudioSession> GetAudioSessionByPid(const int32_t callerPid);
 
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
+
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
+    std::shared_ptr<AudioSessionStateMonitor> GetSelfSharedPtr() override;
 
+private:
     std::mutex sessionServiceMutex_;
-    std::shared_ptr<AudioSessionTimer> sessionTimer_;
     std::unordered_map<int32_t, std::shared_ptr<AudioSession>> sessionMap_;
     std::weak_ptr<SessionTimeOutCallback> timeOutCallback_;
 };

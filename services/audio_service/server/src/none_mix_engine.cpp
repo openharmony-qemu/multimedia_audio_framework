@@ -22,6 +22,7 @@
 #include "audio_utils.h"
 #include "none_mix_engine.h"
 #include "audio_performance_monitor.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -55,7 +56,8 @@ NoneMixEngine::NoneMixEngine()
       startFadeout_(false),
       uChannel_(0),
       uFormat_(sizeof(int32_t)),
-      uSampleRate_(0)
+      uSampleRate_(0),
+      firstSetVolume_(true)
 {
     AUDIO_INFO_LOG("Constructor");
 }
@@ -251,6 +253,24 @@ void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize
     }
 }
 
+void NoneMixEngine::AdjustVoipVolume()
+{
+    if (isVoip_) {
+        uint32_t streamIndx = stream_->GetStreamIndex();
+        AudioProcessConfig config = stream_->GetAudioProcessConfig();
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(config.streamType);
+        float volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndx);
+        float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, volumeType, std::string(SINK_ADAPTER_NAME));
+        if ((!firstSetVolume_ && volumeBg != volumeEd) || firstSetVolume_) {
+            AUDIO_INFO_LOG("Adjust voip volume");
+            AudioVolume::GetInstance()->SetHistoryVolume(streamIndx, volumeEd);
+            AudioVolume::GetInstance()->Monitor(streamIndx, true);
+            renderSink_->SetVolume(volumeEd, volumeEd);
+            firstSetVolume_ = false;
+        }
+    }
+}
+
 void NoneMixEngine::MixStreams()
 {
     if (stream_ == nullptr) {
@@ -282,6 +302,7 @@ void NoneMixEngine::MixStreams()
         return;
     }
     AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT);
+    AdjustVoipVolume();
     failedCount_ = 0;
     uint64_t written = 0;
     // fade in or fade out

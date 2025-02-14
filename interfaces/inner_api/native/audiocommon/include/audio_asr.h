@@ -50,6 +50,20 @@ enum class AsrNoiseSuppressionMode {
      * @since 12
      */
     FAR_FIELD = 3,
+    /**
+     * FULL_DUPLEX_STANDARD
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    FULL_DUPLEX_STANDARD = 4,
+    /**
+     * FULL_DUPLEX_NEAR_FIELD.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    FULL_DUPLEX_NEAR_FIELD = 5,
 };
 
 /**

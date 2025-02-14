@@ -40,7 +40,7 @@ ohos_shared_library("audio_renderer") {
   configs = [ ":audio_renderer_config" ]
 
   sources = [
-    "../../../services/audio_service/client/src/audio_device_descriptor.cpp",
+    "../../../services/audio_policy/server/src/service/device/audio_device_descriptor.cpp",
     "src/audio_renderer.cpp",
     "src/audio_renderer_proxy_obj.cpp",
   ]
@@ -179,10 +179,7 @@ ohos_executable("audio_interrupt_test") {
 
   configs = [ ":audio_renderer_config" ]
 
-  deps = [
-    ":audio_renderer",
-    "../../../services/audio_service:audio_client",
-  ]
+  deps = [ ":audio_renderer" ]
 
   external_deps = [ "hilog:libhilog" ]
 
@@ -212,10 +209,7 @@ ohos_executable("audio_blendmode_test") {
 
   configs = [ ":audio_renderer_config" ]
 
-  deps = [
-    ":audio_renderer",
-    "../../../services/audio_service:audio_client",
-  ]
+  deps = [ ":audio_renderer" ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",

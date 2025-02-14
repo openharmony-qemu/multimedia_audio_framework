@@ -69,7 +69,6 @@ void AudioDeviceManager::ParseDeviceXml()
     unique_ptr<AudioDeviceParser> audioDeviceParser = make_unique<AudioDeviceParser>(this);
     if (audioDeviceParser->LoadConfiguration()) {
         AUDIO_INFO_LOG("Audio device manager load configuration successfully.");
-        audioDeviceParser->Parse();
     }
     AUDIO_INFO_LOG("Out");
 }
@@ -414,11 +413,12 @@ std::string AudioDeviceManager::GetConnDevicesStr()
 std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     std::string devices;
-    devices.append("device type:id:(category:constate) ");
+    devices.append("device type:id:role:(category:constate) ");
     for (auto iter : descs) {
         CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
+        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->getRole())));
         if (iter->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
             iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
@@ -655,6 +655,14 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevice()
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(defalutMic_);
     return devDesc;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::FindConnectedDeviceById(const int32_t deviceId)
+{
+    auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [deviceId](auto &item) {
+        return item->deviceId_ == deviceId;
+    });
+    return it == connectedDevices_.cend() ? nullptr : *it;
 }
 
 // LCOV_EXCL_START
@@ -1353,7 +1361,7 @@ void AudioDeviceManager::Dump(std::string &dumpString)
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
     AppendFormat(dumpString, " MediaDefaultOutputDevices:\n");
     for (auto it : mediaDefaultOutputDevices_) {
-        AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
+        AppendFormat(dumpString, "  sessionId: %u, device type: %s\n", it.first,
             AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
     }
     AppendFormat(dumpString, "current media default output device: %s\n",
@@ -1361,7 +1369,7 @@ void AudioDeviceManager::Dump(std::string &dumpString)
 
     AppendFormat(dumpString, " CallDefaultOutputDevices:\n");
     for (auto it : callDefaultOutputDevices_) {
-        AppendFormat(dumpString, "  sessionId: %d, device type: %s\n", it.first,
+        AppendFormat(dumpString, "  sessionId: %u, device type: %s\n", it.first,
             AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
     }
     AppendFormat(dumpString, "current call default output device: %s\n",

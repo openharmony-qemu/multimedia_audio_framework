@@ -28,7 +28,7 @@
 #include "notification_bundle_option.h"
 #include "rstate.h"
 #include "ipc_skeleton.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "os_account_manager.h"
 #include "locale_config.h"
 #include "resource_manager_adapter.h"
@@ -117,6 +117,20 @@ static void SetActionButton(int32_t notificationId, const std::string& buttonNam
     request.AddActionButton(actionButtonDeal);
 }
 
+static void SetExtraParam(int32_t notificationId, Notification::NotificationRequest& request)
+{
+    std::shared_ptr<AAFwk::WantParams> wantParams = std::make_shared<AAFwk::WantParams>();
+    if (notificationId == RESTORE_VOLUME_NOTIFICATION_ID) {
+        AUDIO_INFO_LOG("SetExtraParam AUDIO_RESTORE_VOLUME_EVENT.");
+        wantParams->SetParam(SAVE_VOLUME_SYS_ABILITY_NAME, AAFwk::String::Box(AUDIO_RESTORE_VOLUME_EVENT));
+    } else {
+        AUDIO_INFO_LOG("SetExtraParam AUDIO_INCREASE_VOLUME_EVENT.");
+        wantParams->SetParam(SAVE_VOLUME_SYS_ABILITY_NAME, AAFwk::String::Box(AUDIO_INCREASE_VOLUME_EVENT));
+    }
+
+    request.SetAdditionalData(wantParams);
+}
+
 bool AudioSafeVolumeNotificationImpl::GetPixelMap()
 {
     if (iconPixelMap_ != nullptr) {
@@ -152,7 +166,7 @@ bool AudioSafeVolumeNotificationImpl::GetPixelMap()
     return true;
 }
 
-static void SetBasicOption(Notification::NotificationRequest &request)
+static void SetBasicOption(int32_t notificationId, Notification::NotificationRequest &request)
 {
     request.SetCreatorUid(SAVE_VOLUME_SYS_ABILITY_ID);
     Notification::NotificationBundleOption bundle(SAVE_VOLUME_SYS_ABILITY_NAME, SAVE_VOLUME_SYS_ABILITY_ID);
@@ -164,7 +178,11 @@ static void SetBasicOption(Notification::NotificationRequest &request)
     request.SetAutoDeletedTime(OHOS::Notification::NotificationConstant::INVALID_AUTO_DELETE_TIME);
     request.SetTapDismissed(false);
     request.SetSlotType(OHOS::Notification::NotificationConstant::SlotType::SOCIAL_COMMUNICATION);
-    request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG);
+    if (notificationId == RESTORE_VOLUME_NOTIFICATION_ID) {
+        request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG);
+    } else {
+        request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG | NOTIFICATION_CLOSE_SOUND_FLAG);
+    }
 }
 
 void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t notificationId)
@@ -190,7 +208,7 @@ void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t noti
     }
 
     Notification::NotificationRequest request;
-    SetBasicOption(request);
+    SetBasicOption(notificationId, request);
     request.SetContent(content);
     request.SetNotificationId(notificationId);
     GetPixelMap();
@@ -203,6 +221,8 @@ void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t noti
     if (!buttonName.empty()) {
         SetActionButton(notificationId, buttonName, request);
     }
+
+    SetExtraParam(notificationId, request);
 
     auto ret = Notification::NotificationHelper::PublishNotification(request);
     AUDIO_INFO_LOG("safe volume service publish notification result = %{public}d", ret);

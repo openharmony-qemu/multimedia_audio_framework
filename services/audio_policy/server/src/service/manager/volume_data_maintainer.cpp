@@ -178,6 +178,30 @@ int32_t VolumeDataMaintainer::GetStreamVolume(AudioStreamType streamType)
     return GetStreamVolumeInternal(streamType);
 }
 
+int32_t VolumeDataMaintainer::GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    std::string volumeKey = GetVolumeKeyForDataShare(deviceType, streamType);
+    int32_t volumeValue = 0;
+    if (!volumeKey.compare("")) {
+        AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
+            deviceType, streamType);
+        return volumeValue;
+    }
+
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeValue, "system");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Get streamType %{public}d, deviceType %{public}d, Volume FromDataBase volumeMap failed.",
+            streamType, deviceType);
+    } else {
+        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d, deviceType %{public}d, "\
+            "Volume FromDataBase volumeMap from datashare %{public}d.", streamType, deviceType, volumeValue);
+    }
+
+    return volumeValue;
+}
+
 int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType)
 {
     AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);

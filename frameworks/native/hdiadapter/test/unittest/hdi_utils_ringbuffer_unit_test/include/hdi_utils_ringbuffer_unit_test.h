@@ -23,7 +23,7 @@
 #include "gmock/gmock.h"
 #include "hdi_utils_ringbuffer.h"
 #include "securec.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_errors.h"
 
 namespace OHOS {

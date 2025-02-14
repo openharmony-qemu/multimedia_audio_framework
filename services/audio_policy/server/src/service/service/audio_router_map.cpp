@@ -20,7 +20,7 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_utils.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
 
 namespace OHOS {

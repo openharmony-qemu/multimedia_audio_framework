@@ -29,6 +29,7 @@
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
+#include "audio_policy_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,17 +107,6 @@ public:
      * @return Returns volume group info
      */
     static sptr<VolumeGroupInfo> Unmarshalling(Parcel &parcel);
-};
-
-/**
- * Describes the device change type and device information.
- *
- * @since 7
- */
-struct DeviceChangeAction {
-    DeviceChangeType type;
-    DeviceFlag flag;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
 };
 
 /**
@@ -199,25 +189,6 @@ private:
     std::shared_ptr<AudioManagerCallback> cb_;
 };
 
-class AudioManagerDeviceChangeCallback {
-public:
-    virtual ~AudioManagerDeviceChangeCallback() = default;
-    /**
-     * Called when an interrupt is received.
-     *
-     * @param deviceChangeAction Indicates the DeviceChangeAction information needed by client.
-     * For details, refer DeviceChangeAction struct
-     * @since 8
-     */
-    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
-};
-
-class AudioQueryClientTypeCallback {
-public:
-    virtual ~AudioQueryClientTypeCallback() = default;
-    virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
-};
-
 class AudioManagerAvailableDeviceChangeCallback {
 public:
     virtual ~AudioManagerAvailableDeviceChangeCallback() = default;
@@ -243,18 +214,6 @@ public:
      * @since 13
      */
     virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
-};
-
-class VolumeKeyEventCallback {
-public:
-    virtual ~VolumeKeyEventCallback() = default;
-    /**
-     * @brief VolumeKeyEventCallback will be executed when hard volume key is pressed up/down
-     *
-     * @param volumeEvent the volume event info.
-     * @since 8
-     */
-    virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
 };
 
 class AudioParameterCallback {
@@ -296,52 +255,6 @@ public:
 
 class AudioPreferredOutputDeviceChangeCallback;
 
-class AudioFocusInfoChangeCallback {
-public:
-    virtual ~AudioFocusInfoChangeCallback() = default;
-    /**
-     * Called when focus info change.
-     *
-     * @param focusInfoList Indicates the focusInfoList information needed by client.
-     * For details, refer audioFocusInfoList_ struct in audio_policy_server.h
-     * @since 9
-     */
-    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
-
-    virtual void OnAudioFocusRequested(const AudioInterrupt &) {}
-
-    virtual void OnAudioFocusAbandoned(const AudioInterrupt &) {}
-};
-
-class AudioFocusInfoChangeCallbackImpl : public AudioFocusInfoChangeCallback {
-public:
-    explicit AudioFocusInfoChangeCallbackImpl();
-    virtual ~AudioFocusInfoChangeCallbackImpl();
-
-    /**
-     * Called when focus info change.
-     *
-     * @param focusInfoList Indicates the focusInfoList information needed by client.
-     * For details, refer audioFocusInfoList_ struct in audio_policy_server.h
-     * @since 9
-     */
-    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
-    void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
-    void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
-    void SaveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
-
-    /**
-     *  Cancel when focus info change.
-     *
-     * @since 9
-     */
-    void RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
-private:
-    std::list<std::weak_ptr<AudioFocusInfoChangeCallback>> callbackList_;
-    std::shared_ptr<AudioFocusInfoChangeCallback> cb_;
-    std::mutex cbListMutex_;
-};
-
 class AudioDistributedRoutingRoleCallback {
 public:
     virtual ~AudioDistributedRoutingRoleCallback() = default;
@@ -378,16 +291,6 @@ private:
     std::list<std::shared_ptr<AudioDistributedRoutingRoleCallback>> callbackList_;
     std::shared_ptr<AudioDistributedRoutingRoleCallback> cb_;
     std::mutex cbListMutex_;
-};
-
-class AudioDeviceRefiner {
-public:
-    virtual ~AudioDeviceRefiner() = default;
-
-    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) = 0;
-    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
 };
 
 class AudioDeviceAnahs {
@@ -1043,24 +946,6 @@ public:
     bool AbandonIndependentInterrupt(FocusType focusType);
 
     /**
-     * @brief Get audio latency from Xml
-     *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    int32_t GetAudioLatencyFromXml() const;
-
-    /**
-     * @brief Get audio sink from Xml
-     *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    uint32_t GetSinkLatencyFromXml() const;
-
-    /**
      * @brief Update stream state
      *
      * @param clientUid client Uid
@@ -1152,14 +1037,6 @@ public:
      */
     int32_t UnregisterFocusInfoChangeCallback(
         const std::shared_ptr<AudioFocusInfoChangeCallback> &callback = nullptr);
-
-    /**
-     * @brief Ask audio native process to request thread priority for client
-     *
-     * @param tid Target thread id
-     * @since 10
-     */
-    void RequestThreadPriority(uint32_t tid);
 
     int32_t SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback);
 
@@ -1297,6 +1174,18 @@ public:
     * in {@link audio_errors.h}.
     */
     int32_t SetVoiceRingtoneMute(bool isMute);
+
+    /**
+    * @brief Get standby state.
+    *
+    * @param sessionId Specifies which stream to be check.
+    * @param isStandby true means the stream is in standby status.
+    * @param enterStandbyTime Specifies when the stream enter standby status, in MONOTONIC time.
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
+    * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
+    */
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
 
     int32_t GenerateSessionId(uint32_t &sessionId);
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const std::shared_ptr<AudioInterruptCallback> &callback,

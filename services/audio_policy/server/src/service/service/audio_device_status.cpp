@@ -22,7 +22,7 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 
@@ -753,6 +753,8 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
             AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
+        std::string currentActivePort = REMOTE_CLASS;
+        audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
         audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
         audioRouteMap_.RemoveDeviceInRouterMap(moduleName);
         audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
@@ -980,18 +982,6 @@ void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 }
 #endif
 
-AudioStreamDeviceChangeReason AudioDeviceStatus::GetDeviceChangeReason(AudioDeviceDescriptor &desc,
-    const DeviceInfoUpdateCommand command)
-{
-    AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    if (command == CONNECTSTATE_UPDATE && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        desc.connectState_ != ConnectState::CONNECTED &&
-        audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
-        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-    }
-    return reason;
-}
-
 void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     AUDIO_WARNING_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
@@ -1025,7 +1015,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
     CheckForA2dpSuspend(desc);
 
-    AudioStreamDeviceChangeReasonExt reason = GetDeviceChangeReason(desc, command);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     OnPreferredStateUpdated(desc, command, reason);
     audioDeviceCommon_.FetchDevice(true, reason);
     audioDeviceCommon_.FetchDevice(false);

@@ -178,6 +178,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
@@ -1160,6 +1161,11 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
     return result;
 }
 
+int32_t AudioRendererSinkInner::GetAudioScene()
+{
+    return currentAudioScene_;
+}
+
 int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
@@ -1766,6 +1772,9 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
             return SUCCESS;
         }
         switchDeviceMute_ = true;
+        if (halName_ == VOIP_HAL_NAME) {
+            SetVolume(0.0f, 0.0f);
+        }
     } else {
         muteCount_--;
         if (muteCount_ > 0) {
@@ -1774,6 +1783,9 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
         }
         switchDeviceMute_ = false;
         muteCount_ = 0;
+        if (halName_ == VOIP_HAL_NAME) {
+            SetVolume(leftVolume_, rightVolume_);
+        }
     }
 
     return SUCCESS;

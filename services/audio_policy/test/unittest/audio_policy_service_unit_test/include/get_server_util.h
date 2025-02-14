@@ -13,31 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_SESSION_TIMER_TEST_H
-#define AUDIO_SESSION_TIMER_TEST_H
+#ifndef GET_SERVER_UTIL
+#define GET_SERVER_UTIL
 
-#include "gtest/gtest.h"
-#include "audio_session_timer.h"
+#include "audio_policy_service.h"
+#include "audio_policy_server.h"
+#include "audio_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class ConcreteAudioSessionTimerCallback : public AudioSessionTimerCallback {
-    void OnAudioSessionTimeOut(const int32_t callerPid) override {}
-};
-
-class AudioSessionTimerTest : public testing::Test {
+class GetServerUtil {
 public:
-    // SetUpTestCase: Called before all test cases
-    static void SetUpTestCase(void);
-    // TearDownTestCase: Called after all test case
-    static void TearDownTestCase(void);
-    // SetUp: Called before each test cases
-    void SetUp(void);
-    // TearDown: Called after each test cases
-    void TearDown(void);
+    static AudioPolicyServer* GetServerPtr();
 };
-
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_SESSION_TIMER_TEST_H
+#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -172,7 +172,7 @@ bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 
 bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel) const
 {
-    parcel.WriteInt32(MapInternalToExternalDeviceType(deviceType_));
+    parcel.WriteInt32(MapInternalToExternalDeviceType());
     parcel.WriteInt32(deviceRole_);
     parcel.WriteInt32(deviceId_);
     audioStreamInfo_.Marshalling(parcel);
@@ -356,15 +356,25 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.networkId_ == networkId_;
 }
 
-DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(DeviceType deviceType)
+DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType() const
 {
-    switch (deviceType) {
+    switch (deviceType_) {
+        case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+            if (!pairDeviceDescriptor_) {
+#ifdef DETECT_SOUNDBOX
+                return DEVICE_TYPE_USB_DEVICE;
+#else
+                if (deviceRole_ == INPUT_DEVICE) {
+                    return DEVICE_TYPE_USB_DEVICE;
+                }
+#endif
+            }
             return DEVICE_TYPE_USB_HEADSET;
         case DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             return DEVICE_TYPE_BLUETOOTH_A2DP;
         default:
-            return deviceType;
+            return deviceType_;
     }
 }
 } // AudioStandard

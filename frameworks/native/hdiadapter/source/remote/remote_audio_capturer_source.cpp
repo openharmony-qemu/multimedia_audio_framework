@@ -353,6 +353,7 @@ int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t reque
     CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "CaptureFrame: Audio capture is null.");
     if (!started_.load()) {
         AUDIO_DEBUG_LOG("AudioRendererSinkInner::RenderFrame invalid state not started!");
+        return ERR_ILLEGAL_STATE;
     }
     std::vector<int8_t> frameHal(requestBytes);
     int32_t ret = audioCapture_->CaptureFrame(frameHal, replyBytes);

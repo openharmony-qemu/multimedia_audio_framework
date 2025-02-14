@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,6 +19,7 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "napi_async_work.h"
+#include "audio_policy_interface.h"
 #include "audio_system_manager.h"
 
 namespace OHOS {
@@ -35,6 +36,7 @@ public:
     bool ContainSameJsCallback(napi_value args);
     void CreateVolumeTsfn(napi_env env);
     bool GetVolumeTsfnFlag();
+    napi_threadsafe_function GetTsfn();
     
 private:
     struct AudioVolumeKeyEventJsCallback {
@@ -44,6 +46,7 @@ private:
     };
 
     void OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb);
+    static void Cleanup(void *data);
     static void SafeJsCallbackVolumeEventWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void VolumeEventTsfnFinalize(napi_env env, void *data, void *hint);
 

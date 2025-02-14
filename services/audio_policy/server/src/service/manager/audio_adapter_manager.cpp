@@ -122,7 +122,7 @@ void AudioAdapterManager::InitBootAnimationVolume()
     AudioVolumeType typeForBootAnimation = VolumeUtils::IsPCVolumeEnable() ? STREAM_SYSTEM : STREAM_RING;
     int32_t bootAnimationVolume = volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation);
     AUDIO_DEBUG_LOG("Init: Type[%{public}d],volume[%{public}d]", typeForBootAnimation, bootAnimationVolume);
-    std::string defaultVolume = VolumeUtils::IsPCVolumeEnable()? std::to_string(bootAnimationVolume) : "7";
+    std::string defaultVolume = std::to_string(bootAnimationVolume);
     auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", defaultVolume.c_str(),
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
@@ -304,6 +304,14 @@ void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
     volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
 }
 
+void AudioAdapterManager::UpdateSafeVolumeByS4()
+{
+    AUDIO_INFO_LOG("Update Safevolume by S4 reboot,reset wired and bt once");
+    isWiredBoot_ = true;
+    isBtBoot_ = true;
+    UpdateSafeVolume();
+}
+
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
@@ -332,15 +340,64 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
     // Save the volume to settingsdata.
     if (handler_ != nullptr) {
-        if (Util::IsDualToneStreamType(streamType)) {
+        if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
             AUDIO_INFO_LOG("DualToneStreamType. Save volume for speaker.");
             handler_->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel);
         } else {
             handler_->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
+            SetDeviceSafeVolume(streamType, volumeLevel);
         }
     }
 
     return SetVolumeDb(streamType);
+}
+
+void AudioAdapterManager::SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel)
+{
+    if (handler_ == nullptr) {
+        AUDIO_ERR_LOG("handler is nullptr");
+        return;
+    }
+
+    if (safeVolumeCall_ == false) {
+        AUDIO_ERR_LOG("safeVolumeCall is false, not deal");
+        return;
+    }
+
+    int64_t activeSafeTimeBt = GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
+    int64_t activeSafeTime = GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
+    SafeStatus safeStatusBt = GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
+    SafeStatus safeStatus = GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
+    int32_t btVolume = volumeDataMaintainer_.GetDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
+    int32_t wiredVolume = volumeDataMaintainer_.GetDeviceVolume(DEVICE_TYPE_WIRED_HEADSET, STREAM_MUSIC);
+    const int32_t ONE_MINUTE = 60;
+    bool isTimeout = activeSafeTimeBt + activeSafeTime >= ONE_MINUTE * GetSafeVolumeTimeout() ? true : false;
+    switch (currentActiveDevice_) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            if (btVolume > safeVolume_ && isTimeout && safeStatusBt == SAFE_ACTIVE) {
+                AUDIO_INFO_LOG("wired device timeout, set bt device to safe volume");
+                handler_->SendSaveVolume(DEVICE_TYPE_BLUETOOTH_A2DP, streamType, volumeLevel);
+            }
+            break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            if (wiredVolume > safeVolume_ && isTimeout && safeStatus == SAFE_ACTIVE) {
+                AUDIO_INFO_LOG("bt device timeout, set wired device to safe volume");
+                handler_->SendSaveVolume(DEVICE_TYPE_WIRED_HEADSET, streamType, volumeLevel);
+            }
+            break;
+        default:
+            AUDIO_ERR_LOG("current device not set safe volume");
+            break;
+    }
+}
+
+void AudioAdapterManager::SetRestoreVolumeFlag(const bool safeVolumeCall)
+{
+    safeVolumeCall_ = safeVolumeCall;
 }
 
 void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel)
@@ -383,7 +440,8 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
-        if (Util::IsDualToneStreamType(streamType)) {
+        if (Util::IsDualToneStreamType(streamType) &&
+            currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST && !VolumeUtils::IsPCVolumeEnable()) {
             volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
         } else {
             volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
@@ -491,7 +549,7 @@ int32_t AudioAdapterManager::SetDoubleRingVolumeDb(const AudioStreamType &stream
 {
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
-        if (Util::IsDualToneStreamType(streamType)) {
+        if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
             volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
         } else {
             volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
@@ -734,9 +792,19 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
     return SUCCESS;
 }
 
+void AudioAdapterManager::MaximizeVoiceAssistantVolume(InternalDeviceType deviceType)
+{
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
+        volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
+        SetVolumeDb(STREAM_VOICE_ASSISTANT);
+        AUDIO_INFO_LOG("MaximizeVoiceAssistantVolume ok");
+    }
+}
+
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
+    MaximizeVoiceAssistantVolume(deviceType);
     // The same device does not set the volume
     bool isSameVolumeGroup = GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType);
     if (currentActiveDevice_ == deviceType) {
@@ -1146,6 +1214,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
             return HEADSET_VOLUME_TYPE;
         default:
             return SPEAKER_VOLUME_TYPE;
@@ -1393,7 +1462,7 @@ bool AudioAdapterManager::LoadVolumeMap(void)
 
     bool result = false;
     for (auto &streamType: VOLUME_TYPE_LIST) {
-        if (Util::IsDualToneStreamType(streamType)) {
+        if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
             result = volumeDataMaintainer_.GetVolume(DEVICE_TYPE_SPEAKER, streamType);
         } else {
             result = volumeDataMaintainer_.GetVolume(currentActiveDevice_, streamType);
@@ -2068,6 +2137,13 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
         AppendFormat(dumpString, "   volumeLevel: %d\n", volumeDataMaintainer_.GetStreamVolume(streamType));
         AppendFormat(dumpString, "  - AudioStreamType: %d", streamType);
         AppendFormat(dumpString, "   streamMuteStatus: %d\n", volumeDataMaintainer_.GetStreamMute(streamType));
+    }
+    if (isSafeBoot_) {
+        safeStatusBt_ = GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
+        safeStatus_ = GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
+        safeActiveBtTime_ = GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
+        safeActiveTime_ = GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
+        isSafeBoot_ = false;
     }
     std::string statusBt = (safeStatusBt_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
     std::string status = (safeStatus_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";

@@ -62,10 +62,6 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid, SourceType sourceType =
-        SOURCE_TYPE_MIC) override;
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
     State GetState() override;
@@ -196,6 +192,7 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -385,6 +382,10 @@ private:
     int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
+
+    uint64_t lastLatency_ = 0;
+    uint64_t lastLatencyPosition_ = 0;
+    uint64_t lastReadIdx_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,

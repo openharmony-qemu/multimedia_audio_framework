@@ -25,6 +25,7 @@
 #include "res_config.h"
 #include "notification_content.h"
 #include "notification_normal_content.h"
+#include "string_wrapper.h"
 
 namespace OHOS {
 namespace AudioStandard {

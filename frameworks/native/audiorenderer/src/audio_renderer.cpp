@@ -257,6 +257,9 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
+    audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
+        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
     audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
@@ -752,7 +755,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     }
 
     {
-        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
+        std::lock_guard<std::mutex> lockSilentMode(silentModeAndMixWithOthersMutex_);
         if (audioStream_->GetSilentModeAndMixWithOthers()) {
             audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
@@ -1810,6 +1813,9 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
         case AUDIO_FLAG_DIRECT:
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
             break;
+        default:
+            AUDIO_INFO_LOG("unknown stream flag");
+            break;
     }
     if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
@@ -2149,6 +2155,10 @@ void AudioRendererPrivate::ConcedeStream()
     currentStream->SetRendererInfo(rendererInfo_);
     switch (pipeType) {
         case PIPE_TYPE_LOWLATENCY_OUT:
+            // todo: fix wrong pipe type in server
+            CHECK_AND_RETURN_LOG(currentStream->GetStreamClass() != IAudioStream::PA_STREAM,
+                "Session %{public}u is pa stream, no need for concede", sessionId);
+            [[fallthrough]];
         case PIPE_TYPE_DIRECT_MUSIC:
             SwitchStream(sessionId, IAudioStream::PA_STREAM, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
             break;
@@ -2185,6 +2195,14 @@ int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
         AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end());
     CHECK_AND_RETURN_RET_LOG(isSupportedStreamUsage, ERR_NOT_SUPPORTED, "stream usage not supported");
     return currentStream->SetDefaultOutputDevice(deviceType);
+}
+
+// diffrence from GetAudioPosition only when set speed
+int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->GetAudioTimestampInfo(timestamp, base);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

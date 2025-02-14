@@ -47,7 +47,7 @@
 #include <pulsecore/memblock.h>
 
 #include <pthread.h>
-#include "audio_log.h"
+#include "audio_pulseaudio_log.h"
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
 #include "audio_hdiadapter_info.h"
@@ -196,11 +196,10 @@ static void ConvertToSplitArr(const char *str)
     for (int i = 0; i < MAX_PARTS; ++i) {
         g_splitArr[i] = NULL;
     }
-
     char *token;
     char *copy = strdup(str);
+    CHECK_AND_RETURN_LOG(copy != NULL, "copy is null");
     int count = 0;
-
     token = strtok(copy, ":");
     while (token != NULL && count < MAX_PARTS) {
         g_splitArr[count] = (char *)malloc(strlen(token) + 1);
@@ -431,9 +430,10 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
 {
     AUTO_CTRACE("module_split_stream_sink::ProcessAudioVolume: len:%zu", length);
     struct userdata *u;
-    pa_assert_se(sinkIn);
-    pa_assert_se(pchunk);
-    pa_assert_se(si);
+    if (sinkIn == NULL || pchunk == NULL || si == NULL) {
+        AUDIO_ERR_LOG("Null pointer");
+        return;
+    }
     pa_assert_se(u = si->userdata);
     const char *streamType = SafeProplistGets(sinkIn->proplist, "stream.type", "NULL");
     const char *sessionIDStr = SafeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
@@ -972,17 +972,6 @@ static ssize_t SplitRenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memc
     return count;
 }
 
-static int InitFailed(pa_module *m, pa_modargs *ma)
-{
-    AUDIO_ERR_LOG("Split Stream Sink Init Failed");
-    if (ma)
-        pa_modargs_free(ma);
-
-    pa__done(m);
-
-    return PA_ERR;
-}
-
 static int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
 {
     pa_sample_spec ss;
@@ -1058,11 +1047,65 @@ static int32_t InitRemoteSink(struct userdata *u, const char *filePath)
     ret = u->sinkAdapter->RendererSinkInit(u->sinkAdapter, &sample_attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("audiorenderer Init failed!");
-        u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter);
         return -1;
     }
 
     return 0;
+}
+
+static void UserdataFree(struct userdata *u)
+{
+    if (u->sink) {
+        pa_sink_unlink(u->sink);
+    }
+
+    if (u->thread) {
+        pa_asyncmsgq_send(u->thread_mq.inq, NULL, PA_MESSAGE_SHUTDOWN, NULL, 0, NULL);
+        pa_thread_free(u->thread);
+    }
+
+    if (u->sinkAdapter) {
+        u->sinkAdapter->RendererSinkStop(u->sinkAdapter);
+        u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter);
+        UnLoadSinkAdapter(u->sinkAdapter);
+    }
+
+    pa_thread_mq_done(&u->thread_mq);
+
+    if (u->sink) {
+        pa_sink_unref(u->sink);
+    }
+
+    if (u->rtpoll) {
+        pa_rtpoll_free(u->rtpoll);
+    }
+
+    if (u->formats) {
+        pa_idxset_free(u->formats, (pa_free_cb_t)pa_format_info_free);
+    }
+
+    pa_xfree(u);
+
+    for (int32_t i = 0; i < MAX_PARTS; ++i) {
+        if (g_splitArr[i] == NULL) {
+            continue;
+        }
+        free(g_splitArr[i]);
+        g_splitArr[i] = NULL;
+    }
+}
+
+static int InitFailed(pa_module *m, pa_modargs *ma)
+{
+    AUDIO_ERR_LOG("Split Stream Sink Init Failed");
+    UserdataFree(m->userdata);
+    m->userdata = NULL;
+    if (ma)
+        pa_modargs_free(ma);
+
+    pa__done(m);
+
+    return PA_ERR;
 }
 
 static int32_t PaHdiSinkNewInit(pa_module *m, pa_modargs *ma, struct userdata *u)
@@ -1075,7 +1118,7 @@ static int32_t PaHdiSinkNewInit(pa_module *m, pa_modargs *ma, struct userdata *u
     u->buffer_size = DEFAULT_BUFFER_SIZE;
 
     mg = pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size);
-    CHECK_AND_RETURN_RET_LOG(mg >= 0, InitFailed(m, ma),
+    CHECK_AND_RETURN_RET_LOG(mg >= 0, PA_ERR,
         "Failed to parse buffer_size arg in capturer sink");
 
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
@@ -1150,7 +1193,7 @@ int pa__init(pa_module *m)
 
     if (PaHdiSinkNewInit(m, ma, u) < 0) {
         AUDIO_ERR_LOG("PaHdiSinkNewInit failed");
-        return -1;
+        return InitFailed(m, ma);
     }
 
     u->dq = pa_asyncmsgq_new(0);
@@ -1191,44 +1234,6 @@ void pa__done(pa_module*m)
     if (!(u = m->userdata)) {
         return;
     }
-
-    if (u->sink) {
-        pa_sink_unlink(u->sink);
-    }
-
-    if (u->thread) {
-        pa_asyncmsgq_send(u->thread_mq.inq, NULL, PA_MESSAGE_SHUTDOWN, NULL, 0, NULL);
-        pa_thread_free(u->thread);
-    }
-
-    if (u->sinkAdapter) {
-        u->sinkAdapter->RendererSinkStop(u->sinkAdapter);
-        u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter);
-        UnLoadSinkAdapter(u->sinkAdapter);
-    }
-
-    pa_thread_mq_done(&u->thread_mq);
-
-    if (u->sink) {
-        pa_sink_unref(u->sink);
-    }
-
-    if (u->rtpoll) {
-        pa_rtpoll_free(u->rtpoll);
-    }
-
-    if (u->formats) {
-        pa_idxset_free(u->formats, (pa_free_cb_t)pa_format_info_free);
-    }
-
-    pa_xfree(u);
+    UserdataFree(u);
     m->userdata = NULL;
-
-    for (int32_t i = 0; i < MAX_PARTS; ++i) {
-        if (g_splitArr[i] == NULL) {
-            continue;
-        }
-        free(g_splitArr[i]);
-        g_splitArr[i] = NULL;
-    }
 }

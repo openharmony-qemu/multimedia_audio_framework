@@ -19,7 +19,7 @@
 #include "resource_manager_adapter.h"
 
 #include "locale_config.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_error.h"
 
 namespace OHOS {

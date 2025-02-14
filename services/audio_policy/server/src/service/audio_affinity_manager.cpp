@@ -17,7 +17,7 @@
 #include "parameter.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_affinity_parser.h"
 
 using namespace std;
@@ -36,10 +36,9 @@ static int64_t GetCurrentTimeMS()
 
 void AudioAffinityManager::ParseAffinityXml()
 {
-    unique_ptr<audioAffinityParser> affinityParser = make_unique<audioAffinityParser>(this);
+    unique_ptr<AudioAffinityParser> affinityParser = make_unique<AudioAffinityParser>(this);
     if (affinityParser->LoadConfiguration()) {
         AUDIO_INFO_LOG("Audio Affinity manager load configuration successfully.");
-        affinityParser->Parse();
     }
     OnXmlParsingCompleted(affinityParser->GetAffinityDeviceInfo());
 }

@@ -22,6 +22,7 @@
 #include <sstream>
 #include <ostream>
 #include <climits>
+#include <thread>
 #include <string>
 #include "audio_utils_c.h"
 #include "audio_errors.h"
@@ -471,6 +472,188 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
+std::mutex g_switchMapMutex;
+static std::map<SwitchStreamInfo, SwitchState> g_switchStreamRecordMap = {};
+
+bool SwitchStreamUtil::IsSwitchStreamSwitching(SwitchStreamInfo &info, SwitchState targetState)
+{
+    std::lock_guard<std::mutex> lock(g_switchMapMutex);
+    auto iter = g_switchStreamRecordMap.find(info);
+    if (iter != g_switchStreamRecordMap.end() && targetState == SWITCH_STATE_CREATED &&
+        iter->second == SWITCH_STATE_WAITING && (info.nextState == CAPTURER_PREPARED)) {
+        AUDIO_INFO_LOG("stream:%{public}u is recreating , need not check using mic in background !",
+            info.sessionId);
+        return true;
+    }
+    if (iter != g_switchStreamRecordMap.end() && targetState == SWITCH_STATE_STARTED &&
+        iter->second == SWITCH_STATE_CREATED && (info.nextState == CAPTURER_RUNNING)) {
+        AUDIO_INFO_LOG("stream:%{public}u is restarting , need not check using mic in background !",
+            info.sessionId);
+        return true;
+    }
+    return false;
+}
+
+bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    if (RECORD_ALLOW_BACKGROUND_LIST.count(info.callerUid)) {
+        AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", info.callerUid);
+        return true;
+    }
+    auto ret = g_switchStreamRecordMap.insert(std::make_pair(info, targetState));
+    CHECK_AND_RETURN_RET_LOG(ret.second, false, "Update Record switchState:%{public}d for stream:%{public}u failed",
+        targetState, info.sessionId);
+    AUDIO_INFO_LOG("SwitchStream will start!Update Record switchState:%{public}d for stream:%{public}u"
+        "uid:%{public}d CapturerState:%{public}d success", targetState, info.sessionId, info.appUid, info.nextState);
+    std::thread(TimeoutThreadHandleTimeoutRecord, info, targetState).detach();
+    return true;
+}
+
+void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState)
+{
+    const std::chrono::seconds TIMEOUT_DURATION(2);
+    AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.");
+    std::this_thread::sleep_for(TIMEOUT_DURATION);
+
+    {
+        std::lock_guard<std::mutex> lock(g_switchMapMutex);
+        auto it = g_switchStreamRecordMap.find(info);
+        if (it != g_switchStreamRecordMap.end()) {
+            it->second = SWITCH_STATE_TIMEOUT;
+            g_switchStreamRecordMap.erase(it);
+            AUDIO_INFO_LOG("SwitchStream:%{public}u uid:%{public}d CapturerState:%{public}d was timeout! "
+                "Update Record switchState:%{public}d success",
+                info.sessionId, info.appUid, info.nextState, SWITCH_STATE_TIMEOUT);
+        }
+    }
+}
+
+//Remove switchStreamInfo from  switchStreamRecordMap must be called with g_switchMapMutex held
+bool SwitchStreamUtil::RemoveSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    if (g_switchStreamRecordMap.count(info) != 0) {
+        g_switchStreamRecordMap.erase(info);
+
+        CHECK_AND_RETURN_RET((g_switchStreamRecordMap.count(info) == 0), false,
+            "Remove exist record failed for stream:%{public}u", info.sessionId);
+        AUDIO_WARNING_LOG("Exist Record has been Removed for stream:%{public}u", info.sessionId);
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::RemoveAllRecordBySessionId(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(g_switchMapMutex);
+
+    for (auto it = g_switchStreamRecordMap.begin(); it != g_switchStreamRecordMap.end();) {
+        if (it->first.sessionId == sessionId) {
+            it = g_switchStreamRecordMap.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    std::lock_guard<std::mutex> lock(g_switchMapMutex);
+    auto iter = g_switchStreamRecordMap.find(info);
+    bool isInfoInRecord = (iter != g_switchStreamRecordMap.end());
+    if (!isInfoInRecord) {
+        if (targetState == SWITCH_STATE_WAITING) {
+            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
+                false, "Insert SwitchStream into Record fail!");
+            AUDIO_INFO_LOG("Insert SwitchStream into Record success!");
+        }
+        return true;
+    }
+        
+    switch (targetState) {
+        case SWITCH_STATE_WAITING:
+            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+                false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
+                false, "Insert SwitchStream into Record fail!");
+            break;
+        case SWITCH_STATE_CREATED:
+            CHECK_AND_RETURN_RET_LOG(HandleCreatedSwitchInfoInRecord(info, targetState), false,
+                "Handle switch record to SWITCH_STATE_CREATED failed!");
+            break;
+        case SWITCH_STATE_STARTED:
+            CHECK_AND_RETURN_RET_LOG(HandleStartedSwitchInfoInRecord(info, targetState), false,
+                "Handle switch record to SWITCH_STATE_STARTED failed!");
+            break;
+        default:
+            CHECK_AND_RETURN_RET_LOG(HandleSwitchInfoInRecord(info, targetState), false,
+                "Handle switch info in record failed!");
+            break;
+    }
+    if (iter->first.nextState == info.nextState) {
+        g_switchStreamRecordMap[info] = SWITCH_STATE_FINISHED;
+        g_switchStreamRecordMap.erase(info);
+        AUDIO_INFO_LOG("SwitchStream will finish!Remove Record for stream:%{public}u uid:%{public}d ",
+            info.sessionId, info.appUid);
+    }
+    if (iter->second == SWITCH_STATE_TIMEOUT || iter->second == SWITCH_STATE_FINISHED) {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState), false,
+            "Remove TIMEOUT or FINISHED Record for Stream:%{public}u Failed!", iter->first.sessionId);
+        return false;
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::HandleCreatedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    auto iter = g_switchStreamRecordMap.find(info);
+    if (iter->second == SWITCH_STATE_WAITING && (info.nextState == CAPTURER_PREPARED)) {
+        g_switchStreamRecordMap[info] = targetState;
+        AUDIO_INFO_LOG("SwitchStream will reCreated!Update Record switchState:%{public}d for"
+            "stream:%{public}u uid:%{public}d streamState:%{public}d success",
+            targetState, info.sessionId, info.appUid, info.nextState);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+            false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::HandleSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    auto iter = g_switchStreamRecordMap.find(info);
+    if (((iter->second == SWITCH_STATE_CREATED) || (iter->second == SWITCH_STATE_STARTED)) &&
+        (info.nextState == CAPTURER_STOPPED || info.nextState == CAPTURER_PAUSED ||
+        info.nextState == CAPTURER_RELEASED || info.nextState == CAPTURER_INVALID)) {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+            false, "Remove Finished Record for Stream:%{public}u Failed!", iter->first.sessionId);
+    } else if ((iter->second == SWITCH_STATE_WAITING) && (info.nextState == CAPTURER_STOPPED ||
+        info.nextState == CAPTURER_PAUSED || info.nextState == CAPTURER_RELEASED ||
+        info.nextState == CAPTURER_INVALID)) {
+        AUDIO_INFO_LOG("SwitchStream streamState has been changed to [%{public}d] before recreate!",
+            info.nextState);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+            false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+        AUDIO_INFO_LOG("Error Record has been Removed for stream:%{public}u", iter->first.sessionId);
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    auto iter = g_switchStreamRecordMap.find(info);
+    if ((iter->second == SWITCH_STATE_CREATED) && (info.nextState == CAPTURER_RUNNING)) {
+        g_switchStreamRecordMap[info] = targetState;
+        AUDIO_INFO_LOG("SwitchStream will reStarted!Update Record switchState:%{public}d for"
+            "stream:%{public}u uid:%{public}d streamState:%{public}d success",
+            targetState, info.sessionId, info.appUid, info.nextState);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+            false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+    }
+    return true;
+}
+
 std::mutex g_recordMapMutex;
 std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
 
@@ -838,7 +1021,7 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
             curMaxAmplitude = value;
         }
     }
-    return float(curMaxAmplitude) / LONG_MAX;
+    return float(curMaxAmplitude) / static_cast<double>(LONG_MAX);
 }
 
 template <typename T>
@@ -851,6 +1034,7 @@ bool StringConverter(const std::string &str, T &result)
 template bool StringConverter(const std::string &str, uint64_t &result);
 template bool StringConverter(const std::string &str, uint32_t &result);
 template bool StringConverter(const std::string &str, int32_t &result);
+template bool StringConverter(const std::string &str, uint16_t &result);
 template bool StringConverter(const std::string &str, uint8_t &result);
 template bool StringConverter(const std::string &str, int8_t &result);
 

@@ -126,30 +126,6 @@ AudioStreamType IAudioStream::GetStreamType(ContentType contentType, StreamUsage
     return streamType;
 }
 
-const std::string IAudioStream::GetEffectSceneName(const StreamUsage &streamUsage)
-{
-    SupportedEffectConfig supportedEffectConfig;
-    AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
-    std::string streamUsageString = "";
-    if (STREAM_USAGE_MAP.find(streamUsage) != STREAM_USAGE_MAP.end()) {
-        streamUsageString = STREAM_USAGE_MAP.find(streamUsage)->second;
-    }
-    if (supportedEffectConfig.postProcessNew.stream.empty()) {
-        AUDIO_WARNING_LOG("empty scene type set!");
-        return AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second;
-    }
-    if (streamUsageString == "") {
-        AUDIO_WARNING_LOG("Find streamUsage string failed, not in the parser's string-enum map.");
-        return AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second;
-    }
-    for (const SceneMappingItem &item: supportedEffectConfig.postProcessSceneMap) {
-        if (item.name == streamUsageString) {
-            return item.sceneType;
-        }
-    }
-    return AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second;
-}
-
 int32_t IAudioStream::GetByteSizePerFrame(const AudioStreamParams &params, size_t &result)
 {
     result = 0;

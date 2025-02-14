@@ -138,9 +138,6 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
 
-    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
-        uint32_t sessionId) override;
-
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
@@ -221,17 +218,7 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC) override;
-
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) override;
-
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
-
-    int32_t GetAudioLatencyFromXml() override;
-
-    uint32_t GetSinkLatencyFromXml() override;
 
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
 
@@ -501,6 +488,8 @@ public:
 
     // for hibernate callback
     void CheckHibernateState(bool hibernate);
+    // for S4 reboot update safevolume
+    void UpdateSafeVolumeByS4();
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -617,6 +606,7 @@ private:
     // for updating default device selection state when game audio stream is muted
     void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
+    void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
 
     AudioPolicyService& audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
@@ -626,6 +616,7 @@ private:
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
     std::atomic<bool> isInitMuteState_ = false;
+    std::atomic<bool> isInitSettingsData_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif

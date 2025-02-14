@@ -469,16 +469,6 @@ void PaAdapterManager::ReleasePaStream(pa_stream *paStream)
     AUDIO_INFO_LOG("Release paStream because of errs");
 }
 
-bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
-{
-    if (streamUsage == STREAM_USAGE_SYSTEM || streamUsage == STREAM_USAGE_DTMF ||
-        streamUsage == STREAM_USAGE_ENFORCED_TONE || streamUsage == STREAM_USAGE_ULTRASONIC ||
-        streamUsage == STREAM_USAGE_NAVIGATION || streamUsage == STREAM_USAGE_NOTIFICATION) {
-        return true;
-    }
-    return false;
-}
-
 bool PaAdapterManager::CheckHighResolution(const AudioProcessConfig &processConfig)
 {
     DeviceType deviceType = processConfig.deviceType;
@@ -511,6 +501,28 @@ void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConf
         AUDIO_INFO_LOG("current stream marked as non-high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "0");
     }
+}
+
+void PaAdapterManager::SetPlaybackProplist(pa_proplist *propList, AudioProcessConfig &processConfig)
+{
+        pa_proplist_sets(propList, "scene.mode",
+            processConfig.rendererInfo.effectMode == EFFECT_NONE ? "EFFECT_NONE" : "EFFECT_DEFAULT");
+        // mark dup stream for dismissing volume handle
+        std::string streamMode = managerType_ == DUP_PLAYBACK ? DUP_STREAM
+            : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
+        pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
+        pa_proplist_sets(propList, "stream.flush", "false");
+        pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
+        pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
+        pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
+        pa_proplist_sets(propList, "spatialization.enabled",
+            std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
+        pa_proplist_sets(propList, "headtracking.enabled",
+            std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
+        pa_proplist_sets(propList, "expectedPlaybackDurationBytes",
+            std::to_string(processConfig.rendererInfo.expectedPlaybackDurationBytes).c_str());
+        AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig.streamType);
+        pa_proplist_sets(propList, "systemVolume.type", std::to_string(systemVolumeType).c_str());
 }
 
 void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConfig &processConfig)
@@ -550,22 +562,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
     if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
-        pa_proplist_sets(propList, "scene.mode",
-            IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
-        // mark dup stream for dismissing volume handle
-        std::string streamMode = managerType_ == DUP_PLAYBACK ? DUP_STREAM
-            : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
-        pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
-        pa_proplist_sets(propList, "stream.flush", "false");
-        pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
-        pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
-        pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
-        pa_proplist_sets(propList, "spatialization.enabled",
-            std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
-        pa_proplist_sets(propList, "headtracking.enabled",
-            std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
-        AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig.streamType);
-        pa_proplist_sets(propList, "systemVolume.type", std::to_string(systemVolumeType).c_str());
+        SetPlaybackProplist(propList, processConfig);
         SetHighResolution(propList, processConfig, sessionId);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         SetRecordProplist(propList, processConfig);

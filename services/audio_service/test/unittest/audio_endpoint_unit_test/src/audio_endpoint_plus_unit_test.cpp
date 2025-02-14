@@ -147,6 +147,16 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_004, TestSize.Level1)
     BasicBufferInfo basicBufferInfo;
     processBuffer->basicBufferInfo_ = &basicBufferInfo;
     processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    uint64_t readFrame = 0;
+    processBuffer->SetCurReadFrame(readFrame);
+    int64_t lastTime = 0;
+    processBuffer->SetLastWrittenTime(lastTime);
+    uint64_t pos = 0;
+    processBuffer->basicBufferInfo_->basePosInFrame.store(pos);
+    AudioProcessConfig config = {};
+    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    sptr<AudioProcessInServer> audioProcess = AudioProcessInServer::Create(config, AudioService::GetInstance());
+    audioEndpointInner->processList_.push_back(audioProcess);
     audioEndpointInner->processBufferList_.push_back(processBuffer);
 
     auto result = audioEndpointInner->CheckAllBufferReady(checkTime, curWritePos);

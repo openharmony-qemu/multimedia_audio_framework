@@ -365,7 +365,6 @@ void AudioDeviceMoreFuzzTest()
     bool active = GetData<bool>();
     GetServerPtr()->SetDeviceActive(deviceType, active);
     GetServerPtr()->IsDeviceActive(deviceType);
-    GetServerPtr()->NotifyCapturerAdded(capturerInfo, audioStreamInfo, sessionId);
     GetServerPtr()->GetDevices(flag);
     GetServerPtr()->GetDevicesInner(flag);
     AudioRingerMode ringMode = GetData<AudioRingerMode>();

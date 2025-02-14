@@ -87,6 +87,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
@@ -887,6 +888,11 @@ void MultiChannelRendererSinkInner::InitAudioRouteNode(AudioRouteNode &source, A
     sink.type = AUDIO_PORT_DEVICE_TYPE;
     sink.ext.device.moduleId = 0;
     sink.ext.device.desc = (char *)"";
+}
+
+int32_t MultiChannelRendererSinkInner::GetAudioScene()
+{
+    return currentAudioScene_;
 }
 
 int32_t MultiChannelRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)

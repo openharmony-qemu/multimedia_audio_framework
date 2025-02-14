@@ -55,11 +55,13 @@ public:
     void SetMoveFinish(bool flag);
     void MuteDefaultSinkPort(std::string networkID, std::string sinkName);
     void SetDeviceInfos(DeviceType oldOutputDevice, DeviceType newOutputDevice);
+    void UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName);
+    void DoUnmutePort(int32_t muteDuration, const std::string &portName);
+
 private:
     AudioIOHandleMap() {}
     ~AudioIOHandleMap() {}
 
-    void UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType);
 private:
     std::mutex ioHandlesMutex_;
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};

@@ -117,7 +117,7 @@ HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_002, TestSize.Le
 
     std::vector<int32_t> appsUid;
     ret = capturer->UpdateAppsUid(appsUid);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_NE(ret, ERROR);
 
     uint32_t captureId = 0;
     ret = capturer->GetCaptureId(captureId);

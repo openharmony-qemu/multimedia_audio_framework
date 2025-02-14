@@ -475,5 +475,21 @@ HWTEST(RemoteFastAudioRenderSinkUnitTest, RemoteFastAudioRenderSinkUnitTest_0014
     EXPECT_NE(instance, nullptr);
     audioRendererInner->rendererInited_ = true;
 }
+
+/**
+ * @tc.name  : Test Template RemoteFastAudioRendererSink
+ * @tc.number: RemoteFastAudioRendererSink_0015
+ * @tc.desc  : Test Template RemoteFastAudioRendererSink GetInstance Interface.
+ */
+HWTEST(RemoteFastAudioRenderSinkUnitTest, RemoteFastAudioRenderSinkUnitTest_0015, TestSize.Level1)
+{
+    std::shared_ptr<RemoteFastAudioRendererSinkInner> audioRendererInner =
+        std::make_shared<RemoteFastAudioRendererSinkInner>(DEVICE_DEFAULT_ID);
+    EXPECT_NE(audioRendererInner, nullptr);
+    IMmapAudioRendererSink* instance = audioRendererInner->GetInstance(DEVICE_DEFAULT_ID);
+    EXPECT_NE(instance, nullptr);
+    auto ret = instance->GetAudioScene();
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

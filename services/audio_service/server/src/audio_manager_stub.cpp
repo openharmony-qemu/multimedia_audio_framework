@@ -60,7 +60,6 @@ const char *g_audioServerCodeStrs[] = {
     "SET_AUDIO_BALANCE_VALUE",
     "CREATE_AUDIOPROCESS",
     "LOAD_AUDIO_EFFECT_LIBRARIES",
-    "REQUEST_THREAD_PRIORITY",
     "CREATE_AUDIO_EFFECT_CHAIN_MANAGER",
     "SET_OUTPUT_DEVICE_SINK",
     "CREATE_PLAYBACK_CAPTURER_MANAGER",
@@ -108,7 +107,9 @@ const char *g_audioServerCodeStrs[] = {
     "RESTORE_SESSION",
     "CREATE_IPC_OFFLINE_STREAM",
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
+    "GET_STANDBY_STATUS",
     "GENERATE_SESSION_ID",
+    "NOTIFY_ACCOUNTS_CHANGED",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -478,14 +479,6 @@ int AudioManagerStub::HandleLoadAudioEffectLibraries(MessageParcel &data, Messag
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleRequestThreadPriority(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t tid = data.ReadUint32();
-    string bundleName = data.ReadString();
-    RequestThreadPriority(tid, bundleName);
-    return AUDIO_OK;
-}
-
 static bool UnmarshallEffectChainMgrParam(EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
 {
     effectChainMgrParam.maxExtraNum = static_cast<uint32_t>(data.ReadInt32());
@@ -795,6 +788,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleLoadHdiEffectModel(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED):
             return HandleUpdateEffectBtOffloadSupported(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED):
+            return HandleNotifyAccountsChanged(data, reply);
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }
@@ -818,6 +813,8 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleCreateIpcOfflineStream(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS):
             return HandleGetOfflineAudioEffectChains(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS):
+            return HandleGetStandbyStatus(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID):
             return HandleGenerateSessionId(data, reply);
         default:
@@ -887,8 +884,6 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleCreateAudioProcess(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_AUDIO_EFFECT_LIBRARIES):
             return HandleLoadAudioEffectLibraries(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY):
-            return HandleRequestThreadPriority(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIO_EFFECT_CHAIN_MANAGER):
             return HandleCreateAudioEffectChainManager(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK):
@@ -1092,6 +1087,19 @@ int AudioManagerStub::HandleSetNonInterruptMute(MessageParcel &data, MessageParc
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    int32_t result = GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+
+    reply.WriteInt32(result);
+    reply.WriteBool(isStandby);
+    reply.WriteInt64(enterStandbyTime);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t sessionId = data.ReadUint32();
@@ -1100,5 +1108,12 @@ int AudioManagerStub::HandleGenerateSessionId(MessageParcel &data, MessageParcel
     reply.WriteUint32(sessionId);
     return AUDIO_OK;
 }
+
+int AudioManagerStub::HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply)
+{
+    NotifyAccountsChanged();
+    return AUDIO_OK;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

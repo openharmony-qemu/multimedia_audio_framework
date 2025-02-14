@@ -89,7 +89,6 @@ private:
     int32_t InitPaContext();
     int32_t HandleMainLoopStart();
     pa_stream *InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId, bool isRecording);
-    bool IsEffectNone(StreamUsage streamUsage);
     int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
         const std::string &streamName, uint32_t sessionId);
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream);
@@ -119,6 +118,7 @@ private:
     void SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig, uint32_t sessionId);
     bool CheckHighResolution(const AudioProcessConfig &processConfig);
     void SetRecordProplist(pa_proplist *propList, AudioProcessConfig &processConfig);
+    void SetPlaybackProplist(pa_proplist *propList, AudioProcessConfig &processConfig);
 
     std::mutex paElementsMutex_;
     pa_threaded_mainloop *mainLoop_;

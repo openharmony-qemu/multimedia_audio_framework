@@ -188,7 +188,7 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_008, TestSize.Level1)
     unit->paStream_ = stream;
     unit->offloadEnable_ = true;
     float volume = 0.0f;
-    EXPECT_EQ(unit->OffloadSetVolume(volume), -62980105);
+    EXPECT_EQ(unit->OffloadSetVolume(volume), ERR_INVALID_HANDLE);
 }
 
 /**

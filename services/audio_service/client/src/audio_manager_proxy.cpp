@@ -20,6 +20,7 @@
 
 #include <cinttypes>
 
+#include <audio_errors.h>
 #include "audio_system_manager.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
@@ -31,9 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t MAX_OFFLINE_EFFECT_CHAIN_NUM = 10;
-#ifndef HAS_FEATURE_INNERCAPTURER
-constexpr int32_t ERROR = -1;
-#endif
+
 }
 AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioService>(impl)
@@ -697,22 +696,6 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
 
     return true;
 }
-
-void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
-    (void)data.WriteUint32(tid);
-    (void)data.WriteString(bundleName);
-    int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "RequestThreadPriority failed, error: %{public}d", error);
-}
-
 static void MarshallEffectChainMgrParam(const EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
 {
     data.WriteInt32(effectChainMgrParam.maxExtraNum);
@@ -1406,6 +1389,29 @@ void AudioManagerProxy::CheckHibernateState(bool onHibernate)
     return;
 }
 
+int32_t AudioManagerProxy::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t result = ERROR;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, result, "WriteInterfaceToken failed");
+
+    data.WriteUint32(sessionId);
+
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS), data,
+        reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, result, "get transaction id failed, error: %d", error);
+
+    result = reply.ReadInt32();
+    isStandby = reply.ReadBool();
+    enterStandbyTime = reply.ReadInt64();
+
+    return result;
+}
+
 int32_t AudioManagerProxy::GenerateSessionId(uint32_t &sessionId)
 {
     MessageParcel data;
@@ -1421,6 +1427,20 @@ int32_t AudioManagerProxy::GenerateSessionId(uint32_t &sessionId)
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "generate sessionid failed,error:%{public}d", error);
     sessionId = reply.ReadUint32();
     return 0;
+}
+
+void AudioManagerProxy::NotifyAccountsChanged()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -20,7 +20,6 @@
 
 #include "audio_interrupt_info.h"
 #include "audio_session_info.h"
-#include "audio_session_timer.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,10 +31,12 @@ enum class AudioSessionState {
     SESSION_RELEASED = 3,
 };
 
+class AudioSessionStateMonitor;
+
 class AudioSession {
 public:
     AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
-        const std::shared_ptr<AudioSessionTimer> sessionTimer);
+        const std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor);
     ~AudioSession();
 
     int32_t Activate();
@@ -54,7 +55,7 @@ private:
 
     int32_t callerPid_;
     AudioSessionStrategy strategy_;
-    std::shared_ptr<AudioSessionTimer> sessionTimer_;
+    std::weak_ptr<AudioSessionStateMonitor> audioSessionStateMonitor_;
 
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;

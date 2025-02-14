@@ -21,7 +21,7 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 
 #include "audio_policy_utils.h"
 
@@ -44,8 +44,8 @@ static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     {SOURCE_TYPE_VOICE_CALL, 6},
     {SOURCE_TYPE_VOICE_COMMUNICATION, 5},
     {SOURCE_TYPE_VOICE_TRANSCRIPTION, 4},
-    {SOURCE_TYPE_MIC, 3},
-    {SOURCE_TYPE_VOICE_RECOGNITION, 2},
+    {SOURCE_TYPE_VOICE_RECOGNITION, 3},
+    {SOURCE_TYPE_MIC, 2},
     {SOURCE_TYPE_UNPROCESSED, 1},
 };
 
@@ -181,9 +181,6 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
     }
 
     if (sessionWithNormalSourceType_.count(sessionID) > 0) {
-        if (Util::IsScoSupportSource(sessionWithNormalSourceType_[sessionID].sourceType)) {
-            audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
-        }
         if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             audioEcManager_.ResetAudioEcInfo();
         }

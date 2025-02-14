@@ -53,6 +53,9 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
     {"navigation", STREAM_NAVIGATION}
 };
 
+uint64_t DURATION_TIME_DEFAULT = 40;
+uint64_t DURATION_TIME_SHORT = 10;
+
 AudioVolume *AudioVolume::GetInstance()
 {
     static AudioVolume instance;
@@ -85,8 +88,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
             " isMuted:%{public}d, streamVolumeSize:%{public}zu",
             sessionId, it->second.volume_, it->second.duckFactor_, it->second.lowPowerFactor_, it->second.isMuted_,
             streamVolume_.size());
-        if (volumeType == STREAM_VOICE_ASSISTANT &&
-            !CheckoutSystemAppUtil::CheckoutSystemApp(it->second.GetAppUid())) {
+        if (volumeType == STREAM_VOICE_ASSISTANT && !it->second.isSystemApp()) {
             volumeType = STREAM_MUSIC;
         }
     } else {
@@ -170,13 +172,13 @@ void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
 }
 
 void AudioVolume::AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage,
-    int32_t uid, int32_t pid)
+    int32_t uid, int32_t pid, bool isSystemApp)
 {
     AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", sessionId);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it == streamVolume_.end()) {
-        streamVolume_.emplace(sessionId, StreamVolume(sessionId, streamType, streamUsage, uid, pid));
+        streamVolume_.emplace(sessionId, StreamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp));
         historyVolume_.emplace(sessionId, 0.0f);
         monitorVolume_.emplace(sessionId, std::make_pair(0.0f, 0));
     } else {
@@ -562,6 +564,26 @@ int32_t GetSimpleBufferAvg(uint8_t *buffer, int32_t length)
     }
     int32_t sum = std::accumulate(buffer, buffer + length, 0);
     return sum / length;
+}
+
+FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationMs)
+{
+    // 0 is default; duration > 40ms do default fade
+    if (expectedPlaybackDurationMs == 0 || expectedPlaybackDurationMs > DURATION_TIME_DEFAULT) {
+        return FADE_STRATEGY_DEFAULT;
+    }
+
+    // duration <= 10 ms no fade
+    if (expectedPlaybackDurationMs <= DURATION_TIME_SHORT && expectedPlaybackDurationMs > 0) {
+        return FADE_STRATEGY_NONE;
+    }
+
+    // duration > 10ms && duration <= 40ms do 5ms fade
+    if (expectedPlaybackDurationMs <= DURATION_TIME_DEFAULT && expectedPlaybackDurationMs > DURATION_TIME_SHORT) {
+        return FADE_STRATEGY_SHORTER;
+    }
+
+    return FADE_STRATEGY_DEFAULT;
 }
 #ifdef __cplusplus
 }

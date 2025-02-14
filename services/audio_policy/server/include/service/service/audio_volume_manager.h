@@ -90,10 +90,11 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     int32_t SetVoiceRingtoneMute(bool isMute);
     void SetVoiceCallVolume(int32_t volume);
-    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+    bool GetVolumeGroupInfosNotWait(std::vector<sptr<VolumeGroupInfo>> &infos);
     void SetDefaultDeviceLoadFlag(bool isLoad);
     void NotifyVolumeGroup();
     bool GetLoadFlag();
+    void UpdateSafeVolumeByS4();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -122,6 +123,8 @@ private:
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
     int32_t DealWithEventVolume(const int32_t notificationId);
+    void ChangeDeviceSafeStatus(SafeStatus safeStatus);
+    bool CheckMixActiveMusicTime(int32_t safeVolume);
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
@@ -164,7 +167,6 @@ private:
     bool increaseNIsShowing_ = false;
 
     std::mutex defaultDeviceLoadMutex_;
-    std::condition_variable loadDefaultDeviceCV_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
 
     IAudioPolicyInterface& audioPolicyManager_;

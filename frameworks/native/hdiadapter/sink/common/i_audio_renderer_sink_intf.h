@@ -66,6 +66,7 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkUpdateAppsUid)(struct RendererSinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
         const size_t size);
     int32_t (*RendererSinkGetRenderId)(struct RendererSinkAdapter *adapter, uint32_t *renderId);
+    int32_t (*RendererSinkGetAudioScene)(struct RendererSinkAdapter *adapter);
 };
 
 int32_t FillinSinkWapper(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter *adapter);
@@ -96,6 +97,7 @@ int32_t IAudioRendererSinkSetPriPaPower(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkUpdateAppsUid(struct RendererSinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
     const size_t size);
 int32_t IAudioRendererSinkGetRenderId(struct RendererSinkAdapter *adapter, uint32_t *renderId);
+int32_t IAudioRendererSinkGetAudioScene(struct RendererSinkAdapter *adapter);
 
 #ifdef __cplusplus
 }

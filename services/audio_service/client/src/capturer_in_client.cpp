@@ -85,10 +85,6 @@ public:
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) override;
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid, SourceType sourceType =
-        SOURCE_TYPE_MIC) override;
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) override;
     State GetState() override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
@@ -215,6 +211,7 @@ public:
     bool GetHighResolutionEnabled() override;
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -828,18 +825,6 @@ int32_t CapturerInClientInner::GetAudioStreamInfo(AudioStreamParams &info)
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
     info = streamParams_;
     return SUCCESS;
-}
-
-bool CapturerInClientInner::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appFullTokenId, appUid, sourceType);
-}
-
-bool CapturerInClientInner::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    return AudioPolicyManager::GetInstance().CheckRecordingStateChange(appTokenId, appFullTokenId, appUid, state);
 }
 
 int32_t CapturerInClientInner::GetAudioSessionID(uint32_t &sessionID)
@@ -2001,6 +1986,12 @@ DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 {
     AUDIO_WARNING_LOG("not supported in capturer");
     return DEVICE_TYPE_NONE;
+}
+
+// diffrence from GetAudioPosition only when set speed
+int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    return GetAudioTime(timestamp, base);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -58,7 +58,7 @@ const uint32_t STEREO_CHANNEL_COUNT = 2;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
-const uint64_t SECOND_TO_NANOSECOND = 1000000000;
+const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const uint64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t SECOND_TO_MILLISECOND = 1000;
 const uint64_t MICROSECOND_TO_MILLISECOND = 1000;
@@ -105,6 +105,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
@@ -789,6 +790,7 @@ int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
     AudioXCollie audioXCollie("OffloadAudioRendererSinkInner::SetVolumeInner", TIME_OUT_SECONDS,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("set offload vol left is %{public}f, right is %{public}f", left, right);
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     float thevolume;
     int32_t ret;
     if (audioRender_ == nullptr) {
@@ -852,6 +854,12 @@ int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
 int32_t OffloadAudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
 {
     AUDIO_DEBUG_LOG("SetOutputRoutes not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t OffloadAudioRendererSinkInner::GetAudioScene()
+{
+    AUDIO_WARNING_LOG("not supported.");
     return ERR_NOT_SUPPORTED;
 }
 

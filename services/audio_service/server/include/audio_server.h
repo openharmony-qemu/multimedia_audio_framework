@@ -127,8 +127,6 @@ public:
 
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
 
-    void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
-
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
 
     int32_t SetCaptureSilentState(bool state) override;
@@ -184,7 +182,11 @@ public:
 
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
 
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
+
     int32_t GenerateSessionId(uint32_t &sessionId) override;
+    
+    void NotifyAccountsChanged() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -203,6 +205,7 @@ private:
     bool CheckPlaybackPermission(const AudioProcessConfig &config);
     int32_t CheckInnerRecorderPermission(const AudioProcessConfig &config);
     bool CheckRecorderPermission(const AudioProcessConfig &config);
+    bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
 
     void ResetRecordConfig(AudioProcessConfig &config);
@@ -232,7 +235,7 @@ private:
         const std::string &extraSceneType);
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     const std::string GetBundleNameFromUid(int32_t uid);
-    bool IsFastBlocked(int32_t uid);
+    bool IsFastBlocked(int32_t uid, PlayerType playerType);
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
     void InitMaxRendererStreamCntPerUid();

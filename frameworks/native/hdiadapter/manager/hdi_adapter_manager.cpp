@@ -19,7 +19,7 @@
 
 #include "hdi_adapter_manager.h"
 
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_errors.h"
 
 #include "include/hdi_adapter_manager_api.h"

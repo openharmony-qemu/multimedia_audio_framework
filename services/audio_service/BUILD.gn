@@ -121,6 +121,7 @@ config("audio_client_public_config") {
     "common/include",
     "../audio_policy/client/include",
     "../audio_policy/common/include",
+    "../audio_policy/util/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audiostream/include",
     "../../frameworks/native/audioutils/include",
@@ -167,11 +168,9 @@ ohos_shared_library("audio_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
   sources = [
-    "client/src/audio_anahs_manager.cpp",
+    "../audio_policy/util/src/audio_manager_util.cpp",
     "client/src/audio_combine_denoising_manager.cpp",
-    "client/src/audio_device_descriptor.cpp",
     "client/src/audio_effect_manager.cpp",
-    "client/src/audio_filter.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
@@ -195,7 +194,6 @@ ohos_shared_library("audio_client") {
     "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
-    "client/src/resource_manager_adapter.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {
@@ -207,7 +205,9 @@ ohos_shared_library("audio_client") {
   deps = [
     ":audio_common",
     "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
+    "../audio_policy:audio_policy_common",
   ]
 
   include_dirs = [ "server/include" ]
@@ -377,7 +377,6 @@ audio_ohos_library("audio_process_service") {
   configs = [ ":audio_service_config" ]
 
   deps = [
-    ":audio_client",
     ":audio_common",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
@@ -387,6 +386,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:audio_capturer_source",
+    "../audio_policy:audio_foundation",
   ]
 
   if (audio_framework_feature_distributed_audio == true) {
@@ -481,6 +481,7 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
+    "../../frameworks/native/audioutils:audio_xml_utils",
     "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:offload_audio_renderer_sink",
@@ -631,6 +632,7 @@ ohos_executable("audio_process_client_test") {
 
   deps = [
     ":audio_client",
+    "../audio_policy:audio_foundation",
     "./../../frameworks/native/audioutils:audio_utils",
   ]
 

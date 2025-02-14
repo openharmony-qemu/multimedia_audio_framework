@@ -1143,9 +1143,10 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
     }
 
     int32_t flag = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
-        preferredDeviceList[0]->deviceType_,
-        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_, rendererInfo.samplingRate);
-    if (isFastControlled_ && (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
+        preferredDeviceList[0]->deviceType_, rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_,
+        rendererInfo.samplingRate);
+    if (isFastControlled_ && (rendererInfo.playerType != PLAYER_TYPE_SOUND_POOL) &&
+        (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
         std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
         std::string result = AudioServerProxy::GetInstance().GetAudioParameterProxy(bundleNamePre);
         if (result == "true") {
@@ -1695,6 +1696,7 @@ void AudioPolicyService::NotifyAccountsChanged(const int &id)
     audioPolicyManager_.NotifyAccountsChanged(id);
     RegisterDataObserver();
     SubscribeAccessibilityConfigObserver();
+    AudioServerProxy::GetInstance().NotifyAccountsChanged();
 }
 
 int32_t AudioPolicyService::GetCurActivateCount()
@@ -1972,7 +1974,8 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
         return ERR_INVALID_PARAM;
     }
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, OUTPUT_DEVICE);
-
+    std::string currentActivePort = REMOTE_CLASS;
+    audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
     audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
 
     AudioModuleInfo moudleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
@@ -2060,6 +2063,11 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
 void AudioPolicyService::CheckHibernateState(bool hibernate)
 {
     AudioServerProxy::GetInstance().CheckHibernateStateProxy(hibernate);
+}
+
+void AudioPolicyService::UpdateSafeVolumeByS4()
+{
+    return audioVolumeManager_.UpdateSafeVolumeByS4();
 }
 } // namespace AudioStandard
 } // namespace OHOS

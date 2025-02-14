@@ -27,7 +27,7 @@
 #include <gmock/gmock.h>
 
 #include "audio_effect.h"
-#include "audio_log.h"
+#include "audio_effect_log.h"
 #include "audio_errors.h"
 
 #define VALID_SCENEKEY_CODE 68864
@@ -101,12 +101,13 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_001, T
 /*
  * tc.name   : Test CreateAudioEnhanceChainDynamic API
  * tc.number : CreateAudioEnhanceChainDynamic_002
- * tc.desc   : Test CreateAudioEnhanceChainDynamic interface(using correct input case).
+ * tc.desc   : Test CreateAudioEnhanceChainDynamic interface(create enhanceChain success but add handles fail).
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_002, TestSize.Level1)
 {
     uint32_t validKeyCode = VALID_SCENEKEY_CODE;
-    manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    int32_t result = manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
+    EXPECT_EQ(result, ERROR);
 }
 
 /*
@@ -268,13 +269,14 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, ExistAudioEnhanceChain_001, TestSize.
 /*
  * tc.name   : Test ExistAudioEnhanceChain API
  * tc.number : ExistAudioEnhanceChain_002
- * tc.desc   : Test ExistAudioEnhanceChain interface after correctly creating an ehanceChain.
+ * tc.desc   : Test ExistAudioEnhanceChain interface when the enhanceChain has no handles.
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, ExistAudioEnhanceChain_002, TestSize.Level1)
 {
     uint32_t validKeyCode = VALID_SCENEKEY_CODE;
     manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
-    manager_->ExistAudioEnhanceChain(validKeyCode);
+    bool result = manager_->ExistAudioEnhanceChain(validKeyCode);
+    EXPECT_EQ(result, false);
 }
 
 /*
@@ -307,7 +309,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, AudioEnhanceChainGetAlgoConfig_002, T
     AudioBufferConfig micRefConfig = {};
     uint32_t validKeyCode = VALID_SCENEKEY_CODE;
     manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
-    manager_->AudioEnhanceChainGetAlgoConfig(validKeyCode, micConfig, ecConfig, micRefConfig);
+    int32_t result = manager_->AudioEnhanceChainGetAlgoConfig(validKeyCode, micConfig, ecConfig, micRefConfig);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /*
@@ -325,13 +328,14 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, IsEmptyEnhanceChain_001, TestSize.Lev
 /*
  * tc.name   : Test IsEmptyEnhanceChain API
  * tc.number : IsEmptyEnhanceChain_002
- * tc.desc   : Ensures the function returns false when there is at least one audio enhance chain.
+ * tc.desc   : Ensures the function returns true when add enhanceChain handles fail.
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, IsEmptyEnhanceChain_002, TestSize.Level1)
 {
     uint32_t validKeyCode = VALID_SCENEKEY_CODE;
     manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
-    manager_->IsEmptyEnhanceChain();
+    bool result = manager_->IsEmptyEnhanceChain();
+    EXPECT_EQ(result, true);
 }
 
 /*
@@ -541,13 +545,14 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyAudioEnhanceChain_002, TestSize.
     uint32_t bufferSize = INVALID_BUFFER_SIZE;
     std::vector<uint8_t> dummyData(bufferSize, 0x00);
     manager_->CopyToEnhanceBuffer(dummyData.data(), dummyData.size());
-    manager_->ApplyAudioEnhanceChain(validSceneKeyCode, dummyData.size());
+    int32_t result = manager_->ApplyAudioEnhanceChain(validSceneKeyCode, dummyData.size());
+    EXPECT_EQ(result, ERROR);
 }
 
 /*
  * tc.name   : Test ApplyAudioEnhanceChain API
  * tc.number : ApplyAudioEnhanceChain_003
- * tc.desc   : Ensures the function successfully applies the audio enhance chain under normal conditions.
+ * tc.desc   : Test ApplyAudioEnhanceChain interface when the enhanceChain has no handles.
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyAudioEnhanceChain_003, TestSize.Level1)
 {
@@ -558,7 +563,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyAudioEnhanceChain_003, TestSize.
     uint32_t bufferSize = VALID_BUFFER_SIZE;
     std::vector<uint8_t> dummyData(bufferSize, 0xAA);
     manager_->CopyToEnhanceBuffer(dummyData.data(), dummyData.size());
-    manager_->ApplyAudioEnhanceChain(validSceneKeyCode, dummyData.size());
+    int32_t result = manager_->ApplyAudioEnhanceChain(validSceneKeyCode, dummyData.size());
+    EXPECT_EQ(result, ERROR);
 }
 
 /*
@@ -802,7 +808,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_002, TestSize
 
     AudioEnhancePropertyArray propertyArray;
     propertyArray.property.push_back({"record", "123"});
-    manager_->SetAudioEnhanceProperty(propertyArray);
+    int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /*

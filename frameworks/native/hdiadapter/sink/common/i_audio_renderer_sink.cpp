@@ -30,6 +30,7 @@
 #endif
 #include "offload_audio_renderer_sink.h"
 #include "multichannel_audio_renderer_sink.h"
+#include "fast_audio_renderer_sink.h"
 
 
 namespace OHOS {
@@ -47,6 +48,9 @@ const char *DEVICE_CLASS_REMOTE = "remote";
 #endif
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
+const char *DEVICE_CLASS_DIRECT_VOIP = "primary_direct_voip";
+const char *DEVICE_CLASS_MMAP_VOIP = "primary_mmap_voip";
+const int32_t CLASS_TYPE_REMOTE = 3;
 
 IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, const char *deviceNetworkId)
 {
@@ -85,6 +89,12 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     }
     if (!strcmp(devceClass, DEVICE_CLASS_MULTICHANNEL)) {
         iAudioRendererSink = MultiChannelRendererSink::GetInstance("multichannel");
+    }
+    if (!strcmp(devceClass, DEVICE_CLASS_DIRECT_VOIP)) {
+        iAudioRendererSink = AudioRendererSink::GetInstance("voip");
+    }
+    if (!strcmp(devceClass, DEVICE_CLASS_MMAP_VOIP)) {
+        iAudioRendererSink = FastAudioRendererSink::GetVoipInstance();
     }
 
     if (iAudioRendererSink == nullptr) {
@@ -149,7 +159,7 @@ void IAudioRendererSinkDeInit(struct RendererSinkAdapter *adapter)
     IAudioRendererSink *audioRendererSink = static_cast<IAudioRendererSink *>(adapter->wapper);
     CHECK_AND_RETURN_LOG(audioRendererSink != nullptr, "null audioRendererSink");
     // remove the sink in allsinks.
-    if (audioRendererSink->IsInited()) {
+    if ((adapter->deviceClass == CLASS_TYPE_REMOTE) || audioRendererSink->IsInited()) {
         audioRendererSink->DeInit();
     }
 }
@@ -425,6 +435,20 @@ int32_t IAudioRendererSinkGetRenderId(struct RendererSinkAdapter *adapter, uint3
         "audioRenderer Not Inited! Init the renderer first, Renderer GetRenderId failed");
 
     int32_t ret = audioRendererSink->GetRenderId(*renderId);
+    return ret;
+}
+
+int32_t IAudioRendererSinkGetAudioScene(struct RendererSinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");
+
+    IAudioRendererSink *audioRendererSink = static_cast<IAudioRendererSink *>(adapter->wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    bool isInited = audioRendererSink->IsInited();
+    CHECK_AND_RETURN_RET_LOG(isInited, ERR_NOT_STARTED,
+        "audioRenderer Not Inited! Init the renderer first, Renderer GetAudioScene failed");
+
+    int32_t ret = audioRendererSink->GetAudioScene();
     return ret;
 }
 #ifdef __cplusplus

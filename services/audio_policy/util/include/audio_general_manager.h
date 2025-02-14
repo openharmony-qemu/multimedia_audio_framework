@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef ST_AUDIO_GENERAL_MANAGER_H
+#define ST_AUDIO_GENERAL_MANAGER_H
+
+#include <mutex>
+#include "audio_policy_interface.h"
+#include "audio_manager_base.h"
+
+namespace OHOS {
+namespace AudioStandard {
+class AudioGeneralManager {
+public:
+    static AudioGeneralManager *GetInstance();
+
+    virtual ~AudioGeneralManager();
+
+    AudioGeneralManager();
+
+    int32_t GetCallingPid();
+
+    const sptr<IStandardAudioService> GetAudioGeneralManagerProxy();
+
+    int32_t SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback);
+
+    int32_t GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+
+    int32_t UnsetAudioDeviceRefinerCallback();
+
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+
+    int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
+
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+
+    int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback);
+
+    int32_t RegisterFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &callback);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
+
+    int32_t SetDeviceChangeCallback(const DeviceFlag flag,
+        const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback);
+
+    int32_t SetQueryClientTypeCallback(
+        const std::shared_ptr<AudioQueryClientTypeCallback>& callback);
+
+    int32_t SetExtraParameters(const std::string &key,
+        const std::vector<std::pair<std::string, std::string>> &kvpairs);
+
+    int32_t GetVolume(AudioVolumeType volumeType) const;
+
+    int32_t RegisterVolumeKeyEventCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
+
+    DeviceType GetActiveOutputDevice();
+
+    AudioScene GetAudioScene() const;
+
+    int32_t GetMaxVolume(AudioVolumeType volumeType);
+
+    int32_t UnregisterFocusInfoChangeCallback(
+        const std::shared_ptr<AudioFocusInfoChangeCallback> &callback);
+
+    int32_t GetAudioFocusInfoList(
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
+
+    int32_t SelectOutputDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+
+    int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
+
+    int32_t RegisterAudioCapturerEventListener(const int32_t clientPid,
+        const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
+    
+    int32_t GetCurrentRendererChangeInfos(
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+
+    int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+
+private:
+    std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
+    int32_t volumeChangeClientPid_ = -1;
+};
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // ST_AUDIO_GENERAL_MANAGER_H

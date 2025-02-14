@@ -18,7 +18,6 @@
 
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
-#include "bluetooth_errorcode.h"
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
@@ -585,9 +584,6 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
         } else {
             ret = hfpInstance_->ConnectSco(static_cast<uint8_t>(newScoCategory));
         }
-        if (ret == BT_ERR_SCO_HAS_BEEN_CONNECTED || ret == BT_ERR_AUDIO_NOT_IDLE) {
-            scene_ = scene;
-        }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "ConnectScoWithAudioScene failed, result: %{public}d", ret);
     }
     scene_ = scene;
@@ -609,7 +605,6 @@ int32_t AudioHfpManager::DisconnectSco()
     int32_t ret;
     if (currentScoCategory == ScoCategory::SCO_VIRTUAL && !IsVirtualCall()) {
         ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(ScoCategory::SCO_CALLULAR));
-        SetVirtualCall(true);
     } else {
         ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(currentScoCategory));
     }

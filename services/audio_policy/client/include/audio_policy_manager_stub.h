@@ -65,14 +65,10 @@ private:
     void GetStreamInFocusByUidInternal(MessageParcel &data, MessageParcel &reply);
     void GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
-    void NotifyCapturerAddedInternal(MessageParcel &data, MessageParcel &reply);
-    void CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply);
     void SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
-    void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
-    void GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
@@ -89,7 +85,6 @@ private:
     void GetToneInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
 #endif
-    void CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void SetClientCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply);

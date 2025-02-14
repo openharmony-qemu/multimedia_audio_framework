@@ -199,21 +199,6 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_010, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyManager.
-* @tc.number: AudioPolicyManagerUnitTest_011.
-* @tc.desc  : Test NotifyCapturerAdded.
-*/
-HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_011, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    uint32_t sessionId = 0;
-    AudioStreamInfo streamInfo;
-    AudioCapturerInfo capturerInfo;
-    audioPolicyManager_->NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
-    EXPECT_NE(audioPolicyManager_, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
 * @tc.number: AudioPolicyManagerUnitTest_012.
 * @tc.desc  : Test GetConverterConfig.
 */

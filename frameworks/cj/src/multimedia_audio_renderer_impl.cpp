@@ -17,7 +17,7 @@
 #include "cj_lambda.h"
 #include "audio_errors.h"
 #include "audio_interrupt_info.h"
-#include "audio_log.h"
+#include "audio_renderer_log.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 #include "timestamp.h"

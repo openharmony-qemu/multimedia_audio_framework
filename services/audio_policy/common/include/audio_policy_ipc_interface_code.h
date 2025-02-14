@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_POLICY_INTERFACE_H
-#define ST_AUDIO_POLICY_INTERFACE_H
+#ifndef ST_AUDIO_POLICY_IPC_INTERFACE_H
+#define ST_AUDIO_POLICY_IPC_INTERFACE_H
 
 /* SAID: 3009 */
 namespace OHOS {
@@ -54,8 +54,6 @@ enum class AudioPolicyInterfaceCode {
     GET_STREAM_IN_FOCUS,
     GET_SESSION_INFO_IN_FOCUS,
     GET_DEVICES,
-    SET_WAKEUP_AUDIOCAPTURER,
-    QUERY_MICROPHONE_PERMISSION,
     SELECT_OUTPUT_DEVICE,
     GET_SELECTED_DEVICE_INFO,
     SELECT_INPUT_DEVICE,
@@ -79,7 +77,6 @@ enum class AudioPolicyInterfaceCode {
     GET_SUPPORTED_TONES,
 #endif
     IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED,
-    GET_USING_PEMISSION_FROM_PRIVACY,
     GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS,
     GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS,
     SET_CALLBACKS_ENABLE,
@@ -184,4 +181,4 @@ enum class AudioPolicyInterfaceCode {
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // ST_AUDIO_POLICY_INTERFACE_H
+#endif // ST_AUDIO_POLICY_IPC_INTERFACE_H

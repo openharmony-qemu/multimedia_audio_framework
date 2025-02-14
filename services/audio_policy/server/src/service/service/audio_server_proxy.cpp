@@ -21,7 +21,7 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
@@ -478,5 +478,14 @@ int32_t AudioServerProxy::SetCaptureSilentStateProxy(bool state)
 #endif
 }
 
+void AudioServerProxy::NotifyAccountsChanged()
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->NotifyAccountsChanged();
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+ 
 }
 }

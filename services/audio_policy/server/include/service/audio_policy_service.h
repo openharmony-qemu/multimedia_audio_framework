@@ -405,6 +405,8 @@ public:
 
     void CheckHibernateState(bool onHibernate);
 
+    void UpdateSafeVolumeByS4();
+
     // for hidump
     int32_t GetCurActivateCount();
     void CheckStreamMode(const int64_t activateSessionId);

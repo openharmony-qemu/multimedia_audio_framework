@@ -62,8 +62,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_STREAM_IN_FOCUS",
     "GET_SESSION_INFO_IN_FOCUS",
     "GET_DEVICES",
-    "SET_WAKEUP_AUDIOCAPTURER",
-    "QUERY_MICROPHONE_PERMISSION",
     "SELECT_OUTPUT_DEVICE",
     "GET_SELECTED_DEVICE_INFO",
     "SELECT_INPUT_DEVICE",
@@ -87,7 +85,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_SUPPORTED_TONES",
 #endif
     "IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED",
-    "GET_USING_PEMISSION_FROM_PRIVACY",
     "GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS",
     "GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS",
     "SET_CALLBACKS_ENABLE",
@@ -419,20 +416,6 @@ void AudioPolicyManagerStub::AdjustSystemVolumeByStepInternal(MessageParcel &dat
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::NotifyCapturerAddedInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioCapturerInfo capturerInfo;
-    AudioStreamInfo streamInfo;
-    uint32_t sessionId;
-
-    capturerInfo.Unmarshalling(data);
-    streamInfo.Unmarshalling(data);
-    data.ReadUint32(sessionId);
-
-    int32_t result = NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::SetClientCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply)
 {
     CallbackChange callbackchange = static_cast<CallbackChange>(data.ReadInt32());
@@ -575,38 +558,6 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &data, 
     int32_t ret = GetSessionInfoInFocus(audioInterrupt, zoneID);
     AudioInterrupt::Marshalling(reply, audioInterrupt);
     reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t appTokenId = data.ReadUint32();
-    uint64_t appFullTokenId = data.ReadUint64();
-    int32_t appUid = data.ReadInt32();
-    SourceType sourceType = static_cast<SourceType> (data.ReadInt32());
-    bool ret = CheckRecordingCreate(appTokenId, appFullTokenId, appUid, sourceType);
-    reply.WriteBool(ret);
-}
-
-void AudioPolicyManagerStub::CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t appTokenId = data.ReadUint32();
-    uint64_t appFullTokenId = data.ReadUint64();
-    int32_t appUid = data.ReadInt32();
-    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
-    bool ret = CheckRecordingStateChange(appTokenId, appFullTokenId, appUid, state);
-    reply.WriteBool(ret);
-}
-
-void AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int ret = GetAudioLatencyFromXml();
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t ret = GetSinkLatencyFromXml();
-    reply.WriteUint32(ret);
 }
 
 void AudioPolicyManagerStub::GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
@@ -1522,9 +1473,6 @@ void AudioPolicyManagerStub::OnMiddleTirRemoteRequest(
             GetSupportedTonesInternal(data, reply);
             break;
 #endif
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY):
-            CheckRecordingStateChangeInternal(data, reply);
-            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS):
             GetPreferredOutputDeviceDescriptorsInternal(data, reply);
             break;
@@ -1558,12 +1506,6 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::RECONFIGURE_CHANNEL):
             ReconfigureAudioChannelInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_LATENCY):
-            GetAudioLatencyFromXmlInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SINK_LATENCY):
-            GetSinkLatencyFromXmlInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_OUTPUT_STREAM_TYPE):
             GetPreferredOutputStreamTypeInternal(data, reply);
@@ -1631,12 +1573,6 @@ void AudioPolicyManagerStub::OnMiddleFirRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES):
             GetDevicesInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER):
-            NotifyCapturerAddedInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION):
-            CheckRecordingCreateInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_OUTPUT_DEVICE):
             SelectOutputDeviceInternal(data, reply);

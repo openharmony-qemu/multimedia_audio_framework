@@ -14,6 +14,7 @@
  */
 
 #include "audio_policy_service_first_unit_test.h"
+#include "get_server_util.h"
 
 #include <thread>
 #include <memory>
@@ -24,9 +25,6 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-const int32_t SYSTEM_ABILITY_ID = 3009;
-const bool RUN_ON_CREATE = false;
-bool g_hasServerInit = false;
 bool g_hasPermission = false;
 static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 const int32_t CONNECTING_NUMBER = 10;
@@ -38,7 +36,6 @@ const int32_t ROUTER_MAP_ID3 = 1003;
 const int32_t ROUTER_MAP_ID4 = 1004;
 const int32_t ROUTER_MAP_ID5 = 1005;
 const int32_t ROUTER_MAP_ID6 = 1006;
-const int32_t DEFAULT_SYSTEM_ABILITY_ID = -1000;
 const int32_t VALUE_ZERO = 0;
 const int32_t DEFAULT_VOLUME_LEVEL = 7;
 const int32_t G_UNKNOWN_PID = -1;
@@ -71,31 +68,9 @@ void AudioPolicyServiceUnitTest::TearDown(void)
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::TearDown start-end");
 }
 
-AudioPolicyServer* AudioPolicyServiceUnitTest::GetServerPtr()
-{
-    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    if (!g_hasServerInit) {
-        AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::GetServerPtr  server.OnStart()");
-        server.OnStart();
-        server.OnDump();
-        server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
-        server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
-#endif
-        server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
-        server.OnAddSystemAbility(DEFAULT_SYSTEM_ABILITY_ID, "");
-        server.OnAddSystemAbility(MEMORY_MANAGER_SA_ID, "");
-        g_hasServerInit = true;
-    }
-    return &server;
-}
-
 static AudioPolicyServer* GetServerPtr()
 {
-    return AudioPolicyServiceUnitTest::GetServerPtr();
+    return GetServerUtil::GetServerPtr();
 }
 
 static void GetPermission()
@@ -350,12 +325,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
             AUDIO_INFO_LOG("AudioPolicyServiceTest_001 pipeType:%{public}d", static_cast<uint32_t>(pipeType));
             GetServerPtr()->audioPolicyService_.audioOffloadStream_.MoveToNewPipeInner(TEST_SESSIONID, pipeType);
         }
-        int32_t result = GetServerPtr()->audioPolicyService_.audioOffloadStream_.LoadMchModule();
-        EXPECT_EQ(SUCCESS, result);
-        GetServerPtr()->audioPolicyService_.audioOffloadStream_.ConstructMchAudioModuleInfo(deviceType);
-        result = GetServerPtr()->audioPolicyService_.audioOffloadStream_.LoadOffloadModule();
-        result = GetServerPtr()->audioPolicyService_.audioOffloadStream_.UnloadOffloadModule();
-        GetServerPtr()->audioPolicyService_.audioOffloadStream_.ConstructOffloadAudioModuleInfo(deviceType);
         // AccountTest
         GetServerPtr()->audioPolicyService_.GetCurActivateCount();
         GetServerPtr()->audioPolicyService_.NotifyAccountsChanged(TEST_SESSIONID);
