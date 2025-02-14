@@ -476,6 +476,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
     {"STANDARD", static_cast<int32_t>(AsrNoiseSuppressionMode::STANDARD)},
     {"NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::NEAR_FIELD)},
     {"FAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD)},
+    {"FULL_DUPLEX_STANDARD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD)},
+    {"FULL_DUPLEX_NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {

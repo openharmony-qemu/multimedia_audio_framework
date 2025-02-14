@@ -301,7 +301,7 @@ napi_value NapiAsrProcessingController::SetAsrNoiseSuppressionMode(napi_env env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invaild");
 
     int32_t asrNoiseSuppressionMode = 0;
-    int32_t asrVoiceControlModeMax = static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD);
+    int32_t asrVoiceControlModeMax = static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD);
     int32_t retMode = NapiParamUtils::GetValueInt32(env, asrNoiseSuppressionMode, argv[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(retMode == 0, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be mode enum"),
