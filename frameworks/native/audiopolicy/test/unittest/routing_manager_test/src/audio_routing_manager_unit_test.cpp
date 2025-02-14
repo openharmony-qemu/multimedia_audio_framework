@@ -251,5 +251,21 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_00
     auto availableDescriptor = AudioRoutingManager::GetInstance()->GetAvailableDevices(usage);
     EXPECT_GT(availableDescriptor.size(), 0);
 }
+
+/**
+ * @tc.name  : Test SetDeviceConnectionStatus
+ * @tc.number: SetDeviceConnectionStatus_001
+ * @tc.desc  : Test SetDeviceConnectionStatus interface.
+ */
+HWTEST(AudioPolicyExtUnitTest, SetDeviceConnectionStatus_001, TestSize.Level1)
+{
+    auto deviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = deviceDescriptors[0];
+    int32_t ret = -1;
+    ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(deviceDescriptor, true);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(deviceDescriptor, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

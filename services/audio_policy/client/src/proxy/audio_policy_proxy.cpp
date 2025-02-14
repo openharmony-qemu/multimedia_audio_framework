@@ -2177,7 +2177,7 @@ int32_t AudioPolicyProxy::InjectInterruption(const std::string networkId, Interr
 }
 
 int32_t AudioPolicyProxy::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-    bool isConnected)
+    const bool isConnected)
 {
     MessageParcel data;
     MessageParcel reply;

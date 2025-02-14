@@ -3519,17 +3519,19 @@ int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
 }
 
 int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-    bool isConnected)
+    const bool isConnected)
 {
     AUDIO_INFO_LOG("SetDeviceConnectionStatus deviceName: %{public}s, isConnected: %{public}d",
         desc->deviceName_.c_str(), isConnected);
     const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MANAGE_AUDIO_CONFIG permission denied");
-    AudioStreamInfo info(desc->audioStreamInfo_->samplingRate, desc->audioStreamInfo_->encoding,
-        desc->audioStreamInfo_->format, desc->audioStreamInfo_->channels, desc->audioStreamInfo_->channelLayout);
-    return audioPolicyService_.OnDeviceStatusUpdated(desc->deviceType_, isConnected, desc->macAddress_,
+    AudioStreamInfo info(*desc->audioStreamInfo_->samplingRate.begin(), desc->audioStreamInfo_->encoding,
+        desc->audioStreamInfo_->format, *desc->audioStreamInfo_->channels.begin(),
+        desc->audioStreamInfo_->channelLayout);
+    audioPolicyService_.OnDeviceStatusUpdated(desc->deviceType_, isConnected, desc->macAddress_,
         desc->deviceName_, info, desc->deviceRole_);
+    return SUCCESS;
 }
 
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
