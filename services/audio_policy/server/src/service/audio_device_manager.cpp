@@ -953,6 +953,7 @@ bool AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
         // a2dp connectState needs to be updated simultaneously when connectState of sco is updated
         if (isScoDevice) {
             if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                desc->connectState_ != VIRTUAL_CONNECTED &&
                 devDesc->connectState_ == CONNECTED) {
                 // sco connected, suspend a2dp
                 desc->connectState_ = SUSPEND_CONNECTED;

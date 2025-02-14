@@ -472,6 +472,7 @@ private:
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
+    int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
 
@@ -490,6 +491,8 @@ private:
     bool isAudioCapturerEventListenerRegistered = false;
 
     std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};
+    std::vector<AudioRendererInfo> rendererInfos_;
+    std::vector<AudioCapturerInfo> capturerInfos_;
 };
 } // namespce AudioStandard
 } // namespace OHOS
