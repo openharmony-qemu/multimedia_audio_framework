@@ -43,6 +43,11 @@ public:
     int32_t ApplyAudioEnhanceChain(const std::string &sceneType, EnhanceBufferAttr *enhanceBufferAttr);
     bool ExistAudioEnhanceChain(const std::string &sceneType);
     std::string GetUpAndDownDevice();
+    // for effect V3
+    int32_t SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
 
 private:
     int32_t SetAudioEnhanceChainDynamic(const std::string &sceneType, const std::string &enhanceMode,

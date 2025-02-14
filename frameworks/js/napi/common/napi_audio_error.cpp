@@ -64,7 +64,9 @@ std::string NapiAudioError::GetMessageByCode(int32_t &code)
     std::string errMessage;
     switch (code) {
         case NAPI_ERR_INVALID_PARAM:
+        case ERR_INVALID_PARAM:
             errMessage = NAPI_ERR_INVALID_PARAM_INFO;
+            code = NAPI_ERR_INVALID_PARAM;
             break;
         case NAPI_ERR_NO_MEMORY:
             errMessage = NAPI_ERR_NO_MEMORY_INFO;
@@ -90,12 +92,14 @@ std::string NapiAudioError::GetMessageByCode(int32_t &code)
             errMessage = NAPI_ERR_INPUT_INVALID_INFO;
             break;
         case NAPI_ERR_PERMISSION_DENIED:
-        case ERR_PERMISSION_DENIED:
+        case ERR_SYSTEM_PERMISSION_DENIED:
             errMessage = NAPI_ERROR_PERMISSION_DENIED_INFO;
             code = NAPI_ERR_PERMISSION_DENIED;
             break;
         case NAPI_ERR_NO_PERMISSION:
+        case ERR_PERMISSION_DENIED:
             errMessage = NAPI_ERR_NO_PERMISSION_INFO;
+            code = NAPI_ERR_NO_PERMISSION;
             break;
         default:
             errMessage = NAPI_ERR_SYSTEM_INFO;

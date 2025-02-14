@@ -24,7 +24,9 @@
 #include "audio_device_info.h"
 #include "napi_param_utils.h"
 #include "audio_asr.h"
-
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+#include "parameters.h"
+#endif
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
 using OHOS::HiviewDFX::HiLogLabel;
@@ -1230,9 +1232,6 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             result = NapiAudioEnum::VOICE_CALL;
             break;
         case AudioStreamType::STREAM_RING:
-        case AudioStreamType::STREAM_SYSTEM:
-        case AudioStreamType::STREAM_NOTIFICATION:
-        case AudioStreamType::STREAM_SYSTEM_ENFORCED:
         case AudioStreamType::STREAM_DTMF:
             result = NapiAudioEnum::RINGTONE;
             break;
@@ -1256,6 +1255,16 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             break;
         case AudioStreamType::STREAM_ULTRASONIC:
             result = NapiAudioEnum::ULTRASONIC;
+            break;
+        case AudioStreamType::STREAM_SYSTEM:
+        case AudioStreamType::STREAM_NOTIFICATION:
+        case AudioStreamType::STREAM_SYSTEM_ENFORCED:
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+            result = (system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0))?
+                NapiAudioEnum::SYSTEM : NapiAudioEnum::RINGTONE;
+#else
+            result = NapiAudioEnum::RINGTONE;
+#endif
             break;
         default:
             result = NapiAudioEnum::MEDIA;

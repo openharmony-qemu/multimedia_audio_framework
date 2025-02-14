@@ -443,6 +443,11 @@ public:
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     int32_t SetVoiceRingtoneMute(bool isMute);
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

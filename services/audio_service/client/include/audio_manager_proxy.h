@@ -88,7 +88,12 @@ public:
     bool GetEffectOffloadEnabled() override;
     void LoadHdiEffectModel() override;
     int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) override;
-    
+        // for effect V3
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
+
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
     
     void SetRotationToEffect(const uint32_t rotate) override;
