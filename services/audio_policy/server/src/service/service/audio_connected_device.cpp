@@ -367,5 +367,16 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetUsbDeviceDescrip
     return nullptr;
 }
 
+void AudioConnectedDevice::SetSpatializationSupported(const std::string macAddress, const bool support)
+{
+    for (auto device : connectedDevices_) {
+        if (device->macAddress_ == macAddress && device->spatializationSupported_ != support) {
+            device->spatializationSupported_ = support;
+            AUDIO_INFO_LOG("spatializationSupported is set to %{public}d", support);
+        }
+    }
+}
+
+
 }
 }

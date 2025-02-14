@@ -2069,5 +2069,10 @@ void AudioPolicyService::UpdateSafeVolumeByS4()
 {
     return audioVolumeManager_.UpdateSafeVolumeByS4();
 }
+
+void AudioPolicyService::SetSpatializationSupported(const std::string macAddress, const bool support)
+{
+    return audioConnectedDevice_.SetSpatializationSupported(macAddress, support);
+}
 } // namespace AudioStandard
 } // namespace OHOS

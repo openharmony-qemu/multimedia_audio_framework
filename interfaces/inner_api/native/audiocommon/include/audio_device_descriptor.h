@@ -66,6 +66,7 @@ public:
     int32_t a2dpOffloadFlag_ = NO_A2DP_DEVICE;
     // Other
     int32_t descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
+    bool spatializationSupported_ = false;
 
     AudioDeviceDescriptor(int32_t descriptorType = AUDIO_DEVICE_DESCRIPTOR);
 
