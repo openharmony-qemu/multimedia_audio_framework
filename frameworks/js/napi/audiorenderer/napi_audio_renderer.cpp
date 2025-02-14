@@ -176,7 +176,7 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     }
 
     if (rendererNapi->streamUsage_ == STREAM_USAGE_UNKNOWN) {
-        renderNapi->audioRenderer_->SetOffloadAllowed(false);
+        rendererNapi->audioRenderer_->SetOffloadAllowed(false);
     }
 
     if (rendererNapi->audioRenderer_ != nullptr && rendererNapi->callbackNapi_ == nullptr) {
