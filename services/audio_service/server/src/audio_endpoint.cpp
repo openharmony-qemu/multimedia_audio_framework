@@ -1446,6 +1446,9 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
 
 void AudioEndpointInner::HandleZeroVolumeCheckEvent()
 {
+    if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
+        return;
+    }
     if (!zeroVolumeStopDevice_ && (ClockTime::GetCurNano() >= delayStopTimeForZeroVolume_)) {
         if (isStarted_) {
             if (fastSink_ != nullptr && fastSink_->Stop() == SUCCESS) {
