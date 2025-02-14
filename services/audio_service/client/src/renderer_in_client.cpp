@@ -800,7 +800,7 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     }
     result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
-    if (isDrain_ && targetSize < clientSpanSizeInByte_) {
+    if (isDrain && targetSize < clientSpanSizeInByte_) {
         int32_t leftSize = clientSpanSizeInByte_ - targetSize;
         int32_t ret = memset_s(desc.buffer + targetSize, leftSize, 0, leftSize);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "left buffer memset output failed");
