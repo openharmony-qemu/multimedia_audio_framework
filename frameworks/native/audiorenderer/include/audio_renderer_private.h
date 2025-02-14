@@ -146,6 +146,7 @@ public:
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {

@@ -210,6 +210,8 @@ public:
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
 
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -1949,6 +1951,12 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+// diffrence from GetAudioPosition only when set speed
+int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    return GetAudioTime(timestamp, base);
 }
 } // namespace AudioStandard
 } // namespace OHOS

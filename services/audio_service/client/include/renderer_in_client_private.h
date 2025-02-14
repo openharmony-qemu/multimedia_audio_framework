@@ -216,6 +216,8 @@ public:
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
 
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -402,6 +404,10 @@ private:
     bool isDataLinkConnected_ = false;
 
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
+
+    uint64_t lastLatency_ = 0;
+    uint64_t lastLatencyPosition_ = 0;
+    uint64_t lastReadIdx_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
