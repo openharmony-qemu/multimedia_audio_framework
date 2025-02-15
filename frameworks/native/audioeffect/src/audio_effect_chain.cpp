@@ -507,7 +507,7 @@ void AudioEffectChain::SetCurrChannelNoCheck(const uint32_t channel)
     currChannelNoCheck_ = channel;
 }
 
-void AudioEffectChain::SetCurrchannelLayoutNoCheck(const uint64_t channelLayout)
+void AudioEffectChain::SetCurrChannelLayoutNoCheck(const uint64_t channelLayout)
 {
     currchannelLayoutNoCheck_ = channelLayout;
 }

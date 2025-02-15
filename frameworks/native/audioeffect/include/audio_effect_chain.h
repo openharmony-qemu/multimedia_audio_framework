@@ -94,7 +94,7 @@ public:
     int32_t updatePrimaryChannel();
     bool CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info);
     void SetCurrChannelNoCheck(const uint32_t channel);
-    void SetCurrchannelLayoutNoCheck(const uint64_t channelLayout);
+    void SetCurrChannelLayoutNoCheck(const uint64_t channelLayout);
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
@@ -132,8 +132,8 @@ private:
     std::string dumpNameOut_ = "";
     bool spatializationEnabledFading_ = false;
     int32_t fadingCounts_ = 0;
-    uint32_t currChannelNoCheck_ = 2U;
-    uint64_t currchannelLayoutNoCheck_ = 3ULL;
+    uint32_t currChannelNoCheck_ = STEREO;
+    uint64_t currchannelLayoutNoCheck_ = CH_LAYOUT_STEREO;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
