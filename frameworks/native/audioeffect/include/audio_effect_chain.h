@@ -132,8 +132,8 @@ private:
     std::string dumpNameOut_ = "";
     bool spatializationEnabledFading_ = false;
     int32_t fadingCounts_ = 0;
-    uint32_t currChannelNoCheck_ = DEFAULT_NUM_CHANNEL;
-    uint64_t currchannelLayoutNoCheck_ = DEFAULT_NUM_CHANNELLAYOUT;
+    uint32_t currChannelNoCheck_ = 2U;
+    uint64_t currchannelLayoutNoCheck_ = 3ULL;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
