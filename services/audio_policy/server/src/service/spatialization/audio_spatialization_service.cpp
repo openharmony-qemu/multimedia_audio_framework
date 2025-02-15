@@ -139,6 +139,15 @@ bool AudioSpatializationService::IsSpatializationEnabled(const std::string addre
     return addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled;
 }
 
+bool AudioSpatializationService::IsSpatializationEnabledForCurrentDevice()
+{
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    std::string encryptedAddress = GetSha256EncryptAddress(currentDeviceAddress_);
+    CHECK_AND_RETURN_RET_LOG(addressToSpatialEnabledMap_.count(encryptedAddress), false,
+        "the current device spatialization enabled is not in memory");
+    return addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled;
+}
+
 int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
 {
     AUDIO_INFO_LOG("Spatialization enabled is set to be: %{public}d", enable);

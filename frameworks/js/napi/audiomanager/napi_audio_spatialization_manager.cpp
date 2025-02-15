@@ -164,6 +164,7 @@ napi_value NapiAudioSpatializationManager::Init(napi_env env, napi_value exports
         DECLARE_NAPI_FUNCTION("updateSpatialDeviceState", UpdateSpatialDeviceState),
         DECLARE_NAPI_FUNCTION("getSpatializationSceneType", GetSpatializationSceneType),
         DECLARE_NAPI_FUNCTION("setSpatializationSceneType", SetSpatializationSceneType),
+        DECLARE_NAPI_FUNCTION("isSpatializationEnabledForCurrentDevice", IsSpatializationEnabledForCurrentDevice),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
     };
@@ -880,6 +881,27 @@ napi_value NapiAudioSpatializationManager::Off(napi_env env, napi_callback_info 
     UnRegisterCallback(env, jsThis, args, callbackName);
 
     return undefinedResult;
+}
+
+napi_value NapiAudioSpatializationManager::IsSpatializationEnabledForCurrentDevice(napi_env env,
+    napi_callback_info info)
+{
+    AUDIO_INFO_LOG("IsSpatializationEnabledForCurrentDevice in");
+    napi_value result = nullptr;
+
+    size_t argc = PARAM0;
+    auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "invaild arguments");
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
+        "napiAudioSpatializationManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,
+        "audioSpatializationMngr is nullptr");
+
+    bool IsSpatializationEnabledForCurrentDevice = napiAudioSpatializationManager->audioSpatializationMngr_
+        ->IsSpatializationEnabledForCurrentDevice();
+    NapiParamUtils::SetValueBoolean(env, IsSpatializationEnabledForCurrentDevice, result);
+    return result;
 }
 } // namespace AudioStandard
 } // namespace OHOS

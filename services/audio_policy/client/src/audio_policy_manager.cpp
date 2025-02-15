@@ -1270,6 +1270,13 @@ bool AudioPolicyManager::IsSpatializationEnabled(const std::string address)
     return gsp->IsSpatializationEnabled(address);
 }
 
+bool AudioPolicyManager::IsSpatializationEnabledForCurrentDevice()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsSpatializationEnabledForCurrentDevice();
+}
+
 int32_t AudioPolicyManager::SetSpatializationEnabled(const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

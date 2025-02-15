@@ -2859,6 +2859,11 @@ bool AudioPolicyServer::IsSpatializationEnabled(const std::string address)
     return audioSpatializationService_.IsSpatializationEnabled(address);
 }
 
+bool AudioPolicyServer::IsSpatializationEnabledForCurrentDevice()
+{
+    return audioSpatializationService_.IsSpatializationEnabledForCurrentDevice();
+}
+
 int32_t AudioPolicyServer::SetSpatializationEnabled(const bool enable)
 {
     if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {

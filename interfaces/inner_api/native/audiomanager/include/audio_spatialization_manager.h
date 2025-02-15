@@ -124,6 +124,14 @@ public:
     bool IsSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 
     /**
+     * @brief Check whether the spatialization is enabled by the current device
+     *
+     * @return Returns <b>true</b> if the spatialization is successfully enabled; returns <b>false</b> otherwise.
+     * @since 16
+     */
+    bool IsSpatializationEnabledForCurrentDevice();
+
+    /**
      * @brief Set the spatialization enabled or disabled
      *
      * @return Returns success or not

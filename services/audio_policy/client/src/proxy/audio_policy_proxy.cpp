@@ -1375,6 +1375,21 @@ bool AudioPolicyProxy::IsSpatializationEnabled(const std::string address)
     return reply.ReadBool();
 }
 
+bool AudioPolicyProxy::IsSpatializationEnabledForCurrentDevice()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE),
+            data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsSpatializationEnabled failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
 
 int32_t AudioPolicyProxy::SetSpatializationEnabled(const bool enable)
 {

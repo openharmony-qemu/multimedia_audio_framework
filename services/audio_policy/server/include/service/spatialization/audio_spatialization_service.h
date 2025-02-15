@@ -48,6 +48,7 @@ public:
     const sptr<IStandardAudioService> GetAudioServerProxy();
     bool IsSpatializationEnabled();
     bool IsSpatializationEnabled(const std::string address);
+    bool IsSpatializationEnabledForCurrentDevice();
     int32_t SetSpatializationEnabled(const bool enable);
     int32_t SetSpatializationEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);

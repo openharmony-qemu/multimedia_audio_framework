@@ -117,6 +117,7 @@ private:
     void UnsetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationEnabledForCurrentDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);

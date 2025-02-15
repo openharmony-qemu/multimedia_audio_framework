@@ -324,6 +324,8 @@ public:
 
     bool IsSpatializationEnabled(const std::string address) override;
 
+    bool IsSpatializationEnabledForCurrentDevice() override;
+
     int32_t SetSpatializationEnabled(const bool enable) override;
 
     int32_t SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,

@@ -321,6 +321,8 @@ public:
 
     bool IsSpatializationEnabled(const std::string address);
 
+    bool IsSpatializationEnabledForCurrentDevice();
+
     int32_t SetSpatializationEnabled(const bool enable);
 
     int32_t SetSpatializationEnabled(

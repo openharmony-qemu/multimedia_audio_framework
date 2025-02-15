@@ -246,6 +246,8 @@ public:
 
     virtual bool IsSpatializationEnabled(const std::string address) = 0;
 
+    virtual bool IsSpatializationEnabledForCurrentDevice() = 0;
+
     virtual int32_t SetSpatializationEnabled(const bool enable) = 0;
 
     virtual int32_t SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,

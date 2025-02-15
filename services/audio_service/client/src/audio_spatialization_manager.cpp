@@ -60,6 +60,11 @@ bool AudioSpatializationManager::IsSpatializationEnabled(
     return AudioPolicyManager::GetInstance().IsSpatializationEnabled(selectedAudioDevice->macAddress_);
 }
 
+bool AudioSpatializationManager::IsSpatializationEnabledForCurrentDevice()
+{
+    return AudioPolicyManager::GetInstance().IsSpatializationEnabledForCurrentDevice();
+}
+
 int32_t AudioSpatializationManager::SetSpatializationEnabled(const bool enable)
 {
     return AudioPolicyManager::GetInstance().SetSpatializationEnabled(enable);
