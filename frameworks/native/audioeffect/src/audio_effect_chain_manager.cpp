@@ -1661,18 +1661,23 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string 
     uint64_t &channelLayout)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    if (!sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+    if (!sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
         return ERROR;
     }
     for (auto& scenePair : sceneTypeToSessionIDMap_) {
         std::string pairSceneTypeAndDeviceKey = scenePair.first + "_&_" + GetDeviceTypeName();
         if (sceneTypeToEffectChainMap_.count(pairSceneTypeAndDeviceKey) > 0 &&
+            sceneTypeToEffectChainMap_[pairSceneTypeAndDeviceKey] != nullptr &&
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
             sceneTypeToEffectChainMap_[pairSceneTypeAndDeviceKey]) {
             std::set<std::string> sessions = scenePair.second;
             FindMaxEffectChannels(scenePair.first, sessions, channels, channelLayout);
         }
     }
+    auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    audioEffectChain->SetCurrChannelNoCheck(channels);
+    audioEffectChain->SetCurrChannelLayoutNoCheck(channelLayout);
     return SUCCESS;
 }
 

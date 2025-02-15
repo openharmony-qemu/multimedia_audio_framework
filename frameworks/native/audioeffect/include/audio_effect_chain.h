@@ -91,7 +91,10 @@ public:
     int32_t SetEffectProperty(const std::string &effect, const std::string &property);
     void SetStreamUsage(const int32_t streamUsage);
     void GetInputChannelInfo(uint32_t &channels, uint64_t &channelLayout);
-    void CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info, AudioEffectConfig *tmpIoBufferConfig);
+    int32_t updatePrimaryChannel();
+    bool CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info);
+    void SetCurrChannelNoCheck(const uint32_t channel);
+    void SetCurrchannelLayoutNoCheck(const uint64_t channelLayout);
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
@@ -129,6 +132,8 @@ private:
     std::string dumpNameOut_ = "";
     bool spatializationEnabledFading_ = false;
     int32_t fadingCounts_ = 0;
+    uint32_t currChannelNoCheck_ = DEFAULT_NUM_CHANNEL;
+    uint64_t currchannelLayoutNoCheck_ = DEFAULT_NUM_CHANNELLAYOUT;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
