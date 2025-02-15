@@ -118,6 +118,8 @@ private:
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     bool isInnerCapped_ = false;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
+    sptr<IRemoteObject> object_ = nullptr;
+    sptr<ProcessDeathRecipient> deathRecipient_ = nullptr;
 
     bool needCheckBackground_ = false;
 

@@ -64,6 +64,11 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
 AudioProcessInServer::~AudioProcessInServer()
 {
     AUDIO_INFO_LOG("~AudioProcessInServer()");
+    if (object_ != nullptr) {
+        bool res = object_->RemoveDeathRecipient(deathRecipient_);
+        AUDIO_INFO_LOG("RemoveDeathRecipient ret: %{public}d", res);
+    }
+
     if (convertedBuffer_.buffer != nullptr) {
         delete [] convertedBuffer_.buffer;
     }
@@ -345,9 +350,10 @@ int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
 {
     sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
     CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
-    bool result = object->AddDeathRecipient(new ProcessDeathRecipient(this, releaseCallback_));
+    deathRecipient_ = new ProcessDeathRecipient(this, releaseCallback_);
+    bool result = object->AddDeathRecipient(deathRecipient_);
     CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "AddDeathRecipient failed.");
-
+    object_= object;
     return SUCCESS;
 }
 
