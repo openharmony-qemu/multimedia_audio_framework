@@ -428,7 +428,7 @@ public:
     int32_t SetVirtualCall(const bool isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        const bool isConnected) override;
+        const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 

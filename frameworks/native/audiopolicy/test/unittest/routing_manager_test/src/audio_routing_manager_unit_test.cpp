@@ -253,19 +253,40 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_00
 }
 
 /**
- * @tc.name  : Test SetDeviceConnectionStatus
- * @tc.number: SetDeviceConnectionStatus_001
+ * @tc.name  : Test Audio_Routing_Manager_SetDeviceConnectionStatus via legal state
+ * @tc.number: Audio_Routing_Manager_SetDeviceConnectionStatus_001
  * @tc.desc  : Test SetDeviceConnectionStatus interface.
  */
-HWTEST(AudioPolicyExtUnitTest, SetDeviceConnectionStatus_001, TestSize.Level1)
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetDeviceConnectionStatus_001, TestSize.Level1)
 {
-    auto deviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = deviceDescriptors[0];
-    int32_t ret = -1;
-    ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(deviceDescriptor, true);
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc->deviceName_ = "Speaker_Out";
+    desc->deviceRole_ = OUTPUT_DEVICE;
+    std::shared_ptr<AudioStreamInfo> streamInfo = std::make_shared<AudioStreamInfo>();
+    streamInfo->samplingRate = SAMPLE_RATE_48000;
+    streamInfo->encoding = ENCODING_PCM;
+    streamInfo->format = SAMPLE_S16LE;
+    streamInfo->channels = STEREO;
+
+    bool isConnected = true;
+    int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, streamInfo, isConnected);
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(deviceDescriptor, false);
-    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Routing_Manager_SetDeviceConnectionStatus via legal state
+ * @tc.number: Audio_Routing_Manager_SetDeviceConnectionStatus_002
+ * @tc.desc  : Test SetDeviceConnectionStatus interface.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetDeviceConnectionStatus_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    std::shared_ptr<AudioStreamInfo> streamInfo = nullptr;
+
+    bool isConnected = true;
+    int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, streamInfo, isConnected);
+    EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

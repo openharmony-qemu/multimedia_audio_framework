@@ -488,11 +488,11 @@ void AudioPolicyManager::SaveRemoteInfo(const std::string &networkId, DeviceType
 }
 
 int32_t AudioPolicyManager::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-    const bool isConnected)
+    const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->SetDeviceConnectionStatus(desc, isConnected);
+    return gsp->SetDeviceConnectionStatus(desc, streamInfo, isConnected);
 }
 } // namespace AudioStandard
 } // namespace OHOS

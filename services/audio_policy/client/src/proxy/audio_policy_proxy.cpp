@@ -2177,7 +2177,7 @@ int32_t AudioPolicyProxy::InjectInterruption(const std::string networkId, Interr
 }
 
 int32_t AudioPolicyProxy::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-    const bool isConnected)
+    const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2188,6 +2188,8 @@ int32_t AudioPolicyProxy::SetDeviceConnectionStatus(const std::shared_ptr<AudioD
 
     bool res = desc->Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(res, -1, "Desc Marshalling() failed");
+    res = streamInfo->Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(res, -1, "StreamInfo Marshalling() failed");
     data.WriteBool(isConnected);
 
     int error = Remote()->SendRequest(
