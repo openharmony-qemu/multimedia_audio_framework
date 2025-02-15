@@ -284,6 +284,11 @@ void RendererInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
 
 State RendererInClientInner::GetState()
 {
+    std::lock_guard lock(switchingMutex_);
+    if (switchingInfo_.isSwitching_) {
+        AUDIO_INFO_LOG("switching, return state in switchingInfo");
+        return switchingInfo_.state_;
+    }
     return state_;
 }
 
@@ -1638,6 +1643,16 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
     return ret;
+}
+
+void RendererInClientInner::SetSwichingStatus(bool isSwitching)
+{
+    std::lock_guard lock(switchingMutex_);
+    if (isSwitching) {
+        switchingInfo_ = {true, state_};
+    } else {
+        switchingInfo_ = {false, INVALID};
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

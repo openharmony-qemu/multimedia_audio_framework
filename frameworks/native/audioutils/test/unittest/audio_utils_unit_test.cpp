@@ -15,6 +15,7 @@
 
 #include <thread>
 #include <gtest/gtest.h>
+#include "gmock/gmock.h"
 #include "audio_utils.h"
 #include "parameter.h"
 #include "audio_channel_blend.h"
@@ -23,12 +24,19 @@
 #include "audio_errors.h"
 
 using namespace testing::ext;
+using namespace testing;
 using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
 constexpr unsigned int QUEUE_SLOTS = 10;
 constexpr unsigned int THREAD_NUM = QUEUE_SLOTS + 1;
+
+class MockExe {
+public:
+    MOCK_METHOD(void, Exe, ());
+};
+
 class AudioUtilsUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -3064,6 +3072,39 @@ HWTEST(AudioUtilsUnitTest, CheckAudioData_003, TestSize.Level1)
     struct SignalDetectAgent signalDetectAgent;
     bool ret = signalDetectAgent.CheckAudioData(buffer, bufferLen);
     EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioScopeExit  API
+* @tc.type  : FUNC
+* @tc.number: AudioScopeExit_001
+* @tc.desc  : Test AudioScopeExit API
+*/
+HWTEST(AudioUtilsUnitTest, AudioScopeExit_001, TestSize.Level1)
+{
+    MockExe mock;
+    InSequence seq;
+    EXPECT_CALL(mock, Exe()).Times(1);
+    AudioScopeExit scopeExit([&mock] () {
+        mock.Exe();
+    });
+}
+
+/**
+* @tc.name  : Test AudioScopeExit  API
+* @tc.type  : FUNC
+* @tc.number: AudioScopeExit_002
+* @tc.desc  : Test AudioScopeExit API
+*/
+HWTEST(AudioUtilsUnitTest, AudioScopeExit_002, TestSize.Level1)
+{
+    MockExe mock;
+    InSequence seq;
+    EXPECT_CALL(mock, Exe()).Times(0);
+    AudioScopeExit scopeExit([&mock] () {
+        mock.Exe();
+    });
+    scopeExit.Relase();
 }
 } // namespace AudioStandard
 } // namespace OHOS
