@@ -498,6 +498,50 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
 
     /**
+     * @brief Exclude the audio output device according to the DeviceUsage.
+     *
+     * @param audioDevUsage AudioDeviceUsage.
+     * @param audioDeviceDescriptors Output device object.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+
+    /**
+     * @brief Unexclude the audio output device according to the DeviceUsage.
+     *
+     * @param audioDevUsage AudioDeviceUsage.
+     * @param audioDeviceDescriptors Output device object.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+
+    /**
+     * @brief Unexclude the audio output device according to the DeviceUsage.
+     *
+     * @param audioDevUsage AudioDeviceUsage.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage) const;
+
+    /**
+     * @brief Get the list of excluded audio output devices according to the DeviceUsage.
+     *
+     * @param audioDevUsage AudioDeviceUsage.
+     * @return Returns the device list is obtained.
+     * @since 16
+     */
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+        AudioDeviceUsage audioDevUsage) const;
+
+    /**
      * @brief Get the list of audio devices.
      *
      * @param deviceFlag Flag of device type.

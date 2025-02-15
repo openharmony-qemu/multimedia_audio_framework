@@ -912,6 +912,22 @@ napi_status NapiParamUtils::GetAudioRendererFilter(const napi_env &env, sptr<Aud
     return napi_ok;
 }
 
+napi_status NapiParamUtils::GetAudioDeviceUsage(const napi_env &env, AudioDeviceUsage &audioDevUsage, napi_value in)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_status status = napi_typeof(env, in, &valueType);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && valueType == napi_number, napi_invalid_arg, "valueType invalid");
+
+    int32_t intValue = 0;
+    status = napi_get_value_int32(env, in, &intValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && NapiAudioEnum::IsLegalDeviceUsage(intValue),
+        napi_invalid_arg, "invalid deviceusage");
+
+    audioDevUsage = static_cast<AudioDeviceUsage>(intValue);
+
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::SetValueDeviceChangeAction(const napi_env& env, const DeviceChangeAction &action,
     napi_value &result)
 {

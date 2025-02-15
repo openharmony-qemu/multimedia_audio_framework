@@ -155,6 +155,49 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::ExcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+    int size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0, "ExcludeOutputDevices get invalid device size.");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    for (int i = 0; i < size; i++) {
+        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+        audioDeviceDescriptors.push_back(audioDeviceDescriptor);
+    }
+
+    int32_t ret = ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::UnexcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+    int size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0, "UnexcludeOutputDevices get invalid device size.");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    for (int i = 0; i < size; i++) {
+        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+        audioDeviceDescriptors.push_back(audioDeviceDescriptor);
+    }
+
+    int32_t ret = UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::GetExcludedOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetExcludedOutputDevices(audioDevUsage);
+    int32_t size = static_cast<int32_t>(devices.size());
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
 void AudioPolicyManagerStub::GetAvailableDevicesInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioDeviceUsage usage  = static_cast<AudioDeviceUsage>(data.ReadInt32());

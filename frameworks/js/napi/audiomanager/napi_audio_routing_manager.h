@@ -46,11 +46,13 @@ private:
         bool supported = false;
         AudioRendererInfo rendererInfo;
         AudioCapturerInfo captureInfo;
+        AudioDeviceUsage audioDevUsage;
         sptr<AudioRendererFilter> audioRendererFilter;
         sptr<AudioCapturerFilter> audioCapturerFilter;
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors;
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDeviceDescriptors;
+        size_t argSize;
     };
 
 #if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
@@ -64,6 +66,8 @@ private:
     static napi_value SelectOutputDeviceByFilter(napi_env env, napi_callback_info info);
     static napi_value SelectInputDevice(napi_env env, napi_callback_info info);
     static napi_value SelectInputDeviceByFilter(napi_env env, napi_callback_info info);
+    static napi_value ExcludeOutputDevices(napi_env env, napi_callback_info info);
+    static napi_value UnexcludeOutputDevices(napi_env env, napi_callback_info info);
     static napi_value SetCommunicationDevice(napi_env env, napi_callback_info info);
     static napi_value IsCommunicationDeviceActive(napi_env env, napi_callback_info info);
     static napi_value IsCommunicationDeviceActiveSync(napi_env env, napi_callback_info info);
@@ -77,6 +81,7 @@ private:
     static napi_value GetPreferredInputDeviceByFilter(napi_env env, napi_callback_info info);
     static napi_value GetAvailableMicrophones(napi_env env, napi_callback_info info);
     static napi_value GetAvailableDevices(napi_env env, napi_callback_info info);
+    static napi_value GetExcludedOutputDevices(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
     static void RegisterDeviceChangeCallback(napi_env env, size_t argc, napi_value *args, const std::string &cbName,
