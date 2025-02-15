@@ -30,4 +30,9 @@ ohos_unittest("audio_utils_unit_test") {
   sources = [ "audio_utils_unit_test.cpp" ]
 
   deps = [ "../../../audioutils:audio_utils" ]
+
+  external_deps = [
+    "googletest:gmock",
+    "googletest:gtest",
+  ]
 }

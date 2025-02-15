@@ -211,6 +211,7 @@ public:
     bool GetHighResolutionEnabled() override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+    void SetSwichingStatus(bool isSwitching) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -1957,6 +1958,11 @@ error:
 int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     return GetAudioTime(timestamp, base);
+}
+
+void CapturerInClientInner::SetSwichingStatus(bool isSwitching)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
 }
 } // namespace AudioStandard
 } // namespace OHOS
