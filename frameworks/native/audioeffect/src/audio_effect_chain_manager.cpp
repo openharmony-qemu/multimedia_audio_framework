@@ -437,7 +437,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
                 continue;
             }
             if (sessionIDToEffectInfoMap_[*s].sceneMode == "EFFECT_NONE") {
-                AUDIO_INFO_LOG("sessionID:%{public}s sceneType:%{public}s, sceneMode is EFFECT_NONE, no send volume",
+                AUDIO_DEBUG_LOG("sessionID:%{public}s sceneType:%{public}s, sceneMode is EFFECT_NONE, no send volume",
                     (*s).c_str(), it->first.c_str());
                 continue;
             }
@@ -472,14 +472,14 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
             continue;
         }
         if (sessionIDToEffectInfoMap_[*sessionId].sceneMode == "EFFECT_NONE") {
-            AUDIO_INFO_LOG("sessionID:%{public}s, sceneMode is EFFECT_NONE, no send volume", (*sessionId).c_str());
+            AUDIO_DEBUG_LOG("sessionID:%{public}s, sceneMode is EFFECT_NONE, no send volume", (*sessionId).c_str());
             continue;
         }
         std::string sceneTypeTemp = sessionIDToEffectInfoMap_[*sessionId].sceneType;
         std::string sceneTypeAndDeviceKey = sceneTypeTemp + "_&_" + GetDeviceTypeName();
         if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) == 0 ||
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
-            AUDIO_INFO_LOG("null audioEffectChain, sceneType: %{public}s", sceneTypeTemp.c_str());
+            AUDIO_DEBUG_LOG("null audioEffectChain, sceneType: %{public}s", sceneTypeTemp.c_str());
             continue;
         }
         auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
@@ -523,7 +523,7 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
     }
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
         if (it->second == nullptr) {
-            AUDIO_INFO_LOG("null audioEffectChain, sceneType: %{public}s", it->first.c_str());
+            AUDIO_DEBUG_LOG("null audioEffectChain, sceneType: %{public}s", it->first.c_str());
             continue;
         }
         auto audioEffectChain = it->second;
@@ -815,7 +815,6 @@ int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels
             channels = tmpChannelCount;
             channelLayout = tmpChannelLayout;
         }
-        AUDIO_INFO_LOG("set hdi channel change to: %{public}d, ret: %{public}d", channels, ret);
     }
     return SUCCESS;
 }
