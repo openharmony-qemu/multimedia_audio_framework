@@ -45,7 +45,8 @@ const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
 
 const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
     SAMPLE_S16LE,
-    SAMPLE_S32LE
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
 };
 
 std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::CreateStreamMap()
