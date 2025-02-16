@@ -490,7 +490,8 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     uint32_t channel = processConfig_.streamInfo.channels;
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
-    if (*serverStreamInfo.channels.rbegin() != processConfig_.streamInfo.channels) {
+    if (*serverStreamInfo.channels.rbegin() != processConfig_.streamInfo.channels ||
+        serverStreamInfo.format != processConfig_.streamInfo.format) {
         size_t spanSizeInByte = 0;
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
             uint32_t serverByteSize = *serverStreamInfo.channels.rbegin() * PcmFormatToBits(serverStreamInfo.format);

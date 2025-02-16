@@ -472,6 +472,9 @@ AudioFormat FastAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat form
         case SAMPLE_S32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
+        case SAMPLE_F32:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            break;
         default:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
