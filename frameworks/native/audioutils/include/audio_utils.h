@@ -486,28 +486,6 @@ enum HdiRenderOffset : uint32_t {
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 
 void CloseFd(int fd);
-
-class AudioScopeExit {
-public:
-    AudioScopeExit(std::function<void()> &&func) : func_(std::move(func))
-    {}
-
-    void Relase()
-    { isReleased_ = true; }
-
-    ~AudioScopeExit()
-    {
-        if (!isReleased_ && func_) { func_(); }
-    }
-
-    AudioScopeExit(const AudioScopeExit &) = delete;
-    AudioScopeExit &operator=(const AudioScopeExit &) = delete;
-    AudioScopeExit(AudioScopeExit &&) = delete;
-    AudioScopeExit &operator=(AudioScopeExit &&) = delete;
-private:
-    bool isReleased_ = false;
-    const std::function<void()> func_{};
-};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

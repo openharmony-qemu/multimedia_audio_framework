@@ -53,6 +53,7 @@
 
 #include "media_monitor_manager.h"
 #include "event_bean.h"
+#include "audio_safe_block_queue.h"
 
 namespace OHOS {
 namespace AudioStandard {

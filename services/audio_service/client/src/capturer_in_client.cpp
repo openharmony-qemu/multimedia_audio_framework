@@ -46,6 +46,7 @@
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
+#include "audio_safe_block_queue.h"
 
 namespace OHOS {
 namespace AudioStandard {

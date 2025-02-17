@@ -17,6 +17,8 @@
 #include <gtest/gtest.h>
 #include "gmock/gmock.h"
 #include "audio_utils.h"
+#include "audio_scope_exit.h"
+#include "audio_safe_block_queue.h"
 
 using namespace testing::ext;
 using namespace testing;

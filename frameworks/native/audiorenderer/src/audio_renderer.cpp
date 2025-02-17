@@ -31,6 +31,7 @@
 #include "audio_utils.h"
 
 #include "media_monitor_manager.h"
+#include "audio_scope_exit.h"
 
 namespace OHOS {
 namespace AudioStandard {
