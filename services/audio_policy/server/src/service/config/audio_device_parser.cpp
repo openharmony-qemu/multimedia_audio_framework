@@ -19,6 +19,7 @@
 #include "audio_device_parser.h"
 #include "media_monitor_manager.h"
 #include "audio_errors.h"
+#include "config_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
