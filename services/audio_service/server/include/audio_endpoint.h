@@ -82,7 +82,7 @@ public:
     virtual int32_t EnableFastInnerCap() = 0;
     virtual int32_t DisableFastInnerCap() = 0;
 
-    virtual int32_t LinkProcessStream(IAudioProcessStream *processStream) = 0;
+    virtual int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) = 0;
     virtual int32_t UnlinkProcessStream(IAudioProcessStream *processStream) = 0;
 
     virtual int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) = 0;
@@ -116,7 +116,7 @@ public:
     int32_t OnPause(IAudioProcessStream *processStream) override;
     // when audio process request update handle info.
     int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
-    int32_t LinkProcessStream(IAudioProcessStream *processStream) override;
+    int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) override;
     int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
     int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
 
