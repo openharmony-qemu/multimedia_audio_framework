@@ -45,7 +45,7 @@ shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallRenderDevice(Stream
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
-    shared_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(carDescs);
+    shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_OUTPUT_DEVICES, carDescs);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
         clientUID, desc->deviceType_);
     return desc;
@@ -56,7 +56,7 @@ shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallCaptureDevice(Sourc
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePublicDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
-    shared_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(carDescs);
+    shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_INPUT_DEVICES, carDescs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
     return desc;
@@ -70,7 +70,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRender
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
-    shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestConnectDeivce(carDescs);
+    shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(CALL_OUTPUT_DEVICES, carDescs);
     if (!latestConnDesc.get()) {
         AUDIO_INFO_LOG("Have no latest connecte desc, dont add the other device.");
         return descs;

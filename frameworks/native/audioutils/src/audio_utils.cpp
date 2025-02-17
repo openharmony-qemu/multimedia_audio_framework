@@ -1246,6 +1246,9 @@ int32_t GetFormatByteSize(int32_t format)
         case SAMPLE_S32LE:
             formatByteSize = 4; // size is 4
             break;
+        case SAMPLE_F32LE:
+            formatByteSize = 4; // size is 4
+            break;
         default:
             formatByteSize = 2; // size is 2
             break;

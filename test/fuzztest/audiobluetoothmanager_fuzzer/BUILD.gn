@@ -60,6 +60,8 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",

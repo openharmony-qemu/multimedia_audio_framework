@@ -77,7 +77,6 @@ public:
         const string &macAddress, const string &networkId, ConnectState connectState);
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
     std::string GetConnDevicesStr();
-    std::string GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs);
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors);

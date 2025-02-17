@@ -1281,6 +1281,32 @@ int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapt
     return ret;
 }
 
+int32_t AudioPolicyServer::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "No system permission");
+
+    return audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioPolicyServer::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "No system permission");
+
+    return audioPolicyService_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetExcludedOutputDevices(AudioDeviceUsage audioDevUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), vector<shared_ptr<AudioDeviceDescriptor>>(),
+        "No system permission");
+
+    return audioPolicyService_.GetExcludedOutputDevices(audioDevUsage);
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
