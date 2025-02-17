@@ -22,6 +22,8 @@
 #include "volume_ramp.h"
 #include "audio_speed.h"
 #include "audio_errors.h"
+#include "audio_scope_exit.h"
+#include "audio_safe_block_queue.h"
 
 using namespace testing::ext;
 using namespace testing;

@@ -27,14 +27,12 @@
 #include <queue>
 #include <climits>
 #include <condition_variable>
-#include <functional>
 #include <charconv>
 #include <unistd.h>
 #include "securec.h"
 
 #include "audio_info.h"
 #include "audio_common_utils.h"
-#include "audio_safe_block_queue.h"
 
 #define AUDIO_MS_PER_SECOND 1000
 #define AUDIO_US_PER_SECOND 1000000
@@ -485,28 +483,6 @@ enum HdiRenderOffset : uint32_t {
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 
 void CloseFd(int fd);
-
-class AudioScopeExit {
-public:
-    AudioScopeExit(std::function<void()> &&func) : func_(std::move(func))
-    {}
-
-    void Relase()
-    { isReleased_ = true; }
-
-    ~AudioScopeExit()
-    {
-        if (!isReleased_ && func_) { func_(); }
-    }
-
-    AudioScopeExit(const AudioScopeExit &) = delete;
-    AudioScopeExit &operator=(const AudioScopeExit &) = delete;
-    AudioScopeExit(AudioScopeExit &&) = delete;
-    AudioScopeExit &operator=(AudioScopeExit &&) = delete;
-private:
-    bool isReleased_ = false;
-    const std::function<void()> func_{};
-};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H
