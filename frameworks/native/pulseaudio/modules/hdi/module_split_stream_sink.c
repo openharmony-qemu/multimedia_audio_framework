@@ -784,6 +784,20 @@ static unsigned SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_memchunk *re
     return nSink;
 }
 
+static void SendStreamData(struct userdata *u, int num, pa_memchunk chunk)
+{
+    // start hdi
+    StartSplitStreamHdiIfRunning(u);
+    // send msg post data
+    if (!strcmp(g_splitArr[num], STREAM_TYPE_NAVIGATION)) {
+        pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_NAVIGATION, NULL, 0, &chunk, NULL);
+    } else if (!strcmp(g_splitArr[num], STREAM_TYPE_COMMUNICATION)) {
+        pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_COMMUNICATION, NULL, 0, &chunk, NULL);
+    } else {
+        pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_MEDIA, NULL, 0, &chunk, NULL);
+    }
+}
+
 static void ProcessRender(struct userdata *u, pa_usec_t now)
 {
     AUTO_CTRACE("module_split_stream_sink: ProcessRender");
@@ -791,6 +805,7 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     /* Fill the buffer up the latency size */
+    int count = 0;
     for (int i = 0; i < g_splitNums; i++) {
         AUTO_CTRACE("module_split_stream_sink::ProcessRender:streamType:%s", g_splitArr[i]);
         AUDIO_DEBUG_LOG("module_split_stream_sink: ProcessRender:streamType:%{public}s", g_splitArr[i]);
@@ -799,23 +814,27 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
         unsigned chunkIsNull = 0;
         chunkIsNull = SplitPaSinkRenderFull(u->sink, u->sink->thread_info.max_request, &chunk, g_splitArr[i]);
         if (chunkIsNull == 0) {
-            continue;
+            count++;
+            if (count != g_splitNums) {
+                continue;
+            }
+            for (int j = 0; j < g_splitNums; j++) {
+                SendStreamData(u, j, chunk);
+            }
+            break;
         }
-
-        // start hdi
-        StartSplitStreamHdiIfRunning(u);
-
-        AUDIO_DEBUG_LOG("module_split_stream_sink: ProcessRender send msg, chunk length = %{public}zu", chunk.length);
-        // send msg post data
-        if (!strcmp(g_splitArr[i], STREAM_TYPE_NAVIGATION)) {
-            pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_NAVIGATION, NULL, 0, &chunk, NULL);
-        } else if (!strcmp(g_splitArr[i], STREAM_TYPE_COMMUNICATION)) {
-            pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_COMMUNICATION, NULL, 0, &chunk, NULL);
-        } else {
-            pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_MEDIA, NULL, 0, &chunk, NULL);
-        }
+        SendStreamData(u, i, chunk);
     }
     u->timestamp += pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+}
+
+static bool MonitorLinkedState(pa_sink *si, bool isRunning)
+{
+    if (isRunning) {
+        return si->monitor_source && PA_SOURCE_IS_RUNNING(si->monitor_source->thread_info.state);
+    } else {
+        return si->monitor_source && PA_SOURCE_IS_LINKED(si->monitor_source->thread_info.state);
+    }
 }
 
 static void ThreadFunc(void *userdata)
@@ -836,11 +855,22 @@ static void ThreadFunc(void *userdata)
         if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
             now = pa_rtclock_now();
         }
+        
+        bool flag = (((u->renderInIdleState && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
+            (!u->renderInIdleState && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
+            !(u->sink->thread_info.state == PA_SINK_IDLE && u->previousState == PA_SINK_SUSPENDED) &&
+            !(u->sink->thread_info.state == PA_SINK_IDLE && u->previousState == PA_SINK_INIT)) ||
+            (u->sink->thread_info.state == PA_SINK_IDLE && MonitorLinkedState(u->sink, true));
+        if (flag) {
+            now = pa_rtclock_now();
+        }
+
         if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
             ProcessRewind(u, now);
         }
+
         /* Render some data and drop it immediately */
-        if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
+        if (flag) {
             if (u->timestamp <= now) {
                 ProcessRender(u, now);
             }
