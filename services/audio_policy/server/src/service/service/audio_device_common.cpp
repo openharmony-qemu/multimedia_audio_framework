@@ -26,6 +26,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_recovery_device.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -424,6 +425,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
                 std::make_shared<AudioDeviceDescriptor>());
         }
     }
+
+    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
+
     audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
         updatedDesc.macAddress_, updatedDesc.deviceRole_);
 
@@ -484,6 +488,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
     }
+    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
@@ -729,6 +734,10 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
         rendererChangeInfo->sessionId);
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
         rendererChangeInfo->sessionId);
+    if (rendererChangeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST) {
+        oldSinkName = (oldSinkName == PRIMARY_DIRECT_VOIP ? PRIMARY_MMAP_VOIP : oldSinkName);
+        newSinkName = (newSinkName == PRIMARY_DIRECT_VOIP ? PRIMARY_MMAP_VOIP : newSinkName);
+    }
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }

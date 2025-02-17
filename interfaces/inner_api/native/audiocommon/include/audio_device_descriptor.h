@@ -118,6 +118,14 @@ public:
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
     DeviceType MapInternalToExternalDeviceType() const;
+
+    struct AudioDeviceDescriptorComparer {
+        bool operator()(const std::shared_ptr<AudioDeviceDescriptor> &lhs,
+            const std::shared_ptr<AudioDeviceDescriptor> &rhs) const
+        {
+            return lhs->IsSameDeviceDesc(*rhs);
+        }
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS

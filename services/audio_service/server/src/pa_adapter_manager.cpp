@@ -819,6 +819,9 @@ pa_sample_spec PaAdapterManager::ConvertToPAAudioParams(AudioProcessConfig proce
         case SAMPLE_S32LE:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_S32LE;
             break;
+        case SAMPLE_F32LE:
+            paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_FLOAT32LE;
+            break;
         default:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_INVALID;
             break;

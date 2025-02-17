@@ -184,7 +184,10 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_PREFERRED_DEVICE",
     "SAVE_REMOTE_INFO",
     "SET_VIRTUAL_CALL",
-    "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE"
+    "EXCLUDE_OUTPUT_DEVICES",
+    "UNEXCLUDE_OUTPUT_DEVICES",
+    "GET_EXCLUDED_OUTPUT_DEVICES",
+    "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1152,6 +1155,15 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_REMOTE_INFO):
             SaveRemoteInfoInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::EXCLUDE_OUTPUT_DEVICES):
+            ExcludeOutputDevicesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNEXCLUDE_OUTPUT_DEVICES):
+            UnexcludeOutputDevicesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES):
+            GetExcludedOutputDevicesInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

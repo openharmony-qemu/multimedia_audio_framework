@@ -36,15 +36,6 @@ const uint32_t ROTATE = 1;
 const int32_t SESSION_ID = 1000001;
 const int32_t STATE = 1;
 
-enum PerferredType {
-    MEDIA_RENDER = 0,
-    CALL_RENDER = 1,
-    CALL_CAPTURE = 2,
-    RING_RENDER = 3,
-    RECORD_CAPTURE = 4,
-    TONE_RENDER = 5,
-};
-
 void AudioPolicyServiceFourthUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest::SetUpTestCase start-end");

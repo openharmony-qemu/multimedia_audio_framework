@@ -39,7 +39,7 @@ namespace AudioStandard {
 using namespace std;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
-
+constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
 mutex g_asProxyMutex;
@@ -672,9 +672,8 @@ int32_t AudioSystemManager::SelectOutputDevice(
         ERR_INVALID_PARAM, "invalid parameter");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
-    size_t validSize = 64;
     if (audioDeviceDescriptors[0]->networkId_ != LOCAL_NETWORK_ID &&
-        audioDeviceDescriptors[0]->networkId_.size() != validSize) {
+        audioDeviceDescriptors[0]->networkId_.size() != VALID_REMOTE_NETWORK_ID_LENGTH) {
         AUDIO_ERR_LOG("SelectOutputDevice: invalid networkId.");
         return ERR_INVALID_PARAM;
     }
@@ -717,10 +716,10 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // operation chack
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
-    size_t validSize = 64;
 
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->networkId_ == LOCAL_NETWORK_ID ||
-        audioDeviceDescriptors[0]->networkId_.size() == validSize, ERR_INVALID_PARAM, "invalid networkId.");
+        audioDeviceDescriptors[0]->networkId_.size() == VALID_REMOTE_NETWORK_ID_LENGTH,
+        ERR_INVALID_PARAM, "invalid networkId.");
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= 0 || (audioRendererFilter->uid == -1),
         ERR_INVALID_PARAM, "invalid uid.");
 
@@ -750,6 +749,71 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         getpid(), audioCapturerFilter->uid, static_cast<int32_t>(audioDeviceDescriptors[0]->deviceType_));
 
     return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+}
+
+int32_t AudioSystemManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
+        ERR_INVALID_PARAM, "invalid parameter: only support output device");
+    CHECK_AND_RETURN_RET_LOG(!audioDeviceDescriptors.empty(), ERR_INVALID_PARAM, "invalid parameter: empty list");
+    for (const auto &devDesc : audioDeviceDescriptors) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter: mull pointer in list");
+        CHECK_AND_RETURN_RET_LOG(!(devDesc->deviceType_ == DEVICE_TYPE_SPEAKER &&
+            devDesc->networkId_ == LOCAL_NETWORK_ID),
+            ERR_INVALID_PARAM, "invalid parameter: speaker can not be excluded.");
+        CHECK_AND_RETURN_RET_LOG(devDesc->deviceType_ != DEVICE_TYPE_EARPIECE, ERR_INVALID_PARAM,
+            "invalid parameter: earpiece can not be excluded.");
+        CHECK_AND_RETURN_RET_LOG(devDesc->networkId_ == LOCAL_NETWORK_ID ||
+            devDesc->networkId_.size() == VALID_REMOTE_NETWORK_ID_LENGTH,
+            ERR_INVALID_PARAM, "invalid parameter: invalid networkId.");
+    }
+    return AudioPolicyManager::GetInstance().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
+        ERR_INVALID_PARAM, "invalid parameter: only support output device");
+    CHECK_AND_RETURN_RET_LOG(!audioDeviceDescriptors.empty(), ERR_INVALID_PARAM, "invalid parameter: empty list");
+    for (const auto &devDesc : audioDeviceDescriptors) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter: mull pointer in list");
+        CHECK_AND_RETURN_RET_LOG(!(devDesc->deviceType_ == DEVICE_TYPE_SPEAKER &&
+            devDesc->networkId_ == LOCAL_NETWORK_ID),
+            ERR_INVALID_PARAM, "invalid parameter: speaker can not be excluded.");
+        CHECK_AND_RETURN_RET_LOG(devDesc->deviceType_ != DEVICE_TYPE_EARPIECE, ERR_INVALID_PARAM,
+            "invalid parameter: earpiece can not be excluded.");
+        CHECK_AND_RETURN_RET_LOG(devDesc->networkId_ == LOCAL_NETWORK_ID ||
+            devDesc->networkId_.size() == VALID_REMOTE_NETWORK_ID_LENGTH,
+            ERR_INVALID_PARAM, "invalid parameter: invalid networkId.");
+    }
+    return AudioPolicyManager::GetInstance().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
+        ERR_INVALID_PARAM, "invalid parameter: only support output device");
+    auto unexcludeOutputDevices = GetExcludedOutputDevices(audioDevUsage);
+    for (const auto &devDesc : unexcludeOutputDevices) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter: mull pointer in list");
+        CHECK_AND_RETURN_RET_LOG(!(devDesc->deviceType_ == DEVICE_TYPE_SPEAKER &&
+            devDesc->networkId_ == LOCAL_NETWORK_ID),
+            ERR_INVALID_PARAM, "invalid parameter: speaker can not be excluded.");
+        CHECK_AND_RETURN_RET_LOG(devDesc->deviceType_ != DEVICE_TYPE_EARPIECE, ERR_INVALID_PARAM,
+            "invalid parameter: earpiece can not be excluded.");
+        CHECK_AND_RETURN_RET_LOG(devDesc->networkId_ == LOCAL_NETWORK_ID ||
+            devDesc->networkId_.size() == VALID_REMOTE_NETWORK_ID_LENGTH,
+            ERR_INVALID_PARAM, "invalid parameter: invalid networkId.");
+    }
+    return AudioPolicyManager::GetInstance().UnexcludeOutputDevices(audioDevUsage, unexcludeOutputDevices);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetExcludedOutputDevices(
+    AudioDeviceUsage audioDevUsage) const
+{
+    return AudioPolicyManager::GetInstance().GetExcludedOutputDevices(audioDevUsage);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
@@ -1334,9 +1398,8 @@ int32_t AudioSystemManager::ConfigDistributedRoutingRole(
         return ERR_INVALID_PARAM;
     }
 
-    size_t validSize = 64;
     if (descriptor->networkId_ != LOCAL_NETWORK_ID &&
-        descriptor->networkId_.size() != validSize) {
+        descriptor->networkId_.size() != VALID_REMOTE_NETWORK_ID_LENGTH) {
         AUDIO_ERR_LOG("ConfigDistributedRoutingRole: invalid networkId");
         return ERR_INVALID_PARAM;
     }
@@ -1484,6 +1547,12 @@ int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const 
 int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
 {
     return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+}
+
+int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
+{
+    AUDIO_INFO_LOG("%{public}d", state);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
