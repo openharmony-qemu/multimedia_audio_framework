@@ -218,7 +218,7 @@ public:
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
-    void SetSwichingStatus(bool isSwitching) override;
+    void SetSwitchingStatus(bool isSwitching) override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);

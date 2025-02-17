@@ -911,7 +911,7 @@ int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::
     return GetAudioTime(timestamp, base);
 }
 
-void FastAudioStream::SetSwichingStatus(bool isSwitching)
+void FastAudioStream::SetSwitchingStatus(bool isSwitching)
 {
     std::lock_guard lock(switchingMutex_);
     if (isSwitching) {
