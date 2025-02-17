@@ -930,6 +930,10 @@ int32_t AudioRendererSinkInner::SetVolume(float left, float right)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "SetVolume failed audioRender_ null");
+    if (halName_ == VOIP_HAL_NAME && switchDeviceMute_ && (left != 0 || right != 0)) {
+        AUDIO_ERR_LOG("Direct voip scene. No need to set volume when switch device and volume is 0");
+        return ERR_INVALID_HANDLE;
+    }
 
     leftVolume_ = left;
     rightVolume_ = right;
@@ -1764,6 +1768,8 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "SetVolume failed audioRender_ null");
 
     if (mute) {
         muteCount_++;
@@ -1773,7 +1779,7 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
         }
         switchDeviceMute_ = true;
         if (halName_ == VOIP_HAL_NAME) {
-            SetVolume(0.0f, 0.0f);
+            audioRender_->SetVolume(audioRender_, 0.0f);
         }
     } else {
         muteCount_--;
