@@ -376,7 +376,5 @@ void AudioConnectedDevice::SetSpatializationSupported(const std::string macAddre
         }
     }
 }
-
-
 }
 }

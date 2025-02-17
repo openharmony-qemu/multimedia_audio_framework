@@ -78,7 +78,7 @@ public:
     void RemoveSpatializationEnabledChangeForCurrentDeviceCallbackReference(napi_env env, napi_value args,
         const std::string &cbName);
     void RemoveAllSpatializationEnabledChangeForCurrentDeviceCallbackReference(const std::string &cbName);
-    int32_t GetSpatializationEnabledChangeForCurrentDeviceCbListSize(const std::string &cbName);
+    int32_t GetSpatializationEnabledChangeCbListSize(const std::string &cbName);
     void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override;
     void CreateSpatEnableForCurrentDeviceTsfn(napi_env env);
     bool GetSpatEnableForCurrentDeviceTsfnFlag();

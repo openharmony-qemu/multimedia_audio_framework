@@ -668,7 +668,7 @@ napi_value NapiAudioSpatializationManager::RegisterCallback(napi_env env, napi_v
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
             NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
         RegisterHeadTrackingEnabledChangeCallback(env, args, cbName, napiAudioSpatializationManager);
-    } else if(!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE_CALLBACK_NAME)) {
+    } else if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE_CALLBACK_NAME)) {
         RegisterSpatializationEnabledChangeForCurrentDeviceCallback(env, args, cbName, napiAudioSpatializationManager);
     } else {
         AUDIO_ERR_LOG("NapiAudioSpatializationManager::No such callback supported");
@@ -860,7 +860,7 @@ void NapiAudioSpatializationManager::UnregisterSpatializationEnabledChangeForCur
         if (callback != nullptr) {
             cb->RemoveSpatializationEnabledChangeForCurrentDeviceCallbackReference(env, callback, cbName);
         }
-        if (callback == nullptr || cb->GetSpatializationEnabledChangeForCurrentDeviceCbListSize(cbName) == 0) {
+        if (callback == nullptr || cb->GetSpatializationEnabledChangeCbListSize(cbName) == 0) {
             int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
                 UnregisterSpatializationEnabledForCurrentDeviceEventListener();
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterSpatializationEnabledForCurrentDeviceEventListener Failed");

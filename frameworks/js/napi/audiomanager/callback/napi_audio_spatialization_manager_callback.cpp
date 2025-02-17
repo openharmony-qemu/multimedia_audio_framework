@@ -302,7 +302,7 @@ void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::CreateSpatEna
     std::string callbackName = "AudioSpatializationEnabledForCurrentDevice";
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
-        SpatializationEnabledForCurrentDeviceTsfnFinalize, nullptr, 
+        SpatializationEnabledForCurrentDeviceTsfnFinalize, nullptr,
         SafeJsCallbackSpatializationEnabledForCurrentDeviceWork, &amSpatEnableForCurrentDeviceTsfn_);
 }
 
@@ -312,7 +312,7 @@ bool NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::GetSpatEnable
 }
 
 void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::
-    RemoveSpatializationEnabledChangeForCurrentDeviceCallbackReference(napi_env env, napi_value args, 
+    RemoveSpatializationEnabledChangeForCurrentDeviceCallbackReference(napi_env env, napi_value args,
     const std::string &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -339,8 +339,8 @@ void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::
         "success");
 }
 
-int32_t NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::
-    GetSpatializationEnabledChangeForCurrentDeviceCbListSize(const std::string &cbName)
+int32_t NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::GetSpatializationEnabledChangeCbListSize(
+    const std::string &cbName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return spatializationEnabledChangeCbForCurrentDeviceList_.size();
@@ -400,8 +400,8 @@ void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::
     napi_close_handle_scope(env, scope);
 }
 
-void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::
-    SpatializationEnabledForCurrentDeviceTsfnFinalize(napi_env env, void *data, void *hint)
+void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::SpatializationEnabledForCurrentDeviceTsfnFinalize(
+    napi_env env, void *data, void *hint)
 {
     AUDIO_INFO_LOG("SpatializationEnabledForCurrentDeviceTsfnFinalize: safe thread resource release.");
 }

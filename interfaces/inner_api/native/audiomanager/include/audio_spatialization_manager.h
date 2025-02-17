@@ -55,7 +55,7 @@ class AudioSpatializationEnabledChangeForCurrentDeviceCallback {
 public:
     virtual ~AudioSpatializationEnabledChangeForCurrentDeviceCallback() = default;
     /**
-     * @brief AudioSpatializationEnabledChangeForAnyDeviceCallback will be executed 
+     * @brief AudioSpatializationEnabledChangeForAnyDeviceCallback will be executed
      *  when spatialization enabled state changes
      *
      * @param enabled the spatialization enabled state for current device.
