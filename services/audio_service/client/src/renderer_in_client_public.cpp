@@ -1645,7 +1645,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     return ret;
 }
 
-void RendererInClientInner::SetSwichingStatus(bool isSwitching)
+void RendererInClientInner::SetSwitchingStatus(bool isSwitching)
 {
     std::lock_guard lock(switchingMutex_);
     if (isSwitching) {

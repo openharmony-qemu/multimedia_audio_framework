@@ -1736,9 +1736,9 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
         std::lock_guard<std::shared_mutex> lock(rendererMutex_);
         isSwitching_ = true;
-        audioStream_->SetSwichingStatus(true);
+        audioStream_->SetSwitchingStatus(true);
         AudioScopeExit scopeExit([this] () {
-            audioStream_->SetSwichingStatus(false);
+            audioStream_->SetSwitchingStatus(false);
         });
         RendererState previousState = GetStatusInner();
         AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
