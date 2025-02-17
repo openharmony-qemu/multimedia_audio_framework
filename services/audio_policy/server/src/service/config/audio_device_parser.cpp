@@ -36,6 +36,9 @@ static std::map<std::string, DeviceType> deviceTypeMap_ = {
 }
 bool AudioDeviceParser::LoadConfiguration()
 {
+    char buf[MAX_PATH_LEN];
+    char *path = GetOneCfgFile(DEVICE_CONFIG_FILE, buf, MAX_PATH_LEN);
+    CHECK_AND_RETURN_RET_LOG(path != nullptr && *path != '\0', ERROR, "invalid path!");
     curNode_ = AudioXmlNode::Create();
     int32_t ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
     if (ret != SUCCESS) {
