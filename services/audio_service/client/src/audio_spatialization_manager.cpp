@@ -105,7 +105,7 @@ int32_t AudioSpatializationManager::RegisterSpatializationEnabledEventListener(
     return AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(callback);
 }
 
-int32_t RegisterSpatializationEnabledForCurrentDeviceEventListener(
+int32_t AudioSpatializationManager::RegisterSpatializationEnabledForCurrentDeviceEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");

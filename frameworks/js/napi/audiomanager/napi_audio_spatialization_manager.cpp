@@ -718,8 +718,8 @@ void NapiAudioSpatializationManager::RegisterSpatializationEnabledChangeForCurre
             RegisterSpatializationEnabledForCurrentDeviceEventListener(
             napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_);
         CHECK_AND_RETURN_LOG(ret == SUCCESS,
-            "NapiAudioSpatializationManager: Registering of Spatialization Enabled Change For Current Device Callback
-            Failed");
+            "NapiAudioSpatializationManager: Registering of Spatialization Enabled Change For Current Device Callback"
+            "Failed");
     }
 
     std::shared_ptr<NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback> cb =
@@ -869,8 +869,8 @@ void NapiAudioSpatializationManager::UnregisterSpatializationEnabledChangeForCur
             cb->RemoveAllSpatializationEnabledChangeForCurrentDeviceCallbackReference(cbName);
         }
     } else {
-        AUDIO_ERR_LOG("UnregisterSpatializationEnabledChangeForCurrentDeviceCallback:
-            spatializationEnabledChangeForCurrentDeviceCallbackNapi_ is null");
+        AUDIO_ERR_LOG("UnregisterSpatializationEnabledChangeForCurrentDeviceCallback:"
+            "spatializationEnabledChangeForCurrentDeviceCallbackNapi_ is null");
     }
 }
 

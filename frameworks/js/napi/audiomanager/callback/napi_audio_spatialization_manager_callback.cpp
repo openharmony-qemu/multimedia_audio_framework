@@ -192,25 +192,6 @@ void NapiAudioSpatializationEnabledChangeCallback::OnSpatializationEnabledChange
     return;
 }
 
-void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::OnSpatializationEnabledChangeForCurrentDevice(
-    const bool &enabled)
-{
-    AUDIO_INFO_LOG("OnSpatializationEnabledChange by the current device entered");
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    for (auto it = spatializationEnabledChangeCbForCurrentDeviceList_.begin();
-        it != spatializationEnabledChangeCbForCurrentDeviceList_.end(); it++) {
-        std::unique_ptr<AudioSpatializationEnabledJsCallback> cb =
-            std::make_unique<AudioSpatializationEnabledJsCallback>();
-        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
-        cb->callback = (*it);
-        cb->enabled = enabled;
-        onSpatializationEnabledChangeFlag_ = true;
-        OnJsCallbackSpatializationEnabled(cb);
-    }
-    return;
-}
-
 void NapiAudioSpatializationEnabledChangeCallback::SafeJsCallbackSpatializationEnabledWork(
     napi_env env, napi_value js_cb, void *context, void *data)
 {
@@ -308,8 +289,8 @@ void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::
         "NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback: creating reference for callback fail");
 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    CHECK_AND_RETURN_LOG(cb != nullptr, "NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback: creating callback
-        failed");
+    CHECK_AND_RETURN_LOG(cb != nullptr, "NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback:"
+        "creating callback failed");
 
     spatializationEnabledChangeCbForCurrentDeviceList_.push_back(cb);
 }
@@ -339,8 +320,8 @@ void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::
         it != spatializationEnabledChangeCbForCurrentDeviceList_.end(); ++it) {
         bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
         if (isSameCallback) {
-            AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeForCurrentDeviceCallbackReference: find js callback,
-                erase it");
+            AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeForCurrentDeviceCallbackReference: find js callback,"
+                "erase it");
             spatializationEnabledChangeCbForCurrentDeviceList_.erase(it);
             return;
         }
@@ -354,8 +335,8 @@ void NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::
     std::lock_guard<std::mutex> lock(mutex_);
     spatializationEnabledChangeCbForCurrentDeviceList_.clear();
 
-    AUDIO_INFO_LOG("RemoveAllSpatializationEnabledChangeForCurrentDeviceCallbackReference: remove all js callbacks
-        success");
+    AUDIO_INFO_LOG("RemoveAllSpatializationEnabledChangeForCurrentDeviceCallbackReference: remove all js callbacks"
+        "success");
 }
 
 int32_t NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback::

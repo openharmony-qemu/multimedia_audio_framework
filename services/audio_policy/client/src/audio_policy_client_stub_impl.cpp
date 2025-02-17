@@ -725,7 +725,7 @@ void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(
 }
 
 int32_t AudioPolicyClientStubImpl::AddSpatializationEnabledChangeForCurrentDeviceCallback(
-    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb)
+    const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
     spatializationEnabledChangeForCurrentDeviceCallbackList_.push_back(cb);

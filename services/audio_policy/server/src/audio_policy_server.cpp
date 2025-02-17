@@ -2987,7 +2987,7 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
     }
-    audioSpatializationService_.SetSpatializationSupported(audioSpatialDeviceState.address,
+    audioPolicyService_.SetSpatializationSupported(audioSpatialDeviceState.address,
         audioSpatialDeviceState.isSpatializationSupported);
     return audioSpatializationService_.UpdateSpatialDeviceState(audioSpatialDeviceState);
 }

@@ -336,8 +336,6 @@ napi_value NapiAudioManager::GetSpatializationManager(napi_env env, napi_callbac
 {
     napi_status status;
     size_t argCount = 0;
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
     if (status != napi_ok || argCount != 0) {

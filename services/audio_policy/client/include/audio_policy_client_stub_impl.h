@@ -83,7 +83,8 @@ public:
     int32_t AddSpatializationEnabledChangeCallback(const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb);
     int32_t RemoveSpatializationEnabledChangeCallback();
     size_t GetSpatializationEnabledChangeCallbackSize() const;
-    int32_t AddSpatializationEnabledChangeForCurrentDeviceCallback(const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb);
+    int32_t AddSpatializationEnabledChangeForCurrentDeviceCallback(
+        const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &cb);
     int32_t RemoveSpatializationEnabledChangeForCurrentDeviceCallback();
     size_t GetSpatializationEnabledChangeForCurrentDeviceCallbackSize() const;
     int32_t AddHeadTrackingEnabledChangeCallback(const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);

@@ -1147,8 +1147,8 @@ void AudioPolicyServerHandler::HandleSpatializatonEnabledChangeForCurrentDeviceE
             continue;
         }
         if (clientCallbacksMap_.count(it->first) > 0 &&
-            clientCallbacksMap_[it->first].count(CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,) > 0 &&
-            clientCallbacksMap_[it->first][CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,]) {
+            clientCallbacksMap_[it->first].count(CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE]) {
             spatializationEnabledChangeForCurrentDeviceCb->OnSpatializationEnabledChangeForCurrentDevice(
                 eventContextObj->spatializationEnabled);
         }
