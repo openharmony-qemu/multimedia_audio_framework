@@ -827,8 +827,7 @@ bool RendererInClientInner::ProcessVolume()
         clientVolume_ = volumeRamp_.GetRampVolume();
         AUDIO_INFO_LOG("clientVolume_:%{public}f", clientVolume_);
         Trace traceVolume("RendererInClientInner::WriteCacheData:Ramp:clientVolume_:" + std::to_string(clientVolume_));
-        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer is not inited");
-        clientBuffer_->SetStreamVolume(clientVolume_);
+        SetInnerVolume(clientVolume_);
     }
     return true;
 }
