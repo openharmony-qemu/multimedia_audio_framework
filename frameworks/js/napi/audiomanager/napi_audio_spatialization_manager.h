@@ -63,15 +63,19 @@ struct AudioSpatializationManagerAsyncContext : public ContextBase {
     static napi_value SetSpatializationSceneType(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
-    static void RegisterCallback(napi_env env, napi_value jsThis,
+    static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *args, const std::string &cbName);
     static void RegisterSpatializationEnabledChangeCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioSpatializationManager *napiAudioSpatializationManager);
+    static void RegisterSpatializationEnabledChangeForCurrentDeviceCallback(napi_env env, napi_value *args,
+        const std::string &cbName, NapiAudioSpatializationManager *napiAudioSpatializationManager);
     static void RegisterHeadTrackingEnabledChangeCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioSpatializationManager *napiAudioSpatializationManager);
-    static void UnRegisterCallback(napi_env env, napi_value jsThis,
+    static napi_value UnRegisterCallback(napi_env env, napi_value jsThis,
         napi_value *args, const std::string &cbName);
     static void UnregisterSpatializationEnabledChangeCallback(napi_env env, napi_value callback,
+        const std::string &cbName, NapiAudioSpatializationManager *napiAudioSpatializationManager);
+    static void UnregisterSpatializationEnabledChangeForCurrentDeviceCallback(napi_env env, napi_value callback,
         const std::string &cbName, NapiAudioSpatializationManager *napiAudioSpatializationManager);
     static void UnregisterHeadTrackingEnabledChangeCallback(napi_env env, napi_value callback,
         const std::string &cbName, NapiAudioSpatializationManager *napiAudioSpatializationManager);
@@ -84,6 +88,8 @@ struct AudioSpatializationManagerAsyncContext : public ContextBase {
     AudioSpatializationManager *audioSpatializationMngr_;
     std::shared_ptr<AudioSpatializationEnabledChangeCallback> spatializationEnabledChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> headTrackingEnabledChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback>
+        spatializationEnabledChangeForCurrentDeviceCallbackNapi_ = nullptr;
 
     napi_env env_;
 };

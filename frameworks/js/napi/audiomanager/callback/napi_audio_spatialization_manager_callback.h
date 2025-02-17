@@ -28,6 +28,8 @@ namespace AudioStandard {
 const std::string SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME = "spatializationEnabledChange";
 const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "spatializationEnabledChangeForAnyDevice";
+const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE_CALLBACK_NAME =
+    "spatializationEnabledChangeForCurrentDevice";
 const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackingEnabledChange";
 const std::string HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "headTrackingEnabledChangeForAnyDevice";
@@ -61,9 +63,44 @@ private:
     napi_env env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForAnyDeviceList_;
+    std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForCurrentDeviceList_;
     static bool onSpatializationEnabledChangeFlag_;
     bool regAmSpatEnable_ = false;
     napi_threadsafe_function amSpatEnableTsfn_ = nullptr;
+};
+
+class NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback :
+    public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
+public:
+    explicit NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback(napi_env env);
+    virtual ~NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback();
+    void SaveSpatializationEnabledChangeForCurrentDeviceCallbackReference(napi_value args, const std::string &cbName);
+    void RemoveSpatializationEnabledChangeForCurrentDeviceCallbackReference(napi_env env, napi_value args,
+        const std::string &cbName);
+    void RemoveAllSpatializationEnabledChangeForCurrentDeviceCallbackReference(const std::string &cbName);
+    int32_t GetSpatializationEnabledChangeForCurrentDeviceCbListSize(const std::string &cbName);
+    void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override;
+    void CreateSpatEnableForCurrentDeviceTsfn(napi_env env);
+    bool GetSpatEnableForCurrentDeviceTsfnFlag();
+
+private:
+    struct AudioSpatializationEnabledForCurrentDeviceJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::string callbackName = "unknown";
+        bool enabled;
+    };
+
+    void OnJsCallbackSpatializationEnabledForCurrentDevice(
+        std::unique_ptr<AudioSpatializationEnabledForCurrentDeviceJsCallback> &jsCb);
+    static void SafeJsCallbackSpatializationEnabledForCurrentDeviceWork(napi_env env, napi_value js_cb, void *context,
+        void *data);
+    static void SpatializationEnabledForCurrentDeviceTsfnFinalize(napi_env env, void *data, void *hint);
+
+    std::mutex mutex_;
+    napi_env env_ = nullptr;
+    std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForCurrentDeviceList_;
+    bool regAmSpatEnableForCurrentDevice_ = false;
+    napi_threadsafe_function amSpatEnableForCurrentDeviceTsfn_ = nullptr;
 };
 
 class NapiAudioHeadTrackingEnabledChangeCallback : public AudioHeadTrackingEnabledChangeCallback {

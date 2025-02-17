@@ -531,6 +531,18 @@ bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForAnyDeviceEvent(
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForCurrentDeviceEvent(const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->spatializationEnabled = enabled;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -1122,6 +1134,27 @@ void AudioPolicyServerHandler::HandleSpatializatonEnabledChangeForAnyDeviceEvent
     }
 }
 
+void AudioPolicyServerHandler::HandleSpatializatonEnabledChangeForCurrentDeviceEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> spatializationEnabledChangeForCurrentDeviceCb = it->second;
+        if (spatializationEnabledChangeForCurrentDeviceCb == nullptr) {
+            AUDIO_ERR_LOG("spatializationEnabledChangeForCurrentDeviceCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,]) {
+            spatializationEnabledChangeForCurrentDeviceCb->OnSpatializationEnabledChangeForCurrentDevice(
+                eventContextObj->spatializationEnabled);
+        }
+    }
+}
+
 void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1254,6 +1287,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::NN_STATE_CHANGE:
             HandleNnStateChangeEvent(event);
+            break;
+        case EventAudioServerCmd::SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE:
+            HandleSpatializatonEnabledChangeForCurrentDeviceEvent(event);
             break;
         default:
             break;

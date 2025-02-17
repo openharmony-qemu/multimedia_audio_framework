@@ -60,6 +60,7 @@ public:
     void HandleSpatializationEnabledChange(const bool &enabled);
     void HandleSpatializationEnabledChange(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
+    void HandleSpatializationEnabledChangeForCurrentDevice(const bool &enabled);
     void HandleHeadTrackingEnabledChange(const bool &enabled);
     void HandleHeadTrackingEnabledChange(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);

@@ -83,6 +83,9 @@ public:
     int32_t AddSpatializationEnabledChangeCallback(const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb);
     int32_t RemoveSpatializationEnabledChangeCallback();
     size_t GetSpatializationEnabledChangeCallbackSize() const;
+    int32_t AddSpatializationEnabledChangeForCurrentDeviceCallback(const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb);
+    int32_t RemoveSpatializationEnabledChangeForCurrentDeviceCallback();
+    size_t GetSpatializationEnabledChangeForCurrentDeviceCallbackSize() const;
     int32_t AddHeadTrackingEnabledChangeCallback(const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);
     int32_t RemoveHeadTrackingEnabledChangeCallback();
     size_t GetHeadTrackingEnabledChangeCallbacSize() const;
@@ -121,6 +124,7 @@ public:
     void OnSpatializationEnabledChange(const bool &enabled) override;
     void OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override;
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
@@ -139,6 +143,8 @@ private:
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback>>
+        spatializationEnabledChangeForCurrentDeviceCallbackList_;
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioNnStateChangeCallback>> nnStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
@@ -168,6 +174,7 @@ private:
     mutable std::mutex deviceChangeWithInfoCallbackMutex_;
     mutable std::mutex headTrackingDataRequestedChangeMutex_;
     mutable std::mutex spatializationEnabledChangeMutex_;
+    mutable std::mutex spatializationEnabledChangeForCurrentDeviceMutex_;
     mutable std::mutex headTrackingEnabledChangeMutex_;
     mutable std::mutex nnStateChangeMutex_;
     mutable std::mutex audioSessionMutex_;

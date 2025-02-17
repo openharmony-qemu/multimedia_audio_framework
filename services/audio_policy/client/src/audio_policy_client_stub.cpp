@@ -49,6 +49,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE):
             HandleSpatializationEnabledChangeForAnyDevice(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE):
+            HandleSpatializationEnabledChangeForCurrentDevice(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE):
             HandleHeadTrackingEnabledChange(data, reply);
             break;
@@ -351,6 +354,12 @@ void AudioPolicyClientStub::HandleSpatializationEnabledChangeForAnyDevice(Messag
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnSpatializationEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
+}
+
+void AudioPolicyClientStub::HandleSpatializationEnabledChangeForCurrentDevice(MessageParcel &data, MessageParcel &reply)
+{
+    bool enabled = data.ReadBool();
+    OnSpatializationEnabledChangeForCurrentDevice(enabled);
 }
 
 void AudioPolicyClientStub::HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply)

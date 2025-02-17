@@ -51,6 +51,19 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
 };
 
+class AudioSpatializationEnabledChangeForCurrentDeviceCallback {
+public:
+    virtual ~AudioSpatializationEnabledChangeForCurrentDeviceCallback() = default;
+    /**
+     * @brief AudioSpatializationEnabledChangeForAnyDeviceCallback will be executed 
+     *  when spatialization enabled state changes
+     *
+     * @param enabled the spatialization enabled state for current device.
+     * @since 16
+     */
+    virtual void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) = 0;
+};
+
 class AudioHeadTrackingEnabledChangeCallback {
 public:
     virtual ~AudioHeadTrackingEnabledChangeCallback() = default;
@@ -192,6 +205,16 @@ public:
         const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
 
     /**
+     * @brief Register the spatialization enabled change for current device callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t RegisterSpatializationEnabledForCurrentDeviceEventListener(
+        const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &callback);
+
+    /**
      * @brief Register the head tracking enabled change callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
@@ -209,6 +232,15 @@ public:
      * @since 11
      */
     int32_t UnregisterSpatializationEnabledEventListener();
+
+    /**
+     * @brief Unregister the spatialization enabled change for current device callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t UnregisterSpatializationEnabledForCurrentDeviceEventListener();
 
     /**
      * @brief Unregister the head tracking enabled change callback listener

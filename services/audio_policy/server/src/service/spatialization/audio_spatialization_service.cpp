@@ -182,6 +182,9 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(
     }
     addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled = enable;
     HandleSpatializationEnabledChange(selectedAudioDevice, enable);
+    if (address == currentDeviceAddress_) {
+        HandleSpatializationEnabledChangeForCurrentDevice(enable);
+    }
     std::string deviceSpatialInfo = EncapsulateDeviceInfo(address);
     UpdateDeviceSpatialMapInfo(address, deviceSpatialInfo);
     if (UpdateSpatializationStateReal(false) != 0) {
@@ -266,6 +269,14 @@ void AudioSpatializationService::HandleSpatializationEnabledChange(const std::sh
     AUDIO_INFO_LOG("device Spatialization enabled callback is triggered: state is %{public}d", enabled);
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendSpatializatonEnabledChangeForAnyDeviceEvent(selectedAudioDevice, enabled);
+    }
+}
+
+void AudioSpatializationService::HandleSpatializationEnabledChangeForCurrentDevice(const bool &enabled)
+{
+    AUDIO_INFO_LOG("current device Spatialization enabled callback is triggered: state is %{public}d", enabled);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendSpatializatonEnabledChangeForCurrentDeviceEvent(enabled);
     }
 }
 

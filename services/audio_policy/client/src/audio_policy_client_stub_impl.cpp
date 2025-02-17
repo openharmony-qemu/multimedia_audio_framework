@@ -724,6 +724,35 @@ void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(
     }
 }
 
+int32_t AudioPolicyClientStubImpl::AddSpatializationEnabledChangeForCurrentDeviceCallback(
+    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
+    spatializationEnabledChangeForCurrentDeviceCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveSpatializationEnabledChangeForCurrentDeviceCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
+    spatializationEnabledChangeForCurrentDeviceCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetSpatializationEnabledChangeForCurrentDeviceCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
+    return spatializationEnabledChangeForCurrentDeviceCallbackList_.size();
+}
+
+void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
+    for (const auto &callback : spatializationEnabledChangeForCurrentDeviceCallbackList_) {
+        callback->OnSpatializationEnabledChangeForCurrentDevice(enabled);
+    }
+}
+
 int32_t AudioPolicyClientStubImpl::AddHeadTrackingEnabledChangeCallback(
     const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb)
 {
