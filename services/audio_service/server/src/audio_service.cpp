@@ -1168,6 +1168,11 @@ int32_t AudioService::GetCurrentRendererStreamCnt()
     return currentRendererStreamCnt_;
 }
 
+void AudioService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    IStreamManager::GetPlaybackManager(PLAYBACK).GetAllSinkInputs(sinkInputs);
+}
+
 // need call with streamLifeCycleMutex_ lock
 bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid,
     int32_t maxStreamCntPerUid)

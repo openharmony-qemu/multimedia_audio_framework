@@ -86,7 +86,7 @@ public:
 
     std::vector<SinkInfo> GetAllSinks();
 
-    std::vector<SinkInput> GetAllSinkInputs();
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 
     std::vector<SourceOutput> GetAllSourceOutputs();
 

@@ -668,15 +668,9 @@ vector<SinkInfo> AudioAdapterManager::GetAllSinks()
     return audioServiceAdapter_->GetAllSinks();
 }
 
-vector<SinkInput> AudioAdapterManager::GetAllSinkInputs()
+void AudioAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
-    if (!audioServiceAdapter_) {
-        AUDIO_ERR_LOG("GetAllSinkInputs audio adapter null");
-        vector<SinkInput> sinkInputList;
-        return sinkInputList;
-    }
-
-    return audioServiceAdapter_->GetAllSinkInputs();
+    AudioPolicyService::GetAudioPolicyService().GetAllSinkInputs(sinkInputs);
 }
 
 vector<SourceOutput> AudioAdapterManager::GetAllSourceOutputs()

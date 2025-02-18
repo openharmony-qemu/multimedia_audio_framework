@@ -222,7 +222,8 @@ void AudioDeviceStatus::WriteDeviceChangeSysEvents(const std::shared_ptr<AudioDe
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     if (desc->deviceRole_ == OUTPUT_DEVICE) {
-        vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+        std::vector<SinkInput> sinkInputs;
+        audioPolicyManager_.GetAllSinkInputs(sinkInputs);
         for (SinkInput sinkInput : sinkInputs) {
             WriteOutputDeviceChangedSysEvents(desc, sinkInput);
         }

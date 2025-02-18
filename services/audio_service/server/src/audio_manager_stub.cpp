@@ -105,6 +105,7 @@ const char *g_audioServerCodeStrs[] = {
     "UPDATE_SESSION_CONNECTION_STATE",
     "SET_SINGLE_STREAM_MUTE",
     "RESTORE_SESSION",
+    "GET_ALL_SINK_INPUTS",
     "CREATE_IPC_OFFLINE_STREAM",
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
     "GET_STANDBY_STATUS",
@@ -946,6 +947,8 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 return HandleSetRemoteAudioParameter(data, reply);
             case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO):
                 return HandleNotifyDeviceInfo(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS):
+                return HandleGetAllSinkInputs(data, reply);
             default:
                 return HandleSecondPartCode(code, data, reply, option);
         }
@@ -1115,5 +1118,16 @@ int AudioManagerStub::HandleNotifyAccountsChanged(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<SinkInput> sinkInputs;
+    GetAllSinkInputs(sinkInputs);
+    size_t size = sinkInputs.size();
+    reply.WriteUint64(size);
+    for (auto &sinkInput : sinkInputs) {
+        sinkInput.Marshalling(reply);
+    }
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

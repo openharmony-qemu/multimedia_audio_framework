@@ -20,6 +20,7 @@ config("capturer_config") {
   include_dirs = [
     "../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../services/audio_service/common/include",
+    "../../../audioschedule/include",
   ]
 
   cflags = [
@@ -51,6 +52,7 @@ ohos_shared_library("module-inner-capturer-sink") {
 
   deps = [
     "../../../../../services/audio_service:audio_common",
+    "../../../audioschedule:audio_schedule",
     "../../../audioutils:audio_utils",
   ]
 

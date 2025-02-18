@@ -114,6 +114,7 @@ public:
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

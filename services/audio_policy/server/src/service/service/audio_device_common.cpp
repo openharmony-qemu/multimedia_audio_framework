@@ -598,7 +598,8 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
     bool hasDirectChangeDevice = false;
-    std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+    std::vector<SinkInput> sinkInputs;
+    audioPolicyManager_.GetAllSinkInputs(sinkInputs);
     for (auto &rendererChangeInfo : rendererChangeInfos) {
         if (!IsRendererStreamRunning(rendererChangeInfo) ||
             (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_DEFAULT &&
@@ -1060,7 +1061,8 @@ void AudioDeviceCommon::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRendere
             streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_NORMAL_OUT);
         }
         audioOffloadStream_.ResetOffloadMode(rendererChangeInfo->sessionId);
-        std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+        std::vector<SinkInput> sinkInputs;
+        audioPolicyManager_.GetAllSinkInputs(sinkInputs);
         MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs);
     }
 }

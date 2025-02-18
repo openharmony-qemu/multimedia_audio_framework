@@ -220,5 +220,10 @@ uint64_t ProAudioStreamManager::GetLatency() noexcept
     return playbackEngine_->GetLatency();
 }
 
+void ProAudioStreamManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    // not supported
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

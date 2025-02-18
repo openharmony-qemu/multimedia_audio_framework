@@ -114,6 +114,15 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     rendererStreamMap_[sessionId] = rendererStream;
     stream = rendererStream;
+
+    std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
+    SinkInput sinkInput;
+    sinkInput.streamId = sessionId;
+    sinkInput.streamType = processConfig.streamType;
+    sinkInput.uid = processConfig.appInfo.appUid;
+    sinkInput.pid = processConfig.appInfo.appPid;
+    sinkInput.paStreamId = pa_stream_get_index(paStream);
+    sinkInputs_.push_back(sinkInput);
     return SUCCESS;
 }
 
@@ -143,7 +152,18 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     if (rendererStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
     }
+    std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
+    sinkInputs_.erase(std::remove_if(sinkInputs_.begin(), sinkInputs_.end(), [&](const SinkInput &sinkInput) {
+        return static_cast<uint32_t>(sinkInput.streamId) == streamIndex;
+        }), sinkInputs_.end());
     return SUCCESS;
+}
+
+void PaAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    sinkInputs = sinkInputs_;
+    Trace trace("PaAdapterManager::GetAllSinkInputs size:" + std::to_string(sinkInputs.size()));
 }
 
 int32_t PaAdapterManager::StartRender(uint32_t streamIndex)
