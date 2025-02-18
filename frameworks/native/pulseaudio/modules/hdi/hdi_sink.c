@@ -184,6 +184,7 @@ static void FreeEffectBuffer(struct Userdata *u);
 static void ResetBufferAttr(struct Userdata *u);
 static void CreateLimiter(struct Userdata *u);
 static void FreeLimiter(struct Userdata *u);
+static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-6f
@@ -475,6 +476,12 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
     if (!u->offload.isHDISinkStarted) {
         AUDIO_DEBUG_LOG("StartOffloadHdi before write, because maybe sink switch");
         StartOffloadHdi(u, i);
+    }
+    if (u->offload.firstWriteHdi) {
+        AudioRawFormat rawFormat;
+        rawFormat.format = (uint32_t)ConvertPaToHdiAdapterFormat(u->ss.format);
+        rawFormat.channels = (uint32_t)u->ss.channels;
+        ProcessVol((uint8_t*)p + index, length, rawFormat, 0, 1);
     }
     int32_t ret = u->offload.sinkAdapter->RendererRenderFrame(u->offload.sinkAdapter, ((char*)p + index),
         (uint64_t)length, &writeLen);
