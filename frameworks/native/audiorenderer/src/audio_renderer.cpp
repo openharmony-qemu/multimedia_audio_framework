@@ -329,11 +329,11 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
 
 // Inner function. Must be called with AudioRendererPrivate::rendererMutex_
 // or AudioRendererPrivate::streamMutex_ held.
-int32_t AudioRendererPrivate::InitAudioInterruptCallback()
+int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
 {
     AUDIO_DEBUG_LOG("in");
 
-    if (audioInterrupt_.streamId != 0) {
+    if (audioInterrupt_.streamId != 0 && !isRestoreAudio) {
         AUDIO_INFO_LOG("old session already has interrupt, need to reset");
         (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
         (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.streamId);
@@ -2044,7 +2044,7 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
         abortRestore_ = false;
     }
 
-    InitAudioInterruptCallback();
+    InitAudioInterruptCallback(true);
     if (GetStatusInner() == RENDERER_RUNNING) {
         GetAudioInterrupt(audioInterrupt_);
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
