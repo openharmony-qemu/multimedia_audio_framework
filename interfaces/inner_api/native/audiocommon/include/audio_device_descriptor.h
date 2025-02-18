@@ -123,7 +123,7 @@ public:
         bool operator()(const std::shared_ptr<AudioDeviceDescriptor> &lhs,
             const std::shared_ptr<AudioDeviceDescriptor> &rhs) const
         {
-            return lhs->IsSameDeviceDesc(*rhs);
+            return !lhs->IsSameDeviceDesc(*rhs);
         }
     };
 };
