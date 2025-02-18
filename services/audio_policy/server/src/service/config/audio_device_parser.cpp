@@ -41,7 +41,7 @@ bool AudioDeviceParser::LoadConfiguration()
     char *path = GetOneCfgFile(DEVICE_CONFIG_FILE, buf, MAX_PATH_LEN);
     CHECK_AND_RETURN_RET_LOG(path != nullptr && *path != '\0', ERROR, "invalid path!");
     curNode_ = AudioXmlNode::Create();
-    int32_t ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
+    int32_t ret = curNode_->Config(path, nullptr, 0);
     if (ret != SUCCESS) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
