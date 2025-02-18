@@ -549,6 +549,7 @@ private:
 private:
 
     static bool isBtListenerRegistered;
+    static bool isBtCrashed;
     bool isPnpDeviceConnected = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
