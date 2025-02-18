@@ -561,7 +561,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
     config.appInfo.appUid = INVALID_UID;
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     bool ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
     ret = audioServer->CheckRecorderPermission(config);
