@@ -1408,8 +1408,7 @@ void AudioPolicyService::RegisterBluetoothListener()
         return;
     }
 
-    if (!isBtCrashed)
-    {
+    if (!isBtCrashed) {
         Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
         Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
     }
