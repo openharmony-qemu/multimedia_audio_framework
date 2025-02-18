@@ -710,7 +710,7 @@ void NapiAudioSpatializationManager::RegisterSpatializationEnabledChangeForCurre
 {
     if (!napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_) {
         napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_ =
-            std::make_shared<NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback>(env);
+            std::make_shared<NapiAudioCurrentSpatializationEnabledChangeCallback>(env);
         CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_ !=
             nullptr, "NapiAudioSpatializationManager: Memory Allocation Failed !!");
 
@@ -722,12 +722,12 @@ void NapiAudioSpatializationManager::RegisterSpatializationEnabledChangeForCurre
             "Failed");
     }
 
-    std::shared_ptr<NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback> cb =
-        std::static_pointer_cast<NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback>
+    std::shared_ptr<NapiAudioCurrentSpatializationEnabledChangeCallback> cb =
+        std::static_pointer_cast<NapiAudioCurrentSpatializationEnabledChangeCallback>
         (napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_);
-    cb->SaveSpatializationEnabledChangeForCurrentDeviceCallbackReference(args[PARAM1], cbName);
-    if (!cb->GetSpatEnableForCurrentDeviceTsfnFlag()) {
-        cb->CreateSpatEnableForCurrentDeviceTsfn(env);
+    cb->SaveCurrentSpatializationEnabledChangeCallbackReference(args[PARAM1], cbName);
+    if (!cb->GetCurrentSpatEnableForCurrentDeviceTsfnFlag()) {
+        cb->CreateCurrentSpatEnableForCurrentDeviceTsfn(env);
     }
 
     AUDIO_INFO_LOG("Register spatialization enabled for current device callback is successful");
@@ -854,19 +854,19 @@ void NapiAudioSpatializationManager::UnregisterSpatializationEnabledChangeForCur
     napi_value callback, const std::string &cbName, NapiAudioSpatializationManager *napiAudioSpatializationManager)
 {
     if (napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_ != nullptr) {
-        std::shared_ptr<NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback> cb =
-            std::static_pointer_cast<NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback>(
+        std::shared_ptr<NapiAudioCurrentSpatializationEnabledChangeCallback> cb =
+            std::static_pointer_cast<NapiAudioCurrentSpatializationEnabledChangeCallback>(
             napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_);
         if (callback != nullptr) {
-            cb->RemoveSpatializationEnabledChangeForCurrentDeviceCallbackReference(env, callback, cbName);
+            cb->RemoveCurrentSpatializationEnabledChangeCallbackReference(env, callback, cbName);
         }
-        if (callback == nullptr || cb->GetSpatializationEnabledChangeCbListSize(cbName) == 0) {
+        if (callback == nullptr || cb->GetCurrentSpatializationEnabledChangeCbListSize(cbName) == 0) {
             int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
                 UnregisterSpatializationEnabledForCurrentDeviceEventListener();
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterSpatializationEnabledForCurrentDeviceEventListener Failed");
             napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_.reset();
             napiAudioSpatializationManager->spatializationEnabledChangeForCurrentDeviceCallbackNapi_ = nullptr;
-            cb->RemoveAllSpatializationEnabledChangeForCurrentDeviceCallbackReference(cbName);
+            cb->RemoveAllCurrentSpatializationEnabledChangeCallbackReference(cbName);
         }
     } else {
         AUDIO_ERR_LOG("UnregisterSpatializationEnabledChangeForCurrentDeviceCallback:"

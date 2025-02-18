@@ -69,19 +69,18 @@ private:
     napi_threadsafe_function amSpatEnableTsfn_ = nullptr;
 };
 
-class NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback :
-    public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
+class NapiAudioCurrentSpatializationEnabledChangeCallback : public NapiAudioCurrentSpatializationEnabledChangeCallback {
 public:
-    explicit NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback(napi_env env);
-    virtual ~NapiAudioSpatializationEnabledChangeForCurrentDeviceCallback();
-    void SaveSpatializationEnabledChangeForCurrentDeviceCallbackReference(napi_value args, const std::string &cbName);
-    void RemoveSpatializationEnabledChangeForCurrentDeviceCallbackReference(napi_env env, napi_value args,
+    explicit NapiAudioCurrentSpatializationEnabledChangeCallback(napi_env env);
+    virtual ~NapiAudioCurrentSpatializationEnabledChangeCallback();
+    void SaveCurrentSpatializationEnabledChangeCallbackReference(napi_value args, const std::string &cbName);
+    void RemoveCurrentSpatializationEnabledChangeCallbackReference(napi_env env, napi_value args,
         const std::string &cbName);
-    void RemoveAllSpatializationEnabledChangeForCurrentDeviceCallbackReference(const std::string &cbName);
-    int32_t GetSpatializationEnabledChangeCbListSize(const std::string &cbName);
+    void RemoveAllCurrentSpatializationEnabledChangeCallbackReference(const std::string &cbName);
+    int32_t GetCurrentSpatializationEnabledChangeCbListSize(const std::string &cbName);
     void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override;
-    void CreateSpatEnableForCurrentDeviceTsfn(napi_env env);
-    bool GetSpatEnableForCurrentDeviceTsfnFlag();
+    void CreateCurrentSpatEnableForCurrentDeviceTsfn(napi_env env);
+    bool GetCurrentSpatEnableForCurrentDeviceTsfnFlag();
 
 private:
     struct AudioSpatializationEnabledForCurrentDeviceJsCallback {
