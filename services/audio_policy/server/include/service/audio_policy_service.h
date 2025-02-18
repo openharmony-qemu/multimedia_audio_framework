@@ -480,6 +480,7 @@ public:
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
+    int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -659,6 +660,8 @@ private:
     AudioCapturerSession& audioCapturerSession_;
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
+
+    sptr<IStandardAudioPolicyManagerListener> policyManagerListener_;
 };
 
 class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {

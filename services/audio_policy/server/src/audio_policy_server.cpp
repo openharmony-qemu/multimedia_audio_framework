@@ -3616,6 +3616,16 @@ int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
     return audioPolicyService_.SetVirtualCall(isVirtual);
 }
 
+int32_t AudioPolicyServer::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object)
+{
+    constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by av_session
+    CHECK_AND_RETURN_RET_LOG(callerUid == avSessionUid, ERROR,
+        "UpdateStreamState callerUid is error: not av_session");
+    return audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
+}
+
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);

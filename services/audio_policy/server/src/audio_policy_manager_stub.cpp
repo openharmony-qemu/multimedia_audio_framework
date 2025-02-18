@@ -189,6 +189,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "UNEXCLUDE_OUTPUT_DEVICES",
     "GET_EXCLUDED_OUTPUT_DEVICES",
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
+    "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1176,6 +1177,9 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES):
             GetExcludedDevicesInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_ALLOWED_PLAYBACK_CALLBACK):
+            SetQueryAllowedPlaybackCallbackInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -2064,6 +2068,14 @@ void AudioPolicyManagerStub::SetVirtualCallInternal(MessageParcel &data, Message
 {
     bool isVirtual = data.ReadBool();
     int32_t result = SetVirtualCall(isVirtual);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "SetQueryAllowedPlaybackCallback is null");
+    int32_t result = SetQueryAllowedPlaybackCallback(object);
     reply.WriteInt32(result);
 }
 } // namespace audio_policy

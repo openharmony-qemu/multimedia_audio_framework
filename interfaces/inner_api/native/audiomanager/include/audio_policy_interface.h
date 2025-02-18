@@ -142,6 +142,12 @@ public:
     virtual void OnRendererStateChange(
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
 };
+
+class AudioQueryAllowedPlaybackCallback {
+    public:
+        virtual ~AudioQueryAllowedPlaybackCallback() = default;
+        virtual bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_INTERFACE_H

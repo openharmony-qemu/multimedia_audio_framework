@@ -1605,6 +1605,14 @@ int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
     return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
 }
 
+int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(
+    const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetQueryAllowedPlaybackCallback(callback);
+}
+
 int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
 {
     AUDIO_INFO_LOG("%{public}d", state);
