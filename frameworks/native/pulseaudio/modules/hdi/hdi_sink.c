@@ -3573,7 +3573,7 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
 static void ThreadFuncRendererTimerBus(void *userdata)
 {
     // set audio thread priority
-    SetThreadQosLevel();
+    SetThreadQosLevelAsync();
 
     struct Userdata *u = userdata;
 

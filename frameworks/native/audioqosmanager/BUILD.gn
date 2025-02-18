@@ -40,6 +40,7 @@ ohos_shared_library("audio_qosmanager") {
     external_deps += [ "qos_manager:qos" ]
     external_deps += [
       "c_utils:utils",
+      "hilog:libhilog",
       "ipc:ipc_single",
     ]
     cflags += [ "-DQOSMANAGER_ENABLE" ]
