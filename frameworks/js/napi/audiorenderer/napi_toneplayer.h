@@ -28,9 +28,9 @@
 namespace OHOS {
 namespace AudioStandard {
 const std::string NAPI_TONE_PLAYER_CLASS_NAME = "TonePlayer";
-const int32_t ARGS_LOAD_MAX = 27;
+const int32_t ARGS_LOAD_MAX = 28;
 const int32_t TONE_TYPE_ARR[ARGS_LOAD_MAX] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    100, 101, 102, 103, 104, 106, 107, 200, 201, 203, 204};
+    100, 101, 102, 103, 104, 106, 107, 108, 200, 201, 203, 204};
 
 class NapiTonePlayer {
 public:
