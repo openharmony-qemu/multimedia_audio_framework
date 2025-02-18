@@ -163,6 +163,11 @@ void FastAudioStream::GetAudioPipeType(AudioPipeType &pipeType)
 
 State FastAudioStream::GetState()
 {
+    std::lock_guard lock(switchingMutex_);
+    if (switchingInfo_.isSwitching_) {
+        AUDIO_INFO_LOG("switching, return state in switchingInfo");
+        return switchingInfo_.state_;
+    }
     return state_;
 }
 
@@ -904,6 +909,16 @@ DeviceType FastAudioStream::GetDefaultOutputDevice()
 int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     return GetAudioTime(timestamp, base);
+}
+
+void FastAudioStream::SetSwitchingStatus(bool isSwitching)
+{
+    std::lock_guard lock(switchingMutex_);
+    if (isSwitching) {
+        switchingInfo_ = {true, state_};
+    } else {
+        switchingInfo_ = {false, INVALID};
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
