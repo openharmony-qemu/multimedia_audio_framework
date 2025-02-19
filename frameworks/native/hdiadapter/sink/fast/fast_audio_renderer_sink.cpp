@@ -775,16 +775,16 @@ int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "FastAudioRendererSink::SetVolume failed audioRender_ null");
-    if (halName_ == MMAP_VOIP_HAL_NAME && switchDeviceMute_ && (left != 0 || right != 0)) {
+    if (halName_ == MMAP_VOIP_HAL_NAME && switchDeviceMute_ && (abs(left) > FLOAT_EPS || abs(right) > FLOAT_EPS)) {
         AUDIO_ERR_LOG("Mmap voip scene. No need set to volume when switch device and volume is 0");
         return ERR_INVALID_HANDLE;
     }
 
     leftVolume_ = left;
     rightVolume_ = right;
-    if ((leftVolume_ == 0) && (rightVolume_ != 0)) {
+    if ((abs(leftVolume_) < FLOAT_EPS) && (abs(rightVolume_) > FLOAT_EPS)) {
         volume = rightVolume_;
-    } else if ((leftVolume_ != 0) && (rightVolume_ == 0)) {
+    } else if ((abs(leftVolume_)  > FLOAT_EPS) && (abs(rightVolume_) < FLOAT_EPS)) {
         volume = leftVolume_;
     } else {
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
