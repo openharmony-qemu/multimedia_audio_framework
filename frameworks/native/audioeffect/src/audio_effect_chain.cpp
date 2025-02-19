@@ -581,13 +581,18 @@ int32_t AudioEffectChain::updatePrimaryChannel()
 
     ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
     ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
+    updateDumpName(); // update dumpFile name(effect_in and effect_out)
+    return SUCCESS;
+}
+
+void AudioEffectChain::updateDumpName()
+{
     dumpNameIn_ = "dump_effect_in_" + sceneType_ + "_"
         + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
     dumpNameOut_ = "dump_effect_out_" + sceneType_ + "_"
         + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
-    return SUCCESS;
 }
 
 int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
@@ -628,12 +633,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 
     ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
     ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
-    dumpNameIn_ = "dump_effect_in_" + sceneType_ + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
-    dumpNameOut_ = "dump_effect_out_" + sceneType_ + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
+    updateDumpName(); // update dumpFile name(effect_in and effect_out)
     return SUCCESS;
 }
 

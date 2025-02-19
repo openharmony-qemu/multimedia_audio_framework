@@ -95,6 +95,7 @@ public:
     bool CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info);
     void SetCurrChannelNoCheck(const uint32_t channel);
     void SetCurrChannelLayoutNoCheck(const uint64_t channelLayout);
+    void updateDumpName();
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
