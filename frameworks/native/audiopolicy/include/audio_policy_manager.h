@@ -455,6 +455,12 @@ public:
     int32_t UnsetMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
 
+    int32_t SetAudioSceneChangeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+
+    int32_t UnsetAudioSceneChangeCallback(
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);

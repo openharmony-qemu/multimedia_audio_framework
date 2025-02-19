@@ -125,6 +125,15 @@ void AudioDeviceCommon::OnPreferredOutputDeviceUpdated(const AudioDeviceDescript
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
 }
 
+void AudioDeviceCommon::OnAudioSceneChange(const AudioScene& audioScene)
+{
+    Trace trace("AudioDeviceCommon::OnAudioSceneChange:" + std::to_string(audioScene));
+    AUDIO_INFO_LOG("Start");
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
+    }
+}
+
 void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)
 {
     AUDIO_INFO_LOG("Start");

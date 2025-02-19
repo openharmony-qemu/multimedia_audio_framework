@@ -618,6 +618,22 @@ int32_t AudioSystemManager::UnsetMicrophoneBlockedCallback(
     return AudioPolicyManager::GetInstance().UnsetMicrophoneBlockedCallback(clientId, callback);
 }
 
+int32_t AudioSystemManager::SetAudioSceneChangeCallback(
+    const std::shared_ptr<AudioManagerAudioSceneChangedCallback>& callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    int32_t clientId = GetCallingPid();
+    return AudioPolicyManager::GetInstance().SetAudioSceneChangeCallback(clientId, callback);
+}
+
+int32_t AudioSystemManager::UnsetAudioSceneChangeCallback(
+    const std::shared_ptr<AudioManagerAudioSceneChangedCallback> callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    return AudioPolicyManager::GetInstance().UnsetAudioSceneChangeCallback(callback);
+}
 
 int32_t AudioSystemManager::SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback)
 {
