@@ -3527,7 +3527,7 @@ int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<Audio
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MANAGE_AUDIO_CONFIG permission denied");
     audioPolicyService_.OnDeviceStatusUpdated(desc->deviceType_, isConnected, desc->macAddress_,
-        desc->deviceName_, streamInfo, desc->deviceRole_);
+        desc->deviceName_, *streamInfo, desc->deviceRole_);
     return SUCCESS;
 }
 
