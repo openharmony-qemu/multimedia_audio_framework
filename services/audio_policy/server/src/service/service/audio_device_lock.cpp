@@ -335,11 +335,11 @@ void AudioDeviceLock::RegisteredTrackerClientDied(pid_t uid)
 }
 
 void AudioDeviceLock::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
-    const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role)
+    const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role, bool hasPair)
 {
     // Pnp device status update
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    audioDeviceStatus_.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role);
+    audioDeviceStatus_.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
 }
 
 void AudioDeviceLock::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, bool isConnected)
@@ -469,6 +469,27 @@ int32_t AudioDeviceLock::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptur
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     return audioRecoveryDevice_.SelectInputDevice(audioCapturerFilter, selectedDesc);
+}
+
+int32_t AudioDeviceLock::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    return audioRecoveryDevice_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioDeviceLock::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    return audioRecoveryDevice_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetExcludedOutputDevices(
+    AudioDeviceUsage audioDevUsage)
+{
+    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
+    return audioStateManager_.GetExcludedOutputDevices(audioDevUsage);
 }
 
 void AudioDeviceLock::UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)

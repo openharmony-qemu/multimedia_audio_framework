@@ -139,6 +139,15 @@ public:
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
+    int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+        AudioDeviceUsage audioDevUsage);
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
@@ -220,7 +229,7 @@ public:
 #endif
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE);
+        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
     void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
@@ -528,6 +537,7 @@ private:
 
     bool LoadAudioPolicyConfig();
     void CreateRecoveryThread();
+    void RecoverExcludedOutputDevices();
     void RecoveryPreferredDevices();
 
     void LoadHdiEffectModel();
@@ -555,6 +565,7 @@ private:
 private:
 
     static bool isBtListenerRegistered;
+    static bool isBtCrashed;
     bool isPnpDeviceConnected = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;

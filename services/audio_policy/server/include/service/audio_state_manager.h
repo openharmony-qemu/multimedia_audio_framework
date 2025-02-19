@@ -16,6 +16,8 @@
 #ifndef ST_AUDIO_STATE_MANAGER_H
 #define ST_AUDIO_STATE_MANAGER_H
 
+#include <set>
+#include <shared_mutex>
 #include "audio_system_manager.h"
 
 namespace OHOS {
@@ -48,6 +50,12 @@ public:
     // Set tone render device selected by the user
     void SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
+    void ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
+    void UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
     // Get media render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredMediaRenderDevice();
 
@@ -71,6 +79,9 @@ public:
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
+    vector<shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(AudioDeviceUsage audioDevUsage);
+    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage, shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
+
 private:
     AudioStateManager() {};
     ~AudioStateManager() {};
@@ -80,7 +91,13 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRingRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
+
+    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorComparer> mediaExcludedDevices_;
+    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorComparer> callExcludedDevices_;
+
     std::mutex mutex_;
+    shared_mutex mediaExcludedDevicesMutex_;
+    shared_mutex callExcludedDevicesMutex_;
 };
 
 } // namespace AudioStandard

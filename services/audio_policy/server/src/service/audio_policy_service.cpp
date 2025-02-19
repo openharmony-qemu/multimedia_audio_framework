@@ -84,6 +84,7 @@ mutex g_dataShareHelperMutex;
 mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
+bool AudioPolicyService::isBtCrashed = false;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -162,8 +163,16 @@ void AudioPolicyService::CreateRecoveryThread()
     if (RecoveryDevicesThread_ != nullptr) {
         RecoveryDevicesThread_->detach();
     }
-    RecoveryDevicesThread_ = std::make_unique<std::thread>([this] { this->RecoveryPreferredDevices(); });
+    RecoveryDevicesThread_ = std::make_unique<std::thread>([this] {
+        this->RecoverExcludedOutputDevices();
+        this->RecoveryPreferredDevices();
+    });
     pthread_setname_np(RecoveryDevicesThread_->native_handle(), "APSRecovery");
+}
+
+void AudioPolicyService::RecoverExcludedOutputDevices()
+{
+    audioRecoveryDevice_.RecoverExcludedOutputDevices();
 }
 
 void AudioPolicyService::RecoveryPreferredDevices()
@@ -411,6 +420,25 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
     return audioDeviceLock_.SelectInputDevice(audioCapturerFilter, selectedDesc);
+}
+
+int32_t AudioPolicyService::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    Trace trace("AudioPolicyService::ExcludeOutputDevices");
+    return audioDeviceLock_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioPolicyService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    return audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetExcludedOutputDevices(
+    AudioDeviceUsage audioDevUsage)
+{
+    return audioDeviceLock_.GetExcludedOutputDevices(audioDevUsage);
 }
 
 bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
@@ -664,9 +692,9 @@ void AudioPolicyService::ResetToSpeaker(DeviceType devType)
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
-    const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role)
+    const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role, bool hasPair)
 {
-    audioDeviceLock_.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role);
+    audioDeviceLock_.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, bool isConnected)
@@ -1414,6 +1442,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
     lock_guard<mutex> lock(g_btProxyMutex);
     g_btProxy = nullptr;
     isBtListenerRegistered = false;
+    isBtCrashed = true;
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSource();
     Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
@@ -1429,9 +1458,14 @@ void AudioPolicyService::RegisterBluetoothListener()
         AUDIO_INFO_LOG("audio policy service already register bt listerer, return");
         return;
     }
-    Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
-    Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+
+    if (!isBtCrashed) {
+        Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
+        Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+    }
+    
     isBtListenerRegistered = true;
+    isBtCrashed = false;
     const sptr<IStandardAudioService> gsp = RegisterBluetoothDeathCallback();
     AudioPolicyUtils::GetInstance().SetBtConnecting(true);
     Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();

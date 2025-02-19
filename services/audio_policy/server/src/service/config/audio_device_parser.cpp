@@ -19,6 +19,7 @@
 #include "audio_device_parser.h"
 #include "media_monitor_manager.h"
 #include "audio_errors.h"
+#include "config_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,8 +37,11 @@ static std::map<std::string, DeviceType> deviceTypeMap_ = {
 }
 bool AudioDeviceParser::LoadConfiguration()
 {
+    char buf[MAX_PATH_LEN];
+    char *path = GetOneCfgFile(DEVICE_CONFIG_FILE, buf, MAX_PATH_LEN);
+    CHECK_AND_RETURN_RET_LOG(path != nullptr && *path != '\0', ERROR, "invalid path!");
     curNode_ = AudioXmlNode::Create();
-    int32_t ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
+    int32_t ret = curNode_->Config(path, nullptr, 0);
     if (ret != SUCCESS) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,

@@ -30,6 +30,7 @@
 #include "audio_policy_manager.h"
 
 #include "media_monitor_manager.h"
+#include "audio_scope_exit.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -485,8 +486,9 @@ bool AudioRendererPrivate::IsDirectVoipParams(const AudioStreamParams &audioStre
         return false;
     }
 
-    // VoIP derect only supports 16bit and 32bit.
-    if (!(audioStreamParams.format == SAMPLE_S16LE || audioStreamParams.format == SAMPLE_S32LE)) {
+    // VoIP derect only supports 16bit, 32bit, 32float.
+    if (!(audioStreamParams.format == SAMPLE_S16LE || audioStreamParams.format == SAMPLE_S32LE ||
+        audioStreamParams.format == SAMPLE_F32LE)) {
         AUDIO_ERR_LOG("The format %{public}d is not supported for direct VoIP mode",
             audioStreamParams.format);
         return false;
@@ -1735,6 +1737,10 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
         std::lock_guard<std::shared_mutex> lock(rendererMutex_);
         isSwitching_ = true;
+        audioStream_->SetSwitchingStatus(true);
+        AudioScopeExit scopeExit([this] () {
+            audioStream_->SetSwitchingStatus(false);
+        });
         RendererState previousState = GetStatusInner();
         AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
         if (previousState == RENDERER_RUNNING) {
@@ -1769,6 +1775,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
+        scopeExit.Relase();
     }
     WriteSwitchStreamLogMsg();
     return switchResult;

@@ -440,7 +440,8 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
-        if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
+        if (Util::IsDualToneStreamType(streamType) &&
+            currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST && !VolumeUtils::IsPCVolumeEnable()) {
             volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
         } else {
             volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);

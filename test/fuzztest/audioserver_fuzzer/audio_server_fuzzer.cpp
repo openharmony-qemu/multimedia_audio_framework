@@ -36,8 +36,17 @@ const int32_t SHIFT_LEFT_16 = 16;
 const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_MIN = 0;
 const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
-const uint8_t TESTSIZE = 24;
 typedef void (*TestPtr)(const uint8_t *, size_t);
+
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
 
 uint32_t Convert2Uint32(const uint8_t *ptr)
 {
@@ -508,7 +517,7 @@ void AudioServerCheckHibernateStateTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerFuzzTest,
     OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest,
     OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
@@ -541,12 +550,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (data == nullptr || size <= 1) {
         return 0;
     }
-    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
-    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
-        return 0;
+    uint32_t len = OHOS::AudioStandard::GetArrLength(g_testPtrs);
+    if (len > 0) {
+        uint8_t firstByte = *data % len;
+        if (firstByte >= len) {
+            return 0;
+        }
+        data = data + 1;
+        size = size - 1;
+        g_testPtrs[firstByte](data, size);
     }
-    data = data + 1;
-    size = size - 1;
-    g_testPtrs[firstByte](data, size);
     return 0;
 }

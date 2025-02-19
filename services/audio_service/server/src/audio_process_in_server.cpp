@@ -64,6 +64,11 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
 AudioProcessInServer::~AudioProcessInServer()
 {
     AUDIO_INFO_LOG("~AudioProcessInServer()");
+    if (object_ != nullptr) {
+        bool res = object_->RemoveDeathRecipient(deathRecipient_);
+        AUDIO_INFO_LOG("RemoveDeathRecipient ret: %{public}d", res);
+    }
+
     if (convertedBuffer_.buffer != nullptr) {
         delete [] convertedBuffer_.buffer;
     }
@@ -345,9 +350,10 @@ int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
 {
     sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
     CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
-    bool result = object->AddDeathRecipient(new ProcessDeathRecipient(this, releaseCallback_));
+    deathRecipient_ = new ProcessDeathRecipient(this, releaseCallback_);
+    bool result = object->AddDeathRecipient(deathRecipient_);
     CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "AddDeathRecipient failed.");
-
+    object_= object;
     return SUCCESS;
 }
 
@@ -484,7 +490,8 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     uint32_t channel = processConfig_.streamInfo.channels;
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
-    if (*serverStreamInfo.channels.rbegin() != processConfig_.streamInfo.channels) {
+    if (*serverStreamInfo.channels.rbegin() != processConfig_.streamInfo.channels ||
+        serverStreamInfo.format != processConfig_.streamInfo.format) {
         size_t spanSizeInByte = 0;
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
             uint32_t serverByteSize = *serverStreamInfo.channels.rbegin() * PcmFormatToBits(serverStreamInfo.format);

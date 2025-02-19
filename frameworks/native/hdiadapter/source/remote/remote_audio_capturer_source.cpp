@@ -350,7 +350,9 @@ int32_t RemoteAudioCapturerSourceInner::CreateCapture(const struct AudioPort &ca
 
 int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
-    CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "CaptureFrame: Audio capture is null.");
+    std::lock_guard<std::mutex> lock(audioAdapterMutex_);
+    CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr) && (audioAdapter_ != nullptr),
+        ERR_INVALID_HANDLE, "CaptureFrame: Audio capture or audio adapter is null.");
     if (!started_.load()) {
         AUDIO_DEBUG_LOG("AudioRendererSinkInner::RenderFrame invalid state not started!");
         return ERR_ILLEGAL_STATE;

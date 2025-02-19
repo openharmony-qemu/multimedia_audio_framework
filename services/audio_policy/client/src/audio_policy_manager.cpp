@@ -17,13 +17,17 @@
 #endif
 
 #include "audio_policy_manager.h"
-#include "audio_policy_proxy.h"
-#include "audio_errors.h"
-#include "audio_server_death_recipient.h"
-#include "audio_policy_log.h"
-#include "audio_utils.h"
+
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+
+#include "audio_errors.h"
+#include "audio_policy_log.h"
+
+#include "audio_utils.h"
+#include "audio_policy_proxy.h"
+#include "audio_server_death_recipient.h"
+#include "audio_service_load.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,9 +62,14 @@ static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
 static sptr<IAudioPolicy> GetAudioPolicyProxyFromSamgr()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "samgr init failed.");
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "Object is NULL.");
+    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get samgr failed.");
+    sptr<IRemoteObject> object = samgr->CheckSystemAbility(AUDIO_POLICY_SERVICE_ID);
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("get audio policy SA failed, try loading");
+        AudioServiceLoad::GetInstance()->LoadAudioService();
+        object = samgr->CheckSystemAbility(AUDIO_POLICY_SERVICE_ID);
+        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "Loading SA failed.");
+    }
     sptr<IAudioPolicy> apProxy = iface_cast<IAudioPolicy>(object);
     CHECK_AND_RETURN_RET_LOG(apProxy != nullptr, nullptr, "Init apProxy is NULL.");
     return apProxy;
@@ -175,9 +184,28 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
         auto &[mutex, isEnable] = callbackChangeInfos_[enumIndex];
         std::lock_guard<std::mutex> lock(mutex);
         if (isEnable) {
+            SetCallbackStreamInfo(enumIndex);
             gsp->SetClientCallbacksEnable(enumIndex, true);
         }
     }
+}
+
+int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callbackChange)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    int32_t ret = SUCCESS;
+    if (callbackChange == CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) {
+        for (auto &rendererInfo : rendererInfos_) {
+            ret = gsp->SetCallbackRendererInfo(rendererInfo);
+        }
+    } else if (callbackChange == CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) {
+        for (auto &capturerInfo : capturerInfos_) {
+            ret = gsp->SetCallbackCapturerInfo(capturerInfo);
+        }
+    }
+    return ret;
 }
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)

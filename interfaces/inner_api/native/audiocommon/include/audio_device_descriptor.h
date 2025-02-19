@@ -66,6 +66,7 @@ public:
     int32_t a2dpOffloadFlag_ = NO_A2DP_DEVICE;
     // Other
     int32_t descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
+    bool hasPair_{false};
 
     AudioDeviceDescriptor(int32_t descriptorType = AUDIO_DEVICE_DESCRIPTOR);
 
@@ -117,6 +118,14 @@ public:
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
     DeviceType MapInternalToExternalDeviceType() const;
+
+    struct AudioDeviceDescriptorComparer {
+        bool operator()(const std::shared_ptr<AudioDeviceDescriptor> &lhs,
+            const std::shared_ptr<AudioDeviceDescriptor> &rhs) const
+        {
+            return !lhs->IsSameDeviceDesc(*rhs);
+        }
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS

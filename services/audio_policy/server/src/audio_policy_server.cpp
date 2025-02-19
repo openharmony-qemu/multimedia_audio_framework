@@ -207,6 +207,7 @@ void AudioPolicyServer::OnStart()
     }
     // Restart to reload the volume.
     InitKVStore();
+    isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -429,6 +430,10 @@ int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
         ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
+    if (isScreenOffOrLock_ && !IsStreamActive(streamInFocus)) {
+        AUDIO_INFO_LOG("screen off or screen lock, this stream is not active, not change volume.");
+        return AUDIO_OK;
+    }
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
         AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
         SetStreamMuteInternal(streamInFocus, false, true);
@@ -650,6 +655,9 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.dms.rotation_changed");
     SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
     SubscribeCommonEvent("usual.event.SCREEN_ON");
+    SubscribeCommonEvent("usual.event.SCREEN_OFF");
+    SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
+    SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
 #ifdef USB_ENABLE
     AudioUsbManager::GetInstance().SubscribeEvent();
 #endif
@@ -706,6 +714,12 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
             return;
         }
         powerStateListener_->ControlAudioFocus(false);
+    } else if (action == "usual.event.SCREEN_OFF" || action == "usual.event.SCREEN_LOCKED") {
+        AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
+        isScreenOffOrLock_ = true;
+    } else if (action == "usual.event.SCREEN_UNLOCKED") {
+        AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
+        isScreenOffOrLock_ = false;
     }
 }
 
@@ -1279,6 +1293,32 @@ int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapt
         "SelectInputDevice: No system permission");
     int32_t ret = audioPolicyService_.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
     return ret;
+}
+
+int32_t AudioPolicyServer::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "No system permission");
+
+    return audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioPolicyServer::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "No system permission");
+
+    return audioPolicyService_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetExcludedOutputDevices(AudioDeviceUsage audioDevUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), vector<shared_ptr<AudioDeviceDescriptor>>(),
+        "No system permission");
+
+    return audioPolicyService_.GetExcludedOutputDevices(audioDevUsage);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)

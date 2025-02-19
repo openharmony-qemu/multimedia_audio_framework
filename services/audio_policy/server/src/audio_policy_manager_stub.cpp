@@ -185,6 +185,9 @@ const char *g_audioPolicyCodeStrs[] = {
     "SAVE_REMOTE_INFO",
     "SET_VIRTUAL_CALL",
     "SET_DEVICE_CONNECTION_STATUS",
+    "EXCLUDE_OUTPUT_DEVICES",
+    "UNEXCLUDE_OUTPUT_DEVICES",
+    "GET_EXCLUDED_OUTPUT_DEVICES",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1149,6 +1152,15 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CONNECTION_STATUS):
             SetDeviceConnectionStatusInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::EXCLUDE_OUTPUT_DEVICES):
+            ExcludeOutputDevicesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNEXCLUDE_OUTPUT_DEVICES):
+            UnexcludeOutputDevicesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES):
+            GetExcludedOutputDevicesInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

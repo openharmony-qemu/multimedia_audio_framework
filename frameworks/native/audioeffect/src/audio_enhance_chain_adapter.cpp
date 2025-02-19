@@ -31,6 +31,7 @@ constexpr int32_t SAMPLE_FORMAT_U8 = 8;
 constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
 constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
 constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
+constexpr int32_t SAMPLE_FORMAT_F32LE = 32;
 
 namespace {
 static const std::map<int32_t, pa_sample_format_t> FORMAT_CONVERT_MAP {
@@ -38,6 +39,7 @@ static const std::map<int32_t, pa_sample_format_t> FORMAT_CONVERT_MAP {
     {SAMPLE_FORMAT_S16LE, PA_SAMPLE_S16LE},
     {SAMPLE_FORMAT_S24LE, PA_SAMPLE_S24LE},
     {SAMPLE_FORMAT_S32LE, PA_SAMPLE_S32LE},
+    {SAMPLE_FORMAT_F32LE, PA_SAMPLE_FLOAT32LE },
 };
 }
 

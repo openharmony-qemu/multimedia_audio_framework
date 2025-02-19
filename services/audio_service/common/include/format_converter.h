@@ -23,8 +23,14 @@ namespace OHOS {
 namespace AudioStandard {
 class FormatConverter {
 public:
+    static void DataAccumulationFromVolume(const std::vector<AudioStreamData> &srcDataList,
+        const AudioStreamData &dstData);
     static int32_t S16MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S16StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S16StereoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S16StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
 };
 } // namespace AudioStandard
 } // namespace OHOS

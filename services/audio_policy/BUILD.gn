@@ -510,6 +510,7 @@ audio_ohos_library("audio_policy_client") {
     "client/src/audio_routing_manager_listener_stub.cpp",
     "client/src/audio_spatialization_state_change_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
+    "client/src/audio_service_load.cpp",
     "client/src/proxy/audio_policy_callback_proxy.cpp",
     "client/src/proxy/audio_policy_microphone_proxy.cpp",
     "client/src/proxy/audio_policy_proxy.cpp",
@@ -728,9 +729,11 @@ ohos_shared_library("audio_policy_common") {
   public_configs = [ ":audio_policy_common_public_config" ]
 
   external_deps = [
+    "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
     "i18n:intl_util",
+    "ipc:ipc_core",
   ]
 
   cflags = [ "-Os" ]

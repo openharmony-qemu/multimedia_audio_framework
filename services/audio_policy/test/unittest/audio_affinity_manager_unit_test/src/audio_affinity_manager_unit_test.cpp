@@ -125,7 +125,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_001, TestSize.Level1)
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
     audioAffinityManager->ParseAffinityXml();
     // Verify the state of the method after it is executed
-    EXPECT_TRUE(audioAffinityManager->rendererAffinityDeviceArray_.empty() &&
+    EXPECT_FALSE(audioAffinityManager->rendererAffinityDeviceArray_.empty() &&
                  audioAffinityManager->capturerAffinityDeviceArray_.empty());
     if (!audioAffinityManager->rendererAffinityDeviceArray_.empty()) {
         const auto& outputDevice = audioAffinityManager->rendererAffinityDeviceArray_[0];

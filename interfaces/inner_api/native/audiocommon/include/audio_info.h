@@ -730,6 +730,11 @@ enum State {
     STOPPING
 };
 
+struct StreamSwitchingInfo {
+    bool isSwitching_ = false;
+    State state_ = INVALID;
+};
+
 struct AudioRegisterTrackerInfo {
     uint32_t sessionId;
     int32_t clientPid;

@@ -20,6 +20,7 @@
 #include "audio_device_manager.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_policy_log.h"
+#include "audio_state_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,6 +28,7 @@ class RouterBase {
 public:
     std::string name_;
     IAudioPolicyInterface& audioPolicyManager_;
+    bool isAlarmFollowRingRouter_ = false;
     RouterBase() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()) {}
     virtual ~RouterBase() {};
 
@@ -43,13 +45,14 @@ public:
     {
         return name_;
     }
-    std::shared_ptr<AudioDeviceDescriptor> GetLatestConnectDeivce(
+    std::shared_ptr<AudioDeviceDescriptor> GetLatestNonExcludedConnectDevice(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
     {
-        // remove abnormal device
+        // remove abnormal device or excluded device
         for (size_t i = 0; i < descs.size(); i++) {
             if (descs[i]->exceptionFlag_ || !descs[i]->isEnable_ ||
-                (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && descs[i]->connectState_ == SUSPEND_CONNECTED)) {
+                (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && descs[i]->connectState_ == SUSPEND_CONNECTED) ||
+                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, descs[i])) {
                 descs.erase(descs.begin() + i);
                 i--;
             }
@@ -86,6 +89,12 @@ public:
                 device->isEnable_, device->exceptionFlag_);
         }
         return std::make_shared<AudioDeviceDescriptor>();
+    }
+
+    void SetAlarmFollowRingRouter(const bool flag)
+    {
+        AUDIO_INFO_LOG("Set alarm follow ring router: %{public}d", flag);
+        isAlarmFollowRingRouter_ = flag;
     }
 };
 } // namespace AudioStandard

@@ -53,6 +53,34 @@ int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     return gsp->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
 
+int32_t AudioPolicyManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioPolicyManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetExcludedOutputDevices(
+    AudioDeviceUsage audioDevUsage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetExcludedOutputDevices: audio policy manager proxy is NULL.");
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
+        return deviceInfo;
+    }
+    return gsp->GetExcludedOutputDevices(audioDevUsage);
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -229,6 +257,7 @@ int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const AudioRe
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->AddPreferredOutputDeviceChangeCallback(rendererInfo, callback);
+        rendererInfos_.push_back(rendererInfo);
         SetCallbackRendererInfo(rendererInfo);
         size_t callbackSize = audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
         if (callbackSize == 1) {
@@ -257,6 +286,7 @@ int32_t AudioPolicyManager::SetPreferredInputDeviceChangeCallback(const AudioCap
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->AddPreferredInputDeviceChangeCallback(capturerInfo, callback);
+        capturerInfos_.push_back(capturerInfo);
         SetCallbackCapturerInfo(capturerInfo);
         size_t callbackSize = audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize();
         if (callbackSize == 1) {

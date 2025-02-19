@@ -462,7 +462,8 @@ const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_U8,
     SAMPLE_S16LE,
     SAMPLE_S24LE,
-    SAMPLE_S32LE
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
 };
 
 const std::vector<AudioChannel> RENDERER_SUPPORTED_CHANNELS {
