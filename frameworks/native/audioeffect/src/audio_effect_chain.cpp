@@ -551,7 +551,7 @@ int32_t AudioEffectChain::updatePrimaryChannel()
                 ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
                 ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
                 AUDIO_INFO_LOG("currChannelLayout is not supported, change to default channelLayout");
-                return SUCCESS;
+                return ERROR;
             }
 
             ret = (*preHandle)->command(preHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
@@ -573,14 +573,29 @@ int32_t AudioEffectChain::updatePrimaryChannel()
         ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
         ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
         AUDIO_INFO_LOG("currChannelLayout is not supported, change to default channelLayout");
-        return SUCCESS;
+        return ERROR;
     }
+
+    ret = (*preHandle)->command(preHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "last effect update EFFECT_CMD_GET_CONFIG fail");
+
+    ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
+    ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
+    dumpNameIn_ = "dump_effect_in_" + sceneType_ + "_"
+        + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
+        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
+    dumpNameOut_ = "dump_effect_out_" + sceneType_ + "_"
+        + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
+        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
     return SUCCESS;
 }
 
 int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 {
-    updatePrimaryChannel();
+    if (updatePrimaryChannel() == SUCCESS) {
+        AUDIO_INFO_LOG("finish UpdateMultichannelIoBufferConfigInner in updatePrimaryChannel, no need continue");
+        return SUCCESS;
+    }
     int32_t replyData = 0;
     AudioEffectConfig tmpIoBufferConfig = ioBufferConfig_;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
