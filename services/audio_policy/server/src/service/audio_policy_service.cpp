@@ -84,6 +84,7 @@ mutex g_dataShareHelperMutex;
 mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
+bool AudioPolicyService::isBtCrashed = false;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -1441,6 +1442,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
     lock_guard<mutex> lock(g_btProxyMutex);
     g_btProxy = nullptr;
     isBtListenerRegistered = false;
+    isBtCrashed = true;
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSource();
     Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
@@ -1456,9 +1458,14 @@ void AudioPolicyService::RegisterBluetoothListener()
         AUDIO_INFO_LOG("audio policy service already register bt listerer, return");
         return;
     }
-    Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
-    Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+
+    if (!isBtCrashed) {
+        Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
+        Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+    }
+    
     isBtListenerRegistered = true;
+    isBtCrashed = false;
     const sptr<IStandardAudioService> gsp = RegisterBluetoothDeathCallback();
     AudioPolicyUtils::GetInstance().SetBtConnecting(true);
     Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
