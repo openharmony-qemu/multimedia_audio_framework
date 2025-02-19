@@ -31,6 +31,8 @@
 #include "audio_enhance_chain.h"
 #include "audio_enhance_chain_adapter.h"
 #include "audio_setting_provider.h"
+#include "audio_device_type.h"
+#include "audio_effect_map.h"
 
 using namespace OHOS::AudioStandard;
 
@@ -174,8 +176,10 @@ void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectCh
 void AudioEnhanceChainManager::ConstructDeviceEnhances()
 {
     CHECK_AND_RETURN_LOG(sceneTypeAndModeToEnhanceChainNameMap_.size() != 0, "no enhance algos");
+    const std::unordered_map<AudioEnhanceScene, std::string> &audioEnhanceSupportedSceneTypes =
+        GetEnhanceSupportedSceneType();
     for (const auto& sceneType: AUDIO_WITH_DEVICE_ENHANCES) {
-        std::string scene = AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.find(sceneType)->second;
+        std::string scene = audioEnhanceSupportedSceneTypes.find(sceneType)->second;
         std::string sceneAndMode = scene + "_&_" + "ENHANCE_DEFAULT";
         std::string enhanceChain = "";
         auto item = sceneTypeAndModeToEnhanceChainNameMap_.find(sceneAndMode);
@@ -302,8 +306,11 @@ int32_t AudioEnhanceChainManager::ParseSceneKeyCode(const uint32_t sceneKeyCode,
     uint32_t sceneTypeMask = SCENE_TYPE_MASK;
     uint32_t sceneCode = (sceneKeyCode & sceneTypeMask) >> 16;
     AudioEnhanceScene scene = static_cast<AudioEnhanceScene>(sceneCode);
-    auto item = AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.find(scene);
-    if (item != AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.end()) {
+    const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
+    const std::unordered_map<AudioEnhanceScene, std::string> &audioEnhanceSupportedSceneTypes =
+        GetEnhanceSupportedSceneType();
+    auto item = audioEnhanceSupportedSceneTypes.find(scene);
+    if (item != audioEnhanceSupportedSceneTypes.end()) {
         sceneType = item->second;
     } else {
         return ERROR;
@@ -315,8 +322,8 @@ int32_t AudioEnhanceChainManager::ParseSceneKeyCode(const uint32_t sceneKeyCode,
     uint32_t renderId = (sceneKeyCode & renderIdMask);
     DeviceType rendererDevice = renderIdToDeviceMap_[renderId];
 
-    auto deviceItem = SUPPORTED_DEVICE_TYPE.find(capturerDevice);
-    if (deviceItem != SUPPORTED_DEVICE_TYPE.end()) {
+    auto deviceItem = supportDeviceType.find(capturerDevice);
+    if (deviceItem != supportDeviceType.end()) {
         if ((capturerDevice == DEVICE_TYPE_INVALID) || (capturerDevice == DEVICE_TYPE_NONE)) {
             capturerDeviceStr = "DEVICE_TYPE_MIC";
             AUDIO_ERR_LOG("capturerDevice not availd");
@@ -326,8 +333,8 @@ int32_t AudioEnhanceChainManager::ParseSceneKeyCode(const uint32_t sceneKeyCode,
     } else {
         return ERROR;
     }
-    deviceItem = SUPPORTED_DEVICE_TYPE.find(rendererDevice);
-    if (deviceItem != SUPPORTED_DEVICE_TYPE.end()) {
+    deviceItem = supportDeviceType.find(rendererDevice);
+    if (deviceItem != supportDeviceType.end()) {
         rendererDeviceStr = deviceItem->second;
     } else {
         return ERROR;
@@ -723,6 +730,7 @@ int32_t AudioEnhanceChainManager::UpdatePropertyAndSendToAlgo(const DeviceType &
 int32_t AudioEnhanceChainManager::SetInputDevice(const uint32_t &captureId, const DeviceType &inputDevice,
     const std::string &deviceName)
 {
+    const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     auto item = captureIdToDeviceMap_.find(captureId);
     if (item == captureIdToDeviceMap_.end()) {
@@ -738,8 +746,8 @@ int32_t AudioEnhanceChainManager::SetInputDevice(const uint32_t &captureId, cons
     captureIdToDeviceMap_[captureId] = inputDevice;
     captureIdToDeviceNameMap_.insert_or_assign(captureId, deviceName);
     std::string inputDeviceStr = "";
-    auto deviceItem = SUPPORTED_DEVICE_TYPE.find(inputDevice);
-    if (deviceItem != SUPPORTED_DEVICE_TYPE.end()) {
+    auto deviceItem = supportDeviceType.find(inputDevice);
+    if (deviceItem != supportDeviceType.end()) {
         inputDeviceStr = deviceItem->second;
     } else {
         return ERROR;
@@ -895,8 +903,9 @@ int32_t AudioEnhanceChainManager::WriteEnhancePropertyToDb(const std::string &ke
 
 void AudioEnhanceChainManager::GetDeviceTypeName(DeviceType deviceType, std::string &deviceName)
 {
-    auto item = SUPPORTED_DEVICE_TYPE.find(deviceType);
-    if (item != SUPPORTED_DEVICE_TYPE.end()) {
+    const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
+    auto item = supportDeviceType.find(deviceType);
+    if (item != supportDeviceType.end()) {
         deviceName = item->second;
     }
 }

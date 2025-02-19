@@ -508,9 +508,9 @@ audio_ohos_library("audio_policy_client") {
     "client/src/audio_policy_manager_device.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
+    "client/src/audio_service_load.cpp",
     "client/src/audio_spatialization_state_change_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
-    "client/src/audio_service_load.cpp",
     "client/src/proxy/audio_policy_callback_proxy.cpp",
     "client/src/proxy/audio_policy_microphone_proxy.cpp",
     "client/src/proxy/audio_policy_proxy.cpp",
@@ -630,6 +630,8 @@ ohos_shared_library("audio_foundation") {
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
     "server/src/service/device/audio_device_descriptor.cpp",
+    "util/src/audio_device_type.cpp",
+    "util/src/audio_effect_map.cpp",
   ]
 
   public_configs = [ ":audio_foundation_public_config" ]

@@ -19,6 +19,7 @@
 
 #include "audio_adapter_info.h"
 #include "audio_effect.h"
+#include "audio_device_type.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,9 +35,10 @@ PipeInfo* AudioAdapterInfo::GetPipeByName(const std::string &pipeName)
 
 AudioPipeDeviceInfo* AudioAdapterInfo::GetDeviceInfoByDeviceType(DeviceType deviceType)
 {
+    const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
     for (auto &deviceInfo : deviceInfos_) {
-        auto device = SUPPORTED_DEVICE_TYPE.find(deviceType);
-        if (device != SUPPORTED_DEVICE_TYPE.end()) {
+        auto device = supportDeviceType.find(deviceType);
+        if (device != supportDeviceType.end()) {
             return &deviceInfo;
         }
     }

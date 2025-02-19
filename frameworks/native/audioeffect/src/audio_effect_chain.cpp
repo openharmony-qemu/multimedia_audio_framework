@@ -24,6 +24,7 @@
 #include "audio_dump_pcm.h"
 #include "securec.h"
 #include "media_monitor_manager.h"
+#include "audio_effect_map.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,8 +38,10 @@ constexpr int32_t CROSS_FADE_FRAME_COUNT = 5;
 #ifdef SENSOR_ENABLE
 AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
 {
+    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
+
     sceneType_ = scene;
-    effectMode_ = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
+    effectMode_ = audioSupportedSceneModes.find(EFFECT_DEFAULT)->second;
     audioBufIn_.frameLength = 0;
     audioBufOut_.frameLength = 0;
     ioBufferConfig_.inputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
@@ -64,8 +67,10 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
 #else
 AudioEffectChain::AudioEffectChain(std::string scene)
 {
+    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
+
     sceneType_ = scene;
-    effectMode_ = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
+    effectMode_ = audioSupportedSceneModes.find(EFFECT_DEFAULT)->second;
     audioBufIn_.frameLength = 0;
     audioBufOut_.frameLength = 0;
     ioBufferConfig_.inputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
@@ -182,7 +187,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     int32_t *data = &(effectParam->data[0]);
     data[COMMAND_CODE_INDEX] = EFFECT_SET_PARAM;
     data[SCENE_TYPE_INDEX] = static_cast<int32_t>(currSceneType_);
-    data[EFFECT_MODE_INDEX] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode_);
+    data[EFFECT_MODE_INDEX] = GetKeyFromValue(GetAudioSupportedSceneModes(), effectMode_);
 #ifdef WINDOW_MANAGER_ENABLE
     std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
     if (audioEffectRotation == nullptr) {
