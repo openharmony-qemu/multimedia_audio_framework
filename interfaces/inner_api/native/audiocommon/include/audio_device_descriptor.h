@@ -67,6 +67,7 @@ public:
     // Other
     int32_t descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     bool spatializationSupported_ = false;
+    bool hasPair_{false};
 
     AudioDeviceDescriptor(int32_t descriptorType = AUDIO_DEVICE_DESCRIPTOR);
 
@@ -123,7 +124,7 @@ public:
         bool operator()(const std::shared_ptr<AudioDeviceDescriptor> &lhs,
             const std::shared_ptr<AudioDeviceDescriptor> &rhs) const
         {
-            return lhs->IsSameDeviceDesc(*rhs);
+            return !lhs->IsSameDeviceDesc(*rhs);
         }
     };
 };

@@ -49,6 +49,7 @@
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
 #include "xcollie/watchdog.h"
+#include "audio_safe_block_queue.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -212,6 +213,7 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+    void SetSwitchingStatus(bool isSwitching) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -1992,6 +1994,11 @@ DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     return GetAudioTime(timestamp, base);
+}
+
+void CapturerInClientInner::SetSwitchingStatus(bool isSwitching)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
 }
 } // namespace AudioStandard
 } // namespace OHOS

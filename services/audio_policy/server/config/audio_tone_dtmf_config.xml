@@ -206,6 +206,17 @@
 	  <Segment duration="0" freq="0" loopCount ="0"  loopIndex="0" />
 	</ToneInfo>
 
+	<ToneInfo name="TONE_TYPE_COMMON_SUPERVISORY_CALL_HOLDING" toneType="108" >
+	  <RepeatCount value="INF"/>
+	  <RepeatSegment value="0"/>
+	  <SegmentCount value="5" />
+	  <Segment duration="200" freq="425, 0" loopCount ="0"  loopIndex="0" />
+	  <Segment duration="600" freq="0" loopCount ="0"  loopIndex="0" />
+	  <Segment duration="200" freq="425, 0" loopCount ="0"  loopIndex="0" />
+	  <Segment duration="3000" freq="0" loopCount ="0"  loopIndex="0" />
+	  <Segment duration="0" freq="0" loopCount ="0"  loopIndex="0" />
+	</ToneInfo>
+
 	<ToneInfo name="TONE_TYPE_COMMON_PROPRIETARY_BEEP" toneType="200" >
 	  <RepeatCount value="0"/>
 	  <RepeatSegment value="0"/>

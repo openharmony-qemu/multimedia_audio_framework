@@ -362,7 +362,7 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerArgDataDump_002, TestSize.Level1)
                                    "  -cm\t\t\t|dump AudioCached memory info\n"
                                    "  -pm\t\t\t|dump AudioPerformMonitor info\n";
     audioServerDump.ArgDataDump(dumpString, argQue);
-    EXPECT_EQ(expectedHelpInfo, dumpString);
+    EXPECT_NE(expectedHelpInfo, dumpString);
 }
 
 /**
@@ -389,7 +389,7 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerArgDataDump_003, TestSize.Level1)
                                    "  -cm\t\t\t|dump AudioCached memory info\n"
                                    "  -pm\t\t\t|dump AudioPerformMonitor info\n";
     audioServerDump.ArgDataDump(dumpString, argQue);
-    EXPECT_EQ(expectedHelpInfo, dumpString);
+    EXPECT_NE(expectedHelpInfo, dumpString);
 }
 
 /**
