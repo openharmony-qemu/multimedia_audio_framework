@@ -101,6 +101,8 @@
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 const uint64_t DEFAULT_GETLATENCY_LOG_THRESHOLD_MS = 100;
+const uint32_t SAMPLE_RATE_96K_HZ = 96000; // 96khz
+const uint8_t CHANNEL_COUNT_8 = 8; // 8ch
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -2366,10 +2368,10 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     AUTO_CTRACE("hdi_sink::SinkRenderPrimary");
     // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
 
-    if (!strcmp(u->sink->name, DP_SINK_NAME)) {
+    if (!strcmp(u->sink->name, DP_SINK_NAME) && u->render_full_enable) {
         // dp update volume
         SetSinkVolumeByDeviceClass(u->sink, GetDeviceClass(u->primary.sinkAdapter->deviceClass));
-        pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
+        pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk); // only work for dp-96k-8ch
         UnsetSinkVolume(u->sink); // reset volume 1.0f
     } else {
         if (u->isEffectBufferAllocated || AllocateEffectBuffer(u)) {
@@ -4540,6 +4542,11 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
     if (!u->sink) {
         AUDIO_ERR_LOG("Failed to create sink object");
         return -1;
+    }
+    u->render_full_enable = false; // default to false.
+    if (u->ss.rate >= SAMPLE_RATE_96K_HZ && u->ss.channels >= CHANNEL_COUNT_8) {
+        AUDIO_INFO_LOG("High sample rate and channel case, will call render_full for dp");
+        u->render_full_enable = true;
     }
 
     u->sink->parent.process_msg = SinkProcessMsg;
