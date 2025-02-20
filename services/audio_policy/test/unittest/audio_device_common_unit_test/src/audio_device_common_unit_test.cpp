@@ -94,6 +94,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_002, TestSize.Level1)
     ret = audioDeviceCommon.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
+    deviceType = DEVICE_TYPE_REMOTE_CAST;
+    ret = audioDeviceCommon.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    EXPECT_EQ(true, ret);
+
     deviceType = DEVICE_TYPE_EARPIECE;
     ret = audioDeviceCommon.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(false, ret);

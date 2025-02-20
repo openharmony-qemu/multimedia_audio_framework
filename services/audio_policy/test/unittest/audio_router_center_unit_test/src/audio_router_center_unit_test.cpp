@@ -16,8 +16,6 @@
 #include "../include/audio_router_center_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
-#include "audio_policy_server.h"
-#include "audio_policy_service.h"
 
 #include <thread>
 #include <memory>
