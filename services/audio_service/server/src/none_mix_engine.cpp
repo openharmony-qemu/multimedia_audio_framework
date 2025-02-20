@@ -23,6 +23,7 @@
 #include "none_mix_engine.h"
 #include "audio_performance_monitor.h"
 #include "audio_volume.h"
+#include "format_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -271,6 +272,20 @@ void NoneMixEngine::AdjustVoipVolume()
     }
 }
 
+int32_t ChannelFormatConvert(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted,
+    AudioStreamInfo audioStreamInfo)
+{
+    if (audioStreamInfo.format == SAMPLE_F32LE && audioStreamInfo.channels == MONO) {
+        //srcdata has actually been converted to int32_t.
+        return FormatConverter::S32MonoToS16Mono(audioBuffer, audioBufferConverted);
+    }
+    if (audioStreamInfo.format == SAMPLE_F32LE && audioStreamInfo.channels == STEREO) {
+        //srcdata has actually been converted to int32_t.
+        return FormatConverter::S32StereoToS16Stereo(audioBuffer, audioBufferConverted);
+    }
+    return SUCCESS;
+}
+
 void NoneMixEngine::MixStreams()
 {
     if (stream_ == nullptr) {
@@ -286,6 +301,12 @@ void NoneMixEngine::MixStreams()
     int32_t appUid = stream_->GetAudioProcessConfig().appInfo.appUid;
     int32_t index = -1;
     int32_t result = stream_->Peek(&audioBuffer, index);
+
+    AudioStreamInfo configStreamInfo = stream_->GetAudioProcessConfig().streamInfo;
+    std::vector<char> audioBufferConverted;
+    int32_t ret = ChannelFormatConvert(audioBuffer, audioBufferConverted, configStreamInfo);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "ChannelFormatConvert failed.");
+
     uint32_t sessionId = stream_->GetStreamIndex();
     writeCount_++;
     if (index < 0) {
@@ -310,10 +331,10 @@ void NoneMixEngine::MixStreams()
         if (startFadeout_) {
             stream_->BlockStream();
         }
-        DoFadeinOut(startFadeout_, audioBuffer.data(), audioBuffer.size());
+        DoFadeinOut(startFadeout_, audioBufferConverted.data(), audioBufferConverted.size());
         cvFading_.notify_all();
     }
-    renderSink_->RenderFrame(*audioBuffer.data(), audioBuffer.size(), written);
+    renderSink_->RenderFrame(*audioBufferConverted.data(), audioBufferConverted.size(), written);
     stream_->ReturnIndex(index);
     renderSink_->UpdateAppsUid({appUid});
     StandbySleep();
@@ -397,12 +418,11 @@ HdiAdapterFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
     switch (format) {
         case AudioSampleFormat::SAMPLE_U8:
         case AudioSampleFormat::SAMPLE_S16LE:
+        case AudioSampleFormat::SAMPLE_F32LE:
             return HdiAdapterFormat::SAMPLE_S16;
         case AudioSampleFormat::SAMPLE_S24LE:
         case AudioSampleFormat::SAMPLE_S32LE:
             return HdiAdapterFormat::SAMPLE_S32;
-        case AudioSampleFormat::SAMPLE_F32LE:
-            return HdiAdapterFormat::SAMPLE_F32;
         default:
             return HdiAdapterFormat::SAMPLE_S16;
     }
