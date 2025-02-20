@@ -25,6 +25,7 @@ ohos_shared_library("audio_qosmanager") {
 
   include_dirs = [
     "include",
+    "../audioschedule/include",
     "../audioutils/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
   ]
