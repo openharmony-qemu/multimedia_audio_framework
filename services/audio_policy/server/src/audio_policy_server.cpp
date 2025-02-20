@@ -714,7 +714,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
             return;
         }
         powerStateListener_->ControlAudioFocus(false);
-    } else if (action == "usual.event.SCREEN_OFF" || action == "usual.event.SCREEN_LOCKED") {
+    } else if (action == "usual.event.SCREEN_LOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
         isScreenOffOrLock_ = true;
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
