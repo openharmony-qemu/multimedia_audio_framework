@@ -786,6 +786,9 @@ static unsigned SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_memchunk *re
 
 static void SendStreamData(struct userdata *u, int num, pa_memchunk chunk)
 {
+    if (num < 0 || num >= g_splitNums) {
+        return;
+    }
     // start hdi
     StartSplitStreamHdiIfRunning(u);
     // send msg post data
