@@ -1199,6 +1199,7 @@ bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_DEVICE:
         case DeviceType::DEVICE_TYPE_FILE_SINK:
         case DeviceType::DEVICE_TYPE_FILE_SOURCE:
             result = true;
@@ -1416,6 +1417,7 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+        case DeviceType::DEVICE_TYPE_USB_DEVICE:
             result = true;
             break;
         default:

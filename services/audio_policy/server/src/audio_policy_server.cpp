@@ -1264,7 +1264,7 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
 {
     if (desc.deviceType_ == DEVICE_TYPE_USB_HEADSET || desc.deviceType_ == DEVICE_TYPE_USB_DEVICE) {
         auto item = audioDeviceManager_.FindConnectedDeviceById(desc.deviceId_);
-        if (item) {
+        if (item && IsUsb(item->deviceType_)) {
             desc.deviceType_ = item->deviceType_;
         }
     } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && desc.deviceRole_ == INPUT_DEVICE) {
