@@ -534,7 +534,7 @@ int32_t AudioEffectChain::updatePrimaryChannel()
 {
     ioBufferConfig_.inputCfg.channels = currChannelNoCheck_;
     ioBufferConfig_.inputCfg.channelLayout = currchannelLayoutNoCheck_;
-    int32_t replyData = 0;
+    int32_t replyData = -1;
     AudioEffectConfig tmpIoBufferConfig = ioBufferConfig_;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};

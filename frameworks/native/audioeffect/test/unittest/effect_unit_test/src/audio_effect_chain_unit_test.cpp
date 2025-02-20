@@ -521,5 +521,133 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_021, TestSize.Level1)
     auto ret = audioEffectChain->UpdateMultichannelIoBufferConfigInner();
     EXPECT_EQ(ret, ERROR);
 }
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_022
+ * @tc.desc  : Test AudioEffectChain::SetCurrChannelNoCheck()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_022, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+
+    uint32_t channels = STEREO;
+    audioEffectChain->SetCurrChannelNoCheck(channels);
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_023
+ * @tc.desc  : Test AudioEffectChain::SetCurrChannelLayoutNoCheck()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_023, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+
+    uint64_t channelLayout = CH_LAYOUT_STEREO;
+    audioEffectChain->SetCurrChannelLayoutNoCheck(channelLayout);
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_024
+ * @tc.desc  : Test AudioEffectChain::updateDumpName()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_024, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+
+    audioEffectChain->sceneType_ = "SCENE_MUSIC";
+    audioEffectChain->ioBufferConfig_.inputCfg.samplingRate = 48000;
+    audioEffectChain->ioBufferConfig_.inputCfg.channels = 2;
+    audioEffectChain->ioBufferConfig_.outputCfg.samplingRate = 48000;
+    audioEffectChain->ioBufferConfig_.outputCfg.channels = 2;
+    audioEffectChain->updateDumpName();
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_025
+ * @tc.desc  : Test AudioEffectChain::CheckChannelLayoutByReplyInfo()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_025, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+    int32_t replyData = -1;
+    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+    auto ret = audioEffectChain->CheckChannelLayoutByReplyInfo(replyInfo);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_026
+ * @tc.desc  : Test AudioEffectChain::CheckChannelLayoutByReplyInfo()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_026, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+    int32_t replyData = 0;
+    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+    auto ret = audioEffectChain->CheckChannelLayoutByReplyInfo(replyInfo);
+    EXPECT_EQ(ret, true);
+}
+
+
 } // namespace AudioStandard
 } // namespace OHOS
