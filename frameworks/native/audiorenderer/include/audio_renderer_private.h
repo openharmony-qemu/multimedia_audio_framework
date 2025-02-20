@@ -120,6 +120,8 @@ public:
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
 
+    bool IsOffloadEnable() override;
+
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
     bool IsFastRenderer() override;
