@@ -474,8 +474,8 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
         std::string sceneTypeTemp = sessionIDToEffectInfoMap_[*sessionId].sceneType;
         std::string sceneTypeAndDeviceKey = sceneTypeTemp + "_&_" + GetDeviceTypeName();
         CHECK_AND_CONTINUE_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0 &&
-            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, "null audioEffectChain, sceneType: %{public}s",
-            sceneTypeTemp.c_str());
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr,
+            "null audioEffectChain, sceneType: %{public}s", sceneTypeTemp.c_str());
         auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
         float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*sessionId);
         float systemVolumeTemp = audioEffectVolume->GetSystemVolume(
@@ -516,7 +516,8 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
         }
     }
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
-        CHECK_AND_CONTINUE_LOG(it->second != nullptr, "null audioEffectChain, sceneType: %{public}s", it->first.c_str());
+        CHECK_AND_CONTINUE_LOG(it->second != nullptr, "null audioEffectChain, sceneType: %{public}s",
+            it->first.c_str());
         auto audioEffectChain = it->second;
         float volume = 0.0f;
         audioEffectChain->SetCurrVolume(volume);
