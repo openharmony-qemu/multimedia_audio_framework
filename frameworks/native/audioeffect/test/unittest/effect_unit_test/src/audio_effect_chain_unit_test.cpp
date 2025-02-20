@@ -648,6 +648,28 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_026, TestSize.Level1)
     EXPECT_EQ(ret, true);
 }
 
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_027
+ * @tc.desc  : Test AudioEffectChain::updatePrimaryChannel()
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_027, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
 
+    EXPECT_NE(audioEffectChain, nullptr);
+
+    auto ret = audioEffectChain->updatePrimaryChannel();
+    EXPECT_EQ(ret, ERROR);
+}
 } // namespace AudioStandard
 } // namespace OHOS
