@@ -17,6 +17,7 @@
 #define ST_AUDIO_SERVER_H
 
 #include <mutex>
+#include <condition_variable>
 #include <pthread.h>
 #include <unordered_map>
 
@@ -189,6 +190,8 @@ public:
     void NotifyAccountsChanged() override;
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
+
+    void NotifyAudioPolicyReady() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -282,6 +285,10 @@ private:
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem
     std::map<std::string, std::string> usbInfoMap_;
+
+    std::atomic<bool> isAudioPolicyReady_ = false;
+    std::mutex isAudioPolicyReadyMutex_;
+    std::condition_variable isAudioPolicyReadyCv_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

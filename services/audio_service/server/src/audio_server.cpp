@@ -144,6 +144,7 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 10;
 
 static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_INVALID,
@@ -1423,6 +1424,14 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
 {
     Trace trace("AudioServer::CreateAudioProcess");
+
+    if (!isAudioPolicyReady_) {
+        std::unique_lock lock(isAudioPolicyReadyMutex_);
+        isAudioPolicyReadyCv_.wait_for(lock, std::chrono::seconds(WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS), [this] () {
+            return isAudioPolicyReady_.load();
+        });
+    }
+
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
     CHECK_AND_RETURN_RET_LOG(CheckConfigFormat(resetConfig), nullptr, "AudioProcessConfig format is wrong, please check"
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str());
@@ -2214,6 +2223,17 @@ void AudioServer::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
     AudioService::GetInstance()->GetAllSinkInputs(sinkInputs);
+}
+
+void AudioServer::NotifyAudioPolicyReady()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+
+    std::lock_guard lock(isAudioPolicyReadyMutex_);
+    isAudioPolicyReady_ = true;
+    isAudioPolicyReadyCv_.notify_all();
+    AUDIO_INFO_LOG("out");
 }
 } // namespace AudioStandard
 } // namespace OHOS

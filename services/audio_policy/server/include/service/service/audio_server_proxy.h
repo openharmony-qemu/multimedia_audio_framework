@@ -96,6 +96,7 @@ public:
     int32_t SetCaptureSilentStateProxy(bool state);
     void NotifyAccountsChanged();
     void GetAllSinkInputsProxy(std::vector<SinkInput> &sinkInputs);
+    void NotifyAudioPolicyReady();
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

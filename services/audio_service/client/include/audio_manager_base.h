@@ -497,6 +497,8 @@ public:
     virtual void NotifyAccountsChanged() = 0;
 
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
+
+    virtual void NotifyAudioPolicyReady() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -578,6 +580,7 @@ private:
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
     int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
