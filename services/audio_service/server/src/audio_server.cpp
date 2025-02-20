@@ -2208,5 +2208,12 @@ int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
     sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
     return SUCCESS;
 }
+
+void AudioServer::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->GetAllSinkInputs(sinkInputs);
+}
 } // namespace AudioStandard
 } // namespace OHOS

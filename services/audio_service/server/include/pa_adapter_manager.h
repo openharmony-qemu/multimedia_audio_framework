@@ -73,6 +73,7 @@ public:
     int32_t AddUnprocessStream(int32_t appUid) override;
     uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
     uint64_t GetLatency() noexcept override;
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 
 private:
     // audio channel index
@@ -134,6 +135,8 @@ private:
     uint32_t highResolutionIndex_ = 0;
     bool isHighResolutionExist_ = false;
     std::set<int32_t> unprocessAppUidSet_;
+    std::mutex sinkInputsMutex_;
+    std::vector<SinkInput> sinkInputs_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

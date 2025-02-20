@@ -644,6 +644,22 @@ struct SinkInput {
     std::string sinkName; // sink name
     int32_t statusMark; // mark the router status
     uint64_t startTime; // when this router is created
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(streamId) &&
+               parcel.WriteInt32(static_cast<int32_t>(streamType)) &&
+               parcel.WriteInt32(uid) &&
+               parcel.WriteInt32(pid) &&
+               parcel.WriteUint32(paStreamId);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        streamId = parcel.ReadInt32();
+        streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        uid = parcel.ReadInt32();
+        pid = parcel.ReadInt32();
+        paStreamId = parcel.ReadUint32();
+    }
 };
 
 struct SourceOutput {

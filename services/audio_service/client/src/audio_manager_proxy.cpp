@@ -32,7 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t MAX_OFFLINE_EFFECT_CHAIN_NUM = 10;
-
+const size_t DEFAULT_MAX_RENDERER_INSTANCES = 1000;
 }
 AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioService>(impl)
@@ -1441,6 +1441,25 @@ void AudioManagerProxy::NotifyAccountsChanged()
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
+}
+
+void AudioManagerProxy::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "getallsinkinputs failed, error: %{public}d", error);
+    size_t size = reply.ReadUint64();
+    CHECK_AND_RETURN_LOG(size <= DEFAULT_MAX_RENDERER_INSTANCES, "getallsinkinputs failed, size: %{public}zu", size);
+    while (size > 0) {
+        SinkInput sinkInput;
+        sinkInput.Unmarshalling(reply);
+        sinkInputs.push_back(sinkInput);
+        size--;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

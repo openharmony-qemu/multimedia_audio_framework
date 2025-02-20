@@ -45,6 +45,7 @@
     *Dump*;
     *CleanAppUseNumMap*;
     *GetSharedVolume*;
+    *GetAllSinkInputs*;
     *HasBluetoothEndpoint*;
     *GetOfflineStream*;
     *GetOfflineAudioEffectChains*;
