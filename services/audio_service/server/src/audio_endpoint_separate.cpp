@@ -475,7 +475,7 @@ int32_t AudioEndpointSeparate::OnUpdateHandleInfo(IAudioProcessStream *processSt
     return SUCCESS;
 }
 
-int32_t AudioEndpointSeparate::LinkProcessStream(IAudioProcessStream *processStream)
+int32_t AudioEndpointSeparate::LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking)
 {
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();

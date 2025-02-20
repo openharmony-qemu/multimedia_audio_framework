@@ -739,7 +739,7 @@ void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, s
 int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
     std::shared_ptr<AudioEndpoint> endpoint)
 {
-    int32_t ret = endpoint->LinkProcessStream(process);
+    int32_t ret = endpoint->LinkProcessStream(process, !GetHibernateState());
     if (ret != SUCCESS && endpoint->GetLinkedProcessCount() == 0 &&
         endpointList_.count(endpoint->GetEndpointName())) {
         std::string endpointToErase = endpoint->GetEndpointName();
@@ -1114,6 +1114,12 @@ void AudioService::CheckHibernateState(bool onHibernate)
         allRunningSinksCV_.notify_all();
         AUDIO_INFO_LOG("Wake up from hibernate");
     }
+}
+
+bool AudioService::GetHibernateState()
+{
+    std::unique_lock<std::mutex> lock(allRunningSinksMutex_);
+    return onHibernate_;
 }
 
 int32_t AudioService::UpdateSourceType(SourceType sourceType)

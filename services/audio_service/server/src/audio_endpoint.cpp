@@ -133,7 +133,7 @@ public:
      *   case4: endpointStatus_ = IDEL, link running process; IDEL-->STARTING-->RUNNING
      *   case5: endpointStatus_ = RUNNING; RUNNING-->RUNNING
     */
-    int32_t LinkProcessStream(IAudioProcessStream *processStream) override;
+    int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) override;
     void LinkProcessStreamExt(IAudioProcessStream *processStream,
     const std::shared_ptr<OHAudioBuffer>& processBuffer);
 
@@ -1199,7 +1199,7 @@ int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *processStrea
     return SUCCESS;
 }
 
-int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream)
+int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking)
 {
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();
@@ -1241,7 +1241,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
             processList_.push_back(processStream);
             processBufferList_.push_back(processBuffer);
         }
-        if (!needEndpointRunning) {
+        if (!needEndpointRunning || !startWhenLinking) {
             AUDIO_INFO_LOG("LinkProcessStream success, process stream status is not running.");
             return SUCCESS;
         }
@@ -1297,7 +1297,6 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         endpointStatus_ = UNLINKED;
     } else if (!IsAnyProcessRunningInner()) {
         endpointStatus_ = IDEL;
-        isStarted_ = false;
         delayStopTime_ = DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS;
     }
 

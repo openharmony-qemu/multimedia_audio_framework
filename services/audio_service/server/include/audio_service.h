@@ -89,6 +89,7 @@ public:
     int32_t UnsetOffloadMode(uint32_t sessionId);
     void UpdateAudioSinkState(uint32_t sinkId, bool started);
     void CheckHibernateState(bool onHibernate);
+    bool GetHibernateState();
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
     std::shared_ptr<CapturerInServer> GetCapturerBySessionID(const uint32_t &session);
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
