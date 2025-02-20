@@ -126,6 +126,7 @@ const int32_t COMMON_SCENE_TYPE_INDEX = 0;
 const int32_t SUCCESS = 0;
 const int32_t ERROR = -1;
 const uint64_t FADE_OUT_TIME = 5000; // 5ms
+bool g_isFirstStarted = true;
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -3573,7 +3574,13 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
 static void ThreadFuncRendererTimerBus(void *userdata)
 {
     // set audio thread priority
-    SetThreadQosLevelAsync();
+    if (g_isFirstStarted) {
+        ScheduleThreadInServer(getpid(), gettid());
+        SetThreadQosLevelAsync();
+        g_isFirstStarted = false;
+    } else {
+        SetThreadQosLevel();
+    }
 
     struct Userdata *u = userdata;
 
