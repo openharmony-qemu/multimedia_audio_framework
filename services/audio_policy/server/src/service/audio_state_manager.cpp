@@ -23,11 +23,13 @@ namespace AudioStandard {
 
 void AudioStateManager::SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredMediaRenderDevice_ = deviceDescriptor;
 }
 
 void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredCallRenderDevice_ = deviceDescriptor;
 }
 
@@ -39,16 +41,19 @@ void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<Audi
 
 void AudioStateManager::SetPreferredRingRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredRingRenderDevice_ = deviceDescriptor;
 }
 
 void AudioStateManager::SetPreferredRecordCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredRecordCaptureDevice_ = deviceDescriptor;
 }
 
 void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredToneRenderDevice_ = deviceDescriptor;
 }
 
@@ -90,12 +95,14 @@ void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredMediaRenderDevice_);
     return devDesc;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredCallRenderDevice_);
     return devDesc;
 }
@@ -109,18 +116,21 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevi
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRingRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRingRenderDevice_);
     return devDesc;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecordCaptureDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRecordCaptureDevice_);
     return devDesc;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredToneRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredToneRenderDevice_);
     return devDesc;
 }
