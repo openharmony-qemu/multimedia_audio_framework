@@ -91,7 +91,8 @@ namespace AudioStandard {
         GENERATE_SESSION_ID,
         GET_ALL_SINK_INPUTS,
         NOTIFY_ACCOUNTS_CHANGED,
-        AUDIO_SERVER_CODE_MAX = NOTIFY_ACCOUNTS_CHANGED,
+        NOTIFY_AUDIO_POLICY_READY,
+        AUDIO_SERVER_CODE_MAX = NOTIFY_AUDIO_POLICY_READY,
     };
 } // namespace AudioStandard
 } // namespace OHOS

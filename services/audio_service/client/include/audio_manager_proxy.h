@@ -115,6 +115,7 @@ public:
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
+    void NotifyAudioPolicyReady() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

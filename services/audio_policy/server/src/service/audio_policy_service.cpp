@@ -887,6 +887,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     // RegisterBluetoothListener() will be called when bluetooth_host is online
     // load hdi-effect-model
     LoadHdiEffectModel();
+    AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
 }
 
 void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
