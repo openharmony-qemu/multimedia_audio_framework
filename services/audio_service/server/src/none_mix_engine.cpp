@@ -296,6 +296,16 @@ int32_t ChannelFormatConvert(std::vector<char> &audioBuffer, std::vector<char> &
     return SUCCESS;
 }
 
+void NoneMixEngine::DoRenderFrame(std::vector<char> &audioBufferConverted, int32_t index, int32_t appUid)
+{
+    uint64_t written = 0;
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+    CHECK_AND_RETURN(sink != nullptr);
+    sink->RenderFrame(*audioBufferConverted.data(), audioBufferConverted.size(), written);
+    stream_->ReturnIndex(index);
+    sink->UpdateAppsUid({appUid});
+}
+
 void NoneMixEngine::MixStreams()
 {
     if (stream_ == nullptr) {
@@ -335,7 +345,6 @@ void NoneMixEngine::MixStreams()
     AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT);
     AdjustVoipVolume();
     failedCount_ = 0;
-    uint64_t written = 0;
     // fade in or fade out
     if (startFadeout_ || startFadein_) {
         if (startFadeout_) {
@@ -344,11 +353,7 @@ void NoneMixEngine::MixStreams()
         DoFadeinOut(startFadeout_, audioBufferConverted.data(), audioBufferConverted.size());
         cvFading_.notify_all();
     }
-    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
-    CHECK_AND_RETURN(sink != nullptr);
-    sink->RenderFrame(*audioBufferConverted.data(), audioBufferConverted.size(), written);
-    stream_->ReturnIndex(index);
-    sink->UpdateAppsUid({appUid});
+    DoRenderFrame(audioBufferConverted, index, appUid);
     StandbySleep();
 }
 

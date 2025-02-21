@@ -49,6 +49,7 @@ private:
     void PauseAsync();
     int32_t StopAudioSink();
     void DoFadeinOut(bool isFadeOut, char* buffer, size_t bufferSize);
+    void DoRenderFrame(std::vector<char> &audioBufferConverted, int32_t index, int32_t appUid);
 
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);

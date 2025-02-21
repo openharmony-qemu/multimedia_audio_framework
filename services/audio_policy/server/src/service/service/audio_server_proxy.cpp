@@ -536,6 +536,5 @@ void AudioServerProxy::UnloadHdiAdapterProxy(uint32_t devMgrType, const std::str
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
->>>>>>> f219fba22 (hdi adapter refactor part2)
 }
 }

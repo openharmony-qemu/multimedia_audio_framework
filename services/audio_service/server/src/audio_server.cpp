@@ -2290,11 +2290,17 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
 
 int32_t AudioServer::LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName)
 {
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+
     return HdiAdapterManager::GetInstance().LoadAdapter(static_cast<HdiDeviceManagerType>(devMgrType), adapterName);
 }
 
 void AudioServer::UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force)
 {
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+
     HdiAdapterManager::GetInstance().UnloadAdapter(static_cast<HdiDeviceManagerType>(devMgrType), adapterName, force);
 }
 } // namespace AudioStandard
