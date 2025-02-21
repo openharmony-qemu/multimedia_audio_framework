@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 #ifdef QOSMANAGER_ENABLE
+#include <chrono>
 #include <thread>
 #include "audio_common_log.h"
 #include "audio_schedule.h"
@@ -37,6 +38,8 @@ extern "C" {
 #ifdef QOSMANAGER_ENABLE
 const std::string BOOT_ANIMATION_FINISHED_EVENT = "bootevent.bootanimation.finished";
 constexpr int32_t WAIT_FOR_BOOT_ANIMATION_S = 10;
+constexpr int32_t WAIT_TIME_FOR_UNSCHEDULE_MS = 500;
+constexpr int32_t WAIT_COUNT_FOR_UNSCHEDULE = 10;
 void SetThreadQosLevel(void)
 {
     std::unordered_map<std::string, std::string> payload;
@@ -57,9 +60,19 @@ static void SetThreadQosLevelWithTid(uint32_t pid, uint32_t tid)
     std::unordered_map<std::string, std::string> payload;
     payload["pid"] = std::to_string(pid);
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
-    ret = OHOS::QOS::SetQosForOtherThread(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, static_cast<int32_t>(tid));
-    CHECK_AND_RETURN_LOG(ret == 0, "set qos for thread %{public}d failed, ret = %{public}d", tid, ret);
-    AUDIO_INFO_LOG("set qos for thread %{public}d success", tid);
+    int32_t retryCount = 0;
+    while (retryCount < WAIT_COUNT_FOR_UNSCHEDULE) {
+        ret = OHOS::QOS::SetQosForOtherThread(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, static_cast<int32_t>(tid));
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("set qos for thread %{public}d failed, current retry count %{public}d", tid, retryCount);
+            retryCount++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME_FOR_UNSCHEDULE_MS));
+        } else {
+            AUDIO_INFO_LOG("set qos for thread %{public}d success", tid);
+            return;
+        }
+    }
+    AUDIO_ERR_LOG("set qos for thread %{public}d finally failed", tid);
 }
 
 void SetThreadQosLevelAsync(void)
