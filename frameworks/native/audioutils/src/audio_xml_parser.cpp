@@ -193,6 +193,7 @@ AudioXmlNodeInner::~AudioXmlNodeInner()
 {
     if (xmlFuncHandle_ != nullptr && doc_ != nullptr) {
         xmlFuncHandle_->xmlFreeDoc(doc_);
+        xmlFuncHandle_->xmlCleanupParser();
         doc_ = nullptr;
     }
     curNode_ = nullptr;
