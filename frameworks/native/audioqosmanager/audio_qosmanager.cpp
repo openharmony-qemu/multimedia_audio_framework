@@ -51,7 +51,7 @@ static void SetThreadQosLevelWithTid(uint32_t pid, uint32_t tid)
 {
     int32_t ret = WaitParameter(BOOT_ANIMATION_FINISHED_EVENT.c_str(), "true", WAIT_FOR_BOOT_ANIMATION_S);
     if (ret != 0) {
-        AUDIO_ERR_LOG("wait for boot animation failed or timeout");
+        AUDIO_ERR_LOG("wait for boot animation failed or timeout, ret = %{public}d", ret);
     }
     UnscheduleThreadInServer(pid, tid);
     std::unordered_map<std::string, std::string> payload;
