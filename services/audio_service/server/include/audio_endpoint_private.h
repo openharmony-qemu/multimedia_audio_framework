@@ -181,6 +181,7 @@ private:
     std::shared_ptr<IAudioRenderSink> GetFastSink(const AudioDeviceDescriptor &deviceInfo, EndpointType type);
     std::shared_ptr<IAudioCaptureSource> GetFastSource(const std::string &networkId, EndpointType type,
         IAudioSourceAttr &attr);
+    void InitAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo);
 
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
