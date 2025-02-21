@@ -38,7 +38,7 @@ extern "C" {
 #ifdef QOSMANAGER_ENABLE
 const std::string BOOT_ANIMATION_FINISHED_EVENT = "bootevent.bootanimation.finished";
 constexpr int32_t WAIT_FOR_BOOT_ANIMATION_S = 10;
-constexpr int32_t WAIT_TIME_FOR_UNSCHEDULE_MS = 50;
+constexpr int32_t WAIT_TIME_FOR_UNSCHEDULE_MS = 100;
 constexpr int32_t WAIT_COUNT_FOR_UNSCHEDULE = 5;
 void SetThreadQosLevel(void)
 {
