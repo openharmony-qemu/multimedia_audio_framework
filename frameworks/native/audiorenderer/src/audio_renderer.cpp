@@ -2080,6 +2080,15 @@ float AudioRendererPrivate::GetSpeed()
     return speed_.value_or(1.0f);
 }
 
+bool AudioRendererPrivate::IsOffloadEnable()
+{
+    std::shared_ptr currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+    bool enable = currentStream->GetOffloadEnable();
+    AUDIO_INFO_LOG("GetOffloadEnable is [%{public}s]", (enable ? "true" : "false"));
+    return enable;
+}
+
 bool AudioRendererPrivate::IsFastRenderer()
 {
     return isFastRenderer_;
