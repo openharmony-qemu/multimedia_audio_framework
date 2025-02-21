@@ -17,7 +17,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "i_audio_renderer_sink.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
@@ -92,7 +91,7 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     AudioParamKey key = *reinterpret_cast<const AudioParamKey *>(rawData);
     std::string condition(reinterpret_cast<const char*>(rawData), size - 1);
     std::string value(reinterpret_cast<const char*>(rawData), size - 1);
-    AudioServerPtr->OnAudioSinkParamChange(netWorkId, key, condition, value);
+    AudioServerPtr->OnRenderSinkParamChange(netWorkId, key, condition, value);
 }
 
 void AudioServerCaptureSilentlyFuzzTest(const uint8_t *rawData, size_t size)

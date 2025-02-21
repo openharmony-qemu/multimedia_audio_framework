@@ -500,6 +500,7 @@ public:
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
     virtual void NotifyAudioPolicyReady() = 0;
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
      * set inner capture limit.
@@ -514,6 +515,27 @@ public:
      */
     virtual int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) = 0;
 #endif
+
+    /**
+     * Load adapter of hal.
+     *
+     * @param devMgrType specify which manager to load adapter, include local, bt, remote.
+     * @param adapterName name of adapter to load.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) = 0;
+
+    /**
+     * Unload adapter of hal.
+     *
+     * @param devMgrType specify which manager to unload adapter, include local, bt, remote.
+     * @param adapterName name of adapter to unload.
+     * @param force need to force unload adapter.
+     *
+     * @return none.
+     */
+    virtual void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -599,6 +621,8 @@ private:
 #ifdef HAS_FEATURE_INNERCAPTURER
     int HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply);
 #endif
+    int HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply);
+    int HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

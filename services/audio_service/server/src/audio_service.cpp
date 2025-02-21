@@ -25,7 +25,9 @@
 #include "audio_utils.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
-#include "audio_capturer_source.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
+#include "source/i_audio_capture_source.h"
 #include "audio_volume.h"
 #include "audio_performance_monitor.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -1181,10 +1183,11 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
         return SUCCESS;
     }
 
-    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr, ERROR, "source is null");
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY);
+    std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(id);
+    CHECK_AND_RETURN_RET_LOG(source != nullptr, ERROR, "source is null");
 
-    return audioCapturerSourceInstance->UpdateSourceType(sourceType);
+    return source->UpdateSourceType(sourceType);
 }
 
 void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)

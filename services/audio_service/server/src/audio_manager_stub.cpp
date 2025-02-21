@@ -113,6 +113,8 @@ const char *g_audioServerCodeStrs[] = {
     "NOTIFY_ACCOUNTS_CHANGED",
     "NOTIFY_AUDIO_POLICY_READY",
     "SET_CAPTURE_LIMIT",
+    "LOAD_HDI_ADAPTER",
+    "UNLOAD_HDI_ADAPTER",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -828,6 +830,10 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT):
             return HandleSetInnerCapLimit(data, reply);
 #endif
+        case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER):
+            return HandleLoadHdiAdapter(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER):
+            return HandleUnloadHdiAdapter(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1154,5 +1160,24 @@ int AudioManagerStub::HandleSetInnerCapLimit(MessageParcel &data, MessageParcel 
     return AUDIO_OK;
 }
 #endif
+
+int AudioManagerStub::HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t devMgrType = data.ReadUint32();
+    const std::string adapterName = data.ReadString();
+    int32_t result = LoadHdiAdapter(devMgrType, adapterName);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t devMgrType = data.ReadUint32();
+    const std::string adapterName = data.ReadString();
+    bool force = data.ReadBool();
+    UnloadHdiAdapter(devMgrType, adapterName, force);
+    return AUDIO_OK;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

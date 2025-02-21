@@ -93,7 +93,9 @@ namespace AudioStandard {
         NOTIFY_ACCOUNTS_CHANGED,
         NOTIFY_AUDIO_POLICY_READY,
         SET_CAPTURE_LIMIT,
-        AUDIO_SERVER_CODE_MAX = SET_CAPTURE_LIMIT,
+        LOAD_HDI_ADAPTER,
+        UNLOAD_HDI_ADAPTER,
+        AUDIO_SERVER_CODE_MAX = UNLOAD_HDI_ADAPTER,
     };
 } // namespace AudioStandard
 } // namespace OHOS

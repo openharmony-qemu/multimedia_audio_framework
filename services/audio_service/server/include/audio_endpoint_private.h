@@ -20,14 +20,15 @@
 #include <memory>
 #include <thread>
 
-#include "i_audio_renderer_sink.h"
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
 #include "audio_device_descriptor.h"
 #include "i_stream_manager.h"
 #include "i_renderer_stream.h"
 #include "audio_utils.h"
-#include "i_audio_capturer_source.h"
+#include "common/hdi_adapter_info.h"
+#include "sink/i_audio_render_sink.h"
+#include "source/i_audio_capture_source.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -177,8 +178,9 @@ private:
     void AsyncGetPosTime();
     bool DelayStopDevice();
 
-    IMmapAudioRendererSink *GetFastSink(const AudioDeviceDescriptor &deviceInfo, EndpointType type);
-    IMmapAudioCapturerSource *GetFastSource(const std::string &networkId, EndpointType type, IAudioSourceAttr &attr);
+    std::shared_ptr<IAudioRenderSink> GetFastSink(const AudioDeviceDescriptor &deviceInfo, EndpointType type);
+    std::shared_ptr<IAudioCaptureSource> GetFastSource(const std::string &networkId, EndpointType type,
+        IAudioSourceAttr &attr);
 
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
@@ -235,8 +237,8 @@ private:
     FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file
     std::string dupDumpName_ = "";
 
-    IMmapAudioRendererSink *fastSink_ = nullptr;
-    IMmapAudioCapturerSource *fastSource_ = nullptr;
+    uint32_t fastRenderId_ = HDI_INVALID_ID;
+    uint32_t fastCaptureId_ = HDI_INVALID_ID;
     FastSinkType fastSinkType_ = NONE_FAST_SINK;
     FastSourceType fastSourceType_ = NONE_FAST_SOURCE;
 

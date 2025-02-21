@@ -516,5 +516,26 @@ int32_t AudioServerProxy::SetInnerCapLimitProxy(uint32_t innerCapLimit)
     return res;
 }
 #endif
+
+int32_t AudioServerProxy::LoadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t res = gsp->LoadHdiAdapter(devMgrType, adapterName);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
+
+void AudioServerProxy::UnloadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName, bool force)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->UnloadHdiAdapter(devMgrType, adapterName, force);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+>>>>>>> f219fba22 (hdi adapter refactor part2)
 }
 }
