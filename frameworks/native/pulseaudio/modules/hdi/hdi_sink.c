@@ -3571,9 +3571,8 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
     }
 }
 
-static void ThreadFuncRendererTimerBus(void *userdata)
+static void SetThreadPriority()
 {
-    // set audio thread priority
     if (g_isFirstStarted) {
         ScheduleThreadInServer(getpid(), gettid());
         SetThreadQosLevelAsync();
@@ -3581,6 +3580,12 @@ static void ThreadFuncRendererTimerBus(void *userdata)
     } else {
         SetThreadQosLevel();
     }
+}
+
+static void ThreadFuncRendererTimerBus(void *userdata)
+{
+    // set audio thread priority
+    SetThreadPriority();
 
     struct Userdata *u = userdata;
 
