@@ -21,6 +21,19 @@
 namespace OHOS {
 namespace AudioStandard {
 
+struct XmlFuncHandle;
+
+class DlopenUtils {
+public:
+    static bool Init();
+    static void DeInit();
+    static std::shared_ptr<XmlFuncHandle> GetHandle();
+private:
+    static std::atomic<int32_t> refCount_;
+    static std::shared_ptr<XmlFuncHandle> xmlFuncHandle_;
+    static std::mutex dlMutex_;
+};
+
 class AudioXmlNode {
 public:
     static std::shared_ptr<AudioXmlNode> Create();
@@ -44,7 +57,6 @@ public:
 
     virtual void FreeDoc() = 0;
     virtual void FreeProp(char *propName) = 0;
-    virtual void CleanUpParser() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

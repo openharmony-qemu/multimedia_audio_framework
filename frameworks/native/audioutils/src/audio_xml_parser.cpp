@@ -48,17 +48,6 @@ struct XmlFuncHandle {
     xmlChar *(*xmlNodeGetContent)(const xmlNode *cur);
 };
 
-class DlopenUtils {
-public:
-    static bool Init();
-    static void DeInit();
-    static std::shared_ptr<XmlFuncHandle> GetHandle();
-private:
-    static std::atomic<int32_t> refCount_;
-    static std::shared_ptr<XmlFuncHandle> xmlFuncHandle_;
-    static std::mutex dlMutex_;
-};
-
 std::atomic<int32_t> DlopenUtils::refCount_{0};
 std::shared_ptr<XmlFuncHandle> DlopenUtils::xmlFuncHandle_ = nullptr;
 std::mutex DlopenUtils::dlMutex_;
@@ -86,7 +75,6 @@ public:
 
     void FreeDoc() override;
     void FreeProp(char *propName) override;
-    void CleanUpParser() override;
 
 private:
     int32_t StrcmpXml(const xmlChar *propName1, const xmlChar *propName2);
@@ -132,6 +120,7 @@ void DlopenUtils::DeInit()
     std::lock_guard<std::mutex> lock(dlMutex_);
     refCount_.store(refCount_.load() - 1);
     if (refCount_.load() == 0 && xmlFuncHandle_.use_count() == 1) {
+        xmlFuncHandle_->xmlCleanupParser();
         dlclose(xmlFuncHandle_->libHandle);
         xmlFuncHandle_ = nullptr;
         AUDIO_INFO_LOG("Libxml2 close success");
@@ -193,7 +182,6 @@ AudioXmlNodeInner::~AudioXmlNodeInner()
 {
     if (xmlFuncHandle_ != nullptr && doc_ != nullptr) {
         xmlFuncHandle_->xmlFreeDoc(doc_);
-        xmlFuncHandle_->xmlCleanupParser();
         doc_ = nullptr;
     }
     curNode_ = nullptr;
@@ -276,12 +264,6 @@ void AudioXmlNodeInner::FreeProp(char *propName)
 {
     CHECK_AND_RETURN_LOG(xmlFuncHandle_ != nullptr, "xmlFuncHandle is nullptr!");
     xmlFuncHandle_->xmlFree(reinterpret_cast<xmlChar*>(propName));
-}
-
-void AudioXmlNodeInner::CleanUpParser()
-{
-    CHECK_AND_RETURN_LOG(xmlFuncHandle_ != nullptr, "xmlFuncHandle is nullptr!");
-    xmlFuncHandle_->xmlCleanupParser();
 }
 
 int32_t AudioXmlNodeInner::StrcmpXml(const xmlChar *propName1, const xmlChar *propName2)
