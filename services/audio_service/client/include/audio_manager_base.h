@@ -287,7 +287,8 @@ public:
      *
      * @return Returns AudioProcess client.
      */
-    virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) = 0;
+    virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
+        const AudioPlaybackCaptureConfig &filterConfig = AudioPlaybackCaptureConfig()) = 0;
 
     /**
      * Use effect manager information to load effect libraries.
@@ -499,6 +500,20 @@ public:
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
     virtual void NotifyAudioPolicyReady() = 0;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    /**
+     * set inner capture limit.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t SetInnerCapLimit(uint32_t innerCapLimit) = 0;
+    /**
+     * check inner capture limit.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) = 0;
+#endif
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -581,6 +596,9 @@ private:
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
     int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply);
+#endif
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

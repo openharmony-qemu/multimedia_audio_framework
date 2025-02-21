@@ -69,8 +69,7 @@ const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
-
-const char* INNER_CAPTURER_SINK = "InnerCapturerSink";
+const char* INNER_CAPTURER_SINK = "InnerCapturerSink_";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 }
@@ -590,11 +589,26 @@ struct CaptureFilterOptions {
     FilterMode usageFilterMode {FilterMode::INCLUDE};
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
+
+    bool operator ==(CaptureFilterOptions& filter)
+    {
+        std::sort(filter.usages.begin(), filter.usages.end());
+        std::sort(filter.pids.begin(), filter.pids.end());
+        std::sort(usages.begin(), usages.end());
+        std::sort(pids.begin(), pids.end());
+        return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
+            && filter.pids == pids && filter.pidFilterMode == pidFilterMode);
+    }
 };
 
 struct AudioPlaybackCaptureConfig {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
+
+    bool operator ==(AudioPlaybackCaptureConfig& filter)
+    {
+        return (filter.filterOptions == filterOptions && filter.silentCapture == silentCapture);
+    }
 };
 
 struct AudioCapturerOptions {
@@ -807,6 +821,8 @@ struct AudioProcessConfig {
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
 
     InnerCapMode innerCapMode {InnerCapMode::INVALID_CAP_MODE};
+
+    int32_t innerCapId = 0;
 };
 
 struct Volume {

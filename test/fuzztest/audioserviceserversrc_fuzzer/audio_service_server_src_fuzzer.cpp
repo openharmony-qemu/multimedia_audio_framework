@@ -168,9 +168,9 @@ void AudioEndPointSeparateStartDeviceFuzzTest(std::shared_ptr<AudioEndpointSepar
 {
     audioEndpoint->StartDevice();
     audioEndpoint->GetEndpointName();
-    audioEndpoint->ShouldInnerCap();
-    audioEndpoint->EnableFastInnerCap();
-    audioEndpoint->DisableFastInnerCap();
+    audioEndpoint->ShouldInnerCap(1);
+    audioEndpoint->EnableFastInnerCap(1);
+    audioEndpoint->DisableFastInnerCap(1);
     return;
 }
 

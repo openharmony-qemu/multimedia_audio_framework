@@ -504,5 +504,17 @@ void AudioServerProxy::NotifyAudioPolicyReady()
     gsp->NotifyAudioPolicyReady();
     IPCSkeleton::SetCallingIdentity(identity);
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t AudioServerProxy::SetInnerCapLimitProxy(uint32_t innerCapLimit)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t res = gsp->SetInnerCapLimit(innerCapLimit);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
+#endif
 }
 }

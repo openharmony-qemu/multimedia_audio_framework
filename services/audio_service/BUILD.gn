@@ -42,6 +42,7 @@ ohos_shared_library("audio_common") {
   include_dirs = [
     "common/include",
     "common/include/limiter",
+    "../audio_policy/server/include",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -122,6 +123,7 @@ config("audio_client_public_config") {
     "../audio_policy/client/include",
     "../audio_policy/common/include",
     "../audio_policy/util/include",
+    "../audio_policy/server/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audiostream/include",
     "../../frameworks/native/audioutils/include",

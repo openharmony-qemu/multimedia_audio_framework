@@ -249,10 +249,9 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpoint);
 
-    int32_t ret = audioEndpoint->EnableFastInnerCap();
+    int32_t ret = audioEndpoint->EnableFastInnerCap(1);
     EXPECT_NE(SUCCESS, ret);
 
-    audioEndpoint->Release();
     audioEndpoint->Release();
 }
 
@@ -282,8 +281,9 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_002, TestSize.Level1)
     audioEndpointInner->GenerateEndpointKey(deviceInfo, 1);
     EXPECT_NE("", ret);
 
-    audioEndpointInner->isInnerCapEnabled_ = true;
-    int32_t result = audioEndpointInner->EnableFastInnerCap();
+    auto &info = audioEndpointInner->fastCaptureInfos_[1];
+    info.isInnerCapEnabled = true;
+    int32_t result = audioEndpointInner->EnableFastInnerCap(1);
     EXPECT_EQ(SUCCESS, result);
 
     result = audioEndpointInner->DisableFastInnerCap();
@@ -505,12 +505,11 @@ HWTEST_F(AudioEndpointUnitTest, CheckProcessToDupStream_001, TestSize.Level1)
     audioEndpointInner->endpointType_ = AudioEndpoint::EndpointType::TYPE_INVALID;
     std::vector<AudioStreamData> audioDataList;
     AudioStreamData audioStreamInfo = {};
-    audioEndpointInner->ProcessToDupStream(audioDataList, audioStreamInfo);
+    audioEndpointInner->ProcessToDupStream(audioDataList, audioStreamInfo, 1);
 
     audioEndpointInner->endpointType_ = AudioEndpoint::EndpointType::TYPE_VOIP_MMAP;
-    audioStreamInfo.isInnerCaped = false;
     audioDataList.push_back(audioStreamInfo);
-    audioEndpointInner->ProcessToDupStream(audioDataList, audioStreamInfo);
+    audioEndpointInner->ProcessToDupStream(audioDataList, audioStreamInfo, 1);
 }
 
 /*
@@ -582,12 +581,12 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     result = audioEndpointInner->Config(deviceInfo);
     EXPECT_FALSE(result);
 
-    processStream->SetInnerCapState(true);
-    result = audioEndpointInner->ShouldInnerCap();
+    processStream->SetInnerCapState(true, 1);
+    result = audioEndpointInner->ShouldInnerCap(1);
     EXPECT_TRUE(result);
 
-    processStream->SetInnerCapState(false);
-    result = audioEndpointInner->ShouldInnerCap();
+    processStream->SetInnerCapState(false, 1);
+    result = audioEndpointInner->ShouldInnerCap(1);
     EXPECT_FALSE(result);
 
     result = audioEndpointInner->UnlinkProcessStream(newpProcessStream);
@@ -677,15 +676,14 @@ HWTEST_F(AudioEndpointUnitTest, HandleStartDeviceFailed_001, TestSize.Level1)
 
     audioEndpointInner->HandleStartDeviceFailed();
     EXPECT_EQ(AudioEndpoint::EndpointStatus::IDEL, audioEndpointInner->endpointStatus_);
-
-    audioEndpointInner->isInnerCapEnabled_ = true;
+    auto &info = audioEndpointInner->fastCaptureInfos_[1];
+    info.isInnerCapEnabled = true;
     EXPECT_TRUE(audioEndpointInner->StartDevice());
 
     EXPECT_TRUE(audioEndpointInner->StopDevice());
 
     audioEndpointInner->fastSource_->DeInit();
     audioEndpointInner->fastSource_ = nullptr;
-    audioEndpointInner->isInnerCapEnabled_ = true;
     EXPECT_FALSE(audioEndpointInner->StartDevice());
 }
 
@@ -737,7 +735,8 @@ HWTEST_F(AudioEndpointUnitTest, DelayStopDevice_001, TestSize.Level1)
 
     audioEndpointInner->fastSource_->DeInit();
     audioEndpointInner->fastSource_ = nullptr;
-    audioEndpointInner->isInnerCapEnabled_ = true;
+    auto &info = audioEndpointInner->fastCaptureInfos_[1];
+    info.isInnerCapEnabled = true;
     EXPECT_FALSE(audioEndpointInner->DelayStopDevice());
 
     audioEndpointInner->deviceInfo_.deviceRole_ = OUTPUT_DEVICE;
