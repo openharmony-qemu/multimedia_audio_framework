@@ -490,9 +490,9 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     renderer->WriteData();
     renderer->WriteEmptyData();
     renderer->DrainAudioBuffer();
-    renderer->EnableInnerCap();
-    renderer->DisableInnerCap();
-    renderer->InitDupStream();
+    renderer->EnableInnerCap(1);
+    renderer->DisableInnerCap(1);
+    renderer->InitDupStream(1);
     renderer->EnableDualTone();
     renderer->DisableDualTone();
     renderer->InitDualToneStream();

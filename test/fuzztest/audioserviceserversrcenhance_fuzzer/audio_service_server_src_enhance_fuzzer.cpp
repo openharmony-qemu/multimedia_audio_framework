@@ -109,18 +109,18 @@ void AudioServiceMoreFuzzTest()
     audioServicePtr->UpdateMuteControlSet(sessionId, true);
     audioServicePtr->UpdateMuteControlSet(sessionId, false);
     audioServicePtr->EnableDualToneList(sessionId);
-    audioServicePtr->OnCapturerFilterChange(sessionId, newConfig);
-    audioServicePtr->OnCapturerFilterRemove(sessionId);
+    audioServicePtr->OnCapturerFilterChange(sessionId, newConfig, 1);
+    audioServicePtr->OnCapturerFilterRemove(sessionId, 1);
 
     int32_t ret = GetData<int32_t>();
-    audioServicePtr->workingInnerCapId_ = GetData<uint32_t>();
+    audioServicePtr->workingConfigs_[1];
     audioServicePtr->GetIpcStream(config, ret);
 #ifdef HAS_FEATURE_INNERCAPTURER
-    audioServicePtr->ShouldBeInnerCap(config);
+    audioServicePtr->ShouldBeInnerCap(config, 1);
     audioServicePtr->ShouldBeDualTone(config);
 
-    audioServicePtr->OnInitInnerCapList();
-    audioServicePtr->OnUpdateInnerCapList();
+    audioServicePtr->OnInitInnerCapList(1);
+    audioServicePtr->OnUpdateInnerCapList(1);
     audioServicePtr->ResetAudioEndpoint();
 #endif
     uint32_t sourceTypeInt = GetData<uint32_t>();

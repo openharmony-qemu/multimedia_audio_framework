@@ -26,6 +26,7 @@
 #include "audio_stream_info.h"
 #include "policy_handler.h"
 #include "audio_endpoint.cpp"
+#include "iservice_registry.h"
 
 using namespace testing::ext;
 
@@ -158,7 +159,9 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_004, TestSize.Level1)
     sptr<AudioProcessInServer> audioProcess = AudioProcessInServer::Create(config, AudioService::GetInstance());
     audioEndpointInner->processList_.push_back(audioProcess);
     audioEndpointInner->processBufferList_.push_back(processBuffer);
-
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(clientConfig, g_audioServicePtr);
+    audioEndpointInner->processList_.push_back(processStream);
     auto result = audioEndpointInner->CheckAllBufferReady(checkTime, curWritePos);
     EXPECT_EQ(result, true);
 }
@@ -190,7 +193,9 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_005, TestSize.Level1)
     processBuffer->basicBufferInfo_ = &basicBufferInfo;
     processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
     audioEndpointInner->processBufferList_.push_back(processBuffer);
-
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(clientConfig, g_audioServicePtr);
+    audioEndpointInner->processList_.push_back(processStream);
     audioEndpointInner->CheckAllBufferReady(checkTime, curWritePos);
 }
 
@@ -211,12 +216,11 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_006, TestSize.Level1)
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData audioStreamData;
-    audioStreamData.isInnerCaped = false;
     srcDataList.push_back(audioStreamData);
     audioEndpointInner->dupBuffer_ = std::make_unique<uint8_t []>(1);
     EXPECT_NE(nullptr, audioEndpointInner->dupBuffer_);
 
-    audioEndpointInner->MixToDupStream(srcDataList);
+    audioEndpointInner->MixToDupStream(srcDataList, 1);
 }
 
 /*
@@ -236,12 +240,12 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_007, TestSize.Level1)
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData audioStreamData;
-    audioStreamData.isInnerCaped = true;
+    audioStreamData.isInnerCapeds[1] = true;
     srcDataList.push_back(audioStreamData);
     audioEndpointInner->dupBuffer_ = std::make_unique<uint8_t []>(1);
     EXPECT_NE(nullptr, audioEndpointInner->dupBuffer_);
 
-    audioEndpointInner->MixToDupStream(srcDataList);
+    audioEndpointInner->MixToDupStream(srcDataList, 1);
 }
 
 /*
@@ -978,6 +982,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_036, TestSize.Level1)
  * @tc.number: AudioEndpointInner_037
  * @tc.desc  : Test AudioEndpointInner::ProcessToDupStream()
  */
+#ifdef HAS_FEATURE_INNERCAPTURER
 HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
@@ -988,7 +993,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
     ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioStreamData dstStreamData;
-    dstStreamData.isInnerCaped = true;
+    dstStreamData.isInnerCapeds[1] = true;
     const std::vector<AudioStreamData> audioDataList = {dstStreamData};
     audioEndpointInner->endpointType_ = AudioEndpoint::EndpointType::TYPE_VOIP_MMAP;
 
@@ -1009,15 +1014,23 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
     config.originalSessionId = MORE_SESSIONID;
+    config.innerCapId = 1;
     uint32_t sessionId = SESSIONID;
+    
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<IStandardAudioService> g_adProxy = iface_cast<IStandardAudioService>(object);
+
+    AudioPlaybackCaptureConfig checkConfig;
+    int32_t checkInnerCapId = 0;
+    g_adProxy->CheckCaptureLimit(checkConfig, checkInnerCapId);
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
-    audioEndpointInner->dupStream_ = adapterManager->CreateRendererStream(config, stream);
-
-    audioEndpointInner->ProcessToDupStream(audioDataList, dstStreamData);
-
+    auto &info = audioEndpointInner->fastCaptureInfos_[1];
+    info.dupStream = adapterManager->CreateRendererStream(config, stream);
+    audioEndpointInner->ProcessToDupStream(audioDataList, dstStreamData, 1);
     EXPECT_EQ(dstStreamData.bufferDesc.bufLength, audioEndpointInner->dupBufferSize_);
 }
-
+#endif
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC

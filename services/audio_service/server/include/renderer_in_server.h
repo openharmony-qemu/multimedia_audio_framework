@@ -85,9 +85,9 @@ public:
     int32_t DrainAudioBuffer();
 
     // for inner-cap
-    int32_t EnableInnerCap();
-    int32_t DisableInnerCap();
-    int32_t InitDupStream();
+    int32_t EnableInnerCap(int32_t innerCapId);
+    int32_t DisableInnerCap(int32_t innerCapId);
+    int32_t InitDupStream(int32_t innerCapId);
 
     // for dual tone
     int32_t EnableDualTone();
@@ -123,6 +123,7 @@ private:
     void StandByCheck();
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
+    void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo);
 
 private:
     std::mutex statusLock_;
@@ -138,10 +139,8 @@ private:
 
     // for inner-cap
     std::mutex dupMutex_;
-    std::atomic<bool> isInnerCapEnabled_ = false;
-    uint32_t dupStreamIndex_ = 0;
     std::shared_ptr<StreamCallbacks> dupStreamCallback_ = nullptr;
-    std::shared_ptr<IRendererStream> dupStream_ = nullptr;
+    std::unordered_map<int32_t, CaptureInfo> captureInfos_;
 
     // for dual sink tone
     std::mutex dualToneMutex_;
@@ -185,6 +184,7 @@ private:
 
     // only read & write in CheckAndWriterRenderStreamStandbySysEvent
     bool lastWriteStandbyEnableStatus_ = false;
+    std::set<int32_t> innerCapIds;
 };
 } // namespace AudioStandard
 } // namespace OHOS

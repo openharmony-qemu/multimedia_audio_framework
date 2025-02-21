@@ -80,7 +80,7 @@ void AudioRecoveryDevice::RecoveryPreferredDevices()
                 iter->second->usageOrSourceType_);
             if (result != SUCCESS) {
                 AUDIO_ERR_LOG("Handle recovery preferred devices failed"
-		    ", deviceType:%{public}d, usageOrSourceType:%{public}d, tryCounter:%{public}d",
+            ", deviceType:%{public}d, usageOrSourceType:%{public}d, tryCounter:%{public}d",
                     iter->second->deviceType_, iter->second->usageOrSourceType_, tryCounter);
             }
         }

@@ -56,8 +56,9 @@ public:
     ~AudioService();
 
     // override for ICapturerFilterListener
-    int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig) override;
-    int32_t OnCapturerFilterRemove(uint32_t sessionId) override;
+    int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig,
+        int32_t innerCapId) override;
+    int32_t OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId) override;
 
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
@@ -103,6 +104,9 @@ public:
     void CleanAppUseNumMap(int32_t appUid);
     bool HasBluetoothEndpoint();
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t UnloadModernInnerCapSink(int32_t innerCapId);
+#endif
 
 private:
     AudioService();
@@ -116,23 +120,29 @@ private:
 #ifdef SUPPORT_LOW_LATENCY
     void CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     void FilterAllFastProcess();
+    int32_t CheckDisableFastInner(std::shared_ptr<AudioEndpoint> endpoint);
+    int32_t HandleFastCapture(std::set<int32_t> captureIds, sptr<AudioProcessInServer> audioProcessInServer,
+        std::shared_ptr<AudioEndpoint> audioEndpoint);
 
     void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
     int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream);
 #endif
-    InnerCapFilterPolicy GetInnerCapFilterPolicy();
-    bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
+    InnerCapFilterPolicy GetInnerCapFilterPolicy(int32_t innerCapId);
+    bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
+    bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, std::set<int32_t> &beCapIds);
+    bool CheckShouldCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
 #endif
     bool ShouldBeDualTone(const AudioProcessConfig &config);
 #ifdef HAS_FEATURE_INNERCAPTURER
-    int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
-    int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
+    int32_t OnInitInnerCapList(int32_t innerCapId); // for first InnerCap filter take effect.
+    int32_t OnUpdateInnerCapList(int32_t innerCapId); // for some InnerCap filter has already take effect.
 #endif
     bool IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo);
     void RemoveIdFromMuteControlSet(uint32_t sessionId);
     void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
     void ReLinkProcessToEndpoint();
+    void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
 
 private:
     std::mutex processListMutex_;
@@ -147,13 +157,13 @@ private:
 
     // for inner-capturer
     bool isRegisterCapturerFilterListened_ = false;
-    uint32_t workingInnerCapId_ = 0; // invalid sessionId
     uint32_t workingDualToneId_ = 0; // invalid sessionId
     AudioPlaybackCaptureConfig workingConfig_;
+    std::unordered_map<int32_t, AudioPlaybackCaptureConfig> workingConfigs_;
 
     std::mutex rendererMapMutex_;
     std::mutex capturerMapMutex_;
-    std::vector<std::weak_ptr<RendererInServer>> filteredRendererMap_ = {};
+    std::unordered_map<int32_t, std::vector<std::weak_ptr<RendererInServer>>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
 

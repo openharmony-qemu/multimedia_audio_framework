@@ -635,7 +635,8 @@ void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetAudioBalanceValue failed, error: %{public}d", error);
 }
 
-sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
+sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -644,6 +645,7 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, nullptr, "WriteInterfaceToken failed");
     ProcessConfig::WriteConfigToParcel(config, data);
+    ProcessConfig::WriteInnerCapConfigToParcel(filterConfig, data);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, nullptr, "CreateAudioProcess failed, error: %{public}d", error);
@@ -1475,5 +1477,27 @@ void AudioManagerProxy::NotifyAudioPolicyReady()
         static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_AUDIO_POLICY_READY), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t AudioManagerProxy::SetInnerCapLimit(uint32_t innerCapLimit)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), AUDIO_ERR, "Write descriptor failed!");
+    data.WriteUint32(innerCapLimit);
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    return ret;
+}
+
+int32_t AudioManagerProxy::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
+{
+    return AUDIO_OK;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

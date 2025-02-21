@@ -106,7 +106,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
 }
 
 int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
-    const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj,
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     AUDIO_INFO_LOG("FastAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
         " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);

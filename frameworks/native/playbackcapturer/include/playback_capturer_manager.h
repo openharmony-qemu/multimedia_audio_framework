@@ -29,6 +29,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr uint32_t DEFAULT_INNER_CAPTURE_NUM_LIMIT = 2;
+
+struct CaptureFilterRef {
+    AudioPlaybackCaptureConfig filterConfig;
+    uint32_t ref = 0;
+};
 
 class PlaybackCapturerManager {
 public:
@@ -46,16 +52,26 @@ public:
     // add for new playback-capturer
     std::vector<StreamUsage> GetDefaultUsages();
     bool RegisterCapturerFilterListener(ICapturerFilterListener *listener);
-    int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config);
-    int32_t RemovePlaybackCapturerFilterInfo(uint32_t sessionId);
+    int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config,
+        int32_t innerCapId);
+    int32_t RemovePlaybackCapturerFilterInfo(uint32_t sessionId, int32_t innerCapId);
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
+    int32_t SetInnerCapLimit(uint32_t innerCapLimit);
+    bool CheckReleaseUnloadModernInnerCapSink(int32_t innerCapId);
+private:
+    uint32_t GetFilterIndex();
 private:
     std::mutex setMutex_;
+    std::mutex filterMapMutex_;
     std::unordered_set<int32_t> supportStreamUsageSet_;
     std::vector<StreamUsage> defaultUsages_ = { STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_MOVIE,
         STREAM_USAGE_GAME, STREAM_USAGE_AUDIOBOOK };
     bool isCaptureSilently_ = false;
     bool isInnerCapturerRunning_ = false;
+    std::unordered_map<int32_t, CaptureFilterRef> filters_;
+    uint32_t filterNowIndex_ = 0;
     ICapturerFilterListener *listener_ = nullptr;
+    uint32_t innerCapLimit_ = DEFAULT_INNER_CAPTURE_NUM_LIMIT;
 };
 
 }  // namespace AudioStandard

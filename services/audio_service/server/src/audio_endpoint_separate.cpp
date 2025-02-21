@@ -56,19 +56,25 @@ std::string AudioEndpointSeparate::GetEndpointName()
     return deviceInfo_.networkId_ + std::to_string(deviceInfo_.deviceId_) + "_" + std::to_string(id_);
 }
 
-bool AudioEndpointSeparate::ShouldInnerCap()
+bool AudioEndpointSeparate::ShouldInnerCap(int32_t innerCapId)
 {
     AUDIO_WARNING_LOG("AudioEndpointSeparate is not supported");
     return false;
 }
 
-int32_t AudioEndpointSeparate::EnableFastInnerCap()
+int32_t AudioEndpointSeparate::EnableFastInnerCap(int32_t innerCapId)
 {
     AUDIO_WARNING_LOG("AudioEndpointSeparate is not supported");
     return ERR_INVALID_OPERATION;
 }
 
 int32_t AudioEndpointSeparate::DisableFastInnerCap()
+{
+    AUDIO_WARNING_LOG("AudioEndpointSeparate is not supported");
+    return ERR_INVALID_OPERATION;
+}
+
+int32_t AudioEndpointSeparate::DisableFastInnerCap(int32_t innerCapId)
 {
     AUDIO_WARNING_LOG("AudioEndpointSeparate is not supported");
     return ERR_INVALID_OPERATION;

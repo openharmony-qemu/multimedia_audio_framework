@@ -1421,7 +1421,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
 #endif
 }
 
-sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
+sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     Trace trace("AudioServer::CreateAudioProcess");
 
@@ -1467,9 +1468,31 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     PolicyHandler::GetInstance().GetAndSaveClientType(resetConfig.appInfo.appUid,
         GetBundleNameFromUid(resetConfig.appInfo.appUid));
 #endif
-
+#ifdef HAS_FEATURE_INNERCAPTURER
+    // 如果是创建内录流，检测内录实例上限
+    if (!HandleCheckCaptureLimit(resetConfig, filterConfig)) {
+        return nullptr;
+    }
+#endif
     return CreateAudioStream(resetConfig, callingUid);
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
+    const AudioPlaybackCaptureConfig &filterConfig)
+{
+    if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        int32_t innerCapId = 0;
+        if (CheckCaptureLimit(filterConfig, innerCapId) == SUCCESS) {
+            resetConfig.innerCapId = innerCapId;
+        } else {
+            AUDIO_ERR_LOG("CheckCaptureLimit fail!");
+            return false;
+        }
+    }
+    return true;
+}
+#endif
 
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 {
@@ -2235,5 +2258,30 @@ void AudioServer::NotifyAudioPolicyReady()
     isAudioPolicyReadyCv_.notify_all();
     AUDIO_INFO_LOG("out");
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
+{
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
+    if (ret == SUCCESS) {
+        PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
+    }
+    return ret;
+}
+
+int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED,
+        "refused for %{public}d", callingUid);
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    int32_t ret = playbackCapturerMgr->SetInnerCapLimit(innerCapLimit);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("SetInnerCapLimit error");
+    }
+    return ret;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

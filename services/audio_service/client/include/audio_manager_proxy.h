@@ -56,7 +56,8 @@ public:
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
-    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
+    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
+        const AudioPlaybackCaptureConfig &filterConfig = AudioPlaybackCaptureConfig()) override;
     bool LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
         std::vector<Effect> &successEffects) override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
@@ -116,6 +117,10 @@ public:
     void NotifyAccountsChanged() override;
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
     void NotifyAudioPolicyReady() override;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
+#endif
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

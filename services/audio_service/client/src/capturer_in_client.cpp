@@ -85,7 +85,8 @@ public:
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj) override;
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override;
     State GetState() override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
@@ -221,7 +222,7 @@ private:
 
     int32_t DeinitIpcStream();
 
-    int32_t InitIpcStream();
+    int32_t InitIpcStream(const AudioPlaybackCaptureConfig &filterConfig);
 
     const AudioProcessConfig ConstructConfig();
 
@@ -340,6 +341,7 @@ private:
 
     bool paramsIsSet_ = false;
     std::atomic_bool threadStatusFlag_ { false };
+    int32_t innerCapId_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -484,7 +486,8 @@ void CapturerInClientInner::UpdateTracker(const std::string &updateCase)
 }
 
 int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
-    const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj,
+    const AudioPlaybackCaptureConfig &config)
 {
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
         " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
@@ -511,7 +514,7 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
     streamParams_ = info; // keep it for later use
     paramsIsSet_ = true;
-    int32_t initRet = InitIpcStream();
+    int32_t initRet = InitIpcStream(config);
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
     logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalCapturer";
@@ -742,6 +745,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     config.isInnerCapturer = isInnerCapturer_;
     config.isWakeupCapturer = isWakeupCapturer_;
+    config.innerCapId = innerCapId_;
 
     clientConfig_ = config;
     return config;
@@ -790,7 +794,7 @@ int32_t CapturerInClientInner::InitCacheBuffer(size_t targetSize)
     return SUCCESS;
 }
 
-int32_t CapturerInClientInner::InitIpcStream()
+int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &filterConfig)
 {
     AUDIO_INFO_LOG("Init Ipc stream");
     AudioProcessConfig config = ConstructConfig();
@@ -798,7 +802,7 @@ int32_t CapturerInClientInner::InitIpcStream()
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode, filterConfig);
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, errorCode, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);

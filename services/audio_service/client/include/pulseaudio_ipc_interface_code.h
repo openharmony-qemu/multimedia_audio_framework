@@ -92,7 +92,8 @@ namespace AudioStandard {
         GET_ALL_SINK_INPUTS,
         NOTIFY_ACCOUNTS_CHANGED,
         NOTIFY_AUDIO_POLICY_READY,
-        AUDIO_SERVER_CODE_MAX = NOTIFY_AUDIO_POLICY_READY,
+        SET_CAPTURE_LIMIT,
+        AUDIO_SERVER_CODE_MAX = SET_CAPTURE_LIMIT,
     };
 } // namespace AudioStandard
 } // namespace OHOS

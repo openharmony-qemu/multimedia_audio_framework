@@ -752,7 +752,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_030, TestSize.Level1
     BufferDesc bufferDesc = {nullptr, 0, 0};
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
@@ -802,7 +802,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_032, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
 
@@ -832,7 +832,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_033, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
@@ -865,7 +865,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_034, TestSize.Level1
     BufferDesc bufferDesc = {nullptr, 0, 0};
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
@@ -896,7 +896,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_035, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
 
@@ -926,7 +926,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_036, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
@@ -958,7 +958,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_037, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
