@@ -1948,8 +1948,30 @@ void AudioEndpointInner::WatchingEndpointWorkLoopFuc()
         WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
 }
 
+void AudioEndpointInner::BindCore()
+{
+    if (coreBinded_) {
+        return;
+    }
+    // bind cpu cores 2-7 for fast mixer
+    cpu_set_t targetCpus;
+    CPU_ZERO(&targetCpus);
+    int32_t cpuNum = sysconf(_SC_NPROCESSORS_CONF);
+    for (int32_t i = CPU_INDEX; i < cpuNum; i++) {
+        CPU_SET(i, &targetCpus);
+    }
+
+    int32_t ret = sched_setaffinity(gettid(), sizeof(cpu_set_t), &targetCpus);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("set target cpu failed, set ret: %{public}d", ret);
+    }
+    AUDIO_INFO_LOG("set pid: %{public}d, tid: %{public}d cpus", getpid(), gettid());
+    coreBinded_ = true;
+}
+
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
+    BindCore();
     SetThreadQosLevel();
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
