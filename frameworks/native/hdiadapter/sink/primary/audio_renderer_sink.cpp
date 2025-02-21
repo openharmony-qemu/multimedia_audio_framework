@@ -932,6 +932,8 @@ int32_t AudioRendererSinkInner::SetVolume(float left, float right)
         "SetVolume failed audioRender_ null");
     if (halName_ == VOIP_HAL_NAME && switchDeviceMute_ && (abs(left) > FLOAT_EPS || abs(right) > FLOAT_EPS)) {
         AUDIO_ERR_LOG("Direct voip scene. No need to set volume when switch device and volume is 0");
+        leftVolume_ = left;
+        rightVolume_ = right;
         return ERR_INVALID_HANDLE;
     }
 
@@ -1769,7 +1771,7 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
-        "SetVolume failed audioRender_ null");
+        "SetSinkMuteForSwitchDevice failed, audioRender_  is null");
 
     if (mute) {
         muteCount_++;
