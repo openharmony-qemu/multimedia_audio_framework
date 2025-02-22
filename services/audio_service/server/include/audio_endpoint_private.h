@@ -119,6 +119,8 @@ public:
     uint32_t GetLinkedProcessCount() override;
 
     AudioMode GetAudioMode() const final;
+
+    void BindCore();
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -200,6 +202,7 @@ private:
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
     static constexpr int32_t UPDATE_THREAD_TIMEOUT = 1000; // 1000ms
+    static constexpr int32_t CPU_INDEX = 2;
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -296,6 +299,7 @@ private:
     std::atomic_bool endpointWorkLoopFucThreadStatus_ { false };
     std::atomic_bool recordEndpointWorkLoopFucThreadStatus_ { false };
     std::unordered_map<int32_t, CaptureInfo> fastCaptureInfos_;
+    bool coreBinded_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
