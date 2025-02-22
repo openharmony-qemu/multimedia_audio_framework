@@ -32,6 +32,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_MIN_VOLUMELEVEL",
     "SET_SYSTEM_VOLUMELEVEL_LEGACY",
     "SET_SYSTEM_VOLUMELEVEL",
+    "SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE",
     "GET_SYSTEM_VOLUMELEVEL",
     "SET_STREAM_MUTE_LEGACY",
     "SET_STREAM_MUTE",
@@ -233,6 +234,16 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, M
     int32_t volumeLevel = data.ReadInt32();
     int32_t volumeFlag = data.ReadInt32();
     int result = SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetSystemVolumeLevelWithDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    int32_t volumeLevel = data.ReadInt32();
+    int32_t volumeFlag = data.ReadInt32();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    int result = SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
     reply.WriteInt32(result);
 }
 
@@ -1706,6 +1717,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 SetSystemVolumeLevelLegacyInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL):
+                SetSystemVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE):
                 SetSystemVolumeLevelInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):

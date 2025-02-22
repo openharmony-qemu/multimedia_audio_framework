@@ -352,6 +352,18 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     return SetVolumeDb(streamType);
 }
 
+int32_t AudioAdapterManager::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
+        streamType, currentActiveDevice_, volumeLevel);
+    if (currentActiveDevice_ != deviceType) {
+        handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
+        SetDeviceSafeVolume(streamType, volumeLevel);
+    }
+
+    return SetVolumeDb(streamType);
+}
+
 void AudioAdapterManager::SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel)
 {
     if (handler_ == nullptr) {

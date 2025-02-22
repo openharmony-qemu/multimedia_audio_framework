@@ -37,6 +37,8 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType, int32_t volumeFlag = 0) override;
+
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) override;
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;
