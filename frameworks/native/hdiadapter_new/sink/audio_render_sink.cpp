@@ -309,11 +309,11 @@ std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const st
 int32_t AudioRenderSink::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    CHECK_AND_RETURN_RET_LOG(halName_ == "voip" && switchDeviceMute_ && (abs(left) > FLOAT_EPS ||
-        abs(right) > FLOAT_EPS), ERR_ILLEGAL_STATE, "mute for switch device at voip scene, not support set volume");
 
     leftVolume_ = left;
     rightVolume_ = right;
+    CHECK_AND_RETURN_RET_LOG(halName_ == "voip" && switchDeviceMute_ && (abs(left) > FLOAT_EPS ||
+        abs(right) > FLOAT_EPS), ERR_ILLEGAL_STATE, "mute for switch device at voip scene, not support set volume");
     float volume;
     if ((abs(leftVolume_) < FLOAT_EPS) && (abs(rightVolume_) > FLOAT_EPS)) {
         volume = rightVolume_;

@@ -23,6 +23,7 @@
 #include "media_monitor_manager.h"
 #include "audio_spatialization_manager.h"
 #include "audio_spatialization_service.h"
+#include "common/hdi_adapter_info.h"
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
@@ -1651,6 +1652,11 @@ int32_t AudioDeviceCommon::OpenRemoteAudioDevice(std::string networkId, DeviceRo
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
     AudioModuleInfo remoteDeviceInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
         deviceRole, deviceType);
+    
+    auto ret = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_REMOTE, networkId);
+    if (ret) {
+        AUDIO_ERR_LOG("load adapter fail");
+    }
     audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, remoteDeviceInfo);
 
     // If device already in list, remove it else do not modify the list.
@@ -1901,6 +1907,11 @@ int32_t AudioDeviceCommon::LoadA2dpModule(DeviceType deviceType, const AudioStre
     CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED,
         "A2dp module is not exist in the configuration file");
 
+    // not load bt_a2dp_fast and bt_hdap, maybe need fix
+    int32_t loadRet = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH, "bt_a2dp");
+    if (loadRet) {
+        AUDIO_ERR_LOG("load adapter fail");
+    }
     for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "source" ? INPUT_DEVICE : OUTPUT_DEVICE;
         DeviceRole deviceRole = deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ? OUTPUT_DEVICE : INPUT_DEVICE;

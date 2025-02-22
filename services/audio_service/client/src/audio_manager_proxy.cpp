@@ -1484,7 +1484,6 @@ int32_t AudioManagerProxy::SetInnerCapLimit(uint32_t innerCapLimit)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), AUDIO_ERR, "Write descriptor failed!");
     data.WriteUint32(innerCapLimit);
     int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT),
@@ -1499,5 +1498,40 @@ int32_t AudioManagerProxy::CheckCaptureLimit(const AudioPlaybackCaptureConfig &c
     return AUDIO_OK;
 }
 #endif
+
+int32_t AudioManagerProxy::LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+    data.WriteUint32(devMgrType);
+    data.WriteString(adapterName);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "LoadHdiAdapter failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
+void AudioManagerProxy::UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    data.WriteUint32(devMgrType);
+    data.WriteString(adapterName);
+    data.WriteBool(force);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "UnloadHdiAdapter failed, error: %{public}d", error);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

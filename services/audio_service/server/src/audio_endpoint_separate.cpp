@@ -31,9 +31,9 @@
 #include "audio_service_log.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
-#include "fast_audio_renderer_sink.h"
-#include "fast_audio_capturer_source.h"
-#include "i_audio_capturer_source.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
+#include "sink/i_audio_render_sink.h"
 #include "linear_pos_time_model.h"
 #include "policy_handler.h"
 namespace OHOS {
@@ -83,7 +83,9 @@ int32_t AudioEndpointSeparate::DisableFastInnerCap(int32_t innerCapId)
 int32_t AudioEndpointSeparate::SetVolume(AudioStreamType streamType, float volume)
 {
     if (streamType_ == streamType) {
-        return fastSink_->SetVolume(volume, volume);
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+        CHECK_AND_RETURN_RET(sink != nullptr, ERR_INVALID_HANDLE);
+        return sink->SetVolume(volume, volume);
     }
     return SUCCESS;
 }
@@ -124,10 +126,11 @@ void AudioEndpointSeparate::Release()
     isInited_.store(false);
     workThreadCV_.notify_all();
 
-    if (fastSink_ != nullptr) {
-        fastSink_->DeInit();
-        fastSink_ = nullptr;
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+    if (sink != nullptr) {
+        sink->DeInit();
     }
+    HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
 
     endpointStatus_.store(INVALID);
 
@@ -170,6 +173,16 @@ void AudioEndpointSeparate::Dump(std::string &dumpString)
     dumpString += "\n";
 }
 
+void AudioEndpointSeparate::InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo)
+{
+    attr.adapterName = "primary";
+    attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
+    attr.channel = dstStreamInfo_.channels; // STEREO = 2
+    attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
+    attr.deviceNetworkId = deviceInfo.networkId_.c_str();
+    attr.deviceType = static_cast<int32_t>(deviceInfo.deviceType_);
+}
+
 bool AudioEndpointSeparate::Config(const AudioDeviceDescriptor &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole_);
@@ -190,25 +203,27 @@ bool AudioEndpointSeparate::Config(const AudioDeviceDescriptor &deviceInfo)
     };
     dstStreamInfo_.channelLayout = deviceInfo.audioStreamInfo_.channelLayout;
 
-    fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    fastRenderId_ = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, "endpoint_sep_" + std::to_string(id_), true);
+    std::shared_ptr<IAudioRenderSink> sink = manager.GetRenderSink(fastRenderId_, true);
+    if (sink == nullptr) {
+        AUDIO_ERR_LOG("fast sink is nullptr");
+        manager.ReleaseId(fastRenderId_);
+        return false;
+    }
 
     IAudioSinkAttr attr = {};
-    attr.adapterName = "primary";
-    attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
-    attr.channel = dstStreamInfo_.channels; // STEREO = 2
-    attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
-    attr.deviceNetworkId = deviceInfo.networkId_.c_str();
-    attr.deviceType = static_cast<int32_t>(deviceInfo.deviceType_);
+    InitSinkAttr(attr, deviceInfo);
 
-    fastSink_->Init(attr);
-    if (!fastSink_->IsInited()) {
+    sink->Init(attr);
+    if (!sink->IsInited()) {
         AUDIO_ERR_LOG("fastSinkInit failed");
-        fastSink_ = nullptr;
+        manager.ReleaseId(fastRenderId_);
         return false;
     }
     if (PrepareDeviceBuffer(deviceInfo) != SUCCESS) {
-        fastSink_->DeInit();
-        fastSink_ = nullptr;
+        sink->DeInit();
+        manager.ReleaseId(fastRenderId_);
         return false;
     }
 
@@ -216,7 +231,7 @@ bool AudioEndpointSeparate::Config(const AudioDeviceDescriptor &deviceInfo)
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType_);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-    fastSink_->SetVolume(vol.volumeFloat, vol.volumeFloat);
+    sink->SetVolume(vol.volumeFloat, vol.volumeFloat);
     AUDIO_DEBUG_LOG("Init hdi volume to %{public}f", vol.volumeFloat);
 
     endpointStatus_ = UNLINKED;
@@ -229,9 +244,9 @@ int32_t AudioEndpointSeparate::GetAdapterBufferInfo(const AudioDeviceDescriptor 
     int32_t ret = 0;
     AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole_);
 
-    CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr, ERR_INVALID_HANDLE, "%{public}s fast sink is null.", __func__);
-    ret = fastSink_->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_,
-    dstByteSizePerFrame_);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "%{public}s fast sink is null.", __func__);
+    ret = sink->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
     if (ret != SUCCESS || dstBufferFd_ == -1 || dstTotalSizeInframe_ == 0 || dstSpanSizeInframe_ == 0 ||
         dstByteSizePerFrame_ == 0) {
         AUDIO_ERR_LOG("%{public}s get mmap buffer info fail, ret %{public}d, dstBufferFd %{public}d, \
@@ -369,7 +384,8 @@ bool AudioEndpointSeparate::StartDevice()
     }
     endpointStatus_ = STARTING;
 
-    if (fastSink_ == nullptr || fastSink_->Start() != SUCCESS) {
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+    if (sink == nullptr || sink->Start() != SUCCESS) {
         AUDIO_ERR_LOG("Sink start failed.");
         return false;
     }
@@ -395,7 +411,8 @@ bool AudioEndpointSeparate::StopDevice()
         }
     }
 
-    if (fastSink_ == nullptr || fastSink_->Stop() != SUCCESS) {
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+    if (sink == nullptr || sink->Stop() != SUCCESS) {
         AUDIO_ERR_LOG("Sink stop failed.");
         return false;
     }
@@ -614,12 +631,13 @@ bool AudioEndpointSeparate::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoT
     int64_t timeNanoSec = 0;
     int32_t ret = 0;
 
-    if (fastSink_ == nullptr || !fastSink_->IsInited()) {
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+    if (sink == nullptr || !sink->IsInited()) {
         AUDIO_ERR_LOG("GetDeviceHandleInfo failed: sink is not inited.");
         return false;
     }
     // GetMmapHandlePosition will call using ipc.
-    ret = fastSink_->GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+    ret = sink->GetMmapHandlePosition(frames, timeSec, timeNanoSec);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Call adapter GetMmapHandlePosition failed: %{public}d", ret);
         return false;

@@ -20,18 +20,19 @@
 #include <memory>
 #include <thread>
 
-#include "i_audio_renderer_sink.h"
+#include "common/hdi_adapter_info.h"
+#include "sink/i_audio_render_sink.h"
+#include "source/i_audio_capture_source.h"
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
 #include "audio_device_descriptor.h"
 #include "i_stream_manager.h"
 #include "i_renderer_stream.h"
 #include "audio_utils.h"
-#include "i_audio_capturer_source.h"
 
 namespace OHOS {
 namespace AudioStandard {
-enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format);
+AudioSampleFormat ConvertToHdiAdapterFormat(AudioSampleFormat format);
 // When AudioEndpoint is offline, notify the owner.
 class IAudioEndpointStatusListener {
 public:
@@ -183,6 +184,8 @@ private:
     int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBuffer> &procBuf, const BufferDesc &readBuf);
     void WriteToProcessBuffers(const BufferDesc &readBuf);
 
+    void InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo);
+
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     // SamplingRate EncodingType SampleFormat Channel
@@ -196,7 +199,7 @@ private:
     std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
 
     std::atomic<bool> isInited_ = false;
-    std::shared_ptr<IMmapAudioRendererSink> fastSink_ = nullptr;
+    uint32_t fastRenderId_ = HDI_INVALID_ID;
     int64_t spanDuration_ = 0; // nano second
     int64_t serverAheadReadTime_ = 0;
     int dstBufferFd_ = -1; // -1: invalid fd.

@@ -302,21 +302,7 @@ config("audio_service_config") {
     "../../frameworks/native/audioschedule/include",
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/playbackcapturer/include",
-    "../../frameworks/native/hdiadapter/common/include",
-    "../../frameworks/native/hdiadapter/sink/bluetooth",
-    "../../frameworks/native/hdiadapter/sink/common",
-    "../../frameworks/native/hdiadapter/sink/file",
-    "../../frameworks/native/hdiadapter/sink/fast",
-    "../../frameworks/native/hdiadapter/sink/remote",
-    "../../frameworks/native/hdiadapter/sink/remote_fast",
-    "../../frameworks/native/hdiadapter/sink/primary",
-    "../../frameworks/native/hdiadapter/sink/offload",
-    "../../frameworks/native/hdiadapter/source/bluetooth",
-    "../../frameworks/native/hdiadapter/source/common",
-    "../../frameworks/native/hdiadapter/source/fast",
-    "../../frameworks/native/hdiadapter/source/primary",
-    "../../frameworks/native/hdiadapter/source/remote",
-    "../../frameworks/native/hdiadapter/source/remote_fast",
+    "../../frameworks/native/hdiadapter_new/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
@@ -387,19 +373,9 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
-    "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
-    "../../frameworks/native/hdiadapter/source:audio_capturer_source",
+    "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_policy:audio_foundation",
   ]
-
-  if (audio_framework_feature_distributed_audio == true) {
-    deps += [
-      "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
-      "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
-    ]
-  }
 
   external_deps = [
     "c_utils:utils",
@@ -441,10 +417,6 @@ audio_ohos_library("audio_process_service") {
   }
 
   if (audio_framework_feature_low_latency) {
-    deps += [
-      "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
-      "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    ]
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
@@ -490,13 +462,7 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioutils:audio_xml_utils",
-    "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:offload_audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
-    "../../frameworks/native/hdiadapter/source:audio_capturer_source",
-    "../../frameworks/native/hdiadapter/source:bluetooth_capturer_source",
-    "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
+    "../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   external_deps = [
@@ -563,10 +529,6 @@ audio_ohos_library("audio_service") {
   }
 
   if (audio_framework_feature_low_latency) {
-    deps += [
-      "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
-      "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    ]
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 

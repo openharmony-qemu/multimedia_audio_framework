@@ -20,6 +20,9 @@
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
+#include "sink/i_audio_render_sink.h"
 #include "none_mix_engine.h"
 #include "audio_performance_monitor.h"
 #include "audio_volume.h"
@@ -72,10 +75,12 @@ NoneMixEngine::~NoneMixEngine()
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
-    if (renderSink_ && renderSink_->IsInited()) {
-        renderSink_->Stop();
-        renderSink_->DeInit();
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+    if (sink && sink->IsInited()) {
+        sink->Stop();
+        sink->DeInit();
     }
+    HdiAdapterManager::GetInstance().ReleaseId(renderId_);
     isStart_ = false;
     startFadein_ = false;
     startFadeout_ = false;
@@ -91,11 +96,12 @@ int32_t NoneMixEngine::Init(const AudioDeviceDescriptor &type, bool isVoip)
     if (type.deviceType_ != device_.deviceType_ || isVoip_ != isVoip) {
         isVoip_ = isVoip;
         device_ = type;
-        if (renderSink_ && renderSink_->IsInited()) {
-            renderSink_->Stop();
-            renderSink_->DeInit();
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+        if (sink && sink->IsInited()) {
+            sink->Stop();
+            sink->DeInit();
         }
-        renderSink_ = nullptr;
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
     }
     return SUCCESS;
 }
@@ -104,8 +110,9 @@ int32_t NoneMixEngine::Start()
 {
     AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
-    CHECK_AND_RETURN_RET_LOG(renderSink_ != nullptr, ERR_INVALID_HANDLE, "null sink");
-    CHECK_AND_RETURN_RET_LOG(renderSink_->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first");
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first");
     fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
     writeCount_ = 0;
     failedCount_ = 0;
@@ -117,7 +124,7 @@ int32_t NoneMixEngine::Start()
     if (!isStart_) {
         startFadeout_ = false;
         startFadein_ = true;
-        ret = renderSink_->Start();
+        ret = sink->Start();
         isStart_ = true;
     }
     if (!playbackThread_->CheckThreadIsRunning()) {
@@ -173,8 +180,9 @@ void NoneMixEngine::PauseAsync()
 int32_t NoneMixEngine::StopAudioSink()
 {
     int32_t ret = SUCCESS;
-    if (renderSink_ && renderSink_->IsInited()) {
-        ret = renderSink_->Stop();
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+    if (sink && sink->IsInited()) {
+        ret = sink->Stop();
     } else {
         AUDIO_ERR_LOG("sink is null or not init");
     }
@@ -266,7 +274,9 @@ void NoneMixEngine::AdjustVoipVolume()
             AUDIO_INFO_LOG("Adjust voip volume");
             AudioVolume::GetInstance()->SetHistoryVolume(streamIndx, volumeEd);
             AudioVolume::GetInstance()->Monitor(streamIndx, true);
-            renderSink_->SetVolume(volumeEd, volumeEd);
+            std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+            CHECK_AND_RETURN(sink != nullptr);
+            sink->SetVolume(volumeEd, volumeEd);
             firstSetVolume_ = false;
         }
     }
@@ -284,6 +294,16 @@ int32_t ChannelFormatConvert(std::vector<char> &audioBuffer, std::vector<char> &
         return FormatConverter::S32StereoToS16Stereo(audioBuffer, audioBufferConverted);
     }
     return SUCCESS;
+}
+
+void NoneMixEngine::DoRenderFrame(std::vector<char> &audioBufferConverted, int32_t index, int32_t appUid)
+{
+    uint64_t written = 0;
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+    CHECK_AND_RETURN(sink != nullptr);
+    sink->RenderFrame(*audioBufferConverted.data(), audioBufferConverted.size(), written);
+    stream_->ReturnIndex(index);
+    sink->UpdateAppsUid({appUid});
 }
 
 void NoneMixEngine::MixStreams()
@@ -325,7 +345,6 @@ void NoneMixEngine::MixStreams()
     AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT);
     AdjustVoipVolume();
     failedCount_ = 0;
-    uint64_t written = 0;
     // fade in or fade out
     if (startFadeout_ || startFadein_) {
         if (startFadeout_) {
@@ -334,9 +353,7 @@ void NoneMixEngine::MixStreams()
         DoFadeinOut(startFadeout_, audioBufferConverted.data(), audioBufferConverted.size());
         cvFading_.notify_all();
     }
-    renderSink_->RenderFrame(*audioBufferConverted.data(), audioBufferConverted.size(), written);
-    stream_->ReturnIndex(index);
-    renderSink_->UpdateAppsUid({appUid});
+    DoRenderFrame(audioBufferConverted, index, appUid);
     StandbySleep();
 }
 
@@ -413,28 +430,28 @@ AudioSamplingRate NoneMixEngine::GetDirectVoipSampleRate(AudioSamplingRate sampl
     return result;
 }
 
-HdiAdapterFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
+AudioSampleFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
 {
     switch (format) {
         case AudioSampleFormat::SAMPLE_U8:
         case AudioSampleFormat::SAMPLE_S16LE:
         case AudioSampleFormat::SAMPLE_F32LE:
-            return HdiAdapterFormat::SAMPLE_S16;
+            return AudioSampleFormat::SAMPLE_S16LE;
         case AudioSampleFormat::SAMPLE_S24LE:
         case AudioSampleFormat::SAMPLE_S32LE:
-            return HdiAdapterFormat::SAMPLE_S32;
+            return AudioSampleFormat::SAMPLE_S32LE;
         default:
-            return HdiAdapterFormat::SAMPLE_S16;
+            return AudioSampleFormat::SAMPLE_S16LE;
     }
 }
 
-int32_t NoneMixEngine::GetDirectFormatByteSize(HdiAdapterFormat format)
+int32_t NoneMixEngine::GetDirectFormatByteSize(AudioSampleFormat format)
 {
     switch (format) {
-        case HdiAdapterFormat::SAMPLE_S16:
+        case AudioSampleFormat::SAMPLE_S16LE:
             return sizeof(int16_t);
-        case HdiAdapterFormat::SAMPLE_S32:
-        case HdiAdapterFormat::SAMPLE_F32:
+        case AudioSampleFormat::SAMPLE_S32LE:
+        case AudioSampleFormat::SAMPLE_F32LE:
             return sizeof(int32_t);
         default:
             return sizeof(int32_t);
@@ -444,30 +461,38 @@ int32_t NoneMixEngine::GetDirectFormatByteSize(HdiAdapterFormat format)
 int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
 {
     uint32_t targetChannel = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
-    HdiAdapterFormat format = GetDirectDeviceFormate(streamInfo.format);
+    AudioSampleFormat format = GetDirectDeviceFormate(streamInfo.format);
     uint32_t sampleRate =
         isVoip_ ? GetDirectVoipSampleRate(streamInfo.samplingRate) : GetDirectSampleRate(streamInfo.samplingRate);
-    if (isInit_ && renderSink_) {
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+    if (isInit_ && sink) {
         if (uChannel_ != targetChannel || uFormat_ != format || sampleRate != uSampleRate_) {
-            if (renderSink_ && renderSink_->IsInited()) {
-                renderSink_->Stop();
-                renderSink_->DeInit();
+            if (sink && sink->IsInited()) {
+                sink->Stop();
+                sink->DeInit();
             }
-            renderSink_ = nullptr;
+            HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         } else {
             return SUCCESS;
         }
     }
+    HdiAdapterManager::GetInstance().ReleaseId(renderId_);
     return InitSink(targetChannel, format, sampleRate);
 }
 
-int32_t NoneMixEngine::InitSink(uint32_t channel, HdiAdapterFormat format, uint32_t rate)
+int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint32_t rate)
 {
     std::string sinkName = DIRECT_SINK_NAME;
     if (isVoip_) {
         sinkName = VOIP_SINK_NAME;
     }
-    renderSink_ = AudioRendererSink::GetInstance(sinkName);
+    renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, sinkName, true);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
+    if (sink == nullptr) {
+        AUDIO_ERR_LOG("get render fail, sinkName: %{public}s", sinkName.c_str());
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+        return ERR_INVALID_HANDLE;
+    }
     IAudioSinkAttr attr = {};
     attr.adapterName = SINK_ADAPTER_NAME;
     attr.sampleRate = rate;
@@ -479,12 +504,12 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, HdiAdapterFormat format, uint3
     attr.openMicSpeaker = 1;
     AUDIO_INFO_LOG("sinkName:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d,channel:%{public}d",
         sinkName.c_str(), attr.deviceType, attr.sampleRate, attr.format, attr.channel);
-    int32_t ret = renderSink_->Init(attr);
+    int32_t ret = sink->Init(attr);
     if (ret != SUCCESS) {
         return ret;
     }
     float volume = 1.0f;
-    ret = renderSink_->SetVolume(volume, volume);
+    ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
     uFormat_ = GetDirectFormatByteSize(attr.format);
@@ -495,7 +520,9 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, HdiAdapterFormat format, uint3
 int32_t NoneMixEngine::SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip)
 {
     Stop();
-    renderSink_->DeInit();
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+    CHECK_AND_RETURN_RET(sink != nullptr, ERR_INVALID_HANDLE);
+    sink->DeInit();
     isVoip_ = isVoip;
     return InitSink(streamInfo);
 }
@@ -509,7 +536,9 @@ uint64_t NoneMixEngine::GetLatency() noexcept
         return latency_;
     }
     uint32_t latency = 0;
-    if (renderSink_->GetLatency(&latency) == 0) {
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
+    CHECK_AND_RETURN_RET(sink != nullptr, 0);
+    if (sink->GetLatency(latency) == 0) {
         latency_ = latency * AUDIO_US_PER_MS + AUDIO_FRAME_WORK_LATENCY_US;
     } else {
         AUDIO_INFO_LOG("get latency failed,use default");
