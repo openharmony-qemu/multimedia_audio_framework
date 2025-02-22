@@ -37,12 +37,16 @@ namespace AudioStandard {
 
 static const std::map<std::string, AsrAecMode> AEC_MODE_MAP = {
     {"BYPASS", AsrAecMode::BYPASS},
-    {"STANDARD", AsrAecMode::STANDARD}
+    {"STANDARD", AsrAecMode::STANDARD},
+    {"EXPAND", AsrAecMode::EXPAND},
+    {"FOLDED", AsrAecMode::FOLDED}
 };
 
 static const std::map<AsrAecMode, std::string> AEC_MODE_MAP_VERSE = {
     {AsrAecMode::BYPASS, "BYPASS"},
-    {AsrAecMode::STANDARD, "STANDARD"}
+    {AsrAecMode::STANDARD, "STANDARD"},
+    {AsrAecMode::EXPAND, "EXPAND"},
+    {AsrAecMode::FOLDED, "FOLDED"}
 };
 
 static const std::map<std::string, AsrNoiseSuppressionMode> NS_MODE_MAP = {

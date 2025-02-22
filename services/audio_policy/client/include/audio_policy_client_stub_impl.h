@@ -94,6 +94,11 @@ public:
     int32_t RemoveAudioSessionCallback();
     int32_t RemoveAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb);
     size_t GetAudioSessionCallbackSize() const;
+    int32_t AddAudioSceneChangedCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
+    int32_t RemoveAudioSceneChangedCallback(
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
+    size_t GetAudioSceneChangedCallbackSize() const;
 
     void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
@@ -126,6 +131,7 @@ public:
         const bool &enabled) override;
     void OnNnStateChange(const int32_t &nnState) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
+    void OnAudioSceneChange(const AudioScene &audioScene) override;
 
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
@@ -144,6 +150,7 @@ private:
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
         microphoneBlockedCallbackList_;
+    std::vector<std::shared_ptr<AudioManagerAudioSceneChangedCallback>> audioSceneChangedCallbackList_;
 
     std::unordered_map<StreamUsage,
         std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>>> preferredOutputDeviceCallbackMap_;
@@ -172,6 +179,7 @@ private:
     mutable std::mutex nnStateChangeMutex_;
     mutable std::mutex audioSessionMutex_;
     mutable std::mutex microphoneBlockedMutex_;
+    mutable std::mutex audioSceneChangedMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

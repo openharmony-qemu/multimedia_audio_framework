@@ -88,6 +88,20 @@ enum class AsrAecMode {
      * @since 12
      */
     STANDARD = 1,
+    /**
+     * Using expand AEC.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 16
+     */
+    EXPAND = 2,
+    /**
+     * Using folded AEC.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 16
+     */
+    FOLDED = 3,
 };
 
 /**

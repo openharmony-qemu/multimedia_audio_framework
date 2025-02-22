@@ -75,6 +75,7 @@ public:
         AUDIO_SESSION_DEACTIVE_EVENT,
         MICROPHONE_BLOCKED,
         NN_STATE_CHANGE,
+        AUDIO_SCENE_CHANGE,
     };
     /* event data */
     class EventContextObj {
@@ -93,6 +94,7 @@ public:
         CastType type;
         bool spatializationEnabled;
         bool headTrackingEnabled;
+        AudioScene audioScene;
         int32_t nnState;
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
@@ -186,6 +188,7 @@ public:
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
+    bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
     bool SendNnStateChangeCallback(const int32_t &state);
 
@@ -226,7 +229,7 @@ private:
     void HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
-
+    void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);

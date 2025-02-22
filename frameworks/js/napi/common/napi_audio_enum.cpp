@@ -484,7 +484,9 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
     {"BYPASS", static_cast<int32_t>(AsrAecMode::BYPASS)},
-    {"STANDARD", static_cast<int32_t>(AsrAecMode::STANDARD)}
+    {"STANDARD", static_cast<int32_t>(AsrAecMode::STANDARD)},
+    {"EXPAND", static_cast<int32_t>(AsrAecMode::EXPAND)},
+    {"FOLDED", static_cast<int32_t>(AsrAecMode::FOLDED)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrWhisperDetectionModeMap = {
