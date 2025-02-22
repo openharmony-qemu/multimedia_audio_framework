@@ -64,7 +64,8 @@ static void SetThreadQosLevelWithTid(uint32_t pid, uint32_t tid)
     while (retryCount < WAIT_COUNT_FOR_UNSCHEDULE) {
         ret = OHOS::QOS::SetQosForOtherThread(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, static_cast<int32_t>(tid));
         if (ret != 0) {
-            AUDIO_WARNING_LOG("set qos for thread %{public}d failed, current retry count %{public}d", tid, retryCount);
+            AUDIO_WARNING_LOG("set qos for thread %{public}d failed, current retry count %{public}d, ret = %{public}d",
+                tid, retryCount, ret);
             retryCount++;
             std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME_FOR_UNSCHEDULE_MS));
         } else {

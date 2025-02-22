@@ -47,6 +47,7 @@
 #include "audio_hdi_log.h"
 #include "audio_qosmanager.h"
 #include "audio_schedule.h"
+#include "parameter.h"
 #include "audio_utils_c.h"
 #include "audio_hdiadapter_info.h"
 #include "volume_tools_c.h"
@@ -127,6 +128,7 @@ const int32_t SUCCESS = 0;
 const int32_t ERROR = -1;
 const uint64_t FADE_OUT_TIME = 5000; // 5ms
 bool g_isFirstStarted = true;
+const char *BOOT_ANIMATION_FINISHED_EVENT = "bootevent.bootanimation.finished";
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -3573,7 +3575,9 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
 
 static void SetThreadPriority()
 {
-    if (g_isFirstStarted) {
+    char paraValue[30] = {0}; // 30 for system parameter
+    int32_t ret = GetParameter(BOOT_ANIMATION_FINISHED_EVENT, "false", paraValue, sizeof(paraValue));
+    if (g_isFirstStarted && ret == 0 && !strcmp(paraValue, "false")) {
         ScheduleThreadInServer(getpid(), gettid());
         SetThreadQosLevelAsync();
         g_isFirstStarted = false;
