@@ -1400,11 +1400,12 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     } else {
         if (endpointType_ == TYPE_VOIP_MMAP && audioDataList.size() == 1) {
             HandleRendererDataParams(audioDataList[0], dstStreamData);
+            AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_VOIP_FAST, ClockTime::GetCurNano());
         } else {
             ProcessData(audioDataList, dstStreamData);
+            AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, ClockTime::GetCurNano());
         }
     }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, ClockTime::GetCurNano());
 
     for (auto &capture: fastCaptureInfos_) {
         if (capture.second.isInnerCapEnabled) {
